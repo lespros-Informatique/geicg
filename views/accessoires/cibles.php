@@ -34,11 +34,18 @@ foreach ($filiereCyclesMap as $fc) {
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des kits et accessoires.</p>
         </div>
-        <?php if (!isset($canAccess) || $canAccess([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
-        <button type="button" class="btn btn-primary btn-add-acc-cible" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
-          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Configurer Kits Filière / Niveau
-        </button>
-        <?php endif; ?>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <?php if (!isset($canAccess) || $canAccess([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS])): ?>
+          <a href="<?= url('accessoire/imprimerCiblesPdf') ?>" target="_blank" id="btn-print-cibles-pdf" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste des kits exigés par filière et niveau en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
+          </a>
+          <?php endif; ?>
+          <?php if (!isset($canAccess) || $canAccess([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
+          <button type="button" class="btn btn-primary btn-add-acc-cible" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
+            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Configurer Kits Filière / Niveau
+          </button>
+          <?php endif; ?>
+        </div>
       </div>
 
       <!-- Navigation Tabs (Kits par Filière & Niveau vs Répertoire des Kits) -->

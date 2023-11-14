@@ -159,7 +159,7 @@
               }
             },
             {
-              data: null, width: '160px', orderable: false, render: function (d) {
+              data: null, width: '50px', orderable: false, render: function (d) {
                 var safeLibelle = $('<div>').text(d.libelle_accessoire || '').html();
                 return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:16px;height:16px;"></i> Modifier</button>';
               }, className: 'text-end'
@@ -2096,6 +2096,19 @@
 
     $('#filter-cible-niveau').on('change', function () {
       tableCibles.ajax.reload();
+    });
+
+    $('#btn-print-cibles-pdf').on('click', function (e) {
+      e.preventDefault();
+      var params = [];
+      var cyc = $('#filter-cible-cycle').val();
+      var fil = $('#filter-cible-filiere-code').val();
+      var niv = $('#filter-cible-niveau').val();
+      if (cyc) params.push('cycle_code=' + encodeURIComponent(cyc));
+      if (fil) params.push('filiere_code=' + encodeURIComponent(fil));
+      if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
+      var url = racine + 'accessoire/imprimerCiblesPdf' + (params.length > 0 ? ('?' + params.join('&')) : '');
+      window.open(url, '_blank');
     });
 
     var currentCycleNiveaux = [];
