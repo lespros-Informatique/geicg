@@ -47,20 +47,16 @@ foreach ($lignes as $l) {
             </div>
             <div class="col-sm-4">
               <div class="form-group" style="margin-bottom: 15px;">
-                <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Campagne</label>
-                <p style="font-size: 1rem; margin: 5px 0;"><?= htmlspecialchars($order['campagne_code'] ?? 'N/A') ?></p>
-              </div>
-            </div>
-            <div class="col-sm-4">
-              <div class="form-group" style="margin-bottom: 15px;">
                 <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Date commande</label>
                 <p style="font-size: 1rem; margin: 5px 0;"><?= htmlspecialchars($order['date_commande'] ?? '') ?></p>
               </div>
             </div>
-          </div>
-          <div class="form-group" style="margin-bottom: 15px;">
-            <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Statut</label>
-            <span class="badge-status <?= ($order['statut_commande'] ?? '') === 'actif' ? 'delivered' : 'cancelled' ?>"><?= htmlspecialchars($order['statut_commande'] ?? '') ?></span>
+            <div class="col-sm-4">
+              <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Statut</label>
+                <span class="badge-status <?= ($order['statut_commande'] ?? '') === 'actif' ? 'delivered' : 'cancelled' ?>"><?= htmlspecialchars($order['statut_commande'] ?? '') ?></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -74,14 +70,13 @@ foreach ($lignes as $l) {
         <div class="card-header"><h3>Lignes de commande</h3></div>
         <div class="card-body" style="padding: 20px;">
           <table class="table table-sm">
-            <thead><tr><th>Kit</th><th>Prix kit</th><th>Statut ligne</th><th>Retrait</th></tr></thead>
+            <thead><tr><th>Kit</th><th>Prix kit</th><th>Statut ligne</th></tr></thead>
             <tbody>
               <?php foreach ($lignes as $l): ?>
               <tr>
                 <td><?= htmlspecialchars($l['libelle_kit'] ?? ($l['kit_code'] ?? '')) ?></td>
                 <td><?= number_format((float) ($l['prix_kit'] ?? 0), 0, ',', ' ') ?> FCFA</td>
                 <td><span class="badge-status <?= ($l['statut_ligne'] ?? '') === 'solde' ? 'delivered' : (($l['statut_ligne'] ?? '') === 'partiel' ? 'shipping' : 'pending') ?>"><?= htmlspecialchars($l['statut_ligne'] ?? '') ?></span></td>
-                <td><?= htmlspecialchars($l['retrait_ligne_commande'] ?? 'non') ?></td>
               </tr>
               <?php endforeach; ?>
             </tbody>

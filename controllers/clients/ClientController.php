@@ -130,26 +130,7 @@ class ClientController extends BaseController
             $commandes = $commandeModel->getByClient($clientProfile['code_client']);
             error_log('[ClientController::details] commandes=' . count($commandes));
 
-            $paiementModel = new ModelPaiement();
-            $ligneModel = new ModelCommandeDetail();
-            $retraitModel = new ModelRetraitKit();
-
             foreach ($commandes as $idx => $commande) {
-                $commandes[$idx]['paiements'] = $paiementModel->getByCommande($commande['code_commande']);
-                error_log('[ClientController::details] commande=' . $commande['code_commande'] . ' paiements=' . count($commandes[$idx]['paiements']));
-
-                $lignes = $ligneModel->getByCommande($commande['code_commande']);
-                error_log('[ClientController::details] commande=' . $commande['code_commande'] . ' lignes=' . count($lignes));
-
-                $retraits = [];
-                foreach ($lignes as $ligne) {
-                    $retrait = $retraitModel->getByElement('ligne_commande_code', $ligne['code_ligne_commande']);
-                    error_log('[ClientController::details] ligne=' . $ligne['code_ligne_commande'] . ' retrait=' . ($retrait ? 'trouvé' : 'aucun'));
-                    if ($retrait) {
-                        $retraits[] = $retrait;
-                    }
-                }
-                $commandes[$idx]['retraits'] = $retraits;
                 $commandes[$idx]['editId'] = $this->validator->crypter((int)($commande['id_commande'] ?? 0));
             }
         } catch (Exception $e) {

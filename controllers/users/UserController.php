@@ -232,7 +232,7 @@ class UserController extends BaseController
                         'tel' => $user['telephone_user'] ?? ''
                     ]);
 
-                    $this->success('Bienvenue sur mes kits!');
+                    $this->success('Bienvenue sur Lavex Admin!');
                 } else {
                     $this->error('Ce compte utilisateur est inactif');
                 }

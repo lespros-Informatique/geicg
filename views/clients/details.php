@@ -64,11 +64,9 @@ $client = isset($client) ? $client : [];
                 <tr>
                   <th>Code</th>
                   <th>Date</th>
-                  <th>Campagne</th>
                   <th>Statut</th>
                   <th>Détail</th>
                   <th>Paiements</th>
-                  <th>Retraits</th>
                 </tr>
               </thead>
               <tbody>
@@ -76,7 +74,6 @@ $client = isset($client) ? $client : [];
                 <tr>
                   <td><?= htmlspecialchars($cmd['code_commande'] ?? '') ?></td>
                   <td><?= htmlspecialchars($cmd['date_commande'] ?? '') ?></td>
-                  <td><?= htmlspecialchars($cmd['campagne_code'] ?? '') ?></td>
                   <td>
                     <span class="badge-status <?= ($cmd['statut_commande'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>">
                       <?= htmlspecialchars($cmd['statut_commande'] ?? '') ?>
@@ -99,20 +96,6 @@ $client = isset($client) ? $client : [];
                           </span>
                           <span style="font-size:0.85rem;color:#666;">
                             <?= isset($p['montant_paiement']) ? number_format((float)$p['montant_paiement'], 0, ',', ' ') . ' FCFA' : '' ?>
-                          </span>
-                        </div>
-                      <?php endforeach; ?>
-                    <?php else: ?>
-                      <span style="color:#999;">-</span>
-                    <?php endif; ?>
-                  </td>
-                  <td>
-                    <?php if (!empty($cmd['retraits'])): ?>
-                      <?php foreach ($cmd['retraits'] as $r): ?>
-                        <div style="margin-bottom:4px;">
-                          <strong><?= htmlspecialchars($r['code_retrait'] ?? '') ?></strong>
-                          <span class="badge-status <?= ($r['statut_retrait'] ?? '') == 'valide' ? 'delivered' : 'cancelled' ?>" style="font-size:0.75rem;">
-                            <?= htmlspecialchars($r['statut_retrait'] ?? '') ?>
                           </span>
                         </div>
                       <?php endforeach; ?>
@@ -148,24 +131,13 @@ $client = isset($client) ? $client : [];
             }).join('');
           }
 
-          function renderRetraits(retraits) {
-            if (!retraits || !retraits.length) return '<span style="color:#999;">-</span>';
-            return retraits.map(function(r) {
-              var cls = (r.statut_retrait || '') === 'valide' ? 'delivered' : 'cancelled';
-              return '<div style="margin-bottom:3px;">' +
-                '<strong>' + (r.code_retrait || '') + '</strong> ' +
-                '<span class="badge-status ' + cls + '" style="font-size:0.7rem;">' + (r.statut_retrait || '') + '</span>' +
-              '</div>';
-            }).join('');
-          }
-
           var cards = rawData.map(function(cmd) {
             var detailHref = '<?= RACINE ?>commande/details/' + (cmd.editId || '');
             return '<div class="mobile-item" style="padding:12px;border-bottom:1px solid var(--border-color);">' +
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
                 '<div>' +
                   '<div style="font-weight:600;">' + (cmd.code_commande || '') + '</div>' +
-                  '<div style="font-size:0.8rem;color:#666;">' + (cmd.date_commande || '') + ' · ' + (cmd.campagne_code || '') + '</div>' +
+                  '<div style="font-size:0.8rem;color:#666;">' + (cmd.date_commande || '') + '</div>' +
                 '</div>' +
                 '<a href="' + detailHref + '" class="btn-action btn-action-secondary" title="Voir détail" style="padding:6px 10px;">' +
                   '<i class="fa fa-eye"></i>' +
@@ -177,10 +149,6 @@ $client = isset($client) ? $client : [];
               '<div style="font-size:0.85rem;">' +
                 '<div style="margin-bottom:4px;font-weight:600;font-size:0.75rem;text-transform:uppercase;color:#999;">Paiements</div>' +
                 renderPaiements(cmd.paiements) +
-              '</div>' +
-              '<div style="font-size:0.85rem;margin-top:6px;">' +
-                '<div style="margin-bottom:4px;font-weight:600;font-size:0.75rem;text-transform:uppercase;color:#999;">Retraits</div>' +
-                renderRetraits(cmd.retraits) +
               '</div>' +
             '</div>';
           }).join('');

@@ -1,7 +1,6 @@
 ﻿<?php
 require_once __DIR__ . '/../../public/inc/header.php';
 $csrfToken = Validator::generateCsrfToken();
-
 ?>
 
 <div class="app-layout">
@@ -12,46 +11,29 @@ $csrfToken = Validator::generateCsrfToken();
     <div class="content-wrapper">
       <div class="page-header">
         <h1>Paiements</h1>
+        <button class="btn btn-primary" id="openPaiementModal">
+          <i class="fa fa-plus"></i> Nouveau paiement
+        </button>
       </div>
 
-      <div class="card" style="margin-bottom:20px;">
-        <div class="card-header">
-          <h3>1. Sélectionner un client</h3>
-        </div>
+      <div class="card">
         <div class="card-body">
-          <div id="clientsLoading" style="display:none;color:#666;">Chargement des clients...</div>
-          <div id="clientsList" class="clients-grid"></div>
-          <div id="clientsEmpty" style="display:none;color:#999;text-align:center;padding:20px;">Aucun client trouvé pour cette campagne.</div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:20px;display:none;" id="kitsCard">
-        <div class="card-header">
-          <h3>2. Sélectionner un kit</h3>
-          <button class="btn btn-sm btn-secondary" id="backToClients" style="display:none;"><i class="fa fa-arrow-left"></i> Retour</button>
-        </div>
-        <div class="card-body">
-          <div id="kitsLoading" style="display:none;color:#666;">Chargement des kits...</div>
-          <div id="kitsList" class="kits-grid"></div>
-          <div id="kitsEmpty" style="display:none;color:#999;text-align:center;padding:20px;">Ce client n'a pas de kit pour cette campagne.</div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:20px;display:none;" id="calendarCard">
-        <div class="card-header">
-          <h3>3. Calendrier des paiements</h3>
-          <div style="display:flex;gap:8px;">
-            <button type="button" class="btn btn-sm btn-warning" id="closeSessionBtn" style="display:none;">
-              <i class="fa fa-toggle-on"></i> Fermer la session
-            </button>
-            <button class="btn btn-sm btn-secondary" id="backToKits" style="display:none;"><i class="fa fa-arrow-left"></i> Retour</button>
+          <div class="table-responsive-mobile">
+            <table class="table" id="dataTable">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Commande</th>
+                  <th>Montant</th>
+                  <th>Mode</th>
+                  <th>Statut</th>
+                  <th>Date</th>
+                  <th class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
-        </div>
-        <div class="card-body">
-          <div id="calendarInfo" style="margin-bottom:12px;font-size:0.9rem;color:#666;"></div>
-          <div id="calendarLoading" style="display:none;color:#666;">Chargement du calendrier...</div>
-          <div id="calendarGrid" class="calendar-grid"></div>
-          <div id="calendarEmpty" style="display:none;color:#999;text-align:center;padding:20px;">Aucune donnée.</div>
         </div>
       </div>
     </div>
@@ -67,8 +49,12 @@ $csrfToken = Validator::generateCsrfToken();
     <div class="modal-body">
       <form id="paiementForm">
         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
-        <input type="hidden" name="ligne_commande_code" id="payLigneCode">
-        <input type="hidden" name="code" id="payCode">
+        <div class="form-group">
+          <label>Code commande</label>
+          <div class="input-wrapper">
+            <input type="text" name="commande_code" id="payCommandeCode" required>
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label>Date</label>
@@ -88,7 +74,7 @@ $csrfToken = Validator::generateCsrfToken();
             <label>Mode de paiement</label>
             <div class="input-wrapper">
               <select name="mode_paiement" id="payMode">
-                <option value="espece">Espèce</option>
+                <option value="especes">Espèce</option>
                 <option value="orange_money">Orange Money</option>
                 <option value="mtn_money">MTN Money</option>
                 <option value="wave">Wave</option>
@@ -115,71 +101,68 @@ $csrfToken = Validator::generateCsrfToken();
       <button class="btn-primary" id="paiementModalSave">Enregistrer</button>
     </div>
   </div>
-  </div>
 </div>
-
-<div class="modal-overlay" id="sessionModal">
-  <div class="modal" style="max-width: 420px;">
-    <div class="modal-header">
-      <h3 class="modal-title">Session de caisse</h3>
-      <button class="modal-close" id="sessionModalClose"><i data-lucide="x"></i></button>
-    </div>
-    <div class="modal-body">
-      <p style="margin-bottom:12px;">Aucune session de caisse ouverte. Veuillez ouvrir une session pour continuer.</p>
-      <form id="sessionForm">
-        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
-        <div class="form-group">
-          <label>Montant d'ouverture (FCFA)</label>
-          <div class="input-wrapper">
-            <input type="number" name="montant_ouverture" id="sessionMontant" value="0" min="0" step="1" required>
-          </div>
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" id="sessionModalCancel">Annuler</button>
-      <button class="btn-primary" id="sessionModalOpen">Ouvrir la session</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="closeSessionModal">
-  <div class="modal" style="max-width: 480px;">
-    <div class="modal-header">
-      <h3 class="modal-title">Fermer la session de caisse</h3>
-      <button class="modal-close" id="closeSessionModalClose"><i data-lucide="x"></i></button>
-    </div>
-    <div class="modal-body">
-      <form id="closeSessionForm">
-        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
-        <input type="hidden" name="session_id" id="closeSessionId">
-        <div class="form-group">
-          <label>Montant attendu (FCFA)</label>
-          <div class="input-wrapper">
-            <input type="number" name="montant_attendu" id="closeMontantAttendu" readonly>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Montant réel compté (FCFA)</label>
-          <div class="input-wrapper">
-            <input type="number" name="montant_reel" id="closeMontantReel" min="0" step="1" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Écart</label>
-          <div class="input-wrapper">
-            <input type="text" name="ecart" id="closeEcart" readonly>
-          </div>
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" id="closeSessionModalCancel">Annuler</button>
-      <button class="btn-primary" id="closeSessionModalSave">Fermer la session</button>
-    </div>
-  </div>
-</div>
-
-<script src="<?= RACINE ?>json/payment-calendar.js?v=1"></script>
 
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
+
+<script>
+$(function() {
+    const modal = document.getElementById('paiementModal');
+    const openBtn = document.getElementById('openPaiementModal');
+    const closeBtn = document.getElementById('paiementModalClose');
+    const cancelBtn = document.getElementById('paiementModalCancel');
+    const saveBtn = document.getElementById('paiementModalSave');
+    const form = document.getElementById('paiementForm');
+
+    function setToday() {
+        var d = new Date();
+        var str = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        document.getElementById('payDate').value = str;
+    }
+
+    function openModal() {
+        setToday();
+        form.reset();
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            loading(saveBtn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+            $.ajax({
+                url: LINK + 'paiement/add',
+                type: 'POST',
+                data: form.serialize(),
+                dataType: 'json',
+                success: function(resp) {
+                    loading(saveBtn, false, 'Enregistrer');
+                    if (resp && resp.status) {
+                        showToast(resp.message || 'Paiement enregistré', 'success');
+                        closeModal();
+                        $('#dataTable').DataTable().ajax.reload(null, false);
+                    } else {
+                        showToast(resp ? resp.message : 'Erreur', 'error');
+                    }
+                },
+                error: function() {
+                    loading(saveBtn, false, 'Enregistrer');
+                    showToast('Erreur serveur', 'error');
+                }
+            });
+        });
+    }
+});
+</script>

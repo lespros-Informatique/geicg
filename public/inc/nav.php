@@ -42,55 +42,20 @@
                                     <i data-lucide="shopping-cart"></i>
                                     <span>Nouvelle commande</span>
                                 </a>
-                                <a href="<?= RACINE ?>product/list" class="dropdown-card">
-                                    <i data-lucide="package"></i>
-                                    <span>Ajouter produit</span>
-                                </a>
                                 <a href="<?= RACINE ?>client/list" class="dropdown-card">
                                     <i data-lucide="users"></i>
                                     <span>Nouveau client</span>
-                                </a>
-                                <a href="<?= RACINE ?>fournisseur/list" class="dropdown-card">
-                                    <i data-lucide="store"></i>
-                                    <span>Fournisseur</span>
                                 </a>
                                 <a href="<?= RACINE ?>paiement/list" class="dropdown-card">
                                     <i data-lucide="credit-card"></i>
                                     <span>Paiements</span>
                                 </a>
-                                <a href="<?= RACINE ?>livraison/list" class="dropdown-card">
-                                    <i data-lucide="truck"></i>
-                                    <span>Livraisons</span>
-                                </a>
-                                <a href="<?= RACINE ?>livreur/list" class="dropdown-card">
-                                    <i data-lucide="user"></i>
-                                    <span>Livreurs</span>
-                                </a>
-                                <a href="<?= RACINE ?>stock/list" class="dropdown-card">
-                                    <i data-lucide="archive"></i>
-                                    <span>Stock</span>
-                                </a>
-                                <a href="<?= RACINE ?>category/list" class="dropdown-card">
-                                    <i data-lucide="folder"></i>
-                                    <span>Catégories</span>
-                                </a>
                             </div>
                         </div>
                     </div>
-                     <button class="btn-icon" id="campaignBtn" title="Campagnes">
-                         <i data-lucide="grid"></i>
-                     </button>
-                     <div class="dropdown-panel" id="campaignPanel">
-                         <div class="dropdown-header">
-                             <h3>Campagnes actives</h3>
-                         </div>
-                         <div class="campaign-list" id="campaignList">
-                             <div class="dropdown-loading">Chargement...</div>
-                         </div>
-                     </div>
-                      <button class="btn-icon" id="themeBtn" title="Thèmes">
-                         <i data-lucide="palette"></i>
-                     </button>
+                    <button class="btn-icon" id="themeBtn" title="Thèmes">
+                        <i data-lucide="palette"></i>
+                    </button>
                      <div class="dropdown-panel" id="themePanel" style="min-width:320px; padding: 16px;">
                          <div class="theme-panel-header">
                              <h3><i data-lucide="sun" style="width:16px;height:16px;"></i> Apparence</h3>
@@ -182,7 +147,7 @@
                                 <img src="https://ui-avatars.com/api/?name=Admin" alt="Admin">
                                 <div>
                                     <strong>Kits</strong>
-                                    <small>admin@kits.com</small>
+                                     <small>admin@lavex.com</small>
                                 </div>
                             </div>
                             <a href="<?= RACINE ?>user/profil" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>

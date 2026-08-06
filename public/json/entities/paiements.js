@@ -3,22 +3,23 @@ $(document).ready(function() {
         const columns = [
             { title: 'N°', data: null, render: function(data, type, row, meta) { return meta.row + 1; } },
             { data: 'code', title: 'Code' },
-            { data: 'nom', title: 'Commande' },
+            { data: 'commande_code', title: 'Commande' },
             {
                 data: 'montant',
                 title: 'Montant',
                 render: function(data) { return data ? Number(data).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA'; }
             },
-            { data: 'methode', title: 'Méthode' },
+            { data: 'mode', title: 'Mode' },
             {
                 data: 'statut',
                 title: 'Statut',
                 render: function(data) {
-                    const map = { 'en_attente': 'pending', 'partiel': 'shipping', 'paye': 'delivered', 'echoue': 'cancelled' };
+                    const map = { 'en_attente': 'pending', 'valide': 'delivered', 'annule': 'cancelled' };
                     const cls = map[data] || 'pending';
                     return '<span class="badge-status ' + cls + '">' + data + '</span>';
                 }
             },
+            { data: 'created_at', title: 'Date' },
             {
                 data: null,
                 title: 'Actions',
@@ -99,4 +100,3 @@ $(document).ready(function() {
         });
     });
 });
-

@@ -12,11 +12,11 @@ $paiement = isset($paiement) ? $paiement : [];
       <div class="page-header">
         <div>
           <h1>Modifier le paiement</h1>
-          <p class="page-subtitle">Mettez Ã  jour les informations du paiement.</p>
+          <p class="page-subtitle">Mettez à jour les informations du paiement.</p>
         </div>
         <a href="<?= RACINE ?>paiement/list" class="btn btn-sm btn-outline-secondary">
           <i data-lucide="arrow-left"></i>
-          Retour Ã  la liste
+          Retour à la liste
         </a>
       </div>
 
@@ -25,8 +25,8 @@ $paiement = isset($paiement) ? $paiement : [];
           <div>
             <h2>Informations du paiement</h2>
           </div>
-          <span class="badge-status <?= ($paiement['statut_paiement'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>">
-            <?= ($paiement['statut_paiement'] ?? '') == 'actif' ? 'Actif' : 'Inactif' ?>
+          <span class="badge-status <?= ($paiement['statut_paiement'] ?? '') == 'valide' ? 'delivered' : (($paiement['statut_paiement'] ?? '') == 'annule' ? 'cancelled' : 'pending') ?>">
+            <?= htmlspecialchars($paiement['statut_paiement'] ?? '') ?>
           </span>
         </div>
 
@@ -57,16 +57,16 @@ $paiement = isset($paiement) ? $paiement : [];
               </div>
 
               <div class="form-field">
-                <label for="methode_paiement">MÃ©thode de paiement</label>
+                <label for="mode_paiement">Mode de paiement</label>
                 <div class="input-with-icon">
                   <span class="input-icon"><?= Validator::icon('credit-card'); ?></span>
-                  <select class="form-control" id="methode_paiement" name="methode_paiement">
-                    <?php foreach (['cash','mobile_money','carte'] as $m): ?>
-                    <option value="<?= $m ?>" <?= ($paiement['methode_paiement'] ?? '') === $m ? 'selected' : '' ?>><?= ucfirst(str_replace('_',' ',$m)) ?></option>
+                  <select class="form-control" id="mode_paiement" name="mode_paiement">
+                    <?php foreach (['especes','orange_money','mtn_money','wave'] as $m): ?>
+                    <option value="<?= $m ?>" <?= ($paiement['mode_paiement'] ?? '') === $m ? 'selected' : '' ?>><?= ucfirst(str_replace('_',' ',$m)) ?></option>
                     <?php endforeach; ?>
                   </select>
                 </div>
-                <div class="error-message" id="methode_paiementError"></div>
+                <div class="error-message" id="mode_paiementError"></div>
               </div>
 
               <div class="form-field">
@@ -74,7 +74,7 @@ $paiement = isset($paiement) ? $paiement : [];
                 <div class="input-with-icon">
                   <span class="input-icon"><?= Validator::icon('signal'); ?></span>
                   <select class="form-control" id="statut_paiement" name="statut_paiement">
-                    <?php foreach (STATUTS::PAIEMENTS as $s): ?>
+                    <?php foreach (['valide','annule','en_attente'] as $s): ?>
                     <option value="<?= $s ?>" <?= ($paiement['statut_paiement'] ?? '') == $s ? 'selected' : '' ?>><?= ucfirst($s) ?></option>
                     <?php endforeach; ?>
                   </select>
@@ -83,13 +83,13 @@ $paiement = isset($paiement) ? $paiement : [];
               </div>
 
               <div class="form-field">
-                <label for="reference_transaction">RÃ©fÃ©rence transaction</label>
+                <label for="reference_paiement">Référence</label>
                 <div class="input-with-icon">
                   <span class="input-icon"><?= Validator::icon('hashtag'); ?></span>
-                  <input type="text" class="form-control" id="reference_transaction" name="reference_transaction"
-                         value="<?= htmlspecialchars($paiement['reference_transaction'] ?? '') ?>">
+                  <input type="text" class="form-control" id="reference_paiement" name="reference_paiement"
+                         value="<?= htmlspecialchars($paiement['reference_paiement'] ?? '') ?>">
                 </div>
-                <div class="error-message" id="reference_transactionError"></div>
+                <div class="error-message" id="reference_paiementError"></div>
               </div>
 
               <div class="readonly-grid">
@@ -119,8 +119,4 @@ $paiement = isset($paiement) ? $paiement : [];
   </main>
 </div>
 
-
-
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
-
-

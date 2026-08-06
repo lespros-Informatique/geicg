@@ -10,7 +10,7 @@ $paiement = isset($paiement) ? $paiement : [];
 
     <div class="content-wrapper">
       <div class="page-header">
-        <h1>DÃ©tails du paiement</h1>
+        <h1>Détails du paiement</h1>
         <a href="<?= RACINE ?>paiement/list" class="btn btn-sm btn-secondary"><i class="fa fa-arrow-left"></i> Retour</a>
       </div>
 
@@ -39,20 +39,20 @@ $paiement = isset($paiement) ? $paiement : [];
             </div>
             <div class="col-sm-4">
               <div class="form-group" style="margin-bottom: 15px;">
-                <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">MÃ©thode</label>
-                <p style="font-size: 1rem; margin: 5px 0;"><?= htmlspecialchars($paiement['methode_paiement'] ?? 'N/A') ?></p>
+                <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Mode</label>
+                <p style="font-size: 1rem; margin: 5px 0;"><?= htmlspecialchars($paiement['mode_paiement'] ?? 'N/A') ?></p>
               </div>
             </div>
             <div class="col-sm-4">
               <div class="form-group" style="margin-bottom: 15px;">
-                <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">RÃ©fÃ©rence</label>
-                <p style="font-size: 1rem; margin: 5px 0;"><?= htmlspecialchars($paiement['reference_transaction'] ?? 'N/A') ?></p>
+                <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Référence</label>
+                <p style="font-size: 1rem; margin: 5px 0;"><?= htmlspecialchars($paiement['reference_paiement'] ?? 'N/A') ?></p>
               </div>
             </div>
           </div>
           <div class="form-group" style="margin-bottom: 15px;">
             <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Statut</label>
-            <span class="badge-status <?= in_array($paiement['statut_paiement'] ?? '', ['paye','partiel']) ? 'delivered' : 'cancelled' ?>"><?= htmlspecialchars($paiement['statut_paiement'] ?? '') ?></span>
+            <span class="badge-status <?= ($paiement['statut_paiement'] ?? '') == 'valide' ? 'delivered' : (($paiement['statut_paiement'] ?? '') == 'annule' ? 'cancelled' : 'pending') ?>"><?= htmlspecialchars($paiement['statut_paiement'] ?? '') ?></span>
           </div>
         </div>
       </div>
@@ -65,4 +65,3 @@ $paiement = isset($paiement) ? $paiement : [];
 </div>
 
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
-

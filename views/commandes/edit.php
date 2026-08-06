@@ -78,19 +78,6 @@ $order = isset($order) ? $order : [];
                 <div class="error-message" id="statut_commandeError"></div>
               </div>
 
-              <div class="form-field">
-                <label for="methode_paiement_commande">Mode de paiement</label>
-                <div class="input-with-icon">
-                  <span class="input-icon"><?= Validator::icon('credit-card'); ?></span>
-                  <select class="form-control" id="methode_paiement_commande" name="methode_paiement_commande">
-                    <?php foreach (['cash','mobile_money','carte'] as $m): ?>
-                    <option value="<?= $m ?>" <?= ($order['methode_paiement_commande'] ?? '') == $m ? 'selected' : '' ?>><?= ucfirst(str_replace('_',' ',$m)) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="error-message" id="methode_paiement_commandeError"></div>
-              </div>
-
               <div class="readonly-grid">
                 <div class="readonly-field">
                   <label>Code commande</label>

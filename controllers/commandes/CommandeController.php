@@ -24,8 +24,10 @@ class CommandeController extends BaseController
             $data[] = [
                 'code' => $c['code_commande'],
                 'client' => $c['client_code'] ?? 'N/A',
+                'client_nom' => $c['client_code'] ?? 'N/A',
                 'user' => $c['user_code'] ?? 'N/A',
                 'date' => $c['date_livraison_commande'] ?? '',
+                'montant' => $c['montant_total_commande'] ?? 0,
                 'statut' => $c['statut_commande'],
                 'id' => $c['id_commande'],
                 'editId' => $idCrypte
