@@ -44,7 +44,7 @@ var_dump(Validator::hashPassword(123));
         </form>
       </div>
       <div class="auth-footer">
-        &copy; 2026 Kits Admin
+        &copy; 2026 LAVEX Admin
       </div>
     </div>
   </main>

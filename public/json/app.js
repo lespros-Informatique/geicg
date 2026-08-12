@@ -1,4 +1,4 @@
-const LINK = window.location.origin + '/kits/';
+const LINK = window.location.origin + '/admin-lavex/';
 
 $.ajaxSetup({
     xhrFields: {
@@ -197,15 +197,6 @@ const entityConfigs = {
             { name: 'pays_code', label: 'Pays', type: 'text', required: false }
         ]
     },
-    kit: {
-        modalTitle: 'Ajouter un kit',
-        fields: [
-            { name: 'code', label: 'Code', type: 'text', required: true },
-            { name: 'libelle', label: 'Libellé', type: 'text', required: true },
-            { name: 'prix', label: 'Prix (FCFA)', type: 'number', required: true },
-            { name: 'description_kit', label: 'Description', type: 'textarea', required: false }
-        ]
-    },
     subcategory: {
         modalTitle: 'Ajouter une sous-catégorie',
         fields: [
@@ -299,11 +290,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         const table = $('#dataTable').DataTable();
                         if (table) table.ajax.reload(null, false);
                         console.log('[form success] type=', formType, 'response=', response);
-                        if (formType === 'kit' && response.kit_code) {
-                            setTimeout(function() {
-                                window.openCompositionPanel(response.kit_code);
-                            }, 400);
-                        }
                         if (formType === 'client' && response.client_code) {
                             setTimeout(function() {
                                 window.location.href = LINK + 'client/list';
@@ -703,11 +689,11 @@ if (modalSave) {
     });
 
     function updateBottomNavActive() {
-        const path = window.location.pathname.replace(/^\/kits\/?/, '/');
+        const path = window.location.pathname.replace(/^\/admin-lavex\/?/, '/');
         document.querySelectorAll('.bottom-nav-item').forEach(function(item) {
             item.classList.remove('active');
             const href = item.getAttribute('href') || '';
-            const cleanHref = href.replace(/^\/kits\/?/, '/');
+            const cleanHref = href.replace(/^\/admin-lavex\/?/, '/');
             if (path === cleanHref || path.startsWith(cleanHref + '/')) {
                 item.classList.add('active');
             }

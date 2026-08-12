@@ -1,20 +1,19 @@
-// const LINK = window.location.origin + '/kits/';
-
+console.log(LINK);
 function handleLogin() {
     $('.formConnexion').on('submit', function(e) {
         e.preventDefault();
         const formData = $(this).serialize();
-        // console.log('[LOGIN] form data:', formData);return
+        // console.log('[LOGIN] form data:', formData);
         $.ajax({
             url: LINK + 'user/connexion',
             type: 'POST',
             data: formData,
-            dataType: 'json',
+            dataType: 'text',
             beforeSend: function() {
                 loading('.btnConnexion', true, '<i class="fa fa-spinner fa-spin"></i> Connexion...');
             },
             success: function(rep) {
-                console.log(rep);
+                // console.log(rep);return;
                 
                 loading('.btnConnexion', false, '<i class="fas fa-sign-in-alt"></i> Se connecter');
                 console.log('[LOGIN] success response:', rep);

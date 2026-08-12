@@ -141,12 +141,12 @@
                     </div>
                     <div class="admin-profile" id="profileBtn">
                         <img src="https://ui-avatars.com/api/?name=Admin" alt="Admin">
-                        <span>Kits <i data-lucide="chevron-down"></i></span>
+                        <span>Admin Lavex <i data-lucide="chevron-down"></i></span>
                         <div class="dropdown-panel" id="profilePanel">
                             <div class="profile-header">
                                 <img src="https://ui-avatars.com/api/?name=Admin" alt="Admin">
                                 <div>
-                                    <strong>Kits</strong>
+                                    <strong>Admin Lavex</strong>
                                      <small>admin@lavex.com</small>
                                 </div>
                             </div>

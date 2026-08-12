@@ -234,7 +234,7 @@ class UserController extends BaseController
 
                     $this->success('Bienvenue sur Lavex Admin!');
                 } else {
-                    $this->error('Ce compte utilisateur est inactif');
+                    $this->error('Ce compte utilisateur est inactif'.$user['nom_user']);
                 }
             } else {
                 $this->error('Identifiants incorrects. Veuillez vérifier votre téléphone/email et mot de passe.');

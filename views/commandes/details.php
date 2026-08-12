@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
 $order = isset($order) ? $order : [];
 $montantTotal = 0;
 foreach ($lignes as $l) {
-    $montantTotal += (float) ($l['prix_kit'] ?? 0);
+    $montantTotal += (float) ($l['sous_total_commande_detail'] ?? 0);
 }
 ?>
 
@@ -70,13 +70,14 @@ foreach ($lignes as $l) {
         <div class="card-header"><h3>Lignes de commande</h3></div>
         <div class="card-body" style="padding: 20px;">
           <table class="table table-sm">
-            <thead><tr><th>Kit</th><th>Prix kit</th><th>Statut ligne</th></tr></thead>
+            <thead><tr><th>Article</th><th>Quantité</th><th>Prix unitaire</th><th>Sous-total</th></tr></thead>
             <tbody>
               <?php foreach ($lignes as $l): ?>
               <tr>
-                <td><?= htmlspecialchars($l['libelle_kit'] ?? ($l['kit_code'] ?? '')) ?></td>
-                <td><?= number_format((float) ($l['prix_kit'] ?? 0), 0, ',', ' ') ?> FCFA</td>
-                <td><span class="badge-status <?= ($l['statut_ligne'] ?? '') === 'solde' ? 'delivered' : (($l['statut_ligne'] ?? '') === 'partiel' ? 'shipping' : 'pending') ?>"><?= htmlspecialchars($l['statut_ligne'] ?? '') ?></span></td>
+                <td><?= htmlspecialchars($l['article_code'] ?? ($l['service_code'] ?? '')) ?></td>
+                <td><?= htmlspecialchars($l['quantite_commande_detail'] ?? '1') ?></td>
+                <td><?= number_format((float) ($l['prix_unitaire_commande_detail'] ?? 0), 0, ',', ' ') ?> FCFA</td>
+                <td><?= number_format((float) ($l['sous_total_commande_detail'] ?? 0), 0, ',', ' ') ?> FCFA</td>
               </tr>
               <?php endforeach; ?>
             </tbody>

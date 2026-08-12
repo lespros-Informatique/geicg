@@ -1,6 +1,6 @@
 <footer class="footer" id="footer">
         <div class="footer-content">
-            <div>&copy; 2026 Kits Admin. Tous droits réservés.</div>
+            <div>&copy; 2026 LAVEX Admin. Tous droits réservés.</div>
             <div class="footer-links">
                 <a href="#">Documentation</a>
                 <a href="#">Support</a>
@@ -41,33 +41,6 @@
                 <i data-lucide="lock"></i>
                 <span>Mot de passe</span>
             </a>
-        </div>
-    </div>
-
-    <div class="composition-panel" id="compositionPanel">
-        <div class="composition-header">
-            <h3>Composer le kit</h3>
-            <button class="composition-close" id="compositionClose"><i data-lucide="x"></i></button>
-        </div>
-        <div class="composition-body">
-            <div class="composition-section">
-                <h4>Ajouter un article</h4>
-                <div class="composition-form">
-                    <select id="compositionArticle" class="form-control">
-                        <option value="">Sélectionner un article</option>
-                    </select>
-                    <input type="number" id="compositionQuantite" class="form-control" placeholder="Quantité" value="1" min="1" style="max-width: 100px;">
-                    <button type="button" class="btn btn-primary" id="compositionAddBtn">
-                        <i data-lucide="plus"></i> Ajouter
-                    </button>
-                </div>
-            </div>
-            <div class="composition-section">
-                <h4>Articles du kit</h4>
-                <div class="composition-list" id="compositionList">
-                    <div class="composition-loading">Chargement...</div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -128,20 +101,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Ajouter un kit</label>
-                            <div class="input-wrapper">
-                                <select name="kit_code" id="cmdKitSelect">
-                                    <option value="">Sélectionner un kit</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-primary" id="cmdAddKitBtn" style="margin-bottom: 12px;">
-                        <i class="fa fa-plus"></i> Ajouter le kit
-                    </button>
-                    <div id="cmdSelectedKits" style="display: flex; flex-direction: column; gap: 8px;"></div>
                 </form>
             </div>
             <div class="modal-footer">
