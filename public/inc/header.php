@@ -18,6 +18,7 @@
 
     <?php
     $currentUserCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+    $currentRoleCode = $_SESSION[USERS_AUTH]['role_code'] ?? '';
     $currentRoles = [];
     $isSuperAdmin = false;
     $isPressing = false;
@@ -28,9 +29,17 @@
     if ($currentUserCode !== '') {
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->prepare("SELECT role_code, pressing_code FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND statut_user_pressing = 'actif'");
-            $stmt->execute([$currentUserCode]);
-            $currentRoles = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if ($currentRoleCode === '') {
+                $stmtR = $db->prepare("SELECT role_code FROM " . TABLES::USERS . " WHERE code_user = ? LIMIT 1");
+                $stmtR->execute([$currentUserCode]);
+                $currentRoleCode = $stmtR->fetchColumn() ?: '';
+            }
+
+            if ($currentRoleCode !== '') {
+                $currentRoles[] = $currentRoleCode;
+            }
+
             $isSuperAdmin = in_array(ROLES::SUPER_ADMIN, $currentRoles, true);
             $isPressing = in_array(ROLES::PRESSING, $currentRoles, true);
             $isLivreur = in_array(ROLES::LIVREUR, $currentRoles, true);
@@ -42,7 +51,7 @@
             }
 
             if ($isLivreur) {
-                $stmtL = $db->prepare("SELECT l.code_livreur FROM " . TABLES::LIVREURS . " l INNER JOIN " . TABLES::USERS . " u ON l.user_code = u.code_user WHERE u.code_user = ? AND l.statut_livreur = 'actif' LIMIT 1");
+                $stmtL = $db->prepare("SELECT l.code_livreur FROM " . TABLES::LIVREURS . " l WHERE l.user_code = ? AND l.statut_livreur = 'actif' LIMIT 1");
                 $stmtL->execute([$currentUserCode]);
                 $currentLivreurCode = $stmtL->fetchColumn() ?: null;
             }

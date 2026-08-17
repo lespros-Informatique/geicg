@@ -244,12 +244,16 @@ class UserController extends BaseController
 
             if (isset($user) && !empty($user) && password_verify($this->post('password'), $user['password_user'] ?? '')) {
                 if ($user['statut_user'] == STATUTS::USERS[0]) {
+                    $roleCode = $this->model->getUserRole($user['code_user']);
+                    $roleCode = $roleCode ? ($roleCode['code_role'] ?? '') : '';
+
                     Validator::saveSesion(USERS_AUTH, [
                         'id_user' => $user['id_user'],
                         'code_user' => $user['code_user'],
                         'nom' => $user['nom_user'],
                         'email' => $user['email_user'] ?? '',
-                        'tel' => $user['telephone_user'] ?? ''
+                        'tel' => $user['telephone_user'] ?? '',
+                        'role_code' => $roleCode
                     ]);
 
                     $this->success('Bienvenue sur Lavex Admin!');

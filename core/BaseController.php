@@ -106,14 +106,24 @@ abstract class BaseController
             return [];
         }
 
+        $roles = [];
         try {
-            $sql = "SELECT role_code FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND statut_user_pressing = 'actif'";
-            $stmt = $this->model->getCon()->prepare($sql);
-            $stmt->execute([$userCode]);
-            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $roleCode = $_SESSION[USERS_AUTH]['role_code'] ?? '';
+            if ($roleCode === '') {
+                $sql = "SELECT role_code FROM " . TABLES::USERS . " WHERE code_user = ? LIMIT 1";
+                $stmt = $this->model->getCon()->prepare($sql);
+                $stmt->execute([$userCode]);
+                $roleCode = $stmt->fetchColumn() ?: '';
+            }
+
+            if ($roleCode !== '') {
+                $roles[] = $roleCode;
+            }
         } catch (Exception $e) {
-            return [];
+            // ignore
         }
+
+        return $roles;
     }
 
     protected function hasRole(string $roleCode): bool
