@@ -17,6 +17,12 @@ class CommandeController extends BaseController
     {
         $this->requireAuth();
         $commandes = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode !== null) {
+            $commandes = array_filter($commandes, function($c) use ($pressingCode) {
+                return $c['pressing_code'] === $pressingCode;
+            });
+        }
         $data = [];
 
         foreach ($commandes as $c) {
@@ -167,7 +173,7 @@ class CommandeController extends BaseController
             exit();
         }
 
-        $this->loadView('../views/commandes/edit.php', ['commande' => $item]);
+        $this->loadView('../views/commandes/edit.php', ['order' => $item]);
     }
 
     public function getActive()
@@ -194,5 +200,42 @@ class CommandeController extends BaseController
         $ligneModel = new ModelCommandeDetail();
         $lignes = $ligneModel->getByCommande($code);
         $this->json(['data' => $lignes]);
+    }
+
+    public function transition()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $id = (int) $this->post('id_commande');
+        $next = $this->post('statut_suivi_commande');
+
+        if (!$id || !$next) {
+            $this->error('Identifiant et statut requis');
+            return;
+        }
+
+        $allowed = ['creee','collectee','en_traitement','prete','livree','annulee'];
+        if (!in_array($next, $allowed, true)) {
+            $this->error('Statut de suivi invalide');
+            return;
+        }
+
+        $item = $this->model->getById($id);
+        if (!$item) {
+            $this->error('Commande introuvable');
+            return;
+        }
+
+        $data = [
+            'id_commande' => $id,
+            'statut_suivi_commande' => $next,
+            'updated_at_commande' => date('Y-m-d H:i:s')
+        ];
+
+        if ($this->model->update($data)) {
+            $this->success('Statut de suivi mis à jour');
+        } else {
+            $this->error('Erreur lors de la mise à jour');
+        }
     }
 }

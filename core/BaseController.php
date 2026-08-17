@@ -111,6 +111,28 @@ abstract class BaseController
         }
     }
 
+    protected function getCurrentPressingCode(): ?string
+    {
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        if ($userCode === '') {
+            return null;
+        }
+
+        if ($this->isSuperAdmin($userCode)) {
+            return null;
+        }
+
+        try {
+            $sql = "SELECT pressing_code FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND statut_user_pressing = 'actif' LIMIT 1";
+            $stmt = $this->model->getCon()->prepare($sql);
+            $stmt->execute([$userCode]);
+            $pressingCode = $stmt->fetchColumn();
+            return $pressingCode ?: null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
     protected function requirePermission(string $module, string $action): void
     {
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';

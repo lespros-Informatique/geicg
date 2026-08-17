@@ -1,5 +1,5 @@
 ﻿<?php
-require_once __DIR__ . '/../../../public/inc/header.php';
+require_once __DIR__ . '/../../public/inc/header.php';
 ?>
 
 <div class="app-layout auth-layout">
@@ -7,8 +7,8 @@ require_once __DIR__ . '/../../../public/inc/header.php';
     <div class="auth-card">
       <div class="auth-header">
         <div class="logo"> <?= LOGO ?> </div>
-        <h1>DÃ©connexion</h1>
-        <p>Vous Ãªtes sur le point de vous dÃ©connecter</p>
+        <h1>Déconnexion</h1>
+        <p>Vous êtes sur le point de vous déconnecter</p>
       </div>
 
       <div class="auth-body">
@@ -20,7 +20,7 @@ require_once __DIR__ . '/../../../public/inc/header.php';
             <button type="submit" class="btn btn-primary btn_actions btnDecon">
               <span class="btn-text">
                 <i data-lucide="log-out"></i>
-                Se dÃ©connecter
+                Se déconnecter
               </span>
             </button>
           </div>
@@ -31,5 +31,4 @@ require_once __DIR__ . '/../../../public/inc/header.php';
 </div>
 
 <script src="<?= RACINE ?>json/auth.js"></script>
-<?php require_once __DIR__ . '/../../../public/inc/footer.php'; ?>
-
+<?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

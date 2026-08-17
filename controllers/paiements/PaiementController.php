@@ -17,6 +17,20 @@ class PaiementController extends BaseController
     {
         $this->requireAuth();
         $paiements = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode !== null) {
+            $commandeCodes = array_filter(array_map(function($c) { return $c['code_commande'] ?? null; }, (new ModelCommande())->getAll()));
+            $commandeModel = new ModelCommande();
+            $allowedCommandeCodes = [];
+            foreach ($commandeModel->getAll() as $c) {
+                if ($c['pressing_code'] === $pressingCode) {
+                    $allowedCommandeCodes[] = $c['code_commande'];
+                }
+            }
+            $paiements = array_filter($paiements, function($p) use ($allowedCommandeCodes) {
+                return in_array($p['commande_code'], $allowedCommandeCodes, true);
+            });
+        }
         $data = [];
 
         foreach ($paiements as $p) {

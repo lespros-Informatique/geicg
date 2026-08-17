@@ -9,7 +9,7 @@ define('ICON', '<img src="'.RACINE.'public/assets/images/logo/icon.png" alt="LOG
 define('TITLE', 'LAVEX Admin');
 
 const USERS_AUTH = 'users_auth';
-const CAMPAIGN_SESSION = 'campagne_active';
+
 class TABLES
 {
     // PRESSING

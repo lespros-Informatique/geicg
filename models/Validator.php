@@ -58,40 +58,6 @@ class Validator
         return $result;
     }
 
-    public static function notifyNodeNewOrder($orderId)
-    {
-        $payload = json_encode(["order_id" => $orderId]);
-
-        // DEBUG: Log the order ID being sent
-        error_log("🔔 Trying to notify Node.js about order: " . $orderId);
-        
-        // Complete URL to Node.js server - FIXED: removed /resto prefix
-        $nodeServerUrl = "http://localhost:8080/commandes/createFromCart";
-        error_log("🔗 Sending request to: " . $nodeServerUrl);
-        
-        $ch = curl_init($nodeServerUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Content-Type: application/json",
-            "Content-Length: " . strlen($payload)
-        ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10); // 10 second timeout
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        
-        error_log("📡 cURL Response Code: " . $httpCode);
-        error_log("📡 cURL Error: " . ($curlError ?: "None"));
-        error_log("📡 Response: " . $response);
-        
-        curl_close($ch);
-
-        return $response;
-    }
-
     public function _verif($table, $field, $value, $id, $id_val) // function veriviant l'existance d'une ligne par 1 element et id
     {
         $result = false;
@@ -531,20 +497,6 @@ public static function viewStatus2($icon1, $icon2, $icon3, $status, $ref)
          return "$statut";
      }
 
-    public static function viewMode($status, $val1, $val2)
-    {
-        // Si status1 = 1, afficher "Wave", sinon "Expresse"
-        if ($status == $val1) {
-            $statut = 'WAVE';
-        } elseif ($status == $val2) {
-            $statut = 'ESPECE ';
-        } else {
-            $statut = 'Aucun';
-        }
-        // Retourner le badge stylisé
-        return $statut;
-    }
-
     public static function icon($icon)
     {
         $result = '<i data-lucide="' . $icon . '"></i>';
@@ -685,23 +637,7 @@ public static function viewStatus2($icon1, $icon2, $icon3, $status, $ref)
         }
     }
 
-    public static function ficon($icon)
-    {
-        $result = '<i class="feather icon-' . $icon . '"></i>';
 
-        return $result;
-    }
-
-    public static function truncateText($text, $length = 10)
-    {
-        $safeText = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
-        if (strlen($text) > $length) {
-            return '<td class="truncate-text" title="' . $safeText . '" onclick="showFullText(this)">'
-                . htmlspecialchars(substr($text, 0, $length)) . '...</td>';
-        }
-
-        return "<td>$safeText</td>";
-    }
 
     public function updateByElements($table, $element1, $element_val1, $element2, $element_val2, $id, $id_val) // update by element1
     {
@@ -716,58 +652,6 @@ public static function viewStatus2($icon1, $icon2, $icon3, $status, $ref)
         }
 
         return false;
-    }
-
-    // checkoutwave
-    public function checkOutWave($montant)
-    {
-        $curl = curl_init();
-
-        curl_setopt_array($curl, [
-            CURLOPT_URL => 'https://api.wave.com/v1/checkout/sessions',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode([
-                'amount' => $montant,
-                'currency' => 'XOF',
-                'error_url' => RACINE . 'church/home/error',
-                'success_url' => RACINE . 'church/home/success',
-            ]),
-            CURLOPT_HTTPHEADER => [
-                'Accept: application/json',
-                'Authorization: Bearer wave_ci_prod_QPqtloWqepC-bbSz_GGTKlBm8vgopNcgBv7-r0hCW-9UlxYAHVECdTRU5TLweboyGdQ_ZS3G_0HYNiYEhIh9lRTs_I6JpZNXxg',
-                'Content-Type: application/json; charset=UTF-8',
-            ],
-        ]);
-
-        // Exécution de la requête cURL
-        $response = curl_exec($curl);
-
-        // Vérification des erreurs cURL
-        if ($response === false) {
-            // Affichage de l'erreur si cURL échoue
-            // var_dump(curl_error($curl));
-            curl_close($curl);
-
-            return false;  // Retourner false en cas d'erreur cURL
-        }
-
-        // Fermeture de la session cURL
-        curl_close($curl);
-
-        // Décoder la réponse JSON de l'API
-        $responseData = json_decode($response, true);
-
-        // Vérifier si la réponse est valide
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            echo 'Erreur lors du décodage JSON: ' . json_last_error_msg();
-
-            return false;  // Retourner false si JSON est mal formé
-        }
-
-        // Retourner la réponse décodée (c'est ici que vous récupérez les données)
-        return $responseData;
     }
 
     public function crypter($data)
@@ -919,137 +803,6 @@ public static function viewStatus2($icon1, $icon2, $icon3, $status, $ref)
             error_log("Validator::getSumAndCount error: " . $e->getMessage());
             return null;
         }
-    }
-
-    /**
-     * Valider les données d'une commande
-     * @param array $data Données de la commande à valider
-     * @return array Tableau des erreurs de validation (vide si aucune erreur)
-     */
-    public function validateCommandeData($data)
-    {
-        $errors = [];
-
-        // Valider le code commande (obligatoire pour création)
-        if (isset($data['code_commande'])) {
-            if (empty(trim($data['code_commande']))) {
-                $errors['code_commande'] = "Le code de commande est requis";
-            } elseif (!preg_match('/^CMD\d{8}\d{4}$/', $data['code_commande'])) {
-                $errors['code_commande'] = "Le format du code de commande est invalide";
-            }
-        }
-
-        // Valider l'ID client (obligatoire pour création)
-        if (isset($data['client_id'])) {
-            if (empty(trim($data['client_id'])) || !is_numeric($data['client_id'])) {
-                $errors['client_id'] = "Un client valide doit être sélectionné";
-            }
-        }
-
-        // Valider le total (obligatoire)
-        if (isset($data['total'])) {
-            if (!is_numeric($data['total']) || floatval($data['total']) <= 0) {
-                $errors['total'] = "Le total doit être un nombre positif";
-            }
-        }
-
-        // Valider les frais de livraison
-        if (isset($data['frais_livraison'])) {
-            if (!is_numeric($data['frais_livraison']) || floatval($data['frais_livraison']) < 0) {
-                $errors['frais_livraison'] = "Les frais de livraison doivent être un nombre positif ou zéro";
-            }
-        }
-
-        // Valider le statut
-        if (isset($data['statut'])) {
-            $statuts_valides = ['reçue', 'en préparation', 'prête', 'en route', 'livrée', 'annulée'];
-            if (!in_array($data['statut'], $statuts_valides)) {
-                $errors['statut'] = "Le statut sélectionné n'est pas valide";
-            }
-        }
-
-        // Valider la méthode de paiement
-        if (isset($data['paiement'])) {
-            $paiements_valides = ['à la livraison', 'wave', 'espèces', 'carte bancaire'];
-            if (!in_array($data['paiement'], $paiements_valides)) {
-                $errors['paiement'] = "La méthode de paiement sélectionnée n'est pas valide";
-            }
-        }
-
-        // Valider l'adresse de livraison (obligatoire)
-        if (isset($data['adresse_livraison'])) {
-            if (empty(trim($data['adresse_livraison']))) {
-                $errors['adresse_livraison'] = "L'adresse de livraison est requise";
-            } elseif (strlen($data['adresse_livraison']) < 10) {
-                $errors['adresse_livraison'] = "L'adresse de livraison doit contenir au moins 10 caractères";
-            }
-        }
-
-        // Valider les instructions (optionnel mais limité en longueur)
-        if (isset($data['instructions'])) {
-            if (strlen($data['instructions']) > 500) {
-                $errors['instructions'] = "Les instructions ne peuvent pas dépasser 500 caractères";
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Valider les données d'un client
-     * @param array $data Données du client à valider
-     * @return array Tableau des erreurs de validation (vide si aucune erreur)
-     */
-    public function validateClientData($data)
-    {
-        $errors = [];
-
-        // Valider le nom (obligatoire)
-        if (isset($data['nom'])) {
-            if (empty(trim($data['nom']))) {
-                $errors['nom'] = "Le nom est requis";
-            } elseif (strlen($data['nom']) < 2) {
-                $errors['nom'] = "Le nom doit contenir au moins 2 caractères";
-            }
-        }
-
-        // Valider le téléphone
-        if (isset($data['telephone'])) {
-            if (empty(trim($data['telephone']))) {
-                $errors['telephone'] = "Le téléphone est requis";
-            } elseif (!preg_match('/^(\+225|0)[0-9]{9}$/', str_replace(' ', '', $data['telephone']))) {
-                $errors['telephone'] = "Le format du téléphone n'est pas valide (ex: 0123456789)";
-            }
-        }
-
-        // Valider l'adresse
-        if (isset($data['adresse'])) {
-            if (empty(trim($data['adresse']))) {
-                $errors['adresse'] = "L'adresse est requise";
-            } elseif (strlen($data['adresse']) < 10) {
-                $errors['adresse'] = "L'adresse doit contenir au moins 10 caractères";
-            }
-        }
-
-        // Valider l'email
-        if (isset($data['email'])) {
-            if (empty(trim($data['email']))) {
-                $errors['email'] = "L'email est requis";
-            } elseif (!self::isValidEmail($data['email'])) {
-                $errors['email'] = "Le format de l'email n'est pas valide";
-            }
-        }
-
-        // Valider le mot de passe (pour l'inscription/modification)
-        if (isset($data['password'])) {
-            if (empty(trim($data['password']))) {
-                $errors['password'] = "Le mot de passe est requis";
-            } elseif (strlen($data['password']) < 6) {
-                $errors['password'] = "Le mot de passe doit contenir au moins 6 caractères";
-            }
-        }
-
-        return $errors;
     }
 
 public static function saveSesion(string $entity, $data){

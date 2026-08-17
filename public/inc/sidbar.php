@@ -22,25 +22,52 @@
              </a>
          </div>
 
-         <div class="nav-section">
-             <div class="nav-section-title">
-                 <i data-lucide="file-text"></i> <span>Catalogue</span>
-             </div>
-             <a href="<?= RACINE ?>article/list" class="nav-item sub">
-                 <i data-lucide="file-text"></i> <span>Articles</span>
-             </a>
-         </div>
+           <div class="nav-section">
+               <div class="nav-section-title">
+                   <i data-lucide="file-text"></i> <span>Catalogue</span>
+               </div>
+               <a href="<?= RACINE ?>article/list" class="nav-item sub">
+                   <i data-lucide="file-text"></i> <span>Articles</span>
+               </a>
+               <a href="<?= RACINE ?>service/list" class="nav-item sub">
+                   <i data-lucide="briefcase"></i> <span>Services</span>
+               </a>
+               <a href="<?= RACINE ?>categorie/list" class="nav-item sub">
+                   <i data-lucide="tag"></i> <span>Catégories</span>
+               </a>
+               <a href="<?= RACINE ?>tarif/list" class="nav-item sub">
+                   <i data-lucide="dollar-sign"></i> <span>Tarifs</span>
+               </a>
+           </div>
 
-         <div class="nav-section">
-             <div class="nav-section-title">
-                 <i data-lucide="shopping-cart"></i> <span>Commercial</span>
-             </div>
-             <a href="<?= RACINE ?>commande/list" class="nav-item sub">
-                 <i data-lucide="clipboard-list"></i> <span>Commandes</span>
-             </a>
-             <a href="<?= RACINE ?>paiement/list" class="nav-item sub">
-                 <i data-lucide="wallet"></i> <span>Paiements</span>
-             </a>
-         </div>
-     </nav>
- </aside>
+          <div class="nav-section">
+              <div class="nav-section-title">
+                  <i data-lucide="shopping-cart"></i> <span>Commercial</span>
+              </div>
+              <a href="<?= RACINE ?>commande/list" class="nav-item sub">
+                  <i data-lucide="clipboard-list"></i> <span>Commandes</span>
+              </a>
+              <a href="<?= RACINE ?>paiement/list" class="nav-item sub">
+                  <i data-lucide="wallet"></i> <span>Paiements</span>
+              </a>
+          </div>
+
+          <div class="nav-section">
+              <div class="nav-section-title">
+                  <i data-lucide="truck"></i> <span>Pressing & Livraison</span>
+              </div>
+              <a href="<?= RACINE ?>pressing/list" class="nav-item sub">
+                  <i data-lucide="map-pin"></i> <span>Pressings</span>
+              </a>
+              <a href="<?= RACINE ?>livreur/list" class="nav-item sub">
+                  <i data-lucide="user"></i> <span>Livreurs</span>
+              </a>
+              <a href="<?= RACINE ?>mission/list" class="nav-item sub">
+                  <i data-lucide="briefcase"></i> <span>Missions</span>
+              </a>
+              <a href="<?= RACINE ?>horaire/list" class="nav-item sub">
+                  <i data-lucide="clock"></i> <span>Horaires</span>
+              </a>
+          </div>
+      </nav>
+  </aside>

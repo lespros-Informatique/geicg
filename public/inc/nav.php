@@ -150,9 +150,8 @@
                                      <small>admin@lavex.com</small>
                                 </div>
                             </div>
-                            <a href="<?= RACINE ?>user/profil" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>
-                            <a href="<?= RACINE ?>setting/list" class="dropdown-item"><i data-lucide="settings"></i> Paramètres</a>
-                            <hr>
+                             <a href="<?= RACINE ?>user/profil" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>
+                             <hr>
                             <a href="<?= RACINE ?>user/decon" class="dropdown-item logout"><i data-lucide="log-out"></i> Déconnexion</a>
                         </div>
                     </div>

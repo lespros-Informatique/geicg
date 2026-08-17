@@ -33,10 +33,6 @@
                 <i data-lucide="user"></i>
                 <span>Mon profil</span>
             </a>
-            <a href="<?= RACINE ?>setting/list" class="dropdown-card">
-                <i data-lucide="settings"></i>
-                <span>Paramètres</span>
-            </a>
             <a href="<?= RACINE ?>user/editPassword" class="dropdown-card">
                 <i data-lucide="lock"></i>
                 <span>Mot de passe</span>
@@ -116,6 +112,6 @@
         </div>
     </div>
 
-   <?php include_once 'footer-link.php' ?>
+   <?php include_once __DIR__ . '/footer-link.php' ?>
 </body>
 </html>

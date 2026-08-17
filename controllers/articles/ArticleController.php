@@ -17,6 +17,12 @@ class ArticleController extends BaseController
     {
         $this->requireAuth();
         $articles = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode !== null) {
+            $articles = array_filter($articles, function($a) use ($pressingCode) {
+                return $a['pressing_code'] === $pressingCode;
+            });
+        }
         $data = [];
 
         foreach ($articles as $a) {

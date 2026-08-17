@@ -73,7 +73,7 @@ $client = isset($client) ? $client : [];
                 <?php foreach ($commandes as $cmd): ?>
                 <tr>
                   <td><?= htmlspecialchars($cmd['code_commande'] ?? '') ?></td>
-                  <td><?= htmlspecialchars($cmd['date_commande'] ?? '') ?></td>
+                  <td><?= htmlspecialchars($cmd['created_at_commande'] ?? '') ?></td>
                   <td>
                     <span class="badge-status <?= ($cmd['statut_commande'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>">
                       <?= htmlspecialchars($cmd['statut_commande'] ?? '') ?>
@@ -137,7 +137,7 @@ $client = isset($client) ? $client : [];
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
                 '<div>' +
                   '<div style="font-weight:600;">' + (cmd.code_commande || '') + '</div>' +
-                  '<div style="font-size:0.8rem;color:#666;">' + (cmd.date_commande || '') + '</div>' +
+                   '<div style="font-size:0.8rem;color:#666;">' + (cmd.created_at_commande || '') + '</div>' +
                 '</div>' +
                 '<a href="' + detailHref + '" class="btn-action btn-action-secondary" title="Voir détail" style="padding:6px 10px;">' +
                   '<i class="fa fa-eye"></i>' +

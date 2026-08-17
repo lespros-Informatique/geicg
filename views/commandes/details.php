@@ -48,7 +48,7 @@ foreach ($lignes as $l) {
             <div class="col-sm-4">
               <div class="form-group" style="margin-bottom: 15px;">
                 <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Date commande</label>
-                <p style="font-size: 1rem; margin: 5px 0;"><?= htmlspecialchars($order['date_commande'] ?? '') ?></p>
+                 <p style="font-size: 1rem; margin: 5px 0;"><?= htmlspecialchars($order['created_at_commande'] ?? '') ?></p>
               </div>
             </div>
             <div class="col-sm-4">
@@ -56,6 +56,32 @@ foreach ($lignes as $l) {
                 <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Statut</label>
                 <span class="badge-status <?= ($order['statut_commande'] ?? '') === 'actif' ? 'delivered' : 'cancelled' ?>"><?= htmlspecialchars($order['statut_commande'] ?? '') ?></span>
               </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Suivi commande</label>
+                <span class="badge-status <?= ($order['statut_suivi_commande'] ?? '') === 'livree' ? 'delivered' : (($order['statut_suivi_commande'] ?? '') === 'annulee' ? 'cancelled' : 'info') ?>"><?= htmlspecialchars($order['statut_suivi_commande'] ?? '') ?></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 15px;">
+            <label style="font-weight: 500; color: var(--text-secondary); font-size: 0.875rem;">Actions de suivi</label>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;" id="commandeTransitionButtons">
+              <?php
+                $current = $order['statut_suivi_commande'] ?? 'creee';
+                $transitions = [];
+                if ($current === 'creee') $transitions = [['label' => 'Marquer collectée', 'next' => 'collectee'], ['label' => 'Annuler', 'next' => 'annulee']];
+                elseif ($current === 'collectee') $transitions = [['label' => 'Mettre en traitement', 'next' => 'en_traitement'], ['label' => 'Annuler', 'next' => 'annulee']];
+                elseif ($current === 'en_traitement') $transitions = [['label' => 'Marquer prête', 'next' => 'prete'], ['label' => 'Annuler', 'next' => 'annulee']];
+                elseif ($current === 'prete') $transitions = [['label' => 'Marquer livrée', 'next' => 'livree'], ['label' => 'Annuler', 'next' => 'annulee']];
+              ?>
+              <?php foreach ($transitions as $t): ?>
+                <button type="button" class="btn btn-sm btn-primary" onclick="transitionCommande(<?= $order['id_commande'] ?>, '<?= $t['next'] ?>')"><?= $t['label'] ?></button>
+              <?php endforeach; ?>
+              <?php if (empty($transitions) && in_array($current, ['livree','annulee'], true)): ?>
+                <span style="color:#999; font-size:0.85rem;">Commande clôturée</span>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -85,6 +111,19 @@ foreach ($lignes as $l) {
         </div>
       </div>
       <?php endif; ?>
+      <script>
+        function transitionCommande(id, nextStatus) {
+          if (!id || !nextStatus) return;
+          showConfirm('Changer le statut de suivi de cette commande ?', function() {
+            $.post(LINK + 'commande/transition', { id_commande: id, statut_suivi_commande: nextStatus }, function(rep) {
+              showToast(rep.message || 'Statut mis à jour', rep.status ? 'success' : 'error');
+              if (rep.status) {
+                setTimeout(() => window.location.reload(), 700);
+              }
+            }, 'json').fail(function() { showToast('Erreur serveur', 'error'); });
+          });
+        }
+      </script>
     </div>
   </main>
 </div>

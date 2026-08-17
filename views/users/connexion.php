@@ -1,6 +1,5 @@
 ﻿<?php
 require_once __DIR__ . '/../../public/inc/header.php';
-var_dump(Validator::hashPassword(123));
 ?>
 
 <div class="app-layout auth-layout">
