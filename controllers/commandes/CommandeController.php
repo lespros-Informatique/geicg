@@ -2,6 +2,8 @@
 
 class CommandeController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelCommande();
@@ -16,13 +18,14 @@ class CommandeController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $commandes = $this->model->getAll();
         $pressingCode = $this->getCurrentPressingCode();
+
         if ($pressingCode !== null) {
-            $commandes = array_filter($commandes, function($c) use ($pressingCode) {
-                return $c['pressing_code'] === $pressingCode;
-            });
+            $commandes = $this->model->getByPressing($pressingCode);
+        } else {
+            $commandes = $this->model->getAll();
         }
+
         $data = [];
 
         foreach ($commandes as $c) {
@@ -58,7 +61,7 @@ class CommandeController extends BaseController
 
                 $data = [
                     'code_commande' => $code,
-                    'pressing_code' => $this->post('pressing_code') ?: 'PRS-001',
+                    'pressing_code' => $this->getCurrentPressingCode() ?: $this->post('pressing_code'),
                     'client_code' => $this->post('client_code'),
                     'user_code' => $userCode,
                     'remise_commande' => $this->post('remise_commande') ?: 0,
@@ -142,6 +145,9 @@ class CommandeController extends BaseController
                 header('Location: ' . RACINE . 'commande/list');
                 exit();
             }
+
+            $this->requirePressingAccess($item['pressing_code'] ?? '');
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'commande/list');
@@ -168,6 +174,8 @@ class CommandeController extends BaseController
                 header('Location: ' . RACINE . 'commande/list');
                 exit();
             }
+
+            $this->requirePressingAccess($item['pressing_code'] ?? '');
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'commande/list');
             exit();
@@ -225,6 +233,8 @@ class CommandeController extends BaseController
             $this->error('Commande introuvable');
             return;
         }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
 
         $data = [
             'id_commande' => $id,

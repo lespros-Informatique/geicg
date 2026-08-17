@@ -1,6 +1,8 @@
 <?php
 class UserController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelUser();
@@ -16,6 +18,24 @@ class UserController extends BaseController
     {
         $this->requireAuth();
         $users = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+
+        if ($pressingCode !== null) {
+            $pressingUserCodes = [];
+            try {
+                $sql = "SELECT user_code FROM " . TABLES::USERS_PRESSINGS . " WHERE pressing_code = ? AND statut_user_pressing = 'actif'";
+                $stmt = $this->model->getCon()->prepare($sql);
+                $stmt->execute([$pressingCode]);
+                $pressingUserCodes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } catch (Exception $e) {
+                $pressingUserCodes = [];
+            }
+
+            $users = array_filter($users, function($u) use ($pressingUserCodes) {
+                return in_array($u['code_user'], $pressingUserCodes, true);
+            });
+        }
+
         $data = [];
 
         foreach ($users as $u) {

@@ -2,6 +2,8 @@
 
 abstract class BaseController
 {
+    use PressingAware;
+
     protected $validator;
     protected $model;
 
@@ -97,92 +99,79 @@ abstract class BaseController
         exit;
     }
 
-    private function isSuperAdmin(string $userCode): bool
+    protected function getCurrentUserRoles(): array
     {
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        if ($userCode === '') {
+            return [];
+        }
+
         try {
-            $sql = "SELECT COUNT(*) FROM " . TABLES::USERS_PRESSINGS . " ur
-                    INNER JOIN " . TABLES::ROLES . " r ON ur.role_code = r.code_role
-                    WHERE ur.user_code = ? AND r.code_role = 'ROLE-ADMIN'";
+            $sql = "SELECT role_code FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND statut_user_pressing = 'actif'";
             $stmt = $this->model->getCon()->prepare($sql);
             $stmt->execute([$userCode]);
-            return $stmt->fetchColumn() > 0;
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
         } catch (Exception $e) {
-            return false;
+            return [];
         }
     }
 
-    protected function getCurrentPressingCode(): ?string
+    protected function hasRole(string $roleCode): bool
+    {
+        return in_array($roleCode, $this->getCurrentUserRoles(), true);
+    }
+
+    protected function isSuperAdmin(): bool
+    {
+        return $this->hasRole(ROLES::SUPER_ADMIN);
+    }
+
+    protected function isPressing(): bool
+    {
+        return $this->hasRole(ROLES::PRESSING);
+    }
+
+    protected function isLivreur(): bool
+    {
+        return $this->hasRole(ROLES::LIVREUR);
+    }
+
+    protected function getCurrentLivreurCode(): ?string
     {
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         if ($userCode === '') {
             return null;
         }
 
-        if ($this->isSuperAdmin($userCode)) {
+        if (!$this->isLivreur()) {
             return null;
         }
 
         try {
-            $sql = "SELECT pressing_code FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND statut_user_pressing = 'actif' LIMIT 1";
+            $sql = "SELECT code_livreur FROM " . TABLES::LIVREURS . " WHERE user_code = ? AND statut_livreur = 'actif' LIMIT 1";
             $stmt = $this->model->getCon()->prepare($sql);
             $stmt->execute([$userCode]);
-            $pressingCode = $stmt->fetchColumn();
-            return $pressingCode ?: null;
+            $code = $stmt->fetchColumn();
+            return $code ?: null;
         } catch (Exception $e) {
             return null;
         }
     }
 
-    protected function requirePermission(string $module, string $action): void
+    protected function requireLivreurAccess(string $livreurCode): void
     {
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-
         if ($userCode === '') {
             $this->json(['status' => 0, 'message' => 'Authentification requise'], 401);
         }
 
-        if ($this->isSuperAdmin($userCode)) {
+        if ($this->isSuperAdmin()) {
             return;
         }
 
-        try {
-            $sqlRoles = "SELECT role_code FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND statut_user_pressing = 'actif'";
-            $stmtRoles = $this->model->getCon()->prepare($sqlRoles);
-            $stmtRoles->execute([$userCode]);
-            $roleCodes = $stmtRoles->fetchAll(PDO::FETCH_COLUMN);
-
-            if (empty($roleCodes)) {
-                $this->json(['status' => 0, 'message' => 'Accès refusé : aucun rôle assigné'], 403);
-            }
-
-            $placeholders = implode(',', array_fill(0, count($roleCodes), '?'));
-            $sqlPerms = "SELECT p.libelle_permission
-                         FROM " . TABLES::PERMISSIONS . " p
-                         INNER JOIN " . TABLES::ROLES_PERMISSIONS . " rp ON p.code_permission = rp.permission_code
-                         INNER JOIN " . TABLES::ROLES . " r ON rp.role_code = r.code_role
-                         WHERE p.statut_permission = 'actif'
-                         AND r.statut_role = 'actif'
-                         AND r.code_role IN ($placeholders)";
-            $stmtPerms = $this->model->getCon()->prepare($sqlPerms);
-            $stmtPerms->execute($roleCodes);
-            $perms = $stmtPerms->fetchAll(PDO::FETCH_COLUMN);
-
-            $hasAccess = false;
-            foreach ($perms as $perm) {
-                if (strpos($perm, $module . '_' . $action) !== false || strpos($perm, $module . '_' . $action) === 0) {
-                    $hasAccess = true;
-                    break;
-                }
-            }
-
-            if (!$hasAccess) {
-                $this->json([
-                    'status' => 0,
-                    'message' => "Accès refusé : permission '$module/$action' manquante"
-                ], 403);
-            }
-        } catch (Exception $e) {
-            $this->json(['status' => 0, 'message' => 'Erreur de vérification des permissions'], 500);
+        $current = $this->getCurrentLivreurCode();
+        if ($current === null || $current !== $livreurCode) {
+            $this->json(['status' => 0, 'message' => 'Accès refusé : vous n\'êtes pas assigné à ce livreur'], 403);
         }
     }
 }

@@ -1,6 +1,7 @@
 <?php
 class ClientController extends BaseController
 {
+    use PressingAware;
     protected function resolveModel()
     {
         return new ModelClient();

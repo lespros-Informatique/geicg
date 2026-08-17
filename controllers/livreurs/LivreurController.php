@@ -2,6 +2,8 @@
 
 class LivreurController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelLivreur();
@@ -17,6 +19,14 @@ class LivreurController extends BaseController
     {
         $this->requireAuth();
         $livreurs = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+
+        if ($pressingCode !== null) {
+            $livreurs = array_filter($livreurs, function($l) use ($pressingCode) {
+                return ($l['pressing_code'] ?? '') === $pressingCode;
+            });
+        }
+
         $data = [];
 
         foreach ($livreurs as $l) {
@@ -55,6 +65,7 @@ class LivreurController extends BaseController
 
         $data = [
             'code_livreur' => $code,
+            'user_code' => $this->post('user_code') ?: '',
             'pressing_code' => $this->post('pressing_code') ?: '',
             'nom_livreur' => $this->post('nom_livreur'),
             'prenom_livreur' => $this->post('prenom_livreur') ?? '',
@@ -85,6 +96,7 @@ class LivreurController extends BaseController
         $id = (int) $this->post('id_livreur');
 
         $data = [
+            'user_code' => $this->post('user_code') ?: '',
             'pressing_code' => $this->post('pressing_code') ?: '',
             'nom_livreur' => $this->post('nom_livreur'),
             'prenom_livreur' => $this->post('prenom_livreur') ?? '',

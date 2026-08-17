@@ -2,6 +2,8 @@
 
 class TarifArticleController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelTarifArticle();
@@ -17,6 +19,12 @@ class TarifArticleController extends BaseController
     {
         $this->requireAuth();
         $tarifs = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode !== null) {
+            $tarifs = array_filter($tarifs, function($t) use ($pressingCode) {
+                return $t['pressing_code'] === $pressingCode;
+            });
+        }
         $data = [];
 
         foreach ($tarifs as $t) {
@@ -55,7 +63,7 @@ class TarifArticleController extends BaseController
 
         $data = [
             'code_tarif' => $code,
-            'pressing_code' => $this->post('pressing_code'),
+            'pressing_code' => $this->getCurrentPressingCode() ?: $this->post('pressing_code'),
             'article_code' => $this->post('article_code'),
             'service_code' => $this->post('service_code'),
             'prix_tarif' => $this->post('prix_tarif') ?: 0,
@@ -85,7 +93,7 @@ class TarifArticleController extends BaseController
         $id = (int) $this->post('id_tarif');
 
         $data = [
-            'pressing_code' => $this->post('pressing_code'),
+            'pressing_code' => $this->getCurrentPressingCode() ?: $this->post('pressing_code'),
             'article_code' => $this->post('article_code'),
             'service_code' => $this->post('service_code'),
             'prix_tarif' => $this->post('prix_tarif') ?: 0,

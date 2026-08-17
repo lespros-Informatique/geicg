@@ -2,6 +2,8 @@
 
 class MissionController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelMission();
@@ -16,7 +18,14 @@ class MissionController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $missions = $this->model->getAll();
+
+        if ($this->isLivreur()) {
+            $livreurCode = $this->getCurrentLivreurCode();
+            $missions = $livreurCode ? $this->model->getByLivreur($livreurCode) : [];
+        } else {
+            $missions = $this->model->getAll();
+        }
+
         $data = [];
 
         foreach ($missions as $m) {
@@ -84,8 +93,22 @@ class MissionController extends BaseController
             return;
         }
 
-        $statut = in_array($this->post('statut_mission'), ['en_attente', 'en_cours', 'terminee', 'annulee']) ? $this->post('statut_mission') : 'en_attente';
         $id = (int) $this->post('id_mission');
+        $item = $this->model->getById($id);
+        if (!$item) {
+            $this->error('Mission introuvable!');
+            return;
+        }
+
+        if ($this->isLivreur()) {
+            $livreurCode = $this->getCurrentLivreurCode();
+            if ($livreurCode === null || ($item['livreur_code'] ?? '') !== $livreurCode) {
+                $this->error('Accès refusé : vous n\'êtes pas assigné à cette mission', 403);
+                return;
+            }
+        }
+
+        $statut = in_array($this->post('statut_mission'), ['en_attente', 'en_cours', 'terminee', 'annulee']) ? $this->post('statut_mission') : 'en_attente';
 
         $data = [
             'commande_code' => $this->post('commande_code'),
@@ -112,6 +135,15 @@ class MissionController extends BaseController
         $this->requireAuth();
         $id = $this->post('id');
         if (isset($id) && $this->model->getById($id)) {
+            if ($this->isLivreur()) {
+                $item = $this->model->getById($id);
+                $livreurCode = $this->getCurrentLivreurCode();
+                if ($livreurCode === null || ($item['livreur_code'] ?? '') !== $livreurCode) {
+                    $this->json(['status' => 0, 'message' => 'Accès refusé : vous n\'êtes pas assigné à cette mission'], 403);
+                    return;
+                }
+            }
+
             if ($this->model->toggleStatus($id)) {
                 $this->success('Statut modifié avec succès!', ['id' => $id, 'reload' => true]);
             } else {

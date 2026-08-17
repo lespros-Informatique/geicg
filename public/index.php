@@ -16,6 +16,14 @@ $clientController = new ClientController();
 $userController = new UserController();
 $commandeController = new CommandeController();
 $paiementController = new PaiementController();
+$villeController = new VilleController();
+$quartierController = new QuartierController();
+$abonnementPressingController = new AbonnementPressingController();
+$forfaitController = new ForfaitController();
+$favoriController = new FavoriController();
+$notificationController = new NotificationController();
+$panierController = new PanierController();
+$panierDetailController = new PanierDetailController();
 
 $route->addRoute('/', [$homeController, 'index']);
 $route->addRoute('/home/dashboardData', [$homeController, 'dashboardData']);
@@ -136,6 +144,72 @@ $route->addRoute('/paiement/edit', [$paiementController, 'edit']);
 $route->addRoute('/paiement/changer', [$paiementController, 'changer']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);
 $route->addRoute('/paiement/details/{param}', [$paiementController, 'details']);
+
+$route->addRoute('/ville/list', [$villeController, 'list']);
+$route->addRoute('/ville/apiList', [$villeController, 'apiList']);
+$route->addRoute('/ville/add', [$villeController, 'add']);
+$route->addRoute('/ville/edit', [$villeController, 'edit']);
+$route->addRoute('/ville/changer', [$villeController, 'changer']);
+$route->addRoute('/ville/edition/{param}', [$villeController, 'edition']);
+$route->addRoute('/ville/details/{param}', [$villeController, 'details']);
+$route->addRoute('/ville/getActive', [$villeController, 'getActive']);
+
+$route->addRoute('/quartier/list', [$quartierController, 'list']);
+$route->addRoute('/quartier/apiList', [$quartierController, 'apiList']);
+$route->addRoute('/quartier/add', [$quartierController, 'add']);
+$route->addRoute('/quartier/edit', [$quartierController, 'edit']);
+$route->addRoute('/quartier/changer', [$quartierController, 'changer']);
+$route->addRoute('/quartier/edition/{param}', [$quartierController, 'edition']);
+$route->addRoute('/quartier/details/{param}', [$quartierController, 'details']);
+$route->addRoute('/quartier/getActive', [$quartierController, 'getActive']);
+
+$route->addRoute('/abonnement/list', [$abonnementPressingController, 'list']);
+$route->addRoute('/abonnement/apiList', [$abonnementPressingController, 'apiList']);
+$route->addRoute('/abonnement/add', [$abonnementPressingController, 'add']);
+$route->addRoute('/abonnement/edit', [$abonnementPressingController, 'edit']);
+$route->addRoute('/abonnement/changer', [$abonnementPressingController, 'changer']);
+$route->addRoute('/abonnement/edition/{param}', [$abonnementPressingController, 'edition']);
+$route->addRoute('/abonnement/details/{param}', [$abonnementPressingController, 'details']);
+
+$route->addRoute('/forfait/list', [$forfaitController, 'list']);
+$route->addRoute('/forfait/apiList', [$forfaitController, 'apiList']);
+$route->addRoute('/forfait/add', [$forfaitController, 'add']);
+$route->addRoute('/forfait/edit', [$forfaitController, 'edit']);
+$route->addRoute('/forfait/changer', [$forfaitController, 'changer']);
+$route->addRoute('/forfait/edition/{param}', [$forfaitController, 'edition']);
+$route->addRoute('/forfait/details/{param}', [$forfaitController, 'details']);
+
+$route->addRoute('/favori/list', [$favoriController, 'list']);
+$route->addRoute('/favori/apiList', [$favoriController, 'apiList']);
+$route->addRoute('/favori/add', [$favoriController, 'add']);
+$route->addRoute('/favori/edit', [$favoriController, 'edit']);
+$route->addRoute('/favori/changer', [$favoriController, 'changer']);
+$route->addRoute('/favori/edition/{param}', [$favoriController, 'edition']);
+$route->addRoute('/favori/details/{param}', [$favoriController, 'details']);
+
+$route->addRoute('/notification/list', [$notificationController, 'list']);
+$route->addRoute('/notification/apiList', [$notificationController, 'apiList']);
+$route->addRoute('/notification/add', [$notificationController, 'add']);
+$route->addRoute('/notification/edit', [$notificationController, 'edit']);
+$route->addRoute('/notification/changer', [$notificationController, 'changer']);
+$route->addRoute('/notification/edition/{param}', [$notificationController, 'edition']);
+$route->addRoute('/notification/details/{param}', [$notificationController, 'details']);
+
+$route->addRoute('/panier/list', [$panierController, 'list']);
+$route->addRoute('/panier/apiList', [$panierController, 'apiList']);
+$route->addRoute('/panier/add', [$panierController, 'add']);
+$route->addRoute('/panier/edit', [$panierController, 'edit']);
+$route->addRoute('/panier/changer', [$panierController, 'changer']);
+$route->addRoute('/panier/edition/{param}', [$panierController, 'edition']);
+$route->addRoute('/panier/details/{param}', [$panierController, 'details']);
+
+$route->addRoute('/panier-detail/list', [$panierDetailController, 'list']);
+$route->addRoute('/panier-detail/apiList', [$panierDetailController, 'apiList']);
+$route->addRoute('/panier-detail/add', [$panierDetailController, 'add']);
+$route->addRoute('/panier-detail/edit', [$panierDetailController, 'edit']);
+$route->addRoute('/panier-detail/changer', [$panierDetailController, 'changer']);
+$route->addRoute('/panier-detail/edition/{param}', [$panierDetailController, 'edition']);
+$route->addRoute('/panier-detail/details/{param}', [$panierDetailController, 'details']);
 
 
 $url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

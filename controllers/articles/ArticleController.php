@@ -2,6 +2,8 @@
 
 class ArticleController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelArticle();
@@ -60,7 +62,7 @@ class ArticleController extends BaseController
 
         $data = [
             'code_article' => $code,
-            'pressing_code' => $this->post('pressing_code') ?: 'PRS-001',
+            'pressing_code' => $this->getCurrentPressingCode() ?: 'PRS-001',
             'categorie_article_code' => $this->post('categorie_article_code') ?: '',
             'libelle_article' => $this->post('libelle_article'),
             'description_article' => $this->post('description_article') ?? '',
@@ -90,7 +92,7 @@ class ArticleController extends BaseController
         $id = (int) $this->post('id_article');
 
         $data = [
-            'pressing_code' => $this->post('pressing_code') ?: 'PRS-001',
+            'pressing_code' => $this->getCurrentPressingCode() ?: 'PRS-001',
             'categorie_article_code' => $this->post('categorie_article_code') ?: '',
             'libelle_article' => $this->post('libelle_article'),
             'description_article' => $this->post('description_article') ?? '',

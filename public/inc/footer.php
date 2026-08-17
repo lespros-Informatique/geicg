@@ -13,10 +13,12 @@
             <i data-lucide="home"></i>
             <span>Accueil</span>
         </a>
+        <?php if ($isSuperAdmin || $isPressing): ?>
         <a href="<?= RACINE ?>paiement/list" class="bottom-nav-item">
             <i data-lucide="credit-card"></i>
             <span>Paiement</span>
         </a>
+        <?php endif; ?>
         <button type="button" class="bottom-nav-item" id="bnProfil">
             <i data-lucide="user"></i>
             <span>Profil</span>

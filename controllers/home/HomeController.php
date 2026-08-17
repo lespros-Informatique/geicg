@@ -1,6 +1,9 @@
 <?php
+
 class HomeController extends BaseController
-    {
+{
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelHome();
@@ -20,8 +23,9 @@ class HomeController extends BaseController
         $this->requireAuth();
         $model = $this->resolveModel();
 
-        $stats = $model->getStats();
-        $recentOrders = $model->getRecentOrders(10);
+        $pressingCode = $this->getCurrentPressingCode();
+        $stats = $model->getStats($pressingCode);
+        $recentOrders = $model->getRecentOrders(10, $pressingCode);
 
         $this->json([
             'stats' => $stats,

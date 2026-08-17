@@ -2,6 +2,8 @@
 
 class HorairePressingController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelHorairePressing();
@@ -17,6 +19,14 @@ class HorairePressingController extends BaseController
     {
         $this->requireAuth();
         $horaires = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+
+        if ($pressingCode !== null) {
+            $horaires = array_filter($horaires, function($h) use ($pressingCode) {
+                return $h['pressing_code'] === $pressingCode;
+            });
+        }
+
         $data = [];
 
         foreach ($horaires as $h) {

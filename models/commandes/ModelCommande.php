@@ -40,4 +40,17 @@ class ModelCommande extends BaseModel
             return [];
         }
     }
+
+    public function getByPressing(string $pressingCode): array
+    {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE pressing_code = ? ORDER BY created_at_commande DESC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$pressingCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log('[ModelCommande::getByPressing] ' . $e->getMessage());
+            return [];
+        }
+    }
 }

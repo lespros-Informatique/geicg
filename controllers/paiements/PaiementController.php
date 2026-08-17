@@ -2,6 +2,8 @@
 
 class PaiementController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelPaiement();
@@ -16,21 +18,23 @@ class PaiementController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $paiements = $this->model->getAll();
         $pressingCode = $this->getCurrentPressingCode();
+
+        $sql = "SELECT p.* FROM " . TABLES::PAIEMENTS . " p
+                INNER JOIN " . TABLES::COMMANDES . " c ON c.code_commande = p.commande_code";
+        $params = [];
+
         if ($pressingCode !== null) {
-            $commandeCodes = array_filter(array_map(function($c) { return $c['code_commande'] ?? null; }, (new ModelCommande())->getAll()));
-            $commandeModel = new ModelCommande();
-            $allowedCommandeCodes = [];
-            foreach ($commandeModel->getAll() as $c) {
-                if ($c['pressing_code'] === $pressingCode) {
-                    $allowedCommandeCodes[] = $c['code_commande'];
-                }
-            }
-            $paiements = array_filter($paiements, function($p) use ($allowedCommandeCodes) {
-                return in_array($p['commande_code'], $allowedCommandeCodes, true);
-            });
+            $sql .= " WHERE c.pressing_code = ?";
+            $params[] = $pressingCode;
         }
+
+        $sql .= " ORDER BY p.created_at_paiement DESC";
+
+        $stmt = $this->model->getCon()->prepare($sql);
+        $stmt->execute($params);
+        $paiements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         $data = [];
 
         foreach ($paiements as $p) {

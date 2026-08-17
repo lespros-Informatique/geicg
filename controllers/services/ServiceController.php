@@ -2,6 +2,8 @@
 
 class ServiceController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelService();

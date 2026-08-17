@@ -61,6 +61,13 @@ class TABLES
     public const NOTIFICATIONS       = 'notifications';
 }
 
+class ROLES
+{
+    public const SUPER_ADMIN = 'ROLE-ADMIN';
+    public const PRESSING    = 'ROLE-PRO';
+    public const LIVREUR     = 'ROLE-LIV';
+}
+
 class STATUTS
 {
     // PRESSINGS

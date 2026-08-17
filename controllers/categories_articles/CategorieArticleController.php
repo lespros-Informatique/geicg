@@ -2,6 +2,8 @@
 
 class CategorieArticleController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelCategorieArticle();

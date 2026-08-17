@@ -2,6 +2,8 @@
 
 class PressingController extends BaseController
 {
+    use PressingAware;
+
     protected function resolveModel()
     {
         return new ModelPressing();
@@ -17,6 +19,14 @@ class PressingController extends BaseController
     {
         $this->requireAuth();
         $pressings = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+
+        if ($pressingCode !== null) {
+            $pressings = array_filter($pressings, function($p) use ($pressingCode) {
+                return $p['code_pressing'] === $pressingCode;
+            });
+        }
+
         $data = [];
 
         foreach ($pressings as $p) {
