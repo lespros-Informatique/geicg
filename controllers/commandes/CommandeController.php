@@ -188,36 +188,95 @@ class CommandeController extends BaseController
         }
     }
 
+    public function edition($details)
+    {
+        $this->requireAuth();
+        $item = null;
+        $id = null;
+
+        try {
+            $id = $this->validator->decrypter($details);
+            $item = $this->model->getWithDetails($id);
+        } catch (Exception $e) {
+            $item = null;
+        }
+
+        if (!$item) {
+            $item = $this->model->getByCodeWithDetails($details);
+            if ($item) {
+                $id = $item['id_commande'];
+            }
+        }
+
+        if (!$item && is_numeric($details)) {
+            $item = $this->model->getWithDetails((int)$details);
+            if ($item) {
+                $id = $item['id_commande'];
+            }
+        }
+
+        if (!$item) {
+            header('Location: ' . RACINE . 'commande/list');
+            exit();
+        }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
+        $encryptedId = $this->validator->crypter($id);
+
+        $clientModel = new ModelClient();
+        $clients = $clientModel->getByStatus('actif');
+
+        $pressingModel = new ModelPressing();
+        $pressings = $pressingModel->getByStatus('actif');
+
+        $this->loadView('../views/commandes/edit.php', [
+            'order' => $item,
+            'clients' => $clients,
+            'pressings' => $pressings,
+            'encryptedId' => $encryptedId
+        ]);
+    }
+
     public function edit()
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['client_code' => $_POST['client_code'] ?? '', 'id_commande' => $_POST['id_commande'] ?? '']);
+        $id = (int) $this->post('id_commande');
 
-        if ($notEmpty === true) {
-            $statut = in_array($this->post('statut_commande'), ['actif', 'inactif']) ? $this->post('statut_commande') : 'actif';
-            $id = (int) $this->post('id_commande');
+        if (!$id) {
+            $this->error('ID de commande requis');
+            return;
+        }
 
-            $data = [
-                'client_code' => $this->post('client_code'),
-                'user_code' => $_SESSION[USERS_AUTH]['code_user'] ?? '',
-                'remise_commande' => $this->post('remise_commande') ?: 0,
-                'frais_collecte_commande' => $this->post('frais_collecte_commande') ?: 0,
-                'frais_livraison_commande' => $this->post('frais_livraison_commande') ?: 0,
-                'montant_total_commande' => $this->post('montant_total_commande') ?: 0,
-                'observation_commande' => $this->post('observation_commande') ?? '',
-                'date_livraison_commande' => $this->post('date_livraison_commande') ?: null,
-                'statut_commande' => $statut,
-                'updated_at_commande' => date('Y-m-d H:i:s')
-            ];
+        $current = $this->model->getById($id);
+        if (!$current) {
+            $this->error('Commande introuvable');
+            return;
+        }
 
-            if ($this->model->update($data)) {
-                $this->success('Commande modifiée avec succès!');
-            } else {
-                $this->error('Erreur lors de la modification');
-            }
+        $this->requirePressingAccess($current['pressing_code'] ?? '');
+
+        $statut = in_array($this->post('statut_commande'), ['actif', 'inactif']) ? $this->post('statut_commande') : 'actif';
+        $statutSuivi = $this->post('statut_suivi_commande') ?: ($current['statut_suivi_commande'] ?? 'creee');
+
+        $data = [
+            'id' => $id,
+            'client_code' => $this->post('client_code') ?: $current['client_code'],
+            'remise_commande' => (float)($this->post('remise_commande') ?? ($current['remise_commande'] ?? 0)),
+            'frais_collecte_commande' => (float)($this->post('frais_collecte_commande') ?? ($current['frais_collecte_commande'] ?? 0)),
+            'frais_livraison_commande' => (float)($this->post('frais_livraison_commande') ?? ($current['frais_livraison_commande'] ?? 0)),
+            'montant_total_commande' => (float)($this->post('montant_total_commande') ?? ($current['montant_total_commande'] ?? 0)),
+            'adresse_livraison_commande' => $this->post('adresse_livraison_commande') ?? ($current['adresse_livraison_commande'] ?? ''),
+            'observation_commande' => $this->post('observation_commande') ?? ($current['observation_commande'] ?? ''),
+            'statut_suivi_commande' => $statutSuivi,
+            'statut_commande' => $statut,
+            'updated_at_commande' => date('Y-m-d H:i:s')
+        ];
+
+        if ($this->model->update($data)) {
+            $this->success('Commande modifiée avec succès !', ['reload' => true]);
         } else {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Erreur lors de la modification de la commande');
         }
     }
 
