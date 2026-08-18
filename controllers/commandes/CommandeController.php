@@ -411,6 +411,7 @@ class CommandeController extends BaseController
         }
 
         $this->requirePressingAccess($item['pressing_code'] ?? '');
+        $this->requireActiveAbonnement($item['pressing_code'] ?? null, 'accepter des commandes');
 
         $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'acceptee', updated_at_commande = NOW() WHERE code_commande = ?";
         $stmt = $this->model->getCon()->prepare($sql);
@@ -481,6 +482,7 @@ class CommandeController extends BaseController
         }
 
         $this->requirePressingAccess($item['pressing_code'] ?? '');
+        $this->requireActiveAbonnement($item['pressing_code'] ?? null, 'saisir des devis au sac');
 
         $itemsJson = $this->post('items_json');
         $items = [];
@@ -570,6 +572,7 @@ class CommandeController extends BaseController
         }
 
         $this->requirePressingAccess($item['pressing_code'] ?? '');
+        $this->requireActiveAbonnement($item['pressing_code'] ?? null, 'lancer le traitement du linge');
 
         $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'en_traitement', updated_at_commande = NOW() WHERE code_commande = ?";
         $stmt = $this->model->getCon()->prepare($sql);
@@ -600,6 +603,7 @@ class CommandeController extends BaseController
         }
 
         $this->requirePressingAccess($item['pressing_code'] ?? '');
+        $this->requireActiveAbonnement($item['pressing_code'] ?? null, 'marquer la commande comme prête');
 
         $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'prete', updated_at_commande = NOW() WHERE code_commande = ?";
         $stmt = $this->model->getCon()->prepare($sql);
@@ -632,6 +636,7 @@ class CommandeController extends BaseController
         }
 
         $this->requirePressingAccess($item['pressing_code'] ?? '');
+        $this->requireActiveAbonnement($item['pressing_code'] ?? null, 'assigner des livreurs');
 
         // Récupérer le nom du livreur
         $livreurModel = new ModelLivreur();
@@ -694,6 +699,7 @@ class CommandeController extends BaseController
         }
 
         $this->requirePressingAccess($item['pressing_code'] ?? '');
+        $this->requireActiveAbonnement($item['pressing_code'] ?? null, 'mettre à jour le suivi de cette commande');
 
         $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = ?, updated_at_commande = NOW() WHERE id_commande = ?";
         $stmt = $this->model->getCon()->prepare($sql);

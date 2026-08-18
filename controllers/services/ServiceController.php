@@ -40,6 +40,7 @@ class ServiceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requireActiveAbonnement(null, 'créer des services');
         $notEmpty = Validator::validateRequiredFields(['libelle_service' => $_POST['libelle_service'] ?? '']);
 
         if ($notEmpty !== true) {
@@ -72,6 +73,7 @@ class ServiceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requireActiveAbonnement(null, 'modifier des services');
         $notEmpty = Validator::validateRequiredFields(['libelle_service' => $_POST['libelle_service'] ?? '', 'id_service' => $_POST['id_service'] ?? '']);
 
         if ($notEmpty !== true) {
@@ -101,6 +103,7 @@ class ServiceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requireActiveAbonnement(null, 'activer ou désactiver des services');
         $id = $this->post('id');
         if (isset($id) && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {

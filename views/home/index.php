@@ -96,6 +96,39 @@ $isLivreur = isset($isLivreur) ? $isLivreur : false;
         </div>
       </div>
 
+      <!-- STATUT ABONNEMENT B2B POUR LE PRESSING -->
+      <?php if (!empty($isPressing)): ?>
+        <div style="background: <?= !empty($isSubscriptionActive) ? '#F0FDF4' : '#FEF2F2' ?>; border: 1px solid <?= !empty($isSubscriptionActive) ? '#BBF7D0' : '#FECACA' ?>; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: <?= !empty($isSubscriptionActive) ? '#DCFCE7' : '#FEE2E2' ?>; color: <?= !empty($isSubscriptionActive) ? '#16A34A' : '#DC2626' ?>; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+              <i class="fa <?= !empty($isSubscriptionActive) ? 'fa-check-circle' : 'fa-exclamation-circle' ?>"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
+                  <?= !empty($isSubscriptionActive) ? 'Abonnement B2B Actif' : 'Abonnement B2B Expiré ou Inactif' ?>
+                </h4>
+                <span class="badge-status <?= !empty($isSubscriptionActive) ? 'delivered' : 'cancelled' ?>" style="font-size: 11px;">
+                  <?= !empty($isSubscriptionActive) ? 'Actif' : 'Suspendu' ?>
+                </span>
+              </div>
+              <p style="margin: 2px 0 0; font-size: 13px; color: #64748B;">
+                <?php if (!empty($isSubscriptionActive) && !empty($subscriptionDetails)): ?>
+                  Forfait : <strong><?= htmlspecialchars($subscriptionDetails['libelle_forfait'] ?? 'Standard') ?></strong> • Expire le <?= htmlspecialchars(date('d/m/Y', strtotime($subscriptionDetails['date_fin_abonnement'] ?? ''))) ?> (<strong><?= (int)($subscriptionDetails['jours_restants'] ?? 0) ?> jours</strong> restants)
+                <?php else: ?>
+                  Votre compte pressing est actuellement inactif. Vous devez souscrire à un forfait pour débloquer le traitement des commandes et vos tarifs.
+                <?php endif; ?>
+              </p>
+            </div>
+          </div>
+          <div>
+            <a href="<?= RACINE ?>abonnement/list" class="btn btn-sm <?= !empty($isSubscriptionActive) ? 'btn-secondary' : 'btn-primary' ?>" style="font-weight: 700; <?= empty($isSubscriptionActive) ? 'background:#DC2626; border-color:#DC2626; color:#FFF;' : '' ?>">
+              <i class="fa fa-id-card"></i> <?= !empty($isSubscriptionActive) ? 'Gérer mon forfait' : 'Souscrire maintenant' ?>
+            </a>
+          </div>
+        </div>
+      <?php endif; ?>
+
       <!-- PIPELINE D'ATELIER : STATUTS EN DIRECT -->
       <div style="background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
         <h3 style="font-size: 16px; font-weight: 700; color: #1E293B; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">

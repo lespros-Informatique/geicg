@@ -68,6 +68,8 @@ class LivreurController extends BaseController
             $pressingCode = $this->post('pressing_code') ?: 'PRS-001';
         }
 
+        $this->requireActiveAbonnement($pressingCode, 'créer ou gérer des livreurs');
+
         $data = [
             'code_livreur' => $code,
             'pressing_code' => $pressingCode,
@@ -116,6 +118,8 @@ class LivreurController extends BaseController
             $pressingCode = $this->post('pressing_code') ?: ($currentLivreur['pressing_code'] ?? 'PRS-001');
         }
 
+        $this->requireActiveAbonnement($pressingCode, 'modifier des livreurs');
+
         $data = [
             'id_livreur' => $id,
             'pressing_code' => $pressingCode,
@@ -138,7 +142,9 @@ class LivreurController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $id = $this->post('id');
-        if (isset($id) && $this->model->getById($id)) {
+        $item = $id ? $this->model->getById($id) : null;
+        if ($item) {
+            $this->requireActiveAbonnement($item['pressing_code'] ?? null, 'activer ou désactiver des livreurs');
             if ($this->model->toggleStatus($id)) {
                 $this->success('Statut modifié avec succès!', ['id' => $id, 'reload' => true]);
             } else {

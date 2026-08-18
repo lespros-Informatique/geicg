@@ -57,6 +57,8 @@ class HorairePressingController extends BaseController
             $pressingCode = $this->post('pressing_code') ?: 'PRS-001';
         }
 
+        $this->requireActiveAbonnement($pressingCode, 'gérer vos horaires d\'ouverture');
+
         $notEmpty = Validator::validateRequiredFields(['jour' => $_POST['jour'] ?? '']);
         if ($notEmpty !== true) {
             $this->error('Le jour est requis !');
@@ -120,6 +122,8 @@ class HorairePressingController extends BaseController
         } else {
             $pressingCode = $this->post('pressing_code') ?: ($item['pressing_code'] ?? 'PRS-001');
         }
+
+        $this->requireActiveAbonnement($pressingCode, 'modifier vos horaires d\'ouverture');
 
         $notEmpty = Validator::validateRequiredFields(['jour' => $_POST['jour'] ?? '']);
         if ($notEmpty !== true) {

@@ -86,6 +86,20 @@ abstract class BaseController
         $data['currentUserName'] = $data['currentUserName'] ?? ($_SESSION[USERS_AUTH]['nom'] ?? ($_SESSION[USERS_AUTH]['nom_user'] ?? 'Utilisateur'));
         $data['currentUserEmail'] = $data['currentUserEmail'] ?? ($_SESSION[USERS_AUTH]['email'] ?? ($_SESSION[USERS_AUTH]['email_user'] ?? ''));
 
+        // Vérification de l'état d'abonnement pour les pressings
+        $isSubscriptionActive = true;
+        $subscriptionDetails = null;
+        if ($isPressing && !empty($pressingCode)) {
+            $isSubscriptionActive = method_exists($this, 'hasActiveAbonnement') 
+                ? $this->hasActiveAbonnement($pressingCode) 
+                : true;
+            $subscriptionDetails = method_exists($this, 'getActiveAbonnementDetails') 
+                ? $this->getActiveAbonnementDetails($pressingCode) 
+                : null;
+        }
+        $data['isSubscriptionActive'] = $data['isSubscriptionActive'] ?? $isSubscriptionActive;
+        $data['subscriptionDetails'] = $data['subscriptionDetails'] ?? $subscriptionDetails;
+
         // Calcul dynamique et filtré des notifications pour le badge de la cloche et le dropdown d'aperçu
         try {
             $notifModel = new ModelNotification();

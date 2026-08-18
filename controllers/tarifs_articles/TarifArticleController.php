@@ -55,6 +55,8 @@ class TarifArticleController extends BaseController
             $pressingCode = $this->post('pressing_code') ?: 'PRS-001';
         }
 
+        $this->requireActiveAbonnement($pressingCode, 'créer des tarifs articles');
+
         $notEmpty = Validator::validateRequiredFields([
             'article_code' => $_POST['article_code'] ?? '',
             'service_code' => $_POST['service_code'] ?? '',
@@ -131,6 +133,8 @@ class TarifArticleController extends BaseController
             $pressingCode = $this->post('pressing_code') ?: $item['pressing_code'];
         }
 
+        $this->requireActiveAbonnement($pressingCode, 'modifier vos tarifs articles');
+
         $notEmpty = Validator::validateRequiredFields([
             'article_code' => $_POST['article_code'] ?? '',
             'service_code' => $_POST['service_code'] ?? '',
@@ -166,7 +170,9 @@ class TarifArticleController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $id = $this->post('id');
-        if (isset($id) && $this->model->getById($id)) {
+        $item = $id ? $this->model->getById($id) : null;
+        if ($item) {
+            $this->requireActiveAbonnement($item['pressing_code'] ?? null, 'activer ou désactiver des tarifs');
             if ($this->model->toggleStatus($id)) {
                 $this->success('Statut modifié avec succès!', ['id' => $id, 'reload' => true]);
             } else {

@@ -42,6 +42,7 @@ class ArticleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requireActiveAbonnement(null, 'créer des articles');
         $notEmpty = Validator::validateRequiredFields(['libelle_article' => $_POST['libelle_article'] ?? '']);
 
         if ($notEmpty !== true) {
@@ -76,6 +77,7 @@ class ArticleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requireActiveAbonnement(null, 'modifier des articles');
         $notEmpty = Validator::validateRequiredFields(['libelle_article' => $_POST['libelle_article'] ?? '', 'id_article' => $_POST['id_article'] ?? '']);
 
         if ($notEmpty !== true) {
@@ -107,6 +109,7 @@ class ArticleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requireActiveAbonnement(null, 'activer ou désactiver des articles');
         $id = $this->post('id');
         if (isset($id) && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {

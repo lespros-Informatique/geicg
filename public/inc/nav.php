@@ -182,3 +182,17 @@
         </div>
     </div>
 </header>
+
+<?php if (!empty($isPressing) && empty($isSubscriptionActive)): ?>
+<div class="subscription-inactive-banner" style="background: #FEF2F2; border-bottom: 2px solid #EF4444; color: #991B1B; padding: 10px 24px; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 2px 6px rgba(239,68,68,0.1); flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: #DC2626; flex-shrink: 0;"></i>
+        <span>
+            <strong>Compte Pressing Inactif / Suspendu :</strong> Vous n'avez aucun abonnement actif ou votre période a expiré. Les actions opérationnelles (traitement de commandes, gestion des tarifs et catalogue, livreurs) sont temporairement verrouillées.
+        </span>
+    </div>
+    <a href="<?= RACINE ?>abonnement/list" class="btn btn-sm btn-primary" style="background: #DC2626; border-color: #DC2626; color: #FFF; white-space: nowrap; font-weight: 700; padding: 6px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+        <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> Souscrire / Renouveler
+    </a>
+</div>
+<?php endif; ?>
