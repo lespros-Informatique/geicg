@@ -12,6 +12,41 @@ class ModelCommande extends BaseModel
         parent::__construct();
     }
 
+    public function getAllWithDetails(): array
+    {
+        try {
+            $sql = "SELECT cmd.*, cl.nom_client, cl.telephone_client, cl.quartier_client, cl.adresse_client,
+                           p.libelle_pressing, p.telephone_pressing
+                    FROM {$this->table} cmd
+                    LEFT JOIN clients cl ON cl.code_client = cmd.client_code
+                    LEFT JOIN pressings p ON p.code_pressing = cmd.pressing_code
+                    ORDER BY cmd.created_at_commande DESC";
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log('[ModelCommande::getAllWithDetails] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getByPressingWithDetails(string $pressingCode): array
+    {
+        try {
+            $sql = "SELECT cmd.*, cl.nom_client, cl.telephone_client, cl.quartier_client, cl.adresse_client,
+                           p.libelle_pressing, p.telephone_pressing
+                    FROM {$this->table} cmd
+                    LEFT JOIN clients cl ON cl.code_client = cmd.client_code
+                    LEFT JOIN pressings p ON p.code_pressing = cmd.pressing_code
+                    WHERE cmd.pressing_code = ?
+                    ORDER BY cmd.created_at_commande DESC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$pressingCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log('[ModelCommande::getByPressingWithDetails] ' . $e->getMessage());
+            return [];
+        }
+    }
+
     public function getWithDetails(int $id): array
     {
         try {
@@ -63,14 +98,6 @@ class ModelCommande extends BaseModel
 
     public function getByPressing(string $pressingCode): array
     {
-        try {
-            $sql = "SELECT * FROM {$this->table} WHERE pressing_code = ? ORDER BY created_at_commande DESC";
-            $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute([$pressingCode]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (Exception $e) {
-            error_log('[ModelCommande::getByPressing] ' . $e->getMessage());
-            return [];
-        }
+        return $this->getByPressingWithDetails($pressingCode);
     }
 }

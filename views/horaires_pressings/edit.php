@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$horaire = isset($horaire) ? $horaire : [];
+$horaire   = isset($horaire) ? $horaire : [];
+$pressings = isset($pressings) ? $pressings : [];
 ?>
 
 <div class="app-layout">
@@ -12,7 +13,7 @@ $horaire = isset($horaire) ? $horaire : [];
       <div class="page-header">
         <div>
           <h1><?= isset($horaire['id_horaire']) ? 'Modifier l\'horaire' : 'Ajouter un horaire' ?></h1>
-          <p class="page-subtitle">Gestion des horaires</p>
+          <p class="page-subtitle">Gestion des plages horaires d'ouverture</p>
         </div>
         <a href="<?= RACINE ?>horaire/list" class="btn btn-sm btn-outline-secondary">
           <i data-lucide="arrow-left"></i>
@@ -23,7 +24,7 @@ $horaire = isset($horaire) ? $horaire : [];
       <div class="form-card">
         <div class="card-header">
           <div>
-            <h2>Informations de l'horaire</h2>
+            <h2>Plage horaire</h2>
           </div>
         </div>
 
@@ -33,64 +34,76 @@ $horaire = isset($horaire) ? $horaire : [];
             <input type="hidden" id="id_horaire" name="id_horaire" value="<?= htmlspecialchars($horaire['id_horaire'] ?? '') ?>">
 
              <div class="form-grid">
-               <div class="form-field">
-                 <label for="pressing_code">Pressing</label>
-                 <div class="input-with-icon">
-                   <span class="input-icon"><?= Validator::icon('map-pin'); ?></span>
-                   <input type="text" class="form-control" id="pressing_code" name="pressing_code"
-                          value="<?= htmlspecialchars($horaire['pressing_code'] ?? '') ?>" required>
+               <?php if ($isSuperAdmin): ?>
+                 <!-- Super Admin peut choisir pour quel pressing configurer les horaires -->
+                 <div class="form-field">
+                   <label for="pressing_code">Pressing</label>
+                   <div class="input-with-icon">
+                     <span class="input-icon"><?= Validator::icon('map-pin'); ?></span>
+                     <select class="form-control" id="pressing_code" name="pressing_code" required>
+                       <option value="">-- Choisir un pressing --</option>
+                       <?php foreach ($pressings as $p): ?>
+                         <option value="<?= htmlspecialchars($p['code_pressing']) ?>" <?= ($horaire['pressing_code'] ?? '') === $p['code_pressing'] ? 'selected' : '' ?>>
+                           <?= htmlspecialchars($p['libelle_pressing']) ?> (<?= htmlspecialchars($p['code_pressing']) ?>)
+                         </option>
+                       <?php endforeach; ?>
+                     </select>
+                   </div>
+                   <div class="error-message" id="pressingError"></div>
                  </div>
-                 <div class="error-message" id="pressingError"></div>
-               </div>
+               <?php else: ?>
+                 <!-- Pressing Pro : son pressing_code est automatiquement injecté -->
+                 <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($currentPressingCode ?? '') ?>">
+               <?php endif; ?>
 
                <div class="form-field">
-                 <label for="jour">Jour</label>
+                 <label for="jour">Jour de la semaine</label>
                  <div class="input-with-icon">
                    <span class="input-icon"><?= Validator::icon('calendar'); ?></span>
                    <select class="form-control" id="jour" name="jour" required>
-                     <option value="">Sélectionner</option>
-                     <option value="lundi" <?= ($horaire['jour'] ?? '') === 'lundi' ? 'selected' : '' ?>>Lundi</option>
-                     <option value="mardi" <?= ($horaire['jour'] ?? '') === 'mardi' ? 'selected' : '' ?>>Mardi</option>
-                     <option value="mercredi" <?= ($horaire['jour'] ?? '') === 'mercredi' ? 'selected' : '' ?>>Mercredi</option>
-                     <option value="jeudi" <?= ($horaire['jour'] ?? '') === 'jeudi' ? 'selected' : '' ?>>Jeudi</option>
-                     <option value="vendredi" <?= ($horaire['jour'] ?? '') === 'vendredi' ? 'selected' : '' ?>>Vendredi</option>
-                     <option value="samedi" <?= ($horaire['jour'] ?? '') === 'samedi' ? 'selected' : '' ?>>Samedi</option>
-                     <option value="dimanche" <?= ($horaire['jour'] ?? '') === 'dimanche' ? 'selected' : '' ?>>Dimanche</option>
+                     <option value="">-- Choisir un jour --</option>
+                     <option value="lundi" <?= strtolower($horaire['jour'] ?? '') === 'lundi' ? 'selected' : '' ?>>Lundi</option>
+                     <option value="mardi" <?= strtolower($horaire['jour'] ?? '') === 'mardi' ? 'selected' : '' ?>>Mardi</option>
+                     <option value="mercredi" <?= strtolower($horaire['jour'] ?? '') === 'mercredi' ? 'selected' : '' ?>>Mercredi</option>
+                     <option value="jeudi" <?= strtolower($horaire['jour'] ?? '') === 'jeudi' ? 'selected' : '' ?>>Jeudi</option>
+                     <option value="vendredi" <?= strtolower($horaire['jour'] ?? '') === 'vendredi' ? 'selected' : '' ?>>Vendredi</option>
+                     <option value="samedi" <?= strtolower($horaire['jour'] ?? '') === 'samedi' ? 'selected' : '' ?>>Samedi</option>
+                     <option value="dimanche" <?= strtolower($horaire['jour'] ?? '') === 'dimanche' ? 'selected' : '' ?>>Dimanche</option>
                    </select>
                  </div>
                  <div class="error-message" id="jourError"></div>
                </div>
 
                <div class="form-field">
-                 <label for="heure_ouverture">Heure ouverture</label>
+                 <label for="est_ferme">Jour de fermeture ?</label>
+                 <div class="input-with-icon">
+                   <span class="input-icon"><?= Validator::icon('toggle-left'); ?></span>
+                   <select class="form-control" id="est_ferme" name="est_ferme" onchange="toggleHoraireInputs(this.value)">
+                     <option value="0" <?= ($horaire['est_ferme'] ?? 0) == 0 ? 'selected' : '' ?>>Non (Ouvert)</option>
+                     <option value="1" <?= ($horaire['est_ferme'] ?? 0) == 1 ? 'selected' : '' ?>>Oui (Fermé toute la journée)</option>
+                   </select>
+                 </div>
+                 <div class="error-message" id="fermeError"></div>
+               </div>
+
+               <div class="form-field horaire-time-field" style="<?= ($horaire['est_ferme'] ?? 0) == 1 ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                 <label for="heure_ouverture">Heure d'ouverture</label>
                  <div class="input-with-icon">
                    <span class="input-icon"><?= Validator::icon('clock'); ?></span>
                    <input type="time" class="form-control" id="heure_ouverture" name="heure_ouverture"
-                          value="<?= htmlspecialchars($horaire['heure_ouverture'] ?? '') ?>">
+                          value="<?= htmlspecialchars(substr($horaire['heure_ouverture'] ?? '08:00', 0, 5)) ?>">
                  </div>
                  <div class="error-message" id="ouvertureError"></div>
                </div>
 
-               <div class="form-field">
-                 <label for="heure_fermeture">Heure fermeture</label>
+               <div class="form-field horaire-time-field" style="<?= ($horaire['est_ferme'] ?? 0) == 1 ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                 <label for="heure_fermeture">Heure de fermeture</label>
                  <div class="input-with-icon">
                    <span class="input-icon"><?= Validator::icon('clock'); ?></span>
                    <input type="time" class="form-control" id="heure_fermeture" name="heure_fermeture"
-                          value="<?= htmlspecialchars($horaire['heure_fermeture'] ?? '') ?>">
+                          value="<?= htmlspecialchars(substr($horaire['heure_fermeture'] ?? '18:00', 0, 5)) ?>">
                  </div>
                  <div class="error-message" id="fermetureError"></div>
-               </div>
-
-               <div class="form-field">
-                 <label for="est_ferme">Fermé</label>
-                 <div class="input-with-icon">
-                   <span class="input-icon"><?= Validator::icon('toggle-left'); ?></span>
-                   <select class="form-control" id="est_ferme" name="est_ferme">
-                     <option value="0" <?= ($horaire['est_ferme'] ?? 0) == 0 ? 'selected' : '' ?>>Non</option>
-                     <option value="1" <?= ($horaire['est_ferme'] ?? 0) == 1 ? 'selected' : '' ?>>Oui</option>
-                   </select>
-                 </div>
-                 <div class="error-message" id="fermeError"></div>
                </div>
              </div>
 
@@ -98,21 +111,30 @@ $horaire = isset($horaire) ? $horaire : [];
               <button type="submit" class="btn btn-primary btn_actions btnEditHoraire">
                 <span class="btn-text">
                   <i data-lucide="save"></i>
-                  Sauvegarder
+                  Enregistrer l'horaire
                 </span>
               </button>
-              <a href="<?= RACINE ?>horaire/list" class="btn btn-secondary">
-                <i data-lucide="x"></i>
-                Annuler
-              </a>
             </div>
           </form>
         </div>
       </div>
-
     </div>
   </main>
 </div>
 
-<script src="<?= RACINE ?>json/entities/horaires.js?v=4"></script>
+<script>
+function toggleHoraireInputs(isFerme) {
+  const fields = document.querySelectorAll('.horaire-time-field');
+  fields.forEach(f => {
+    if (isFerme == 1) {
+      f.style.opacity = '0.5';
+      f.style.pointerEvents = 'none';
+    } else {
+      f.style.opacity = '1';
+      f.style.pointerEvents = 'auto';
+    }
+  });
+}
+</script>
+
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

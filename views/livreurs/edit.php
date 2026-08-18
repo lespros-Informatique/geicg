@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
 $livreur = isset($livreur) ? $livreur : [];
+$pressings = isset($pressings) ? $pressings : [];
 ?>
 
 <div class="app-layout">
@@ -43,7 +44,7 @@ $livreur = isset($livreur) ? $livreur : [];
                  <div class="input-with-icon">
                    <span class="input-icon"><?= Validator::icon('user'); ?></span>
                    <input type="text" class="form-control" id="nom_livreur" name="nom_livreur"
-                          value="<?= htmlspecialchars($livreur['nom_livreur'] ?? '') ?>" required>
+                          value="<?= htmlspecialchars($livreur['nom_livreur'] ?? '') ?>" required placeholder="ex: Kouassi">
                  </div>
                  <div class="error-message" id="nomError"></div>
                </div>
@@ -53,7 +54,7 @@ $livreur = isset($livreur) ? $livreur : [];
                  <div class="input-with-icon">
                    <span class="input-icon"><?= Validator::icon('user'); ?></span>
                    <input type="text" class="form-control" id="prenom_livreur" name="prenom_livreur"
-                          value="<?= htmlspecialchars($livreur['prenom_livreur'] ?? '') ?>">
+                          value="<?= htmlspecialchars($livreur['prenom_livreur'] ?? '') ?>" placeholder="ex: Jean">
                  </div>
                  <div class="error-message" id="prenomError"></div>
                </div>
@@ -63,20 +64,32 @@ $livreur = isset($livreur) ? $livreur : [];
                  <div class="input-with-icon">
                    <span class="input-icon"><?= Validator::icon('phone'); ?></span>
                    <input type="text" class="form-control" id="telephone_livreur" name="telephone_livreur"
-                          value="<?= htmlspecialchars($livreur['telephone_livreur'] ?? '') ?>" required>
+                          value="<?= htmlspecialchars($livreur['telephone_livreur'] ?? '') ?>" required placeholder="ex: +225 07 00 00 00 00">
                  </div>
                  <div class="error-message" id="telephoneError"></div>
                </div>
 
-               <div class="form-field">
-                 <label for="pressing_code">Pressing</label>
-                 <div class="input-with-icon">
-                   <span class="input-icon"><?= Validator::icon('map-pin'); ?></span>
-                   <input type="text" class="form-control" id="pressing_code" name="pressing_code"
-                          value="<?= htmlspecialchars($livreur['pressing_code'] ?? '') ?>">
+               <?php if ($isSuperAdmin): ?>
+                 <!-- Super Admin peut choisir d'affecter le coursier à un pressing spécifique ou le laisser global -->
+                 <div class="form-field">
+                   <label for="pressing_code">Pressing rattaché</label>
+                   <div class="input-with-icon">
+                     <span class="input-icon"><?= Validator::icon('map-pin'); ?></span>
+                     <select class="form-control" id="pressing_code" name="pressing_code">
+                       <option value="">-- Coursier Marketplace Global --</option>
+                       <?php foreach ($pressings as $p): ?>
+                         <option value="<?= htmlspecialchars($p['code_pressing']) ?>" <?= ($livreur['pressing_code'] ?? '') === $p['code_pressing'] ? 'selected' : '' ?>>
+                           <?= htmlspecialchars($p['libelle_pressing']) ?> (<?= htmlspecialchars($p['code_pressing']) ?>)
+                         </option>
+                       <?php endforeach; ?>
+                     </select>
+                   </div>
+                   <div class="error-message" id="pressingError"></div>
                  </div>
-                 <div class="error-message" id="pressingError"></div>
-               </div>
+               <?php else: ?>
+                 <!-- Pour le gérant de pressing, le champ est automatiquement lié à son pressing sans affichage inutile -->
+                 <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($currentPressingCode ?? '') ?>">
+               <?php endif; ?>
 
                <?php if (isset($livreur['statut_livreur'])): ?>
                <div class="form-field">
@@ -100,18 +113,12 @@ $livreur = isset($livreur) ? $livreur : [];
                   Sauvegarder
                 </span>
               </button>
-              <a href="<?= RACINE ?>livreur/list" class="btn btn-secondary">
-                <i data-lucide="x"></i>
-                Annuler
-              </a>
             </div>
           </form>
         </div>
       </div>
-
     </div>
   </main>
 </div>
 
-<script src="<?= RACINE ?>json/entities/livreurs.js?v=4"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

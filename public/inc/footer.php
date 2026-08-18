@@ -75,38 +75,7 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="commandeModalOverlay">
-        <div class="modal" style="max-width: 700px;">
-            <div class="modal-header">
-                <h3 class="modal-title" id="commandeModalTitle">Nouvelle commande</h3>
-                <button class="modal-close" id="commandeModalClose"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body" id="commandeModalBody">
-                <form id="commandeForm">
-                    <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
-                    <input type="hidden" name="client_code" id="cmdClientCode">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Code client</label>
-                            <div class="input-wrapper">
-                                <input type="text" name="client_code_display" id="cmdClientCodeDisplay" readonly>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Campagne</label>
-                            <div class="input-wrapper">
-                                <input type="text" name="campagne_code_display" id="cmdCampagneDisplay" readonly>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="commandeModalCancel">Annuler</button>
-                <button class="btn-primary" id="commandeModalSave">Enregistrer</button>
-            </div>
-        </div>
-    </div>
+
 
     <div class="mobile-actions-overlay" id="mobileActionOverlay">
         <div class="mobile-actions-sheet" id="mobileActionSheet">

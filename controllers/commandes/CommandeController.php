@@ -12,7 +12,28 @@ class CommandeController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/commandes/list.php');
+        $clientModel   = new ModelClient();
+        $clients       = $clientModel->getAll();
+
+        $pressingModel = new ModelPressing();
+        $pressings     = $pressingModel->getByStatus('actif');
+
+        $articleModel  = new ModelArticle();
+        $articles      = $articleModel->getByStatus('actif');
+
+        $serviceModel  = new ModelService();
+        $services      = $serviceModel->getByStatus('actif');
+
+        $tarifModel    = new ModelTarifArticle();
+        $tarifs        = $tarifModel->getAllWithDetails();
+
+        $this->loadView('../views/commandes/list.php', [
+            'clients'   => $clients,
+            'pressings' => $pressings,
+            'articles'  => $articles,
+            'services'  => $services,
+            'tarifs'    => $tarifs
+        ]);
     }
 
     public function apiList()
@@ -21,22 +42,30 @@ class CommandeController extends BaseController
         $pressingCode = $this->getCurrentPressingCode();
 
         if ($pressingCode !== null) {
-            $commandes = $this->model->getByPressing($pressingCode);
+            $commandes = $this->model->getByPressingWithDetails($pressingCode);
         } else {
-            $commandes = $this->model->getAll();
+            $commandes = $this->model->getAllWithDetails();
         }
 
         $data = [];
 
         foreach ($commandes as $c) {
             $idCrypte = $this->validator->crypter($c['id_commande']);
+            $statutSuivi = $c['statut_suivi_commande'] ?? 'creee';
+            $statutSuiviLabel = STATUTS::SUIVI_COMMANDES[$statutSuivi] ?? ucfirst(str_replace('_', ' ', $statutSuivi));
+            $typeCmd = $c['type_commande'] ?? 'detaillee';
+
             $data[] = [
                 'code' => $c['code_commande'],
-                'client' => $c['client_code'] ?? 'N/A',
-                'client_nom' => $c['client_code'] ?? 'N/A',
-                'user' => $c['user_code'] ?? 'N/A',
-                'date' => $c['date_livraison_commande'] ?? '',
-                'montant' => $c['montant_total_commande'] ?? 0,
+                'type' => $typeCmd,
+                'type_label' => ($typeCmd === 'colis') ? 'Sac / Colis (' . ($c['nb_sacs_colis'] ?? 1) . ')' : 'Détaillée',
+                'client' => $c['nom_client'] ?? ($c['client_code'] ?? 'Client'),
+                'client_tel' => $c['telephone_client'] ?? '-',
+                'pressing' => $c['libelle_pressing'] ?? ($c['pressing_code'] ?? '-'),
+                'date' => !empty($c['created_at_commande']) ? date('d/m/Y H:i', strtotime($c['created_at_commande'])) : '-',
+                'montant' => (float)($c['montant_total_commande'] ?? 0),
+                'statut_suivi' => $statutSuivi,
+                'statut_suivi_label' => $statutSuiviLabel,
                 'statut' => $c['statut_commande'],
                 'id' => $c['id_commande'],
                 'editId' => $idCrypte
@@ -50,39 +79,112 @@ class CommandeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['client_code' => $_POST['client_code'] ?? '']);
 
-        if ($notEmpty === true) {
-            if ($this->validator->getByElement(TABLES::COMMANDES, 'code_commande', $this->post('code'))) {
-                $this->error('Ce code commande existe déjà!');
-            } else {
-                $code = $this->post('code') ?: $this->validator->generateCode(TABLES::COMMANDES, 'code_commande', 'CMD-', 6);
-                $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $clientCode = $this->post('client_code');
+        if (empty($clientCode)) {
+            $this->error('Veuillez sélectionner un client');
+            return;
+        }
 
-                $data = [
-                    'code_commande' => $code,
-                    'pressing_code' => $this->getCurrentPressingCode() ?: $this->post('pressing_code'),
-                    'client_code' => $this->post('client_code'),
-                    'user_code' => $userCode,
-                    'remise_commande' => $this->post('remise_commande') ?: 0,
-                    'frais_collecte_commande' => $this->post('frais_collecte_commande') ?: 0,
-                    'frais_livraison_commande' => $this->post('frais_livraison_commande') ?: 0,
-                    'montant_total_commande' => $this->post('montant_total_commande') ?: 0,
-                    'observation_commande' => $this->post('observation_commande') ?? '',
-                    'date_livraison_commande' => $this->post('date_livraison_commande') ?: null,
-                    'statut_commande' => 'actif',
-                    'statut_suivi_commande' => 'creee',
-                    'created_at_commande' => date('Y-m-d H:i:s')
-                ];
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode === null) {
+            $pressingCode = $this->post('pressing_code');
+        }
 
-                if ($this->model->create($data)) {
-                    $this->success('Commande ajoutée avec succès!', ['commande_code' => $code]);
-                } else {
-                    $this->error('Erreur lors de l\'ajout');
+        if (empty($pressingCode)) {
+            $this->error('Veuillez sélectionner un pressing');
+            return;
+        }
+
+        $typeCommande = in_array($this->post('type_commande'), ['colis', 'detaillee']) ? $this->post('type_commande') : 'detaillee';
+        $nbSacsColis  = ($typeCommande === 'colis') ? max(1, (int)$this->post('nb_sacs_colis', 1)) : 1;
+
+        $code = $this->post('code') ?: $this->validator->generateCode(TABLES::COMMANDES, 'code_commande', 'CMD-', 6);
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+
+        $fraisCollecte = (float)($this->post('frais_collecte_commande') ?: 0);
+        $fraisLivraison = (float)($this->post('frais_livraison_commande') ?: 0);
+        $remise = (float)($this->post('remise_commande') ?: 0);
+
+        $itemsJson = $this->post('items_json');
+        $items = [];
+        if (!empty($itemsJson)) {
+            $items = json_decode($itemsJson, true) ?: [];
+        }
+
+        $sousTotalArticles = 0;
+        if ($typeCommande === 'detaillee' && !empty($items)) {
+            foreach ($items as $item) {
+                $qty = max(1, (int)($item['quantite'] ?? 1));
+                $pu  = max(0, (float)($item['prix_unitaire'] ?? 0));
+                $sousTotalArticles += ($qty * $pu);
+            }
+            $montantTotal = $sousTotalArticles + $fraisCollecte + $fraisLivraison - $remise;
+        } else {
+            $montantTotal = (float)($this->post('montant_total_commande') ?: 0);
+        }
+
+        // Si commande colis créée par pressing avant inventaire, montant peut être 0 et statut 'recue_pressing'
+        $statutSuivi = ($typeCommande === 'colis' && $montantTotal == 0) ? 'recue_pressing' : 'creee';
+
+        $data = [
+            'code_commande' => $code,
+            'pressing_code' => $pressingCode,
+            'client_code' => $clientCode,
+            'user_code' => $userCode,
+            'type_commande' => $typeCommande,
+            'nb_sacs_colis' => $nbSacsColis,
+            'remise_commande' => $remise,
+            'frais_collecte_commande' => $fraisCollecte,
+            'frais_livraison_commande' => $fraisLivraison,
+            'montant_total_commande' => max(0, $montantTotal),
+            'adresse_livraison_commande' => $this->post('adresse_livraison_commande') ?? '',
+            'observation_commande' => $this->post('observation_commande') ?? '',
+            'date_livraison_commande' => $this->post('date_livraison_commande') ?: null,
+            'statut_commande' => 'actif',
+            'statut_suivi_commande' => $statutSuivi,
+            'created_at_commande' => date('Y-m-d H:i:s')
+        ];
+
+        if ($this->model->create($data)) {
+            // Insertion des articles détaillés dans commande_details
+            if ($typeCommande === 'detaillee' && !empty($items)) {
+                $db = $this->model->getCon();
+                $stmtDet = $db->prepare("
+                    INSERT INTO " . TABLES::COMMANDE_DETAILS . " 
+                    (code_commande_detail, commande_code, article_code, service_code, quantite_commande_detail, prix_unitaire_commande_detail, sous_total_commande_detail, created_at_commande_detail)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+
+                foreach ($items as $idx => $it) {
+                    $detCode = 'CMD-DET-' . strtoupper(substr(uniqid(), -6)) . '-' . ($idx + 1);
+                    $artCode = $it['article_code'] ?? '';
+                    $srvCode = $it['service_code'] ?? '';
+                    $qty     = max(1, (int)($it['quantite'] ?? 1));
+                    $pu      = max(0, (float)($it['prix_unitaire'] ?? 0));
+                    $st      = $qty * $pu;
+
+                    if (!empty($artCode) && !empty($srvCode)) {
+                        $stmtDet->execute([$detCode, $code, $artCode, $srvCode, $qty, $pu, $st]);
+                    }
                 }
             }
+
+            // Notification autonome
+            try {
+                $pressingObj = (new ModelPressing())->getByCode($pressingCode);
+                $pressingName = $pressingObj['libelle_pressing'] ?? 'Le pressing';
+                NotificationService::notifyOrderCreated($clientCode, $code, $pressingName);
+            } catch (Exception $e) {
+                error_log('[NotificationService Error] ' . $e->getMessage());
+            }
+
+            $this->success('Commande créée avec succès !', [
+                'commande_code' => $code,
+                'editId' => $this->validator->crypter($this->model->getCon()->lastInsertId())
+            ]);
         } else {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Erreur lors de la création de la commande');
         }
     }
 
@@ -196,12 +298,25 @@ class CommandeController extends BaseController
             $missions = [];
         }
 
+        // Articles, Services et Tarifs pour le devis après inventaire
+        $articleModel = new ModelArticle();
+        $articles     = $articleModel->getByStatus('actif');
+
+        $serviceModel = new ModelService();
+        $services     = $serviceModel->getByStatus('actif');
+
+        $tarifModel   = new ModelTarifArticle();
+        $tarifs       = $tarifModel->getByPressing($item['pressing_code'] ?? '');
+
         $this->loadView('../views/commandes/details.php', [
-            'order' => $item,
+            'order'       => $item,
             'encryptedId' => $encryptedId,
-            'lignes' => $lignes,
-            'livreurs' => $livreurs,
-            'missions' => $missions
+            'lignes'      => $lignes,
+            'livreurs'    => $livreurs,
+            'missions'    => $missions,
+            'articles'    => $articles,
+            'services'    => $services,
+            'tarifs'      => $tarifs
         ]);
     }
 
@@ -280,10 +395,9 @@ class CommandeController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $code = $this->post('code_commande');
-        $montant = (float) $this->post('montant_total');
 
-        if (!$code || $montant <= 0) {
-            $this->error('Code commande et montant valide requis');
+        if (!$code) {
+            $this->error('Code commande requis');
             return;
         }
 
@@ -295,8 +409,62 @@ class CommandeController extends BaseController
 
         $this->requirePressingAccess($item['pressing_code'] ?? '');
 
+        $itemsJson = $this->post('items_json');
+        $items = [];
+        if (!empty($itemsJson)) {
+            $items = json_decode($itemsJson, true) ?: [];
+        }
+
+        $fraisCollecte = (float)($item['frais_collecte_commande'] ?? 0);
+        $fraisLivraison = (float)($item['frais_livraison_commande'] ?? 0);
+        $remise = (float)($item['remise_commande'] ?? 0);
+
+        $sousTotalArticles = 0;
+        if (!empty($items)) {
+            foreach ($items as $it) {
+                $qty = max(1, (int)($it['quantite'] ?? 1));
+                $pu  = max(0, (float)($it['prix_unitaire'] ?? 0));
+                $sousTotalArticles += ($qty * $pu);
+            }
+            $montant = $sousTotalArticles + $fraisCollecte + $fraisLivraison - $remise;
+        } else {
+            $montant = (float) $this->post('montant_total');
+        }
+
+        if ($montant <= 0) {
+            $this->error('Veuillez ajouter au moins un article ou renseigner un montant valide');
+            return;
+        }
+
+        $db = $this->model->getCon();
+
+        // 1. Insertion des articles inventoriés dans commande_details
+        if (!empty($items)) {
+            $db->prepare("DELETE FROM " . TABLES::COMMANDE_DETAILS . " WHERE commande_code = ?")->execute([$code]);
+
+            $stmtDet = $db->prepare("
+                INSERT INTO " . TABLES::COMMANDE_DETAILS . " 
+                (code_commande_detail, commande_code, article_code, service_code, quantite_commande_detail, prix_unitaire_commande_detail, sous_total_commande_detail, created_at_commande_detail)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+
+            foreach ($items as $idx => $it) {
+                $detCode = 'CMD-DET-' . strtoupper(substr(uniqid(), -6)) . '-' . ($idx + 1);
+                $artCode = $it['article_code'] ?? '';
+                $srvCode = $it['service_code'] ?? '';
+                $qty     = max(1, (int)($it['quantite'] ?? 1));
+                $pu      = max(0, (float)($it['prix_unitaire'] ?? 0));
+                $st      = $qty * $pu;
+
+                if (!empty($artCode) && !empty($srvCode)) {
+                    $stmtDet->execute([$detCode, $code, $artCode, $srvCode, $qty, $pu, $st]);
+                }
+            }
+        }
+
+        // 2. Mise à jour de la commande
         $sql = "UPDATE " . TABLES::COMMANDES . " SET montant_total_commande = ?, statut_suivi_commande = 'prix_a_valider', updated_at_commande = NOW() WHERE code_commande = ?";
-        $stmt = $this->model->getCon()->prepare($sql);
+        $stmt = $db->prepare($sql);
         if ($stmt->execute([$montant, $code])) {
             // Notification au client pour validation du devis
             NotificationService::notifyColisPriceToConfirm(
@@ -305,7 +473,7 @@ class CommandeController extends BaseController
                 $montant,
                 $item['libelle_pressing'] ?? 'Le pressing'
             );
-            $this->success('Devis enregistré ! Le client a été notifié pour confirmation.', ['reload' => true]);
+            $this->success('Devis enregistré avec succès ! Le client a été notifié pour confirmation.', ['reload' => true]);
         } else {
             $this->error('Erreur lors de l\'enregistrement du devis');
         }

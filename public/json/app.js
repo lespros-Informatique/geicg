@@ -243,11 +243,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalSave = document.getElementById('modalSave');
     let currentFormConfig = null;
     let currentSaveHandler = null;
-    let currentFormType = null;
-
     window.openModal = function(type, saveHandler) {
+        // 1. Si c'est un ID d'élément DOM existant dans la page (qui n'est pas le genericModal)
+        if (typeof type === 'string' && type) {
+            const customEl = document.getElementById(type);
+            if (customEl && customEl !== modal) {
+                customEl.style.display = 'flex';
+                customEl.classList.add('active');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+        }
+
         if (!modal) return;
         currentFormConfig = getEntityConfig(type);
+        if (!currentFormConfig) {
+            console.warn('[openModal] Aucune configuration trouvée pour le type :', type);
+            return;
+        }
         currentFormType = type;
         const formType = type;
         currentSaveHandler = saveHandler || function(formData) {
@@ -498,9 +511,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    window.closeModal = function() {
+    window.closeModal = function(id) {
+        if (typeof id === 'string' && id) {
+            const customEl = document.getElementById(id);
+            if (customEl && customEl !== modal) {
+                customEl.style.display = 'none';
+                customEl.classList.remove('active');
+                return;
+            }
+        }
         if (modal) {
             modal.classList.remove('active');
+            modal.style.display = 'none';
             if (modalForm) modalForm.reset();
         }
         currentFormConfig = null;

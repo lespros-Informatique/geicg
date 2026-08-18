@@ -7,6 +7,19 @@ class ModelPressing extends BaseModel
     protected ?string $statusField = 'statut_pressing';
     protected ?string $createdAtField = 'created_at_pressing';
 
+    public function getByCode(string $code): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("SELECT * FROM {$this->table} WHERE code_pressing = ? LIMIT 1");
+            $stmt->execute([$code]);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $res ?: null;
+        } catch (Exception $e) {
+            error_log('[ModelPressing::getByCode] ' . $e->getMessage());
+            return null;
+        }
+    }
+
     /**
      * Statistiques globales du pressing pour le tableau de bord 360°
      */

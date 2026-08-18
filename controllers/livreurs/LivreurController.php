@@ -18,13 +18,12 @@ class LivreurController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $livreurs = $this->model->getAll();
         $pressingCode = $this->getCurrentPressingCode();
 
         if ($pressingCode !== null) {
-            $livreurs = array_filter($livreurs, function($l) use ($pressingCode) {
-                return ($l['pressing_code'] ?? '') === $pressingCode;
-            });
+            $livreurs = $this->model->getByPressing($pressingCode);
+        } else {
+            $livreurs = $this->model->getAll();
         }
 
         $data = [];
@@ -63,10 +62,16 @@ class LivreurController extends BaseController
             return;
         }
 
+        // Attribution automatique du pressing pour le gérant Pro
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode === null) {
+            $pressingCode = $this->post('pressing_code') ?: null;
+        }
+
         $data = [
             'code_livreur' => $code,
-            'user_code' => $this->post('user_code') ?: '',
-            'pressing_code' => $this->post('pressing_code') ?: '',
+            'user_code' => $this->post('user_code') ?: null,
+            'pressing_code' => $pressingCode,
             'nom_livreur' => $this->post('nom_livreur'),
             'prenom_livreur' => $this->post('prenom_livreur') ?? '',
             'telephone_livreur' => $this->post('telephone_livreur'),
@@ -95,9 +100,27 @@ class LivreurController extends BaseController
         $statut = ($this->post('actif') == 1) ? 'actif' : 'inactif';
         $id = (int) $this->post('id_livreur');
 
+        $currentLivreur = $this->model->getById($id);
+        if (!$currentLivreur) {
+            $this->error('Livreur introuvable');
+            return;
+        }
+
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode !== null) {
+            // Si gérant de pressing, sécuriser qu'il n'édite que ses propres livreurs
+            if (($currentLivreur['pressing_code'] ?? '') !== $pressingCode) {
+                $this->error('Accès refusé', 403);
+                return;
+            }
+        } else {
+            $pressingCode = $this->post('pressing_code') ?: null;
+        }
+
         $data = [
-            'user_code' => $this->post('user_code') ?: '',
-            'pressing_code' => $this->post('pressing_code') ?: '',
+            'id_livreur' => $id,
+            'user_code' => $this->post('user_code') ?: null,
+            'pressing_code' => $pressingCode,
             'nom_livreur' => $this->post('nom_livreur'),
             'prenom_livreur' => $this->post('prenom_livreur') ?? '',
             'telephone_livreur' => $this->post('telephone_livreur'),
@@ -165,17 +188,29 @@ class LivreurController extends BaseController
             exit();
         }
 
-        $this->loadView('../views/livreurs/edit.php', ['livreur' => $item]);
+        $pressings = (new ModelPressing())->getByStatus('actif');
+
+        $this->loadView('../views/livreurs/edit.php', [
+            'livreur' => $item,
+            'pressings' => $pressings
+        ]);
     }
 
     public function getActive()
     {
         $this->requireAuth();
-        $items = $this->model->getByStatus('actif');
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode !== null) {
+            $items = $this->model->getByPressing($pressingCode);
+        } else {
+            $items = $this->model->getByStatus('actif');
+        }
         $options = [];
         $options[''] = 'Sélectionner un livreur';
         foreach ($items as $i) {
-            $options[$i['code_livreur']] = ($i['nom_livreur'] ?? '') . ' ' . ($i['prenom_livreur'] ?? '');
+            if (($i['statut_livreur'] ?? '') === 'actif') {
+                $options[$i['code_livreur']] = ($i['nom_livreur'] ?? '') . ' ' . ($i['prenom_livreur'] ?? '');
+            }
         }
         $this->json(['options' => $options]);
     }
@@ -183,6 +218,10 @@ class LivreurController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/livreurs/edit.php', ['livreur' => []]);
+        $pressings = (new ModelPressing())->getByStatus('actif');
+        $this->loadView('../views/livreurs/edit.php', [
+            'livreur' => [],
+            'pressings' => $pressings
+        ]);
     }
 }

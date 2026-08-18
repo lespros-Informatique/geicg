@@ -1,5 +1,5 @@
 <?php
-define('ROOT', $_SERVER['DOCUMENT_ROOT']);
+define('ROOT', $_SERVER['DOCUMENT_ROOT'] ?? 'C:/wamp64/www');
 define('RACINE', 'http://localhost/admin-lavex/');
 
 define('LOGO', '<img src="' .RACINE. 'public/assets/images/logo/logo.png" class="img-circle" alt="Logo" width="80" style="border-radius: 70%; object-fit: covers;">');

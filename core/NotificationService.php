@@ -15,6 +15,18 @@ class NotificationService
         return self::$db;
     }
 
+    public function send(
+        string $title,
+        string $message,
+        string $clientCode,
+        string $target = 'client',
+        string $type = 'commande',
+        ?string $referenceCode = null,
+        array $extraData = []
+    ): ?string {
+        return self::notifyClient($clientCode, $type, $title, $message, $referenceCode, $extraData);
+    }
+
     /**
      * Envoie une notification au client (In-App en BDD + Push OneSignal)
      */

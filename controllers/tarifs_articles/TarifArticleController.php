@@ -18,22 +18,23 @@ class TarifArticleController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $tarifs = $this->model->getAll();
         $pressingCode = $this->getCurrentPressingCode();
+
         if ($pressingCode !== null) {
-            $tarifs = array_filter($tarifs, function($t) use ($pressingCode) {
-                return $t['pressing_code'] === $pressingCode;
-            });
+            $tarifs = $this->model->getByPressing($pressingCode);
+        } else {
+            $tarifs = $this->model->getAllWithDetails();
         }
+
         $data = [];
 
         foreach ($tarifs as $t) {
             $idCrypte = $this->validator->crypter($t['id_tarif']);
             $data[] = [
                 'code' => $t['code_tarif'],
-                'pressing' => $t['pressing_code'] ?? '',
-                'article' => $t['article_code'] ?? '',
-                'service' => $t['service_code'] ?? '',
+                'pressing' => $t['libelle_pressing'] ?? ($t['pressing_code'] ?? ''),
+                'article' => $t['libelle_article'] ?? ($t['article_code'] ?? ''),
+                'service' => $t['libelle_service'] ?? ($t['service_code'] ?? ''),
                 'prix' => $t['prix_tarif'] ?? 0,
                 'statut' => $t['statut_tarif'],
                 'id' => $t['id_tarif'],
@@ -48,33 +49,68 @@ class TarifArticleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['pressing_code' => $_POST['pressing_code'] ?? '', 'article_code' => $_POST['article_code'] ?? '', 'service_code' => $_POST['service_code'] ?? '']);
+
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode === null) {
+            $pressingCode = $this->post('pressing_code');
+        }
+
+        if (empty($pressingCode)) {
+            $this->error('Le pressing est requis');
+            return;
+        }
+
+        $notEmpty = Validator::validateRequiredFields([
+            'article_code' => $_POST['article_code'] ?? '',
+            'service_code' => $_POST['service_code'] ?? '',
+            'prix_tarif' => $_POST['prix_tarif'] ?? ''
+        ]);
 
         if ($notEmpty !== true) {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Veuillez renseigner tous les champs requis !');
+            return;
+        }
+
+        $articleCode = $this->post('article_code');
+        $serviceCode = $this->post('service_code');
+        $prixTarif = (float)$this->post('prix_tarif');
+
+        // Vérifier si un tarif existe déjà pour ce pressing + article + service
+        $existing = $this->model->getCon()->prepare("
+            SELECT id_tarif FROM " . TABLES::TARIFS_ARTICLES . " 
+            WHERE pressing_code = ? AND article_code = ? AND service_code = ? LIMIT 1
+        ");
+        $existing->execute([$pressingCode, $articleCode, $serviceCode]);
+        $existingId = $existing->fetchColumn();
+
+        if ($existingId) {
+            // Mettre à jour le tarif existant
+            $stmtUp = $this->model->getCon()->prepare("
+                UPDATE " . TABLES::TARIFS_ARTICLES . " 
+                SET prix_tarif = ?, statut_tarif = 'actif', updated_at_tarif = NOW() 
+                WHERE id_tarif = ?
+            ");
+            $stmtUp->execute([$prixTarif, $existingId]);
+            $this->success('Tarif mis à jour avec succès !');
             return;
         }
 
         $code = $this->post('code_tarif') ?: $this->validator->generateCode(TABLES::TARIFS_ARTICLES, 'code_tarif', 'TAR-', 6);
-        if ($this->validator->getByElement(TABLES::TARIFS_ARTICLES, 'code_tarif', $code)) {
-            $this->error('Ce code tarif existe déjà!');
-            return;
-        }
 
         $data = [
             'code_tarif' => $code,
-            'pressing_code' => $this->getCurrentPressingCode() ?: $this->post('pressing_code'),
-            'article_code' => $this->post('article_code'),
-            'service_code' => $this->post('service_code'),
-            'prix_tarif' => $this->post('prix_tarif') ?: 0,
+            'pressing_code' => $pressingCode,
+            'article_code' => $articleCode,
+            'service_code' => $serviceCode,
+            'prix_tarif' => $prixTarif,
             'statut_tarif' => 'actif',
             'created_at_tarif' => date('Y-m-d H:i:s')
         ];
 
         if ($this->model->create($data)) {
-            $this->success('Tarif ajouté avec succès!');
+            $this->success('Tarif enregistré avec succès !');
         } else {
-            $this->error('Erreur lors de l\'ajout');
+            $this->error('Erreur lors de l\'enregistrement du tarif');
         }
     }
 
@@ -82,27 +118,49 @@ class TarifArticleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['pressing_code' => $_POST['pressing_code'] ?? '', 'article_code' => $_POST['article_code'] ?? '', 'service_code' => $_POST['service_code'] ?? '', 'id_tarif' => $_POST['id_tarif'] ?? '']);
+
+        $id = (int)$this->post('id_tarif');
+        $item = $this->model->getById($id);
+        if (!$item) {
+            $this->error('Tarif introuvable');
+            return;
+        }
+
+        $pressingCode = $this->getCurrentPressingCode();
+        if ($pressingCode !== null) {
+            if (($item['pressing_code'] ?? '') !== $pressingCode) {
+                $this->error('Accès refusé', 403);
+                return;
+            }
+        } else {
+            $pressingCode = $this->post('pressing_code') ?: $item['pressing_code'];
+        }
+
+        $notEmpty = Validator::validateRequiredFields([
+            'article_code' => $_POST['article_code'] ?? '',
+            'service_code' => $_POST['service_code'] ?? '',
+            'prix_tarif' => $_POST['prix_tarif'] ?? ''
+        ]);
 
         if ($notEmpty !== true) {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Veuillez renseigner tous les champs requis !');
             return;
         }
 
         $statut = ($this->post('actif') == 1) ? 'actif' : 'inactif';
-        $id = (int) $this->post('id_tarif');
 
         $data = [
-            'pressing_code' => $this->getCurrentPressingCode() ?: $this->post('pressing_code'),
+            'id_tarif' => $id,
+            'pressing_code' => $pressingCode,
             'article_code' => $this->post('article_code'),
             'service_code' => $this->post('service_code'),
-            'prix_tarif' => $this->post('prix_tarif') ?: 0,
+            'prix_tarif' => (float)$this->post('prix_tarif'),
             'statut_tarif' => $statut,
             'updated_at_tarif' => date('Y-m-d H:i:s')
         ];
 
         if ($this->model->update($data)) {
-            $this->success('Tarif modifié avec succès!');
+            $this->success('Tarif modifié avec succès !');
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -161,24 +219,31 @@ class TarifArticleController extends BaseController
             exit();
         }
 
-        $this->loadView('../views/tarifs_articles/edit.php', ['tarif' => $item]);
-    }
-
-    public function getActive()
-    {
-        $this->requireAuth();
-        $items = $this->model->getByStatus('actif');
-        $options = [];
-        $options[''] = 'Sélectionner un tarif';
-        foreach ($items as $i) {
-            $options[$i['code_tarif']] = $i['code_tarif'];
-        }
-        $this->json(['options' => $options]);
+        $this->loadFormDataAndRender($item);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/tarifs_articles/edit.php', ['tarif' => []]);
+        $this->loadFormDataAndRender([]);
+    }
+
+    private function loadFormDataAndRender(array $tarif): void
+    {
+        $articleModel = new ModelArticle();
+        $articles = $articleModel->getByStatus('actif');
+
+        $serviceModel = new ModelService();
+        $services = $serviceModel->getByStatus('actif');
+
+        $pressingModel = new ModelPressing();
+        $pressings = $pressingModel->getByStatus('actif');
+
+        $this->loadView('../views/tarifs_articles/edit.php', [
+            'tarif' => $tarif,
+            'articles' => $articles,
+            'services' => $services,
+            'pressings' => $pressings
+        ]);
     }
 }
