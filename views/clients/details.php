@@ -1,6 +1,8 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../public/inc/header.php';
 $client = isset($client) ? $client : [];
+$commandes = isset($commandes) ? $commandes : [];
+$isSuperAdmin = isset($isSuperAdmin) ? $isSuperAdmin : false;
 ?>
 
 <div class="app-layout">
@@ -9,41 +11,51 @@ $client = isset($client) ? $client : [];
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
 
     <div class="content-wrapper">
-      <div class="page-header">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
         <div>
-          <h1>DÃ©tails du client</h1>
-          <p class="page-subtitle">Informations complÃ¨tes</p>
+          <h1 style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="user" style="color: #2563EB;"></i> Fiche Client : <?= htmlspecialchars($client['nom_client'] ?? '') ?>
+          </h1>
+          <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0;">
+            <?= $isSuperAdmin ? 'Consultation en lecture seule du compte client' : 'Informations complètes et historique des commandes' ?>
+          </p>
         </div>
-        <a href="<?= RACINE ?>client/list" class="btn btn-secondary"><i data-lucide="arrow-left"></i> Retour</a>
+        <a href="<?= RACINE ?>client/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+          <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour aux clients
+        </a>
       </div>
 
-      <div class="detail-card">
-        <div class="detail-card-header"><h2>Client</h2></div>
+      <div class="detail-card" style="border-radius: 14px; border: 1px solid #E2E8F0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #FFFFFF;">
+        <div class="detail-card-header" style="margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+          <h2 style="font-size: 17px; font-weight: 700; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="info" style="color: #2563EB; width: 18px; height: 18px;"></i> Informations Personnelles
+          </h2>
+        </div>
         <div class="detail-card-body">
-          <div class="info-list">
+          <div class="info-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             <div class="info-item">
-              <span class="info-label">Code</span>
-              <span class="info-value code-badge"><?= htmlspecialchars($client['code_client'] ?? '') ?></span>
+              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Code Client</span>
+              <span class="info-value code-badge" style="font-weight: 700; margin-top: 4px; display: inline-block;"><?= htmlspecialchars($client['code_client'] ?? '') ?></span>
             </div>
             <div class="info-item">
-              <span class="info-label">Nom</span>
-              <span class="info-value"><?= htmlspecialchars($client['nom_client'] ?? '-') ?></span>
+              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Nom & Prénoms</span>
+              <span class="info-value" style="font-weight: 700; color: #1E293B; margin-top: 4px; display: inline-block;"><?= htmlspecialchars($client['nom_client'] ?? '-') ?></span>
             </div>
             <div class="info-item">
-              <span class="info-label">TÃ©lÃ©phone</span>
-              <span class="info-value"><?= htmlspecialchars($client['telephone_client'] ?? '-') ?></span>
+              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Téléphone</span>
+              <span class="info-value" style="font-weight: 600; color: #1E293B; margin-top: 4px; display: inline-block;"><i class="fa fa-phone" style="color: #2563EB;"></i> <?= htmlspecialchars($client['telephone_client'] ?? '-') ?></span>
             </div>
             <div class="info-item">
-              <span class="info-label">Quartier</span>
-              <span class="info-value"><?= htmlspecialchars($client['quartier_client'] ?? '-') ?></span>
+              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Quartier</span>
+              <span class="info-value" style="color: #2563EB; font-weight: 600; margin-top: 4px; display: inline-block;"><i class="fa fa-map-marker-alt"></i> <?= htmlspecialchars($client['quartier_client'] ?? '-') ?></span>
             </div>
             <div class="info-item">
-              <span class="info-label">Adresse</span>
-              <span class="info-value"><?= htmlspecialchars($client['adresse_client'] ?? '-') ?></span>
+              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Adresse</span>
+              <span class="info-value" style="color: #334155; margin-top: 4px; display: inline-block;"><?= htmlspecialchars($client['adresse_client'] ?? '-') ?></span>
             </div>
             <div class="info-item">
-              <span class="info-label">Statut</span>
-              <span class="info-value">
+              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Statut</span>
+              <span class="info-value" style="margin-top: 4px; display: inline-block;">
                 <span class="badge-status <?= ($client['statut_client'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>">
                   <?= htmlspecialchars($client['statut_client'] ?? '') ?>
                 </span>
@@ -54,15 +66,19 @@ $client = isset($client) ? $client : [];
       </div>
 
       <?php if (!empty($commandes)): ?>
-      <div class="detail-card" style="margin-top: 24px;">
-        <div class="detail-card-header"><h2>Commandes</h2></div>
+      <div class="detail-card" style="margin-top: 24px; border-radius: 14px; border: 1px solid #E2E8F0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #FFFFFF;">
+        <div class="detail-card-header" style="margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+          <h2 style="font-size: 17px; font-weight: 700; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="shopping-bag" style="color: #2563EB; width: 18px; height: 18px;"></i> Historique des Commandes (<?= count($commandes) ?>)
+          </h2>
+        </div>
         <div class="detail-card-body">
           <div class="mobile-list-container" id="commandesMobileList"></div>
           <div class="table-responsive-mobile">
-            <table class="table" id="dataTable">
+            <table class="table" id="dataTable" style="width: 100%;">
               <thead>
                 <tr>
-                  <th>Code</th>
+                  <th>Code Commande</th>
                   <th>Date</th>
                   <th>Statut</th>
                   <th>Détail</th>
@@ -72,7 +88,7 @@ $client = isset($client) ? $client : [];
               <tbody>
                 <?php foreach ($commandes as $cmd): ?>
                 <tr>
-                  <td><?= htmlspecialchars($cmd['code_commande'] ?? '') ?></td>
+                  <td><strong style="color: #1E293B;"><?= htmlspecialchars($cmd['code_commande'] ?? '') ?></strong></td>
                   <td><?= htmlspecialchars($cmd['created_at_commande'] ?? '') ?></td>
                   <td>
                     <span class="badge-status <?= ($cmd['statut_commande'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>">
@@ -115,7 +131,6 @@ $client = isset($client) ? $client : [];
         (function() {
           var rawData = <?= json_encode($commandes) ?>;
           var container = document.getElementById('commandesMobileList');
-          console.log('[details mobile] rawData count=', rawData ? rawData.length : 0, 'container=', !!container);
           if (!container || !rawData || !rawData.length) return;
 
           function renderPaiements(paiements) {

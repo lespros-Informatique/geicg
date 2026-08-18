@@ -38,18 +38,46 @@
                     <h3>Actions rapides</h3>
                 </div>
                 <div class="dropdown-grid">
-                    <a href="<?= RACINE ?>commande/list" class="dropdown-card">
-                        <i data-lucide="shopping-cart"></i>
-                        <span>Commandes</span>
-                    </a>
-                    <a href="<?= RACINE ?>client/list" class="dropdown-card">
-                        <i data-lucide="users"></i>
-                        <span>Clients</span>
-                    </a>
-                    <a href="<?= RACINE ?>paiement/list" class="dropdown-card">
-                        <i data-lucide="credit-card"></i>
-                        <span>Paiements</span>
-                    </a>
+                    <?php if (isset($isSuperAdmin) && $isSuperAdmin): ?>
+                        <a href="<?= RACINE ?>pressing/list" class="dropdown-card">
+                            <i data-lucide="store"></i>
+                            <span>Pressings</span>
+                        </a>
+                        <a href="<?= RACINE ?>abonnement/list" class="dropdown-card">
+                            <i data-lucide="credit-card"></i>
+                            <span>Abonnements</span>
+                        </a>
+                        <a href="<?= RACINE ?>user/list" class="dropdown-card">
+                            <i data-lucide="users"></i>
+                            <span>Utilisateurs</span>
+                        </a>
+                    <?php elseif (isset($isLivreur) && $isLivreur): ?>
+                        <a href="<?= RACINE ?>mission/list" class="dropdown-card">
+                            <i data-lucide="truck"></i>
+                            <span>Missions</span>
+                        </a>
+                        <a href="<?= RACINE ?>commande/list" class="dropdown-card">
+                            <i data-lucide="package"></i>
+                            <span>Commandes</span>
+                        </a>
+                        <a href="<?= RACINE ?>notification/list" class="dropdown-card">
+                            <i data-lucide="bell"></i>
+                            <span>Notifications</span>
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= RACINE ?>commande/list" class="dropdown-card">
+                            <i data-lucide="shopping-cart"></i>
+                            <span>Commandes</span>
+                        </a>
+                        <a href="<?= RACINE ?>client/list" class="dropdown-card">
+                            <i data-lucide="users"></i>
+                            <span>Clients</span>
+                        </a>
+                        <a href="<?= RACINE ?>tarif/list" class="dropdown-card">
+                            <i data-lucide="tag"></i>
+                            <span>Tarifs</span>
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

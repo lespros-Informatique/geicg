@@ -59,6 +59,10 @@ class TABLES
 
     // NOTIFICATIONS
     public const NOTIFICATIONS       = 'notifications';
+
+    // ZONES TERRITORIALES
+    public const VILLES              = 'villes';
+    public const QUARTIERS           = 'quartiers';
 }
 
 class ROLES
@@ -168,4 +172,8 @@ class STATUTS
 
     // NOTIFICATIONS
     public const NOTIFICATIONS       = ['envoyee','echec'];
+
+    // ZONES TERRITORIALES
+    public const VILLES              = ['actif','inactif'];
+    public const QUARTIERS           = ['actif','inactif'];
 }

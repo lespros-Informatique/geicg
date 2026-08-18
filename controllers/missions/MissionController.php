@@ -111,6 +111,7 @@ class MissionController extends BaseController
         $statut = in_array($this->post('statut_mission'), STATUTS::MISSIONS) ? $this->post('statut_mission') : 'en_attente';
 
         $data = [
+            'id_mission' => $id,
             'commande_code' => $this->post('commande_code'),
             'livreur_code' => $this->post('livreur_code') ?? '',
             'type_mission' => $this->post('type_mission'),
@@ -122,7 +123,7 @@ class MissionController extends BaseController
             'updated_at_mission' => date('Y-m-d H:i:s')
         ];
 
-        if ($this->model->update($data)) {
+        if ($this->model->update($data, $id)) {
             $this->success('Mission modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');

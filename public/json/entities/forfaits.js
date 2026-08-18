@@ -1,4 +1,6 @@
 $(document).ready(function() {
+    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
+
     if ($('#dataTable').length) {
         const columns = [
             { 
@@ -24,14 +26,16 @@ $(document).ready(function() {
                 data: 'montant', 
                 title: 'Montant',
                 render: function(data) {
-                    return '<strong style="color: #059669; font-size: 14px;">' + Number(data || 0).toLocaleString('fr-FR') + ' FCFA</strong>';
+                    const val = Number(data || 0).toLocaleString('fr-FR');
+                    return '<span style="font-weight: 800; color: #059669;">' + val + ' FCFA</span>';
                 }
             },
             { 
                 data: 'duree_mois', 
                 title: 'Durée',
                 render: function(data) {
-                    return '<span style="font-weight: 600; color: #475569;">' + (data || 1) + ' mois</span>';
+                    const mois = parseInt(data || 1);
+                    return '<span style="color: #64748B; font-weight: 600;">' + mois + ' mois</span>';
                 }
             },
             { 
@@ -49,11 +53,10 @@ $(document).ready(function() {
                 title: 'Actions',
                 className: 'text-center',
                 render: function(data, type, row) {
-                    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
                     const isActif = (row.statut === 'actif');
                     return `
                         <div class="table-actions">
-                            <a href="${baseApi}forfait/edition/${row.editId}" class="btn-action btn-action-primary" title="Modifier">
+                            <a href="${baseApi}forfait/edition/${row.editId}" class="btn-action btn-action-primary" title="Modifier le forfait">
                                 <i class="fa fa-edit"></i>
                             </a>
                             <button type="button" class="btn-action ${isActif ? 'btn-action-warning' : 'btn-action-success'} btnToggleForfaitStatut"
@@ -68,34 +71,109 @@ $(document).ready(function() {
 
         const table = initDataTable('dataTable', 'forfait/apiList', columns);
 
+        // Toggle Status Forfait
         $(document).on('click', '.btnToggleForfaitStatut', function() {
             const id = $(this).data('id');
-            const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
-            if (confirm('Voulez-vous modifier le statut de ce forfait ?')) {
-                $.post(baseApi + 'forfait/changer', { id: id }, function(rep) {
-                    if (typeof showToast === 'function') {
-                        showToast(rep.message || 'Statut mis à jour', rep.status ? 'success' : 'error');
-                    }
-                    table.ajax.reload();
-                }, 'json').fail(function() {
-                    if (typeof showToast === 'function') showToast('Erreur serveur', 'error');
-                });
-            }
+            if (!id) return;
+
+            $.post(baseApi + 'forfait/changer', { id: id }, function(rep) {
+                if (rep.status) {
+                    if (typeof showToast === 'function') showToast(rep.message || 'Statut mis à jour', 'success');
+                    table.ajax.reload(null, false);
+                } else {
+                    if (typeof showToast === 'function') showToast(rep.message || 'Erreur', 'error');
+                }
+            }, 'json').fail(function() {
+                if (typeof showToast === 'function') showToast('Erreur serveur', 'error');
+            });
         });
 
+        // Mobile cards
         const forfaitsMobileConfig = {
             entity: 'forfait',
-            primary: [{ key: 'libelle', label: 'Forfait' }],
-            secondary: [{ key: 'code', label: 'Code' }, { key: 'montant', label: 'Montant' }, { key: 'statut', label: 'Statut' }],
-            detailUrl: function(r) { return (typeof LINK !== 'undefined' ? LINK : '/admin-lavex/') + 'forfait/edition/' + r.editId; },
+            primary: [{ key: 'code', label: 'Code' }, { key: 'libelle', label: 'Libellé' }],
+            secondary: [{ key: 'montant', label: 'Montant' }, { key: 'duree_mois', label: 'Durée (mois)' }],
             actions: [
-                {
-                    label: 'Modifier',
-                    url: function(r) { return (typeof LINK !== 'undefined' ? LINK : '/admin-lavex/') + 'forfait/edition/' + r.editId; },
-                    icon: 'edit'
-                }
+                { id: 'modifier', label: 'Modifier', icon: 'edit', href: function(r) { return baseApi + 'forfait/edition/' + r.editId; } }
             ]
         };
         renderMobileCards('dataTable', forfaitsMobileConfig);
     }
+
+    // Formulaire d'ajout de forfait
+    $('#formAddForfait').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const btn = form.find('.btn_actions');
+
+        if (typeof loading === 'function') loading(btn, true, 'Enregistrement...');
+
+        $.ajax({
+            url: baseApi + 'forfait/add',
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(rep) {
+                if (typeof loading === 'function') loading(btn, false);
+                if (rep.status) {
+                    if (typeof showToast === 'function') showToast(rep.message || 'Forfait créé avec succès !', 'success');
+                    closeAddForfaitModal();
+                    form[0].reset();
+                    if ($('#dataTable').length) {
+                        $('#dataTable').DataTable().ajax.reload(null, false);
+                    }
+                } else {
+                    if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de la création', 'error');
+                }
+            },
+            error: function(xhr) {
+                if (typeof loading === 'function') loading(btn, false);
+                let msg = 'Erreur lors de la création';
+                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                if (typeof showToast === 'function') showToast(msg, 'error');
+            }
+        });
+    });
+
+    // Formulaire d'édition de forfait
+    $('#formEditForfait').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const btn = form.find('.btn_actions');
+
+        if (typeof loading === 'function') loading(btn, true, 'Sauvegarde...');
+
+        $.ajax({
+            url: baseApi + 'forfait/edit',
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(rep) {
+                if (typeof loading === 'function') loading(btn, false);
+                if (rep.status) {
+                    if (typeof showToast === 'function') showToast(rep.message || 'Forfait modifié avec succès !', 'success');
+                    setTimeout(function() {
+                        window.location.href = baseApi + 'forfait/list';
+                    }, 800);
+                } else {
+                    if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de la modification', 'error');
+                }
+            },
+            error: function(xhr) {
+                if (typeof loading === 'function') loading(btn, false);
+                let msg = 'Erreur serveur';
+                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                if (typeof showToast === 'function') showToast(msg, 'error');
+            }
+        });
+    });
 });
+
+function openAddForfaitModal() {
+    $('#modalAddForfait').css('display', 'flex');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeAddForfaitModal() {
+    $('#modalAddForfait').hide();
+}

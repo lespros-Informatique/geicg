@@ -100,6 +100,7 @@ class PressingController extends BaseController
         $id = (int) $this->post('id_pressing');
 
         $data = [
+            'id_pressing' => $id,
             'libelle_pressing' => $this->post('libelle_pressing'),
             'telephone_pressing' => $this->post('telephone_pressing') ?? '',
             'email_pressing' => $this->post('email_pressing') ?? '',
@@ -113,7 +114,7 @@ class PressingController extends BaseController
             'updated_at_pressing' => date('Y-m-d H:i:s')
         ];
 
-        if ($this->model->update($data)) {
+        if ($this->model->update($data, $id)) {
             $this->success('Pressing modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');

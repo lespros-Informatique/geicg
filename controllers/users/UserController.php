@@ -119,6 +119,7 @@ class UserController extends BaseController
                 $id = (int) $this->post('id_user');
                 
                 $data = [
+                    'id_user' => $id,
                     'nom_user' => $this->post('nom'),
                     'prenom_user' => $this->post('prenom') ?? '',
                     'telephone_user' => $this->post('telephone'),
@@ -127,7 +128,7 @@ class UserController extends BaseController
                     'updated_at_user' => date('Y-m-d H:i:s')
                 ];
 
-                if ($this->model->update($data)) {
+                if ($this->model->update($data, $id)) {
                     $roleCode = $this->post('role_code');
                     if ($roleCode) {
                         $user = $this->model->getById($id);

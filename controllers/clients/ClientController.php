@@ -10,7 +10,12 @@ class ClientController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/clients/list.php');
+        $isSuperAdmin = $this->isSuperAdmin();
+        $isPressing = $this->isPressing();
+        $this->loadView('../views/clients/list.php', [
+            'isSuperAdmin' => $isSuperAdmin,
+            'isPressing' => $isPressing
+        ]);
     }
 
     public function apiList()
@@ -40,6 +45,12 @@ class ClientController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+
+        if ($this->isSuperAdmin()) {
+            $this->error("L'administrateur général n'a pas accès à la création directe de clients.");
+            return;
+        }
+
         $notEmpty = Validator::validateRequiredFields(['nom' => $_POST['nom'] ?? '', 'telephone' => $_POST['telephone'] ?? '']);
 
         if ($notEmpty === true) {
@@ -80,6 +91,12 @@ class ClientController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+
+        if ($this->isSuperAdmin()) {
+            $this->error("L'administrateur général n'a pas accès à la modification directe des clients.");
+            return;
+        }
+
         $notEmpty = Validator::validateRequiredFields(['nom' => $_POST['nom'] ?? '', 'telephone' => $_POST['telephone'] ?? '', 'id_client' => $_POST['id_client'] ?? '']);
 
         if ($notEmpty === true) {
@@ -103,7 +120,7 @@ class ClientController extends BaseController
                     'updated_at_client' => date('Y-m-d H:i:s')
                 ];
 
-                if ($this->model->update($data)) {
+                if ($this->model->update($data, $id)) {
                     $this->success('Client modifié avec succès!');
                 } else {
                     $this->error('Erreur lors de la modification');
@@ -144,13 +161,20 @@ class ClientController extends BaseController
         $this->loadView('../views/clients/details.php', [
             'client' => $clientProfile,
             'encryptedId' => $encryptedId,
-            'commandes' => $commandes
+            'commandes' => $commandes,
+            'isSuperAdmin' => $this->isSuperAdmin(),
+            'isPressing' => $this->isPressing()
         ]);
     }
 
     public function edition($details)
     {
         $this->requireAuth();
+        if ($this->isSuperAdmin()) {
+            header('Location: ' . RACINE . 'client/list');
+            exit();
+        }
+
         try {
             $decryptedId = $this->validator->decrypter($details);
             $client = $this->model->getById($decryptedId);
@@ -171,6 +195,12 @@ class ClientController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+
+        if ($this->isSuperAdmin()) {
+            $this->error("L'administrateur général n'a pas accès à la modification du statut client.");
+            return;
+        }
+
         $id = $this->post('id');
         if (isset($id) && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {

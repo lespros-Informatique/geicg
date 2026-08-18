@@ -185,4 +185,69 @@ abstract class BaseController
             $this->json(['status' => 0, 'message' => 'Accès refusé : vous n\'êtes pas assigné à ce livreur'], 403);
         }
     }
+
+    /**
+     * Récupère la liste des permissions attribuées au rôle de l'utilisateur connecté
+     */
+    protected function getUserPermissions(): array
+    {
+        if ($this->isSuperAdmin()) {
+            return ['*'];
+        }
+
+        $roles = $this->getCurrentUserRoles();
+        if (empty($roles)) {
+            return [];
+        }
+
+        try {
+            $pdo = ($this->model && method_exists($this->model, 'getCon')) ? $this->model->getCon() : (new Database())->getCon();
+            $inClause = implode(',', array_fill(0, count($roles), '?'));
+            $sql = "
+                SELECT DISTINCT rp.permission_code 
+                FROM " . TABLES::ROLES_PERMISSIONS . " rp
+                JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
+                WHERE rp.role_code IN ($inClause)
+                  AND rp.statut_role_permission = 'actif'
+                  AND p.statut_permission = 'actif'
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($roles);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            error_log("Error fetching user permissions: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Vérifie si l'utilisateur possède une permission donnée
+     */
+    protected function hasPermission(string $permissionCode): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $perms = $this->getUserPermissions();
+        return in_array('*', $perms, true) || in_array($permissionCode, $perms, true);
+    }
+
+    /**
+     * Bloque la requête avec une erreur 403 si l'utilisateur ne possède pas la permission requise
+     */
+    protected function requirePermission(string $permissionCode, string $customMessage = ''): void
+    {
+        $this->requireAuth();
+
+        if (!$this->hasPermission($permissionCode)) {
+            $msg = !empty($customMessage) ? $customMessage : "Accès refusé : privilège [{$permissionCode}] requis pour cette action.";
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+                $this->json(['status' => 0, 'message' => $msg], 403);
+            } else {
+                header('Location: ' . RACINE . '?error=forbidden');
+                exit();
+            }
+        }
+    }
 }

@@ -313,14 +313,14 @@ $(document).ready(function() {
         $(document).on('click', '.btnToggleAbnStatut', function() {
             const id = $(this).data('id');
             const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
-            if (confirm('Voulez-vous modifier le statut de cet abonnement ?')) {
+            showConfirm('Voulez-vous modifier le statut de cet abonnement ?', function() {
                 $.post(baseApi + 'abonnement/changer', { id: id }, function(rep) {
                     if (typeof showToast === 'function') showToast(rep.message || 'Statut mis à jour', rep.status ? 'success' : 'error');
                     table.ajax.reload();
                 }, 'json').fail(function() {
                     if (typeof showToast === 'function') showToast('Erreur serveur', 'error');
                 });
-            }
+            }, 'Statut Abonnement', 'Modifier', false);
         });
 
         const abonnementsMobileConfig = {

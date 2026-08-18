@@ -108,6 +108,7 @@ class PaiementController extends BaseController
             $id = (int) $this->post('id_paiement');
 
             $data = [
+                'id_paiement' => $id,
                 'commande_code' => $this->post('commande_code'),
                 'montant_paiement' => $this->post('montant_paiement'),
                 'mode_paiement' => $mode,
@@ -116,7 +117,7 @@ class PaiementController extends BaseController
                 'updated_at_paiement' => date('Y-m-d H:i:s')
             ];
 
-            if ($this->model->update($data)) {
+            if ($this->model->update($data, $id)) {
                 $this->success('Paiement modifié!');
             } else {
                 $this->error('Erreur modification');

@@ -12,7 +12,14 @@ class HomeController extends BaseController
     public function index()
     {
         if (Validator::isConnected()) {
-            $this->loadView('../views/home/index.php');
+            $isSuperAdmin = $this->isSuperAdmin();
+            $isPressing = $this->isPressing();
+            $isLivreur = $this->isLivreur();
+            $this->loadView('../views/home/index.php', [
+                'isSuperAdmin' => $isSuperAdmin,
+                'isPressing' => $isPressing,
+                'isLivreur' => $isLivreur
+            ]);
         } else {
             $this->loadView('../views/users/connexion.php');
         }

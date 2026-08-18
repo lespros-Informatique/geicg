@@ -90,13 +90,14 @@ class RoleController extends BaseController
         $id = (int) $this->post('id_role');
 
         $data = [
+            'id_role' => $id,
             'libelle_role' => $this->post('libelle_role'),
             'description_role' => $this->post('description_role') ?? '',
             'statut_role' => $statut,
             'updated_at_role' => date('Y-m-d H:i:s')
         ];
 
-        if ($this->model->update($data)) {
+        if ($this->model->update($data, $id)) {
             $this->success('Rôle modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');

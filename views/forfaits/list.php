@@ -15,9 +15,13 @@ require_once __DIR__ . '/../../public/inc/header.php';
           </h1>
           <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0;">Configuration des plans d'adhésion et forfaits proposés aux pressings partenaires</p>
         </div>
+
+        <button type="button" class="btn btn-primary" onclick="openAddForfaitModal()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Nouveau forfait
+        </button>
       </div>
 
-      <div class="card" style="border-radius: 14px; padding: 20px;">
+      <div class="card" style="border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
         <div class="table-responsive-mobile">
           <table class="table" id="dataTable" style="width: 100%;">
             <thead>
@@ -36,10 +40,56 @@ require_once __DIR__ . '/../../public/inc/header.php';
         </div>
       </div>
 
-      <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/forfaits.js?v=2"></script>
     </div>
   </main>
 </div>
 
+<!-- MODAL AJOUTER FORFAIT -->
+<div id="modalAddForfait" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden;">
+    <div style="padding: 18px 22px; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="plus-circle" style="color: #2563EB; width: 18px; height: 18px;"></i> Créer un Forfait B2B
+      </h3>
+      <button type="button" onclick="closeAddForfaitModal()" style="background: none; border: none; font-size: 18px; color: #94A3B8; cursor: pointer;">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+
+    <form id="formAddForfait" style="padding: 22px;">
+      <?= Validator::csrfField() ?>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Nom / Libellé du Forfait *</label>
+        <input type="text" class="form-control" name="libelle_forfait" placeholder="Ex: Forfait Trimestriel Pro" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div class="form-group">
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Montant (FCFA) *</label>
+          <input type="number" class="form-control" name="montant_forfait" placeholder="Ex: 50000" min="0" step="500" required>
+        </div>
+
+        <div class="form-group">
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Durée (Mois) *</label>
+          <input type="number" class="form-control" name="duree_mois_forfait" value="1" min="1" max="36" required>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Description / Avantages</label>
+        <textarea class="form-control" name="description_forfait" rows="2" placeholder="Description des services inclus..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="closeAddForfaitModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary btn_actions" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+          <i data-lucide="save" style="width: 16px; height: 16px;"></i> Enregistrer le forfait
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="<?= RACINE ?>json/mobile-list.js"></script>
+<script src="<?= RACINE ?>json/entities/forfaits.js?v=3"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

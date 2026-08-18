@@ -17,24 +17,16 @@ $(document).ready(function() {
             },
             { 
                 data: 'libelle', 
-                title: 'Libellé Ville',
+                title: 'Quartier',
                 render: function(data) {
                     return '<strong style="color: #1E293B;">' + (data || '') + '</strong>';
                 }
             },
             { 
-                data: 'total_quartiers', 
-                title: 'Quartiers Rattachés',
-                render: function(data, type, row) {
-                    const count = parseInt(data || 0);
-                    const badgeColor = count > 0 ? 'background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE;' : 'background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0;';
-                    return `
-                        <a href="${baseApi}ville/edition/${row.editId}" style="text-decoration: none;">
-                            <span style="font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; ${badgeColor}">
-                                <i class="fa fa-map-marker-alt"></i> ${count} quartier${count > 1 ? 's' : ''}
-                            </span>
-                        </a>
-                    `;
+                data: 'ville_nom', 
+                title: 'Ville',
+                render: function(data) {
+                    return '<span style="color: #2563EB; font-weight: 600;"><i class="fa fa-map-marker-alt"></i> ' + (data || '-') + '</span>';
                 }
             },
             { 
@@ -55,10 +47,10 @@ $(document).ready(function() {
                     const isActif = (row.statut === 'actif');
                     return `
                         <div class="table-actions">
-                            <a href="${baseApi}ville/edition/${row.editId}" class="btn-action btn-action-primary" title="Gérer la ville et ses quartiers">
+                            <a href="${baseApi}quartier/edition/${row.editId}" class="btn-action btn-action-primary" title="Modifier le quartier">
                                 <i class="fa fa-edit"></i>
                             </a>
-                            <button type="button" class="btn-action ${isActif ? 'btn-action-warning' : 'btn-action-success'} btnToggleVilleStatut"
+                            <button type="button" class="btn-action ${isActif ? 'btn-action-warning' : 'btn-action-success'} btnToggleQuartierStatut"
                                     data-id="${row.id}" title="${isActif ? 'Désactiver' : 'Activer'}">
                                 <i class="fa ${isActif ? 'fa-pause' : 'fa-play'}"></i>
                             </button>
@@ -68,41 +60,39 @@ $(document).ready(function() {
             }
         ];
 
-        const table = initDataTable('dataTable', 'ville/apiList', columns);
+        const table = initDataTable('dataTable', 'quartier/apiList', columns);
 
-        // Toggle Status Ville
-        $(document).on('click', '.btnToggleVilleStatut', function() {
+        // Toggle Status Quartier
+        $(document).on('click', '.btnToggleQuartierStatut', function() {
             const id = $(this).data('id');
             if (!id) return;
 
-            showConfirm('Voulez-vous modifier le statut de cette ville ?', function() {
-                $.post(baseApi + 'ville/changer', { id: id }, function(rep) {
-                    if (rep.status) {
-                        if (typeof showToast === 'function') showToast(rep.message || 'Statut mis à jour', 'success');
-                        table.ajax.reload(null, false);
-                    } else {
-                        if (typeof showToast === 'function') showToast(rep.message || 'Erreur', 'error');
-                    }
-                }, 'json').fail(function() {
-                    if (typeof showToast === 'function') showToast('Erreur serveur', 'error');
-                });
-            }, 'Statut Ville', 'Modifier', false);
+            $.post(baseApi + 'quartier/changer', { id: id }, function(rep) {
+                if (rep.status) {
+                    if (typeof showToast === 'function') showToast(rep.message || 'Statut mis à jour', 'success');
+                    table.ajax.reload(null, false);
+                } else {
+                    if (typeof showToast === 'function') showToast(rep.message || 'Erreur', 'error');
+                }
+            }, 'json').fail(function() {
+                if (typeof showToast === 'function') showToast('Erreur serveur', 'error');
+            });
         });
 
         // Mobile cards
-        const villesMobileConfig = {
-            entity: 'ville',
-            primary: [{ key: 'code', label: 'Code' }, { key: 'libelle', label: 'Libellé' }],
-            secondary: [{ key: 'total_quartiers', label: 'Quartiers' }, { key: 'statut', label: 'Statut' }],
+        const quartiersMobileConfig = {
+            entity: 'quartier',
+            primary: [{ key: 'code', label: 'Code' }, { key: 'libelle', label: 'Quartier' }],
+            secondary: [{ key: 'ville_nom', label: 'Ville' }, { key: 'statut', label: 'Statut' }],
             actions: [
-                { id: 'modifier', label: 'Gérer la ville & quartiers', icon: 'edit', href: function(r) { return baseApi + 'ville/edition/' + r.editId; } }
+                { id: 'modifier', label: 'Modifier', icon: 'edit', href: function(r) { return baseApi + 'quartier/edition/' + r.editId; } }
             ]
         };
-        renderMobileCards('dataTable', villesMobileConfig);
+        renderMobileCards('dataTable', quartiersMobileConfig);
     }
 
-    // Formulaire d'ajout de ville
-    $('#formAddVille').on('submit', function(e) {
+    // Formulaire d'ajout de quartier
+    $('#formAddQuartier').on('submit', function(e) {
         e.preventDefault();
         const form = $(this);
         const btn = form.find('.btn_actions');
@@ -110,15 +100,15 @@ $(document).ready(function() {
         if (typeof loading === 'function') loading(btn, true, 'Enregistrement...');
 
         $.ajax({
-            url: baseApi + 'ville/add',
+            url: baseApi + 'quartier/add',
             type: 'POST',
             data: form.serialize(),
             dataType: 'json',
             success: function(rep) {
                 if (typeof loading === 'function') loading(btn, false);
                 if (rep.status) {
-                    if (typeof showToast === 'function') showToast(rep.message || 'Ville ajoutée avec succès !', 'success');
-                    closeAddVilleModal();
+                    if (typeof showToast === 'function') showToast(rep.message || 'Quartier ajouté avec succès !', 'success');
+                    closeAddQuartierModal();
                     form[0].reset();
                     if ($('#dataTable').length) {
                         $('#dataTable').DataTable().ajax.reload(null, false);
@@ -136,8 +126,8 @@ $(document).ready(function() {
         });
     });
 
-    // Formulaire d'édition de ville
-    $('#formEditVille').on('submit', function(e) {
+    // Formulaire d'édition de quartier
+    $('#formEditQuartier').on('submit', function(e) {
         e.preventDefault();
         const form = $(this);
         const btn = form.find('.btn_actions');
@@ -145,16 +135,16 @@ $(document).ready(function() {
         if (typeof loading === 'function') loading(btn, true, 'Sauvegarde...');
 
         $.ajax({
-            url: baseApi + 'ville/edit',
+            url: baseApi + 'quartier/edit',
             type: 'POST',
             data: form.serialize(),
             dataType: 'json',
             success: function(rep) {
                 if (typeof loading === 'function') loading(btn, false);
                 if (rep.status) {
-                    if (typeof showToast === 'function') showToast(rep.message || 'Ville modifiée avec succès !', 'success');
+                    if (typeof showToast === 'function') showToast(rep.message || 'Quartier modifié avec succès !', 'success');
                     setTimeout(function() {
-                        window.location.href = baseApi + 'ville/list';
+                        window.location.href = baseApi + 'quartier/list';
                     }, 800);
                 } else {
                     if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de la modification', 'error');
@@ -170,11 +160,11 @@ $(document).ready(function() {
     });
 });
 
-function openAddVilleModal() {
-    $('#modalAddVille').css('display', 'flex');
+function openAddQuartierModal() {
+    $('#modalAddQuartier').css('display', 'flex');
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-function closeAddVilleModal() {
-    $('#modalAddVille').hide();
+function closeAddQuartierModal() {
+    $('#modalAddQuartier').hide();
 }

@@ -208,6 +208,10 @@ $route->addRoute('/notification/apiList', [$notificationController, 'apiList']);
 $route->addRoute('/notification/add', [$notificationController, 'add']);
 $route->addRoute('/notification/edit', [$notificationController, 'edit']);
 $route->addRoute('/notification/changer', [$notificationController, 'changer']);
+$route->addRoute('/notification/marquerLu', [$notificationController, 'marquerLu']);
+$route->addRoute('/notification/marquerToutLu', [$notificationController, 'marquerToutLu']);
+$route->addRoute('/notification/delete', [$notificationController, 'delete']);
+$route->addRoute('/notification/stats', [$notificationController, 'stats']);
 $route->addRoute('/notification/edition/{param}', [$notificationController, 'edition']);
 $route->addRoute('/notification/details/{param}', [$notificationController, 'details']);
 
@@ -236,6 +240,7 @@ $route->addRoute('/role/edition/{param}', [$roleController, 'edition']);
 $route->addRoute('/role/details/{param}', [$roleController, 'details']);
 $route->addRoute('/role/formulaire', [$roleController, 'formulaire']);
 $route->addRoute('/role/updatePermissions', [$roleController, 'updatePermissions']);
+$route->addRoute('/role/permissions', [$roleController, 'updatePermissions']);
 
 $route->addRoute('/permission/list', [$permissionController, 'list']);
 $route->addRoute('/permission/apiList', [$permissionController, 'apiList']);
