@@ -111,7 +111,8 @@ abstract class BaseController
             $roleCode = $_SESSION[USERS_AUTH]['role_code'] ?? '';
             if ($roleCode === '') {
                 $sql = "SELECT role_code FROM " . TABLES::USERS . " WHERE code_user = ? LIMIT 1";
-                $stmt = $this->model->getCon()->prepare($sql);
+                $pdo = ($this->model && method_exists($this->model, 'getCon')) ? $this->model->getCon() : (new Database())->getCon();
+                $stmt = $pdo->prepare($sql);
                 $stmt->execute([$userCode]);
                 $roleCode = $stmt->fetchColumn() ?: '';
             }

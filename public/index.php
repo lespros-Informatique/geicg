@@ -79,6 +79,11 @@ $route->addRoute('/mission/edition/{param}', [$missionController, 'edition']);
 $route->addRoute('/mission/details/{param}', [$missionController, 'details']);
 $route->addRoute('/mission/getActive', [$missionController, 'getActive']);
 $route->addRoute('/mission/formulaire', [$missionController, 'formulaire']);
+$route->addRoute('/mission/enRouteCollecte', [$missionController, 'enRouteCollecte']);
+$route->addRoute('/mission/lingeCollecte', [$missionController, 'lingeCollecte']);
+$route->addRoute('/mission/deposeAuPressing', [$missionController, 'deposeAuPressing']);
+$route->addRoute('/mission/enRouteLivraison', [$missionController, 'enRouteLivraison']);
+$route->addRoute('/mission/remiseAuClient', [$missionController, 'remiseAuClient']);
 
 $route->addRoute('/horaire/list', [$horairePressingController, 'list']);
 $route->addRoute('/horaire/apiList', [$horairePressingController, 'apiList']);
@@ -139,6 +144,12 @@ $route->addRoute('/commande/changer', [$commandeController, 'changer']);
 $route->addRoute('/commande/edition/{param}', [$commandeController, 'edition']);
 $route->addRoute('/commande/details/{param}', [$commandeController, 'details']);
 $route->addRoute('/commande/transition', [$commandeController, 'transition']);
+$route->addRoute('/commande/accepter', [$commandeController, 'accepter']);
+$route->addRoute('/commande/refuser', [$commandeController, 'refuser']);
+$route->addRoute('/commande/saisirDevisColis', [$commandeController, 'saisirDevisColis']);
+$route->addRoute('/commande/lancerTraitement', [$commandeController, 'lancerTraitement']);
+$route->addRoute('/commande/marquerPrete', [$commandeController, 'marquerPrete']);
+$route->addRoute('/commande/assignerLivreur', [$commandeController, 'assignerLivreur']);
 
 $route->addRoute('/paiement/list', [$paiementController, 'list']);
 $route->addRoute('/paiement/apiList', [$paiementController, 'apiList']);

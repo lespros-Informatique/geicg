@@ -138,76 +138,293 @@ class CommandeController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $item = null;
+        $id = null;
+
+        // 1. Décryptage ID
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getWithDetails($id);
-            if (!$item) {
-                header('Location: ' . RACINE . 'commande/list');
-                exit();
-            }
-
-            $this->requirePressingAccess($item['pressing_code'] ?? '');
-
-            $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
+            $item = null;
+        }
+
+        // 2. Recherche par code commande direct
+        if (!$item) {
+            $item = $this->model->getByCodeWithDetails($details);
+            if ($item) {
+                $id = $item['id_commande'];
+            }
+        }
+
+        // 3. Recherche par ID direct
+        if (!$item && is_numeric($details)) {
+            $item = $this->model->getWithDetails((int)$details);
+            if ($item) {
+                $id = $item['id_commande'];
+            }
+        }
+
+        if (!$item) {
             header('Location: ' . RACINE . 'commande/list');
             exit();
         }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
+        $encryptedId = $this->validator->crypter($id);
 
         $ligneModel = new ModelCommandeDetail();
         $lignes = $ligneModel->getByCommande($item['code_commande']);
 
+        // Livreurs disponibles pour assignation
+        $livreurModel = new ModelLivreur();
+        $livreurs = $livreurModel->getByStatus('actif');
+
+        // Missions rattachées à cette commande
+        $missions = [];
+        try {
+            $stmtM = $this->model->getCon()->prepare("
+                SELECT m.*, l.nom_livreur, l.telephone_livreur 
+                FROM " . TABLES::MISSIONS . " m
+                LEFT JOIN " . TABLES::LIVREURS . " l ON m.livreur_code = l.code_livreur
+                WHERE m.commande_code = ?
+                ORDER BY m.id_mission DESC
+            ");
+            $stmtM->execute([$item['code_commande']]);
+            $missions = $stmtM->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            $missions = [];
+        }
+
         $this->loadView('../views/commandes/details.php', [
             'order' => $item,
             'encryptedId' => $encryptedId,
-            'lignes' => $lignes
+            'lignes' => $lignes,
+            'livreurs' => $livreurs,
+            'missions' => $missions
         ]);
     }
 
-    public function edition($details)
+    public function accepter()
     {
+        $this->requirePost(false);
         $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) {
-                header('Location: ' . RACINE . 'commande/list');
-                exit();
-            }
+        $code = $this->post('code_commande');
 
-            $this->requirePressingAccess($item['pressing_code'] ?? '');
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'commande/list');
-            exit();
-        }
-
-        $this->loadView('../views/commandes/edit.php', ['order' => $item]);
-    }
-
-    public function getActive()
-    {
-        $this->requireAuth();
-        $items = $this->model->getByStatus('actif');
-        $options = [];
-        $options[''] = 'Sélectionner une commande';
-        foreach ($items as $i) {
-            $options[$i['code_commande']] = $i['code_commande'];
-        }
-        $this->json(['options' => $options]);
-    }
-
-    public function listByOrder()
-    {
-        $this->requireAuth();
-        $code = $this->post('code');
         if (!$code) {
             $this->error('Code commande requis');
             return;
         }
 
-        $ligneModel = new ModelCommandeDetail();
-        $lignes = $ligneModel->getByCommande($code);
-        $this->json(['data' => $lignes]);
+        $item = $this->model->getByCodeWithDetails($code);
+        if (!$item) {
+            $this->error('Commande introuvable');
+            return;
+        }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
+
+        $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'acceptee', updated_at_commande = NOW() WHERE code_commande = ?";
+        $stmt = $this->model->getCon()->prepare($sql);
+        if ($stmt->execute([$code])) {
+            // Notification au client
+            NotificationService::notifyOrderAccepted(
+                $item['client_code'],
+                $code,
+                $item['libelle_pressing'] ?? 'Le pressing'
+            );
+            $this->success('Commande acceptée avec succès !', ['reload' => true]);
+        } else {
+            $this->error('Erreur lors de l\'acceptation');
+        }
+    }
+
+    public function refuser()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $code = $this->post('code_commande');
+        $motif = trim($this->post('motif', ''));
+
+        if (!$code) {
+            $this->error('Code commande requis');
+            return;
+        }
+
+        $item = $this->model->getByCodeWithDetails($code);
+        if (!$item) {
+            $this->error('Commande introuvable');
+            return;
+        }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
+
+        $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'refusee', updated_at_commande = NOW() WHERE code_commande = ?";
+        $stmt = $this->model->getCon()->prepare($sql);
+        if ($stmt->execute([$code])) {
+            // Notification au client
+            NotificationService::notifyOrderRejected(
+                $item['client_code'],
+                $code,
+                $item['libelle_pressing'] ?? 'Le pressing',
+                $motif ?: null
+            );
+            $this->success('Commande refusée', ['reload' => true]);
+        } else {
+            $this->error('Erreur lors du refus');
+        }
+    }
+
+    public function saisirDevisColis()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $code = $this->post('code_commande');
+        $montant = (float) $this->post('montant_total');
+
+        if (!$code || $montant <= 0) {
+            $this->error('Code commande et montant valide requis');
+            return;
+        }
+
+        $item = $this->model->getByCodeWithDetails($code);
+        if (!$item) {
+            $this->error('Commande introuvable');
+            return;
+        }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
+
+        $sql = "UPDATE " . TABLES::COMMANDES . " SET montant_total_commande = ?, statut_suivi_commande = 'prix_a_valider', updated_at_commande = NOW() WHERE code_commande = ?";
+        $stmt = $this->model->getCon()->prepare($sql);
+        if ($stmt->execute([$montant, $code])) {
+            // Notification au client pour validation du devis
+            NotificationService::notifyColisPriceToConfirm(
+                $item['client_code'],
+                $code,
+                $montant,
+                $item['libelle_pressing'] ?? 'Le pressing'
+            );
+            $this->success('Devis enregistré ! Le client a été notifié pour confirmation.', ['reload' => true]);
+        } else {
+            $this->error('Erreur lors de l\'enregistrement du devis');
+        }
+    }
+
+    public function lancerTraitement()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $code = $this->post('code_commande');
+
+        if (!$code) {
+            $this->error('Code commande requis');
+            return;
+        }
+
+        $item = $this->model->getByCodeWithDetails($code);
+        if (!$item) {
+            $this->error('Commande introuvable');
+            return;
+        }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
+
+        $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'en_traitement', updated_at_commande = NOW() WHERE code_commande = ?";
+        $stmt = $this->model->getCon()->prepare($sql);
+        if ($stmt->execute([$code])) {
+            // Notification au client
+            NotificationService::notifyProcessingStarted($item['client_code'], $code);
+            $this->success('Traitement du linge démarré !', ['reload' => true]);
+        } else {
+            $this->error('Erreur lors de la mise à jour');
+        }
+    }
+
+    public function marquerPrete()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $code = $this->post('code_commande');
+
+        if (!$code) {
+            $this->error('Code commande requis');
+            return;
+        }
+
+        $item = $this->model->getByCodeWithDetails($code);
+        if (!$item) {
+            $this->error('Commande introuvable');
+            return;
+        }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
+
+        $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'prete', updated_at_commande = NOW() WHERE code_commande = ?";
+        $stmt = $this->model->getCon()->prepare($sql);
+        if ($stmt->execute([$code])) {
+            // Notification au client
+            NotificationService::notifyOrderReady($item['client_code'], $code);
+            $this->success('Commande marquée comme prête !', ['reload' => true]);
+        } else {
+            $this->error('Erreur lors de la mise à jour');
+        }
+    }
+
+    public function assignerLivreur()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $code = $this->post('code_commande');
+        $livreurCode = $this->post('livreur_code');
+        $typeMission = $this->post('type_mission') ?: 'livraison'; // 'collecte' ou 'livraison'
+
+        if (!$code || !$livreurCode) {
+            $this->error('Commande et livreur requis');
+            return;
+        }
+
+        $item = $this->model->getByCodeWithDetails($code);
+        if (!$item) {
+            $this->error('Commande introuvable');
+            return;
+        }
+
+        $this->requirePressingAccess($item['pressing_code'] ?? '');
+
+        // Récupérer le nom du livreur
+        $livreurModel = new ModelLivreur();
+        $livreur = $this->validator->getByElement(TABLES::LIVREURS, 'code_livreur', $livreurCode);
+        $nomLivreur = $livreur ? ($livreur['nom_livreur'] ?? 'Le livreur') : 'Le livreur';
+
+        // Créer la mission
+        $missionModel = new ModelMission();
+        $missionCode = $this->validator->generateCode(TABLES::MISSIONS, 'code_mission', 'MIS-', 6);
+        $missionData = [
+            'code_mission' => $missionCode,
+            'commande_code' => $code,
+            'livreur_code' => $livreurCode,
+            'type_mission' => $typeMission,
+            'adresse_mission' => $item['adresse_client'] ?? '',
+            'statut_mission' => 'en_attente',
+            'created_at_mission' => date('Y-m-d H:i:s')
+        ];
+        $missionModel->create($missionData);
+
+        // Mettre à jour le statut de suivi de la commande
+        $nouveauStatut = ($typeMission === 'collecte') ? 'collecte_programmee' : 'en_livraison';
+        $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = ?, updated_at_commande = NOW() WHERE code_commande = ?";
+        $stmt = $this->model->getCon()->prepare($sql);
+        $stmt->execute([$nouveauStatut, $code]);
+
+        // Notifications
+        if ($typeMission === 'collecte') {
+            NotificationService::notifyDriverAssigned($item['client_code'], $code, $nomLivreur);
+        } else {
+            NotificationService::notifyDeliveryEnRoute($item['client_code'], $code, $nomLivreur);
+        }
+
+        $this->success("Livreur {$nomLivreur} assigné avec succès !", ['reload' => true]);
     }
 
     public function transition()
@@ -222,13 +439,14 @@ class CommandeController extends BaseController
             return;
         }
 
-        $allowed = ['creee','collectee','en_traitement','prete','livree','annulee'];
+        $allowed = array_keys(STATUTS::SUIVI_COMMANDES);
+
         if (!in_array($next, $allowed, true)) {
-            $this->error('Statut de suivi invalide');
+            $this->error('Statut de suivi non reconnu');
             return;
         }
 
-        $item = $this->model->getById($id);
+        $item = $this->model->getWithDetails($id);
         if (!$item) {
             $this->error('Commande introuvable');
             return;
@@ -236,14 +454,43 @@ class CommandeController extends BaseController
 
         $this->requirePressingAccess($item['pressing_code'] ?? '');
 
-        $data = [
-            'id_commande' => $id,
-            'statut_suivi_commande' => $next,
-            'updated_at_commande' => date('Y-m-d H:i:s')
-        ];
+        $sql = "UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = ?, updated_at_commande = NOW() WHERE id_commande = ?";
+        $stmt = $this->model->getCon()->prepare($sql);
 
-        if ($this->model->update($data)) {
-            $this->success('Statut de suivi mis à jour');
+        if ($stmt->execute([$next, $id])) {
+            // Déclenchement automatique de la notification selon le statut
+            $clientCode = $item['client_code'] ?? '';
+            $orderCode = $item['code_commande'] ?? '';
+            $pressingName = $item['libelle_pressing'] ?? 'Le pressing';
+
+            switch ($next) {
+                case 'acceptee':
+                    NotificationService::notifyOrderAccepted($clientCode, $orderCode, $pressingName);
+                    break;
+                case 'refusee':
+                    NotificationService::notifyOrderRejected($clientCode, $orderCode, $pressingName);
+                    break;
+                case 'collectee':
+                    NotificationService::notifyCollectionCompleted($clientCode, $orderCode);
+                    break;
+                case 'recue_pressing':
+                    NotificationService::notifyReceivedAtPressing($clientCode, $orderCode, $pressingName);
+                    break;
+                case 'en_traitement':
+                    NotificationService::notifyProcessingStarted($clientCode, $orderCode);
+                    break;
+                case 'prete':
+                    NotificationService::notifyOrderReady($clientCode, $orderCode);
+                    break;
+                case 'en_livraison':
+                    NotificationService::notifyDeliveryEnRoute($clientCode, $orderCode);
+                    break;
+                case 'livree':
+                    NotificationService::notifyOrderDelivered($clientCode, $orderCode);
+                    break;
+            }
+
+            $this->success("Statut de la commande mis à jour vers {$next}", ['reload' => true]);
         } else {
             $this->error('Erreur lors de la mise à jour');
         }

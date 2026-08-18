@@ -108,7 +108,7 @@ class MissionController extends BaseController
             }
         }
 
-        $statut = in_array($this->post('statut_mission'), ['en_attente', 'en_cours', 'terminee', 'annulee']) ? $this->post('statut_mission') : 'en_attente';
+        $statut = in_array($this->post('statut_mission'), STATUTS::MISSIONS) ? $this->post('statut_mission') : 'en_attente';
 
         $data = [
             'commande_code' => $this->post('commande_code'),
@@ -157,18 +157,43 @@ class MissionController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $item = null;
+        $id = null;
+
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) {
-                header('Location: ' . RACINE . 'mission/list');
-                exit();
-            }
-            $encryptedId = $this->validator->crypter($id);
+            $item = $this->model->getWithDetails($id);
         } catch (Exception $e) {
+            $item = null;
+        }
+
+        if (!$item && is_numeric($details)) {
+            $item = $this->model->getWithDetails((int)$details);
+            if ($item) $id = $item['id_mission'];
+        }
+
+        if (!$item) {
+            $item = $this->validator->getByElement(TABLES::MISSIONS, 'code_mission', $details);
+            if ($item) {
+                $id = $item['id_mission'];
+                $item = $this->model->getWithDetails($id);
+            }
+        }
+
+        if (!$item) {
             header('Location: ' . RACINE . 'mission/list');
             exit();
         }
+
+        if ($this->isLivreur()) {
+            $livreurCode = $this->getCurrentLivreurCode();
+            if ($livreurCode === null || ($item['livreur_code'] ?? '') !== $livreurCode) {
+                header('Location: ' . RACINE . 'mission/list');
+                exit();
+            }
+        }
+
+        $encryptedId = $this->validator->crypter($id);
 
         $this->loadView('../views/missions/details.php', [
             'mission' => $item,
@@ -210,5 +235,150 @@ class MissionController extends BaseController
     {
         $this->requireAuth();
         $this->loadView('../views/missions/edit.php', ['mission' => []]);
+    }
+
+    // === ACTIONS LIVREUR TERRAIN & NOTIFICATIONS CLIENT ===
+
+    public function enRouteCollecte()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $codeMission = $this->post('code_mission');
+
+        $mission = $this->validator->getByElement(TABLES::MISSIONS, 'code_mission', $codeMission);
+        if (!$mission) {
+            $this->error('Mission introuvable');
+            return;
+        }
+
+        $cmdModel = new ModelCommande();
+        $commande = $cmdModel->getByCodeWithDetails($mission['commande_code']);
+        if (!$commande) {
+            $this->error('Commande associée introuvable');
+            return;
+        }
+
+        // Récupérer le nom du livreur
+        $livreur = $this->validator->getByElement(TABLES::LIVREURS, 'code_livreur', $mission['livreur_code']);
+        $nomLivreur = $livreur ? ($livreur['nom_livreur'] ?? 'Le coursier') : 'Le coursier';
+
+        // Mettre à jour la mission & la commande
+        $this->model->getCon()->prepare("UPDATE " . TABLES::MISSIONS . " SET statut_mission = 'en_cours' WHERE code_mission = ?")->execute([$codeMission]);
+        $this->model->getCon()->prepare("UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'livreur_en_route_collecte' WHERE code_commande = ?")->execute([$mission['commande_code']]);
+
+        // Notification client
+        NotificationService::notifyDriverEnRoute($commande['client_code'], $commande['code_commande'], $nomLivreur);
+
+        $this->success('Statut mis à jour : vous êtes en route pour la collecte !', ['reload' => true]);
+    }
+
+    public function lingeCollecte()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $codeMission = $this->post('code_mission');
+
+        $mission = $this->validator->getByElement(TABLES::MISSIONS, 'code_mission', $codeMission);
+        if (!$mission) {
+            $this->error('Mission introuvable');
+            return;
+        }
+
+        $cmdModel = new ModelCommande();
+        $commande = $cmdModel->getByCodeWithDetails($mission['commande_code']);
+
+        // Mettre à jour la commande
+        $this->model->getCon()->prepare("UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'collectee' WHERE code_commande = ?")->execute([$mission['commande_code']]);
+
+        // Notification client
+        if ($commande) {
+            NotificationService::notifyCollectionCompleted($commande['client_code'], $commande['code_commande']);
+        }
+
+        $this->success('Linge collecté avec succès chez le client !', ['reload' => true]);
+    }
+
+    public function deposeAuPressing()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $codeMission = $this->post('code_mission');
+
+        $mission = $this->validator->getByElement(TABLES::MISSIONS, 'code_mission', $codeMission);
+        if (!$mission) {
+            $this->error('Mission introuvable');
+            return;
+        }
+
+        $cmdModel = new ModelCommande();
+        $commande = $cmdModel->getByCodeWithDetails($mission['commande_code']);
+
+        // Clôturer la mission de collecte & mettre la commande en "recue_pressing"
+        $this->model->getCon()->prepare("UPDATE " . TABLES::MISSIONS . " SET statut_mission = 'terminee' WHERE code_mission = ?")->execute([$codeMission]);
+        $this->model->getCon()->prepare("UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'recue_pressing' WHERE code_commande = ?")->execute([$mission['commande_code']]);
+
+        // Notification client
+        if ($commande) {
+            NotificationService::notifyReceivedAtPressing($commande['client_code'], $commande['code_commande'], $commande['libelle_pressing'] ?? 'Le pressing');
+        }
+
+        $this->success('Linge déposé au pressing ! Mission de collecte terminée.', ['reload' => true]);
+    }
+
+    public function enRouteLivraison()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $codeMission = $this->post('code_mission');
+
+        $mission = $this->validator->getByElement(TABLES::MISSIONS, 'code_mission', $codeMission);
+        if (!$mission) {
+            $this->error('Mission introuvable');
+            return;
+        }
+
+        $cmdModel = new ModelCommande();
+        $commande = $cmdModel->getByCodeWithDetails($mission['commande_code']);
+
+        $livreur = $this->validator->getByElement(TABLES::LIVREURS, 'code_livreur', $mission['livreur_code']);
+        $nomLivreur = $livreur ? ($livreur['nom_livreur'] ?? 'Le coursier') : 'Le coursier';
+
+        // Mettre à jour la mission & la commande
+        $this->model->getCon()->prepare("UPDATE " . TABLES::MISSIONS . " SET statut_mission = 'en_cours' WHERE code_mission = ?")->execute([$codeMission]);
+        $this->model->getCon()->prepare("UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'en_livraison' WHERE code_commande = ?")->execute([$mission['commande_code']]);
+
+        // Notification client
+        if ($commande) {
+            NotificationService::notifyDeliveryEnRoute($commande['client_code'], $commande['code_commande'], $nomLivreur);
+        }
+
+        $this->success('Statut mis à jour : vous êtes en route pour la livraison !', ['reload' => true]);
+    }
+
+    public function remiseAuClient()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $codeMission = $this->post('code_mission');
+
+        $mission = $this->validator->getByElement(TABLES::MISSIONS, 'code_mission', $codeMission);
+        if (!$mission) {
+            $this->error('Mission introuvable');
+            return;
+        }
+
+        $cmdModel = new ModelCommande();
+        $commande = $cmdModel->getByCodeWithDetails($mission['commande_code']);
+
+        // Clôturer la mission de livraison & mettre la commande en "livree"
+        $this->model->getCon()->prepare("UPDATE " . TABLES::MISSIONS . " SET statut_mission = 'terminee' WHERE code_mission = ?")->execute([$codeMission]);
+        $this->model->getCon()->prepare("UPDATE " . TABLES::COMMANDES . " SET statut_suivi_commande = 'livree' WHERE code_commande = ?")->execute([$mission['commande_code']]);
+
+        // Notification client
+        if ($commande) {
+            NotificationService::notifyOrderDelivered($commande['client_code'], $commande['code_commande']);
+        }
+
+        $this->success('Linge remis au client ! Commande livrée et clôturée avec succès.', ['reload' => true]);
     }
 }

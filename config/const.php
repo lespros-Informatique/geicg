@@ -136,8 +136,35 @@ class STATUTS
     // MISSIONS
     public const MISSIONS            = ['en_attente','en_cours','terminee','annulee'];
 
-    // HORAIRES PRESSINGS
-    public const HORAIRES_PRESSINGS  = ['actif','inactif'];
+    // SUIVI COMMANDES
+    public const SUIVI_COMMANDES = [
+        'creee' => 'Commande reçue',
+        'acceptee' => 'Acceptée',
+        'refusee' => 'Refusée',
+        'collecte_programmee' => 'Collecte programmée',
+        'collecte_assignee' => 'Livreur assigné (Collecte)',
+        'livreur_en_route_collecte' => 'Livreur en route pour la collecte',
+        'collectee' => 'Linge collecté',
+        'recue_pressing' => 'Reçue au pressing',
+        'prix_a_valider' => 'Devis à valider',
+        'en_traitement' => 'En traitement',
+        'prete' => 'Prête au pressing',
+        'en_livraison' => 'En cours de livraison',
+        'livree' => 'Livrée au client',
+        'annulee' => 'Annulée'
+    ];
+
+    // TYPES DE COMMANDES
+    public const TYPES_COMMANDES = [
+        'detaillee' => 'Détaillée',
+        'colis' => 'Collecte au sac sans détail'
+    ];
+
+    // TYPES DE MISSIONS
+    public const TYPES_MISSIONS = [
+        'collecte' => 'Collecte',
+        'livraison' => 'Livraison'
+    ];
 
     // NOTIFICATIONS
     public const NOTIFICATIONS       = ['envoyee','echec'];

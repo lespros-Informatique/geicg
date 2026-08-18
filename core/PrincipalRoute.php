@@ -6,6 +6,8 @@ require_once __DIR__ . '/../models/Validator.php';
 
 require_once __DIR__ . '/../core/PressingAware.php';
 
+require_once __DIR__ . '/../core/NotificationService.php';
+
 require_once __DIR__ . '/../core/BaseController.php';
 
 require_once __DIR__ . '/../core/BaseModel.php';

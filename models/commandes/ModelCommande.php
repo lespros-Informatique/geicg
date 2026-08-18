@@ -15,15 +15,35 @@ class ModelCommande extends BaseModel
     public function getWithDetails(int $id): array
     {
         try {
-            $sql = "SELECT cmd.*, cl.nom_client, cl.telephone_client, cl.quartier_client, cl.adresse_client
+            $sql = "SELECT cmd.*, cl.nom_client, cl.telephone_client, cl.quartier_client, cl.adresse_client,
+                           p.libelle_pressing, p.telephone_pressing, p.adresse_pressing
                     FROM {$this->table} cmd
-                    INNER JOIN clients cl ON cl.code_client = cmd.client_code
+                    LEFT JOIN clients cl ON cl.code_client = cmd.client_code
+                    LEFT JOIN pressings p ON p.code_pressing = cmd.pressing_code
                     WHERE cmd.{$this->primaryKey} = ?";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute([$id]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log('[ModelCommande::getWithDetails] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getByCodeWithDetails(string $code): array
+    {
+        try {
+            $sql = "SELECT cmd.*, cl.nom_client, cl.telephone_client, cl.quartier_client, cl.adresse_client,
+                           p.libelle_pressing, p.telephone_pressing, p.adresse_pressing
+                    FROM {$this->table} cmd
+                    LEFT JOIN clients cl ON cl.code_client = cmd.client_code
+                    LEFT JOIN pressings p ON p.code_pressing = cmd.pressing_code
+                    WHERE cmd.code_commande = ? LIMIT 1";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$code]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log('[ModelCommande::getByCodeWithDetails] ' . $e->getMessage());
             return [];
         }
     }

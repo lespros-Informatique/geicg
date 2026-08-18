@@ -139,22 +139,63 @@ class PressingController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $item = null;
+        $id = null;
+
+        // Tenter le décryptage de l'identifiant
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) {
-                header('Location: ' . RACINE . 'pressing/list');
-                exit();
-            }
-            $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
+            $item = null;
+        }
+
+        // Si non trouvé par ID crypté, chercher par code_pressing
+        if (!$item) {
+            $item = $this->validator->getByElement(TABLES::PRESSINGS, 'code_pressing', $details);
+            if ($item) {
+                $id = $item['id_pressing'];
+            }
+        }
+
+        // Si non trouvé, chercher par ID direct numérique
+        if (!$item && is_numeric($details)) {
+            $item = $this->model->getById((int)$details);
+            if ($item) {
+                $id = $item['id_pressing'];
+            }
+        }
+
+        if (!$item) {
             header('Location: ' . RACINE . 'pressing/list');
             exit();
         }
 
+        $encryptedId = $this->validator->crypter($id);
+        $pressingCode = $item['code_pressing'];
+
+        // Si l'utilisateur est un gérant de pressing (ROLE-PRO), s'assurer qu'il accède bien à son propre pressing
+        $this->requirePressingAccess($pressingCode);
+
+        // Chargement de l'écosystème 360° du pressing
+        $stats = $this->model->getPressingStats($pressingCode);
+        $orders = $this->model->getPressingOrders($pressingCode, 100);
+        $tarifs = $this->model->getPressingTarifs($pressingCode);
+        $horaires = $this->model->getPressingHoraires($pressingCode);
+        $clients = $this->model->getPressingClients($pressingCode);
+        $missions = $this->model->getPressingMissions($pressingCode, 100);
+        $abonnement = $this->model->getPressingAbonnement($pressingCode);
+
         $this->loadView('../views/pressings/details.php', [
             'pressing' => $item,
-            'encryptedId' => $encryptedId
+            'encryptedId' => $encryptedId,
+            'stats' => $stats,
+            'orders' => $orders,
+            'tarifs' => $tarifs,
+            'horaires' => $horaires,
+            'clients' => $clients,
+            'missions' => $missions,
+            'abonnement' => $abonnement
         ]);
     }
 

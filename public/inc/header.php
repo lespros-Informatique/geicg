@@ -11,6 +11,10 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        window.RACINE = '<?= RACINE ?>';
+        window.LINK = '<?= RACINE ?>';
+    </script>
 </head>
 <body>
     <input type="hidden" id="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
@@ -58,5 +62,22 @@
         } catch (Exception $e) {
             $currentRoles = [];
         }
+    }
+
+    $currentUserName  = $_SESSION[USERS_AUTH]['nom_user'] ?? ($_SESSION[USERS_AUTH]['login_user'] ?? 'Utilisateur');
+    $currentUserEmail = $_SESSION[USERS_AUTH]['email_user'] ?? '';
+    $currentUserPhoto = !empty($_SESSION[USERS_AUTH]['photo_user']) ? RACINE . 'public/assets/images/users/' . $_SESSION[USERS_AUTH]['photo_user'] : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
+
+    // Notifications récentes
+    $recentAdminNotifs = [];
+    $unreadNotifsCount = 0;
+    try {
+        if (isset($db)) {
+            $stmtN = $db->query("SELECT * FROM " . TABLES::NOTIFICATIONS . " ORDER BY id_notification DESC LIMIT 5");
+            $recentAdminNotifs = $stmtN->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unreadNotifsCount = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::NOTIFICATIONS . " WHERE lu_notification = 0")->fetchColumn();
+        }
+    } catch (Exception $e) {
+        $recentAdminNotifs = [];
     }
     ?>
