@@ -118,6 +118,49 @@ class NotificationService
     }
 
     /**
+     * Envoie une notification dédiée au pressing (In-App)
+     */
+    public static function notifyPressing(
+        string $pressingCode,
+        string $type,
+        string $title,
+        string $message,
+        ?string $referenceCode = null,
+        array $extraData = []
+    ): ?string {
+        if (empty($pressingCode)) {
+            return null;
+        }
+
+        $codeNotification = 'NOT-' . strtoupper(bin2hex(random_bytes(4))) . '-' . substr(time(), -4);
+        $dataJsonStr = !empty($extraData) ? json_encode($extraData, JSON_UNESCAPED_UNICODE) : null;
+
+        try {
+            $pdo = self::getDb();
+            $stmt = $pdo->prepare("
+                INSERT INTO `notifications` 
+                (`code_notification`, `pressing_code`, `type_notification`, `titre_notification`, `message_notification`, `reference_code`, `data_json`, `lu_notification`, `statut_notification`) 
+                VALUES 
+                (:code, :pressing_code, :type, :title, :message, :reference_code, :data_json, 0, 'envoyee')
+            ");
+            $stmt->execute([
+                ':code' => $codeNotification,
+                ':pressing_code' => $pressingCode,
+                ':type' => $type,
+                ':title' => $title,
+                ':message' => $message,
+                ':reference_code' => $referenceCode,
+                ':data_json' => $dataJsonStr
+            ]);
+        } catch (Exception $e) {
+            error_log("Erreur BDD NotificationService (Pressing): " . $e->getMessage());
+            return null;
+        }
+
+        return $codeNotification;
+    }
+
+    /**
      * Envoi Push OneSignal REST API
      */
     private static function sendOneSignalPush(

@@ -1,6 +1,8 @@
 <?php
 
 require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../config/GeniusPayConfig.php';
+require_once __DIR__ . '/../core/GeniusPayService.php';
 
 require_once __DIR__ . '/../models/Validator.php';
 
@@ -25,6 +27,7 @@ require_once __DIR__ . '/../models/users_pressings/ModelUserPressing.php';
 require_once __DIR__ . '/../models/commandes/ModelCommande.php';
 require_once __DIR__ . '/../models/commande_details/ModelCommandeDetail.php';
 require_once __DIR__ . '/../models/paiements/ModelPaiement.php';
+require_once __DIR__ . '/../models/retraits/ModelRetrait.php';
 require_once __DIR__ . '/../models/pressings/ModelPressing.php';
 require_once __DIR__ . '/../models/livreurs/ModelLivreur.php';
 require_once __DIR__ . '/../models/missions/ModelMission.php';
@@ -63,3 +66,5 @@ require_once __DIR__ . '/../controllers/roles/RoleController.php';
 require_once __DIR__ . '/../controllers/permissions/PermissionController.php';
 require_once __DIR__ . '/../controllers/commandes/CommandeController.php';
 require_once __DIR__ . '/../controllers/paiements/PaiementController.php';
+require_once __DIR__ . '/../controllers/retraits/RetraitController.php';
+require_once __DIR__ . '/../controllers/webhooks/GeniusPayWebhookController.php';

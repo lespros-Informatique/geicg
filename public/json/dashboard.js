@@ -115,6 +115,18 @@ $(document).ready(function() {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
+
+            // 5. Remplissage du solde portefeuille en direct
+            if ($('#dash-wallet-balance').length) {
+                $.getJSON(baseApi + 'retrait/apiSolde', function(r) {
+                    if (r && r.status && r.data) {
+                        const soldeDisp = Number(r.data.solde_disponible || 0).toLocaleString('fr-FR') + ' FCFA';
+                        $('#dash-wallet-balance').text(soldeDisp);
+                    }
+                }).fail(function() {
+                    $('#dash-wallet-balance').text('0 FCFA');
+                });
+            }
         });
     }
 

@@ -56,6 +56,9 @@ $steps = STATUTS::SUIVI_COMMANDES;
           </p>
         </div>
         <div style="display: flex; gap: 8px;">
+          <a href="<?= RACINE ?>commande/ticket/<?= $encryptedId ?>" target="_blank" class="btn btn-outline-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE;">
+            <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer Reçu
+          </a>
           <a href="<?= RACINE ?>commande/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour aux commandes
           </a>

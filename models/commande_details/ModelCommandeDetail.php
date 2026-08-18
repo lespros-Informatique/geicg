@@ -24,4 +24,27 @@ class ModelCommandeDetail extends BaseModel
             return [];
         }
     }
+
+    public function getByCommandeWithArticles(string $commandeCode): array
+    {
+        try {
+            $sql = "SELECT cd.*, a.libelle_article, s.libelle_service 
+                    FROM {$this->table} cd
+                    LEFT JOIN articles_pressings a ON a.code_article = cd.article_code
+                    LEFT JOIN services s ON s.code_service = cd.service_code
+                    WHERE cd.commande_code = ? 
+                    ORDER BY cd.created_at_commande_detail ASC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$commandeCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log('[ModelCommandeDetail::getByCommandeWithArticles] ' . $e->getMessage());
+            return $this->getByCommande($commandeCode);
+        }
+    }
+
+    public function getByCommandeCode(string $commandeCode): array
+    {
+        return $this->getByCommandeWithArticles($commandeCode);
+    }
 }

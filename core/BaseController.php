@@ -185,7 +185,7 @@ abstract class BaseController
 
     protected function isSuperAdmin(): bool
     {
-        return $this->hasRole(ROLES::SUPER_ADMIN);
+        return $this->hasRole(ROLES::SUPER_ADMIN) || $this->hasRole('ROLE-SUPER-ADMIN') || $this->hasRole('ROLE-ADMIN') || $this->hasRole('ADMIN');
     }
 
     protected function isPressing(): bool

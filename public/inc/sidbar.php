@@ -14,10 +14,16 @@
         <!-- === SUPER ADMIN : HUB PRESSINGS & GESTION GLOBALE === -->
         <div class="nav-section">
             <div class="nav-section-title">
-                <i data-lucide="store"></i> <span>Partenaires</span>
+                <i data-lucide="store"></i> <span>Partenaires & Finances</span>
             </div>
             <a href="<?= RACINE ?>pressing/list" class="nav-item sub">
                 <i data-lucide="map-pin"></i> <span>Pressings (Hub 360°)</span>
+            </a>
+            <a href="<?= RACINE ?>retrait/list" class="nav-item sub">
+                <i data-lucide="wallet"></i> <span>Retraits Pressings</span>
+            </a>
+            <a href="<?= RACINE ?>paiement/list" class="nav-item sub">
+                <i data-lucide="receipt"></i> <span>Paiements Réseau</span>
             </a>
         </div>
 
@@ -65,6 +71,9 @@
             </div>
             <a href="<?= RACINE ?>commande/list" class="nav-item sub">
                 <i data-lucide="clipboard-list"></i> <span>Mes Commandes</span>
+            </a>
+            <a href="<?= RACINE ?>retrait/list" class="nav-item sub">
+                <i data-lucide="wallet"></i> <span>Mon Portefeuille & Retraits</span>
             </a>
             <a href="<?= RACINE ?>client/list" class="nav-item sub">
                 <i data-lucide="contact"></i> <span>Mes Clients</span>

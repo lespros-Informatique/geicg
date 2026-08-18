@@ -38,12 +38,39 @@ $isLivreur = isset($isLivreur) ? $isLivreur : false;
               <i class="fa fa-route"></i> Mes Tournées
             </a>
           <?php else: ?>
+            <a href="<?= RACINE ?>retrait/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 10px 18px; border-radius: 10px; background: #ECFDF5; color: #059669; border: 1.5px solid #A7F3D0;">
+              <i data-lucide="wallet" style="width: 18px; height: 18px;"></i> Mon Portefeuille & Retraits
+            </a>
             <a href="<?= RACINE ?>commande/list" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 10px 18px; border-radius: 10px;">
               <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle commande
             </a>
           <?php endif; ?>
         </div>
       </div>
+
+      <!-- BANDEAU PORTEFEUILLE & RETRAITS MOBILE MONEY POUR LE PRESSING -->
+      <?php if (!empty($isPressing)): ?>
+        <div style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; color: #FFFFFF; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+              <i data-lucide="wallet"></i>
+            </div>
+            <div>
+              <span style="font-size: 12px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Portefeuille & Solde En Ligne (GeniusPay)</span>
+              <div style="display: flex; align-items: baseline; gap: 10px;">
+                <h2 id="dash-wallet-balance" style="font-size: 26px; font-weight: 900; color: #10B981; margin: 2px 0 0 0;">0 FCFA</h2>
+                <small style="color: #94A3B8; font-size: 12px;">Disponible au retrait</small>
+              </div>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #CBD5E1;">Vos encaissements en ligne sont automatiquement crédités ici. Demandez un reversement à tout moment.</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="<?= RACINE ?>retrait/list" class="btn btn-primary" style="background: #10B981; border-color: #10B981; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px;">
+              <i data-lucide="arrow-up-right" style="width: 18px; height: 18px;"></i> Demander un Retrait
+            </a>
+          </div>
+        </div>
+      <?php endif; ?>
 
       <!-- CARTES KPI PRINCIPALES -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 24px;">
@@ -343,6 +370,16 @@ $isLivreur = isset($isLivreur) ? $isLivreur : false;
               <div>
                 <strong style="color: #1E293B; font-size: 13px; display: block;">Mes Livreurs</strong>
                 <small style="color: #64748B;">Équipe de coursiers</small>
+              </div>
+            </a>
+
+            <a href="<?= RACINE ?>retrait/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0; transition: all 0.15s ease;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                <i class="fa fa-wallet"></i>
+              </div>
+              <div>
+                <strong style="color: #1E293B; font-size: 13px; display: block;">Mon Portefeuille</strong>
+                <small style="color: #64748B;">Solde & retraits Wave/OM</small>
               </div>
             </a>
 

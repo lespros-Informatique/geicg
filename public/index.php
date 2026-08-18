@@ -26,6 +26,8 @@ $favoriController = new FavoriController();
 $notificationController = new NotificationController();
 $panierController = new PanierController();
 $panierDetailController = new PanierDetailController();
+$retraitController = new RetraitController();
+$geniusPayWebhookController = new GeniusPayWebhookController();
 
 $route->addRoute('/', [$homeController, 'index']);
 $route->addRoute('/home/dashboardData', [$homeController, 'dashboardData']);
@@ -125,19 +127,22 @@ $route->addRoute('/client/edit', [$clientController, 'edit']);
 $route->addRoute('/client/changer', [$clientController, 'changer']);
 $route->addRoute('/client/edition/{param}', [$clientController, 'edition']);
 $route->addRoute('/client/details/{param}', [$clientController, 'details']);
+$route->addRoute('/client/getActive', [$clientController, 'getActive']);
+$route->addRoute('/client/formulaire', [$clientController, 'formulaire']);
 
-$route->addRoute('/user/profil', [$userController, 'profil']);
 $route->addRoute('/user/list', [$userController, 'list']);
 $route->addRoute('/user/apiList', [$userController, 'apiList']);
-$route->addRoute('/user/decon', [$userController, 'decon']);
-$route->addRoute('/user/details/{param}', [$userController, 'details']);
-$route->addRoute('/user/edition/{param}', [$userController, 'edition']);
-$route->addRoute('/user/connexion', [$userController, 'connexion']);
 $route->addRoute('/user/add', [$userController, 'add']);
 $route->addRoute('/user/edit', [$userController, 'edit']);
-$route->addRoute('/user/editPassword', [$userController, 'editPassword']);
 $route->addRoute('/user/changer', [$userController, 'changer']);
-$route->addRoute('/user/setRole', [$userController, 'setRole']);
+$route->addRoute('/user/login', [$userController, 'login']);
+$route->addRoute('/user/logout', [$userController, 'logout']);
+$route->addRoute('/user/connexion', [$userController, 'connexion']);
+$route->addRoute('/user/profil', [$userController, 'profil']);
+$route->addRoute('/user/edition/{param}', [$userController, 'edition']);
+$route->addRoute('/user/details/{param}', [$userController, 'details']);
+$route->addRoute('/user/getActive', [$userController, 'getActive']);
+$route->addRoute('/user/formulaire', [$userController, 'formulaire']);
 
 $route->addRoute('/commande/list', [$commandeController, 'list']);
 $route->addRoute('/commande/apiList', [$commandeController, 'apiList']);
@@ -146,13 +151,15 @@ $route->addRoute('/commande/edit', [$commandeController, 'edit']);
 $route->addRoute('/commande/changer', [$commandeController, 'changer']);
 $route->addRoute('/commande/edition/{param}', [$commandeController, 'edition']);
 $route->addRoute('/commande/details/{param}', [$commandeController, 'details']);
-$route->addRoute('/commande/transition', [$commandeController, 'transition']);
+$route->addRoute('/commande/getActive', [$commandeController, 'getActive']);
+$route->addRoute('/commande/formulaire', [$commandeController, 'formulaire']);
+$route->addRoute('/commande/saisirDevisColis', [$commandeController, 'saisirDevisColis']);
 $route->addRoute('/commande/accepter', [$commandeController, 'accepter']);
 $route->addRoute('/commande/refuser', [$commandeController, 'refuser']);
-$route->addRoute('/commande/saisirDevisColis', [$commandeController, 'saisirDevisColis']);
 $route->addRoute('/commande/lancerTraitement', [$commandeController, 'lancerTraitement']);
 $route->addRoute('/commande/marquerPrete', [$commandeController, 'marquerPrete']);
 $route->addRoute('/commande/assignerLivreur', [$commandeController, 'assignerLivreur']);
+$route->addRoute('/commande/ticket/{param}', [$commandeController, 'ticket']);
 
 $route->addRoute('/paiement/list', [$paiementController, 'list']);
 $route->addRoute('/paiement/apiList', [$paiementController, 'apiList']);
@@ -162,6 +169,15 @@ $route->addRoute('/paiement/changer', [$paiementController, 'changer']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);
 $route->addRoute('/paiement/details/{param}', [$paiementController, 'details']);
 
+$route->addRoute('/retrait/list', [$retraitController, 'list']);
+$route->addRoute('/retrait/apiList', [$retraitController, 'apiList']);
+$route->addRoute('/retrait/apiSolde', [$retraitController, 'apiSolde']);
+$route->addRoute('/retrait/demander', [$retraitController, 'demander']);
+$route->addRoute('/retrait/changerStatut', [$retraitController, 'changerStatut']);
+$route->addRoute('/retrait/simulerWebhookCashout', [$retraitController, 'simulerWebhookCashout']);
+
+$route->addRoute('/webhooks/geniuspay', [$geniusPayWebhookController, 'handle']);
+
 $route->addRoute('/ville/list', [$villeController, 'list']);
 $route->addRoute('/ville/apiList', [$villeController, 'apiList']);
 $route->addRoute('/ville/add', [$villeController, 'add']);
@@ -170,6 +186,7 @@ $route->addRoute('/ville/changer', [$villeController, 'changer']);
 $route->addRoute('/ville/edition/{param}', [$villeController, 'edition']);
 $route->addRoute('/ville/details/{param}', [$villeController, 'details']);
 $route->addRoute('/ville/getActive', [$villeController, 'getActive']);
+$route->addRoute('/ville/formulaire', [$villeController, 'formulaire']);
 
 $route->addRoute('/quartier/list', [$quartierController, 'list']);
 $route->addRoute('/quartier/apiList', [$quartierController, 'apiList']);
@@ -179,16 +196,17 @@ $route->addRoute('/quartier/changer', [$quartierController, 'changer']);
 $route->addRoute('/quartier/edition/{param}', [$quartierController, 'edition']);
 $route->addRoute('/quartier/details/{param}', [$quartierController, 'details']);
 $route->addRoute('/quartier/getActive', [$quartierController, 'getActive']);
+$route->addRoute('/quartier/formulaire', [$quartierController, 'formulaire']);
 
 $route->addRoute('/abonnement/list', [$abonnementPressingController, 'list']);
 $route->addRoute('/abonnement/apiList', [$abonnementPressingController, 'apiList']);
-$route->addRoute('/abonnement/checkActive', [$abonnementPressingController, 'checkActive']);
 $route->addRoute('/abonnement/add', [$abonnementPressingController, 'add']);
 $route->addRoute('/abonnement/edit', [$abonnementPressingController, 'edit']);
-$route->addRoute('/abonnement/renouveler', [$abonnementPressingController, 'renouveler']);
 $route->addRoute('/abonnement/changer', [$abonnementPressingController, 'changer']);
 $route->addRoute('/abonnement/edition/{param}', [$abonnementPressingController, 'edition']);
 $route->addRoute('/abonnement/details/{param}', [$abonnementPressingController, 'details']);
+$route->addRoute('/abonnement/getActive', [$abonnementPressingController, 'getActive']);
+$route->addRoute('/abonnement/formulaire', [$abonnementPressingController, 'formulaire']);
 
 $route->addRoute('/forfait/list', [$forfaitController, 'list']);
 $route->addRoute('/forfait/apiList', [$forfaitController, 'apiList']);
@@ -197,6 +215,8 @@ $route->addRoute('/forfait/edit', [$forfaitController, 'edit']);
 $route->addRoute('/forfait/changer', [$forfaitController, 'changer']);
 $route->addRoute('/forfait/edition/{param}', [$forfaitController, 'edition']);
 $route->addRoute('/forfait/details/{param}', [$forfaitController, 'details']);
+$route->addRoute('/forfait/getActive', [$forfaitController, 'getActive']);
+$route->addRoute('/forfait/formulaire', [$forfaitController, 'formulaire']);
 
 $route->addRoute('/favori/list', [$favoriController, 'list']);
 $route->addRoute('/favori/apiList', [$favoriController, 'apiList']);

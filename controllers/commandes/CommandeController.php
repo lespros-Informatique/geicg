@@ -742,4 +742,36 @@ class CommandeController extends BaseController
             $this->error('Erreur lors de la mise à jour');
         }
     }
+
+    public function ticket($details)
+    {
+        $this->requireAuth();
+        try {
+            $commandeId = $this->validator->decrypter($details);
+            $commande = $this->model->getWithDetails($commandeId);
+            if (!$commande) {
+                header('Location: ' . RACINE . 'commande/list');
+                exit();
+            }
+        } catch (Exception $e) {
+            header('Location: ' . RACINE . 'commande/list');
+            exit();
+        }
+
+        $this->requirePressingAccess($commande['pressing_code'] ?? '');
+
+        // Récupérer les lignes de commande
+        $detailModel = new ModelCommandeDetail();
+        $commande['details'] = $detailModel->getByCommandeCode($commande['code_commande']);
+
+        // Récupérer le mode de paiement
+        $stmtPay = $this->model->getCon()->prepare("SELECT * FROM " . TABLES::PAIEMENTS . " WHERE commande_code = ? ORDER BY id_paiement DESC LIMIT 1");
+        $stmtPay->execute([$commande['code_commande']]);
+        $paiement = $stmtPay->fetch(PDO::FETCH_ASSOC);
+
+        $this->loadView('../views/commandes/ticket.php', [
+            'commande' => $commande,
+            'paiement' => $paiement
+        ]);
+    }
 }
