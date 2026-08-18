@@ -47,6 +47,7 @@ class UserController extends BaseController
                 'prenom' => $u['prenom_user'] ?? '',
                 'telephone' => $u['telephone_user'] ?? '',
                 'role' => $role ? $role['libelle_role'] : '-',
+                'role_code' => $role ? ($role['code_role'] ?? '') : '',
                 'statut' => $u['statut_user'],
                 'id' => $u['id_user'],
                 'editId' => $idCrypte
@@ -157,6 +158,43 @@ class UserController extends BaseController
             }
         } else {
             $this->error('Utilisateur introuvable!');
+        }
+    }
+
+    public function setRole()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+
+        if (!$this->isSuperAdmin()) {
+            $this->error('Accès refusé', 403);
+            return;
+        }
+
+        $id = (int) $this->post('id_user');
+        $roleCode = $this->post('role_code');
+
+        if (!$id || !$roleCode) {
+            $this->error('Identifiant et rôle requis');
+            return;
+        }
+
+        $user = $this->model->getById($id);
+        if (!$user) {
+            $this->error('Utilisateur introuvable');
+            return;
+        }
+
+        $allowedRoles = [ROLES::SUPER_ADMIN, ROLES::PRESSING, ROLES::LIVREUR];
+        if (!in_array($roleCode, $allowedRoles, true)) {
+            $this->error('Rôle invalide');
+            return;
+        }
+
+        if ($this->model->setUserRole($user['code_user'], $roleCode)) {
+            $this->success('Rôle attribué avec succès');
+        } else {
+            $this->error('Erreur lors de l\'attribution du rôle');
         }
     }
 

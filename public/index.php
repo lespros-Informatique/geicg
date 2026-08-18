@@ -18,6 +18,8 @@ $commandeController = new CommandeController();
 $paiementController = new PaiementController();
 $villeController = new VilleController();
 $quartierController = new QuartierController();
+$roleController = new RoleController();
+$permissionController = new PermissionController();
 $abonnementPressingController = new AbonnementPressingController();
 $forfaitController = new ForfaitController();
 $favoriController = new FavoriController();
@@ -127,6 +129,7 @@ $route->addRoute('/user/add', [$userController, 'add']);
 $route->addRoute('/user/edit', [$userController, 'edit']);
 $route->addRoute('/user/editPassword', [$userController, 'editPassword']);
 $route->addRoute('/user/changer', [$userController, 'changer']);
+$route->addRoute('/user/setRole', [$userController, 'setRole']);
 
 $route->addRoute('/commande/list', [$commandeController, 'list']);
 $route->addRoute('/commande/apiList', [$commandeController, 'apiList']);
@@ -210,6 +213,25 @@ $route->addRoute('/panier-detail/edit', [$panierDetailController, 'edit']);
 $route->addRoute('/panier-detail/changer', [$panierDetailController, 'changer']);
 $route->addRoute('/panier-detail/edition/{param}', [$panierDetailController, 'edition']);
 $route->addRoute('/panier-detail/details/{param}', [$panierDetailController, 'details']);
+
+$route->addRoute('/role/list', [$roleController, 'list']);
+$route->addRoute('/role/apiList', [$roleController, 'apiList']);
+$route->addRoute('/role/add', [$roleController, 'add']);
+$route->addRoute('/role/edit', [$roleController, 'edit']);
+$route->addRoute('/role/changer', [$roleController, 'changer']);
+$route->addRoute('/role/edition/{param}', [$roleController, 'edition']);
+$route->addRoute('/role/details/{param}', [$roleController, 'details']);
+$route->addRoute('/role/formulaire', [$roleController, 'formulaire']);
+$route->addRoute('/role/updatePermissions', [$roleController, 'updatePermissions']);
+
+$route->addRoute('/permission/list', [$permissionController, 'list']);
+$route->addRoute('/permission/apiList', [$permissionController, 'apiList']);
+$route->addRoute('/permission/add', [$permissionController, 'add']);
+$route->addRoute('/permission/edit', [$permissionController, 'edit']);
+$route->addRoute('/permission/changer', [$permissionController, 'changer']);
+$route->addRoute('/permission/edition/{param}', [$permissionController, 'edition']);
+$route->addRoute('/permission/details/{param}', [$permissionController, 'details']);
+$route->addRoute('/permission/formulaire', [$permissionController, 'formulaire']);
 
 
 $url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

@@ -57,5 +57,7 @@ require_once __DIR__ . '/../controllers/paniers/PanierController.php';
 require_once __DIR__ . '/../controllers/panier_details/PanierDetailController.php';
 require_once __DIR__ . '/../controllers/clients/ClientController.php';
 require_once __DIR__ . '/../controllers/users/UserController.php';
+require_once __DIR__ . '/../controllers/roles/RoleController.php';
+require_once __DIR__ . '/../controllers/permissions/PermissionController.php';
 require_once __DIR__ . '/../controllers/commandes/CommandeController.php';
 require_once __DIR__ . '/../controllers/paiements/PaiementController.php';

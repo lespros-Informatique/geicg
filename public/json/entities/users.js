@@ -47,9 +47,17 @@ $(document).ready(function() {
         actions: [
             { id: 'voir', label: 'Voir', icon: 'eye', href: function(r) { return LINK + 'user/details/' + r.editId; } },
             { id: 'modifier', label: 'Modifier', icon: 'edit', href: function(r) { return LINK + 'user/edition/' + r.editId; } },
+            { id: 'role', label: 'Rôle', icon: 'shield', onClick: function(rowData) {
+                const role = prompt('Rôle de ' + rowData.nom + ' (' + rowData.code + ')\nROLE-ADMIN | ROLE-PRO | ROLE-LIV', rowData.role_code || 'ROLE-PRO');
+                if (role === null) return;
+                $.post(LINK + 'user/setRole', { id_user: rowData.id, role_code: role }, function(rep) {
+                    showToast(rep.message || 'Rôle mis à jour', rep.status ? 'success' : 'error');
+                    if (rep.status) $('#dataTable').DataTable().ajax.reload();
+                }, 'json').fail(function() { showToast('Erreur serveur', 'error'); });
+            }},
         ],
         getActions: function(row) {
-            var list = usersMobileConfig.actions.map(function(a) { return Object.assign({}, a, { href: a.href(row) }); });
+            var list = usersMobileConfig.actions.map(function(a) { return Object.assign({}, a, { href: a.href ? a.href(row) : undefined }); });
             var isActive = row.statut === 'actif';
             list.push({
                 id: isActive ? 'desactiver' : 'activer',
