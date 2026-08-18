@@ -20,9 +20,11 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
             Suivi des commandes détaillées et des collectes de linge au sac
           </p>
         </div>
+        <?php if (empty($isLivreur)): ?>
         <button class="btn-primary" onclick="openNewOrderModal()" style="display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="plus" style="width: 18px; height: 18px;"></i> Nouvelle commande
         </button>
+        <?php endif; ?>
       </div>
 
       <div class="card" style="padding: 20px; border-radius: 14px;">
@@ -50,6 +52,7 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
       <!-- ==========================================
            MODAL CRÉATION DE COMMANDE (COLIS OU DÉTAILLÉE)
            ========================================== -->
+      <?php if (empty($isLivreur)): ?>
       <div id="modal-nouvelle-commande" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
         <div style="background: #FFF; border-radius: 16px; width: 92%; max-width: 680px; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
           
@@ -243,6 +246,7 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
           </form>
         </div>
       </div>
+      <?php endif; ?>
 
       <script src="<?= RACINE ?>json/mobile-list.js"></script>
       <script src="<?= RACINE ?>json/entities/commandes.js?v=6"></script>

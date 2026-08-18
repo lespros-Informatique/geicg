@@ -12,30 +12,40 @@ class NotificationController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $pressingCode = $this->getCurrentPressingCode();
-        $stats = $this->model->getStats($pressingCode);
+        $isLivreur = $this->isLivreur();
+        $livreurCode = $isLivreur ? $this->getCurrentLivreurCode() : null;
+        $pressingCode = !$isLivreur ? $this->getCurrentPressingCode() : null;
 
-        // Récupérer la liste des clients pour le formulaire d'envoi
-        $clientModel = new ModelClient();
-        $clients = $clientModel->getAll();
+        $stats = $this->model->getStats($pressingCode, $livreurCode);
+
+        // Récupérer la liste des clients pour le formulaire d'envoi (si pas livreur)
+        $clients = [];
+        if (!$isLivreur) {
+            $clientModel = new ModelClient();
+            $clients = $clientModel->getAll();
+        }
 
         $this->loadView('../views/notifications/list.php', [
             'stats' => $stats,
-            'clients' => $clients
+            'clients' => $clients,
+            'isLivreur' => $isLivreur
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $pressingCode = $this->getCurrentPressingCode();
-        $items = $this->model->getAllWithClient($pressingCode);
+        $isLivreur = $this->isLivreur();
+        $livreurCode = $isLivreur ? $this->getCurrentLivreurCode() : null;
+        $pressingCode = !$isLivreur ? $this->getCurrentPressingCode() : null;
+
+        $items = $this->model->getAllWithClient($pressingCode, $livreurCode);
         $data = [];
 
         foreach ($items as $i) {
             $idCrypte = $this->validator->crypter($i['id_notification']);
             $isLu = ((int)$i['lu_notification'] === 1);
-            $clientName = $i['nom_client'] ?: ($i['client_code'] ?: 'Tous les clients (Global)');
+            $clientName = $i['nom_client'] ?: ($i['client_code'] ?: ($isLivreur ? 'Mission Livreur' : 'Tous les clients (Global)'));
 
             $data[] = [
                 'id' => (int)$i['id_notification'],
@@ -61,6 +71,11 @@ class NotificationController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+
+        if ($this->isLivreur()) {
+            $this->error('Action non autorisée pour votre profil.');
+            return;
+        }
 
         $titre = trim($this->post('titre_notification'));
         $message = trim($this->post('message_notification'));
@@ -132,7 +147,11 @@ class NotificationController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
 
-        if ($this->model->markAllAsRead()) {
+        $isLivreur = $this->isLivreur();
+        $livreurCode = $isLivreur ? $this->getCurrentLivreurCode() : null;
+        $pressingCode = !$isLivreur ? $this->getCurrentPressingCode() : null;
+
+        if ($this->model->markAllAsRead($pressingCode, $livreurCode)) {
             $this->success('Toutes les notifications ont été marquées comme lues !');
         } else {
             $this->error('Erreur lors de la mise à jour');
@@ -168,8 +187,11 @@ class NotificationController extends BaseController
     public function stats()
     {
         $this->requireAuth();
-        $pressingCode = $this->getCurrentPressingCode();
-        $stats = $this->model->getStats($pressingCode);
+        $isLivreur = $this->isLivreur();
+        $livreurCode = $isLivreur ? $this->getCurrentLivreurCode() : null;
+        $pressingCode = !$isLivreur ? $this->getCurrentPressingCode() : null;
+
+        $stats = $this->model->getStats($pressingCode, $livreurCode);
         $this->json($stats);
     }
 }

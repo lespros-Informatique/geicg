@@ -80,6 +80,11 @@ class CommandeController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
 
+        if ($this->isLivreur()) {
+            $this->error('Action non autorisée : un livreur ne peut pas créer de commande.', 403);
+            return;
+        }
+
         $clientCode = $this->post('client_code');
         if (empty($clientCode)) {
             $this->error('Veuillez sélectionner un client');

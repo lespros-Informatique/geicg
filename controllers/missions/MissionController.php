@@ -56,6 +56,12 @@ class MissionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+
+        if ($this->isLivreur()) {
+            $this->error('Action non autorisée : un livreur ne peut pas créer de mission.', 403);
+            return;
+        }
+
         $notEmpty = Validator::validateRequiredFields(['commande_code' => $_POST['commande_code'] ?? '', 'type_mission' => $_POST['type_mission'] ?? '']);
 
         if ($notEmpty !== true) {
@@ -83,6 +89,15 @@ class MissionController extends BaseController
         ];
 
         if ($this->model->create($data)) {
+            if (!empty($data['livreur_code'])) {
+                NotificationService::notifyLivreur(
+                    $data['livreur_code'],
+                    'mission.assignee',
+                    'Nouvelle mission assignée',
+                    "La mission #{$code} (" . ($data['type_mission'] === 'collecte' ? 'Collecte' : 'Livraison') . ") vous a été assignée pour la commande #{$data['commande_code']}.",
+                    $data['commande_code']
+                );
+            }
             $this->success('Mission ajoutée avec succès!');
         } else {
             $this->error('Erreur lors de l\'ajout');
@@ -131,6 +146,15 @@ class MissionController extends BaseController
         ];
 
         if ($this->model->update($data, $id)) {
+            if (!empty($data['livreur_code']) && ($item['livreur_code'] ?? '') !== $data['livreur_code']) {
+                NotificationService::notifyLivreur(
+                    $data['livreur_code'],
+                    'mission.assignee',
+                    'Nouvelle mission assignée',
+                    "La mission #{$item['code_mission']} (" . ($data['type_mission'] === 'collecte' ? 'Collecte' : 'Livraison') . ") vous a été assignée pour la commande #{$data['commande_code']}.",
+                    $data['commande_code']
+                );
+            }
             $this->success('Mission modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -212,6 +236,11 @@ class MissionController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        if ($this->isLivreur()) {
+            header('Location: ' . RACINE . 'mission/list?error=forbidden');
+            exit();
+        }
+
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -242,6 +271,10 @@ class MissionController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        if ($this->isLivreur()) {
+            header('Location: ' . RACINE . 'mission/list?error=forbidden');
+            exit();
+        }
         $this->loadView('../views/missions/edit.php', ['mission' => []]);
     }
 

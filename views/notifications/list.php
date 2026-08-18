@@ -23,9 +23,11 @@ $clients = isset($clients) ? $clients : [];
           <button type="button" class="btn btn-secondary" onclick="markAllNotificationsRead()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
             <i class="fa fa-check-double"></i> Tout marquer comme lu
           </button>
+          <?php if (empty($isLivreur)): ?>
           <button type="button" class="btn btn-primary" onclick="openSendModal()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
             <i data-lucide="send" style="width: 16px; height: 16px;"></i> Envoyer une notification
           </button>
+          <?php endif; ?>
         </div>
       </div>
 

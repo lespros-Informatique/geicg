@@ -1,5 +1,7 @@
 $(document).ready(function() {
     if ($('#dataTable').length) {
+        const isLivreur = (window.isLivreurUser === true);
+
         const columns = [
             { title: 'N°', data: null, render: function(data, type, row, meta) { return meta.row + 1; } },
             { data: 'code', title: 'Code' },
@@ -33,12 +35,13 @@ $(document).ready(function() {
                 title: 'Actions',
                 className: 'text-center',
                 render: function(data, type, row) {
-                    const phoneBtn = row.telephone ? `<a href="tel:${row.telephone}" title="Appeler le client" class="btn-action btn-action-success"><i class="fa fa-phone"></i></a>` : '';
+                    const phoneBtn = row.telephone ? `<a href="tel:${row.telephone}" title="Appeler le client" class="btn-action btn-action-success" style="background:#059669; color:#FFF;"><i class="fa fa-phone"></i></a>` : '';
+                    const editBtn = isLivreur ? '' : `<a href="${LINK}mission/edition/${row.editId}" title="Modifier" class="btn-action btn-action-secondary"><i class="fa fa-edit"></i></a>`;
                     return `
-                        <div class="table-actions">
-                            <a href="${row.gpsUrl || '#'}" target="_blank" title="Lancer GPS Google Maps" class="btn-action btn-action-primary" style="background:#1E3A5F; color:#FFF;"><i class="fa fa-location-arrow"></i></a>
+                        <div class="table-actions" style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
+                            <a href="${LINK}mission/carte?mission=${row.code}" title="Lancer le GPS & Guidage Trajet Live" class="btn-action btn-action-primary" style="background:#1E3A5F; color:#FFF;"><i class="fa fa-location-arrow"></i></a>
                             ${phoneBtn}
-                            <a href="${LINK}mission/edition/${row.editId}" title="Modifier" class="btn-action btn-action-secondary"><i class="fa fa-edit"></i></a>
+                            ${editBtn}
                         </div>
                     `;
                 }
@@ -47,21 +50,25 @@ $(document).ready(function() {
 
         const table = initDataTable('dataTable', 'mission/apiList', columns);
 
-        const missionsMobileConfig = {
-        entity: 'mission',
-        primary: [{ key: 'code', label: 'Mission' }],
-        secondary: [{ key: 'commande', label: 'Commande' }, { key: 'type', label: 'Type' }, { key: 'adresse', label: 'Adresse' }],
-        detailUrl: function(r) { return LINK + 'mission/edition/' + r.editId; },
-        actions: [
-            { id: 'gps', label: 'GPS Google Maps', icon: 'navigation', href: function(r) { return r.gpsUrl; }, target: '_blank' },
-            { id: 'modifier', label: 'Modifier', icon: 'edit', href: function(r) { return LINK + 'mission/edition/' + r.editId; } },
-        ],
-        getActions: function(row) {
-            var list = missionsMobileConfig.actions.map(function(a) { return Object.assign({}, a, { href: a.href(row) }); });
-            return list;
+        const mobileActions = [
+            { id: 'gps', label: 'Lancer le GPS & Guidage Live', icon: 'navigation', href: function(r) { return LINK + 'mission/carte?mission=' + r.code; } }
+        ];
+
+        if (!isLivreur) {
+            mobileActions.push({ id: 'modifier', label: 'Modifier', icon: 'edit', href: function(r) { return LINK + 'mission/edition/' + r.editId; } });
         }
-    };
-    renderMobileCards('dataTable', missionsMobileConfig);
+
+        const missionsMobileConfig = {
+            entity: 'mission',
+            primary: [{ key: 'code', label: 'Mission' }],
+            secondary: [{ key: 'commande', label: 'Commande' }, { key: 'type', label: 'Type' }, { key: 'adresse', label: 'Adresse' }],
+            detailUrl: isLivreur ? function(r) { return LINK + 'mission/carte?mission=' + r.code; } : function(r) { return LINK + 'mission/edition/' + r.editId; },
+            actions: mobileActions,
+            getActions: function(row) {
+                return mobileActions.map(function(a) { return Object.assign({}, a, { href: a.href(row) }); });
+            }
+        };
+        renderMobileCards('dataTable', missionsMobileConfig);
     }
 
     $('.formEditMission').on('submit', function(e) {

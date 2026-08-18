@@ -72,16 +72,41 @@ abstract class BaseController
 
     protected function loadView(string $path, array $data = []): void
     {
-        $data['isSuperAdmin'] = $data['isSuperAdmin'] ?? $this->isSuperAdmin();
-        $data['isPressing'] = $data['isPressing'] ?? $this->isPressing();
-        $data['isLivreur'] = $data['isLivreur'] ?? $this->isLivreur();
+        $isSuperAdmin = $data['isSuperAdmin'] ?? $this->isSuperAdmin();
+        $isPressing = $data['isPressing'] ?? $this->isPressing();
+        $isLivreur = $data['isLivreur'] ?? $this->isLivreur();
+        $livreurCode = $data['livreurCode'] ?? ($isLivreur ? $this->getCurrentLivreurCode() : null);
+        $pressingCode = $data['pressingCode'] ?? (($isPressing && !$isLivreur) ? $this->getCurrentPressingCode() : null);
+
+        $data['isSuperAdmin'] = $isSuperAdmin;
+        $data['isPressing'] = $isPressing;
+        $data['isLivreur'] = $isLivreur;
+        $data['livreurCode'] = $livreurCode;
+        $data['pressingCode'] = $pressingCode;
         $data['currentUserName'] = $data['currentUserName'] ?? ($_SESSION[USERS_AUTH]['nom'] ?? ($_SESSION[USERS_AUTH]['nom_user'] ?? 'Utilisateur'));
         $data['currentUserEmail'] = $data['currentUserEmail'] ?? ($_SESSION[USERS_AUTH]['email'] ?? ($_SESSION[USERS_AUTH]['email_user'] ?? ''));
 
+        // Calcul dynamique et filtré des notifications pour le badge de la cloche et le dropdown d'aperçu
+        try {
+            $notifModel = new ModelNotification();
+            $notifStats = $notifModel->getStats($pressingCode, $livreurCode);
+            $data['unreadNotifsCount'] = $notifStats['non_lues'] ?? 0;
+            $data['recentAdminNotifs'] = $notifModel->getAllWithClient($pressingCode, $livreurCode, 5);
+        } catch (Exception $e) {
+            $data['unreadNotifsCount'] = 0;
+            $data['recentAdminNotifs'] = [];
+        }
+
+        if (!file_exists($path)) {
+            $candidate = __DIR__ . '/../' . ltrim(str_replace('../', '', $path), '/\\');
+            if (file_exists($candidate)) {
+                $path = $candidate;
+            }
+        }
         foreach ($data as $key => $value) {
             $$key = $value;
         }
-        require_once $path;
+        require $path;
     }
 
     protected function post(string $key, $default = '')

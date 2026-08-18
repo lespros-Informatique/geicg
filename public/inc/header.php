@@ -118,16 +118,16 @@
     $currentUserEmail = $_SESSION[USERS_AUTH]['email_user'] ?? ($_SESSION[USERS_AUTH]['email'] ?? '');
     $currentUserPhoto = !empty($_SESSION[USERS_AUTH]['photo_user']) ? RACINE . 'public/assets/images/users/' . $_SESSION[USERS_AUTH]['photo_user'] : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
 
-    // Notifications récentes
+    // Notifications récentes filtrées par rôle (Livreur, Pressing ou Super Admin)
     $recentAdminNotifs = [];
     $unreadNotifsCount = 0;
     try {
-        if (isset($db)) {
-            $stmtN = $db->query("SELECT * FROM " . TABLES::NOTIFICATIONS . " ORDER BY id_notification DESC LIMIT 5");
-            $recentAdminNotifs = $stmtN->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $unreadNotifsCount = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::NOTIFICATIONS . " WHERE lu_notification = 0")->fetchColumn();
-        }
+        $notifModel = new ModelNotification();
+        $notifStats = $notifModel->getStats($currentPressingCode, $currentLivreurCode);
+        $unreadNotifsCount = $notifStats['non_lues'] ?? 0;
+        $recentAdminNotifs = $notifModel->getAllWithClient($currentPressingCode, $currentLivreurCode, 5);
     } catch (Exception $e) {
         $recentAdminNotifs = [];
+        $unreadNotifsCount = 0;
     }
     ?>

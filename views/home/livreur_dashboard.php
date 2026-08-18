@@ -147,8 +147,8 @@ if (!$nextMission) {
                 <i class="fa fa-phone"></i> Appeler le client (<?= htmlspecialchars($nextMission['telephone_client']) ?>)
               </a>
             <?php endif; ?>
-            <a href="<?= $mapsUrl ?>" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-              <i class="fa fa-location-arrow"></i> Lancer le GPS Google Maps
+            <a href="<?= RACINE ?>mission/carte?mission=<?= urlencode($nextMission['code_mission']) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+              <i class="fa fa-location-arrow"></i> Lancer le GPS & Guidage Trajet Live
             </a>
           </div>
         </div>
@@ -268,7 +268,7 @@ if (!$nextMission) {
                     </a>
                   <?php endif; ?>
                   
-                  <a href="<?= $mMapsUrl ?>" target="_blank" class="btn btn-sm btn-secondary" title="Guidage GPS" style="padding: 6px 10px; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                  <a href="<?= RACINE ?>mission/carte?mission=<?= urlencode($m['code_mission']) ?>" class="btn btn-sm btn-secondary" title="Tracé d'itinéraire et guidage GPS" style="padding: 6px 10px; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
                     <i class="fa fa-location-arrow" style="color: #2563EB;"></i> GPS
                   </a>
 

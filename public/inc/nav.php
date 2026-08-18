@@ -54,11 +54,11 @@
                     <?php elseif (isset($isLivreur) && $isLivreur): ?>
                         <a href="<?= RACINE ?>mission/list" class="dropdown-card">
                             <i data-lucide="truck"></i>
-                            <span>Missions</span>
+                            <span>Mes Missions</span>
                         </a>
-                        <a href="<?= RACINE ?>commande/list" class="dropdown-card">
-                            <i data-lucide="package"></i>
-                            <span>Commandes</span>
+                        <a href="<?= RACINE ?>mission/carte" class="dropdown-card">
+                            <i data-lucide="map"></i>
+                            <span>Carte Tournées</span>
                         </a>
                         <a href="<?= RACINE ?>notification/list" class="dropdown-card">
                             <i data-lucide="bell"></i>

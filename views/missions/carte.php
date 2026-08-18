@@ -6,23 +6,49 @@ $livreurCode = $livreurCode ?? '';
 $hasActiveMission = false;
 $activeDestination = null;
 
-foreach ($missions as $m) {
-    if (($m['statut_mission'] ?? '') === 'en_cours') {
-        $hasActiveMission = true;
-        $isCol = ($m['type_mission'] === 'collecte');
-        $destLat = !empty($m['latitude_mission']) ? (float)$m['latitude_mission'] : (!empty($m['latitude_client']) ? (float)$m['latitude_client'] : 5.358);
-        $destLng = !empty($m['longitude_mission']) ? (float)$m['longitude_mission'] : (!empty($m['longitude_client']) ? (float)$m['longitude_client'] : -3.985);
-        $destName = $isCol ? ($m['nom_client'] ?? 'Client (Collecte)') : ($m['nom_client'] ?? 'Client (Livraison)');
-        $destAddress = !empty($m['adresse_mission']) ? $m['adresse_mission'] : ($m['adresse_client'] ?? 'Abidjan');
+$targetMissionCode = $_GET['mission'] ?? ($_GET['code'] ?? null);
 
-        $activeDestination = [
-            'lat' => $destLat,
-            'lng' => $destLng,
-            'name' => $destName,
-            'address' => $destAddress,
-            'type' => $m['type_mission']
-        ];
-        break;
+if ($targetMissionCode) {
+    foreach ($missions as $m) {
+        if ($m['code_mission'] === $targetMissionCode) {
+            $hasActiveMission = true;
+            $isCol = ($m['type_mission'] === 'collecte');
+            $destLat = !empty($m['latitude_mission']) ? (float)$m['latitude_mission'] : (!empty($m['latitude_client']) ? (float)$m['latitude_client'] : 5.358);
+            $destLng = !empty($m['longitude_mission']) ? (float)$m['longitude_mission'] : (!empty($m['longitude_client']) ? (float)$m['longitude_client'] : -3.985);
+            $destName = $isCol ? ($m['nom_client'] ?? 'Client (Collecte)') : ($m['nom_client'] ?? 'Client (Livraison)');
+            $destAddress = !empty($m['adresse_mission']) ? $m['adresse_mission'] : ($m['adresse_client'] ?? 'Abidjan');
+
+            $activeDestination = [
+                'lat' => $destLat,
+                'lng' => $destLng,
+                'name' => $destName,
+                'address' => $destAddress,
+                'type' => $m['type_mission']
+            ];
+            break;
+        }
+    }
+}
+
+if (!$activeDestination) {
+    foreach ($missions as $m) {
+        if (($m['statut_mission'] ?? '') === 'en_cours') {
+            $hasActiveMission = true;
+            $isCol = ($m['type_mission'] === 'collecte');
+            $destLat = !empty($m['latitude_mission']) ? (float)$m['latitude_mission'] : (!empty($m['latitude_client']) ? (float)$m['latitude_client'] : 5.358);
+            $destLng = !empty($m['longitude_mission']) ? (float)$m['longitude_mission'] : (!empty($m['longitude_client']) ? (float)$m['longitude_client'] : -3.985);
+            $destName = $isCol ? ($m['nom_client'] ?? 'Client (Collecte)') : ($m['nom_client'] ?? 'Client (Livraison)');
+            $destAddress = !empty($m['adresse_mission']) ? $m['adresse_mission'] : ($m['adresse_client'] ?? 'Abidjan');
+
+            $activeDestination = [
+                'lat' => $destLat,
+                'lng' => $destLng,
+                'name' => $destName,
+                'address' => $destAddress,
+                'type' => $m['type_mission']
+            ];
+            break;
+        }
     }
 }
 ?>
@@ -268,6 +294,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // Démarrer le tracé d'itinéraire et la géolocalisation live si mission active
   if (typeof LivreurGpsTracker !== 'undefined') {
     LivreurGpsTracker.init(map, livreurCode, hasActive, activeDest);
+  }
+
+  // Si une mission est passée en paramètre d'URL (?mission=... ou ?code=...), centrer et ouvrir le popup
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetCode = urlParams.get('mission') || urlParams.get('code');
+  if (targetCode && missionMarkers[targetCode]) {
+    setTimeout(function() {
+      map.setView(missionMarkers[targetCode].getLatLng(), 15);
+      missionMarkers[targetCode].openPopup();
+    }, 400);
   }
 });
 
