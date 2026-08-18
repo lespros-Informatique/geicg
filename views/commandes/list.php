@@ -149,7 +149,7 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
 
                 <div>
                   <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">Prix Unit. (FCFA)</label>
-                  <input type="number" id="line_price" value="1000" min="0" step="50" class="form-control" style="width: 100%; padding: 8px 6px; font-size: 13px;">
+                  <input type="number" id="line_price" value="" min="0" step="50" class="form-control" style="width: 100%; padding: 8px 6px; font-size: 13px;" placeholder="Prix FCFA">
                 </div>
 
                 <div>
@@ -294,20 +294,27 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
       }
 
       function autoFillLinePrice() {
-        const artCode = document.getElementById('line_article_select').value;
-        const srvCode = document.getElementById('line_service_select').value;
-        const pressingCode = document.getElementById('order_pressing_code')?.value || '';
+        const artCode = $('#line_article_select').val() || document.getElementById('line_article_select')?.value;
+        const srvCode = $('#line_service_select').val() || document.getElementById('line_service_select')?.value;
+        const pressingCode = $('#order_pressing_code').val() || document.getElementById('order_pressing_code')?.value || '';
 
         if (!artCode || !srvCode) return;
 
-        const found = tarifsCatalogue.find(t => 
-          t.article_code === artCode && 
-          t.service_code === srvCode && 
-          (!pressingCode || t.pressing_code === pressingCode)
-        );
+        let found = null;
+        if (Array.isArray(tarifsCatalogue) && tarifsCatalogue.length > 0) {
+          if (pressingCode) {
+            found = tarifsCatalogue.find(t => t.article_code === artCode && t.service_code === srvCode && t.pressing_code === pressingCode);
+          }
+          if (!found) {
+            found = tarifsCatalogue.find(t => t.article_code === artCode && t.service_code === srvCode);
+          }
+        }
 
-        if (found && found.prix_tarif) {
-          document.getElementById('line_price').value = Math.round(parseFloat(found.prix_tarif));
+        if (found && found.prix_tarif !== undefined && found.prix_tarif !== null) {
+          const val = Math.round(parseFloat(found.prix_tarif));
+          $('#line_price').val(val);
+          const priceInput = document.getElementById('line_price');
+          if (priceInput) priceInput.value = val;
         }
       }
 

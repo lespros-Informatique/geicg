@@ -73,4 +73,19 @@ class ModelUser extends BaseModel
             return false;
         }
     }
+
+    /**
+     * Met à jour le mot de passe d'un utilisateur
+     */
+    public function updatePassword(string $hashPassword, int $userId): bool
+    {
+        try {
+            $sql = "UPDATE " . TABLES::USERS . " SET password_user = ?, updated_at_user = ? WHERE id_user = ?";
+            $stmt = $this->getCon()->prepare($sql);
+            return $stmt->execute([$hashPassword, date('Y-m-d H:i:s'), $userId]);
+        } catch (Exception $e) {
+            error_log("ModelUser::updatePassword error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

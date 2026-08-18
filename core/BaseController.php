@@ -47,8 +47,10 @@ abstract class BaseController
 
     protected function json(array $data, int $code = 200): void
     {
-        http_response_code($code);
-        header('Content-Type: application/json');
+        if (!headers_sent()) {
+            http_response_code($code);
+            header('Content-Type: application/json; charset=utf-8');
+        }
         echo json_encode($data);
         exit;
     }
@@ -70,6 +72,12 @@ abstract class BaseController
 
     protected function loadView(string $path, array $data = []): void
     {
+        $data['isSuperAdmin'] = $data['isSuperAdmin'] ?? $this->isSuperAdmin();
+        $data['isPressing'] = $data['isPressing'] ?? $this->isPressing();
+        $data['isLivreur'] = $data['isLivreur'] ?? $this->isLivreur();
+        $data['currentUserName'] = $data['currentUserName'] ?? ($_SESSION[USERS_AUTH]['nom'] ?? ($_SESSION[USERS_AUTH]['nom_user'] ?? 'Utilisateur'));
+        $data['currentUserEmail'] = $data['currentUserEmail'] ?? ($_SESSION[USERS_AUTH]['email'] ?? ($_SESSION[USERS_AUTH]['email_user'] ?? ''));
+
         foreach ($data as $key => $value) {
             $$key = $value;
         }
@@ -95,7 +103,11 @@ abstract class BaseController
 
     protected function redirect(string $url): void
     {
-        header('Location: ' . $url);
+        if (!headers_sent()) {
+            header('Location: ' . $url);
+        } else {
+            echo "<script>window.location.href=" . json_encode($url) . ";</script>";
+        }
         exit;
     }
 

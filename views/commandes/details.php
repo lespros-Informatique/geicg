@@ -418,7 +418,7 @@ $steps = STATUTS::SUIVI_COMMANDES;
 
           <div>
             <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">Prix Unit. (FCFA)</label>
-            <input type="number" id="devis_price" value="1000" min="0" step="50" class="form-control" style="width: 100%; padding: 8px 6px; font-size: 13px;">
+            <input type="number" id="devis_price" value="" min="0" step="50" class="form-control" style="width: 100%; padding: 8px 6px; font-size: 13px;" placeholder="Prix FCFA">
           </div>
 
           <div>
@@ -515,6 +515,7 @@ const fraisColCmd     = <?= $fraisCollecte ?>;
 const fraisLivCmd     = <?= $fraisLivraison ?>;
 const remiseCmdVal    = <?= $remiseCmd ?>;
 const tarifsCatalog   = <?= json_encode($tarifs, JSON_UNESCAPED_UNICODE) ?>;
+const allTarifsCatalog = <?= json_encode($allTarifs ?? [], JSON_UNESCAPED_UNICODE) ?>;
 const baseApiUrl      = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
 
 let devisItemsList = <?= !empty($lignes) ? json_encode(array_map(function($l) {
@@ -595,31 +596,50 @@ function submitMarquerPrete() {
 function openDevisModal() {
   renderDevisItems();
   openWorkflowModal('modal-devis');
+  
   if ($.fn.select2) {
     $('#devis_article_select').select2({
       dropdownParent: $('#modal-devis'),
-      placeholder: '-- Choisir un article --',
+      placeholder: '-- Choisir --',
       width: '100%'
-    }).off('change.autofill').on('change.autofill', function() { autoFillDevisPrice(); });
+    }).off('select2:select change').on('select2:select change', function() { 
+      autoFillDevisPrice(); 
+    });
 
     $('#devis_service_select').select2({
       dropdownParent: $('#modal-devis'),
-      placeholder: '-- Choisir un service --',
+      placeholder: '-- Service --',
       width: '100%'
-    }).off('change.autofill').on('change.autofill', function() { autoFillDevisPrice(); });
+    }).off('select2:select change').on('select2:select change', function() { 
+      autoFillDevisPrice(); 
+    });
   }
 }
 
 function autoFillDevisPrice() {
-  const artCode = document.getElementById('devis_article_select').value;
-  const srvCode = document.getElementById('devis_service_select').value;
+  const artCode = $('#devis_article_select').val() || document.getElementById('devis_article_select')?.value;
+  const srvCode = $('#devis_service_select').val() || document.getElementById('devis_service_select')?.value;
   if (!artCode || !srvCode) return;
 
-  const found = tarifsCatalog.find(t => t.article_code === artCode && t.service_code === srvCode);
-  if (found && found.prix_tarif) {
-    document.getElementById('devis_price').value = Math.round(parseFloat(found.prix_tarif));
+  let found = null;
+  if (Array.isArray(tarifsCatalog) && tarifsCatalog.length > 0) {
+    found = tarifsCatalog.find(t => t.article_code === artCode && t.service_code === srvCode);
+  }
+  if (!found && Array.isArray(allTarifsCatalog) && allTarifsCatalog.length > 0) {
+    found = allTarifsCatalog.find(t => t.article_code === artCode && t.service_code === srvCode);
+  }
+
+  if (found && found.prix_tarif !== undefined && found.prix_tarif !== null) {
+    const val = Math.round(parseFloat(found.prix_tarif));
+    $('#devis_price').val(val);
+    const inputEl = document.getElementById('devis_price');
+    if (inputEl) inputEl.value = val;
   }
 }
+
+$(document).on('change', '#devis_article_select, #devis_service_select', function() {
+  autoFillDevisPrice();
+});
 
 function addDevisLineItem() {
   const selArt = document.getElementById('devis_article_select');

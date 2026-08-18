@@ -359,13 +359,21 @@ class CommandeController extends BaseController
 
         // Articles, Services et Tarifs pour le devis après inventaire
         $articleModel = new ModelArticle();
-        $articles     = $articleModel->getByStatus('actif');
+        $pressingCode = $item['pressing_code'] ?? '';
+        $articles     = [];
+        if ($pressingCode !== '') {
+            $articles = $articleModel->getByPressing($pressingCode);
+        }
+        if (empty($articles)) {
+            $articles = $articleModel->getByStatus('actif');
+        }
 
         $serviceModel = new ModelService();
         $services     = $serviceModel->getByStatus('actif');
 
         $tarifModel   = new ModelTarifArticle();
-        $tarifs       = $tarifModel->getByPressing($item['pressing_code'] ?? '');
+        $tarifs       = $tarifModel->getByPressing($pressingCode);
+        $allTarifs    = $tarifModel->getAll();
 
         $this->loadView('../views/commandes/details.php', [
             'order'       => $item,
@@ -375,7 +383,8 @@ class CommandeController extends BaseController
             'missions'    => $missions,
             'articles'    => $articles,
             'services'    => $services,
-            'tarifs'      => $tarifs
+            'tarifs'      => $tarifs,
+            'allTarifs'   => $allTarifs
         ]);
     }
 

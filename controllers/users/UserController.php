@@ -309,24 +309,64 @@ class UserController extends BaseController
 
     public function editPassword()
     {
-        $this->requirePost();
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields($_POST);
 
-        if ($notEmpty === true) {
-            $user = $this->model->getById($_SESSION[USERS_AUTH]['id_user'] ?? 0);
-            if (isset($user) && !empty($user) && password_verify($this->post('password'), $user['password_user'])) {
-                $mdp = Validator::hashPassword($this->post('newPassword'));
-                if ($this->model->updatePassword($mdp, $user['id_user'])) {
-                    $this->success('Mot de passe modifié avec succès!');
-                } else {
-                    $this->error('Erreur lors de la modification du mot de passe!');
-                }
-            } else {
-                $this->error('Ancien mot de passe incorrect!');
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $this->loadView('../views/users/editPassword.php', [
+                'user' => $_SESSION[USERS_AUTH] ?? []
+            ]);
+            return;
+        }
+
+        $this->requirePost(false);
+
+        $oldPassword = $this->post('old_password') ?: $this->post('password');
+        $newPassword = $this->post('new_password') ?: $this->post('newPassword');
+        $confirmPassword = $this->post('confirm_password') ?: $this->post('confirmPassword');
+
+        if (empty($oldPassword) || empty($newPassword)) {
+            $this->error('Veuillez renseigner l\'ancien et le nouveau mot de passe !');
+            return;
+        }
+
+        if (!empty($confirmPassword) && $newPassword !== $confirmPassword) {
+            $this->error('La confirmation du nouveau mot de passe ne correspond pas !');
+            return;
+        }
+
+        if (strlen($newPassword) < 4) {
+            $this->error('Le nouveau mot de passe doit contenir au moins 4 caractères !');
+            return;
+        }
+
+        $userId = $_SESSION[USERS_AUTH]['id_user'] ?? 0;
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $user = null;
+        if ($userId) {
+            $user = $this->model->getById((int)$userId);
+        }
+        if (!$user && $userCode) {
+            $user = $this->validator->getByElement(TABLES::USERS, 'code_user', $userCode);
+            if ($user) {
+                $userId = (int)$user['id_user'];
             }
+        }
+
+        if (!$user) {
+            $this->error('Utilisateur introuvable !');
+            return;
+        }
+
+        if (!password_verify($oldPassword, $user['password_user'] ?? '')) {
+            $this->error('Votre mot de passe actuel est incorrect !');
+            return;
+        }
+
+        $hash = Validator::hashPassword($newPassword);
+        if ($this->model->updatePassword($hash, (int)$userId)) {
+            $this->success('Votre mot de passe a été modifié avec succès !');
         } else {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Erreur lors de la mise à jour du mot de passe');
         }
     }
 }
