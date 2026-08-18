@@ -23,22 +23,29 @@ class MissionController extends BaseController
             $livreurCode = $this->getCurrentLivreurCode();
             $missions = $livreurCode ? $this->model->getByLivreur($livreurCode) : [];
         } else {
-            $missions = $this->model->getAll();
+            $missions = (new ModelHome())->getLivreurMissions(null, 100);
         }
 
         $data = [];
 
         foreach ($missions as $m) {
             $idCrypte = $this->validator->crypter($m['id_mission']);
+            $lat = $m['latitude_mission'] ?? ($m['latitude_client'] ?? '');
+            $lng = $m['longitude_mission'] ?? ($m['longitude_client'] ?? '');
+            $adr = !empty($m['adresse_mission']) ? $m['adresse_mission'] : ($m['adresse_client'] ?? 'Abidjan');
+            $gpsUrl = ($lat && $lng) ? "https://www.google.com/maps/dir/?api=1&destination={$lat},{$lng}" : "https://www.google.com/maps/search/?api=1&query=" . urlencode($adr . ' Abidjan');
+
             $data[] = [
                 'code' => $m['code_mission'],
                 'commande' => $m['commande_code'] ?? '',
-                'livreur' => $m['livreur_code'] ?? '',
+                'livreur' => $m['nom_livreur'] ?? ($m['livreur_code'] ?? ''),
                 'type' => $m['type_mission'] ?? '',
-                'adresse' => $m['adresse_mission'] ?? '',
+                'adresse' => $adr,
                 'statut' => $m['statut_mission'],
                 'id' => $m['id_mission'],
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'gpsUrl' => $gpsUrl,
+                'telephone' => $m['telephone_client'] ?? ''
             ];
         }
 
@@ -381,5 +388,17 @@ class MissionController extends BaseController
         }
 
         $this->success('Linge remis au client ! Commande livrée et clôturée avec succès.', ['reload' => true]);
+    }
+
+    public function carte()
+    {
+        $this->requireAuth();
+        $livreurCode = $this->getCurrentLivreurCode();
+        $missions = (new ModelHome())->getLivreurMissions($livreurCode, 50);
+
+        $this->loadView('../views/missions/carte.php', [
+            'livreurCode' => $livreurCode,
+            'missions' => $missions
+        ]);
     }
 }

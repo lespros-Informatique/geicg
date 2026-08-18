@@ -102,13 +102,28 @@
         </div>
 
         <?php elseif ($isLivreur): ?>
-        <!-- === LIVREUR : MISSIONS DE TERRAIN === -->
+        <!-- === LIVREUR : ESPACE LOGISTIQUE & TERRAIN === -->
         <div class="nav-section">
             <div class="nav-section-title">
                 <i data-lucide="truck"></i> <span>Mes Tournées</span>
             </div>
             <a href="<?= RACINE ?>mission/list" class="nav-item sub">
-                <i data-lucide="map-pin"></i> <span>Missions du jour</span>
+                <i data-lucide="clipboard-list"></i> <span>Missions & Courses</span>
+            </a>
+            <a href="<?= RACINE ?>mission/carte" class="nav-item sub">
+                <i data-lucide="map"></i> <span>Carte des Tournées</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <i data-lucide="bell"></i> <span>Alertes & Compte</span>
+            </div>
+            <a href="<?= RACINE ?>notification/list" class="nav-item sub">
+                <i data-lucide="bell-ring"></i> <span>Notifications</span>
+            </a>
+            <a href="<?= RACINE ?>user/profil" class="nav-item sub">
+                <i data-lucide="user"></i> <span>Mon Profil</span>
             </a>
         </div>
         <?php endif; ?>

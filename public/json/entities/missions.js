@@ -33,9 +33,12 @@ $(document).ready(function() {
                 title: 'Actions',
                 className: 'text-center',
                 render: function(data, type, row) {
+                    const phoneBtn = row.telephone ? `<a href="tel:${row.telephone}" title="Appeler le client" class="btn-action btn-action-success"><i class="fa fa-phone"></i></a>` : '';
                     return `
                         <div class="table-actions">
-                            <a href="${LINK}mission/edition/${row.editId}" title="Modifier" class="btn-action btn-action-primary"><i class="fa fa-edit"></i></a>
+                            <a href="${row.gpsUrl || '#'}" target="_blank" title="Lancer GPS Google Maps" class="btn-action btn-action-primary" style="background:#1E3A5F; color:#FFF;"><i class="fa fa-location-arrow"></i></a>
+                            ${phoneBtn}
+                            <a href="${LINK}mission/edition/${row.editId}" title="Modifier" class="btn-action btn-action-secondary"><i class="fa fa-edit"></i></a>
                         </div>
                     `;
                 }
@@ -47,9 +50,10 @@ $(document).ready(function() {
         const missionsMobileConfig = {
         entity: 'mission',
         primary: [{ key: 'code', label: 'Mission' }],
-        secondary: [{ key: 'commande', label: 'Commande' }, { key: 'type', label: 'Type' }],
+        secondary: [{ key: 'commande', label: 'Commande' }, { key: 'type', label: 'Type' }, { key: 'adresse', label: 'Adresse' }],
         detailUrl: function(r) { return LINK + 'mission/edition/' + r.editId; },
         actions: [
+            { id: 'gps', label: 'GPS Google Maps', icon: 'navigation', href: function(r) { return r.gpsUrl; }, target: '_blank' },
             { id: 'modifier', label: 'Modifier', icon: 'edit', href: function(r) { return LINK + 'mission/edition/' + r.editId; } },
         ],
         getActions: function(row) {

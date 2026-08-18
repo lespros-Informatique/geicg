@@ -145,4 +145,89 @@ class ModelHome extends BaseModel
             return [];
         }
     }
+
+    public function getLivreurStats(?string $livreurCode = null): array
+    {
+        try {
+            $db = $this->pdo->getCon();
+            if ($livreurCode !== null && $livreurCode !== '') {
+                $stmt = $db->prepare("SELECT * FROM v_livreur_dashboard_stats WHERE code_livreur = ? LIMIT 1");
+                $stmt->execute([$livreurCode]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) {
+                    return [
+                        'is_livreur' => true,
+                        'livreur_code' => $row['code_livreur'],
+                        'nom_livreur' => $row['nom_livreur'],
+                        'prenom_livreur' => $row['prenom_livreur'] ?? '',
+                        'telephone_livreur' => $row['telephone_livreur'] ?? '',
+                        'total_missions' => (int)($row['total_missions'] ?? 0),
+                        'missions_en_attente' => (int)($row['missions_en_attente'] ?? 0),
+                        'missions_en_cours' => (int)($row['missions_en_cours'] ?? 0),
+                        'missions_terminees' => (int)($row['missions_terminees'] ?? 0),
+                        'missions_terminees_aujourdhui' => (int)($row['missions_terminees_aujourdhui'] ?? 0),
+                        'total_collectes' => (int)($row['total_collectes'] ?? 0),
+                        'total_livraisons' => (int)($row['total_livraisons'] ?? 0),
+                        'total_sacs_transportes' => (int)($row['total_sacs_transportes'] ?? 0),
+                        'frais_courses_total' => (float)($row['frais_courses_total'] ?? 0),
+                    ];
+                }
+            }
+
+            // Fallback global pour Super Admin ou si livreur non assigné
+            $row = $db->query("
+                SELECT 
+                    COUNT(DISTINCT code_livreur) AS total_livreurs,
+                    COALESCE(SUM(total_missions), 0) AS total_missions,
+                    COALESCE(SUM(missions_en_attente), 0) AS missions_en_attente,
+                    COALESCE(SUM(missions_en_cours), 0) AS missions_en_cours,
+                    COALESCE(SUM(missions_terminees), 0) AS missions_terminees,
+                    COALESCE(SUM(missions_terminees_aujourdhui), 0) AS missions_terminees_aujourdhui,
+                    COALESCE(SUM(total_collectes), 0) AS total_collectes,
+                    COALESCE(SUM(total_livraisons), 0) AS total_livraisons,
+                    COALESCE(SUM(total_sacs_transportes), 0) AS total_sacs_transportes,
+                    COALESCE(SUM(frais_courses_total), 0) AS frais_courses_total
+                FROM v_livreur_dashboard_stats
+            ")->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            return [
+                'is_livreur' => false,
+                'livreur_code' => null,
+                'total_livreurs' => (int)($row['total_livreurs'] ?? 0),
+                'total_missions' => (int)($row['total_missions'] ?? 0),
+                'missions_en_attente' => (int)($row['missions_en_attente'] ?? 0),
+                'missions_en_cours' => (int)($row['missions_en_cours'] ?? 0),
+                'missions_terminees' => (int)($row['missions_terminees'] ?? 0),
+                'missions_terminees_aujourdhui' => (int)($row['missions_terminees_aujourdhui'] ?? 0),
+                'total_collectes' => (int)($row['total_collectes'] ?? 0),
+                'total_livraisons' => (int)($row['total_livraisons'] ?? 0),
+                'total_sacs_transportes' => (int)($row['total_sacs_transportes'] ?? 0),
+                'frais_courses_total' => (float)($row['frais_courses_total'] ?? 0),
+            ];
+        } catch (Exception $e) {
+            error_log("ModelHome::getLivreurStats error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getLivreurMissions(?string $livreurCode = null, int $limit = 20): array
+    {
+        try {
+            $db = $this->pdo->getCon();
+            $sql = "SELECT * FROM v_livreur_missions_detail";
+            if ($livreurCode !== null && $livreurCode !== '') {
+                $sql .= " WHERE livreur_code = ? ORDER BY CASE WHEN statut_mission = 'en_cours' THEN 1 WHEN statut_mission = 'en_attente' THEN 2 ELSE 3 END, id_mission DESC LIMIT " . (int)$limit;
+                $stmt = $db->prepare($sql);
+                $stmt->execute([$livreurCode]);
+            } else {
+                $sql .= " ORDER BY CASE WHEN statut_mission = 'en_cours' THEN 1 WHEN statut_mission = 'en_attente' THEN 2 ELSE 3 END, id_mission DESC LIMIT " . (int)$limit;
+                $stmt = $db->query($sql);
+            }
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelHome::getLivreurMissions error: " . $e->getMessage());
+            return [];
+        }
+    }
 }

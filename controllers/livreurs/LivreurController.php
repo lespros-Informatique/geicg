@@ -264,4 +264,42 @@ class LivreurController extends BaseController
             'pressings' => $pressings
         ]);
     }
+
+    public function updatePosition()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+
+        $lat = (float)$this->post('latitude');
+        $lng = (float)$this->post('longitude');
+        $codeLivreur = $this->post('code_livreur') ?: $this->getCurrentLivreurCode();
+
+        if (!$codeLivreur) {
+            $this->error('Code livreur introuvable');
+            return;
+        }
+
+        if (empty($lat) || empty($lng)) {
+            $this->error('Coordonnées GPS requises');
+            return;
+        }
+
+        if ($this->model->updatePosition($codeLivreur, $lat, $lng)) {
+            $this->success('Position GPS mise à jour', [
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+        } else {
+            $this->error('Erreur lors de la mise à jour GPS');
+        }
+    }
+
+    public function livePositions()
+    {
+        $this->requireAuth();
+        $pressingCode = $this->getCurrentPressingCode();
+        $positions = $this->model->getLivePositions($pressingCode);
+        $this->json(['data' => $positions]);
+    }
 }

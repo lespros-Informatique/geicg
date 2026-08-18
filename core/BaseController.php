@@ -166,16 +166,32 @@ abstract class BaseController
             return null;
         }
 
-        if (!$this->isLivreur()) {
+        if (!$this->isLivreur() && !$this->isSuperAdmin()) {
             return null;
         }
 
         try {
+            $pdo = ($this->model && method_exists($this->model, 'getCon')) ? $this->model->getCon() : (new Database())->getCon();
             $sql = "SELECT code_livreur FROM " . TABLES::LIVREURS . " WHERE user_code = ? AND statut_livreur = 'actif' LIMIT 1";
-            $stmt = $this->model->getCon()->prepare($sql);
+            $stmt = $pdo->prepare($sql);
             $stmt->execute([$userCode]);
             $code = $stmt->fetchColumn();
-            return $code ?: null;
+            if ($code) {
+                return $code;
+            }
+
+            // Fallback par téléphone ou nom
+            $userTel = $_SESSION[USERS_AUTH]['tel'] ?? ($_SESSION[USERS_AUTH]['telephone_user'] ?? '');
+            if ($userTel !== '') {
+                $stmtTel = $pdo->prepare("SELECT code_livreur FROM " . TABLES::LIVREURS . " WHERE telephone_livreur = ? LIMIT 1");
+                $stmtTel->execute([$userTel]);
+                $codeTel = $stmtTel->fetchColumn();
+                if ($codeTel) {
+                    return $codeTel;
+                }
+            }
+
+            return null;
         } catch (Exception $e) {
             return null;
         }

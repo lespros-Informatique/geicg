@@ -69,6 +69,8 @@ $route->addRoute('/livreur/edition/{param}', [$livreurController, 'edition']);
 $route->addRoute('/livreur/details/{param}', [$livreurController, 'details']);
 $route->addRoute('/livreur/getActive', [$livreurController, 'getActive']);
 $route->addRoute('/livreur/formulaire', [$livreurController, 'formulaire']);
+$route->addRoute('/livreur/updatePosition', [$livreurController, 'updatePosition']);
+$route->addRoute('/livreur/livePositions', [$livreurController, 'livePositions']);
 
 $route->addRoute('/mission/list', [$missionController, 'list']);
 $route->addRoute('/mission/apiList', [$missionController, 'apiList']);
@@ -84,6 +86,7 @@ $route->addRoute('/mission/lingeCollecte', [$missionController, 'lingeCollecte']
 $route->addRoute('/mission/deposeAuPressing', [$missionController, 'deposeAuPressing']);
 $route->addRoute('/mission/enRouteLivraison', [$missionController, 'enRouteLivraison']);
 $route->addRoute('/mission/remiseAuClient', [$missionController, 'remiseAuClient']);
+$route->addRoute('/mission/carte', [$missionController, 'carte']);
 
 $route->addRoute('/horaire/list', [$horairePressingController, 'list']);
 $route->addRoute('/horaire/apiList', [$horairePressingController, 'apiList']);
