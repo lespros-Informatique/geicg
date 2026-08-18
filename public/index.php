@@ -179,8 +179,10 @@ $route->addRoute('/quartier/getActive', [$quartierController, 'getActive']);
 
 $route->addRoute('/abonnement/list', [$abonnementPressingController, 'list']);
 $route->addRoute('/abonnement/apiList', [$abonnementPressingController, 'apiList']);
+$route->addRoute('/abonnement/checkActive', [$abonnementPressingController, 'checkActive']);
 $route->addRoute('/abonnement/add', [$abonnementPressingController, 'add']);
 $route->addRoute('/abonnement/edit', [$abonnementPressingController, 'edit']);
+$route->addRoute('/abonnement/renouveler', [$abonnementPressingController, 'renouveler']);
 $route->addRoute('/abonnement/changer', [$abonnementPressingController, 'changer']);
 $route->addRoute('/abonnement/edition/{param}', [$abonnementPressingController, 'edition']);
 $route->addRoute('/abonnement/details/{param}', [$abonnementPressingController, 'details']);

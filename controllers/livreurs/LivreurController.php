@@ -62,15 +62,14 @@ class LivreurController extends BaseController
             return;
         }
 
-        // Attribution automatique du pressing pour le gérant Pro
+        // Attribution automatique du pressing pour le gérant Pro ou fallback
         $pressingCode = $this->getCurrentPressingCode();
-        if ($pressingCode === null) {
-            $pressingCode = $this->post('pressing_code') ?: null;
+        if (empty($pressingCode)) {
+            $pressingCode = $this->post('pressing_code') ?: 'PRS-001';
         }
 
         $data = [
             'code_livreur' => $code,
-            'user_code' => $this->post('user_code') ?: null,
             'pressing_code' => $pressingCode,
             'nom_livreur' => $this->post('nom_livreur'),
             'prenom_livreur' => $this->post('prenom_livreur') ?? '',
@@ -114,12 +113,11 @@ class LivreurController extends BaseController
                 return;
             }
         } else {
-            $pressingCode = $this->post('pressing_code') ?: null;
+            $pressingCode = $this->post('pressing_code') ?: ($currentLivreur['pressing_code'] ?? 'PRS-001');
         }
 
         $data = [
             'id_livreur' => $id,
-            'user_code' => $this->post('user_code') ?: null,
             'pressing_code' => $pressingCode,
             'nom_livreur' => $this->post('nom_livreur'),
             'prenom_livreur' => $this->post('prenom_livreur') ?? '',
@@ -167,8 +165,50 @@ class LivreurController extends BaseController
             exit();
         }
 
+        $pressingName = 'Pressing Partenaire';
+        if (!empty($item['pressing_code'])) {
+            $stmtP = $this->model->getCon()->prepare("SELECT libelle_pressing FROM " . TABLES::PRESSINGS . " WHERE code_pressing = ? LIMIT 1");
+            $stmtP->execute([$item['pressing_code']]);
+            $pressingName = $stmtP->fetchColumn() ?: $item['pressing_code'];
+        }
+
+        // Récupération des missions du livreur
+        $missions = [];
+        $stats = [
+            'total_missions' => 0,
+            'terminees' => 0,
+            'en_cours' => 0,
+            'collectes' => 0,
+            'livraisons' => 0
+        ];
+        try {
+            $stmtM = $this->model->getCon()->prepare("
+                SELECT m.*, c.statut_suivi_commande, cli.nom_client, cli.telephone_client
+                FROM " . TABLES::MISSIONS . " m
+                LEFT JOIN " . TABLES::COMMANDES . " c ON m.commande_code = c.code_commande
+                LEFT JOIN " . TABLES::CLIENTS . " cli ON c.client_code = cli.code_client
+                WHERE m.livreur_code = ?
+                ORDER BY m.id_mission DESC
+            ");
+            $stmtM->execute([$item['code_livreur']]);
+            $missions = $stmtM->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $stats['total_missions'] = count($missions);
+            foreach ($missions as $m) {
+                if (($m['statut_mission'] ?? '') === 'terminee') $stats['terminees']++;
+                if (($m['statut_mission'] ?? '') === 'en_cours') $stats['en_cours']++;
+                if (strtolower($m['type_mission'] ?? '') === 'collecte') $stats['collectes']++;
+                if (strtolower($m['type_mission'] ?? '') === 'livraison') $stats['livraisons']++;
+            }
+        } catch (Exception $e) {
+            error_log('[LivreurController::details] Missions error: ' . $e->getMessage());
+        }
+
         $this->loadView('../views/livreurs/details.php', [
             'livreur' => $item,
+            'pressingName' => $pressingName,
+            'missions' => $missions,
+            'stats' => $stats,
             'encryptedId' => $encryptedId
         ]);
     }

@@ -53,7 +53,16 @@ class VilleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->error('Non implemente');
+        $id = $this->post('id');
+        if (isset($id) && $this->model->getById($id)) {
+            if ($this->model->toggleStatus($id)) {
+                $this->success('Statut de la ville modifié avec succès!', ['id' => $id, 'reload' => true]);
+            } else {
+                $this->error('Erreur lors du changement de statut');
+            }
+        } else {
+            $this->error('Ville introuvable!');
+        }
     }
 
     public function details($details)

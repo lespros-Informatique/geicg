@@ -421,25 +421,27 @@ $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr 
                 <i data-lucide="alert-circle" style="width: 48px; height: 48px; margin-bottom: 12px; color: #F59E0B;"></i>
                 <p style="font-size: 14px; font-weight: 700; color: #334155; margin: 0;">Aucun forfait ou abonnement actif pour ce pressing.</p>
                 <p style="font-size: 13px; color: #64748B; margin: 4px 0 16px;">Assignez un forfait pour débloquer les fonctionnalités du pressing sur la Marketplace.</p>
-                <a href="<?= RACINE ?>abonnement/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                <a href="<?= RACINE ?>abonnement/list" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
                   <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Souscrire un forfait
                 </a>
               </div>
             <?php else: ?>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-                <div style="background: linear-gradient(135deg, #1E3A5F, #0F766E); color: #FFF; border-radius: 14px; padding: 24px; box-shadow: 0 10px 25px -5px rgba(30, 58, 95, 0.3);">
-                  <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; margin-bottom: 8px;">Forfait Actuel</div>
-                  <h3 style="font-size: 22px; font-weight: 800; margin: 0 0 12px;"><?= htmlspecialchars($abonnement['libelle_forfait']) ?></h3>
-                  <div style="font-size: 28px; font-weight: 800; margin-bottom: 16px;">
-                    <?= number_format((float)$abonnement['montant_abonnement'], 0, ',', ' ') ?> <span style="font-size: 14px; font-weight: 600; opacity: 0.8;">FCFA</span>
+                <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <span style="font-size: 11px; font-weight: 700; color: #2563EB; text-transform: uppercase; letter-spacing: 0.5px; background: #EFF6FF; padding: 3px 8px; border-radius: 6px; border: 1px solid #DBEAFE;">Forfait Actuel</span>
+                    <h3 style="font-size: 20px; font-weight: 800; color: #1E293B; margin: 10px 0 6px;"><?= htmlspecialchars($abonnement['libelle_forfait']) ?></h3>
+                    <div style="font-size: 26px; font-weight: 800; color: #059669; margin-bottom: 16px;">
+                      <?= number_format((float)$abonnement['montant_abonnement'], 0, ',', ' ') ?> <span style="font-size: 13px; font-weight: 600; color: #64748B;">FCFA</span>
+                    </div>
                   </div>
-                  <div style="display: flex; gap: 8px; align-items: center;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">
-                      Statut : <?= strtoupper($abonnement['statut_abonnement_pressing']) ?>
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <span class="badge-status delivered" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;">
+                      Statut : <?= strtoupper(htmlspecialchars($abonnement['statut_abonnement_pressing'])) ?>
                     </span>
                     <?php if (isset($abonnement['jours_restants'])): ?>
-                      <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">
-                        <?= (int)$abonnement['jours_restants'] ?> jour(s) restant(s)
+                      <span style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                        <i data-lucide="clock" style="width: 13px; height: 13px;"></i> <?= (int)$abonnement['jours_restants'] ?> jour(s) restant(s)
                       </span>
                     <?php endif; ?>
                   </div>

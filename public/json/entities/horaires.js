@@ -9,9 +9,13 @@ $(document).ready(function() {
             {
                 data: 'statut',
                 title: 'Statut',
-                render: function(data) {
-                    const cls = data === 'actif' ? 'delivered' : 'cancelled';
-                    return '<span class="badge-status ' + cls + '">' + data + '</span>';
+                render: function(data, type, row) {
+                    const isOuvert = (data === 'Ouvert' || row.est_ferme == 0);
+                    if (isOuvert) {
+                        return '<span style="background-color: #ECFDF5 !important; color: #059669 !important; border: 1px solid #A7F3D0 !important; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fa fa-check-circle"></i> Ouvert</span>';
+                    } else {
+                        return '<span style="background-color: #FEF2F2 !important; color: #DC2626 !important; border: 1px solid #FECACA !important; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fa fa-times-circle"></i> Fermé</span>';
+                    }
                 }
             },
             {

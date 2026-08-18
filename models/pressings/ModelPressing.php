@@ -215,7 +215,8 @@ class ModelPressing extends BaseModel
                 SELECT 
                     ap.*, 
                     COALESCE(f.libelle_forfait, 'Forfait Standard') as libelle_forfait, 
-                    COALESCE(f.prix_forfait, 0) as prix_forfait,
+                    COALESCE(ap.montant_abonnement, f.montant_forfait, 0) as montant_abonnement,
+                    COALESCE(f.montant_forfait, 0) as montant_forfait,
                     COALESCE(f.description_forfait, '') as description_forfait,
                     DATEDIFF(ap.date_fin_abonnement, CURDATE()) as jours_restants
                 FROM " . TABLES::ABONNEMENTS_PRESSINGS . " ap

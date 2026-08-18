@@ -40,28 +40,11 @@ $pressings = isset($pressings) ? $pressings : [];
             <?= Validator::csrfField() ?>
             <input type="hidden" id="id_tarif" name="id_tarif" value="<?= htmlspecialchars($tarif['id_tarif'] ?? '') ?>">
 
-             <div class="form-grid">
-               <?php if ($isSuperAdmin): ?>
-                 <!-- Super Admin peut choisir le pressing à configurer -->
-                 <div class="form-field">
-                   <label for="pressing_code">Pressing partenaire</label>
-                   <div class="input-with-icon">
-                     <span class="input-icon"><?= Validator::icon('map-pin'); ?></span>
-                     <select class="form-control" id="pressing_code" name="pressing_code" required>
-                       <option value="">-- Choisir un pressing --</option>
-                       <?php foreach ($pressings as $p): ?>
-                         <option value="<?= htmlspecialchars($p['code_pressing']) ?>" <?= ($tarif['pressing_code'] ?? '') === $p['code_pressing'] ? 'selected' : '' ?>>
-                           <?= htmlspecialchars($p['libelle_pressing']) ?> (<?= htmlspecialchars($p['code_pressing']) ?>)
-                         </option>
-                       <?php endforeach; ?>
-                     </select>
-                   </div>
-                   <div class="error-message" id="pressingError"></div>
-                 </div>
-               <?php else: ?>
-                 <!-- Pressing Pro : son pressing_code est automatiquement injecté -->
-                 <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($currentPressingCode ?? '') ?>">
-               <?php endif; ?>
+              <div class="form-grid">
+                <?php
+                  $resolvedPressingCode = $currentPressingCode ?: ($tarif['pressing_code'] ?? ($pressings[0]['code_pressing'] ?? 'PRS-001'));
+                ?>
+                <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($resolvedPressingCode) ?>">
 
                <div class="form-field">
                  <label for="article_code">Article du catalogue</label>
@@ -134,5 +117,66 @@ $pressings = isset($pressings) ? $pressings : [];
     </div>
   </main>
 </div>
+
+<script>
+$(document).ready(function() {
+  if ($.fn.select2) {
+    $('#article_code').select2({
+      placeholder: '-- Sélectionner un article --',
+      allowClear: true,
+      width: '100%'
+    });
+
+    $('#service_code').select2({
+      placeholder: '-- Sélectionner un service --',
+      allowClear: true,
+      width: '100%'
+    });
+  }
+
+  $('.formEditTarif').on('submit', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const btn = form.find('.btnEditTarif');
+    const isEdit = $('#id_tarif').val() !== '';
+    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
+    const url = isEdit ? (baseApi + 'tarif/edit') : (baseApi + 'tarif/add');
+
+    if (typeof loading === 'function') {
+      loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+    }
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: form.serialize(),
+      dataType: 'json',
+      success: function(rep) {
+        if (typeof loading === 'function') {
+          loading(btn, false, '<i data-lucide="save"></i> Enregistrer le tarif');
+        }
+        if (rep.status) {
+          if (typeof showToast === 'function') showToast(rep.message || 'Tarif enregistré avec succès !', 'success');
+          setTimeout(function() {
+            window.location.href = baseApi + 'tarif/list';
+          }, 700);
+        } else {
+          if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de l\'enregistrement', 'error');
+        }
+      },
+      error: function(xhr) {
+        if (typeof loading === 'function') {
+          loading(btn, false, '<i data-lucide="save"></i> Enregistrer le tarif');
+        }
+        let msg = 'Erreur serveur';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          msg = xhr.responseJSON.message;
+        }
+        if (typeof showToast === 'function') showToast(msg, 'error');
+      }
+    });
+  });
+});
+</script>
 
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

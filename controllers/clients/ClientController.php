@@ -93,6 +93,7 @@ class ClientController extends BaseController
                 $id = (int) $this->post('id_client');
 
                 $data = [
+                    'id_client' => $id,
                     'nom_client' => $this->post('nom'),
                     'telephone_client' => $this->post('telephone'),
                     'email_client' => $this->post('email_client') ?: null,

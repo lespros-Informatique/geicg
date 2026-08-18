@@ -26,8 +26,9 @@ class ForfaitController extends BaseController
             $data[] = [
                 'code' => $i['code_forfait'],
                 'libelle' => $i['libelle_forfait'],
-                'montant' => $i['montant_forfait'] ?? 0,
-                'statut' => $i['statut_forfait'],
+                'montant' => (float)($i['montant_forfait'] ?? 0),
+                'duree_mois' => (int)($i['duree_mois_forfait'] ?? 1),
+                'statut' => $i['statut_forfait'] ?? 'actif',
                 'id' => $i['id_forfait'],
                 'editId' => $idCrypte
             ];
@@ -54,7 +55,16 @@ class ForfaitController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->error('Non implemente');
+        $id = $this->post('id');
+        if (isset($id) && $this->model->getById($id)) {
+            if ($this->model->toggleStatus($id)) {
+                $this->success('Statut du forfait modifié avec succès!', ['id' => $id, 'reload' => true]);
+            } else {
+                $this->error('Erreur lors du changement de statut');
+            }
+        } else {
+            $this->error('Forfait introuvable!');
+        }
     }
 
     public function details($details)

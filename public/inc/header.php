@@ -8,9 +8,59 @@
     <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .select2-container--default .select2-selection--single {
+            height: 42px !important;
+            border: 1px solid #CBD5E1 !important;
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+            display: flex !important;
+            align-items: center !important;
+            background-color: #FFFFFF !important;
+            transition: all 0.2s ease !important;
+        }
+        .select2-container--default .select2-selection--single:focus,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #1E3A5F !important;
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12) !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #1E293B !important;
+            font-size: 14px !important;
+            padding-left: 0 !important;
+            line-height: 28px !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px !important;
+            right: 8px !important;
+        }
+        .select2-dropdown {
+            border: 1px solid #CBD5E1 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+            z-index: 100000 !important;
+        }
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 6px !important;
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #1E3A5F !important;
+            color: #FFFFFF !important;
+        }
+        .select2-container--default .select2-results__option--selected {
+            background-color: #EFF6FF !important;
+            color: #1E3A5F !important;
+            font-weight: 600 !important;
+        }
+    </style>
     <script>
         window.RACINE = '<?= RACINE ?>';
         window.LINK = '<?= RACINE ?>';

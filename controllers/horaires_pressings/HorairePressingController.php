@@ -23,20 +23,22 @@ class HorairePressingController extends BaseController
         if ($pressingCode !== null) {
             $horaires = $this->model->getByPressing($pressingCode);
         } else {
-            $horaires = $this->model->getAll();
+            $horaires = $this->model->getAllWithPressing();
         }
 
         $data = [];
 
         foreach ($horaires as $h) {
             $idCrypte = $this->validator->crypter($h['id_horaire']);
+            $isFerme = (int)($h['est_ferme'] ?? 0) === 1;
             $data[] = [
-                'code' => $h['pressing_code'],
+                'code' => $h['libelle_pressing'] ?? $h['pressing_code'],
+                'pressing_code' => $h['pressing_code'],
                 'jour' => ucfirst($h['jour'] ?? ''),
-                'heure_ouverture' => $h['heure_ouverture'] ? substr($h['heure_ouverture'], 0, 5) : '-',
-                'heure_fermeture' => $h['heure_fermeture'] ? substr($h['heure_fermeture'], 0, 5) : '-',
-                'est_ferme' => $h['est_ferme'] ?? 0,
-                'statut' => ($h['est_ferme'] ?? 0) ? 'Fermé' : 'Ouvert',
+                'heure_ouverture' => (!$isFerme && $h['heure_ouverture']) ? substr($h['heure_ouverture'], 0, 5) : '-',
+                'heure_fermeture' => (!$isFerme && $h['heure_fermeture']) ? substr($h['heure_fermeture'], 0, 5) : '-',
+                'est_ferme' => $isFerme ? 1 : 0,
+                'statut' => $isFerme ? 'Fermé' : 'Ouvert',
                 'id' => $h['id_horaire'],
                 'editId' => $idCrypte
             ];
@@ -51,13 +53,8 @@ class HorairePressingController extends BaseController
         $this->requireAuth();
 
         $pressingCode = $this->getCurrentPressingCode();
-        if ($pressingCode === null) {
-            $pressingCode = $this->post('pressing_code');
-        }
-
         if (empty($pressingCode)) {
-            $this->error('Le pressing est requis');
-            return;
+            $pressingCode = $this->post('pressing_code') ?: 'PRS-001';
         }
 
         $notEmpty = Validator::validateRequiredFields(['jour' => $_POST['jour'] ?? '']);
@@ -67,7 +64,7 @@ class HorairePressingController extends BaseController
         }
 
         $jour = strtolower(trim($this->post('jour')));
-        $estFerme = $this->post('est_ferme') ? 1 : 0;
+        $estFerme = ((int)$this->post('est_ferme') === 1) ? 1 : 0;
         $heureOuverture = !$estFerme ? ($this->post('heure_ouverture') ?: '08:00:00') : null;
         $heureFermeture = !$estFerme ? ($this->post('heure_fermeture') ?: '18:00:00') : null;
 
@@ -121,7 +118,7 @@ class HorairePressingController extends BaseController
                 return;
             }
         } else {
-            $pressingCode = $this->post('pressing_code') ?: $item['pressing_code'];
+            $pressingCode = $this->post('pressing_code') ?: ($item['pressing_code'] ?? 'PRS-001');
         }
 
         $notEmpty = Validator::validateRequiredFields(['jour' => $_POST['jour'] ?? '']);
@@ -130,13 +127,16 @@ class HorairePressingController extends BaseController
             return;
         }
 
-        $estFerme = $this->post('est_ferme') ? 1 : 0;
+        $estFerme = ((int)$this->post('est_ferme') === 1) ? 1 : 0;
+        $heureOuverture = !$estFerme ? ($this->post('heure_ouverture') ?: '08:00:00') : null;
+        $heureFermeture = !$estFerme ? ($this->post('heure_fermeture') ?: '18:00:00') : null;
+
         $data = [
             'id_horaire' => $id,
             'pressing_code' => $pressingCode,
             'jour' => strtolower(trim($this->post('jour'))),
-            'heure_ouverture' => !$estFerme ? ($this->post('heure_ouverture') ?: '08:00:00') : null,
-            'heure_fermeture' => !$estFerme ? ($this->post('heure_fermeture') ?: '18:00:00') : null,
+            'heure_ouverture' => $heureOuverture,
+            'heure_fermeture' => $heureFermeture,
             'est_ferme' => $estFerme
         ];
 

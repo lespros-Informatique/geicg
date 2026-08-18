@@ -5,7 +5,18 @@ $(document).ready(function() {
             { data: 'code', title: 'Code' },
             { data: 'commande', title: 'Commande' },
             { data: 'livreur', title: 'Livreur' },
-            { data: 'type', title: 'Type' },
+            {
+                data: 'type',
+                title: 'Type de Mission',
+                render: function(data) {
+                    const isCollecte = (data || '').toLowerCase() === 'collecte';
+                    if (isCollecte) {
+                        return '<span style="background:#FEF3C7; color:#B45309; border:1px solid #FCD34D; border-radius:6px; padding:4px 8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:5px;"><i class="fa fa-box"></i> Collecte</span>';
+                    } else {
+                        return '<span style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; padding:4px 8px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:5px;"><i class="fa fa-truck"></i> Livraison</span>';
+                    }
+                }
+            },
             { data: 'adresse', title: 'Adresse' },
             {
                 data: 'statut',
@@ -13,7 +24,8 @@ $(document).ready(function() {
                 render: function(data) {
                     const map = { 'en_attente': 'warning', 'en_cours': 'info', 'terminee': 'delivered', 'annulee': 'cancelled' };
                     const cls = map[data] || 'cancelled';
-                    return '<span class="badge-status ' + cls + '">' + data + '</span>';
+                    const labels = { 'en_attente': 'En attente', 'en_cours': 'En cours', 'terminee': 'Terminée', 'annulee': 'Annulée' };
+                    return '<span class="badge-status ' + cls + '">' + (labels[data] || data) + '</span>';
                 }
             },
             {

@@ -8,23 +8,34 @@ require_once __DIR__ . '/../../public/inc/header.php';
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
 
     <div class="content-wrapper">
-      <h1 class="page-title">Villes</h1>
-      <div class="card">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+        <div>
+          <h1 style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="navigation" style="color: #2563EB;"></i> Gestion des Villes
+          </h1>
+          <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0;">Liste des villes et zones de couverture du service</p>
+        </div>
+      </div>
+
+      <div class="card" style="border-radius: 14px; padding: 20px;">
         <div class="table-responsive-mobile">
-          <table class="table" id="dataTable">
+          <table class="table" id="dataTable" style="width: 100%;">
             <thead>
               <tr>
+                <th>N°</th>
                 <th>Code</th>
-                <th>Libelle</th>
+                <th>Libellé Ville</th>
                 <th>Statut</th>
+                <th style="text-align: center;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
         </div>
       </div>
+
       <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/villes.js?v=1"></script>
+      <script src="<?= RACINE ?>json/entities/villes.js?v=2"></script>
     </div>
   </main>
 </div>

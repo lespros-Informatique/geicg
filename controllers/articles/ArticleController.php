@@ -18,13 +18,8 @@ class ArticleController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $articles = $this->model->getAll();
         $pressingCode = $this->getCurrentPressingCode();
-        if ($pressingCode !== null) {
-            $articles = array_filter($articles, function($a) use ($pressingCode) {
-                return $a['pressing_code'] === $pressingCode;
-            });
-        }
+        $articles = $this->model->getAllWithCategory($pressingCode);
         $data = [];
 
         foreach ($articles as $a) {
@@ -32,7 +27,7 @@ class ArticleController extends BaseController
             $data[] = [
                 'code' => $a['code_article'],
                 'nom' => $a['libelle_article'],
-                'categorie' => $a['categorie_article_code'] ?? '',
+                'categorie' => $a['libelle_categorie'] ?? ($a['categorie_article_code'] ?? ''),
                 'pressing' => $a['pressing_code'] ?? '',
                 'statut' => $a['statut_article'],
                 'id' => $a['id_article'],
@@ -92,6 +87,7 @@ class ArticleController extends BaseController
         $id = (int) $this->post('id_article');
 
         $data = [
+            'id_article' => $id,
             'pressing_code' => $this->getCurrentPressingCode() ?: 'PRS-001',
             'categorie_article_code' => $this->post('categorie_article_code') ?: '',
             'libelle_article' => $this->post('libelle_article'),
@@ -126,7 +122,11 @@ class ArticleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/articles/edit.php', ['article' => []]);
+        $categories = (new ModelCategorieArticle())->getByStatus('actif');
+        $this->loadView('../views/articles/edit.php', [
+            'article' => [],
+            'categories' => $categories
+        ]);
     }
 
     public function details($details)
@@ -166,7 +166,11 @@ class ArticleController extends BaseController
             exit();
         }
 
-        $this->loadView('../views/articles/edit.php', ['article' => $item]);
+        $categories = (new ModelCategorieArticle())->getByStatus('actif');
+        $this->loadView('../views/articles/edit.php', [
+            'article' => $item,
+            'categories' => $categories
+        ]);
     }
 
     public function getActive()

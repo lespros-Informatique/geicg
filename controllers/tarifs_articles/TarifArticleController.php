@@ -51,13 +51,8 @@ class TarifArticleController extends BaseController
         $this->requireAuth();
 
         $pressingCode = $this->getCurrentPressingCode();
-        if ($pressingCode === null) {
-            $pressingCode = $this->post('pressing_code');
-        }
-
         if (empty($pressingCode)) {
-            $this->error('Le pressing est requis');
-            return;
+            $pressingCode = $this->post('pressing_code') ?: 'PRS-001';
         }
 
         $notEmpty = Validator::validateRequiredFields([

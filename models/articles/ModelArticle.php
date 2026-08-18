@@ -25,15 +25,24 @@ class ModelArticle extends BaseModel
         }
     }
 
-    public function getByCategory(string $categoryCode): array
+    public function getAllWithCategory(?string $pressingCode = null): array
     {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE categorie_article_code = ? AND statut_article = 'actif' ORDER BY libelle_article ASC";
-            $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute([$categoryCode]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $sql = "
+                SELECT a.*, COALESCE(cat.libelle_categorie_article, a.categorie_article_code) as libelle_categorie
+                FROM {$this->table} a
+                LEFT JOIN " . TABLES::CATEGORIES_ARTICLES . " cat ON a.categorie_article_code = cat.code_categorie_article
+            ";
+            if ($pressingCode !== null) {
+                $sql .= " WHERE a.pressing_code = ? OR a.pressing_code = 'PRS-001' ORDER BY cat.libelle_categorie_article ASC, a.libelle_article ASC";
+                $stmt = $this->getCon()->prepare($sql);
+                $stmt->execute([$pressingCode]);
+                return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            }
+            $sql .= " ORDER BY cat.libelle_categorie_article ASC, a.libelle_article ASC";
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
-            error_log("ModelArticle::getByCategory error: " . $e->getMessage());
+            error_log("ModelArticle::getAllWithCategory error: " . $e->getMessage());
             return [];
         }
     }

@@ -84,6 +84,7 @@ class CategorieArticleController extends BaseController
         $id = (int) $this->post('id_categorie_article');
 
         $data = [
+            'id_categorie_article' => $id,
             'libelle_categorie_article' => $this->post('libelle_categorie_article'),
             'description_categorie_article' => $this->post('description_categorie_article') ?? '',
             'icon_categorie_article' => $this->post('icon_categorie_article') ?? '',

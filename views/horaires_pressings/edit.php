@@ -34,27 +34,10 @@ $pressings = isset($pressings) ? $pressings : [];
             <input type="hidden" id="id_horaire" name="id_horaire" value="<?= htmlspecialchars($horaire['id_horaire'] ?? '') ?>">
 
              <div class="form-grid">
-               <?php if ($isSuperAdmin): ?>
-                 <!-- Super Admin peut choisir pour quel pressing configurer les horaires -->
-                 <div class="form-field">
-                   <label for="pressing_code">Pressing</label>
-                   <div class="input-with-icon">
-                     <span class="input-icon"><?= Validator::icon('map-pin'); ?></span>
-                     <select class="form-control" id="pressing_code" name="pressing_code" required>
-                       <option value="">-- Choisir un pressing --</option>
-                       <?php foreach ($pressings as $p): ?>
-                         <option value="<?= htmlspecialchars($p['code_pressing']) ?>" <?= ($horaire['pressing_code'] ?? '') === $p['code_pressing'] ? 'selected' : '' ?>>
-                           <?= htmlspecialchars($p['libelle_pressing']) ?> (<?= htmlspecialchars($p['code_pressing']) ?>)
-                         </option>
-                       <?php endforeach; ?>
-                     </select>
-                   </div>
-                   <div class="error-message" id="pressingError"></div>
-                 </div>
-               <?php else: ?>
-                 <!-- Pressing Pro : son pressing_code est automatiquement injecté -->
-                 <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($currentPressingCode ?? '') ?>">
-               <?php endif; ?>
+                <?php
+                  $resolvedHorairePressingCode = $currentPressingCode ?: ($horaire['pressing_code'] ?? ($pressings[0]['code_pressing'] ?? 'PRS-001'));
+                ?>
+                <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($resolvedHorairePressingCode) ?>">
 
                <div class="form-field">
                  <label for="jour">Jour de la semaine</label>
@@ -135,6 +118,51 @@ function toggleHoraireInputs(isFerme) {
     }
   });
 }
+
+$(document).ready(function() {
+  $('.formEditHoraire').on('submit', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const btn = form.find('.btnEditHoraire');
+    const isEdit = $('#id_horaire').val() !== '';
+    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
+    const url = isEdit ? (baseApi + 'horaires/edit') : (baseApi + 'horaires/add');
+
+    if (typeof loading === 'function') {
+      loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+    }
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: form.serialize(),
+      dataType: 'json',
+      success: function(rep) {
+        if (typeof loading === 'function') {
+          loading(btn, false, '<i data-lucide="save"></i> Enregistrer l\'horaire');
+        }
+        if (rep.status) {
+          if (typeof showToast === 'function') showToast(rep.message || 'Horaire enregistré avec succès !', 'success');
+          setTimeout(function() {
+            window.location.href = baseApi + 'horaires/list';
+          }, 700);
+        } else {
+          if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de l\'enregistrement', 'error');
+        }
+      },
+      error: function(xhr) {
+        if (typeof loading === 'function') {
+          loading(btn, false, '<i data-lucide="save"></i> Enregistrer l\'horaire');
+        }
+        let msg = 'Erreur serveur';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          msg = xhr.responseJSON.message;
+        }
+        if (typeof showToast === 'function') showToast(msg, 'error');
+      }
+    });
+  });
+});
 </script>
 
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

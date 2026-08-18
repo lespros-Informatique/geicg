@@ -83,6 +83,7 @@ class ServiceController extends BaseController
         $id = (int) $this->post('id_service');
 
         $data = [
+            'id_service' => $id,
             'libelle_service' => $this->post('libelle_service'),
             'description_service' => $this->post('description_service') ?? '',
             'statut_service' => $statut,

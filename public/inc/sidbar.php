@@ -28,12 +28,6 @@
             <a href="<?= RACINE ?>categorie/list" class="nav-item sub">
                 <i data-lucide="tag"></i> <span>Catégories d'articles</span>
             </a>
-            <a href="<?= RACINE ?>service/list" class="nav-item sub">
-                <i data-lucide="sparkles"></i> <span>Services standards</span>
-            </a>
-            <a href="<?= RACINE ?>article/list" class="nav-item sub">
-                <i data-lucide="shirt"></i> <span>Articles de référence</span>
-            </a>
             <a href="<?= RACINE ?>forfait/list" class="nav-item sub">
                 <i data-lucide="award"></i> <span>Forfaits B2B</span>
             </a>
@@ -84,6 +78,9 @@
             <a href="<?= RACINE ?>tarif/list" class="nav-item sub">
                 <i data-lucide="dollar-sign"></i> <span>Mes Tarifs Articles</span>
             </a>
+            <a href="<?= RACINE ?>article/list" class="nav-item sub">
+                <i data-lucide="shirt"></i> <span>Mes Articles</span>
+            </a>
             <a href="<?= RACINE ?>service/list" class="nav-item sub">
                 <i data-lucide="sparkles"></i> <span>Mes Services</span>
             </a>
@@ -98,9 +95,6 @@
             </div>
             <a href="<?= RACINE ?>livreur/list" class="nav-item sub">
                 <i data-lucide="user-check"></i> <span>Mes Livreurs</span>
-            </a>
-            <a href="<?= RACINE ?>mission/list" class="nav-item sub">
-                <i data-lucide="briefcase"></i> <span>Missions de collecte/livraison</span>
             </a>
             <a href="<?= RACINE ?>abonnement/list" class="nav-item sub">
                 <i data-lucide="credit-card"></i> <span>Mon Abonnement B2B</span>

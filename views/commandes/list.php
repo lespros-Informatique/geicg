@@ -196,22 +196,11 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
               </select>
             </div>
 
-            <!-- 3. PRESSING -->
-            <?php if ($isSuperAdmin): ?>
-              <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Pressing Traitant</label>
-                <select name="pressing_code" id="order_pressing_code" required class="form-control" onchange="autoFillLinePrice()" style="width: 100%; padding: 10px 12px; font-size: 14px;">
-                  <option value="">-- Choisir un pressing --</option>
-                  <?php foreach ($pressings as $p): ?>
-                    <option value="<?= htmlspecialchars($p['code_pressing']) ?>">
-                      <?= htmlspecialchars($p['libelle_pressing']) ?> (<?= htmlspecialchars($p['code_pressing']) ?>)
-                    </option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-            <?php else: ?>
-              <input type="hidden" name="pressing_code" id="order_pressing_code" value="<?= htmlspecialchars($currentPressingCode ?? '') ?>">
-            <?php endif; ?>
+            <!-- 3. PRESSING (Session automatique) -->
+            <?php
+              $resolvedOrderPressingCode = $currentPressingCode ?: ($pressings[0]['code_pressing'] ?? 'PRS-001');
+            ?>
+            <input type="hidden" name="pressing_code" id="order_pressing_code" value="<?= htmlspecialchars($resolvedOrderPressingCode) ?>">
 
             <!-- 4. ADRESSE DE COLLECTE / LIVRAISON -->
             <div style="margin-bottom: 16px;">
@@ -256,7 +245,7 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
       </div>
 
       <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/commandes.js?v=5"></script>
+      <script src="<?= RACINE ?>json/entities/commandes.js?v=6"></script>
 
       <script>
       const tarifsCatalogue = <?= json_encode($tarifs, JSON_UNESCAPED_UNICODE) ?>;
@@ -273,6 +262,9 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
       function closeNewOrderModal() {
         const modal = document.getElementById('modal-nouvelle-commande');
         if (modal) modal.style.display = 'none';
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
 
       function handleTypeCommandeChange(type) {
@@ -417,7 +409,8 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
       }
 
       function fillClientAddress(selectEl) {
-        const opt = selectEl.options[selectEl.selectedIndex];
+        if (!selectEl) return;
+        const opt = selectEl.options ? selectEl.options[selectEl.selectedIndex] : null;
         if (opt) {
           const adr = opt.getAttribute('data-adresse') || '';
           const inputAdr = document.getElementById('order_adresse');
@@ -425,6 +418,10 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
             inputAdr.value = adr;
           }
         }
+      }
+
+      function onOrderClientChange(el) {
+        fillClientAddress(el);
       }
 
       function submitNewOrder(e) {
@@ -457,7 +454,7 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
               closeNewOrderModal();
               selectedItemsList = [];
               renderSelectedItems();
-              if ($.fn.DataTable.isDataTable('#dataTable')) {
+              if ($.fn.DataTable && $.fn.DataTable.isDataTable('#dataTable')) {
                 $('#dataTable').DataTable().ajax.reload();
               } else {
                 setTimeout(() => window.location.reload(), 700);
@@ -466,14 +463,60 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
               if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de la création', 'error');
             }
           },
-          error: function() {
+          error: function(xhr) {
             if (typeof loading === 'function') {
               loading(btn, false, '<i data-lucide="check-circle"></i> Créer la commande');
             }
-            if (typeof showToast === 'function') showToast('Erreur de communication avec le serveur', 'error');
+            let msg = 'Erreur lors de la création de la commande';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+              msg = xhr.responseJSON.message;
+            }
+            if (typeof showToast === 'function') showToast(msg, 'error');
           }
         });
       }
+
+      $(document).ready(function() {
+        if ($.fn.select2) {
+          $('#order_client_code').select2({
+            dropdownParent: $('#modal-nouvelle-commande'),
+            placeholder: '-- Choisir un client --',
+            width: '100%'
+          }).on('change', function() {
+            onOrderClientChange(this);
+          });
+
+          $('#line_article_select').select2({
+            dropdownParent: $('#modal-nouvelle-commande'),
+            placeholder: '-- Choisir un article --',
+            width: '100%'
+          }).on('change', function() {
+            autoFillLinePrice();
+          });
+
+          $('#line_service_select').select2({
+            dropdownParent: $('#modal-nouvelle-commande'),
+            placeholder: '-- Choisir un service --',
+            width: '100%'
+          }).on('change', function() {
+            autoFillLinePrice();
+          });
+        }
+
+        // Détection de l'ouverture automatique depuis la liste client
+        const urlParams = new URLSearchParams(window.location.search);
+        const preselectedClient = urlParams.get('client');
+        if (preselectedClient) {
+          const sel = $('#order_client_code');
+          if (sel.length) {
+            sel.val(preselectedClient).trigger('change');
+          }
+          openNewOrderModal();
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }
+      });
       </script>
     </div>
   </main>

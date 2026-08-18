@@ -69,27 +69,10 @@ $pressings = isset($pressings) ? $pressings : [];
                  <div class="error-message" id="telephoneError"></div>
                </div>
 
-               <?php if ($isSuperAdmin): ?>
-                 <!-- Super Admin peut choisir d'affecter le coursier à un pressing spécifique ou le laisser global -->
-                 <div class="form-field">
-                   <label for="pressing_code">Pressing rattaché</label>
-                   <div class="input-with-icon">
-                     <span class="input-icon"><?= Validator::icon('map-pin'); ?></span>
-                     <select class="form-control" id="pressing_code" name="pressing_code">
-                       <option value="">-- Coursier Marketplace Global --</option>
-                       <?php foreach ($pressings as $p): ?>
-                         <option value="<?= htmlspecialchars($p['code_pressing']) ?>" <?= ($livreur['pressing_code'] ?? '') === $p['code_pressing'] ? 'selected' : '' ?>>
-                           <?= htmlspecialchars($p['libelle_pressing']) ?> (<?= htmlspecialchars($p['code_pressing']) ?>)
-                         </option>
-                       <?php endforeach; ?>
-                     </select>
-                   </div>
-                   <div class="error-message" id="pressingError"></div>
-                 </div>
-               <?php else: ?>
-                 <!-- Pour le gérant de pressing, le champ est automatiquement lié à son pressing sans affichage inutile -->
-                 <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($currentPressingCode ?? '') ?>">
-               <?php endif; ?>
+                <?php
+                  $resolvedLivreurPressingCode = $currentPressingCode ?: ($livreur['pressing_code'] ?? '');
+                ?>
+                <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($resolvedLivreurPressingCode) ?>">
 
                <?php if (isset($livreur['statut_livreur'])): ?>
                <div class="form-field">
@@ -120,5 +103,52 @@ $pressings = isset($pressings) ? $pressings : [];
     </div>
   </main>
 </div>
+
+<script>
+$(document).ready(function() {
+  $('.formEditLivreur').on('submit', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const btn = form.find('.btnEditLivreur');
+    const isEdit = $('#id_livreur').val() !== '';
+    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
+    const url = isEdit ? (baseApi + 'livreur/edit') : (baseApi + 'livreur/add');
+
+    if (typeof loading === 'function') {
+      loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+    }
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: form.serialize(),
+      dataType: 'json',
+      success: function(rep) {
+        if (typeof loading === 'function') {
+          loading(btn, false, '<i data-lucide="save"></i> Sauvegarder');
+        }
+        if (rep.status) {
+          if (typeof showToast === 'function') showToast(rep.message || 'Livreur enregistré avec succès !', 'success');
+          setTimeout(function() {
+            window.location.href = baseApi + 'livreur/list';
+          }, 700);
+        } else {
+          if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de l\'enregistrement', 'error');
+        }
+      },
+      error: function(xhr) {
+        if (typeof loading === 'function') {
+          loading(btn, false, '<i data-lucide="save"></i> Sauvegarder');
+        }
+        let msg = 'Erreur serveur';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          msg = xhr.responseJSON.message;
+        }
+        if (typeof showToast === 'function') showToast(msg, 'error');
+      }
+    });
+  });
+});
+</script>
 
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

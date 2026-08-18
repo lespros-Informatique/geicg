@@ -1,3 +1,8 @@
+window.openCommandeModal = function(clientCode) {
+    const base = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
+    window.location.href = base + 'commande/list' + (clientCode ? '?client=' + encodeURIComponent(clientCode) : '');
+};
+
 $(document).ready(function() {
     if ($('#dataTable').length) {
         const columns = [

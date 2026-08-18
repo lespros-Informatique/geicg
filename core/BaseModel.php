@@ -73,17 +73,26 @@ abstract class BaseModel
         }
     }
 
-    public function update(array $data): bool
+    public function update(array $data, ?int $id = null): bool
     {
         try {
-            $id = $data['id'] ?? null;
             if ($id === null) {
+                $id = $data['id'] ?? ($data[$this->primaryKey] ?? null);
+            }
+            if ($id === null) {
+                error_log("Update {$this->table}: No ID provided in payload");
                 return false;
             }
             unset($data['id']);
+            unset($data[$this->primaryKey]);
+
+            if (empty($data)) {
+                return true;
+            }
+
             $set = implode(', ', array_map(fn($f) => "$f = :$f", array_keys($data)));
-            $sql = "UPDATE {$this->table} SET $set WHERE {$this->primaryKey} = :id";
-            $data['id'] = $id;
+            $sql = "UPDATE {$this->table} SET $set WHERE {$this->primaryKey} = :primary_key_id";
+            $data['primary_key_id'] = $id;
             $stmt = $this->pdo->getCon()->prepare($sql);
             return $stmt->execute($data);
         } catch (Exception $e) {

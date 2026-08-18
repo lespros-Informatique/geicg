@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../public/inc/header.php';
 ?>
 
@@ -28,7 +28,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
       </div>
 
       <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/clients.js?v=3"></script>
+      <script src="<?= RACINE ?>json/entities/clients.js?v=4"></script>
     </div>
   </main>
 </div>

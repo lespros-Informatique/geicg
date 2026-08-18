@@ -595,6 +595,19 @@ function submitMarquerPrete() {
 function openDevisModal() {
   renderDevisItems();
   openWorkflowModal('modal-devis');
+  if ($.fn.select2) {
+    $('#devis_article_select').select2({
+      dropdownParent: $('#modal-devis'),
+      placeholder: '-- Choisir un article --',
+      width: '100%'
+    }).off('change.autofill').on('change.autofill', function() { autoFillDevisPrice(); });
+
+    $('#devis_service_select').select2({
+      dropdownParent: $('#modal-devis'),
+      placeholder: '-- Choisir un service --',
+      width: '100%'
+    }).off('change.autofill').on('change.autofill', function() { autoFillDevisPrice(); });
+  }
 }
 
 function autoFillDevisPrice() {
