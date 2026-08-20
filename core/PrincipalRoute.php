@@ -68,3 +68,6 @@ require_once __DIR__ . '/../controllers/commandes/CommandeController.php';
 require_once __DIR__ . '/../controllers/paiements/PaiementController.php';
 require_once __DIR__ . '/../controllers/retraits/RetraitController.php';
 require_once __DIR__ . '/../controllers/webhooks/GeniusPayWebhookController.php';
+require_once __DIR__ . '/../models/settings/ModelSetting.php';
+require_once __DIR__ . '/../controllers/settings/SettingController.php';
+

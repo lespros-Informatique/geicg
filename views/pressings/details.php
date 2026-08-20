@@ -48,6 +48,22 @@ $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ?
               <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #F8FAFC; color: #334155; border: 1px solid #E2E8F0;">
                 <i data-lucide="clock" style="width: 12px; height: 12px; vertical-align: -1px; color: #2563EB;"></i> <?= htmlspecialchars($pressing['delai_livraison_pressing'] ?? '24h - 48h') ?>
               </span>
+              <?php 
+                $modeLog = $pressing['mode_logistique'] ?? 'pressing';
+                if ($modeLog === 'lavex'):
+              ?>
+                <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #DBEAFE; color: #1E40AF; border: 1px solid #BFDBFE;">
+                  <i data-lucide="rocket" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Flotte Officielle Lavex
+                </span>
+              <?php elseif ($modeLog === 'retrait_uniquement'): ?>
+                <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB;">
+                  <i data-lucide="store" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Retrait Atelier Uniquement
+                </span>
+              <?php else: ?>
+                <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;">
+                  <i data-lucide="truck" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Livreur du Pressing (Frais: <?= number_format((float)($pressing['frais_collecte_pressing'] ?? 1000), 0, ',', ' ') ?> / <?= number_format((float)($pressing['frais_livraison_pressing'] ?? 1000), 0, ',', ' ') ?> FCFA)
+                </span>
+              <?php endif; ?>
               <?php if (!empty($pressing['livraison_gratuite'])): ?>
                 <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">
                   <i data-lucide="truck" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Livraison Gratuite <?= !empty($pressing['seuil_livraison_gratuite']) ? '(dès ' . number_format($pressing['seuil_livraison_gratuite'], 0, ',', ' ') . ' FCFA)' : '' ?>
@@ -643,21 +659,21 @@ $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ?
               
               <label style="border: 2px solid #2563EB; background: #EFF6FF; border-radius: 12px; padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s;" class="role-card-option" id="role-card-pro">
                 <input type="radio" name="role_code" value="ROLE-PRO" checked style="display: none;" onchange="selectTeamRole('ROLE-PRO')">
-                <div style="font-size: 22px; margin-bottom: 4px;">👑</div>
+                <div style="font-size: 20px; color: #2563EB; margin-bottom: 4px;"><i data-lucide="crown"></i></div>
                 <div style="font-weight: 800; font-size: 13px; color: #1E40AF;">Propriétaire</div>
                 <div style="font-size: 11px; color: #64748B;">Propriétaire de l'enseigne</div>
               </label>
 
               <label style="border: 2px solid #E2E8F0; background: #FFF; border-radius: 12px; padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s;" class="role-card-option" id="role-card-gest">
                 <input type="radio" name="role_code" value="ROLE-GEST" style="display: none;" onchange="selectTeamRole('ROLE-GEST')">
-                <div style="font-size: 22px; margin-bottom: 4px;">💼</div>
+                <div style="font-size: 20px; color: #64748B; margin-bottom: 4px;"><i data-lucide="briefcase"></i></div>
                 <div style="font-weight: 800; font-size: 13px; color: #1E293B;">Gestionnaire</div>
                 <div style="font-size: 11px; color: #64748B;">Gérant d'atelier au quotidien</div>
               </label>
 
               <label style="border: 2px solid #E2E8F0; background: #FFF; border-radius: 12px; padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s;" class="role-card-option" id="role-card-liv">
                 <input type="radio" name="role_code" value="ROLE-LIV" style="display: none;" onchange="selectTeamRole('ROLE-LIV')">
-                <div style="font-size: 22px; margin-bottom: 4px;">🛵</div>
+                <div style="font-size: 20px; color: #64748B; margin-bottom: 4px;"><i data-lucide="truck"></i></div>
                 <div style="font-weight: 800; font-size: 13px; color: #1E293B;">Livreur</div>
                 <div style="font-size: 11px; color: #64748B;">Collecte & Livraison terrain</div>
               </label>

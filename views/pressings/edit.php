@@ -117,18 +117,25 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                 </div>
 
                 <div class="form-field">
-                  <label for="quartier_code">Quartier</label>
-                  <div class="input-with-icon">
-                    <span class="input-icon"><?= Validator::icon('map'); ?></span>
-                    <select class="form-control" id="quartier_code" name="quartier_code">
-                      <option value="">Sélectionner un quartier</option>
-                      <?php foreach ($quartiers as $q): ?>
-                        <option value="<?= $q['code_quartier'] ?>" data-ville="<?= $q['ville_code'] ?>" <?= ($pressing['quartier_code'] ?? '') == $q['code_quartier'] ? 'selected' : '' ?>>
-                          <?= htmlspecialchars($q['libelle_quartier']) ?>
-                        </option>
-                      <?php endforeach; ?>
-                    </select>
+                  <label for="quartier_code" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Quartier</span>
+                    <span style="font-size: 11px; color: #2563EB; font-weight: 600;"><i data-lucide="search" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Recherche rapide</span>
+                  </label>
+                  <div style="position: relative;">
+                    <input type="text" id="quartier_search" class="form-control" placeholder="Rechercher un quartier (ex: Koko, Nimbo, Air France...)" autocomplete="off" style="margin-bottom: 6px; font-size: 13px; border-radius: 8px; border: 1.5px solid #2563eb; background: #f0f6ff;">
+                    <div class="input-with-icon">
+                      <span class="input-icon"><?= Validator::icon('map'); ?></span>
+                      <select class="form-control" id="quartier_code" name="quartier_code">
+                        <option value="">Sélectionner un quartier</option>
+                        <?php foreach ($quartiers as $q): ?>
+                          <option value="<?= $q['code_quartier'] ?>" data-ville="<?= $q['ville_code'] ?>" <?= ($pressing['quartier_code'] ?? '') == $q['code_quartier'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($q['libelle_quartier']) ?>
+                          </option>
+                        <?php endforeach; ?>
+                      </select>
+                    </div>
                   </div>
+                  <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Tapez les premières lettres du quartier pour filtrer la liste en temps réel.</small>
                 </div>
 
                 <div class="form-field" style="grid-column: 1 / -1;">
@@ -206,7 +213,98 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                   </h4>
                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
                     
-                    <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                    <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px; grid-column: 1 / -1;">
+                      <label for="mode_logistique" style="font-weight: 700; font-size: 13px; color: #1E293B; display: block; margin-bottom: 6px;">
+                        Mode de Gestion Logistique (Qui assure la livraison ?)
+                      </label>
+                      <div class="input-with-icon">
+                        <span class="input-icon"><?= Validator::icon('truck'); ?></span>
+                        <select class="form-control" id="mode_logistique" name="mode_logistique" onchange="toggleLogisticsFields(this.value)">
+                          <option value="pressing" <?= ($pressing['mode_logistique'] ?? 'pressing') === 'pressing' ? 'selected' : '' ?>>
+                            Livraison assurée par le Pressing (Ses propres livreurs et tarifs)
+                          </option>
+                          <option value="lavex" <?= ($pressing['mode_logistique'] ?? '') === 'lavex' ? 'selected' : '' ?>>
+                            Livraison assurée par la Flotte Officielle Lavex
+                          </option>
+                          <option value="retrait_uniquement" <?= ($pressing['mode_logistique'] ?? '') === 'retrait_uniquement' ? 'selected' : '' ?>>
+                            Retrait en Atelier Uniquement (Pas de service de livraison)
+                          </option>
+                        </select>
+                      </div>
+                      <small style="color: #64748B; font-size: 11px; display: block; margin-top: 6px;">
+                        Permet de définir si ce pressing utilise ses propres livreurs ou la flotte Lavex.
+                      </small>
+                    </div>
+
+                    <div class="form-field mode-pressing-field" id="container_frais_collecte" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                      <label for="frais_collecte_pressing" style="font-weight: 700; font-size: 13px; color: #1E293B; display: block; margin-bottom: 6px;">
+                        Frais de Collecte du Pressing (FCFA)
+                      </label>
+                      <div class="input-with-icon">
+                        <span class="input-icon"><?= Validator::icon('dollar-sign'); ?></span>
+                        <input type="number" class="form-control" id="frais_collecte_pressing" name="frais_collecte_pressing"
+                               placeholder="ex: 1000" min="0" step="100" value="<?= htmlspecialchars($pressing['frais_collecte_pressing'] ?? '1000') ?>">
+                      </div>
+                      <small style="color: #64748B; font-size: 11px; display: block; margin-top: 6px;">
+                        Fixé par le pressing pour sa propre flotte de collecte.
+                      </small>
+                    </div>
+
+                    <div class="form-field mode-pressing-field" id="container_frais_livraison" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                      <label for="frais_livraison_pressing" style="font-weight: 700; font-size: 13px; color: #1E293B; display: block; margin-bottom: 6px;">
+                        Frais de Livraison du Pressing (FCFA)
+                      </label>
+                      <div class="input-with-icon">
+                        <span class="input-icon"><?= Validator::icon('dollar-sign'); ?></span>
+                        <input type="number" class="form-control" id="frais_livraison_pressing" name="frais_livraison_pressing"
+                               placeholder="ex: 1000" min="0" step="100" value="<?= htmlspecialchars($pressing['frais_livraison_pressing'] ?? '1000') ?>">
+                      </div>
+                      <small style="color: #64748B; font-size: 11px; display: block; margin-top: 6px;">
+                        Fixé par le pressing pour sa propre flotte de livraison.
+                      </small>
+                    </div>
+
+                    <div class="form-field" id="container_notice_lavex" style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 14px 16px; border-radius: 10px; display: none; grid-column: 1 / -1;">
+                      <div style="font-size: 12.5px; color: #1E40AF; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="shield-check" style="width: 18px; height: 18px; color: #2563EB;"></i>
+                        <span>Flotte Officielle Lavex active : La collecte et la livraison sont gérées par Lavex aux tarifs standards de la plateforme (1 000 FCFA / trajet).</span>
+                      </div>
+                    </div>
+
+                    <div class="form-field" id="container_notice_retrait" style="background: #F3F4F6; border: 1px solid #E5E7EB; padding: 14px 16px; border-radius: 10px; display: none; grid-column: 1 / -1;">
+                      <div style="font-size: 12.5px; color: #4B5563; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="store" style="width: 18px; height: 18px; color: #6B7280;"></i>
+                        <span>Retrait atelier uniquement : Aucun frais de transport n'est appliqué aux commandes de ce pressing.</span>
+                      </div>
+                    </div>
+
+                    <?php if (!empty($isSuperAdmin)): ?>
+                    <div class="form-field" id="container_taux_commission" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                      <label for="taux_commission_pressing" style="font-weight: 700; font-size: 13px; color: #1E293B; display: block; margin-bottom: 6px;">
+                        Taux de Commission Partenaire (%)
+                      </label>
+                      <div class="input-with-icon">
+                        <span class="input-icon"><?= Validator::icon('percent'); ?></span>
+                        <input type="number" class="form-control" id="taux_commission_pressing" name="taux_commission_pressing"
+                               placeholder="ex: 0.00 ou 10.00" min="0" max="100" step="0.5" value="<?= htmlspecialchars($pressing['taux_commission_pressing'] ?? '0.00') ?>">
+                      </div>
+                      <small style="color: #64748B; font-size: 11px; display: block; margin-top: 6px;">
+                        Pourcentage prélevé par Lavex (Fixé par le Super Admin, par défaut à 0.00% au lancement).
+                      </small>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="form-field mode-pressing-field" id="container_propose_livraison" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                      <label style="font-weight: 700; font-size: 13px; color: #1E293B; display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0;">
+                        <span>Proposer le Service de Livraison</span>
+                        <input type="checkbox" id="propose_livraison" name="propose_livraison" value="1" <?= (!isset($pressing['propose_livraison']) || !empty($pressing['propose_livraison'])) ? 'checked' : '' ?> style="width: 18px; height: 18px; accent-color: #2563EB;">
+                      </label>
+                      <small style="color: #64748B; font-size: 11px; display: block; margin-top: 6px;">
+                        Activer la collecte et la livraison à domicile pour ce pressing.
+                      </small>
+                    </div>
+
+                    <div class="form-field mode-pressing-field" id="container_livraison_gratuite" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
                       <label style="font-weight: 700; font-size: 13px; color: #1E293B; display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0;">
                         <span>Proposer la Livraison Gratuite</span>
                         <input type="checkbox" id="livraison_gratuite" name="livraison_gratuite" value="1" <?= (!empty($pressing['livraison_gratuite'])) ? 'checked' : '' ?> style="width: 18px; height: 18px; accent-color: #2563EB;">
@@ -216,7 +314,7 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                       </small>
                     </div>
 
-                    <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                    <div class="form-field mode-pressing-field" id="container_seuil_livraison_gratuite" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
                       <label for="seuil_livraison_gratuite" style="font-weight: 700; font-size: 13px; color: #1E293B; display: block; margin-bottom: 6px;">
                         Seuil Minimum Livraison Gratuite (FCFA)
                       </label>
@@ -227,7 +325,7 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                       </div>
                     </div>
 
-                    <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                    <div class="form-field mode-pressing-field" id="container_delai_livraison" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
                       <label for="delai_livraison_pressing" style="font-weight: 700; font-size: 13px; color: #1E293B; display: block; margin-bottom: 6px;">
                         Temps / Délais Moyen de Livraison
                       </label>
@@ -377,8 +475,11 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                   <label for="duree_mois">Durée de la période (en mois)</label>
                   <div class="input-with-icon">
                     <span class="input-icon"><?= Validator::icon('calendar'); ?></span>
-                    <input type="number" class="form-control" id="duree_mois" name="duree_mois" value="1" min="1" max="36">
+                    <input type="number" class="form-control" id="duree_mois" name="duree_mois" value="3" min="1" max="36">
                   </div>
+                  <small style="color: #10b981; font-weight: 600; font-size: 11px; display: block; margin-top: 4px;">
+                    Offre de Lancement : 3 mois (90 jours) d'essai offerts !
+                  </small>
                 </div>
 
                 <div class="form-field">
@@ -492,9 +593,15 @@ function selectForfaitCard(code, montant, duree) {
 
 function filterQuartiersByVille() {
   const selectedVille = $('#ville_code').val();
+  const searchTerm = $('#quartier_search').val() ? $('#quartier_search').val().toLowerCase().trim() : '';
+
   $('#quartier_code option').each(function() {
+    const optionText = $(this).text().toLowerCase();
     const qVille = $(this).attr('data-ville');
-    if (!qVille || !selectedVille || qVille === selectedVille) {
+    const isVilleMatch = !qVille || !selectedVille || qVille === selectedVille;
+    const isSearchMatch = !searchTerm || optionText.includes(searchTerm);
+
+    if (isVilleMatch && isSearchMatch) {
       $(this).show().prop('disabled', false);
     } else {
       $(this).hide().prop('disabled', true);
@@ -508,6 +615,17 @@ function filterQuartiersByVille() {
 }
 
 $('#ville_code').on('change', filterQuartiersByVille);
+
+$('#quartier_search').on('keyup input', function() {
+  filterQuartiersByVille();
+  const searchTerm = $(this).val().trim();
+  if (searchTerm.length > 0) {
+    const firstMatch = $('#quartier_code option:not(:disabled)[value!=""]:first');
+    if (firstMatch.length) {
+      $('#quartier_code').val(firstMatch.val());
+    }
+  }
+});
 
 function previewPressingLogo(input) {
   if (input.files && input.files[0]) {
@@ -543,6 +661,29 @@ function toggleSeuilLivraison() {
 
 $('#livraison_gratuite').on('change', toggleSeuilLivraison);
 
+function toggleLogisticsFields(mode) {
+  if (!mode) mode = $('#mode_logistique').val();
+  if (mode === 'pressing') {
+    $('#container_frais_collecte, #container_frais_livraison, #container_propose_livraison, #container_livraison_gratuite, #container_seuil_livraison_gratuite, #container_delai_livraison').show();
+    $('#container_delai_livraison label').text('Temps / Délais Moyen de Livraison (Pressing)');
+    $('#container_notice_lavex, #container_notice_retrait').hide();
+    $('#propose_livraison').prop('checked', true);
+  } else if (mode === 'lavex') {
+    $('#container_frais_collecte, #container_frais_livraison, #container_propose_livraison, #container_livraison_gratuite, #container_seuil_livraison_gratuite, #container_delai_livraison').hide();
+    $('#container_notice_lavex').show();
+    $('#container_notice_retrait').hide();
+    $('#propose_livraison').prop('checked', true);
+  } else if (mode === 'retrait_uniquement') {
+    $('#container_frais_collecte, #container_frais_livraison, #container_propose_livraison, #container_livraison_gratuite, #container_seuil_livraison_gratuite').hide();
+    $('#container_delai_livraison').show();
+    $('#container_delai_livraison label').text('Temps Moyen de Traitement en Atelier');
+    $('#container_notice_lavex').hide();
+    $('#container_notice_retrait').show();
+    $('#propose_livraison').prop('checked', false);
+  }
+  if (window.lucide) window.lucide.createIcons();
+}
+
 $(document).ready(function() {
   const firstForfait = $('input[name="forfait_code"]:checked').val();
   if (firstForfait) {
@@ -550,6 +691,7 @@ $(document).ready(function() {
   }
   filterQuartiersByVille();
   toggleSeuilLivraison();
+  toggleLogisticsFields();
 });
 </script>
 

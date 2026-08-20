@@ -305,8 +305,11 @@ class ModelPressing extends BaseModel
                 INSERT INTO " . TABLES::PRESSINGS . " (
                     code_pressing, libelle_pressing, telephone_pressing, email_pressing,
                     adresse_pressing, ville_code, quartier_code, latitude_pressing, longitude_pressing,
-                    logo_pressing, statut_pressing, created_at_pressing
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+                    logo_pressing, miniature_pressing, propose_livraison, mode_logistique,
+                    frais_collecte_pressing, frais_livraison_pressing, livraison_gratuite,
+                    seuil_livraison_gratuite, delai_livraison_pressing, accepte_colis_sans_detail,
+                    statut_pressing, created_at_pressing
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
             ");
             $stmtP->execute([
                 $pressingCode,
@@ -318,7 +321,16 @@ class ModelPressing extends BaseModel
                 $pressingData['quartier_code'] ?? '',
                 $pressingData['latitude_pressing'] ?? null,
                 $pressingData['longitude_pressing'] ?? null,
-                $pressingData['logo_pressing'] ?? ''
+                $pressingData['logo_pressing'] ?? '',
+                $pressingData['miniature_pressing'] ?? '',
+                $pressingData['propose_livraison'] ?? 1,
+                $pressingData['mode_logistique'] ?? 'pressing',
+                $pressingData['frais_collecte_pressing'] ?? 1000.00,
+                $pressingData['frais_livraison_pressing'] ?? 1000.00,
+                $pressingData['livraison_gratuite'] ?? 0,
+                $pressingData['seuil_livraison_gratuite'] ?? 0.00,
+                $pressingData['delai_livraison_pressing'] ?? '24h - 48h',
+                $pressingData['accepte_colis_sans_detail'] ?? 1
             ]);
 
             // 2. Créer l'Utilisateur Gérant (ROLE-PRO)

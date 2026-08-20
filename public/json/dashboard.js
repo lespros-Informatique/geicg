@@ -89,7 +89,7 @@ $(document).ready(function() {
                             '<div class="mobile-item-body">' +
                                 '<div class="mobile-item-primary">' +
                                     '<span class="mobile-item-label">Commande</span>' +
-                                    '<span class="mobile-item-value">' + (o.code_commande || '') + ' ' + (isColis ? '📦 Sac' : '👕 Détaillée') + '</span>' +
+                                    '<span class="mobile-item-value">' + (o.code_commande || '') + ' (' + (isColis ? 'Sac' : 'Détaillée') + ')</span>' +
                                 '</div>' +
                                 '<div class="mobile-item-primary">' +
                                     '<span class="mobile-item-label">Client</span>' +

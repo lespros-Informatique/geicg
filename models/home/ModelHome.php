@@ -137,7 +137,7 @@ class ModelHome extends BaseModel
                 $st = $row['statut_suivi_commande'] ?? 'creee';
                 $row['statutLabel'] = $stepLabels[$st] ?? ucfirst(str_replace('_', ' ', $st));
                 $row['date_formatted'] = !empty($row['created_at_commande']) ? date('d/m/Y H:i', strtotime($row['created_at_commande'])) : '-';
-                $row['type_label'] = ($row['type_commande'] === 'colis') ? '📦 Sac sans détail' : '👕 Détaillée';
+                $row['type_label'] = ($row['type_commande'] === 'colis') ? 'Sac sans détail' : 'Détaillée';
             }
             return $rows;
         } catch (Exception $e) {

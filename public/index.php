@@ -28,9 +28,11 @@ $panierController = new PanierController();
 $panierDetailController = new PanierDetailController();
 $retraitController = new RetraitController();
 $geniusPayWebhookController = new GeniusPayWebhookController();
+$settingController = new SettingController();
 
 $route->addRoute('/', [$homeController, 'index']);
 $route->addRoute('/home/dashboardData', [$homeController, 'dashboardData']);
+$route->addRoute('/setting/list', [$settingController, 'list']);
 
 $route->addRoute('/article/list', [$articleController, 'list']);
 $route->addRoute('/article/apiList', [$articleController, 'apiList']);

@@ -124,10 +124,10 @@ $clients = isset($clients) ? $clients : [];
       <div class="form-group" style="margin-bottom: 16px;">
         <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Destinataire *</label>
         <select class="form-control" name="client_code" style="width: 100%;">
-          <option value="ALL">📢 Tous les clients (Diffusion globale)</option>
+          <option value="ALL">Tous les clients (Diffusion globale)</option>
           <?php foreach ($clients as $c): ?>
             <option value="<?= htmlspecialchars($c['code_client'] ?? '') ?>">
-              👤 <?= htmlspecialchars($c['nom_client'] ?? '') ?> (<?= htmlspecialchars($c['telephone_client'] ?? '') ?>)
+              Client: <?= htmlspecialchars($c['nom_client'] ?? '') ?> (<?= htmlspecialchars($c['telephone_client'] ?? '') ?>)
             </option>
           <?php endforeach; ?>
         </select>
@@ -137,10 +137,10 @@ $clients = isset($clients) ? $clients : [];
       <div class="form-group" style="margin-bottom: 16px;">
         <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Catégorie d'alerte *</label>
         <select class="form-control" name="type_notification" style="width: 100%;">
-          <option value="alerte">📢 Annonce / Alerte Générale</option>
-          <option value="promotion">🎁 Offre Promotionnelle / Remise</option>
-          <option value="systeme">⚙️ Notification Système / Maintenance</option>
-          <option value="commande.info">🧺 Information Commande</option>
+          <option value="alerte">Annonce / Alerte Générale</option>
+          <option value="promotion">Offre Promotionnelle / Remise</option>
+          <option value="systeme">Notification Système / Maintenance</option>
+          <option value="commande.info">Information Commande</option>
         </select>
       </div>
 

@@ -61,6 +61,9 @@
             <a href="<?= RACINE ?>client/list" class="nav-item sub">
                 <i data-lucide="contact"></i> <span>Clients Marketplace</span>
             </a>
+            <a href="<?= RACINE ?>setting/list" class="nav-item sub">
+                <i data-lucide="sliders"></i> <span>Paramètres Système Lavex</span>
+            </a>
         </div>
 
         <?php elseif ($isPressing): ?>

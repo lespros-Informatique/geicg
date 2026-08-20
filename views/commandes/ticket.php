@@ -174,9 +174,9 @@ $isPaye = ($statutPaiement === 'valide');
 
     <div class="payment-badge">
       <?php if ($isPaye): ?>
-        ✓ PAYÉ EN LIGNE (<?= strtoupper($modePaiement) ?>)
+        PAYÉ EN LIGNE (<?= strtoupper($modePaiement) ?>)
       <?php else: ?>
-        ⚠ À RÉGLER EN ESPÈCES AU LIVREUR
+        À RÉGLER EN ESPÈCES AU LIVREUR
       <?php endif; ?>
     </div>
 
@@ -188,7 +188,7 @@ $isPaye = ($statutPaiement === 'valide');
   </div>
 
   <div class="actions-bar">
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimer Ticket</button>
+    <button class="btn-print" onclick="window.print()">Imprimer Ticket</button>
     <button class="btn-close" onclick="window.close(); history.back();">Fermer</button>
   </div>
 

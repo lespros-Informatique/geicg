@@ -63,6 +63,9 @@ class TABLES
     // ZONES TERRITORIALES
     public const VILLES              = 'villes';
     public const QUARTIERS           = 'quartiers';
+
+    // COMMISSIONS
+    public const COMMISSIONS_PRESSINGS = 'commissions_pressings';
 }
 
 class ROLES

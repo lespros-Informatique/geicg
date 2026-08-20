@@ -1,3 +1,45 @@
+<?php
+  $currentPressingCodeNav = $_SESSION['CURRENT_PRESSING_CODE'] ?? null;
+  $quotaWarning = null;
+
+  if ($currentPressingCodeNav) {
+      try {
+          $dbNav = (new Database())->getCon();
+          $stmtNavQ = $dbNav->prepare("
+              SELECT f.code_forfait, f.libelle_forfait, f.limite_pressings_forfait
+              FROM abonnements_pressings ab
+              JOIN forfaits f ON ab.forfait_code = f.code_forfait
+              WHERE ab.pressing_code = ? AND ab.statut_abonnement_pressing = 'actif'
+              ORDER BY ab.id_abonnement_pressing DESC LIMIT 1
+          ");
+          $stmtNavQ->execute([$currentPressingCodeNav]);
+          $subNav = $stmtNavQ->fetch(PDO::FETCH_ASSOC);
+
+          if ($subNav && (int)$subNav['limite_pressings_forfait'] > 0) {
+              $limitNav = (int)$subNav['limite_pressings_forfait'];
+              $stmtNavCount = $dbNav->prepare("
+                  SELECT COUNT(*) FROM commandes 
+                  WHERE pressing_code = ? 
+                  AND MONTH(created_at_commande) = MONTH(CURRENT_DATE())
+                  AND YEAR(created_at_commande) = YEAR(CURRENT_DATE())
+              ");
+              $stmtNavCount->execute([$currentPressingCodeNav]);
+              $countNav = (int)$stmtNavCount->fetchColumn();
+              $remainingNav = max(0, $limitNav - $countNav);
+
+              if ($remainingNav <= 10) {
+                  $quotaWarning = [
+                      'limit' => $limitNav,
+                      'count' => $countNav,
+                      'remaining' => $remainingNav,
+                      'forfait' => $subNav['libelle_forfait']
+                  ];
+              }
+          }
+      } catch (Exception $e) {}
+  }
+?>
+
 <header class="topbar">
     <div class="topbar-left">
         <button class="btn-icon mobile-menu-btn" id="mobileMenuBtn" style="display:none;">
@@ -196,6 +238,24 @@
     </div>
     <a href="<?= RACINE ?>abonnement/list" class="btn btn-sm btn-primary" style="background: #DC2626; border-color: #DC2626; color: #FFF; white-space: nowrap; font-weight: 700; padding: 6px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
         <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> Souscrire / Renouveler
+    </a>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($quotaWarning)): ?>
+<div class="quota-warning-banner" style="background: <?= $quotaWarning['remaining'] === 0 ? '#FEF2F2' : '#FFFBEB' ?>; border-bottom: 2px solid <?= $quotaWarning['remaining'] === 0 ? '#EF4444' : '#F59E0B' ?>; color: <?= $quotaWarning['remaining'] === 0 ? '#991B1B' : '#92400E' ?>; padding: 10px 24px; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 2px 6px rgba(245,158,11,0.1); flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="<?= $quotaWarning['remaining'] === 0 ? 'eye-off' : 'alert-triangle' ?>" style="width: 20px; height: 20px; color: <?= $quotaWarning['remaining'] === 0 ? '#DC2626' : '#D97706' ?>; flex-shrink: 0;"></i>
+        <span>
+            <?php if ($quotaWarning['remaining'] === 0): ?>
+                <strong>Quota Mensuel Atteint (<?= $quotaWarning['count'] ?>/<?= $quotaWarning['limit'] ?>) :</strong> Votre pressing est temporairement masqué des recherches Lavex jusqu'au mois prochain. Passez à la formule supérieure pour réapparaître immédiatement !
+            <?php else: ?>
+                <strong>Alerte Quota (<?= $quotaWarning['count'] ?>/<?= $quotaWarning['limit'] ?>) :</strong> Il ne vous reste plus que <strong><?= $quotaWarning['remaining'] ?> commande(s)</strong> disponible(s) ce mois-ci sur votre <?= htmlspecialchars($quotaWarning['forfait']) ?>.
+            <?php endif; ?>
+        </span>
+    </div>
+    <a href="<?= RACINE ?>abonnement/list" class="btn btn-sm btn-primary" style="background: #2563EB; border-color: #2563EB; color: #FFF; white-space: nowrap; font-weight: 700; padding: 6px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+        <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i> Passer au Forfait Supérieur
     </a>
 </div>
 <?php endif; ?>

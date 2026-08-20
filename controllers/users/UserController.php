@@ -91,6 +91,35 @@ class UserController extends BaseController
                     $this->model->setUserRole($code_user, $roleCode);
 
                     $pressingCode = $this->getCurrentPressingCode();
+                    if ($pressingCode) {
+                        // Contrôle du nombre maximal d'utilisateurs selon le forfait B2B du pressing (100% dynamique depuis la BDD)
+                        $stmtSub = $this->model->getCon()->prepare("
+                            SELECT f.code_forfait, f.libelle_forfait, f.nb_comptes_max
+                            FROM abonnements_pressings ab
+                            JOIN forfaits f ON ab.forfait_code = f.code_forfait
+                            WHERE ab.pressing_code = ? AND ab.statut_abonnement_pressing = 'actif'
+                            ORDER BY ab.id_abonnement_pressing DESC LIMIT 1
+                        ");
+                        $stmtSub->execute([$pressingCode]);
+                        $sub = $stmtSub->fetch(PDO::FETCH_ASSOC);
+
+                        if ($sub) {
+                            $maxUsersAllowed = (int)($sub['nb_comptes_max'] ?? 0);
+                            if ($maxUsersAllowed > 0) {
+                                $stmtUsersCount = $this->model->getCon()->prepare("
+                                    SELECT COUNT(*) FROM " . TABLES::USERS_PRESSINGS . " WHERE pressing_code = ? AND statut_user_pressing = 'actif'
+                                ");
+                                $stmtUsersCount->execute([$pressingCode]);
+                                $currentUsersCount = (int)$stmtUsersCount->fetchColumn();
+
+                                if ($currentUsersCount >= $maxUsersAllowed) {
+                                    $this->error("Votre forfait actuel (" . $sub['libelle_forfait'] . ") est limité à $maxUsersAllowed compte(s) utilisateur(s). Passez à la formule supérieure pour ajouter du personnel !");
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
                     if ($pressingCode && in_array($roleCode, ['ROLE-PRO', 'ROLE-GEST', 'ROLE-LIV'])) {
                         try {
                             $userPressingCode = $this->validator->generateCode(TABLES::USERS_PRESSINGS, 'code_user_pressing', 'USP-', 6);

@@ -96,8 +96,8 @@ class PressingController extends BaseController
             return;
         }
 
-        $dureeMois = (int)($this->post('duree_mois') ?: ($forfait['duree_mois_forfait'] ?? 1));
-        if ($dureeMois < 1) $dureeMois = 1;
+        $dureeMois = (int)($this->post('duree_mois') ?: 3);
+        if ($dureeMois < 1) $dureeMois = 3;
         $montant = (float)($this->post('montant_abonnement') !== '' ? $this->post('montant_abonnement') : ($forfait['montant_forfait'] ?? 0));
         $dateDebut = $this->post('date_debut_abonnement') ?: date('Y-m-d');
         $dateFin = date('Y-m-d', strtotime("+$dureeMois months", strtotime($dateDebut)));
@@ -233,6 +233,11 @@ class PressingController extends BaseController
             return;
         }
 
+        $modeLogistique = in_array($_POST['mode_logistique'] ?? '', ['pressing', 'lavex', 'retrait_uniquement']) ? $_POST['mode_logistique'] : 'pressing';
+        $fraisCollectePressing = (isset($_POST['frais_collecte_pressing']) && $_POST['frais_collecte_pressing'] !== '') ? (float)$_POST['frais_collecte_pressing'] : 1000.00;
+        $fraisLivraisonPressing = (isset($_POST['frais_livraison_pressing']) && $_POST['frais_livraison_pressing'] !== '') ? (float)$_POST['frais_livraison_pressing'] : 1000.00;
+        $tauxCommissionPressing = (isset($_POST['taux_commission_pressing']) && $_POST['taux_commission_pressing'] !== '') ? (float)$_POST['taux_commission_pressing'] : 0.00;
+        $proposeLivraison = isset($_POST['propose_livraison']) ? (int)$_POST['propose_livraison'] : ($modeLogistique === 'retrait_uniquement' ? 0 : 1);
         $livraisonGratuite = isset($_POST['livraison_gratuite']) ? (int)$_POST['livraison_gratuite'] : 0;
         $seuilLivraisonGratuite = (isset($_POST['seuil_livraison_gratuite']) && $_POST['seuil_livraison_gratuite'] !== '') ? (float)$_POST['seuil_livraison_gratuite'] : 0.00;
         $delaiLivraison = !empty($_POST['delai_livraison_pressing']) ? trim($_POST['delai_livraison_pressing']) : '24h - 48h';
@@ -250,6 +255,11 @@ class PressingController extends BaseController
             'longitude_pressing' => $this->post('longitude_pressing') ?? null,
             'logo_pressing' => $logo ?? '',
             'miniature_pressing' => $miniature ?? '',
+            'mode_logistique' => $modeLogistique,
+            'frais_collecte_pressing' => $fraisCollectePressing,
+            'frais_livraison_pressing' => $fraisLivraisonPressing,
+            'taux_commission_pressing' => $tauxCommissionPressing,
+            'propose_livraison' => $proposeLivraison,
             'livraison_gratuite' => $livraisonGratuite,
             'seuil_livraison_gratuite' => $seuilLivraisonGratuite,
             'delai_livraison_pressing' => $delaiLivraison,
