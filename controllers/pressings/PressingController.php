@@ -235,6 +235,7 @@ class PressingController extends BaseController
 
         $livraisonGratuite = isset($_POST['livraison_gratuite']) ? (int)$_POST['livraison_gratuite'] : 0;
         $seuilLivraisonGratuite = (isset($_POST['seuil_livraison_gratuite']) && $_POST['seuil_livraison_gratuite'] !== '') ? (float)$_POST['seuil_livraison_gratuite'] : 0.00;
+        $delaiLivraison = !empty($_POST['delai_livraison_pressing']) ? trim($_POST['delai_livraison_pressing']) : '24h - 48h';
         $accepteColisSansDetail = isset($_POST['accepte_colis_sans_detail']) ? (int)$_POST['accepte_colis_sans_detail'] : 0;
 
         $data = [
@@ -251,6 +252,7 @@ class PressingController extends BaseController
             'miniature_pressing' => $miniature ?? '',
             'livraison_gratuite' => $livraisonGratuite,
             'seuil_livraison_gratuite' => $seuilLivraisonGratuite,
+            'delai_livraison_pressing' => $delaiLivraison,
             'accepte_colis_sans_detail' => $accepteColisSansDetail,
             'statut_pressing' => $statut,
             'updated_at_pressing' => date('Y-m-d H:i:s')

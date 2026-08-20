@@ -45,6 +45,8 @@ $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ?
               <span class="code-badge" style="background: #F1F5F9; color: #475569; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;"><?= htmlspecialchars($codePressing) ?></span>
               <span class="badge-status <?= $statut === 'actif' ? 'delivered' : 'cancelled' ?>" style="text-transform: uppercase; font-size: 11px; padding: 3px 8px; border-radius: 6px;">
                 <?= htmlspecialchars($statut) ?>
+              <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #F8FAFC; color: #334155; border: 1px solid #E2E8F0;">
+                <i data-lucide="clock" style="width: 12px; height: 12px; vertical-align: -1px; color: #2563EB;"></i> <?= htmlspecialchars($pressing['delai_livraison_pressing'] ?? '24h - 48h') ?>
               </span>
               <?php if (!empty($pressing['livraison_gratuite'])): ?>
                 <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">

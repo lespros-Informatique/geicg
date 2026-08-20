@@ -228,6 +228,20 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                     </div>
 
                     <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                      <label for="delai_livraison_pressing" style="font-weight: 700; font-size: 13px; color: #1E293B; display: block; margin-bottom: 6px;">
+                        Temps / Délais Moyen de Livraison
+                      </label>
+                      <div class="input-with-icon">
+                        <span class="input-icon"><?= Validator::icon('clock'); ?></span>
+                        <input type="text" class="form-control" id="delai_livraison_pressing" name="delai_livraison_pressing"
+                               placeholder="ex: 24h - 48h, Express 12h" value="<?= htmlspecialchars($pressing['delai_livraison_pressing'] ?? '24h - 48h') ?>">
+                      </div>
+                      <small style="color: #64748B; font-size: 11px; display: block; margin-top: 6px;">
+                        Affiché sur l'application Lavex pour informer les clients (ex: 24h - 48h).
+                      </small>
+                    </div>
+
+                    <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
                       <label style="font-weight: 700; font-size: 13px; color: #1E293B; display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0;">
                         <span>Accepter la Collecte au Sac (Sans Détail)</span>
                         <input type="checkbox" id="accepte_colis_sans_detail" name="accepte_colis_sans_detail" value="1" <?= (!isset($pressing['accepte_colis_sans_detail']) || !empty($pressing['accepte_colis_sans_detail'])) ? 'checked' : '' ?> style="width: 18px; height: 18px; accent-color: #2563EB;">
