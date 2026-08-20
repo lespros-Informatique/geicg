@@ -71,45 +71,45 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
             <input type="hidden" name="items_json" id="items_json" value="[]">
 
             <!-- 1. SÉLECTEUR DE TYPE DE COMMANDE -->
-            <div style="margin-bottom: 18px;">
-              <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">Type de commande</label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; font-size: 13px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">Type de commande</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <!-- Option 1 : Collecte au Sac / Colis -->
-                <label id="label-type-colis" style="border: 2px solid #D97706; background: #FFFBEB; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px;">
+                <label id="label-type-colis" style="border: 2px solid #2563EB; background: #F8FAFC; border-radius: 10px; padding: 14px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; transition: all 0.15s ease;">
                   <input type="radio" name="type_commande" value="colis" checked onchange="handleTypeCommandeChange('colis')" style="margin-top: 3px;">
                   <div>
-                    <strong style="display: block; font-size: 14px; color: #92400E;">📦 Collecte au Sac</strong>
-                    <small style="color: #B45309; font-size: 11px; line-height: 1.3; display: block; margin-top: 2px;">
+                    <strong style="display: block; font-size: 14px; font-weight: 700; color: #1E293B;">Collecte au Sac</strong>
+                    <span style="color: #64748B; font-size: 12px; line-height: 1.4; display: block; margin-top: 3px;">
                       Sac sans détail. Le devis est fixé par le pressing après pesée/inventaire.
-                    </small>
+                    </span>
                   </div>
                 </label>
 
                 <!-- Option 2 : Commande Détaillée -->
-                <label id="label-type-detaillee" style="border: 2px solid #E2E8F0; background: #F8FAFC; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px;">
+                <label id="label-type-detaillee" style="border: 1px solid #E2E8F0; background: #FFFFFF; border-radius: 10px; padding: 14px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; transition: all 0.15s ease;">
                   <input type="radio" name="type_commande" value="detaillee" onchange="handleTypeCommandeChange('detaillee')" style="margin-top: 3px;">
                   <div>
-                    <strong style="display: block; font-size: 14px; color: #1E293B;">👕 Commande Détaillée</strong>
-                    <small style="color: #64748B; font-size: 11px; line-height: 1.3; display: block; margin-top: 2px;">
+                    <strong style="display: block; font-size: 14px; font-weight: 700; color: #1E293B;">Commande Détaillée</strong>
+                    <span style="color: #64748B; font-size: 12px; line-height: 1.4; display: block; margin-top: 3px;">
                       Articles et services choisis avec calcul automatique du total.
-                    </small>
+                    </span>
                   </div>
                 </label>
               </div>
             </div>
 
             <!-- BLOC 1 : COLLECTE AU SAC -->
-            <div id="bloc-colis-options" style="background: #FFFBEB; border: 1px dashed #FCD34D; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-              <div class="form-group">
-                <label style="font-size: 13px; font-weight: 700; color: #92400E; margin-bottom: 6px; display: block;">
+            <div id="bloc-colis-options" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 13px; font-weight: 600; color: #1E293B; margin-bottom: 6px; display: block;">
                   Nombre de sacs de linge confiés
                 </label>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                  <input type="number" name="nb_sacs_colis" id="nb_sacs_colis" value="1" min="1" max="20" class="form-control" style="width: 100px; font-size: 16px; font-weight: 700; text-align: center;">
-                  <span style="font-size: 13px; color: #B45309;">sac(s) de linge</span>
+                  <input type="number" name="nb_sacs_colis" id="nb_sacs_colis" value="1" min="1" max="20" class="form-control" style="width: 90px; font-size: 15px; font-weight: 700; text-align: center;">
+                  <span style="font-size: 13px; color: #475569;">sac(s) de linge</span>
                 </div>
-                <small style="color: #78350F; font-size: 12px; display: block; margin-top: 6px;">
-                  💡 Le montant initial sera à 0 FCFA. Dès réception du linge, le pressing saisira le montant réel via le bouton d'inventaire.
+                <small style="color: #64748B; font-size: 12px; display: block; margin-top: 10px; line-height: 1.4;">
+                  Le montant initial sera à 0 FCFA. Dès réception du linge, le pressing saisira le montant réel via le bouton d'inventaire.
                 </small>
               </div>
             </div>
@@ -117,14 +117,14 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
             <!-- BLOC 2 : COMMANDE DÉTAILLÉE (CHOIX D'ARTICLES ET SERVICES) -->
             <div id="bloc-detaillee-options" style="display: none; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
               <h4 style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 6px;">
-                <i data-lucide="plus-circle" style="width: 16px; height: 16px; color: #2563EB;"></i> Ajouter des articles au panier
+                <i data-lucide="plus-circle" style="width: 16px; height: 16px; color: #2563EB;"></i> Ajouter des vêtements au panier
               </h4>
 
               <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr 1.2fr auto; gap: 8px; align-items: flex-end; margin-bottom: 12px;">
                 <div>
-                  <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">Article</label>
+                  <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">Vêtement / Article</label>
                   <select id="line_article_select" class="form-control" onchange="autoFillLinePrice()" style="width: 100%; padding: 8px 10px; font-size: 13px;">
-                    <option value="">-- Choisir un article --</option>
+                    <option value="">-- Choisir un vêtement / article --</option>
                     <?php foreach ($articles as $art): ?>
                       <option value="<?= htmlspecialchars($art['code_article']) ?>" data-label="<?= htmlspecialchars($art['libelle_article']) ?>">
                         <?= htmlspecialchars($art['libelle_article']) ?>
@@ -167,7 +167,7 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px;" id="table-selected-items">
                   <thead>
                     <tr style="background: #F1F5F9; text-align: left; color: #475569;">
-                      <th style="padding: 8px 12px;">Article</th>
+                      <th style="padding: 8px 12px;">Vêtement / Article</th>
                       <th style="padding: 8px 12px;">Service</th>
                       <th style="padding: 8px 12px; text-align: center;">Qté</th>
                       <th style="padding: 8px 12px; text-align: right;">Prix Unit.</th>
@@ -178,7 +178,7 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
                   <tbody id="tbody-selected-items">
                     <tr id="row-empty-items">
                       <td colspan="6" style="padding: 16px; text-align: center; color: #94A3B8;">
-                        Aucun article sélectionné. Choisissez un article ci-dessus pour composer la commande.
+                        Aucun vêtement sélectionné. Choisissez un vêtement ci-dessus pour composer la commande.
                       </td>
                     </tr>
                   </tbody>
@@ -280,18 +280,18 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
         if (type === 'colis') {
           blocColis.style.display = 'block';
           blocDetaillee.style.display = 'none';
-          labelColis.style.borderColor = '#D97706';
-          labelColis.style.background = '#FFFBEB';
-          labelDetaillee.style.borderColor = '#E2E8F0';
-          labelDetaillee.style.background = '#F8FAFC';
+          labelColis.style.border = '2px solid #2563EB';
+          labelColis.style.background = '#F8FAFC';
+          labelDetaillee.style.border = '1px solid #E2E8F0';
+          labelDetaillee.style.background = '#FFFFFF';
           document.getElementById('montant_total_commande').value = 0;
         } else {
           blocColis.style.display = 'none';
           blocDetaillee.style.display = 'block';
-          labelDetaillee.style.borderColor = '#2563EB';
-          labelDetaillee.style.background = '#EFF6FF';
-          labelColis.style.borderColor = '#E2E8F0';
-          labelColis.style.background = '#F8FAFC';
+          labelDetaillee.style.border = '2px solid #2563EB';
+          labelDetaillee.style.background = '#F8FAFC';
+          labelColis.style.border = '1px solid #E2E8F0';
+          labelColis.style.background = '#FFFFFF';
           recalcGrandTotal();
         }
         if (typeof lucide !== 'undefined') lucide.createIcons();

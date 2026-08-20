@@ -231,11 +231,24 @@ class TarifArticleController extends BaseController
 
     private function loadFormDataAndRender(array $tarif): void
     {
+        $pressingCode = $this->getCurrentPressingCode();
+        if (empty($pressingCode) && !empty($tarif['pressing_code'])) {
+            $pressingCode = $tarif['pressing_code'];
+        }
+
         $articleModel = new ModelArticle();
-        $articles = $articleModel->getByStatus('actif');
+        if (!empty($pressingCode)) {
+            $articles = $articleModel->getAllWithCategory($pressingCode);
+        } else {
+            $articles = $articleModel->getAllWithCategory();
+        }
 
         $serviceModel = new ModelService();
-        $services = $serviceModel->getByStatus('actif');
+        if (!empty($pressingCode)) {
+            $services = $serviceModel->getByPressing($pressingCode);
+        } else {
+            $services = $serviceModel->getByStatus('actif');
+        }
 
         $pressingModel = new ModelPressing();
         $pressings = $pressingModel->getByStatus('actif');

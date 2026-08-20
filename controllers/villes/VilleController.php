@@ -47,6 +47,8 @@ class VilleController extends BaseController
             return;
         }
 
+        if (!$this->checkUnique(TABLES::VILLES, 'libelle_ville', $libelle, 'nom de ville')) return;
+
         $code = trim($this->post('code_ville'));
         if (empty($code)) {
             $code = 'VIL-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $libelle), 0, 3));

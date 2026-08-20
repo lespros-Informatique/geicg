@@ -12,20 +12,38 @@ class CommandeController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $clientModel   = new ModelClient();
-        $clients       = $clientModel->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+
+        $clientModel = new ModelClient();
+        if (!empty($pressingCode)) {
+            $clients = $clientModel->getByPressing($pressingCode);
+        } else {
+            $clients = $clientModel->getAll();
+        }
 
         $pressingModel = new ModelPressing();
         $pressings     = $pressingModel->getByStatus('actif');
 
         $articleModel  = new ModelArticle();
-        $articles      = $articleModel->getByStatus('actif');
+        if (!empty($pressingCode)) {
+            $articles = $articleModel->getAllWithCategory($pressingCode);
+        } else {
+            $articles = $articleModel->getAllWithCategory();
+        }
 
         $serviceModel  = new ModelService();
-        $services      = $serviceModel->getByStatus('actif');
+        if (!empty($pressingCode)) {
+            $services = $serviceModel->getByPressing($pressingCode);
+        } else {
+            $services = $serviceModel->getByStatus('actif');
+        }
 
         $tarifModel    = new ModelTarifArticle();
-        $tarifs        = $tarifModel->getAllWithDetails();
+        if (!empty($pressingCode)) {
+            $tarifs = $tarifModel->getByPressing($pressingCode);
+        } else {
+            $tarifs = $tarifModel->getAllWithDetails();
+        }
 
         $this->loadView('../views/commandes/list.php', [
             'clients'   => $clients,

@@ -37,6 +37,8 @@ $csrfToken = Validator::generateCsrfToken();
             <?= Validator::csrfField() ?>
             <input type="hidden" id="id_user" name="id_user" value="<?= htmlspecialchars($user['id_user'] ?? '') ?>">
 
+            <div id="editUserAlert" style="display:none; padding: 12px 16px; border-radius: 10px; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; font-weight: 700; font-size: 13px; margin-bottom: 20px; align-items: center; gap: 8px;"></div>
+
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
               
               <div class="form-field">
@@ -44,7 +46,7 @@ $csrfToken = Validator::generateCsrfToken();
                 <div class="input-with-icon">
                   <span class="input-icon"><?= Validator::icon('user'); ?></span>
                   <input type="text" class="form-control" id="nom" name="nom"
-                         placeholder="Nom" value="<?= htmlspecialchars($user['nom_user'] ?? '') ?>" required style="border-radius: 10px; height: 44px;">
+                         placeholder="Ex: Kouassi" value="<?= htmlspecialchars($user['nom_user'] ?? '') ?>" required style="border-radius: 10px; height: 44px;">
                 </div>
                 <div class="error-message" id="nomError"></div>
               </div>
@@ -86,11 +88,11 @@ $csrfToken = Validator::generateCsrfToken();
                   <select class="form-control" id="role_code" name="role_code" required style="border-radius: 10px; height: 44px;">
                     <option value="">Sélectionner un rôle</option>
                     <?php if ($isSuperAdmin): ?>
-                      <option value="ROLE-ADMIN" <?= ($role['code_role'] ?? '') == 'ROLE-ADMIN' ? 'selected' : '' ?>>👑 Administrateur</option>
+                      <option value="ROLE-ADMIN" <?= ($role['code_role'] ?? '') == 'ROLE-ADMIN' ? 'selected' : '' ?>>Administrateur</option>
                     <?php endif; ?>
-                    <option value="ROLE-PRO" <?= ($role['code_role'] ?? '') == 'ROLE-PRO' ? 'selected' : '' ?>>👑 Propriétaire</option>
-                    <option value="ROLE-GEST" <?= ($role['code_role'] ?? '') == 'ROLE-GEST' ? 'selected' : '' ?>>💼 Gestionnaire</option>
-                    <option value="ROLE-LIV" <?= ($role['code_role'] ?? '') == 'ROLE-LIV' ? 'selected' : '' ?>>🛵 Livreur</option>
+                    <option value="ROLE-PRO" <?= ($role['code_role'] ?? '') == 'ROLE-PRO' ? 'selected' : '' ?>>Propriétaire</option>
+                    <option value="ROLE-GEST" <?= ($role['code_role'] ?? '') == 'ROLE-GEST' ? 'selected' : '' ?>>Gestionnaire</option>
+                    <option value="ROLE-LIV" <?= ($role['code_role'] ?? '') == 'ROLE-LIV' ? 'selected' : '' ?>>Livreur</option>
                   </select>
                 </div>
                 <div class="error-message" id="roleError"></div>

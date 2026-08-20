@@ -9,8 +9,8 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
     <div class="content-wrapper">
       <div class="page-header">
-          <h1>Tarifs articles</h1>
-        <a href="<?= RACINE ?>tarif/formulaire" class="btn btn-primary"><i data-lucide="plus"></i> Ajouter tarif</a>
+          <h1>Grille Tarifaire des Vêtements & Services</h1>
+        <a href="<?= RACINE ?>tarif/formulaire" class="btn btn-primary"><i data-lucide="plus"></i> Ajouter un tarif</a>
       </div>
 
       <div class="card">
@@ -19,7 +19,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
              <table class="table" id="dataTable">
                  <thead>
                   <tr>
-                    <th>N°</th><th>Code</th><th>Pressing</th><th>Article</th><th>Service</th><th>Prix</th><th>Statut</th><th>Actions</th>
+                    <th>N°</th><th>Code</th><th>Pressing</th><th>Vêtement / Article</th><th>Service</th><th>Prix (FCFA)</th><th>Statut</th><th>Actions</th>
                   </tr>
                </thead>
                <tbody></tbody>

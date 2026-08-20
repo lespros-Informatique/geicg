@@ -78,8 +78,29 @@ $(document).ready(function() {
     renderMobileCards('dataTable', usersMobileConfig);
     }
 
+    $('#telephone').on('input blur', function() {
+        const val = $(this).val().trim();
+        const errDiv = $('#telephoneError');
+        const isEdit = $('#id_user').val() !== '';
+        if (val.length === 10 && !isEdit) {
+            $.post(LINK + 'user/checkPhone', { telephone: val }, function(rep) {
+                if (!rep.status) {
+                    errDiv.css({'color': '#EF4444', 'font-size': '12px', 'margin-top': '4px', 'font-weight': '600'}).html('<i class="fa fa-exclamation-triangle"></i> ' + rep.message);
+                    $('.formEditUser button[type="submit"]').prop('disabled', true);
+                } else {
+                    errDiv.css({'color': '#10B981', 'font-size': '12px', 'margin-top': '4px', 'font-weight': '600'}).html('<i class="fa fa-check-circle"></i> Numéro disponible');
+                    $('.formEditUser button[type="submit"]').prop('disabled', false);
+                }
+            }, 'json');
+        } else {
+            errDiv.html('');
+            $('.formEditUser button[type="submit"]').prop('disabled', false);
+        }
+    });
+
     $('.formEditUser').on('submit', function(e) {
         e.preventDefault();
+        $('#editUserAlert').hide().html('');
         const form = $(this);
         const btn = form.find('.btn_actions');
         loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
@@ -95,12 +116,15 @@ $(document).ready(function() {
                     showToast(rep.message, 'success');
                     setTimeout(() => window.location.href = LINK + 'user/list', 700);
                 } else {
+                    $('#editUserAlert').css('display', 'flex').html('<i class="fa fa-exclamation-circle"></i> ' + rep.message);
                     showToast(rep.message, 'error');
                 }
             },
-            error: function() {
+            error: function(xhr) {
                 loading(btn, false, '<i class="fa fa-save"></i> Sauvegarder');
-                showToast('Erreur serveur', 'error');
+                const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur lors de l\'enregistrement';
+                $('#editUserAlert').css('display', 'flex').html('<i class="fa fa-exclamation-circle"></i> ' + msg);
+                showToast(msg, 'error');
             }
         });
     });

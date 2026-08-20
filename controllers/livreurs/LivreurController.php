@@ -92,12 +92,16 @@ class LivreurController extends BaseController
             $existingUser = $userCode;
         }
 
-        // 2. Liaison User <-> Pressing
-        $stmtUp = $db->prepare("
-            INSERT INTO " . TABLES::USERS_PRESSINGS . " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing)
-            VALUES (?, ?, ?, 'ROLE-LIV', 'actif', NOW())
-        ");
-        $stmtUp->execute([$userPressingCode, $existingUser, $pressingCode]);
+        // 2. Liaison User <-> Pressing (Vérification anti-doublon SQL)
+        $stmtCheckUp = $db->prepare("SELECT id_user_pressing FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND pressing_code = ? LIMIT 1");
+        $stmtCheckUp->execute([$existingUser, $pressingCode]);
+        if (!$stmtCheckUp->fetch()) {
+            $stmtUp = $db->prepare("
+                INSERT INTO " . TABLES::USERS_PRESSINGS . " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing)
+                VALUES (?, ?, ?, 'ROLE-LIV', 'actif', NOW())
+            ");
+            $stmtUp->execute([$userPressingCode, $existingUser, $pressingCode]);
+        }
 
         $data = [
             'code_livreur' => $code,

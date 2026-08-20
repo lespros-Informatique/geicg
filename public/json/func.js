@@ -8,13 +8,26 @@ function loading(selector, status, message) {
     el.prop('disabled', status);
 }
 
-function showToast(message, type = 'success') {
+function showToast(message, type = 'success', title = null) {
     if (!message) return;
-    let container = document.querySelector('.js-toast-container');
+
+    if (!document.getElementById('toastProStyles')) {
+        const styleEl = document.createElement('style');
+        styleEl.id = 'toastProStyles';
+        styleEl.innerHTML = `
+            @keyframes toastProSlideDown {
+                from { opacity: 0; transform: translateY(-24px) scale(0.94); }
+                to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+        `;
+        document.head.appendChild(styleEl);
+    }
+
+    let container = document.querySelector('.js-toast-container-pro');
     if (!container) {
         container = document.createElement('div');
-        container.className = 'js-toast-container';
-        container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 999999; display: flex; flex-direction: column; gap: 10px; max-width: 380px; width: 100%;';
+        container.className = 'js-toast-container-pro';
+        container.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999999; display: flex; flex-direction: column; gap: 10px; max-width: 480px; width: 92%; pointer-events: none;';
         document.body.appendChild(container);
     }
 
@@ -22,41 +35,38 @@ function showToast(message, type = 'success') {
         .find(el => el.textContent.trim() === message.trim());
     if (duplicate) return;
 
-    const durations = { success: 3000, info: 4000, warning: 5000, error: 7000 };
-    const duration = durations[type] || 4000;
-
-    const icons = {
-        success: '<svg class="toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:20px;height:20px;color:#10B981;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-        error: '<svg class="toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:20px;height:20px;color:#EF4444;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
-        warning: '<svg class="toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:20px;height:20px;color:#F59E0B;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
-        info: '<svg class="toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:20px;height:20px;color:#3B82F6;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-    };
+    const theme = {
+        success: { bg: '#ECFDF5', border: '#6EE7B7', color: '#065F46', title: 'Succès !', icon: '<svg width="20" height="20" fill="none" stroke="#10B981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' },
+        error: { bg: '#FEF2F2', border: '#FCA5A5', color: '#991B1B', title: 'Attention', icon: '<svg width="20" height="20" fill="none" stroke="#EF4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>' },
+        warning: { bg: '#FFFBEB', border: '#FCD34D', color: '#92400E', title: 'Avertissement', icon: '<svg width="20" height="20" fill="none" stroke="#F59E0B" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' },
+        info: { bg: '#EFF6FF', border: '#93C5FD', color: '#1E40AF', title: 'Information', icon: '<svg width="20" height="20" fill="none" stroke="#3B82F6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' }
+    }[type] || { bg: '#FFFFFF', border: '#E2E8F0', color: '#1E293B', title: 'Notification', icon: '' };
 
     const toast = document.createElement('div');
-    toast.className = `toast toast--${type}`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'polite');
-    toast.style.cssText = 'background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; gap: 12px; animation: slideIn 0.2s ease;';
+    toast.className = `toast-pro toast-pro--${type}`;
+    toast.style.cssText = `background: ${theme.bg}; border: 1.5px solid ${theme.border}; border-radius: 14px; padding: 14px 18px; box-shadow: 0 16px 32px rgba(15,23,42,0.14), 0 4px 10px rgba(0,0,0,0.05); display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; pointer-events: auto; animation: toastProSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; transition: all 0.25s ease;`;
+
+    const displayTitle = title || theme.title;
 
     toast.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-            ${icons[type] || icons.info}
-            <span class="toast__message" style="font-size: 13px; font-weight: 600; color: #1E293B;">${message}</span>
+        <div style="font-size: 20px; line-height: 1; flex-shrink: 0; margin-top: 2px;">${theme.icon}</div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+            <div style="font-size: 13px; font-weight: 800; color: ${theme.color}; text-transform: uppercase; letter-spacing: 0.4px;">${displayTitle}</div>
+            <div class="toast__message" style="font-size: 13.5px; font-weight: 600; color: #1E293B; line-height: 1.45;">${message}</div>
         </div>
-        <button type="button" class="toast__close" aria-label="Fermer" style="background: none; border: none; font-size: 18px; color: #94A3B8; cursor: pointer; line-height: 1;">&times;</button>
+        <button type="button" class="toast__close" aria-label="Fermer" style="background: none; border: none; font-size: 20px; color: ${theme.color}; cursor: pointer; padding: 0 4px; line-height: 1; opacity: 0.75;">&times;</button>
     `;
 
     container.appendChild(toast);
 
     const removeToast = () => {
         toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-10px)';
-        toast.style.transition = 'all 0.2s ease';
-        setTimeout(() => { toast.remove(); }, 200);
+        toast.style.transform = 'translateY(-16px)';
+        setTimeout(() => { toast.remove(); }, 250);
     };
 
     toast.querySelector('.toast__close').addEventListener('click', removeToast);
-    setTimeout(removeToast, duration);
+    setTimeout(removeToast, type === 'error' ? 6500 : 4000);
 }
 
 function showConfirm(message, callback, title = 'Confirmation', confirmText = 'Confirmer', isDanger = false) {

@@ -60,9 +60,28 @@ abstract class BaseController
         $this->json(array_merge(['status' => 1, 'message' => $message], $extra));
     }
 
-    protected function error(string $message, int $code = 400): void
+    protected function error(string $message, int $code = 200): void
     {
         $this->json(['status' => 0, 'message' => $message], $code);
+    }
+
+    protected function checkUnique(string $table, string $field, $value, string $label, ?string $idField = null, $idVal = null): bool
+    {
+        $val = trim((string)$value);
+        if ($val === '') return true;
+
+        $exists = false;
+        if ($idField && !empty($idVal)) {
+            $exists = $this->validator->_verif($table, $field, $val, $idField, $idVal);
+        } else {
+            $exists = $this->validator->verif($table, $field, $val);
+        }
+
+        if ($exists) {
+            $this->error("Ce $label ($val) est déjà utilisé dans le système !");
+            return false;
+        }
+        return true;
     }
 
     protected function generateCode(string $table, string $field, string $prefix, int $len): string

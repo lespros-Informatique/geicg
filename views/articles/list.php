@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../public/inc/header.php';
 // var_dump(RACINE . 'public/assets/images/articles/');
 ?>
@@ -10,8 +10,8 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
     <div class="content-wrapper">
       <div class="page-header">
-          <h1>Articles</h1>
-        <a href="<?= RACINE ?>article/formulaire" class="btn btn-primary"><i data-lucide="plus"></i> Ajouter article</a>
+          <h1>Catalogue des Vêtements & Articles</h1>
+        <a href="<?= RACINE ?>article/formulaire" class="btn btn-primary"><i data-lucide="plus"></i> Ajouter un vêtement / article</a>
       </div>
 
       <div class="card">
@@ -20,7 +20,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
              <table class="table" id="dataTable">
                 <thead>
                  <tr>
-                   <th>N°</th><th>Code</th><th>Libellé</th><th>Catégorie</th><th>Pressing</th><th>Statut</th><th>Actions</th>
+                   <th>N°</th><th>Code</th><th>Libellé vêtement</th><th>Catégorie</th><th>Pressing</th><th>Statut</th><th>Actions</th>
                  </tr>
               </thead>
               <tbody></tbody>

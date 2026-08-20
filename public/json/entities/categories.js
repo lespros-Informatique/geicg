@@ -20,7 +20,7 @@ $(document).ready(function() {
                         }
                         return `
                             <div style="width: 38px; height: 38px; border-radius: 8px; background: #F8FAFC; border: 1px solid #E2E8F0; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; margin: auto;">
-                                <img src="${iconSrc}" alt="${row.libelle || ''}" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\\'color:#94A3B8; font-size:16px;\\'>📁</span>';" style="width: 100%; height: 100%; object-fit: cover;">
+                                <img src="${iconSrc}" alt="${row.libelle || ''}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa fa-folder\\' style=\\'color:#94A3B8; font-size:16px;\\'></i>';" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                         `;
                     }

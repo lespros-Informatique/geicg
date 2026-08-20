@@ -53,6 +53,8 @@ class ForfaitController extends BaseController
             return;
         }
 
+        if (!$this->checkUnique(TABLES::FORFAITS, 'libelle_forfait', $libelle, 'nom de forfait')) return;
+
         $code = trim($this->post('code_forfait'));
         if (empty($code)) {
             $code = $this->validator->generateCode(TABLES::FORFAITS, 'code_forfait', 'FOR-', 5);

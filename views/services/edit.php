@@ -39,10 +39,11 @@ $service = isset($service) ? $service : [];
 
              <div class="form-grid">
                <div class="form-field">
-                 <label for="libelle_service">Libellé</label>
+                 <label for="libelle_service">Libellé du service</label>
                  <div class="input-with-icon">
                    <span class="input-icon"><?= Validator::icon('file-text'); ?></span>
                    <input type="text" class="form-control" id="libelle_service" name="libelle_service"
+                          placeholder="ex: Lavage, Repassage, Nettoyage à sec..."
                           value="<?= htmlspecialchars($service['libelle_service'] ?? '') ?>" required>
                  </div>
                  <div class="error-message" id="libelleError"></div>
@@ -50,7 +51,7 @@ $service = isset($service) ? $service : [];
 
                <div class="form-field">
                  <label for="description_service">Description</label>
-                 <textarea class="form-control" id="description_service" name="description_service"><?= htmlspecialchars($service['description_service'] ?? '') ?></textarea>
+                 <textarea class="form-control" id="description_service" name="description_service" placeholder="Description détaillée du service offert..."><?= htmlspecialchars($service['description_service'] ?? '') ?></textarea>
                  <div class="error-message" id="descriptionError"></div>
                </div>
 

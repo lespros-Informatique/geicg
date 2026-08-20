@@ -147,4 +147,69 @@ $(document).ready(function() {
         const code = $(this).data('code');
         window.openCommandeModal(code);
     });
+
+    $('.formEditClient').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const btn = form.find('.btnEditClient');
+        const alertBox = $('#editClientAlert');
+
+        alertBox.hide().removeClass('alert-danger alert-success');
+
+        const formData = form.serialize();
+        const clientPhone = $('#telephone').val() ? $('#telephone').val().trim() : '';
+
+        if (!clientPhone || clientPhone.length !== 10) {
+            const err = 'Le numéro de téléphone doit contenir 10 chiffres !';
+            alertBox.addClass('alert-danger').css('display', 'flex').find('#editClientAlertText').text(err);
+            if (!alertBox.find('#editClientAlertText').length) {
+                alertBox.html('<i class="fa fa-exclamation-circle"></i> ' + err);
+            }
+            showToast(err, 'error');
+            return;
+        }
+
+        loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+
+        const targetUrl = $('#id_client').val() ? (baseApi + 'client/edit') : (baseApi + 'client/add');
+
+        $.ajax({
+            url: targetUrl,
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                loading(btn, false, '<i class="fa fa-save"></i> Sauvegarder');
+                if (response.status) {
+                    showToast(response.message, 'success');
+                    setTimeout(function() {
+                        window.location.href = baseApi + 'client/list';
+                    }, 400);
+                } else {
+                    const msg = response.message || 'Erreur lors de la modification';
+                    alertBox.addClass('alert-danger').css('display', 'flex');
+                    if (alertBox.find('#editClientAlertText').length) {
+                        alertBox.find('#editClientAlertText').text(msg);
+                    } else {
+                        alertBox.html('<i class="fa fa-exclamation-circle"></i> ' + msg);
+                    }
+                    showToast(msg, 'error');
+                }
+            },
+            error: function(xhr) {
+                loading(btn, false, '<i class="fa fa-save"></i> Sauvegarder');
+                let msg = 'Erreur lors de l\'enregistrement';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alertBox.addClass('alert-danger').css('display', 'flex');
+                if (alertBox.find('#editClientAlertText').length) {
+                    alertBox.find('#editClientAlertText').text(msg);
+                } else {
+                    alertBox.html('<i class="fa fa-exclamation-circle"></i> ' + msg);
+                }
+                showToast(msg, 'error');
+            }
+        });
+    });
 });

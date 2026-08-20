@@ -118,10 +118,14 @@ $(document).ready(function() {
 
         loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement en cours...');
 
+        const formData = new FormData(this);
+
         $.ajax({
             url: url,
             type: 'POST',
-            data: form.serialize(),
+            data: formData,
+            processData: false,
+            contentType: false,
             dataType: 'json',
             success: function(rep) {
                 loading(btn, false, '<i class="fa fa-check-circle"></i> Valider & Activer le Pressing (Tout-en-Un)');

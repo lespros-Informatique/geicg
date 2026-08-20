@@ -50,9 +50,11 @@ class ArticleController extends BaseController
             return;
         }
 
+        $libelle = $this->post('libelle_article');
+
         $code = $this->post('code_article') ?: $this->validator->generateCode(TABLES::ARTICLES_PRESSINGS, 'code_article', 'ART-', 6);
         if ($this->validator->getByElement(TABLES::ARTICLES_PRESSINGS, 'code_article', $code)) {
-            $this->error('Ce code article existe déjà!');
+            $this->error('Ce code article existe déjà !');
             return;
         }
 

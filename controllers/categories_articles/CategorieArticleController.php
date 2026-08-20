@@ -96,9 +96,12 @@ class CategorieArticleController extends BaseController
             return;
         }
 
+        $libelle = $this->post('libelle_categorie_article');
+        if (!$this->checkUnique(TABLES::CATEGORIES_ARTICLES, 'libelle_categorie_article', $libelle, 'nom de catégorie')) return;
+
         $code = $this->post('code_categorie_article') ?: $this->validator->generateCode(TABLES::CATEGORIES_ARTICLES, 'code_categorie_article', 'CAT-', 6);
         if ($this->validator->getByElement(TABLES::CATEGORIES_ARTICLES, 'code_categorie_article', $code)) {
-            $this->error('Ce code catégorie existe déjà!');
+            $this->error('Ce code catégorie existe déjà !');
             return;
         }
 

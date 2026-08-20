@@ -14,8 +14,8 @@ $pressings = isset($pressings) ? $pressings : [];
     <div class="content-wrapper">
       <div class="page-header">
         <div>
-          <h1><?= isset($tarif['id_tarif']) ? 'Modifier le tarif article' : 'Ajouter un tarif article' ?></h1>
-          <p class="page-subtitle">Gestion de la grille tarifaire</p>
+          <h1><?= isset($tarif['id_tarif']) ? 'Modifier le tarif vêtement' : 'Ajouter un tarif vêtement' ?></h1>
+          <p class="page-subtitle">Gestion de la grille tarifaire des vêtements et linge du pressing</p>
         </div>
         <a href="<?= RACINE ?>tarif/list" class="btn btn-sm btn-outline-secondary">
           <i data-lucide="arrow-left"></i>
@@ -26,7 +26,7 @@ $pressings = isset($pressings) ? $pressings : [];
       <div class="form-card">
         <div class="card-header">
           <div>
-            <h2>Configuration du tarif</h2>
+            <h2>Configuration du tarif de prestation</h2>
           </div>
           <?php if (isset($tarif['statut_tarif'])): ?>
             <span class="badge-status <?= $tarif['statut_tarif'] == 'actif' ? 'delivered' : 'cancelled' ?>">
@@ -47,14 +47,17 @@ $pressings = isset($pressings) ? $pressings : [];
                 <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($resolvedPressingCode) ?>">
 
                <div class="form-field">
-                 <label for="article_code">Article du catalogue</label>
+                 <label for="article_code">Vêtement / Article du catalogue</label>
                  <div class="input-with-icon">
                    <span class="input-icon"><?= Validator::icon('shirt'); ?></span>
                    <select class="form-control" id="article_code" name="article_code" required>
-                     <option value="">-- Sélectionner un article --</option>
+                     <option value="">-- Sélectionner un vêtement / article --</option>
                      <?php foreach ($articles as $art): ?>
+                       <?php 
+                         $catLabel = !empty($art['libelle_categorie']) ? $art['libelle_categorie'] : ($art['categorie_article_code'] ?? '');
+                       ?>
                        <option value="<?= htmlspecialchars($art['code_article']) ?>" <?= ($tarif['article_code'] ?? '') === $art['code_article'] ? 'selected' : '' ?>>
-                         <?= htmlspecialchars($art['libelle_article']) ?> (<?= htmlspecialchars($art['categorie_article_code'] ?? '') ?>)
+                         <?= htmlspecialchars($art['libelle_article']) ?><?= !empty($catLabel) ? ' (' . htmlspecialchars($catLabel) . ')' : '' ?>
                        </option>
                      <?php endforeach; ?>
                    </select>

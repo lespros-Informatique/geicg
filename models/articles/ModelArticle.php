@@ -33,8 +33,8 @@ class ModelArticle extends BaseModel
                 FROM {$this->table} a
                 LEFT JOIN " . TABLES::CATEGORIES_ARTICLES . " cat ON a.categorie_article_code = cat.code_categorie_article
             ";
-            if ($pressingCode !== null) {
-                $sql .= " WHERE a.pressing_code = ? OR a.pressing_code = 'PRS-001' ORDER BY cat.libelle_categorie_article ASC, a.libelle_article ASC";
+            if ($pressingCode !== null && $pressingCode !== '') {
+                $sql .= " WHERE a.pressing_code = ? ORDER BY cat.libelle_categorie_article ASC, a.libelle_article ASC";
                 $stmt = $this->getCon()->prepare($sql);
                 $stmt->execute([$pressingCode]);
                 return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

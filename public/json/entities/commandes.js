@@ -16,9 +16,9 @@ $(document).ready(function() {
                 title: 'Type',
                 render: function(data, type, row) {
                     if (data === 'colis') {
-                        return `<span style="background: #FEF3C7; color: #92400E; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">📦 ${row.type_label || 'Colis'}</span>`;
+                        return `<span style="background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px;">${row.type_label || 'Collecte au Sac'}</span>`;
                     }
-                    return `<span style="background: #EFF6FF; color: #1E40AF; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">👕 Détaillée</span>`;
+                    return `<span style="background: #EFF6FF; color: #1E40AF; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px;">Commande Détaillée</span>`;
                 }
             },
             { 

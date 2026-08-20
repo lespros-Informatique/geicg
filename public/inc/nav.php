@@ -176,6 +176,9 @@
                     </div>
                 </div>
                 <a href="<?= RACINE ?>user/profil" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>
+                <?php if (!empty($isPressing)): ?>
+                    <a href="<?= RACINE ?>pressing/config" class="dropdown-item"><i data-lucide="store"></i> Mon Pressing</a>
+                <?php endif; ?>
                 <hr>
                 <a href="<?= RACINE ?>user/decon" class="dropdown-item logout"><i data-lucide="log-out"></i> Déconnexion</a>
             </div>

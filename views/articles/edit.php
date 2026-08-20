@@ -12,19 +12,19 @@ $csrfToken = Validator::generateCsrfToken();
     <div class="content-wrapper">
       <div class="page-header">
         <div>
-          <h1><?= isset($article['id_article']) ? 'Modifier l\'article' : 'Ajouter un article' ?></h1>
-          <p class="page-subtitle">Gestion des articles</p>
+          <h1><?= isset($article['id_article']) ? 'Modifier le vêtement / article' : 'Ajouter un vêtement / article' ?></h1>
+          <p class="page-subtitle">Gestion du catalogue de vêtements du pressing</p>
         </div>
         <a href="<?= RACINE ?>article/list" class="btn btn-sm btn-outline-secondary">
           <i data-lucide="arrow-left"></i>
-          Retour Ã  la liste
+          Retour à la liste
         </a>
       </div>
 
       <div class="form-card">
         <div class="card-header">
           <div>
-            <h2>Informations de l'article</h2>
+            <h2>Informations du vêtement / article</h2>
           </div>
           <?php if (isset($article['statut_article'])): ?>
             <span class="badge-status <?= $article['statut_article'] == 'actif' ? 'delivered' : 'cancelled' ?>">
@@ -46,17 +46,17 @@ $csrfToken = Validator::generateCsrfToken();
                 <input type="hidden" id="pressing_code" name="pressing_code" value="<?= htmlspecialchars($resolvedArtPressing) ?>">
 
                 <div class="form-field">
-                  <label for="libelle_article">Libellé de l'article</label>
+                  <label for="libelle_article">Nom du vêtement / article</label>
                   <div class="input-with-icon">
                     <span class="input-icon"><?= Validator::icon('file-text'); ?></span>
                     <input type="text" class="form-control" id="libelle_article" name="libelle_article"
-                           value="<?= htmlspecialchars($article['libelle_article'] ?? '') ?>" required placeholder="ex: Chemise manche longue">
+                           value="<?= htmlspecialchars($article['libelle_article'] ?? '') ?>" required placeholder="ex: Chemise homme, Pantalon costume, Robe longue">
                   </div>
                   <div class="error-message" id="libelleError"></div>
                 </div>
 
                 <div class="form-field">
-                  <label for="categorie_article_code">Catégorie</label>
+                  <label for="categorie_article_code">Catégorie de vêtement</label>
                   <div class="input-with-icon">
                     <span class="input-icon"><?= Validator::icon('tag'); ?></span>
                     <select class="form-control" id="categorie_article_code" name="categorie_article_code" required>

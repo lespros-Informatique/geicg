@@ -138,6 +138,107 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                     <textarea class="form-control" id="adresse_pressing" name="adresse_pressing" rows="2" placeholder="Rue, Carrefour, Repère..."><?= htmlspecialchars($pressing['adresse_pressing'] ?? '') ?></textarea>
                   </div>
                 </div>
+
+                <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                  <!-- CHAMP FICHIER : LOGO DU PRESSING -->
+                  <div class="form-field">
+                    <label for="logo_file" style="font-weight: 700; font-size: 13px; color: #1E293B; margin-bottom: 6px; display: block;">
+                      Logo Officiel du Pressing (Icône Rond/Carré)
+                    </label>
+                    <div style="display: flex; gap: 14px; align-items: flex-start;">
+                      <div id="logoPreviewWrapper" style="width: 70px; height: 70px; border-radius: 12px; border: 2px dashed #CBD5E1; background: #F8FAFC; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; position: relative;">
+                        <?php 
+                          $currentLogo = $pressing['logo_pressing'] ?? '';
+                          $hasLogo = !empty($currentLogo);
+                          $logoUrl = $hasLogo ? ((strpos($currentLogo, 'http') === 0) ? $currentLogo : RACINE . 'public/assets/images/pressings/' . $currentLogo) : '';
+                        ?>
+                        <?php if ($hasLogo): ?>
+                          <img id="logoPreviewImg" src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo actuel" style="width: 100%; height: 100%; object-fit: cover;">
+                        <?php else: ?>
+                          <img id="logoPreviewImg" src="" alt="Aperçu Logo" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                          <i id="logoPlaceholderIcon" class="fa fa-building" style="font-size: 24px; color: #94A3B8;"></i>
+                        <?php endif; ?>
+                      </div>
+                      <div style="flex: 1;">
+                        <div class="input-with-icon">
+                          <span class="input-icon"><?= Validator::icon('image'); ?></span>
+                          <input type="file" class="form-control" id="logo_file" name="logo_file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" onchange="previewPressingLogo(this)">
+                        </div>
+                        <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Logo/Insigne officiel (PNG, JPG, WEBP, SVG)</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CHAMP FICHIER : MINIATURE / COUVERTURE DU PRESSING -->
+                  <div class="form-field">
+                    <label for="miniature_file" style="font-weight: 700; font-size: 13px; color: #1E293B; margin-bottom: 6px; display: block;">
+                      Miniature / Photo de Couverture (Affiche Lavex) <i data-lucide="star" style="width: 14px; height: 14px; color: #2563EB; vertical-align: -1px; display: inline;"></i>
+                    </label>
+                    <div style="display: flex; gap: 14px; align-items: flex-start;">
+                      <div id="miniaturePreviewWrapper" style="width: 110px; height: 70px; border-radius: 12px; border: 2px dashed #CBD5E1; background: #F8FAFC; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; position: relative;">
+                        <?php 
+                          $currentMiniature = $pressing['miniature_pressing'] ?? '';
+                          $hasMiniature = !empty($currentMiniature);
+                          $miniatureUrl = $hasMiniature ? ((strpos($currentMiniature, 'http') === 0) ? $currentMiniature : RACINE . 'public/assets/images/pressings/' . $currentMiniature) : '';
+                        ?>
+                        <?php if ($hasMiniature): ?>
+                          <img id="miniaturePreviewImg" src="<?= htmlspecialchars($miniatureUrl) ?>" alt="Miniature actuelle" style="width: 100%; height: 100%; object-fit: cover;">
+                        <?php else: ?>
+                          <img id="miniaturePreviewImg" src="" alt="Aperçu Miniature" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                          <i id="miniaturePlaceholderIcon" class="fa fa-camera" style="font-size: 24px; color: #94A3B8;"></i>
+                        <?php endif; ?>
+                      </div>
+                      <div style="flex: 1;">
+                        <div class="input-with-icon">
+                          <span class="input-icon"><?= Validator::icon('image'); ?></span>
+                          <input type="file" class="form-control" id="miniature_file" name="miniature_file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" onchange="previewPressingMiniature(this)">
+                        </div>
+                        <small style="color: #2563EB; font-size: 11px; display: block; margin-top: 4px; font-weight: 600;">Image principale affichée sur la plateforme Lavex</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SECTION LIVRAISON & COLLECTE AU SAC -->
+                <div class="form-field" style="grid-column: 1 / -1; margin-top: 10px; padding-top: 16px; border-top: 1px dashed #E2E8F0;">
+                  <h4 style="font-size: 14px; font-weight: 700; color: #1E293B; margin: 0 0 14px 0; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="truck" style="width: 16px; height: 16px; color: #2563EB;"></i> Configuration Livraison & Collecte au Sac
+                  </h4>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                    
+                    <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                      <label style="font-weight: 700; font-size: 13px; color: #1E293B; display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0;">
+                        <span>Proposer la Livraison Gratuite</span>
+                        <input type="checkbox" id="livraison_gratuite" name="livraison_gratuite" value="1" <?= (!empty($pressing['livraison_gratuite'])) ? 'checked' : '' ?> style="width: 18px; height: 18px; accent-color: #2563EB;">
+                      </label>
+                      <small style="color: #64748B; font-size: 11px; display: block; margin-top: 6px;">
+                        Offre la livraison au client si le seuil ci-dessous est atteint.
+                      </small>
+                    </div>
+
+                    <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                      <label for="seuil_livraison_gratuite" style="font-weight: 700; font-size: 13px; color: #1E293B; display: block; margin-bottom: 6px;">
+                        Seuil Minimum Livraison Gratuite (FCFA)
+                      </label>
+                      <div class="input-with-icon">
+                        <span class="input-icon"><?= Validator::icon('dollar-sign'); ?></span>
+                        <input type="number" class="form-control" id="seuil_livraison_gratuite" name="seuil_livraison_gratuite"
+                               placeholder="ex: 15000" min="0" step="500" value="<?= htmlspecialchars($pressing['seuil_livraison_gratuite'] ?? '0') ?>">
+                      </div>
+                    </div>
+
+                    <div class="form-field" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px 16px; border-radius: 10px;">
+                      <label style="font-weight: 700; font-size: 13px; color: #1E293B; display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0;">
+                        <span>Accepter la Collecte au Sac (Sans Détail)</span>
+                        <input type="checkbox" id="accepte_colis_sans_detail" name="accepte_colis_sans_detail" value="1" <?= (!isset($pressing['accepte_colis_sans_detail']) || !empty($pressing['accepte_colis_sans_detail'])) ? 'checked' : '' ?> style="width: 18px; height: 18px; accent-color: #2563EB;">
+                      </label>
+                      <small style="color: #64748B; font-size: 11px; display: block; margin-top: 6px;">
+                        Permet de confier des sacs sans détail d'articles à la réservation.
+                      </small>
+                    </div>
+
+                  </div>
+                </div>
               </div>
 
               <?php if (!$isEdit): ?>
@@ -394,12 +495,47 @@ function filterQuartiersByVille() {
 
 $('#ville_code').on('change', filterQuartiersByVille);
 
+function previewPressingLogo(input) {
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      $('#logoPreviewImg').attr('src', e.target.result).show();
+      $('#logoPlaceholderIcon').hide();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function previewPressingMiniature(input) {
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      $('#miniaturePreviewImg').attr('src', e.target.result).show();
+      $('#miniaturePlaceholderIcon').hide();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function toggleSeuilLivraison() {
+  const isChecked = $('#livraison_gratuite').is(':checked');
+  const input = $('#seuil_livraison_gratuite');
+  if (isChecked) {
+    input.prop('disabled', false).css({'background': '#FFFFFF', 'opacity': '1', 'cursor': 'text'});
+  } else {
+    input.prop('disabled', true).css({'background': '#F1F5F9', 'opacity': '0.6', 'cursor': 'not-allowed'});
+  }
+}
+
+$('#livraison_gratuite').on('change', toggleSeuilLivraison);
+
 $(document).ready(function() {
   const firstForfait = $('input[name="forfait_code"]:checked').val();
   if (firstForfait) {
     $('#forfait-card-' + firstForfait).css({'border-color': '#2563eb', 'background': '#eff6ff'});
   }
   filterQuartiersByVille();
+  toggleSeuilLivraison();
 });
 </script>
 

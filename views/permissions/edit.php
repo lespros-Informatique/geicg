@@ -25,10 +25,11 @@ $permission = isset($permission) ? $permission : [];
 
             <div class="form-grid">
               <div class="form-field">
-                <label for="code_permission">Code</label>
+                <label for="code_permission">Code Permission</label>
                 <div class="input-with-icon">
                   <span class="input-icon"><?= Validator::icon('hash'); ?></span>
                   <input type="text" class="form-control" id="code_permission" name="code_permission"
+                         placeholder="ex: PERM-ADD-USER..."
                          value="<?= htmlspecialchars($permission['code_permission'] ?? '') ?>" <?= isset($permission['id_permission']) ? 'readonly' : 'required' ?>>
                 </div>
                 <div class="error-message" id="codeError"></div>
@@ -39,6 +40,7 @@ $permission = isset($permission) ? $permission : [];
                 <div class="input-with-icon">
                   <span class="input-icon"><?= Validator::icon('file-text'); ?></span>
                   <input type="text" class="form-control" id="libelle_permission" name="libelle_permission"
+                         placeholder="ex: Créer un utilisateur..."
                          value="<?= htmlspecialchars($permission['libelle_permission'] ?? '') ?>" required>
                 </div>
                 <div class="error-message" id="libelleError"></div>
@@ -46,7 +48,7 @@ $permission = isset($permission) ? $permission : [];
 
               <div class="form-field" style="grid-column: 1 / -1;">
                 <label for="description_permission">Description</label>
-                <textarea class="form-control" id="description_permission" name="description_permission" rows="3"><?= htmlspecialchars($permission['description_permission'] ?? '') ?></textarea>
+                <textarea class="form-control" id="description_permission" name="description_permission" rows="3" placeholder="Description du droit ou privilège accordé..."><?= htmlspecialchars($permission['description_permission'] ?? '') ?></textarea>
                 <div class="error-message" id="descriptionError"></div>
               </div>
 

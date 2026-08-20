@@ -43,13 +43,13 @@ $encryptedId = isset($encryptedId) ? $encryptedId : '';
             <div class="form-group">
               <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Montant (FCFA) *</label>
               <input type="number" class="form-control" id="montant_forfait" name="montant_forfait"
-                     value="<?= htmlspecialchars($forfait['montant_forfait'] ?? '0') ?>" required min="0" step="500">
+                     value="<?= htmlspecialchars($forfait['montant_forfait'] ?? '0') ?>" required min="0" step="500" placeholder="ex: 15000">
             </div>
 
             <div class="form-group">
               <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Durée (Mois) *</label>
               <input type="number" class="form-control" id="duree_mois_forfait" name="duree_mois_forfait"
-                     value="<?= htmlspecialchars($forfait['duree_mois_forfait'] ?? '1') ?>" required min="1" max="36">
+                     value="<?= htmlspecialchars($forfait['duree_mois_forfait'] ?? '1') ?>" required min="1" max="36" placeholder="ex: 1">
             </div>
           </div>
 

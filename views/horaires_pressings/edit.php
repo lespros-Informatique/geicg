@@ -126,7 +126,7 @@ $(document).ready(function() {
     const btn = form.find('.btnEditHoraire');
     const isEdit = $('#id_horaire').val() !== '';
     const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
-    const url = isEdit ? (baseApi + 'horaires/edit') : (baseApi + 'horaires/add');
+    const url = isEdit ? (baseApi + 'horaire/edit') : (baseApi + 'horaire/add');
 
     if (typeof loading === 'function') {
       loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
@@ -144,7 +144,7 @@ $(document).ready(function() {
         if (rep.status) {
           if (typeof showToast === 'function') showToast(rep.message || 'Horaire enregistré avec succès !', 'success');
           setTimeout(function() {
-            window.location.href = baseApi + 'horaires/list';
+            window.location.href = baseApi + 'horaire/list';
           }, 700);
         } else {
           if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de l\'enregistrement', 'error');

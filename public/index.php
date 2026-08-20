@@ -62,6 +62,7 @@ $route->addRoute('/pressing/details/{param}', [$pressingController, 'details']);
 $route->addRoute('/pressing/getActive', [$pressingController, 'getActive']);
 $route->addRoute('/pressing/formulaire', [$pressingController, 'formulaire']);
 $route->addRoute('/pressing/addUser', [$pressingController, 'addUser']);
+$route->addRoute('/pressing/config', [$pressingController, 'config']);
 
 $route->addRoute('/livreur/list', [$livreurController, 'list']);
 $route->addRoute('/livreur/apiList', [$livreurController, 'apiList']);
@@ -100,6 +101,16 @@ $route->addRoute('/horaire/edition/{param}', [$horairePressingController, 'editi
 $route->addRoute('/horaire/details/{param}', [$horairePressingController, 'details']);
 $route->addRoute('/horaire/getActive', [$horairePressingController, 'getActive']);
 $route->addRoute('/horaire/formulaire', [$horairePressingController, 'formulaire']);
+
+$route->addRoute('/horaires/list', [$horairePressingController, 'list']);
+$route->addRoute('/horaires/apiList', [$horairePressingController, 'apiList']);
+$route->addRoute('/horaires/add', [$horairePressingController, 'add']);
+$route->addRoute('/horaires/edit', [$horairePressingController, 'edit']);
+$route->addRoute('/horaires/changer', [$horairePressingController, 'changer']);
+$route->addRoute('/horaires/edition/{param}', [$horairePressingController, 'edition']);
+$route->addRoute('/horaires/details/{param}', [$horairePressingController, 'details']);
+$route->addRoute('/horaires/getActive', [$horairePressingController, 'getActive']);
+$route->addRoute('/horaires/formulaire', [$horairePressingController, 'formulaire']);
 
 $route->addRoute('/categorie/list', [$categorieArticleController, 'list']);
 $route->addRoute('/categorie/apiList', [$categorieArticleController, 'apiList']);
@@ -144,6 +155,7 @@ $route->addRoute('/user/edition/{param}', [$userController, 'edition']);
 $route->addRoute('/user/details/{param}', [$userController, 'details']);
 $route->addRoute('/user/getActive', [$userController, 'getActive']);
 $route->addRoute('/user/formulaire', [$userController, 'formulaire']);
+$route->addRoute('/user/checkPhone', [$userController, 'checkPhone']);
 
 $route->addRoute('/commande/list', [$commandeController, 'list']);
 $route->addRoute('/commande/apiList', [$commandeController, 'apiList']);
@@ -281,5 +293,9 @@ if (strpos($url, '/admin-lavex/public') === 0) {
     $url = str_replace('/admin-lavex/public', '', $url);
 } elseif (strpos($url, '/admin-lavex') === 0) {
     $url = str_replace('/admin-lavex', '', $url);
+}
+$url = rtrim($url, '/');
+if ($url === '') {
+    $url = '/';
 }
 $route->run($url);

@@ -94,11 +94,15 @@ class UserController extends BaseController
                     if ($pressingCode && in_array($roleCode, ['ROLE-PRO', 'ROLE-GEST', 'ROLE-LIV'])) {
                         try {
                             $userPressingCode = $this->validator->generateCode(TABLES::USERS_PRESSINGS, 'code_user_pressing', 'USP-', 6);
-                            $stmtUp = $this->model->getCon()->prepare("
-                                INSERT INTO " . TABLES::USERS_PRESSINGS . " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing)
-                                VALUES (?, ?, ?, ?, 'actif', NOW())
-                            ");
-                            $stmtUp->execute([$userPressingCode, $code_user, $pressingCode, $roleCode]);
+                            $stmtCheckUp = $this->model->getCon()->prepare("SELECT id_user_pressing FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND pressing_code = ? LIMIT 1");
+                            $stmtCheckUp->execute([$code_user, $pressingCode]);
+                            if (!$stmtCheckUp->fetch()) {
+                                $stmtUp = $this->model->getCon()->prepare("
+                                    INSERT INTO " . TABLES::USERS_PRESSINGS . " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing)
+                                    VALUES (?, ?, ?, ?, 'actif', NOW())
+                                ");
+                                $stmtUp->execute([$userPressingCode, $code_user, $pressingCode, $roleCode]);
+                            }
 
                             if ($roleCode === 'ROLE-LIV') {
                                 $codeLivreur = $this->validator->generateCode(TABLES::LIVREURS, 'code_livreur', 'LIV-', 6);
@@ -253,6 +257,23 @@ class UserController extends BaseController
             'role' => $role,
             'encryptedId' => $encryptedId
         ]);
+    }
+
+    public function checkPhone()
+    {
+        $this->requireAuth();
+        $phone = trim($_POST['telephone'] ?? ($_GET['telephone'] ?? ''));
+        if (empty($phone)) {
+            $this->error('Numéro de téléphone requis');
+            return;
+        }
+
+        $exists = $this->validator->verif(TABLES::USERS, 'telephone_user', $phone);
+        if ($exists) {
+            $this->error('Ce numéro de téléphone est déjà attribué à un compte !');
+        } else {
+            $this->success('Numéro disponible');
+        }
     }
 
     public function formulaire()

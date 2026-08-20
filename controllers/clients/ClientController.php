@@ -21,7 +21,14 @@ class ClientController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $clients = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+
+        if (!empty($pressingCode)) {
+            $clients = $this->model->getByPressing($pressingCode);
+        } else {
+            $clients = $this->model->getAll();
+        }
+
         $data = [];
 
         foreach ($clients as $c) {
@@ -46,44 +53,47 @@ class ClientController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
 
-        if ($this->isSuperAdmin()) {
-            $this->error("L'administrateur général n'a pas accès à la création directe de clients.");
+        $notEmpty = Validator::validateRequiredFields(['nom' => $_POST['nom'] ?? '', 'telephone' => $_POST['telephone'] ?? '']);
+
+        if ($notEmpty !== true) {
+            $this->error('Veuillez renseigner tous les champs obligatoires (Nom et Téléphone) !');
             return;
         }
 
-        $notEmpty = Validator::validateRequiredFields(['nom' => $_POST['nom'] ?? '', 'telephone' => $_POST['telephone'] ?? '']);
+        if (!Validator::validNumber($this->post('telephone'), 10)) {
+            $this->error('Le numéro de téléphone doit contenir 10 chiffres !');
+            return;
+        }
 
-        if ($notEmpty === true) {
-            if (!Validator::validNumber($this->post('telephone'), 10)) {
-                $this->error('Le numéro de téléphone doit contenir 10 chiffres!');
-            } elseif ($this->validator->getByElement(TABLES::CLIENTS, 'telephone_client', $this->post('telephone'))) {
-                $this->error('Ce numéro de téléphone existe déjà!');
+        if (!$this->checkUnique(TABLES::CLIENTS, 'telephone_client', $this->post('telephone'), 'numéro de téléphone client')) return;
+
+        if (!empty($this->post('email_client'))) {
+            if (!$this->checkUnique(TABLES::CLIENTS, 'email_client', $this->post('email_client'), 'adresse email client')) return;
+        }
+
+        try {
+            $code_client = $this->validator->generateCode(TABLES::CLIENTS, 'code_client', 'CLI-', 6);
+            $pressingCode = $this->getCurrentPressingCode() ?: ($this->post('pressing_code') ?: 'PRS-001');
+            $data = [
+                'code_client' => $code_client,
+                'pressing_code' => $pressingCode,
+                'nom_client' => $this->post('nom'),
+                'telephone_client' => $this->post('telephone'),
+                'email_client' => $this->post('email_client') ?: null,
+                'quartier_client' => $this->post('quartier_client') ?? '',
+                'adresse_client' => $this->post('adresse_client') ?? '',
+                'statut_client' => 'actif',
+                'created_at_client' => date('Y-m-d H:i:s')
+            ];
+
+            if ($this->model->create($data)) {
+                $this->success('Client ajouté avec succès !', ['client_code' => $code_client]);
             } else {
-                try {
-                    $code_client = $this->validator->generateCode(TABLES::CLIENTS, 'code_client', 'CLI-', 6);
-                    $data = [
-                        'code_client' => $code_client,
-                        'nom_client' => $this->post('nom'),
-                        'telephone_client' => $this->post('telephone'),
-                        'email_client' => $this->post('email_client') ?: null,
-                        'quartier_client' => $this->post('quartier_client') ?? '',
-                        'adresse_client' => $this->post('adresse_client') ?? '',
-                        'statut_client' => 'actif',
-                        'created_at_client' => date('Y-m-d H:i:s')
-                    ];
-
-                    if ($this->model->create($data)) {
-                        $this->success('Client ajouté avec succès!', ['client_code' => $code_client]);
-                    } else {
-                        $this->error('Erreur lors de l\'ajout du client');
-                    }
-                } catch (Exception $e) {
-                    error_log('Client add error: ' . $e->getMessage());
-                    $this->error('Erreur serveur: ' . $e->getMessage(), 500);
-                }
+                $this->error('Erreur lors de l\'ajout du client');
             }
-        } else {
-            $this->error('Veuillez renseigner tous les champs!');
+        } catch (Exception $e) {
+            error_log('Client add error: ' . $e->getMessage());
+            $this->error('Erreur serveur: ' . $e->getMessage(), 500);
         }
     }
 
@@ -91,11 +101,6 @@ class ClientController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-
-        if ($this->isSuperAdmin()) {
-            $this->error("L'administrateur général n'a pas accès à la modification directe des clients.");
-            return;
-        }
 
         $notEmpty = Validator::validateRequiredFields(['nom' => $_POST['nom'] ?? '', 'telephone' => $_POST['telephone'] ?? '', 'id_client' => $_POST['id_client'] ?? '']);
 

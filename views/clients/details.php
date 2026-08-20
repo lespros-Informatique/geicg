@@ -13,165 +13,149 @@ $isSuperAdmin = isset($isSuperAdmin) ? $isSuperAdmin : false;
     <div class="content-wrapper">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
         <div>
-          <h1 style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="user" style="color: #2563EB;"></i> Fiche Client : <?= htmlspecialchars($client['nom_client'] ?? '') ?>
+          <h1 style="font-size: 22px; font-weight: 800; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="user" style="color: #2563EB;"></i> Fiche Client : <?= htmlspecialchars($client['nom_client'] ?? 'Client') ?>
           </h1>
-          <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0;">
-            <?= $isSuperAdmin ? 'Consultation en lecture seule du compte client' : 'Informations complètes et historique des commandes' ?>
+          <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0; font-size: 13px;">
+            <?= $isSuperAdmin ? 'Consultation globale du profil client' : 'Coordonnées et historique des commandes du client' ?>
           </p>
         </div>
-        <a href="<?= RACINE ?>client/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-          <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour aux clients
-        </a>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <?php if (!empty($client['id_client']) && !empty($encryptedId)): ?>
+            <a href="<?= RACINE ?>client/edition/<?= htmlspecialchars($encryptedId) ?>" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+              <i data-lucide="edit" style="width: 16px; height: 16px;"></i> Modifier le client
+            </a>
+          <?php endif; ?>
+          <a href="<?= RACINE ?>client/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour à la liste
+          </a>
+        </div>
       </div>
 
-      <div class="detail-card" style="border-radius: 14px; border: 1px solid #E2E8F0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #FFFFFF;">
-        <div class="detail-card-header" style="margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
-          <h2 style="font-size: 17px; font-weight: 700; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="info" style="color: #2563EB; width: 18px; height: 18px;"></i> Informations Personnelles
+      <!-- CARTE 1 : INFORMATIONS PERSONNELLES -->
+      <div class="card" style="border-radius: 14px; border: 1px solid #E2E8F0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #FFFFFF; margin-bottom: 24px;">
+        <div style="margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="font-size: 16px; font-weight: 700; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="info" style="color: #2563EB; width: 18px; height: 18px;"></i> Coordonnées & Identifiants
           </h2>
+          <span class="badge-status <?= ($client['statut_client'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>" style="font-weight: 700;">
+            <?= htmlspecialchars(ucfirst($client['statut_client'] ?? 'Actif')) ?>
+          </span>
         </div>
-        <div class="detail-card-body">
-          <div class="info-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div class="info-item">
-              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Code Client</span>
-              <span class="info-value code-badge" style="font-weight: 700; margin-top: 4px; display: inline-block;"><?= htmlspecialchars($client['code_client'] ?? '') ?></span>
-            </div>
-            <div class="info-item">
-              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Nom & Prénoms</span>
-              <span class="info-value" style="font-weight: 700; color: #1E293B; margin-top: 4px; display: inline-block;"><?= htmlspecialchars($client['nom_client'] ?? '-') ?></span>
-            </div>
-            <div class="info-item">
-              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Téléphone</span>
-              <span class="info-value" style="font-weight: 600; color: #1E293B; margin-top: 4px; display: inline-block;"><i class="fa fa-phone" style="color: #2563EB;"></i> <?= htmlspecialchars($client['telephone_client'] ?? '-') ?></span>
-            </div>
-            <div class="info-item">
-              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Quartier</span>
-              <span class="info-value" style="color: #2563EB; font-weight: 600; margin-top: 4px; display: inline-block;"><i class="fa fa-map-marker-alt"></i> <?= htmlspecialchars($client['quartier_client'] ?? '-') ?></span>
-            </div>
-            <div class="info-item">
-              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Adresse</span>
-              <span class="info-value" style="color: #334155; margin-top: 4px; display: inline-block;"><?= htmlspecialchars($client['adresse_client'] ?? '-') ?></span>
-            </div>
-            <div class="info-item">
-              <span class="info-label" style="display: block; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Statut</span>
-              <span class="info-value" style="margin-top: 4px; display: inline-block;">
-                <span class="badge-status <?= ($client['statut_client'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>">
-                  <?= htmlspecialchars($client['statut_client'] ?? '') ?>
-                </span>
-              </span>
-            </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+          <div>
+            <span style="display: block; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Code Client</span>
+            <span class="code-badge" style="font-size: 14px; font-weight: 800; margin-top: 4px; display: inline-block;">
+              <?= htmlspecialchars($client['code_client'] ?? '-') ?>
+            </span>
+          </div>
+
+          <div>
+            <span style="display: block; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Nom & Prénoms</span>
+            <strong style="font-size: 15px; color: #1E293B; margin-top: 4px; display: block;">
+              <?= htmlspecialchars($client['nom_client'] ?? '-') ?>
+            </strong>
+          </div>
+
+          <div>
+            <span style="display: block; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Téléphone (Login)</span>
+            <span style="font-size: 14px; font-weight: 700; color: #2563EB; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa fa-phone"></i> <?= htmlspecialchars($client['telephone_client'] ?? '-') ?>
+            </span>
+          </div>
+
+          <div>
+            <span style="display: block; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Email</span>
+            <span style="font-size: 14px; color: #334155; margin-top: 4px; display: block;">
+              <?= htmlspecialchars($client['email_client'] ?? '-') ?>
+            </span>
+          </div>
+
+          <div>
+            <span style="display: block; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Quartier</span>
+            <span style="font-size: 14px; color: #2563EB; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa fa-map-marker-alt"></i> <?= htmlspecialchars($client['quartier_client'] ?? '-') ?>
+            </span>
+          </div>
+
+          <div>
+            <span style="display: block; font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Adresse Domicile</span>
+            <span style="font-size: 13.5px; color: #334155; margin-top: 4px; display: block; line-height: 1.4;">
+              <?= htmlspecialchars($client['adresse_client'] ?? '-') ?>
+            </span>
           </div>
         </div>
       </div>
 
-      <?php if (!empty($commandes)): ?>
-      <div class="detail-card" style="margin-top: 24px; border-radius: 14px; border: 1px solid #E2E8F0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #FFFFFF;">
-        <div class="detail-card-header" style="margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
-          <h2 style="font-size: 17px; font-weight: 700; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 8px;">
+      <!-- CARTE 2 : HISTORIQUE DES COMMANDES DU CLIENT -->
+      <div class="card" style="border-radius: 14px; border: 1px solid #E2E8F0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #FFFFFF;">
+        <div style="margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="font-size: 16px; font-weight: 700; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 8px;">
             <i data-lucide="shopping-bag" style="color: #2563EB; width: 18px; height: 18px;"></i> Historique des Commandes (<?= count($commandes) ?>)
           </h2>
+          <?php if (!empty($client['code_client'])): ?>
+            <a href="<?= RACINE ?>commande/list?client=<?= htmlspecialchars($client['code_client']) ?>" class="btn btn-sm btn-outline-primary" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+              <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Créer une commande
+            </a>
+          <?php endif; ?>
         </div>
-        <div class="detail-card-body">
-          <div class="mobile-list-container" id="commandesMobileList"></div>
-          <div class="table-responsive-mobile">
-            <table class="table" id="dataTable" style="width: 100%;">
-              <thead>
-                <tr>
-                  <th>Code Commande</th>
-                  <th>Date</th>
-                  <th>Statut</th>
-                  <th>Détail</th>
-                  <th>Paiements</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($commandes as $cmd): ?>
-                <tr>
-                  <td><strong style="color: #1E293B;"><?= htmlspecialchars($cmd['code_commande'] ?? '') ?></strong></td>
-                  <td><?= htmlspecialchars($cmd['created_at_commande'] ?? '') ?></td>
-                  <td>
-                    <span class="badge-status <?= ($cmd['statut_commande'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>">
-                      <?= htmlspecialchars($cmd['statut_commande'] ?? '') ?>
-                    </span>
-                  </td>
-                  <td>
-                    <?php if (!empty($cmd['editId'])): ?>
-                      <a href="<?= RACINE ?>commande/details/<?= htmlspecialchars($cmd['editId']) ?>" class="btn-action btn-action-secondary" title="Voir détail">
-                        <i class="fa fa-eye"></i>
-                      </a>
-                    <?php endif; ?>
-                  </td>
-                  <td>
-                    <?php if (!empty($cmd['paiements'])): ?>
-                      <?php foreach ($cmd['paiements'] as $p): ?>
-                        <div style="margin-bottom:4px;">
-                          <strong><?= htmlspecialchars($p['code_paiement'] ?? '') ?></strong>
-                          <span class="badge-status <?= ($p['statut_paiement'] ?? '') == 'valide' ? 'delivered' : 'cancelled' ?>" style="font-size:0.75rem;">
-                            <?= htmlspecialchars($p['statut_paiement'] ?? '') ?>
-                          </span>
-                          <span style="font-size:0.85rem;color:#666;">
-                            <?= isset($p['montant_paiement']) ? number_format((float)$p['montant_paiement'], 0, ',', ' ') . ' FCFA' : '' ?>
-                          </span>
-                        </div>
-                      <?php endforeach; ?>
-                    <?php else: ?>
-                      <span style="color:#999;">-</span>
-                    <?php endif; ?>
-                  </td>
-                </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
+
+        <?php if (!empty($commandes)): ?>
+        <div class="table-responsive-mobile">
+          <table class="table" style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Étape de suivi</th>
+                <th>Date</th>
+                <th style="text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($commandes as $cmd): ?>
+              <tr>
+                <td><strong style="color: #1E293B;">#<?= htmlspecialchars($cmd['code_commande'] ?? '') ?></strong></td>
+                <td>
+                  <?php if (($cmd['type_commande'] ?? '') === 'colis'): ?>
+                    <span style="background: #FEF3C7; color: #92400E; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">Collecte au Sac</span>
+                  <?php else: ?>
+                    <span style="background: #EFF6FF; color: #1E40AF; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">Commande Détaillée</span>
+                  <?php endif; ?>
+                </td>
+                <td>
+                  <strong style="color: #059669;">
+                    <?= isset($cmd['montant_total_commande']) ? number_format((float)$cmd['montant_total_commande'], 0, ',', ' ') . ' FCFA' : '0 FCFA' ?>
+                  </strong>
+                </td>
+                <td>
+                  <span class="badge-status <?= ($cmd['statut_commande'] ?? '') == 'actif' ? 'delivered' : 'cancelled' ?>" style="font-weight: 700;">
+                    <?= htmlspecialchars(ucfirst($cmd['statut_suivi_commande'] ?? ($cmd['statut_commande'] ?? ''))) ?>
+                  </span>
+                </td>
+                <td style="color: #64748B; font-size: 13px;"><?= htmlspecialchars($cmd['created_at_commande'] ?? '-') ?></td>
+                <td style="text-align: center;">
+                  <?php if (!empty($cmd['editId'])): ?>
+                    <a href="<?= RACINE ?>commande/details/<?= htmlspecialchars($cmd['editId']) ?>" class="btn-action btn-action-secondary" title="Voir la commande" style="display: inline-flex; align-items: center; justify-content: center;">
+                      <i class="fa fa-eye"></i>
+                    </a>
+                  <?php endif; ?>
+                </td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+        <?php else: ?>
+          <div style="text-align: center; padding: 30px; color: #94A3B8; font-size: 14px;">
+            <i data-lucide="inbox" style="width: 36px; height: 36px; stroke-width: 1.5; margin-bottom: 8px; opacity: 0.6;"></i>
+            <p style="margin: 0;">Aucune commande enregistrée pour ce client pour le moment.</p>
           </div>
-        </div>
+        <?php endif; ?>
       </div>
 
-      <script>
-        (function() {
-          var rawData = <?= json_encode($commandes) ?>;
-          var container = document.getElementById('commandesMobileList');
-          if (!container || !rawData || !rawData.length) return;
-
-          function renderPaiements(paiements) {
-            if (!paiements || !paiements.length) return '<span style="color:#999;">-</span>';
-            return paiements.map(function(p) {
-              var cls = (p.statut_paiement || '') === 'valide' ? 'delivered' : 'cancelled';
-              var montant = p.montant_paiement ? Number(p.montant_paiement).toLocaleString('fr-FR') + ' FCFA' : '';
-              return '<div style="margin-bottom:3px;">' +
-                '<strong>' + (p.code_paiement || '') + '</strong> ' +
-                '<span class="badge-status ' + cls + '" style="font-size:0.7rem;">' + (p.statut_paiement || '') + '</span> ' +
-                '<span style="font-size:0.8rem;color:#666;">' + montant + '</span>' +
-              '</div>';
-            }).join('');
-          }
-
-          var cards = rawData.map(function(cmd) {
-            var detailHref = '<?= RACINE ?>commande/details/' + (cmd.editId || '');
-            return '<div class="mobile-item" style="padding:12px;border-bottom:1px solid var(--border-color);">' +
-              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
-                '<div>' +
-                  '<div style="font-weight:600;">' + (cmd.code_commande || '') + '</div>' +
-                   '<div style="font-size:0.8rem;color:#666;">' + (cmd.created_at_commande || '') + '</div>' +
-                '</div>' +
-                '<a href="' + detailHref + '" class="btn-action btn-action-secondary" title="Voir détail" style="padding:6px 10px;">' +
-                  '<i class="fa fa-eye"></i>' +
-                '</a>' +
-              '</div>' +
-              '<div style="font-size:0.75rem;color:#666;margin-bottom:4px;">' +
-                '<span class="badge-status ' + ((cmd.statut_commande || '') === 'actif' ? 'delivered' : 'cancelled') + '">' + (cmd.statut_commande || '') + '</span>' +
-              '</div>' +
-              '<div style="font-size:0.85rem;">' +
-                '<div style="margin-bottom:4px;font-weight:600;font-size:0.75rem;text-transform:uppercase;color:#999;">Paiements</div>' +
-                renderPaiements(cmd.paiements) +
-              '</div>' +
-            '</div>';
-          }).join('');
-
-          container.innerHTML = cards;
-        })();
-      </script>
-      <?php endif; ?>
     </div>
   </main>
 </div>

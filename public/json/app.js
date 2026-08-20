@@ -82,37 +82,37 @@ const entityConfigs = {
     category: {
         modalTitle: 'Ajouter une catégorie',
         fields: [
-            { name: 'libelle', label: 'Libellé', type: 'text', required: true },
-            { name: 'description', label: 'Description', type: 'textarea', required: false }
+            { name: 'libelle', label: 'Libellé', type: 'text', placeholder: 'Ex: Vêtements homme, Linge de maison...', required: true },
+            { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Description de la catégorie...', required: false }
         ]
     },
     client: {
         modalTitle: 'Ajouter un client',
         fields: [
-            { name: 'nom', label: 'Nom', type: 'text', required: true },
-            { name: 'telephone', label: 'Téléphone', type: 'tel', required: true },
-            { name: 'email_client', label: 'Email', type: 'email', required: false },
-            { name: 'quartier_client', label: 'Quartier', type: 'text', required: false },
-            { name: 'adresse_client', label: 'Adresse', type: 'textarea', required: false }
+            { name: 'nom', label: 'Nom & Prénoms', type: 'text', placeholder: 'Ex: Kouassi Jean', required: true },
+            { name: 'telephone', label: 'Téléphone', type: 'tel', placeholder: 'Ex: 0708091011', required: true },
+            { name: 'email_client', label: 'Email', type: 'email', placeholder: 'Ex: client@lavex.ci (Optionnel)', required: false },
+            { name: 'quartier_client', label: 'Quartier', type: 'text', placeholder: 'Ex: Angré 8ème Tranche', required: false },
+            { name: 'adresse_client', label: 'Adresse', type: 'textarea', placeholder: 'Ex: Rue des Jardins, Villa 14', required: false }
         ]
     },
     utilisateur: {
         modalTitle: 'Ajouter un membre d\'équipe',
         fields: [
-            { name: 'nom', label: 'Nom', type: 'text', required: true, col: 1 },
-            { name: 'prenom', label: 'Prénom', type: 'text', required: false, col: 2 },
-            { name: 'email', label: 'Email de connexion (Login)', type: 'email', required: true, col: 1 },
-            { name: 'telephone', label: 'Téléphone Mobile', type: 'tel', required: true, col: 2 },
-            { name: 'role_code', label: 'Rôle attribué', type: 'select', required: true, options: { 'ROLE-PRO': '👑 Propriétaire', 'ROLE-GEST': '💼 Gestionnaire', 'ROLE-LIV': '🛵 Livreur' }, col: 1 },
-            { name: 'password', label: 'Mot de passe (Défaut: 12345)', type: 'password', required: false, col: 2 }
+            { name: 'nom', label: 'Nom', type: 'text', placeholder: 'Ex: Kouassi', required: true, col: 1 },
+            { name: 'prenom', label: 'Prénom', type: 'text', placeholder: 'Ex: Jean-Marc', required: false, col: 2 },
+            { name: 'telephone', label: 'Téléphone (Login de connexion)', type: 'tel', placeholder: 'Ex: 0708091011', required: true, col: 1 },
+            { name: 'email', label: 'Email (Optionnel)', type: 'email', placeholder: 'Ex: agent@lavex.ci', required: false, col: 2 },
+            { name: 'role_code', label: 'Rôle attribué', type: 'select', required: true, options: { 'ROLE-PRO': 'Propriétaire', 'ROLE-GEST': 'Gestionnaire', 'ROLE-LIV': 'Livreur' }, col: 1 },
+            { name: 'password', label: 'Mot de passe par défaut', type: 'text', value: '12345', readonly: true, required: false, col: 2 }
         ]
     },
     order: {
         modalTitle: 'Nouvelle commande',
         fields: [
-            { name: 'client_code', label: 'Code client', type: 'text', required: true },
-            { name: 'adresse_livraison_commande', label: 'Adresse', type: 'textarea', required: true },
-            { name: 'montant_total_commande', label: 'Montant', type: 'number', required: true },
+            { name: 'client_code', label: 'Code client', type: 'text', placeholder: 'Ex: CLI-123456', required: true },
+            { name: 'adresse_livraison_commande', label: 'Adresse', type: 'textarea', placeholder: 'Adresse précise de livraison...', required: true },
+            { name: 'montant_total_commande', label: 'Montant', type: 'number', placeholder: '0', required: true },
             { name: 'statut_commande', label: 'Statut', type: 'select', required: false, options: { 'en_attente': 'En attente', 'confirmee': 'Confirmée', 'en_livraison': 'En livraison', 'livree': 'Livrée', 'annulee': 'Annulée' } },
             { name: 'methode_paiement_commande', label: 'Paiement', type: 'select', required: false, options: { 'cash': 'Espèces', 'mobile_money': 'Mobile Money', 'carte': 'Carte' } }
         ]
@@ -120,45 +120,45 @@ const entityConfigs = {
     fournisseur: {
         modalTitle: 'Ajouter un fournisseur',
         fields: [
-            { name: 'nom', label: 'Nom', type: 'text', required: true },
-            { name: 'telephone', label: 'Téléphone', type: 'text', required: true },
-            { name: 'whatsapp', label: 'WhatsApp', type: 'text', required: false },
-            { name: 'localisation', label: 'Localisation', type: 'text', required: false },
+            { name: 'nom', label: 'Nom', type: 'text', placeholder: 'Ex: Grossiste Produits Linge', required: true },
+            { name: 'telephone', label: 'Téléphone', type: 'text', placeholder: 'Ex: 0708091011', required: true },
+            { name: 'whatsapp', label: 'WhatsApp', type: 'text', placeholder: 'Ex: 0708091011', required: false },
+            { name: 'localisation', label: 'Localisation', type: 'text', placeholder: 'Ex: Treichville Zone 3', required: false },
             { name: 'mode_collaboration', label: 'Mode collaboration', type: 'select', required: true, options: { 'achat_direct': 'Achat direct', 'dropshipping': 'Dropshipping', 'depot_vente': 'Dépôt vente', 'commission': 'Commission' } }
         ]
     },
     livreur: {
         modalTitle: 'Ajouter un livreur',
         fields: [
-            { name: 'nom', label: 'Nom complet', type: 'text', required: true },
-            { name: 'telephone', label: 'Téléphone', type: 'text', required: true },
-            { name: 'email', label: 'Email', type: 'email', required: false },
+            { name: 'nom', label: 'Nom complet', type: 'text', placeholder: 'Ex: Yao Paul', required: true },
+            { name: 'telephone', label: 'Téléphone', type: 'text', placeholder: 'Ex: 0708091011', required: true },
+            { name: 'email', label: 'Email', type: 'email', placeholder: 'Ex: livreur@lavex.ci', required: false },
             { name: 'moyen_transport', label: 'Moyen de transport', type: 'select', required: true, options: { 'moto': 'Moto', 'voiture': 'Voiture', 'velo': 'Vélo', 'tricycle': 'Tricycle' } }
         ]
     },
     paiement: {
         modalTitle: 'Ajouter un paiement',
         fields: [
-            { name: 'commande_code', label: 'Code commande', type: 'text', required: true },
-            { name: 'montant_paiement', label: 'Montant (FCFA)', type: 'number', required: true },
+            { name: 'commande_code', label: 'Code commande', type: 'text', placeholder: 'Ex: CMD-123456', required: true },
+            { name: 'montant_paiement', label: 'Montant (FCFA)', type: 'number', placeholder: 'Ex: 5000', required: true },
             { name: 'methode_paiement', label: 'Méthode', type: 'select', required: false, options: { 'cash': 'Espèces', 'mobile_money': 'Mobile Money', 'carte': 'Carte' } },
-            { name: 'reference_transaction', label: 'Référence', type: 'text', required: false },
+            { name: 'reference_transaction', label: 'Référence', type: 'text', placeholder: 'Ex: TXN-99887766', required: false },
             { name: 'statut_paiement', label: 'Statut', type: 'select', required: false, options: { 'en_attente': 'En attente', 'partiel': 'Partiel', 'paye': 'Payé', 'echoue': 'Échoué' } }
         ]
     },
     role: {
         modalTitle: 'Ajouter un rôle',
         fields: [
-            { name: 'nom', label: 'Nom du rôle', type: 'text', required: true },
-            { name: 'description', label: 'Description', type: 'textarea', required: false }
+            { name: 'nom', label: 'Nom du rôle', type: 'text', placeholder: 'Ex: Gestionnaire Atelier', required: true },
+            { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Description des privilèges attribués...', required: false }
         ]
     },
     permission: {
         modalTitle: 'Ajouter une permission',
         fields: [
-            { name: 'module', label: 'Module', type: 'text', required: true },
-            { name: 'action', label: 'Action', type: 'text', required: true },
-            { name: 'description', label: 'Description', type: 'textarea', required: false }
+            { name: 'module', label: 'Module', type: 'text', placeholder: 'Ex: Commandes, Clients...', required: true },
+            { name: 'action', label: 'Action', type: 'text', placeholder: 'Ex: Créer, Modifier, Supprimer...', required: true },
+            { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Détail de la permission...', required: false }
         ]
     },
     stock: {
@@ -264,21 +264,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const formType = type;
         currentSaveHandler = saveHandler || function(formData) {
             const endpoints = {
-                product: LINK + 'product/add',
-                category: LINK + 'category/add',
-                client: LINK + 'clientController/add',
+                product: LINK + 'article/add',
+                category: LINK + 'categorie/add',
+                client: LINK + 'client/add',
                 utilisateur: LINK + 'user/add',
-                order: LINK + 'order/add',
-                fournisseur: LINK + 'fournisseur/add',
+                order: LINK + 'commande/add',
                 livreur: LINK + 'livreur/add',
                 paiement: LINK + 'paiement/add',
                 role: LINK + 'role/add',
                 permission: LINK + 'permission/add',
-                stock: LINK + 'stock/add',
-                commission: LINK + 'commission/add',
-                setting: LINK + 'setting/add',
-                city: LINK + 'city/add',
-                subcategory: LINK + 'subcategory/add'
+                service: LINK + 'service/add',
+                forfait: LINK + 'forfait/add',
+                ville: LINK + 'ville/add',
+                quartier: LINK + 'quartier/add',
+                horaire: LINK + 'horaire/add',
+                horaires: LINK + 'horaires/add'
             };
             const url = endpoints[type];
 
@@ -308,7 +308,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             }, 400);
                         }
                     } else {
-                        showToast(response.message || 'Erreur lors de l\'enregistrement', 'error');
+                        const errMsg = response.message || 'Erreur lors de l\'enregistrement';
+                        $('#genericModalAlert').css('display', 'flex').html('<i class="fa fa-exclamation-circle"></i> ' + errMsg);
+                        showToast(errMsg, 'error');
                     }
                 },
                 error: function(xhr) {
@@ -324,6 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else if (xhr.responseText) {
                         errorMsg = 'Erreur ' + xhr.status + ': ' + xhr.responseText.slice(0, 150);
                     }
+                    $('#genericModalAlert').css('display', 'flex').html('<i class="fa fa-exclamation-circle"></i> ' + errorMsg);
                     showToast(errorMsg, 'error');
                 }
             });
@@ -339,7 +342,8 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.querySelector('.modal').style.maxWidth = '550px';
             modal.querySelector('.modal').style.width = '96%';
         }
-        let html = '<input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">';
+        let html = '<div id="genericModalAlert" style="display:none; padding: 12px 16px; border-radius: 10px; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; font-weight: 700; font-size: 13px; margin-bottom: 16px; align-items: center; gap: 8px;"></div>';
+        html += '<input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">';
         const fields = currentFormConfig.fields;
         const rows = [];
         const forceSingleCol = (type !== 'utilisateur') && fields.length <= 5;
@@ -383,7 +387,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     html += '<button type="button" class="btn btn-sm btn-outline-primary image-upload-trigger"><i class="fa fa-cloud-upload"></i> Ajouter des images</button>';
                     html += '<div class="image-previews-grid"></div>';
                 } else {
-                    html += '<input type="' + f.type + '" name="' + f.name + '" class="form-control" ' + (f.required ? 'required' : '') + ' style="border-radius: 8px; height: 42px; width: 100%; padding: 0 12px;">';
+                    const valAttr = f.value ? 'value="' + f.value + '"' : '';
+                    const readAttr = f.readonly ? 'readonly style="background-color: #F1F5F9; color: #475569; font-weight: 700; cursor: not-allowed; border-radius: 8px; height: 42px; width: 100%; padding: 0 12px;"' : 'style="border-radius: 8px; height: 42px; width: 100%; padding: 0 12px;"';
+                    const placeAttr = f.placeholder ? 'placeholder="' + f.placeholder + '"' : '';
+                    html += '<input type="' + f.type + '" name="' + f.name + '" ' + valAttr + ' ' + placeAttr + ' class="form-control" ' + (f.required ? 'required' : '') + ' ' + readAttr + '>';
                 }
                 html += '<span class="field-feedback-icon" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"></span></div></div>';
             });

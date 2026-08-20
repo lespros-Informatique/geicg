@@ -38,6 +38,7 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
             <div class="form-group">
               <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Code Rôle *</label>
               <input type="text" class="form-control" id="code_role" name="code_role"
+                     placeholder="ex: ROLE-GEST, ROLE-LIV..."
                      value="<?= htmlspecialchars($role['code_role'] ?? '') ?>" <?= isset($role['id_role']) ? 'readonly' : 'required' ?>
                      style="background: <?= isset($role['id_role']) ? '#F8FAFC' : '#FFF' ?>; font-weight: 700;">
             </div>
@@ -45,6 +46,7 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
             <div class="form-group">
               <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Libellé Rôle *</label>
               <input type="text" class="form-control" id="libelle_role" name="libelle_role"
+                     placeholder="ex: Gérant de Pressing, Caissier..."
                      value="<?= htmlspecialchars($role['libelle_role'] ?? '') ?>" required>
             </div>
           </div>

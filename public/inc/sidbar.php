@@ -32,7 +32,7 @@
                 <i data-lucide="layers"></i> <span>Marketplace & Offres</span>
             </div>
             <a href="<?= RACINE ?>categorie/list" class="nav-item sub">
-                <i data-lucide="tag"></i> <span>Catégories d'articles</span>
+                <i data-lucide="tag"></i> <span>Catégories de vêtements</span>
             </a>
             <a href="<?= RACINE ?>forfait/list" class="nav-item sub">
                 <i data-lucide="award"></i> <span>Forfaits B2B</span>
@@ -82,13 +82,16 @@
 
         <div class="nav-section">
             <div class="nav-section-title">
-                <i data-lucide="tag"></i> <span>Mon Catalogue</span>
+                <i data-lucide="store"></i> <span>Mon Établissement</span>
             </div>
+            <a href="<?= RACINE ?>pressing/config" class="nav-item sub">
+                <i data-lucide="settings"></i> <span>Configuration Pressing</span>
+            </a>
             <a href="<?= RACINE ?>tarif/list" class="nav-item sub">
-                <i data-lucide="dollar-sign"></i> <span>Mes Tarifs Articles</span>
+                <i data-lucide="dollar-sign"></i> <span>Grille Tarifaire</span>
             </a>
             <a href="<?= RACINE ?>article/list" class="nav-item sub">
-                <i data-lucide="shirt"></i> <span>Mes Articles</span>
+                <i data-lucide="shirt"></i> <span>Vêtements & Articles</span>
             </a>
             <a href="<?= RACINE ?>service/list" class="nav-item sub">
                 <i data-lucide="sparkles"></i> <span>Mes Services</span>

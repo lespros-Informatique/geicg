@@ -11,12 +11,12 @@ require_once __DIR__ . '/../../public/inc/header.php';
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
         <div>
           <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #1E293B; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="layers" style="color: #2563EB;"></i> Catégories d'articles
+            <i data-lucide="layers" style="color: #2563EB;"></i> Catégories de vêtements & linge
           </h1>
-          <p class="page-subtitle" style="margin: 4px 0 0; color: #64748B; font-size: 13px;">Gestion et classification des types de linge</p>
+          <p class="page-subtitle" style="margin: 4px 0 0; color: #64748B; font-size: 13px;">Gestion et classification des types de vêtements et de linge</p>
         </div>
         <a href="<?= RACINE ?>categorie/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Ajouter catégorie
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Ajouter une catégorie
         </a>
       </div>
 

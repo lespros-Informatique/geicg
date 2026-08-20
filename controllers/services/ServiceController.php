@@ -18,7 +18,14 @@ class ServiceController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $services = $this->model->getAll();
+        $pressingCode = $this->getCurrentPressingCode();
+
+        if (!empty($pressingCode)) {
+            $services = $this->model->getByPressing($pressingCode);
+        } else {
+            $services = $this->model->getAll();
+        }
+
         $data = [];
 
         foreach ($services as $s) {
@@ -48,14 +55,17 @@ class ServiceController extends BaseController
             return;
         }
 
+        $libelle = $this->post('libelle_service');
+
         $code = $this->post('code_service') ?: $this->validator->generateCode(TABLES::SERVICES, 'code_service', 'SERV-', 6);
         if ($this->validator->getByElement(TABLES::SERVICES, 'code_service', $code)) {
-            $this->error('Ce code service existe déjà!');
+            $this->error('Ce code service existe déjà !');
             return;
         }
 
         $data = [
             'code_service' => $code,
+            'pressing_code' => $this->getCurrentPressingCode(),
             'libelle_service' => $this->post('libelle_service'),
             'description_service' => $this->post('description_service') ?? '',
             'statut_service' => 'actif',

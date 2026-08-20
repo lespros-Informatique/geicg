@@ -134,6 +134,78 @@ class PressingController extends BaseController
         }
     }
 
+    private function handleLogoUpload(?string $existingLogo = null): ?string
+    {
+        if (isset($_FILES['logo_file']) && $_FILES['logo_file']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['logo_file'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'];
+
+            if (!in_array($ext, $allowedExtensions, true)) {
+                throw new InvalidArgumentException("Format d'image du logo non autorisé (JPG, PNG, WEBP, SVG, GIF).");
+            }
+
+            if ($file['size'] > 5 * 1024 * 1024) {
+                throw new InvalidArgumentException("Le fichier du logo ne doit pas dépasser 5 Mo.");
+            }
+
+            $uploadDir = __DIR__ . '/../../public/assets/images/pressings/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $newFileName = 'prs_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $destPath = $uploadDir . $newFileName;
+
+            if (move_uploaded_file($file['tmp_name'], $destPath)) {
+                return $newFileName;
+            }
+        }
+
+        $postedLogo = trim($_POST['logo_pressing'] ?? '');
+        if ($postedLogo !== '') {
+            return $postedLogo;
+        }
+
+        return $existingLogo;
+    }
+
+    private function handleMiniatureUpload(?string $existingMiniature = null): ?string
+    {
+        if (isset($_FILES['miniature_file']) && $_FILES['miniature_file']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['miniature_file'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'];
+
+            if (!in_array($ext, $allowedExtensions, true)) {
+                throw new InvalidArgumentException("Format d'image miniature non autorisé (JPG, PNG, WEBP, SVG, GIF).");
+            }
+
+            if ($file['size'] > 5 * 1024 * 1024) {
+                throw new InvalidArgumentException("Le fichier de la miniature ne doit pas dépasser 5 Mo.");
+            }
+
+            $uploadDir = __DIR__ . '/../../public/assets/images/pressings/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $newFileName = 'min_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $destPath = $uploadDir . $newFileName;
+
+            if (move_uploaded_file($file['tmp_name'], $destPath)) {
+                return $newFileName;
+            }
+        }
+
+        $postedMiniature = trim($_POST['miniature_pressing'] ?? '');
+        if ($postedMiniature !== '') {
+            return $postedMiniature;
+        }
+
+        return $existingMiniature;
+    }
+
     public function edit()
     {
         $this->requirePost(false);
@@ -147,6 +219,23 @@ class PressingController extends BaseController
 
         $statut = in_array($this->post('statut_pressing'), ['actif', 'inactif', 'suspendu']) ? $this->post('statut_pressing') : 'actif';
         $id = (int) $this->post('id_pressing');
+        $pressing = $this->model->getById($id);
+        if (!$pressing) {
+            $this->error('Pressing introuvable!');
+            return;
+        }
+
+        try {
+            $logo = $this->handleLogoUpload($pressing['logo_pressing'] ?? null);
+            $miniature = $this->handleMiniatureUpload($pressing['miniature_pressing'] ?? null);
+        } catch (Exception $e) {
+            $this->error($e->getMessage());
+            return;
+        }
+
+        $livraisonGratuite = isset($_POST['livraison_gratuite']) ? (int)$_POST['livraison_gratuite'] : 0;
+        $seuilLivraisonGratuite = (isset($_POST['seuil_livraison_gratuite']) && $_POST['seuil_livraison_gratuite'] !== '') ? (float)$_POST['seuil_livraison_gratuite'] : 0.00;
+        $accepteColisSansDetail = isset($_POST['accepte_colis_sans_detail']) ? (int)$_POST['accepte_colis_sans_detail'] : 0;
 
         $data = [
             'id_pressing' => $id,
@@ -158,13 +247,17 @@ class PressingController extends BaseController
             'quartier_code' => $this->post('quartier_code') ?? '',
             'latitude_pressing' => $this->post('latitude_pressing') ?? null,
             'longitude_pressing' => $this->post('longitude_pressing') ?? null,
-            'logo_pressing' => $this->post('logo_pressing') ?? '',
+            'logo_pressing' => $logo ?? '',
+            'miniature_pressing' => $miniature ?? '',
+            'livraison_gratuite' => $livraisonGratuite,
+            'seuil_livraison_gratuite' => $seuilLivraisonGratuite,
+            'accepte_colis_sans_detail' => $accepteColisSansDetail,
             'statut_pressing' => $statut,
             'updated_at_pressing' => date('Y-m-d H:i:s')
         ];
 
         if ($this->model->update($data, $id)) {
-            $this->success('Pressing modifié avec succès!');
+            $this->success('Pressing et paramètres mis à jour avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -321,8 +414,13 @@ class PressingController extends BaseController
         $password = trim($this->post('password_user'));
         $roleCode = trim($this->post('role_code'));
 
-        if (empty($pressingCode) || empty($nom) || empty($email) || empty($roleCode)) {
-            $this->error('Veuillez renseigner toutes les informations obligatoires (Nom, Email et Rôle) !');
+        if (empty($pressingCode) || empty($nom) || empty($telephone) || empty($roleCode)) {
+            $this->error('Veuillez renseigner toutes les informations obligatoires (Nom, Téléphone et Rôle) !');
+            return;
+        }
+
+        if (!Validator::validNumber($telephone, 10)) {
+            $this->error('Le numéro de téléphone doit contenir 10 chiffres !');
             return;
         }
 
@@ -339,12 +437,24 @@ class PressingController extends BaseController
 
         $db = $this->model->getCon();
 
-        // 1. Vérifier si l'email existe déjà
-        $stmtU = $db->prepare("SELECT id_user FROM " . TABLES::USERS . " WHERE email_user = ? LIMIT 1");
-        $stmtU->execute([$email]);
-        if ($stmtU->fetch()) {
-            $this->error("L'adresse email ($email) est déjà attribuée à un autre compte !");
+        // 1. Vérifier si le téléphone existe déjà
+        $stmtT = $db->prepare("SELECT id_user FROM " . TABLES::USERS . " WHERE telephone_user = ? LIMIT 1");
+        $stmtT->execute([$telephone]);
+        if ($stmtT->fetch()) {
+            $this->error("Le numéro de téléphone ($telephone) est déjà attribué à un autre compte !");
             return;
+        }
+
+        // 2. Vérifier l'email s'il est renseigné
+        if (!empty($email)) {
+            $stmtU = $db->prepare("SELECT id_user FROM " . TABLES::USERS . " WHERE email_user = ? LIMIT 1");
+            $stmtU->execute([$email]);
+            if ($stmtU->fetch()) {
+                $this->error("L'adresse email ($email) est déjà attribuée à un autre compte !");
+                return;
+            }
+        } else {
+            $email = null;
         }
 
         try {
@@ -391,5 +501,29 @@ class PressingController extends BaseController
             error_log("Erreur PressingController::addUser: " . $e->getMessage());
             $this->error("Erreur serveur lors de la création du membre de l'équipe.");
         }
+    }
+
+    public function config()
+    {
+        $this->requireAuth();
+        $pressingCode = $this->getCurrentPressingCode();
+
+        if (empty($pressingCode)) {
+            $db = $this->model->getCon();
+            $pressingCode = $db->query("SELECT code_pressing FROM " . TABLES::PRESSINGS . " LIMIT 1")->fetchColumn() ?: 'PRS-001';
+        }
+
+        $db = $this->model->getCon();
+        $stmt = $db->prepare("SELECT id_pressing FROM " . TABLES::PRESSINGS . " WHERE code_pressing = ? LIMIT 1");
+        $stmt->execute([$pressingCode]);
+        $idPressing = $stmt->fetchColumn();
+
+        if (!$idPressing) {
+            header('Location: ' . RACINE . 'pressing/list');
+            exit();
+        }
+
+        $encryptedId = $this->validator->crypter($idPressing);
+        $this->details($encryptedId);
     }
 }

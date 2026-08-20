@@ -17,6 +17,8 @@ $libelle      = $pressing['libelle_pressing'] ?? 'Pressing';
 $statut       = $pressing['statut_pressing'] ?? 'actif';
 $logoStr      = $pressing['logo_pressing'] ?? '';
 $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr : RACINE . 'public/assets/images/pressings/' . $logoStr) : null;
+$miniatureStr = $pressing['miniature_pressing'] ?? '';
+$miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ? $miniatureStr : RACINE . 'public/assets/images/pressings/' . $miniatureStr) : null;
 ?>
 
 <div class="app-layout">
@@ -28,7 +30,9 @@ $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr 
       <!-- === EN-TÊTE DU HUB PRESSING 360° === -->
       <div class="page-header" style="margin-bottom: 24px;">
         <div style="display: flex; align-items: center; gap: 16px;">
-          <?php if ($logo): ?>
+          <?php if ($miniature): ?>
+            <img src="<?= htmlspecialchars($miniature) ?>" alt="<?= htmlspecialchars($libelle) ?> (Miniature)" title="Miniature Lavex" style="width: 90px; height: 60px; border-radius: 12px; object-fit: cover; border: 2px solid var(--border-color, #E2E8F0); box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+          <?php elseif ($logo): ?>
             <img src="<?= htmlspecialchars($logo) ?>" alt="<?= htmlspecialchars($libelle) ?>" style="width: 60px; height: 60px; border-radius: 14px; object-fit: cover; border: 2px solid var(--border-color, #E2E8F0); box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
           <?php else: ?>
             <div style="width: 60px; height: 60px; border-radius: 14px; background: linear-gradient(135deg, #1E3A5F, #0F766E); color: #FFF; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
@@ -42,6 +46,16 @@ $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr 
               <span class="badge-status <?= $statut === 'actif' ? 'delivered' : 'cancelled' ?>" style="text-transform: uppercase; font-size: 11px; padding: 3px 8px; border-radius: 6px;">
                 <?= htmlspecialchars($statut) ?>
               </span>
+              <?php if (!empty($pressing['livraison_gratuite'])): ?>
+                <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">
+                  <i data-lucide="truck" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Livraison Gratuite <?= !empty($pressing['seuil_livraison_gratuite']) ? '(dès ' . number_format($pressing['seuil_livraison_gratuite'], 0, ',', ' ') . ' FCFA)' : '' ?>
+                </span>
+              <?php endif; ?>
+              <?php if (!isset($pressing['accepte_colis_sans_detail']) || !empty($pressing['accepte_colis_sans_detail'])): ?>
+                <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">
+                  <i data-lucide="shopping-bag" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Collecte au Sac Acceptée
+                </span>
+              <?php endif; ?>
             </div>
             <p class="page-subtitle" style="margin: 4px 0 0; color: #64748B; font-size: 13px;">
               <i data-lucide="map-pin" style="width: 14px; height: 14px; vertical-align: middle; display: inline;"></i> <?= htmlspecialchars($pressing['adresse_pressing'] ?? 'Adresse non renseignée') ?>
@@ -618,6 +632,8 @@ $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr 
         <input type="hidden" name="pressing_code" value="<?= htmlspecialchars($codePressing) ?>">
         <div class="modal-body" style="padding: 24px;">
           
+          <div id="modalTeamAlert" style="display:none; padding: 12px 16px; border-radius: 10px; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; font-weight: 700; font-size: 13px; margin-bottom: 16px; align-items: center; gap: 8px;"></div>
+          
           <!-- CHOIX DU ROLE (3 COLONNES) -->
           <div style="margin-bottom: 24px;">
             <label style="font-weight: 700; font-size: 14px; color: #1E293B; margin-bottom: 10px; display: block;">Rôle attribué au membre dans ce Pressing</label>
@@ -712,6 +728,10 @@ function switchHubTab(btn, tabId) {
 
 function openModalAddTeamMember() {
   $('#formAddTeamMember')[0].reset();
+  $('#team_password').val('12345');
+  $('#modalTeamAlert').hide().html('');
+  $('#teamPhoneError').html('');
+  $('#formAddTeamMember button[type="submit"]').prop('disabled', false);
   selectTeamRole('ROLE-PRO');
   var myModal = new bootstrap.Modal(document.getElementById('modalAddTeamMember'));
   myModal.show();
@@ -732,36 +752,66 @@ function selectTeamRole(role) {
   }
 }
 
-$('#formAddTeamMember').on('submit', function(e) {
-  e.preventDefault();
-  const form = $(this);
-  const btn = form.find('.btn_submit_team');
-  const btnHtml = btn.html();
-
-  btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
-
-  $.ajax({
-    url: LINK + 'pressing/addUser',
-    type: 'POST',
-    data: form.serialize(),
-    dataType: 'json',
-    success: function(rep) {
-      btn.prop('disabled', false).html(btnHtml);
-      if (rep.status) {
-        showToast(rep.message, 'success');
-        var mEl = document.getElementById('modalAddTeamMember');
-        var mObj = bootstrap.Modal.getInstance(mEl);
-        if (mObj) mObj.hide();
-        setTimeout(() => window.location.reload(), 700);
-      } else {
-        showToast(rep.message, 'error');
-      }
-    },
-    error: function(xhr) {
-      btn.prop('disabled', false).html(btnHtml);
-      const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur lors de l\'enregistrement';
-      showToast(msg, 'error');
+$(document).ready(function() {
+  $('#team_phone').on('input blur', function() {
+    const val = $(this).val().trim();
+    let errDiv = $('#teamPhoneError');
+    if (!errDiv.length) {
+      $(this).after('<div id="teamPhoneError" style="font-size: 12px; margin-top: 4px; font-weight: 600;"></div>');
+      errDiv = $('#teamPhoneError');
     }
+    if (val.length === 10) {
+      $.post(LINK + 'user/checkPhone', { telephone: val }, function(rep) {
+        if (!rep.status) {
+          errDiv.css('color', '#EF4444').html('<i class="fa fa-exclamation-triangle"></i> ' + rep.message);
+          $('#formAddTeamMember button[type="submit"]').prop('disabled', true);
+          $('#modalTeamAlert').css('display', 'flex').html('<i class="fa fa-exclamation-circle"></i> ' + rep.message);
+        } else {
+          errDiv.css('color', '#10B981').html('<i class="fa fa-check-circle"></i> Numéro disponible');
+          $('#formAddTeamMember button[type="submit"]').prop('disabled', false);
+          $('#modalTeamAlert').hide().html('');
+        }
+      }, 'json');
+    } else {
+      errDiv.html('');
+      $('#formAddTeamMember button[type="submit"]').prop('disabled', false);
+    }
+  });
+
+  $('#formAddTeamMember').on('submit', function(e) {
+    e.preventDefault();
+    $('#modalTeamAlert').hide().html('');
+    const form = $(this);
+    const btn = form.find('.btn_submit_team');
+    const btnHtml = btn.html();
+
+    btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+
+    $.ajax({
+      url: LINK + 'pressing/addUser',
+      type: 'POST',
+      data: form.serialize(),
+      dataType: 'json',
+      success: function(rep) {
+        btn.prop('disabled', false).html(btnHtml);
+        if (rep.status) {
+          showToast(rep.message, 'success');
+          var mEl = document.getElementById('modalAddTeamMember');
+          var mObj = bootstrap.Modal.getInstance(mEl);
+          if (mObj) mObj.hide();
+          setTimeout(() => window.location.reload(), 700);
+        } else {
+          $('#modalTeamAlert').css('display', 'flex').html('<i class="fa fa-exclamation-circle"></i> ' + rep.message);
+          showToast(rep.message, 'error');
+        }
+      },
+      error: function(xhr) {
+        btn.prop('disabled', false).html(btnHtml);
+        const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur lors de l\'enregistrement';
+        $('#modalTeamAlert').css('display', 'flex').html('<i class="fa fa-exclamation-circle"></i> ' + msg);
+        showToast(msg, 'error');
+      }
+    });
   });
 });
 </script>
