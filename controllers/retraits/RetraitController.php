@@ -146,9 +146,13 @@ class RetraitController extends BaseController
         // Si approbation par l'administrateur : Déclencher le Cashout GeniusPay
         if ($nouveauStatut === 'approuve') {
             $cashoutResult = GeniusPayService::initiateCashout($retrait);
-            if (!empty($cashoutResult['reference'])) {
-                $reference = $cashoutResult['reference'];
+
+            if (empty($cashoutResult['success'])) {
+                $this->error('Échec du virement GeniusPay : ' . ($cashoutResult['message'] ?? 'Erreur API GeniusPay'));
+                return;
             }
+
+            $reference = $cashoutResult['reference'] ?? ('CASHOUT-' . strtoupper($retrait['operateur_retrait']) . '-' . rand(1000, 9999));
 
             if ($this->model->changerStatutRetrait($id, 'approuve', $reference ?: null, null)) {
                 // Notifier le pressing que le virement est en cours

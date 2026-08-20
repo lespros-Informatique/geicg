@@ -70,9 +70,39 @@ class LivreurController extends BaseController
 
         $this->requireActiveAbonnement($pressingCode, 'créer ou gérer des livreurs');
 
+        $db = $this->model->getCon();
+        $userCode = $this->validator->generateCode(TABLES::USERS, 'code_user', 'USR-', 6);
+        $userPressingCode = $this->validator->generateCode(TABLES::USERS_PRESSINGS, 'code_user_pressing', 'USP-', 6);
+        $telephone = $this->post('telephone_livreur');
+        $email = $this->post('email') ?: ($this->post('email_user') ?: ($telephone . '@lavex.ci'));
+        $password = $this->post('password') ?: '123456';
+        $hashedPassword = Validator::hashPassword($password);
+
+        // 1. Créer le compte utilisateur pour la connexion mobile/admin si inexistant
+        $stmtCheck = $db->prepare("SELECT code_user FROM " . TABLES::USERS . " WHERE email_user = ? OR (telephone_user = ? AND telephone_user != '') LIMIT 1");
+        $stmtCheck->execute([$email, $telephone]);
+        $existingUser = $stmtCheck->fetchColumn();
+
+        if (!$existingUser) {
+            $stmtUser = $db->prepare("
+                INSERT INTO " . TABLES::USERS . " (code_user, role_code, nom_user, prenom_user, email_user, telephone_user, password_user, statut_user, created_at_user)
+                VALUES (?, 'ROLE-LIV', ?, ?, ?, ?, ?, 'actif', NOW())
+            ");
+            $stmtUser->execute([$userCode, $this->post('nom_livreur'), $this->post('prenom_livreur') ?? '', $email, $telephone, $hashedPassword]);
+            $existingUser = $userCode;
+        }
+
+        // 2. Liaison User <-> Pressing
+        $stmtUp = $db->prepare("
+            INSERT INTO " . TABLES::USERS_PRESSINGS . " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing)
+            VALUES (?, ?, ?, 'ROLE-LIV', 'actif', NOW())
+        ");
+        $stmtUp->execute([$userPressingCode, $existingUser, $pressingCode]);
+
         $data = [
             'code_livreur' => $code,
             'pressing_code' => $pressingCode,
+            'user_code' => $existingUser,
             'nom_livreur' => $this->post('nom_livreur'),
             'prenom_livreur' => $this->post('prenom_livreur') ?? '',
             'telephone_livreur' => $this->post('telephone_livreur'),
@@ -81,9 +111,9 @@ class LivreurController extends BaseController
         ];
 
         if ($this->model->create($data)) {
-            $this->success('Livreur ajouté avec succès!');
+            $this->success('Livreur ajouté avec succès et rattaché au pressing !');
         } else {
-            $this->error('Erreur lors de l\'ajout');
+            $this->error('Erreur lors de l\'ajout du livreur');
         }
     }
 

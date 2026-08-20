@@ -39,22 +39,30 @@ class GeniusPayWebhookController
 
         // Vérification de la signature HMAC SHA-256
         $config = GeniusPayConfig::get();
-        $secret = $config['webhook_secret'];
-        if (!$this->verifySignature($signature, $rawBody, $timestamp, $secret)) {
-            $altSecret = ($config['mode'] === 'sandbox')
-                ? (getenv('GENIUSPAY_WEBHOOK_SECRET_LIVE') ?: '')
-                : (getenv('GENIUSPAY_WEBHOOK_SECRET_SANDBOX') ?: '');
-            
-            if (empty($altSecret) || !$this->verifySignature($signature, $rawBody, $timestamp, $altSecret)) {
-                http_response_code(401);
-                echo json_encode([
-                    'type' => 'about:blank',
-                    'title' => 'Unauthorized',
-                    'status' => 401,
-                    'detail' => 'Invalid webhook signature.',
-                ]);
-                exit();
+        $secretsToTry = array_unique(array_filter([
+            $config['webhook_secret'] ?? '',
+            $config['webhook_secret_alt'] ?? '',
+            getenv('GENIUSPAY_WEBHOOK_SECRET_SANDBOX') ?: '',
+            getenv('GENIUSPAY_WEBHOOK_SECRET_LIVE') ?: ''
+        ]));
+
+        $signatureValid = false;
+        foreach ($secretsToTry as $s) {
+            if ($this->verifySignature($signature, $rawBody, $timestamp, $s)) {
+                $signatureValid = true;
+                break;
             }
+        }
+
+        if (!$signatureValid) {
+            http_response_code(401);
+            echo json_encode([
+                'type' => 'about:blank',
+                'title' => 'Unauthorized',
+                'status' => 401,
+                'detail' => 'Invalid webhook signature.',
+            ]);
+            exit();
         }
 
         $payload = json_decode($rawBody, true);

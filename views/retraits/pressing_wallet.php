@@ -125,20 +125,38 @@ $minRetrait = $minRetrait ?? 2000;
               <?php else: ?>
                 <?php foreach ($retraits as $r): ?>
                   <?php
-                    $badgeCls = 'bg-secondary';
-                    $badgeLabel = $r['statut_retrait'];
-                    if ($r['statut_retrait'] === 'complete') {
-                        $badgeCls = 'background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;';
-                        $badgeLabel = 'Virement complété';
-                    } elseif ($r['statut_retrait'] === 'en_attente') {
-                        $badgeCls = 'background:#FFFBEB; color:#D97706; border:1px solid #FDE68A;';
-                        $badgeLabel = 'En attente';
-                    } elseif ($r['statut_retrait'] === 'approuve') {
-                        $badgeCls = 'background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;';
-                        $badgeLabel = 'Approuvé (en cours)';
-                    } elseif ($r['statut_retrait'] === 'rejete' || $r['statut_retrait'] === 'echoue') {
-                        $badgeCls = 'background:#FEF2F2; color:#DC2626; border:1px solid #FECACA;';
-                        $badgeLabel = 'Échoué / Rejeté';
+                    // Opérateur Badge & Icône
+                    $op = strtolower($r['operateur_retrait'] ?? 'wave');
+                    $opPillStyle = 'background:#E0F7FE; color:#0284C7; border:1px solid #BAE6FD;';
+                    $opName = 'WAVE';
+                    $opDot = '#0284C7';
+                    if ($op === 'orange_money') {
+                        $opPillStyle = 'background:#FFF7ED; color:#EA580C; border:1px solid #FFEDD5;';
+                        $opName = 'ORANGE';
+                        $opDot = '#EA580C';
+                    } elseif ($op === 'mtn_money') {
+                        $opPillStyle = 'background:#FEFCE8; color:#CA8A04; border:1px solid #FEF08A;';
+                        $opName = 'MTN';
+                        $opDot = '#CA8A04';
+                    } elseif ($op === 'moov_money') {
+                        $opPillStyle = 'background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;';
+                        $opName = 'MOOV';
+                        $opDot = '#2563EB';
+                    }
+
+                    // Statut court
+                    $st = $r['statut_retrait'] ?? 'en_attente';
+                    $stHtml = '';
+                    if ($st === 'complete') {
+                        $stHtml = '<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;"><i data-lucide="check-circle-2" style="width:13px; height:13px;"></i> Effectué</span>';
+                    } elseif ($st === 'en_attente') {
+                        $stHtml = '<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; background:#FFFBEB; color:#D97706; border:1px solid #FDE68A;"><i data-lucide="clock" style="width:13px; height:13px;"></i> En attente</span>';
+                    } elseif ($st === 'approuve') {
+                        $stHtml = '<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;"><i data-lucide="refresh-cw" style="width:13px; height:13px; animation: spinSlow 2s linear infinite;"></i> En cours</span>';
+                    } elseif ($st === 'rejete') {
+                        $stHtml = '<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; background:#FEF2F2; color:#DC2626; border:1px solid #FECACA;"><i data-lucide="x-circle" style="width:13px; height:13px;"></i> Rejeté</span>';
+                    } else {
+                        $stHtml = '<span style="display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; background:#FEF2F2; color:#DC2626; border:1px solid #FECACA;"><i data-lucide="alert-triangle" style="width:13px; height:13px;"></i> Échoué</span>';
                     }
                   ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
@@ -156,20 +174,19 @@ $minRetrait = $minRetrait ?? 2000;
                       </strong>
                     </td>
                     <td style="padding: 14px 12px;">
-                      <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="text-transform: uppercase; font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: <?= $r['operateur_retrait'] === 'wave' ? '#E0F2FE; color:#0284C7' : ($r['operateur_retrait'] === 'orange_money' ? '#FFEDD5; color:#EA580C' : '#FEF3C7; color:#D97706') ?>;">
-                          <?= htmlspecialchars($r['operateur_retrait']) ?>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:8px; font-weight:800; font-size:11px; letter-spacing:0.3px; text-transform:uppercase; <?= $opPillStyle ?>">
+                          <span style="width: 8px; height: 8px; border-radius: 50%; background: <?= $opDot ?>; display: inline-block;"></span>
+                          <?= $opName ?>
                         </span>
-                        <span style="font-weight: 600; font-size: 13px; color: #1E293B;"><?= htmlspecialchars($r['telephone_beneficiaire']) ?></span>
+                        <span style="font-weight: 700; font-size: 13px; color: #1E293B;"><?= htmlspecialchars($r['telephone_beneficiaire']) ?></span>
                       </div>
                     </td>
                     <td style="padding: 14px 12px; font-size: 13px; color: #475569;">
                       <?= htmlspecialchars($r['nom_beneficiaire'] ?: '-') ?>
                     </td>
                     <td style="padding: 14px 12px; text-align: center;">
-                      <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; <?= $badgeCls ?>">
-                        <?= $badgeLabel ?>
-                      </span>
+                      <?= $stHtml ?>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -330,6 +347,9 @@ function soumettreRetrait(e) {
 }
 
 $(document).ready(function() {
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
   if (window.location.search.indexOf('action=nouveau') !== -1 || window.location.hash === '#demander') {
     ouvrirModalRetrait();
   }

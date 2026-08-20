@@ -97,15 +97,14 @@ const entityConfigs = {
         ]
     },
     utilisateur: {
-        modalTitle: 'Ajouter un utilisateur',
+        modalTitle: 'Ajouter un membre d\'équipe',
         fields: [
-            { name: 'nom', label: 'Nom', type: 'text', required: true },
-            { name: 'prenom', label: 'Prénom', type: 'text', required: false },
-            { name: 'email', label: 'Email', type: 'email', required: false },
-            { name: 'telephone', label: 'Téléphone', type: 'tel', required: true },
-            { name: 'password', label: 'Mot de passe', type: 'password', required: false },
-            { name: 'role_code', label: 'Rôle', type: 'select', required: true, options: { 'ROLE-ADMIN': 'Administrateur', 'ROLE-PRO': 'Propriétaire', 'ROLE-LIV': 'Livreur' } },
-            { name: 'actif', label: 'Statut', type: 'select', required: false, options: { 'actif': 'Actif', 'inactif': 'Inactif' } }
+            { name: 'nom', label: 'Nom', type: 'text', required: true, col: 1 },
+            { name: 'prenom', label: 'Prénom', type: 'text', required: false, col: 2 },
+            { name: 'email', label: 'Email de connexion (Login)', type: 'email', required: true, col: 1 },
+            { name: 'telephone', label: 'Téléphone Mobile', type: 'tel', required: true, col: 2 },
+            { name: 'role_code', label: 'Rôle attribué', type: 'select', required: true, options: { 'ROLE-PRO': '👑 Propriétaire', 'ROLE-GEST': '💼 Gestionnaire', 'ROLE-LIV': '🛵 Livreur' }, col: 1 },
+            { name: 'password', label: 'Mot de passe (Défaut: 12345)', type: 'password', required: false, col: 2 }
         ]
     },
     order: {
@@ -331,15 +330,19 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         modalTitle.textContent = currentFormConfig.modalTitle;
         const isProductModal = type === 'product';
-        const isLargeModal = isProductModal;
+        const isUserModal = type === 'utilisateur';
+        const isLargeModal = isProductModal || isUserModal;
         if (isLargeModal && window.innerWidth > 768) {
-            modal.querySelector('.modal').style.maxWidth = '900px';
+            modal.querySelector('.modal').style.maxWidth = isProductModal ? '900px' : '720px';
+            modal.querySelector('.modal').style.width = '96%';
+        } else {
+            modal.querySelector('.modal').style.maxWidth = '550px';
             modal.querySelector('.modal').style.width = '96%';
         }
         let html = '<input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">';
         const fields = currentFormConfig.fields;
         const rows = [];
-        const forceSingleCol = fields.length <= 5;
+        const forceSingleCol = (type !== 'utilisateur') && fields.length <= 5;
         let row = [];
         fields.forEach(function(f) {
             f.options = f.options || {};
@@ -367,20 +370,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         rows.forEach(function(row) {
             const isFull = row.length === 1;
-            html += '<div class="' + (isFull ? 'form-row-full' : 'form-row') + '">';
+            html += '<div class="' + (isFull ? 'form-row-full' : 'form-row') + '" style="display: flex; gap: 16px; width: 100%; margin-bottom: 14px; flex-wrap: wrap;">';
             row.forEach(function(f) {
-                const colClass = isFull ? 'form-group-full' : ('form-group-' + (f.col === 2 ? 2 : 1));
-                html += '<div class="form-group ' + colClass + '"><label>' + f.label + (f.required ? ' *' : '') + '</label><div class="input-wrapper">';
+                const isHalf = !isFull && row.length === 2;
+                html += '<div class="form-group" style="flex: ' + (isHalf ? '1 1 calc(50% - 8px)' : '1 1 100%') + '; min-width: 220px; display: flex; flex-direction: column; gap: 6px;"><label style="font-weight: 700; font-size: 13px; color: #334155;">' + f.label + (f.required ? ' *' : '') + '</label><div class="input-wrapper" style="position: relative; width: 100%;">';
                 if (f.type === 'select') {
-                    html += '<select name="' + f.name + '" ' + (f.required ? 'required' : '') + '>' + Object.entries(f.options || {}).map(function(e) { return '<option value="' + e[0] + '">' + e[1] + '</option>'; }).join('') + '</select>';
+                    html += '<select name="' + f.name + '" class="form-control" ' + (f.required ? 'required' : '') + ' style="border-radius: 8px; height: 42px; width: 100%; padding: 0 12px;">' + Object.entries(f.options || {}).map(function(e) { return '<option value="' + e[0] + '">' + e[1] + '</option>'; }).join('') + '</select>';
                 } else if (f.type === 'textarea') {
-                    html += '<textarea name="' + f.name + '" ' + (f.required ? 'required' : '') + '></textarea>';
+                    html += '<textarea name="' + f.name + '" class="form-control" ' + (f.required ? 'required' : '') + ' style="border-radius: 8px; width: 100%; min-height: 80px;"></textarea>';
                 } else if (f.type === 'image-upload') {
                     html += '<input type="file" name="image_files" multiple accept="image/*" class="image-upload-input" style="display:none">';
                     html += '<button type="button" class="btn btn-sm btn-outline-primary image-upload-trigger"><i class="fa fa-cloud-upload"></i> Ajouter des images</button>';
                     html += '<div class="image-previews-grid"></div>';
                 } else {
-                    html += '<input type="' + f.type + '" name="' + f.name + '" ' + (f.required ? 'required' : '') + '>';
+                    html += '<input type="' + f.type + '" name="' + f.name + '" class="form-control" ' + (f.required ? 'required' : '') + ' style="border-radius: 8px; height: 42px; width: 100%; padding: 0 12px;">';
                 }
                 html += '<span class="field-feedback-icon" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"></span></div></div>';
             });

@@ -150,6 +150,11 @@ abstract class BaseController
         exit;
     }
 
+    protected function getCurrentUserCode(): ?string
+    {
+        return $_SESSION[USERS_AUTH]['code_user'] ?? null;
+    }
+
     protected function getCurrentUserRoles(): array
     {
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';

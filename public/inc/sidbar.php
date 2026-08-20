@@ -19,11 +19,11 @@
             <a href="<?= RACINE ?>pressing/list" class="nav-item sub">
                 <i data-lucide="map-pin"></i> <span>Pressings (Hub 360°)</span>
             </a>
+            <a href="<?= RACINE ?>livreur/list" class="nav-item sub">
+                <i data-lucide="truck"></i> <span>Flotte Livreurs (Global)</span>
+            </a>
             <a href="<?= RACINE ?>retrait/list" class="nav-item sub">
                 <i data-lucide="wallet"></i> <span>Retraits Pressings</span>
-            </a>
-            <a href="<?= RACINE ?>paiement/list" class="nav-item sub">
-                <i data-lucide="receipt"></i> <span>Paiements Réseau</span>
             </a>
         </div>
 
@@ -50,7 +50,7 @@
                 <i data-lucide="shield-check"></i> <span>Comptes & Sécurité</span>
             </div>
             <a href="<?= RACINE ?>user/list" class="nav-item sub">
-                <i data-lucide="users"></i> <span>Utilisateurs Backoffice</span>
+                <i data-lucide="users"></i> <span>Utilisateurs & Gérants</span>
             </a>
             <a href="<?= RACINE ?>role/list" class="nav-item sub">
                 <i data-lucide="shield"></i> <span>Rôles & Accès</span>
@@ -100,10 +100,13 @@
 
         <div class="nav-section">
             <div class="nav-section-title">
-                <i data-lucide="truck"></i> <span>Logistique & Compte</span>
+                <i data-lucide="truck"></i> <span>Logistique & Équipe</span>
             </div>
             <a href="<?= RACINE ?>livreur/list" class="nav-item sub">
-                <i data-lucide="user-check"></i> <span>Mes Livreurs</span>
+                <i data-lucide="truck"></i> <span>Mes Livreurs</span>
+            </a>
+            <a href="<?= RACINE ?>user/list" class="nav-item sub">
+                <i data-lucide="user-check"></i> <span>Mon Équipe & Personnel</span>
             </a>
             <a href="<?= RACINE ?>abonnement/list" class="nav-item sub">
                 <i data-lucide="credit-card"></i> <span>Mon Abonnement B2B</span>

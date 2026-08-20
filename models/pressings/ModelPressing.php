@@ -234,4 +234,155 @@ class ModelPressing extends BaseModel
             return null;
         }
     }
+
+    /**
+     * Obtenir le Gérant / Responsable Principal du pressing
+     */
+    public function getPressingOwner(string $pressingCode): ?array
+    {
+        try {
+            $sql = "
+                SELECT u.*, COALESCE(r.libelle_role, 'Gérant / Propriétaire') as libelle_role
+                FROM " . TABLES::USERS_PRESSINGS . " up
+                JOIN " . TABLES::USERS . " u ON up.user_code = u.code_user
+                LEFT JOIN " . TABLES::ROLES . " r ON up.role_code = r.code_role OR u.role_code = r.code_role
+                WHERE up.pressing_code = ? AND up.statut_user_pressing = 'actif'
+                ORDER BY CASE WHEN up.role_code = 'ROLE-PRO' OR u.role_code = 'ROLE-PRO' THEN 1 ELSE 2 END, u.id_user ASC
+                LIMIT 1
+            ";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$pressingCode]);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $res ?: null;
+        } catch (Exception $e) {
+            error_log("Erreur getPressingOwner: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Obtenir la liste de tous les Utilisateurs / Personnel du pressing
+     */
+    public function getPressingUsers(string $pressingCode): array
+    {
+        try {
+            $sql = "
+                SELECT u.*, COALESCE(r.libelle_role, u.role_code) as libelle_role, up.role_code as role_pressing_code, up.statut_user_pressing
+                FROM " . TABLES::USERS_PRESSINGS . " up
+                JOIN " . TABLES::USERS . " u ON up.user_code = u.code_user
+                LEFT JOIN " . TABLES::ROLES . " r ON up.role_code = r.code_role OR u.role_code = r.code_role
+                WHERE up.pressing_code = ?
+                ORDER BY u.nom_user ASC
+            ";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$pressingCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("Erreur getPressingUsers: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Transaction Onboarding Tout-en-Un : Création atomique du Pressing, du Compte Gérant et de l'Abonnement B2B Initial
+     */
+    public function onboardPressingWithOwnerAndSubscription(array $pressingData, array $userData, array $subscriptionData, ?string $adminUserCode = null): array
+    {
+        $validator = new Validator();
+        $pressingCode = !empty($pressingData['code_pressing']) ? $pressingData['code_pressing'] : $validator->generateCode(TABLES::PRESSINGS, 'code_pressing', 'PRS-', 6);
+        $userCode = $validator->generateCode(TABLES::USERS, 'code_user', 'USR-', 6);
+        $userPressingCode = $validator->generateCode(TABLES::USERS_PRESSINGS, 'code_user_pressing', 'USP-', 6);
+        $abnCode = $validator->generateCode(TABLES::ABONNEMENTS_PRESSINGS, 'code_abonnement_pressing', 'ABN-', 6);
+
+        $db = $this->getCon();
+        if (!$db->inTransaction()) {
+            $db->beginTransaction();
+        }
+
+        try {
+            // 1. Créer le Pressing
+            $stmtP = $db->prepare("
+                INSERT INTO " . TABLES::PRESSINGS . " (
+                    code_pressing, libelle_pressing, telephone_pressing, email_pressing,
+                    adresse_pressing, ville_code, quartier_code, latitude_pressing, longitude_pressing,
+                    logo_pressing, statut_pressing, created_at_pressing
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+            ");
+            $stmtP->execute([
+                $pressingCode,
+                $pressingData['libelle_pressing'],
+                $pressingData['telephone_pressing'] ?? '',
+                $pressingData['email_pressing'] ?? '',
+                $pressingData['adresse_pressing'] ?? '',
+                $pressingData['ville_code'] ?? '',
+                $pressingData['quartier_code'] ?? '',
+                $pressingData['latitude_pressing'] ?? null,
+                $pressingData['longitude_pressing'] ?? null,
+                $pressingData['logo_pressing'] ?? ''
+            ]);
+
+            // 2. Créer l'Utilisateur Gérant (ROLE-PRO)
+            $hashedPassword = password_hash($userData['password_user'], PASSWORD_BCRYPT);
+            
+            $stmtU = $db->prepare("
+                INSERT INTO " . TABLES::USERS . " (
+                    code_user, role_code, nom_user, prenom_user, telephone_user, email_user, password_user, statut_user, created_at_user
+                ) VALUES (?, 'ROLE-PRO', ?, ?, ?, ?, ?, 'actif', NOW())
+            ");
+            $stmtU->execute([
+                $userCode,
+                $userData['nom_user'],
+                $userData['prenom_user'] ?? '',
+                $userData['telephone_user'] ?? '',
+                $userData['email_user'],
+                $hashedPassword
+            ]);
+
+            // 3. Associer le Gérant au Pressing dans users_pressings
+            $stmtUP = $db->prepare("
+                INSERT INTO " . TABLES::USERS_PRESSINGS . " (
+                    code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing
+                ) VALUES (?, ?, ?, 'ROLE-PRO', 'actif', NOW())
+            ");
+            $stmtUP->execute([$userPressingCode, $userCode, $pressingCode]);
+
+            // 4. Créer l'Abonnement B2B Initial rattaché au Pressing ET au Gérant
+            $stmtA = $db->prepare("
+                INSERT INTO " . TABLES::ABONNEMENTS_PRESSINGS . " (
+                    code_abonnement_pressing, pressing_code, user_code, created_by_user, forfait_code,
+                    montant_abonnement, date_debut_abonnement, date_fin_abonnement, statut_abonnement_pressing, created_at_abonnement_pressing
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+            ");
+            $stmtA->execute([
+                $abnCode,
+                $pressingCode,
+                $userCode,
+                $adminUserCode,
+                $subscriptionData['forfait_code'],
+                $subscriptionData['montant_abonnement'],
+                $subscriptionData['date_debut_abonnement'],
+                $subscriptionData['date_fin_abonnement']
+            ]);
+
+            if ($db->inTransaction()) {
+                $db->commit();
+            }
+
+            return [
+                'success' => true,
+                'pressing_code' => $pressingCode,
+                'user_code' => $userCode,
+                'abonnement_code' => $abnCode
+            ];
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            error_log('[onboardPressingWithOwnerAndSubscription] ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
 }

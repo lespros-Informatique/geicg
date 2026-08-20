@@ -28,7 +28,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
       </div>
 
       <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/users.js?v=3"></script>
+      <script src="<?= RACINE ?>json/entities/users.js?v=<?= time() ?>"></script>
     </div>
   </main>
 </div>

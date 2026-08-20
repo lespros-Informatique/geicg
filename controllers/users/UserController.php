@@ -70,9 +70,10 @@ class UserController extends BaseController
                 $this->error('Ce numéro de téléphone existe déjà!');
             } else {
                 $code_user = $this->validator->generateCode(TABLES::USERS, 'code_user', 'US-', 6);
-                $email = $this->post('email') ?: null;
-                $password = !empty($this->post('password')) ? Validator::hashPassword($this->post('password')) : null;
-                $statut = $this->post('actif') ?: 'actif';
+                $email = $this->post('email') ?: ($this->post('email_user') ?: null);
+                $rawPassword = !empty($this->post('password')) ? $this->post('password') : '12345';
+                $password = Validator::hashPassword($rawPassword);
+                $statut = 'actif';
 
                 $data = [
                     'code_user' => $code_user,
@@ -86,9 +87,33 @@ class UserController extends BaseController
                 ];
 
                 if ($this->model->create($data)) {
-                    $roleCode = $this->post('role_code') ?: 'ROLE-ADMIN';
+                    $roleCode = $this->post('role_code') ?: 'ROLE-PRO';
                     $this->model->setUserRole($code_user, $roleCode);
-                    $this->success('Utilisateur ajouté avec succès!');
+
+                    $pressingCode = $this->getCurrentPressingCode();
+                    if ($pressingCode && in_array($roleCode, ['ROLE-PRO', 'ROLE-GEST', 'ROLE-LIV'])) {
+                        try {
+                            $userPressingCode = $this->validator->generateCode(TABLES::USERS_PRESSINGS, 'code_user_pressing', 'USP-', 6);
+                            $stmtUp = $this->model->getCon()->prepare("
+                                INSERT INTO " . TABLES::USERS_PRESSINGS . " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing)
+                                VALUES (?, ?, ?, ?, 'actif', NOW())
+                            ");
+                            $stmtUp->execute([$userPressingCode, $code_user, $pressingCode, $roleCode]);
+
+                            if ($roleCode === 'ROLE-LIV') {
+                                $codeLivreur = $this->validator->generateCode(TABLES::LIVREURS, 'code_livreur', 'LIV-', 6);
+                                $stmtLiv = $this->model->getCon()->prepare("
+                                    INSERT INTO " . TABLES::LIVREURS . " (code_livreur, pressing_code, user_code, nom_livreur, prenom_livreur, telephone_livreur, statut_livreur, created_at_livreur)
+                                    VALUES (?, ?, ?, ?, ?, ?, 'actif', NOW())
+                                ");
+                                $stmtLiv->execute([$codeLivreur, $pressingCode, $code_user, $this->post('nom'), $this->post('prenom') ?? '', $this->post('telephone')]);
+                            }
+                        } catch (Exception $e) {
+                            error_log("Erreur de liaison pressing dans UserController::add : " . $e->getMessage());
+                        }
+                    }
+
+                    $this->success('Utilisateur ajouté avec succès ! (Mot de passe par défaut : 12345)');
                 } else {
                     $this->error('Erreur lors de l\'ajout de l\'utilisateur');
                 }
@@ -228,6 +253,12 @@ class UserController extends BaseController
             'role' => $role,
             'encryptedId' => $encryptedId
         ]);
+    }
+
+    public function formulaire()
+    {
+        $this->requireAuth();
+        $this->loadView('../views/users/edit.php', ['user' => [], 'role' => []]);
     }
 
     public function edition($details)

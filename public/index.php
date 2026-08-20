@@ -61,6 +61,7 @@ $route->addRoute('/pressing/edition/{param}', [$pressingController, 'edition']);
 $route->addRoute('/pressing/details/{param}', [$pressingController, 'details']);
 $route->addRoute('/pressing/getActive', [$pressingController, 'getActive']);
 $route->addRoute('/pressing/formulaire', [$pressingController, 'formulaire']);
+$route->addRoute('/pressing/addUser', [$pressingController, 'addUser']);
 
 $route->addRoute('/livreur/list', [$livreurController, 'list']);
 $route->addRoute('/livreur/apiList', [$livreurController, 'apiList']);

@@ -77,7 +77,46 @@ $(document).ready(function() {
         const isAdd = !idPressing;
         const url = isAdd ? LINK + 'pressing/add' : LINK + 'pressing/edit';
 
-        loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+        if (isAdd) {
+            // Validation personnalisée des étapes
+            const libelle = $.trim($('#libelle_pressing').val());
+            const nomUser = $.trim($('#nom_user').val());
+            const emailUser = $.trim($('#email_user').val());
+            const passwordUser = $.trim($('#password_user').val());
+            const forfaitCode = $('input[name="forfait_code"]:checked').val();
+
+            if (!libelle) {
+                showToast('Veuillez saisir le nom du pressing !', 'warning');
+                if (typeof goToStep === 'function') goToStep(1);
+                $('#libelle_pressing').focus();
+                return;
+            }
+            if (!nomUser) {
+                showToast('Veuillez saisir le nom du gérant responsable !', 'warning');
+                if (typeof goToStep === 'function') goToStep(2);
+                $('#nom_user').focus();
+                return;
+            }
+            if (!emailUser) {
+                showToast('Veuillez saisir l\'email de connexion du gérant !', 'warning');
+                if (typeof goToStep === 'function') goToStep(2);
+                $('#email_user').focus();
+                return;
+            }
+            if (!passwordUser) {
+                showToast('Veuillez saisir un mot de passe de connexion !', 'warning');
+                if (typeof goToStep === 'function') goToStep(2);
+                $('#password_user').focus();
+                return;
+            }
+            if (!forfaitCode) {
+                showToast('Veuillez sélectionner un forfait B2B !', 'warning');
+                if (typeof goToStep === 'function') goToStep(3);
+                return;
+            }
+        }
+
+        loading(btn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement en cours...');
 
         $.ajax({
             url: url,
@@ -85,17 +124,18 @@ $(document).ready(function() {
             data: form.serialize(),
             dataType: 'json',
             success: function(rep) {
-                loading(btn, false, '<i class="fa fa-save"></i> Sauvegarder');
+                loading(btn, false, '<i class="fa fa-check-circle"></i> Valider & Activer le Pressing (Tout-en-Un)');
                 if (rep.status) {
-                    showToast(rep.message, 'success');
-                    setTimeout(() => window.location.href = LINK + 'pressing/list', 700);
+                    showToast(rep.message || 'Pressing enregistré avec succès !', 'success');
+                    setTimeout(() => window.location.href = LINK + 'pressing/list', 800);
                 } else {
-                    showToast(rep.message, 'error');
+                    showToast(rep.message || 'Erreur lors de l\'enregistrement', 'error');
                 }
             },
-            error: function() {
-                loading(btn, false, '<i class="fa fa-save"></i> Sauvegarder');
-                showToast('Erreur serveur', 'error');
+            error: function(xhr) {
+                loading(btn, false, '<i class="fa fa-save"></i> Enregistrer');
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur lors de la communication avec le serveur';
+                showToast(msg, 'error');
             }
         });
     });

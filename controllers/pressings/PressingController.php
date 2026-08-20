@@ -12,7 +12,19 @@ class PressingController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/pressings/list.php');
+        $db = $this->model->getCon();
+
+        $villes = $db->query("SELECT code_ville, libelle_ville FROM " . TABLES::VILLES . " WHERE statut_ville = 'actif' ORDER BY libelle_ville ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $quartiers = $db->query("SELECT code_quartier, ville_code, libelle_quartier FROM " . TABLES::QUARTIERS . " WHERE statut_quartier = 'actif' ORDER BY libelle_quartier ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $forfaits = $db->query("SELECT code_forfait, libelle_forfait, montant_forfait, duree_mois_forfait FROM " . TABLES::FORFAITS . " WHERE statut_forfait = 'actif' ORDER BY montant_forfait ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->loadView('../views/pressings/list.php', [
+            'villes' => $villes,
+            'quartiers' => $quartiers,
+            'forfaits' => $forfaits,
+            'isSuperAdmin' => $this->isSuperAdmin(),
+            'currentPressingCode' => $this->getCurrentPressingCode()
+        ]);
     }
 
     public function apiList()
@@ -50,38 +62,75 @@ class PressingController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['libelle_pressing' => $_POST['libelle_pressing'] ?? '']);
 
-        if ($notEmpty !== true) {
-            $this->error('Veuillez renseigner tous les champs!');
+        $libelle = trim($this->post('libelle_pressing'));
+        $emailUser = trim($this->post('email_user'));
+        $nomUser = trim($this->post('nom_user'));
+        $passwordUser = trim($this->post('password_user'));
+        $forfaitCode = trim($this->post('forfait_code'));
+
+        if (empty($libelle) || empty($emailUser) || empty($nomUser) || empty($passwordUser) || empty($forfaitCode)) {
+            $this->error('Veuillez remplir toutes les informations obligatoires (Nom du Pressing, Responsable, Email Login, Mot de passe et Forfait B2B) !');
             return;
         }
 
-        $code = $this->post('code_pressing') ?: $this->validator->generateCode(TABLES::PRESSINGS, 'code_pressing', 'PRS-', 6);
-        if ($this->validator->getByElement(TABLES::PRESSINGS, 'code_pressing', $code)) {
-            $this->error('Ce code pressing existe déjà!');
+        $db = $this->model->getCon();
+
+        // 1. Vérifier si l'email gérant existe déjà
+        $stmtU = $db->prepare("SELECT id_user FROM " . TABLES::USERS . " WHERE email_user = ? LIMIT 1");
+        $stmtU->execute([$emailUser]);
+        if ($stmtU->fetch()) {
+            $this->error('Cet email d\'utilisateur (' . $emailUser . ') est déjà attribué à un autre compte !');
             return;
         }
 
-        $data = [
-            'code_pressing' => $code,
-            'libelle_pressing' => $this->post('libelle_pressing'),
+        // 2. Générer le code pressing
+        $codePressing = $this->post('code_pressing') ?: $this->validator->generateCode(TABLES::PRESSINGS, 'code_pressing', 'PRS-', 6);
+
+        // 3. Récupérer le forfait B2B
+        $stmtF = $db->prepare("SELECT * FROM " . TABLES::FORFAITS . " WHERE code_forfait = ? LIMIT 1");
+        $stmtF->execute([$forfaitCode]);
+        $forfait = $stmtF->fetch(PDO::FETCH_ASSOC);
+        if (!$forfait) {
+            $this->error('Le forfait B2B sélectionné est invalide !');
+            return;
+        }
+
+        $dureeMois = (int)($this->post('duree_mois') ?: ($forfait['duree_mois_forfait'] ?? 1));
+        if ($dureeMois < 1) $dureeMois = 1;
+        $montant = (float)($this->post('montant_abonnement') !== '' ? $this->post('montant_abonnement') : ($forfait['montant_forfait'] ?? 0));
+        $dateDebut = $this->post('date_debut_abonnement') ?: date('Y-m-d');
+        $dateFin = date('Y-m-d', strtotime("+$dureeMois months", strtotime($dateDebut)));
+
+        // 4. Lancer l'onboarding tout-en-un sous transaction
+        $res = $this->model->onboardPressingWithOwnerAndSubscription([
+            'code_pressing' => $codePressing,
+            'libelle_pressing' => $libelle,
             'telephone_pressing' => $this->post('telephone_pressing') ?? '',
-            'email_pressing' => $this->post('email_pressing') ?? '',
+            'email_pressing' => $this->post('email_pressing') ?? $emailUser,
             'adresse_pressing' => $this->post('adresse_pressing') ?? '',
             'ville_code' => $this->post('ville_code') ?? '',
             'quartier_code' => $this->post('quartier_code') ?? '',
             'latitude_pressing' => $this->post('latitude_pressing') ?? null,
             'longitude_pressing' => $this->post('longitude_pressing') ?? null,
-            'logo_pressing' => $this->post('logo_pressing') ?? '',
-            'statut_pressing' => 'actif',
-            'created_at_pressing' => date('Y-m-d H:i:s')
-        ];
+            'logo_pressing' => $this->post('logo_pressing') ?? ''
+        ], [
+            'nom_user' => $nomUser,
+            'prenom_user' => $this->post('prenom_user') ?? '',
+            'telephone_user' => $this->post('telephone_user') ?? $this->post('telephone_pressing'),
+            'email_user' => $emailUser,
+            'password_user' => $passwordUser
+        ], [
+            'forfait_code' => $forfaitCode,
+            'montant_abonnement' => $montant,
+            'date_debut_abonnement' => $dateDebut,
+            'date_fin_abonnement' => $dateFin
+        ], $this->getCurrentUserCode());
 
-        if ($this->model->create($data)) {
-            $this->success('Pressing ajouté avec succès!');
+        if ($res['success']) {
+            $this->success('Pressing, compte gérant et abonnement B2B créés et activés avec succès !');
         } else {
-            $this->error('Erreur lors de l\'ajout');
+            $this->error('Erreur lors de la création : ' . ($res['error'] ?? 'Veuillez réessayer.'));
         }
     }
 
@@ -186,6 +235,8 @@ class PressingController extends BaseController
         $clients = $this->model->getPressingClients($pressingCode);
         $missions = $this->model->getPressingMissions($pressingCode, 100);
         $abonnement = $this->model->getPressingAbonnement($pressingCode);
+        $owner = $this->model->getPressingOwner($pressingCode);
+        $pressingUsers = $this->model->getPressingUsers($pressingCode);
 
         $this->loadView('../views/pressings/details.php', [
             'pressing' => $item,
@@ -196,13 +247,16 @@ class PressingController extends BaseController
             'horaires' => $horaires,
             'clients' => $clients,
             'missions' => $missions,
-            'abonnement' => $abonnement
+            'abonnement' => $abonnement,
+            'owner' => $owner,
+            'pressingUsers' => $pressingUsers
         ]);
     }
 
     public function edition($details)
     {
         $this->requireAuth();
+        $db = $this->model->getCon();
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -215,7 +269,14 @@ class PressingController extends BaseController
             exit();
         }
 
-        $this->loadView('../views/pressings/edit.php', ['pressing' => $item]);
+        $villes = $db->query("SELECT code_ville, libelle_ville FROM " . TABLES::VILLES . " WHERE statut_ville = 'actif' ORDER BY libelle_ville ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $quartiers = $db->query("SELECT code_quartier, ville_code, libelle_quartier FROM " . TABLES::QUARTIERS . " WHERE statut_quartier = 'actif' ORDER BY libelle_quartier ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->loadView('../views/pressings/edit.php', [
+            'pressing' => $item,
+            'villes' => $villes,
+            'quartiers' => $quartiers
+        ]);
     }
 
     public function getActive()
@@ -233,6 +294,102 @@ class PressingController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/pressings/edit.php', ['pressing' => []]);
+        $db = $this->model->getCon();
+
+        $villes = $db->query("SELECT code_ville, libelle_ville FROM " . TABLES::VILLES . " WHERE statut_ville = 'actif' ORDER BY libelle_ville ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $quartiers = $db->query("SELECT code_quartier, ville_code, libelle_quartier FROM " . TABLES::QUARTIERS . " WHERE statut_quartier = 'actif' ORDER BY libelle_quartier ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $forfaits = $db->query("SELECT code_forfait, libelle_forfait, description_forfait, montant_forfait, duree_mois_forfait FROM " . TABLES::FORFAITS . " WHERE statut_forfait = 'actif' ORDER BY montant_forfait ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->loadView('../views/pressings/edit.php', [
+            'pressing' => [],
+            'villes' => $villes,
+            'quartiers' => $quartiers,
+            'forfaits' => $forfaits
+        ]);
+    }
+
+    public function addUser()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+
+        $pressingCode = trim($this->post('pressing_code'));
+        $nom = trim($this->post('nom_user'));
+        $prenom = trim($this->post('prenom_user'));
+        $telephone = trim($this->post('telephone_user'));
+        $email = trim($this->post('email_user'));
+        $password = trim($this->post('password_user'));
+        $roleCode = trim($this->post('role_code'));
+
+        if (empty($pressingCode) || empty($nom) || empty($email) || empty($roleCode)) {
+            $this->error('Veuillez renseigner toutes les informations obligatoires (Nom, Email et Rôle) !');
+            return;
+        }
+
+        if (!in_array($roleCode, ['ROLE-PRO', 'ROLE-GEST', 'ROLE-LIV'])) {
+            $this->error('Rôle invalide ! Sélectionnez soit Propriétaire, Gestionnaire ou Livreur.');
+            return;
+        }
+
+        if (empty($password)) {
+            $password = '12345';
+        }
+
+        $this->requirePressingAccess($pressingCode);
+
+        $db = $this->model->getCon();
+
+        // 1. Vérifier si l'email existe déjà
+        $stmtU = $db->prepare("SELECT id_user FROM " . TABLES::USERS . " WHERE email_user = ? LIMIT 1");
+        $stmtU->execute([$email]);
+        if ($stmtU->fetch()) {
+            $this->error("L'adresse email ($email) est déjà attribuée à un autre compte !");
+            return;
+        }
+
+        try {
+            $db->beginTransaction();
+
+            $userCode = $this->validator->generateCode(TABLES::USERS, 'code_user', 'USR-', 6);
+            $userPressingCode = $this->validator->generateCode(TABLES::USERS_PRESSINGS, 'code_user_pressing', 'USP-', 6);
+            $hashedPassword = Validator::hashPassword($password);
+
+            // 2. Création du compte User
+            $stmtUser = $db->prepare("
+                INSERT INTO " . TABLES::USERS . " (code_user, role_code, nom_user, prenom_user, email_user, telephone_user, password_user, statut_user, created_at_user)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+            ");
+            $stmtUser->execute([$userCode, $roleCode, $nom, $prenom, $email, $telephone, $hashedPassword]);
+
+            // 3. Liaison User <-> Pressing
+            $stmtUp = $db->prepare("
+                INSERT INTO " . TABLES::USERS_PRESSINGS . " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing)
+                VALUES (?, ?, ?, ?, 'actif', NOW())
+            ");
+            $stmtUp->execute([$userPressingCode, $userCode, $pressingCode, $roleCode]);
+
+            // 4. Si Rôle Livreur, ajouter également dans la table livreurs
+            if ($roleCode === 'ROLE-LIV') {
+                $codeLivreur = $this->validator->generateCode(TABLES::LIVREURS, 'code_livreur', 'LIV-', 6);
+                $stmtLiv = $db->prepare("
+                    INSERT INTO " . TABLES::LIVREURS . " (code_livreur, pressing_code, user_code, nom_livreur, prenom_livreur, telephone_livreur, statut_livreur, created_at_livreur)
+                    VALUES (?, ?, ?, ?, ?, ?, 'actif', NOW())
+                ");
+                $stmtLiv->execute([$codeLivreur, $pressingCode, $userCode, $nom, $prenom, $telephone]);
+            }
+
+            $db->commit();
+
+            $msg = 'Propriétaire du pressing créé avec succès !';
+            if ($roleCode === 'ROLE-GEST') $msg = 'Gestionnaire du pressing créé avec succès !';
+            if ($roleCode === 'ROLE-LIV') $msg = 'Livreur du pressing créé et rattaché avec succès !';
+
+            $this->success($msg);
+
+        } catch (Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log("Erreur PressingController::addUser: " . $e->getMessage());
+            $this->error("Erreur serveur lors de la création du membre de l'équipe.");
+        }
     }
 }

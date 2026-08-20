@@ -9,6 +9,8 @@ $horaires   = $horaires ?? [];
 $clients    = $clients ?? [];
 $missions   = $missions ?? [];
 $abonnement = $abonnement ?? null;
+$owner      = $owner ?? null;
+$pressingUsers = $pressingUsers ?? [];
 
 $codePressing = $pressing['code_pressing'] ?? '';
 $libelle      = $pressing['libelle_pressing'] ?? 'Pressing';
@@ -125,9 +127,9 @@ $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr 
             <i data-lucide="truck" style="width: 18px; height: 18px;"></i>
             <span>Livreurs & Missions (<?= count($missions) ?>)</span>
           </button>
-          <button type="button" class="hub-tab-btn" onclick="switchHubTab(this, 'tab-abonnement')" style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 20px; font-size: 14px; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748B; border-bottom: 2px solid transparent;">
-            <i data-lucide="credit-card" style="width: 18px; height: 18px;"></i>
-            <span>Abonnement B2B</span>
+          <button type="button" class="hub-tab-btn" onclick="switchHubTab(this, 'tab-users')" style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 20px; font-size: 14px; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748B; border-bottom: 2px solid transparent;">
+            <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
+            <span>Équipe & Personnel (<?= count($pressingUsers) ?>)</span>
           </button>
           <button type="button" class="hub-tab-btn" onclick="switchHubTab(this, 'tab-infos')" style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 20px; font-size: 14px; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748B; border-bottom: 2px solid transparent;">
             <i data-lucide="info" style="width: 18px; height: 18px;"></i>
@@ -468,6 +470,72 @@ $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr 
             <?php endif; ?>
           </div>
 
+          <!-- === TAB : ÉQUIPE & PERSONNEL DU PRESSING === -->
+          <div id="tab-users" class="hub-tab-content" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h2 style="font-size: 16px; font-weight: 700; margin: 0; color: #1E293B;">Équipe & Personnel du pressing</h2>
+                <p style="font-size: 12px; color: #64748B; margin: 2px 0 0;">Liste des gérants, administrateurs et livreurs ayant accès à ce pressing.</p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 13px; color: #64748B;"><?= count($pressingUsers) ?> utilisateur(s)</span>
+                <button type="button" class="btn btn-primary btn-sm" onclick="openModalAddTeamMember()" style="display: inline-flex; align-items: center; gap: 6px;">
+                  <i data-lucide="user-plus" style="width: 15px; height: 15px;"></i> Nouveau Membre
+                </button>
+              </div>
+            </div>
+
+            <?php if (empty($pressingUsers)): ?>
+              <div style="text-align: center; padding: 40px 16px; color: #94A3B8;">
+                <i data-lucide="user-check" style="width: 48px; height: 48px; margin-bottom: 12px; stroke-width: 1.5;"></i>
+                <p style="font-size: 14px; font-weight: 600; margin: 0;">Aucun utilisateur spécifique rattaché à ce pressing pour le moment.</p>
+              </div>
+            <?php else: ?>
+              <div class="table-responsive-mobile">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; text-align: left; font-size: 12px; color: #64748B;">
+                      <th style="padding: 12px 16px;">Utilisateur / Gérant</th>
+                      <th style="padding: 12px 16px;">Email (Login Admin)</th>
+                      <th style="padding: 12px 16px;">Téléphone Contact</th>
+                      <th style="padding: 12px 16px;">Rôle / Fonction</th>
+                      <th style="padding: 12px 16px;">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($pressingUsers as $u): ?>
+                      <tr style="border-bottom: 1px solid #F1F5F9; font-size: 13px;">
+                        <td style="padding: 12px 16px;">
+                          <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: #2563EB; color: #FFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
+                              <?= strtoupper(substr($u['nom_user'] ?? 'U', 0, 1)) ?>
+                            </div>
+                            <div>
+                              <strong style="color: #1E293B; display: block;"><?= htmlspecialchars(($u['nom_user'] ?? '') . ' ' . ($u['prenom_user'] ?? '')) ?></strong>
+                              <span style="font-size: 11px; color: #94A3B8;"><?= htmlspecialchars($u['code_user']) ?></span>
+                            </div>
+                          </div>
+                        </td>
+                        <td style="padding: 12px 16px; color: #475569; font-weight: 600;"><?= htmlspecialchars($u['email_user'] ?? '-') ?></td>
+                        <td style="padding: 12px 16px; color: #475569;"><?= htmlspecialchars($u['telephone_user'] ?? '-') ?></td>
+                        <td style="padding: 12px 16px;">
+                          <span style="background: #DBEAFE; color: #1E40AF; padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i data-lucide="shield" style="width: 12px; height: 12px;"></i> <?= htmlspecialchars($u['libelle_role'] ?? 'Gérant') ?>
+                          </span>
+                        </td>
+                        <td style="padding: 12px 16px;">
+                          <span class="badge-status <?= ($u['statut_user'] ?? 'actif') === 'actif' ? 'delivered' : 'cancelled' ?>" style="font-size: 11px;">
+                            <?= htmlspecialchars($u['statut_user'] ?? 'actif') ?>
+                          </span>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
+
           <!-- === TAB 7 : INFOS & COORDONNÉES === -->
           <div id="tab-infos" class="hub-tab-content" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -478,23 +546,54 @@ $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr 
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;">
-                <h4 style="font-size: 14px; font-weight: 700; color: #1E293B; margin: 0 0 12px;">Coordonnées</h4>
+              <!-- CARTE 1 : GERANT / RESPONSABLE PRINCIPAL -->
+              <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 14px; padding: 18px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: #1E40AF; margin: 0 0 14px; display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="user-check" style="width: 16px; height: 16px; color: #2563EB;"></i> Responsable Principal du Pressing
+                </h4>
+                <?php if ($owner): ?>
+                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+                    <div style="width: 44px; height: 44px; border-radius: 50%; background: #2563EB; color: #FFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; box-shadow: 0 2px 8px rgba(37,99,235,0.2);">
+                      <?= strtoupper(substr($owner['nom_user'] ?? 'G', 0, 1)) ?>
+                    </div>
+                    <div>
+                      <div style="font-weight: 800; color: #1E293B; font-size: 15px;"><?= htmlspecialchars(($owner['nom_user'] ?? '') . ' ' . ($owner['prenom_user'] ?? '')) ?></div>
+                      <span style="font-size: 11px; background: #DBEAFE; color: #1E40AF; padding: 2px 8px; border-radius: 12px; font-weight: 700;"><?= htmlspecialchars($owner['libelle_role'] ?? 'Gérant / Propriétaire') ?></span>
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; background: #FFFFFF; padding: 12px; border-radius: 10px; border: 1px solid #DBEAFE;">
+                    <div><span style="color: #64748B;">Email Login :</span> <strong style="color: #1E293B;"><?= htmlspecialchars($owner['email_user'] ?? '-') ?></strong></div>
+                    <div><span style="color: #64748B;">Téléphone Mobile :</span> <strong style="color: #1E293B;"><?= htmlspecialchars($owner['telephone_user'] ?? '-') ?></strong></div>
+                    <div><span style="color: #64748B;">Code Gérant :</span> <strong style="color: #2563EB;"><?= htmlspecialchars($owner['code_user'] ?? '-') ?></strong></div>
+                  </div>
+                <?php else: ?>
+                  <p style="font-size: 13px; color: #64748B; margin: 0;">Aucun responsable rattaché directement.</p>
+                <?php endif; ?>
+              </div>
+
+              <!-- CARTE 2 : COORDONNEES -->
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: #1E293B; margin: 0 0 14px; display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="store" style="width: 16px; height: 16px; color: #64748B;"></i> Coordonnées de l'Atelier
+                </h4>
                 <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
-                  <div><span style="color: #64748B;">Téléphone :</span> <strong><?= htmlspecialchars($pressing['telephone_pressing'] ?? '-') ?></strong></div>
-                  <div><span style="color: #64748B;">Email :</span> <strong><?= htmlspecialchars($pressing['email_pressing'] ?? '-') ?></strong></div>
-                  <div><span style="color: #64748B;">Adresse :</span> <strong><?= htmlspecialchars($pressing['adresse_pressing'] ?? '-') ?></strong></div>
+                  <div><span style="color: #64748B;">Téléphone Atelier :</span> <strong><?= htmlspecialchars($pressing['telephone_pressing'] ?? '-') ?></strong></div>
+                  <div><span style="color: #64748B;">Email Officiel :</span> <strong><?= htmlspecialchars($pressing['email_pressing'] ?? '-') ?></strong></div>
+                  <div><span style="color: #64748B;">Adresse Physique :</span> <strong><?= htmlspecialchars($pressing['adresse_pressing'] ?? '-') ?></strong></div>
                   <div><span style="color: #64748B;">Ville / Quartier :</span> <strong><?= htmlspecialchars($pressing['ville_code'] ?? '-') ?> / <?= htmlspecialchars($pressing['quartier_code'] ?? '-') ?></strong></div>
                 </div>
               </div>
 
-              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;">
-                <h4 style="font-size: 14px; font-weight: 700; color: #1E293B; margin: 0 0 12px;">Options Marketplace</h4>
+              <!-- CARTE 3 : OPTIONS MARKETPLACE -->
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: #1E293B; margin: 0 0 14px; display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="settings" style="width: 16px; height: 16px; color: #64748B;"></i> Configuration Marketplace Client
+                </h4>
                 <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
                   <div><span style="color: #64748B;">Livraison Gratuite :</span> <strong><?= !empty($pressing['livraison_gratuite']) ? 'Oui' : 'Non' ?></strong></div>
                   <div><span style="color: #64748B;">Collecte au Sac (Colis) :</span> <strong><?= !empty($pressing['accepte_colis_sans_detail']) ? 'Oui' : 'Non' ?></strong></div>
                   <div><span style="color: #64748B;">Option Express :</span> <strong><?= !empty($pressing['has_express']) ? 'Oui' : 'Non' ?></strong></div>
-                  <div><span style="color: #64748B;">Note Moyenne :</span> <strong style="color: #D97706;">★ <?= number_format((float)($pressing['rating'] ?? 4.8), 1) ?> / 5</strong></div>
+                  <div><span style="color: #64748B;">Note Client Moyenne :</span> <strong style="color: #D97706;">★ <?= number_format((float)($pressing['rating'] ?? 4.8), 1) ?> / 5</strong></div>
                 </div>
               </div>
             </div>
@@ -503,6 +602,91 @@ $logo         = !empty($logoStr) ? ((strpos($logoStr, 'http') === 0) ? $logoStr 
       </div>
     </div>
   </main>
+</div>
+
+<!-- === MODAL : AJOUT D'UN MEMBRE D'ÉQUIPE (PROPRIÉTAIRE, GESTIONNAIRE OU LIVREUR) === -->
+<div class="modal fade" id="modalAddTeamMember" tabindex="-1" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 12px 36px rgba(0,0,0,0.18);">
+      <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding: 20px 24px; background: #F8FAFC; border-radius: 16px 16px 0 0;">
+        <h5 class="modal-title" style="font-weight: 800; font-size: 18px; color: #1E293B; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="user-plus" style="color: #2563EB;"></i> Nouveau Membre de l'Équipe
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="formAddTeamMember" style="width: 100%;">
+        <input type="hidden" name="pressing_code" value="<?= htmlspecialchars($codePressing) ?>">
+        <div class="modal-body" style="padding: 24px;">
+          
+          <!-- CHOIX DU ROLE (3 COLONNES) -->
+          <div style="margin-bottom: 24px;">
+            <label style="font-weight: 700; font-size: 14px; color: #1E293B; margin-bottom: 10px; display: block;">Rôle attribué au membre dans ce Pressing</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+              
+              <label style="border: 2px solid #2563EB; background: #EFF6FF; border-radius: 12px; padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s;" class="role-card-option" id="role-card-pro">
+                <input type="radio" name="role_code" value="ROLE-PRO" checked style="display: none;" onchange="selectTeamRole('ROLE-PRO')">
+                <div style="font-size: 22px; margin-bottom: 4px;">👑</div>
+                <div style="font-weight: 800; font-size: 13px; color: #1E40AF;">Propriétaire</div>
+                <div style="font-size: 11px; color: #64748B;">Propriétaire de l'enseigne</div>
+              </label>
+
+              <label style="border: 2px solid #E2E8F0; background: #FFF; border-radius: 12px; padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s;" class="role-card-option" id="role-card-gest">
+                <input type="radio" name="role_code" value="ROLE-GEST" style="display: none;" onchange="selectTeamRole('ROLE-GEST')">
+                <div style="font-size: 22px; margin-bottom: 4px;">💼</div>
+                <div style="font-weight: 800; font-size: 13px; color: #1E293B;">Gestionnaire</div>
+                <div style="font-size: 11px; color: #64748B;">Gérant d'atelier au quotidien</div>
+              </label>
+
+              <label style="border: 2px solid #E2E8F0; background: #FFF; border-radius: 12px; padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s;" class="role-card-option" id="role-card-liv">
+                <input type="radio" name="role_code" value="ROLE-LIV" style="display: none;" onchange="selectTeamRole('ROLE-LIV')">
+                <div style="font-size: 22px; margin-bottom: 4px;">🛵</div>
+                <div style="font-weight: 800; font-size: 13px; color: #1E293B;">Livreur</div>
+                <div style="font-size: 11px; color: #64748B;">Collecte & Livraison terrain</div>
+              </label>
+
+            </div>
+          </div>
+
+          <!-- FORM GRID FULL WIDTH -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 100%;">
+            
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="team_nom" style="font-weight: 700; font-size: 13px; color: #334155;">Nom du membre *</label>
+              <input type="text" class="form-control" id="team_nom" name="nom_user" placeholder="Ex: Kouassi" required style="border-radius: 10px; height: 44px; padding: 0 14px; width: 100%;">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="team_prenom" style="font-weight: 700; font-size: 13px; color: #334155;">Prénom(s)</label>
+              <input type="text" class="form-control" id="team_prenom" name="prenom_user" placeholder="Ex: Jean-Marc" style="border-radius: 10px; height: 44px; padding: 0 14px; width: 100%;">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="team_phone" style="font-weight: 700; font-size: 13px; color: #334155;">Téléphone (Login de connexion) *</label>
+              <input type="tel" class="form-control" id="team_phone" name="telephone_user" placeholder="Ex: 0708091011" maxlength="10" required style="border-radius: 10px; height: 44px; padding: 0 14px; width: 100%;">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="team_email" style="font-weight: 700; font-size: 13px; color: #334155;">Email (Optionnel)</label>
+              <input type="email" class="form-control" id="team_email" name="email_user" placeholder="Ex: agent@lavex.ci" style="border-radius: 10px; height: 44px; padding: 0 14px; width: 100%;">
+            </div>
+
+            <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 6px;">
+              <label for="team_password" style="font-weight: 700; font-size: 13px; color: #334155;">Mot de passe par défaut</label>
+              <input type="text" class="form-control" id="team_password" name="password_user" value="12345" readonly style="border-radius: 10px; height: 44px; padding: 0 14px; width: 100%; background-color: #F1F5F9; color: #475569; font-weight: 700; cursor: not-allowed;">
+            </div>
+
+          </div>
+
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #E2E8F0; padding: 16px 24px; background: #F8FAFC; border-radius: 0 0 16px 16px;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px; padding: 10px 20px;">Annuler</button>
+          <button type="submit" class="btn btn-primary btn_submit_team" style="border-radius: 10px; padding: 10px 20px; font-weight: 700;">
+            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Enregistrer le Membre
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -525,6 +709,61 @@ function switchHubTab(btn, tabId) {
     target.style.display = 'block';
   }
 }
+
+function openModalAddTeamMember() {
+  $('#formAddTeamMember')[0].reset();
+  selectTeamRole('ROLE-PRO');
+  var myModal = new bootstrap.Modal(document.getElementById('modalAddTeamMember'));
+  myModal.show();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function selectTeamRole(role) {
+  $('.role-card-option').css({'border-color': '#E2E8F0', 'background': '#FFF'});
+  if (role === 'ROLE-PRO') {
+    $('#role-card-pro').css({'border-color': '#2563EB', 'background': '#EFF6FF'});
+    $('input[name="role_code"][value="ROLE-PRO"]').prop('checked', true);
+  } else if (role === 'ROLE-GEST') {
+    $('#role-card-gest').css({'border-color': '#2563EB', 'background': '#EFF6FF'});
+    $('input[name="role_code"][value="ROLE-GEST"]').prop('checked', true);
+  } else {
+    $('#role-card-liv').css({'border-color': '#2563EB', 'background': '#EFF6FF'});
+    $('input[name="role_code"][value="ROLE-LIV"]').prop('checked', true);
+  }
+}
+
+$('#formAddTeamMember').on('submit', function(e) {
+  e.preventDefault();
+  const form = $(this);
+  const btn = form.find('.btn_submit_team');
+  const btnHtml = btn.html();
+
+  btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+
+  $.ajax({
+    url: LINK + 'pressing/addUser',
+    type: 'POST',
+    data: form.serialize(),
+    dataType: 'json',
+    success: function(rep) {
+      btn.prop('disabled', false).html(btnHtml);
+      if (rep.status) {
+        showToast(rep.message, 'success');
+        var mEl = document.getElementById('modalAddTeamMember');
+        var mObj = bootstrap.Modal.getInstance(mEl);
+        if (mObj) mObj.hide();
+        setTimeout(() => window.location.reload(), 700);
+      } else {
+        showToast(rep.message, 'error');
+      }
+    },
+    error: function(xhr) {
+      btn.prop('disabled', false).html(btnHtml);
+      const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur lors de l\'enregistrement';
+      showToast(msg, 'error');
+    }
+  });
+});
 </script>
 
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
