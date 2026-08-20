@@ -1,6 +1,5 @@
 <?php 
 require_once __DIR__ . '/../core/PrincipalRoute.php';
-
 $route = new Router();
 
 $homeController = new HomeController();
@@ -151,6 +150,7 @@ $route->addRoute('/user/edit', [$userController, 'edit']);
 $route->addRoute('/user/changer', [$userController, 'changer']);
 $route->addRoute('/user/login', [$userController, 'login']);
 $route->addRoute('/user/logout', [$userController, 'logout']);
+$route->addRoute('/user/decon', [$userController, 'decon']);
 $route->addRoute('/user/connexion', [$userController, 'connexion']);
 $route->addRoute('/user/profil', [$userController, 'profil']);
 $route->addRoute('/user/edition/{param}', [$userController, 'edition']);

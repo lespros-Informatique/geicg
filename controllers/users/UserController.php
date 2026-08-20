@@ -259,9 +259,20 @@ class UserController extends BaseController
 
     public function decon()
     {
-        $this->requireAuth();
         $this->unsetSession();
-        $this->loadView('../views/users/connexion.php');
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_unset();
+            @session_destroy();
+        }
+        $_SESSION = [];
+
+        header('Location: ' . RACINE . 'user/connexion');
+        exit();
+    }
+
+    public function logout()
+    {
+        $this->decon();
     }
 
     public function details($details)

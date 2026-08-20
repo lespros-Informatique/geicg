@@ -8,29 +8,27 @@ function handleLogin() {
             url: LINK + 'user/connexion',
             type: 'POST',
             data: formData,
-            dataType: 'text',
+            dataType: 'json',
             beforeSend: function() {
-                loading('.btnConnexion', true, '<i class="fa fa-spinner fa-spin"></i> Connexion...');
+                loading('.btnConnexion', true, 'Connexion en cours...');
             },
             success: function(rep) {
-                // console.log(rep);return;
-                
-                loading('.btnConnexion', false, '<i class="fas fa-sign-in-alt"></i> Se connecter');
-                console.log('[LOGIN] success response:', rep);
-                if (rep.status) {
-                    showToast(rep.message, 'success');
+                loading('.btnConnexion', false, 'Se connecter');
+                if (typeof rep === 'string') {
+                    try { rep = JSON.parse(rep); } catch(e) {}
+                }
+                if (rep && (rep.status === 1 || rep.status === true)) {
+                    showToast(rep.message || 'Bienvenue sur Lavex Admin !', 'success');
                     setTimeout(function() {
                         window.location.href = LINK;
-                    }, 2000);
+                    }, 1000);
                 } else {
-                    showToast(rep.message, 'error');
+                    showToast((rep && rep.message) ? rep.message : 'Identifiants incorrects', 'error');
                 }
             },
             error: function(xhr, status, error) {
-                loading('.btnConnexion', false, '<i class="fas fa-sign-in-alt"></i> Se connecter');
-                console.error('[LOGIN] ajax error:', status, error);
-                console.error('[LOGIN] xhr status:', xhr.status);
-                let msg = 'Erreur serveur';
+                loading('.btnConnexion', false, 'Se connecter');
+                let msg = 'Identifiants ou connexion invalide';
                 try {
                     const resp = xhr.responseJSON || JSON.parse(xhr.responseText);
                     if (resp && resp.message) msg = resp.message;

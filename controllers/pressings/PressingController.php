@@ -210,10 +210,16 @@ class PressingController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+
+        if (empty($_POST) && isset($_SERVER['CONTENT_LENGTH']) && (int)$_SERVER['CONTENT_LENGTH'] > 0) {
+            $this->error('L\'image ou le fichier téléchargé est trop volumineux pour le serveur (taille max 8 Mo). Veuillez choisir une photo plus légère !');
+            return;
+        }
+
         $notEmpty = Validator::validateRequiredFields(['libelle_pressing' => $_POST['libelle_pressing'] ?? '', 'id_pressing' => $_POST['id_pressing'] ?? '']);
 
         if ($notEmpty !== true) {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Veuillez renseigner tous les champs obligatoires !');
             return;
         }
 

@@ -15,16 +15,24 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
       <div class="card">
          <div class="mobile-list-container"></div>
-         <div class="table-responsive-mobile">
-             <table class="table" id="dataTable">
-                 <thead>
-                  <tr>
-                    <th>N°</th><th>Pressing</th><th>Jour</th><th>Ouverture</th><th>Fermeture</th><th>Statut</th><th>Actions</th>
-                  </tr>
-               </thead>
-               <tbody></tbody>
-            </table>
-          </div>
+          <div class="table-responsive-mobile">
+              <table class="table" id="dataTable" data-superadmin="<?= !empty($isSuperAdmin) ? '1' : '0' ?>">
+                  <thead>
+                   <tr>
+                     <th>N°</th>
+                     <?php if (!empty($isSuperAdmin)): ?>
+                       <th>Pressing</th>
+                     <?php endif; ?>
+                     <th>Jour</th>
+                     <th>Ouverture</th>
+                     <th>Fermeture</th>
+                     <th>Statut</th>
+                     <th>Actions</th>
+                   </tr>
+                </thead>
+                <tbody></tbody>
+             </table>
+           </div>
        </div>
 
       <script src="<?= RACINE ?>json/mobile-list.js"></script>

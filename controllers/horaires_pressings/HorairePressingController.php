@@ -33,6 +33,7 @@ class HorairePressingController extends BaseController
             $isFerme = (int)($h['est_ferme'] ?? 0) === 1;
             $data[] = [
                 'code' => $h['libelle_pressing'] ?? $h['pressing_code'],
+                'pressing_name' => $h['libelle_pressing'] ?? '',
                 'pressing_code' => $h['pressing_code'],
                 'jour' => ucfirst($h['jour'] ?? ''),
                 'heure_ouverture' => (!$isFerme && $h['heure_ouverture']) ? substr($h['heure_ouverture'], 0, 5) : '-',
@@ -44,7 +45,7 @@ class HorairePressingController extends BaseController
             ];
         }
 
-        $this->json(['data' => $data]);
+        $this->json(['data' => $data, 'isSuperAdmin' => $this->isSuperAdmin()]);
     }
 
     public function add()
@@ -128,6 +129,16 @@ class HorairePressingController extends BaseController
         $notEmpty = Validator::validateRequiredFields(['jour' => $_POST['jour'] ?? '']);
         if ($notEmpty !== true) {
             $this->error('Le jour est requis !');
+            return;
+        }
+
+        $jour = strtolower(trim($this->post('jour')));
+
+        // Empêcher les doublons lors d'une modification de jour
+        $existing = $this->model->getCon()->prepare("SELECT id_horaire FROM " . TABLES::HORAIRES_PRESSINGS . " WHERE pressing_code = ? AND jour = ? AND id_horaire != ? LIMIT 1");
+        $existing->execute([$pressingCode, $jour, $id]);
+        if ($existing->fetchColumn()) {
+            $this->error('Ce pressing a déjà configuré une plage horaire pour ' . ucfirst($jour) . ' !');
             return;
         }
 

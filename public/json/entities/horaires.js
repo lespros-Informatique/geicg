@@ -1,9 +1,16 @@
 $(document).ready(function() {
     if ($('#dataTable').length) {
-        const columns = [
-            { title: 'N°', data: null, render: function(data, type, row, meta) { return meta.row + 1; } },
-            { data: 'code', title: 'Pressing' },
-            { data: 'jour', title: 'Jour' },
+        const isSuperAdmin = $('#dataTable').attr('data-superadmin') === '1';
+
+        let columns = [];
+        columns.push({ title: 'N°', data: null, render: function(data, type, row, meta) { return meta.row + 1; } });
+
+        if (isSuperAdmin) {
+            columns.push({ data: 'pressing_name', title: 'Pressing' });
+        }
+
+        columns.push(
+            { data: 'jour', title: 'Jour', render: function(d) { return '<strong style="font-size: 14px; color: #1E293B;">' + (d || '') + '</strong>'; } },
             { data: 'heure_ouverture', title: 'Ouverture' },
             { data: 'heure_fermeture', title: 'Fermeture' },
             {
@@ -30,24 +37,24 @@ $(document).ready(function() {
                     `;
                 }
             }
-        ];
+        );
 
         const table = initDataTable('dataTable', 'horaire/apiList', columns);
 
         const horairesMobileConfig = {
-        entity: 'horaire',
-        primary: [{ key: 'code', label: 'Pressing' }],
-        secondary: [{ key: 'jour', label: 'Jour' }],
-        detailUrl: function(r) { return LINK + 'horaire/edition/' + r.editId; },
-        actions: [
-            { id: 'modifier', label: 'Modifier', icon: 'edit', href: function(r) { return LINK + 'horaire/edition/' + r.editId; } },
-        ],
-        getActions: function(row) {
-            var list = horairesMobileConfig.actions.map(function(a) { return Object.assign({}, a, { href: a.href(row) }); });
-            return list;
-        }
-    };
-    renderMobileCards('dataTable', horairesMobileConfig);
+            entity: 'horaire',
+            primary: isSuperAdmin ? [{ key: 'pressing_name', label: 'Pressing' }, { key: 'jour', label: 'Jour' }] : [{ key: 'jour', label: 'Jour' }],
+            secondary: [{ key: 'statut', label: 'Statut' }],
+            detailUrl: function(r) { return LINK + 'horaire/edition/' + r.editId; },
+            actions: [
+                { id: 'modifier', label: 'Modifier', icon: 'edit', href: function(r) { return LINK + 'horaire/edition/' + r.editId; } },
+            ],
+            getActions: function(row) {
+                var list = horairesMobileConfig.actions.map(function(a) { return Object.assign({}, a, { href: a.href(row) }); });
+                return list;
+            }
+        };
+        renderMobileCards('dataTable', horairesMobileConfig);
     }
 
     $('.formEditHoraire').on('submit', function(e) {

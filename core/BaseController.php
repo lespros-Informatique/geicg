@@ -35,7 +35,9 @@ abstract class BaseController
 
     protected function unsetSession(): void
     {
-        if (isset($_SESSION[USERS_AUTH]['id_user'])) {
+        $_SESSION = [];
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_unset();
             session_destroy();
         }
     }

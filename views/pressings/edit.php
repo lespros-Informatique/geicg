@@ -627,26 +627,80 @@ $('#quartier_search').on('keyup input', function() {
   }
 });
 
-function previewPressingLogo(input) {
+function compressAndPreviewImage(input, previewImgId, placeholderIconId, maxMB) {
   if (input.files && input.files[0]) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      $('#logoPreviewImg').attr('src', e.target.result).show();
-      $('#logoPlaceholderIcon').hide();
-    };
-    reader.readAsDataURL(input.files[0]);
+    const file = input.files[0];
+    const maxSizeBytes = (maxMB || 3) * 1024 * 1024;
+
+    if (file.size > maxSizeBytes) {
+      if (typeof showToast === 'function') {
+        showToast('Photo volumineuse (' + (file.size / (1024 * 1024)).toFixed(1) + ' Mo). Compression automatique...', 'info');
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1400;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(function(blob) {
+            try {
+              const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                type: 'image/webp',
+                lastModified: Date.now()
+              });
+
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(compressedFile);
+              input.files = dataTransfer.files;
+            } catch(err) {}
+
+            $('#' + previewImgId).attr('src', canvas.toDataURL('image/webp', 0.85)).show();
+            if (placeholderIconId) $('#' + placeholderIconId).hide();
+
+            if (typeof showToast === 'function') {
+              showToast('Image optimisée avec succès !', 'success');
+            }
+          }, 'image/webp', 0.85);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        $('#' + previewImgId).attr('src', e.target.result).show();
+        if (placeholderIconId) $('#' + placeholderIconId).hide();
+      };
+      reader.readAsDataURL(file);
+    }
   }
 }
 
+function previewPressingLogo(input) {
+  compressAndPreviewImage(input, 'logoPreviewImg', 'logoPlaceholderIcon', 3);
+}
+
 function previewPressingMiniature(input) {
-  if (input.files && input.files[0]) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      $('#miniaturePreviewImg').attr('src', e.target.result).show();
-      $('#miniaturePlaceholderIcon').hide();
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
+  compressAndPreviewImage(input, 'miniaturePreviewImg', 'miniaturePlaceholderIcon', 3);
 }
 
 function toggleSeuilLivraison() {
