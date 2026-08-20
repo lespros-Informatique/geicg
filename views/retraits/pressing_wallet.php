@@ -5,6 +5,34 @@ $retraits = $retraits ?? [];
 $minRetrait = $minRetrait ?? 2000;
 ?>
 
+<style>
+/* === MOBILE PWA UX OPTIMIZATIONS FOR WALLET & RETRAITS === */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+  }
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-bottom: 16px !important;
+  }
+  .page-header-actions {
+    width: 100% !important;
+    margin-top: 10px !important;
+  }
+  .page-header-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 48px !important;
+    font-size: 15px !important;
+  }
+  .wallet-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+</style>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -18,10 +46,12 @@ $minRetrait = $minRetrait ?? 2000;
           </h1>
           <p class="page-subtitle" style="margin: 4px 0 0; color: #64748B; font-size: 13px;">Gérez vos gains issus des paiements en ligne et effectuez vos retraits</p>
         </div>
-        <button type="button" class="btn btn-primary" onclick="ouvrirModalRetrait()" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #059669; border-color: #059669; padding: 10px 18px; border-radius: 10px;">
-          <i data-lucide="arrow-up-right" style="width: 18px; height: 18px;"></i>
-          Demander un retrait
-        </button>
+        <div class="page-header-actions">
+          <button type="button" class="btn btn-primary" onclick="ouvrirModalRetrait()" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #059669; border-color: #059669; padding: 10px 18px; border-radius: 10px;">
+            <i data-lucide="arrow-up-right" style="width: 18px; height: 18px;"></i>
+            Demander un retrait
+          </button>
+        </div>
       </div>
 
       <!-- CARTES DE SOLDE / STATS FINANCIÈRES -->

@@ -7,6 +7,41 @@ $pressingName = isset($pressingName) ? $pressingName : ($livreur['pressing_code'
 $nomComplet = trim(($livreur['nom_livreur'] ?? '') . ' ' . ($livreur['prenom_livreur'] ?? '')) ?: 'Livreur';
 ?>
 
+<style>
+/* === MOBILE PWA UX OPTIMIZATIONS FOR LIVREUR DETAILS === */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+  }
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-bottom: 16px !important;
+    gap: 12px !important;
+  }
+  .page-header-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .page-header-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 46px !important;
+    font-size: 14px !important;
+  }
+  .livreur-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .livreur-detail-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+</style>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -20,7 +55,7 @@ $nomComplet = trim(($livreur['nom_livreur'] ?? '') . ' ' . ($livreur['prenom_liv
           </h1>
           <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0;">Informations complètes et historique d'activité</p>
         </div>
-        <div style="display: flex; gap: 10px;">
+        <div class="page-header-actions" style="display: flex; gap: 10px;">
           <a href="<?= RACINE ?>livreur/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="arrow-left"></i> Retour à la liste
           </a>
@@ -33,7 +68,7 @@ $nomComplet = trim(($livreur['nom_livreur'] ?? '') . ' ' . ($livreur['prenom_liv
       </div>
 
       <!-- STATS DU LIVREUR -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div class="livreur-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
         <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div style="width: 48px; height: 48px; border-radius: 10px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 20px;">
             <i data-lucide="package"></i>
@@ -77,7 +112,7 @@ $nomComplet = trim(($livreur['nom_livreur'] ?? '') . ' ' . ($livreur['prenom_liv
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+      <div class="livreur-detail-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
         <!-- CARTE PROFIL LIVREUR -->
         <div class="detail-card" style="background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: fit-content;">
           <div class="detail-card-header" style="background: #F8FAFC; padding: 16px 20px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">

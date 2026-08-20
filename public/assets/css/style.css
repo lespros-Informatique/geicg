@@ -1591,6 +1591,18 @@ body {
     padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }
+    .app-layout, .main-content, .content-wrapper {
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+    }
+    .card, .form-card {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
     body {
         padding-bottom: 72px;
     }

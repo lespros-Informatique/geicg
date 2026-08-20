@@ -5,6 +5,53 @@ $isSuperAdmin = isset($isSuperAdmin) ? $isSuperAdmin : false;
 $isLivreur = isset($isLivreur) ? $isLivreur : false;
 ?>
 
+<style>
+/* === MOBILE PWA OPTIMIZATIONS FOR PRESSING MANAGERS === */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+  }
+  .page-header {
+    margin-bottom: 16px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .page-header-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .page-header-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 46px !important;
+    font-size: 14px !important;
+  }
+  .kpi-grid-responsive {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 18px !important;
+  }
+  .kpi-card-item {
+    padding: 12px 10px !important;
+  }
+  .kpi-card-val {
+    font-size: 18px !important;
+  }
+  .wallet-mobile-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 16px !important;
+  }
+  .wallet-mobile-banner .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 46px !important;
+  }
+}
+</style>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -25,7 +72,7 @@ $isLivreur = isset($isLivreur) ? $isLivreur : false;
           </p>
         </div>
 
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div class="page-header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <?php if ($isSuperAdmin): ?>
             <a href="<?= RACINE ?>pressing/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
               <i class="fa fa-store"></i> Pressings
@@ -50,9 +97,9 @@ $isLivreur = isset($isLivreur) ? $isLivreur : false;
 
       <!-- BANDEAU PORTEFEUILLE & RETRAITS MOBILE MONEY POUR LE PRESSING -->
       <?php if (!empty($isPressing)): ?>
-        <div style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; color: #FFFFFF; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        <div class="wallet-mobile-banner" style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; color: #FFFFFF; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
           <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+            <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
               <i data-lucide="wallet"></i>
             </div>
             <div>
@@ -73,51 +120,51 @@ $isLivreur = isset($isLivreur) ? $isLivreur : false;
       <?php endif; ?>
 
       <!-- CARTES KPI PRINCIPALES -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 24px;">
+      <div class="kpi-grid-responsive" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 24px;">
         <!-- KPI 1 : CA TOTAL -->
-        <div style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div class="kpi-card-item" style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Chiffre d'Affaires</span>
-            <h2 id="kpi-ca" style="font-size: 24px; font-weight: 800; color: #059669; margin: 4px 0 2px 0;">0 FCFA</h2>
+            <h2 id="kpi-ca" class="kpi-card-val" style="font-size: 24px; font-weight: 800; color: #059669; margin: 4px 0 2px 0;">0 FCFA</h2>
             <small style="color: #94A3B8; font-size: 11px;">Total généré</small>
           </div>
-          <div style="width: 52px; height: 52px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
             <i data-lucide="banknote"></i>
           </div>
         </div>
 
         <!-- KPI 2 : COMMANDES TOTALES -->
-        <div style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div class="kpi-card-item" style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Commandes</span>
-            <h2 id="kpi-commandes" style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 4px 0 2px 0;">0</h2>
+            <h2 id="kpi-commandes" class="kpi-card-val" style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 4px 0 2px 0;">0</h2>
             <small style="color: #94A3B8; font-size: 11px;">Toutes commandes confondues</small>
           </div>
-          <div style="width: 52px; height: 52px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
             <i data-lucide="clipboard-list"></i>
           </div>
         </div>
 
         <!-- KPI 3 : CLIENTS DU PRESSING -->
-        <div style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div class="kpi-card-item" style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;" id="label-kpi-clients">Clients Actifs</span>
-            <h2 id="kpi-clients" style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 4px 0 2px 0;">0</h2>
+            <h2 id="kpi-clients" class="kpi-card-val" style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 4px 0 2px 0;">0</h2>
             <small style="color: #94A3B8; font-size: 11px;">Clients fidélisés</small>
           </div>
-          <div style="width: 52px; height: 52px; border-radius: 12px; background: #F3E8FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #F3E8FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
             <i data-lucide="users"></i>
           </div>
         </div>
 
         <!-- KPI 4 : TARIFS / SERVICES -->
-        <div style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div class="kpi-card-item" style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;" id="label-kpi-catalogue">Tarifs au Catalogue</span>
-            <h2 id="kpi-catalogue" style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 4px 0 2px 0;">0</h2>
+            <h2 id="kpi-catalogue" class="kpi-card-val" style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 4px 0 2px 0;">0</h2>
             <small style="color: #94A3B8; font-size: 11px;">Articles & services actifs</small>
           </div>
-          <div style="width: 52px; height: 52px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
             <i data-lucide="tag"></i>
           </div>
         </div>

@@ -5,6 +5,30 @@ $forfaits = isset($forfaits) ? $forfaits : [];
 $isSuperAdmin = isset($isSuperAdmin) ? $isSuperAdmin : false;
 ?>
 
+<style>
+/* === MOBILE PWA UX OPTIMIZATIONS FOR B2B SUBSCRIPTIONS === */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+  }
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-bottom: 16px !important;
+    gap: 12px !important;
+  }
+  .page-header-actions {
+    width: 100% !important;
+  }
+  .page-header-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 48px !important;
+    font-size: 15px !important;
+  }
+}
+</style>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -19,13 +43,16 @@ $isSuperAdmin = isset($isSuperAdmin) ? $isSuperAdmin : false;
           <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0;">Gestion des forfaits, abonnements actifs et renouvellements</p>
         </div>
         <?php if ($isSuperAdmin): ?>
-          <button type="button" class="btn btn-primary" onclick="openCreateAbonnementModal()" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 10px; padding: 10px 18px;">
-            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Créer un abonnement
-          </button>
+          <div class="page-header-actions">
+            <button type="button" class="btn btn-primary" onclick="openCreateAbonnementModal()" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 10px; padding: 10px 18px;">
+              <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Créer un abonnement
+            </button>
+          </div>
         <?php endif; ?>
       </div>
 
       <div class="card" style="border-radius: 14px; padding: 20px;">
+        <div class="mobile-list-container"></div>
         <div class="table-responsive-mobile">
           <table class="table" id="dataTable" style="width: 100%;">
             <thead>

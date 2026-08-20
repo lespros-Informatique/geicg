@@ -10,15 +10,47 @@
 
     <div class="bottom-nav" id="bottomNav">
         <a href="<?= RACINE ?>" class="bottom-nav-item">
-            <i data-lucide="home"></i>
-            <span>Accueil</span>
+            <i data-lucide="<?= !empty($isPressing) ? 'store' : 'layout-dashboard' ?>"></i>
+            <span><?= !empty($isPressing) ? 'Atelier' : 'Accueil' ?></span>
         </a>
-        <?php if ($isSuperAdmin || $isPressing): ?>
-        <a href="<?= RACINE ?>paiement/list" class="bottom-nav-item">
-            <i data-lucide="credit-card"></i>
-            <span>Paiement</span>
-        </a>
+        
+        <?php if (!empty($isPressing)): ?>
+            <a href="<?= RACINE ?>commande/list" class="bottom-nav-item">
+                <i data-lucide="clipboard-list"></i>
+                <span>Commandes</span>
+            </a>
+            <a href="<?= RACINE ?>tarifs/list" class="bottom-nav-item">
+                <i data-lucide="tag"></i>
+                <span>Tarifs</span>
+            </a>
+            <a href="<?= RACINE ?>retrait/list" class="bottom-nav-item">
+                <i data-lucide="wallet"></i>
+                <span>Solde</span>
+            </a>
+        <?php elseif (!empty($isLivreur)): ?>
+            <a href="<?= RACINE ?>mission/carte" class="bottom-nav-item">
+                <i data-lucide="navigation"></i>
+                <span>GPS Live</span>
+            </a>
+            <a href="<?= RACINE ?>mission/list" class="bottom-nav-item">
+                <i data-lucide="clipboard-list"></i>
+                <span>Missions</span>
+            </a>
+        <?php else: ?>
+            <a href="<?= RACINE ?>pressing/list" class="bottom-nav-item">
+                <i data-lucide="building-2"></i>
+                <span>Pressings</span>
+            </a>
+            <a href="<?= RACINE ?>commande/list" class="bottom-nav-item">
+                <i data-lucide="clipboard-list"></i>
+                <span>Commandes</span>
+            </a>
+            <a href="<?= RACINE ?>abonnement/list" class="bottom-nav-item">
+                <i data-lucide="credit-card"></i>
+                <span>Abos B2B</span>
+            </a>
         <?php endif; ?>
+
         <button type="button" class="bottom-nav-item" id="bnProfil">
             <i data-lucide="user"></i>
             <span>Profil</span>

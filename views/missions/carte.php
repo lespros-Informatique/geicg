@@ -97,7 +97,62 @@ if (!$activeDestination) {
     grid-template-columns: 1fr !important;
   }
   #tourneeMap {
-    min-height: 420px !important;
+    min-height: 480px !important;
+  }
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+  }
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .page-header-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .page-header-actions .btn {
+    justify-content: center !important;
+    height: 44px !important;
+  }
+  .mobile-driver-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid #E2E8F0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 99999;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+  }
+  .mobile-driver-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #64748B;
+    font-size: 11px;
+    font-weight: 600;
+    gap: 3px;
+    flex: 1;
+    height: 100%;
+  }
+  .mobile-driver-nav-item.active {
+    color: #2563EB;
+    font-weight: 800;
+  }
+}
+@media (min-width: 901px) {
+  .mobile-driver-bottom-bar {
+    display: none !important;
   }
 }
 .mission-point-card:hover {
@@ -122,12 +177,12 @@ if (!$activeDestination) {
           </p>
         </div>
 
-        <div style="display: flex; gap: 8px;">
+        <div class="page-header-actions" style="display: flex; gap: 8px;">
           <a href="<?= RACINE ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-            <i data-lucide="layout-dashboard" style="width: 16px; height: 16px;"></i> Tableau de bord
+            <i data-lucide="layout-dashboard" style="width: 16px; height: 16px;"></i> Accueil
           </a>
           <a href="<?= RACINE ?>mission/list" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-            <i data-lucide="list" style="width: 16px; height: 16px;"></i> Liste des missions
+            <i data-lucide="list" style="width: 16px; height: 16px;"></i> Missions
           </a>
         </div>
       </div>
@@ -319,5 +374,25 @@ function selectMissionDestination(lat, lng, name, address, code) {
   }
 }
 </script>
+
+<!-- BARRE DE NAVIGATION INFÉRIEURE NATIVE PWA MOBILE -->
+<div class="mobile-driver-bottom-bar">
+  <a href="<?= RACINE ?>" class="mobile-driver-nav-item">
+    <i data-lucide="layout-dashboard" style="width: 20px; height: 20px;"></i>
+    <span>Accueil</span>
+  </a>
+  <a href="<?= RACINE ?>mission/carte" class="mobile-driver-nav-item active">
+    <i data-lucide="navigation" style="width: 20px; height: 20px;"></i>
+    <span>GPS Live</span>
+  </a>
+  <a href="<?= RACINE ?>mission/list" class="mobile-driver-nav-item">
+    <i data-lucide="clipboard-list" style="width: 20px; height: 20px;"></i>
+    <span>Missions</span>
+  </a>
+  <a href="<?= RACINE ?>user/profil" class="mobile-driver-nav-item">
+    <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+    <span>Profil</span>
+  </a>
+</div>
 
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

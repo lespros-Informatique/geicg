@@ -2,6 +2,30 @@
 require_once __DIR__ . '/../../public/inc/header.php';
 ?>
 
+<style>
+/* === MOBILE PWA UX OPTIMIZATIONS FOR LIVREURS LIST === */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+  }
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-bottom: 16px !important;
+    gap: 12px !important;
+  }
+  .page-header-actions {
+    width: 100% !important;
+  }
+  .page-header-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 48px !important;
+    font-size: 15px !important;
+  }
+}
+</style>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -9,8 +33,15 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
     <div class="content-wrapper">
       <div class="page-header">
-          <h1>Livreurs</h1>
-        <a href="<?= RACINE ?>livreur/formulaire" class="btn btn-primary"><i data-lucide="plus"></i> Ajouter livreur</a>
+        <div>
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #1E293B;">Gestion des Livreurs</h1>
+          <p class="page-subtitle" style="margin: 4px 0 0; color: #64748B; font-size: 13px;">Annuaire et suivi de la flotte de livreurs partenaires et internes</p>
+        </div>
+        <div class="page-header-actions">
+          <a href="<?= RACINE ?>livreur/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 10px; padding: 10px 18px;">
+            <i data-lucide="plus" style="width: 18px; height: 18px;"></i> Ajouter livreur
+          </a>
+        </div>
       </div>
 
       <div class="card">

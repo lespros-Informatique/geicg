@@ -6,6 +6,43 @@ $services  = isset($services) ? $services : [];
 $pressings = isset($pressings) ? $pressings : [];
 ?>
 
+<style>
+/* === MOBILE PWA UX OPTIMIZATIONS FOR EDIT TARIF FORM === */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+  }
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-bottom: 16px !important;
+    gap: 10px !important;
+  }
+  .page-header .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 44px !important;
+  }
+  .form-card {
+    border-radius: 14px !important;
+    padding: 16px !important;
+  }
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+  .form-actions {
+    margin-top: 20px !important;
+  }
+  .form-actions .btn {
+    width: 100% !important;
+    height: 48px !important;
+    font-size: 15px !important;
+    justify-content: center !important;
+  }
+}
+</style>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">

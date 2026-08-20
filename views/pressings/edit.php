@@ -7,6 +7,55 @@ $quartiers = isset($quartiers) ? $quartiers : [];
 $forfaits = isset($forfaits) ? $forfaits : [];
 ?>
 
+<style>
+/* === MOBILE PWA UX OPTIMIZATIONS FOR PRESSING ONBOARDING & EDIT FORM === */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+  }
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-bottom: 16px !important;
+    gap: 10px !important;
+  }
+  .page-header .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 44px !important;
+  }
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .card-body {
+    padding: 16px 12px !important;
+  }
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  .form-control, .input-with-icon {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .form-actions {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .form-actions .btn {
+    width: 100% !important;
+    height: 48px !important;
+    font-size: 15px !important;
+    justify-content: center !important;
+  }
+  .wizard-step-item span {
+    font-size: 11px !important;
+  }
+}
+</style>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">

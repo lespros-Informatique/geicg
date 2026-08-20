@@ -21,6 +21,49 @@ $miniatureStr = $pressing['miniature_pressing'] ?? '';
 $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ? $miniatureStr : RACINE . 'public/assets/images/pressings/' . $miniatureStr) : null;
 ?>
 
+<style>
+/* === MOBILE PWA UX OPTIMIZATIONS FOR PRESSING DETAILS & CONFIG === */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px 10px 80px 10px !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  .page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-bottom: 16px !important;
+    gap: 14px !important;
+  }
+  .page-header-info {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+  .page-header-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .page-header-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 46px !important;
+    font-size: 14px !important;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .table-responsive-mobile {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+  }
+}
+</style>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -29,7 +72,7 @@ $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ?
     <div class="content-wrapper">
       <!-- === EN-TÊTE DU HUB PRESSING 360° === -->
       <div class="page-header" style="margin-bottom: 24px;">
-        <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="page-header-info" style="display: flex; align-items: center; gap: 16px;">
           <?php if ($miniature): ?>
             <img src="<?= htmlspecialchars($miniature) ?>" alt="<?= htmlspecialchars($libelle) ?> (Miniature)" title="Miniature Lavex" style="width: 90px; height: 60px; border-radius: 12px; object-fit: cover; border: 2px solid var(--border-color, #E2E8F0); box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
           <?php elseif ($logo): ?>
@@ -45,6 +88,7 @@ $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ?
               <span class="code-badge" style="background: #F1F5F9; color: #475569; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;"><?= htmlspecialchars($codePressing) ?></span>
               <span class="badge-status <?= $statut === 'actif' ? 'delivered' : 'cancelled' ?>" style="text-transform: uppercase; font-size: 11px; padding: 3px 8px; border-radius: 6px;">
                 <?= htmlspecialchars($statut) ?>
+              </span>
               <span class="badge-status delivered" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #F8FAFC; color: #334155; border: 1px solid #E2E8F0;">
                 <i data-lucide="clock" style="width: 12px; height: 12px; vertical-align: -1px; color: #2563EB;"></i> <?= htmlspecialchars($pressing['delai_livraison_pressing'] ?? '24h - 48h') ?>
               </span>
@@ -83,7 +127,7 @@ $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ?
             </p>
           </div>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div class="page-header-actions" style="display: flex; gap: 8px;">
           <a href="<?= RACINE ?>pressing/edition/<?= $encryptedId ?>" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Modifier la fiche
           </a>
