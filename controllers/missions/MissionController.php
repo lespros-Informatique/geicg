@@ -75,14 +75,45 @@ class MissionController extends BaseController
             return;
         }
 
+        $commandeCode = $this->post('commande_code');
+        $adresseMission = $this->post('adresse_mission') ?? '';
+        $latMission = $this->post('latitude_mission') ?? null;
+        $lngMission = $this->post('longitude_mission') ?? null;
+
+        // Récupération automatique de l'adresse et des coordonnées GPS réelles de la commande
+        if (empty($adresseMission) || empty($latMission) || empty($lngMission)) {
+            $db = $this->model->getCon();
+            $stmtC = $db->prepare("
+                SELECT c.adresse_livraison_commande, c.latitude_livraison, c.longitude_livraison,
+                       cl.adresse_client, cl.latitude_client, cl.longitude_client
+                FROM " . TABLES::COMMANDES . " c
+                LEFT JOIN " . TABLES::CLIENTS . " cl ON c.client_code = cl.code_client
+                WHERE c.code_commande = ? LIMIT 1
+            ");
+            $stmtC->execute([$commandeCode]);
+            $cRow = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+            if ($cRow) {
+                if (empty($adresseMission)) {
+                    $adresseMission = !empty($cRow['adresse_livraison_commande']) ? $cRow['adresse_livraison_commande'] : ($cRow['adresse_client'] ?? '');
+                }
+                if (empty($latMission) || (float)$latMission == 0) {
+                    $latMission = (!empty($cRow['latitude_livraison']) && (float)$cRow['latitude_livraison'] != 0) ? $cRow['latitude_livraison'] : ($cRow['latitude_client'] ?? null);
+                }
+                if (empty($lngMission) || (float)$lngMission == 0) {
+                    $lngMission = (!empty($cRow['longitude_livraison']) && (float)$cRow['longitude_livraison'] != 0) ? $cRow['longitude_livraison'] : ($cRow['longitude_client'] ?? null);
+                }
+            }
+        }
+
         $data = [
             'code_mission' => $code,
-            'commande_code' => $this->post('commande_code'),
+            'commande_code' => $commandeCode,
             'livreur_code' => $this->post('livreur_code') ?? '',
             'type_mission' => $this->post('type_mission'),
-            'adresse_mission' => $this->post('adresse_mission') ?? '',
-            'latitude_mission' => $this->post('latitude_mission') ?? null,
-            'longitude_mission' => $this->post('longitude_mission') ?? null,
+            'adresse_mission' => $adresseMission,
+            'latitude_mission' => $latMission,
+            'longitude_mission' => $lngMission,
             'observation_mission' => $this->post('observation_mission') ?? '',
             'statut_mission' => 'en_attente',
             'created_at_mission' => date('Y-m-d H:i:s')
