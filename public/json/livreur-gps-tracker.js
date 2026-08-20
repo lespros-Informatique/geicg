@@ -109,7 +109,7 @@ window.LivreurGpsTracker = (function() {
         const speed = position.coords.speed || 0;
         const speedKmh = Math.round(speed * 3.6);
 
-        updateGpsBadge(true, `🛵 En Course (${speedKmh} km/h • ±${Math.round(accuracy)}m)`);
+        updateGpsBadge(true, `En Course (${speedKmh} km/h • ±${Math.round(accuracy)}m)`);
 
         // Mise à jour de la moto en direct
         if (activeMap && typeof L !== 'undefined') {
@@ -311,7 +311,7 @@ window.LivreurGpsTracker = (function() {
             hud.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px; color: #10B981; font-weight: 800; font-size: 14px;">
                     <i class="fa fa-check-circle" style="font-size: 18px;"></i>
-                    <span>🎉 Vous êtes arrivé à destination !</span>
+                    <span>Vous êtes arrivé à destination !</span>
                 </div>
                 <div style="font-size: 12px; color: #E2E8F0;">${dest ? (dest.name + ' • ' + dest.address) : ''}</div>
             `;
@@ -319,7 +319,7 @@ window.LivreurGpsTracker = (function() {
             hud.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                     <span style="font-size: 11px; font-weight: 700; color: #93C5FD; text-transform: uppercase; letter-spacing: 0.5px;">
-                        🏁 Destination en cours
+                        Destination en cours
                     </span>
                     <span style="font-size: 12px; font-weight: 800; background: #2563EB; padding: 2px 8px; border-radius: 10px;">
                         ~${durationMin} min

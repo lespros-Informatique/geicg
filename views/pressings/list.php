@@ -9,8 +9,10 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
     <div class="content-wrapper">
       <div class="page-header">
-          <h1>Pressings</h1>
-        <a href="<?= RACINE ?>pressing/formulaire" class="btn btn-primary"><i data-lucide="plus"></i> Ajouter pressing</a>
+        <h1>Pressings</h1>
+        <?php if (!empty($isSuperAdmin)): ?>
+          <a href="<?= RACINE ?>pressing/formulaire" class="btn btn-primary"><i data-lucide="plus"></i> Ajouter pressing</a>
+        <?php endif; ?>
       </div>
 
       <div class="card">

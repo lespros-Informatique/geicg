@@ -280,6 +280,23 @@ abstract class BaseController
     }
 
     /**
+     * Exige que l'utilisateur connecté possède le rôle Super Admin
+     */
+    protected function requireSuperAdmin(string $customMessage = ''): void
+    {
+        $this->requireAuth();
+        if (!$this->isSuperAdmin()) {
+            $msg = !empty($customMessage) ? $customMessage : "Accès réservé exclusivement au Super Administrateur Lavex.";
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+                $this->json(['status' => 0, 'message' => $msg], 403);
+            } else {
+                header('Location: ' . RACINE . '?error=forbidden');
+                exit();
+            }
+        }
+    }
+
+    /**
      * Récupère la liste des permissions attribuées au rôle de l'utilisateur connecté
      */
     protected function getUserPermissions(): array

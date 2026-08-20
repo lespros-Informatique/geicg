@@ -172,6 +172,21 @@ $steps = STATUTS::SUIVI_COMMANDES;
               <span style="color: #64748B;">Pressing Traitant</span>
               <strong><?= htmlspecialchars($pressingNom) ?></strong>
             </div>
+            <?php
+              $sousTotalArticlesCalculated = 0;
+              if (!empty($lignes)) {
+                foreach ($lignes as $l) {
+                  $sousTotalArticlesCalculated += (float)($l['sous_total_commande_detail'] ?? 0);
+                }
+              }
+              if ($sousTotalArticlesCalculated <= 0) {
+                $sousTotalArticlesCalculated = max(0, $montantTotal + $remiseCmd - $fraisCollecte - $fraisLivraison);
+              }
+            ?>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px;">
+              <span style="color: #64748B;">Sous-total des vêtements</span>
+              <span><?= number_format($sousTotalArticlesCalculated, 0, ',', ' ') ?> FCFA</span>
+            </div>
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px;">
               <span style="color: #64748B;">Frais de collecte</span>
               <span><?= number_format($fraisCollecte, 0, ',', ' ') ?> FCFA</span>
@@ -180,12 +195,26 @@ $steps = STATUTS::SUIVI_COMMANDES;
               <span style="color: #64748B;">Frais de livraison</span>
               <span><?= number_format($fraisLivraison, 0, ',', ' ') ?> FCFA</span>
             </div>
+            <?php if ($remiseCmd > 0): ?>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px; color: #059669; font-weight: 700;">
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  <i data-lucide="tag" style="width: 14px; height: 14px;"></i> Remise / Avantage Promo
+                </span>
+                <span>-<?= number_format($remiseCmd, 0, ',', ' ') ?> FCFA</span>
+              </div>
+            <?php endif; ?>
             <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px;">
               <span style="font-size: 15px; font-weight: 700; color: #1E293B;">Total à encaisser</span>
               <strong style="font-size: 20px; font-weight: 800; color: #059669;">
                 <?= number_format($montantTotal, 0, ',', ' ') ?> FCFA
               </strong>
             </div>
+            <?php if ($remiseCmd > 0): ?>
+              <div style="font-size: 11.5px; color: #047857; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 8px 10px; border-radius: 8px; margin-top: 4px;">
+                <i data-lucide="info" style="width: 13px; height: 13px; color: #059669; vertical-align: middle;"></i>
+                Le client a bénéficié d'une réduction promo de <strong><?= number_format($remiseCmd, 0, ',', ' ') ?> FCFA</strong> (Montant avant remise : <?= number_format($sousTotalArticlesCalculated + $fraisCollecte + $fraisLivraison, 0, ',', ' ') ?> FCFA).
+              </div>
+            <?php endif; ?>
           </div>
         </div>
       </div>

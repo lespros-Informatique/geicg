@@ -61,16 +61,16 @@ class PressingController extends BaseController
     public function add()
     {
         $this->requirePost(false);
-        $this->requireAuth();
+        $this->requireSuperAdmin("Seul le Super Administrateur peut créer ou ajouter un nouveau pressing.");
 
         $libelle = trim($this->post('libelle_pressing'));
         $emailUser = trim($this->post('email_user'));
         $nomUser = trim($this->post('nom_user'));
-        $passwordUser = trim($this->post('password_user'));
+        $passwordUser = trim($this->post('password_user')) ?: '12345';
         $forfaitCode = trim($this->post('forfait_code'));
 
-        if (empty($libelle) || empty($emailUser) || empty($nomUser) || empty($passwordUser) || empty($forfaitCode)) {
-            $this->error('Veuillez remplir toutes les informations obligatoires (Nom du Pressing, Responsable, Email Login, Mot de passe et Forfait B2B) !');
+        if (empty($libelle) || empty($emailUser) || empty($nomUser) || empty($forfaitCode)) {
+            $this->error('Veuillez remplir toutes les informations obligatoires (Nom du Pressing, Responsable, Email Login et Forfait B2B) !');
             return;
         }
 
@@ -102,6 +102,14 @@ class PressingController extends BaseController
         $dateDebut = $this->post('date_debut_abonnement') ?: date('Y-m-d');
         $dateFin = date('Y-m-d', strtotime("+$dureeMois months", strtotime($dateDebut)));
 
+        $geo = $this->resolveGeoCoordinates(
+            $this->post('latitude_pressing'),
+            $this->post('longitude_pressing'),
+            $this->post('adresse_pressing') ?? '',
+            $this->post('quartier_code') ?? '',
+            $this->post('ville_code') ?? ''
+        );
+
         // 4. Lancer l'onboarding tout-en-un sous transaction
         $res = $this->model->onboardPressingWithOwnerAndSubscription([
             'code_pressing' => $codePressing,
@@ -111,8 +119,8 @@ class PressingController extends BaseController
             'adresse_pressing' => $this->post('adresse_pressing') ?? '',
             'ville_code' => $this->post('ville_code') ?? '',
             'quartier_code' => $this->post('quartier_code') ?? '',
-            'latitude_pressing' => $this->post('latitude_pressing') ?? null,
-            'longitude_pressing' => $this->post('longitude_pressing') ?? null,
+            'latitude_pressing' => $geo['lat'],
+            'longitude_pressing' => $geo['lng'],
             'logo_pressing' => $this->post('logo_pressing') ?? ''
         ], [
             'nom_user' => $nomUser,
@@ -249,6 +257,14 @@ class PressingController extends BaseController
         $delaiLivraison = !empty($_POST['delai_livraison_pressing']) ? trim($_POST['delai_livraison_pressing']) : '24h - 48h';
         $accepteColisSansDetail = isset($_POST['accepte_colis_sans_detail']) ? (int)$_POST['accepte_colis_sans_detail'] : 0;
 
+        $geoEdit = $this->resolveGeoCoordinates(
+            $this->post('latitude_pressing'),
+            $this->post('longitude_pressing'),
+            $this->post('adresse_pressing') ?? '',
+            $this->post('quartier_code') ?? '',
+            $this->post('ville_code') ?? ''
+        );
+
         $data = [
             'id_pressing' => $id,
             'libelle_pressing' => $this->post('libelle_pressing'),
@@ -257,8 +273,8 @@ class PressingController extends BaseController
             'adresse_pressing' => $this->post('adresse_pressing') ?? '',
             'ville_code' => $this->post('ville_code') ?? '',
             'quartier_code' => $this->post('quartier_code') ?? '',
-            'latitude_pressing' => $this->post('latitude_pressing') ?? null,
-            'longitude_pressing' => $this->post('longitude_pressing') ?? null,
+            'latitude_pressing' => $geoEdit['lat'],
+            'longitude_pressing' => $geoEdit['lng'],
             'logo_pressing' => $logo ?? '',
             'miniature_pressing' => $miniature ?? '',
             'mode_logistique' => $modeLogistique,
@@ -284,7 +300,7 @@ class PressingController extends BaseController
     public function changer()
     {
         $this->requirePost(false);
-        $this->requireAuth();
+        $this->requireSuperAdmin("Seul le Super Administrateur peut désactiver ou activer un pressing.");
         $id = $this->post('id');
         if (isset($id) && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -380,6 +396,8 @@ class PressingController extends BaseController
             exit();
         }
 
+        $this->requirePressingAccess($item['code_pressing']);
+
         $villes = $db->query("SELECT code_ville, libelle_ville FROM " . TABLES::VILLES . " WHERE statut_ville = 'actif' ORDER BY libelle_ville ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $quartiers = $db->query("SELECT code_quartier, ville_code, libelle_quartier FROM " . TABLES::QUARTIERS . " WHERE statut_quartier = 'actif' ORDER BY libelle_quartier ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -404,7 +422,7 @@ class PressingController extends BaseController
 
     public function formulaire()
     {
-        $this->requireAuth();
+        $this->requireSuperAdmin();
         $db = $this->model->getCon();
 
         $villes = $db->query("SELECT code_ville, libelle_ville FROM " . TABLES::VILLES . " WHERE statut_ville = 'actif' ORDER BY libelle_ville ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -543,5 +561,90 @@ class PressingController extends BaseController
 
         $encryptedId = $this->validator->crypter($idPressing);
         $this->details($encryptedId);
+    }
+
+    /**
+     * Récupère automatiquement les coordonnées GPS (Latitude & Longitude) du pressing
+     */
+    private function resolveGeoCoordinates(?string $postedLat, ?string $postedLng, string $adresse, string $quartierCode, string $villeCode): array
+    {
+        $lat = ($postedLat !== null && $postedLat !== '' && (float)$postedLat != 0) ? (float)$postedLat : null;
+        $lng = ($postedLng !== null && $postedLng !== '' && (float)$postedLng != 0) ? (float)$postedLng : null;
+
+        if ($lat !== null && $lng !== null) {
+            return ['lat' => $lat, 'lng' => $lng];
+        }
+
+        $db = $this->model->getCon();
+        $quartierName = '';
+        $villeName = '';
+
+        if (!empty($quartierCode)) {
+            $stmtQ = $db->prepare("SELECT libelle_quartier FROM " . TABLES::QUARTIERS . " WHERE code_quartier = ? LIMIT 1");
+            $stmtQ->execute([$quartierCode]);
+            $quartierName = $stmtQ->fetchColumn() ?: '';
+        }
+
+        if (!empty($villeCode)) {
+            $stmtV = $db->prepare("SELECT libelle_ville FROM " . TABLES::VILLES . " WHERE code_ville = ? LIMIT 1");
+            $stmtV->execute([$villeCode]);
+            $villeName = $stmtV->fetchColumn() ?: '';
+        }
+
+        // 1. Géocodage Nominatim avec l'adresse complète
+        $query = trim("{$adresse} {$quartierName} {$villeName} Côte d'Ivoire");
+        $geo = $this->queryNominatim($query);
+
+        if (!$geo && (!empty($quartierName) || !empty($villeName))) {
+            // 2. Géocodage avec Quartier + Ville
+            $query2 = trim("{$quartierName} {$villeName} Côte d'Ivoire");
+            $geo = $this->queryNominatim($query2);
+        }
+
+        if ($geo) {
+            return $geo;
+        }
+
+        // 3. Fallbacks par Villes majeures de Côte d'Ivoire
+        $vLower = strtolower($villeName);
+        if (strpos($vLower, 'bouak') !== false) {
+            return ['lat' => 7.690000, 'lng' => -5.030000];
+        } elseif (strpos($vLower, 'yamoussoukro') !== false) {
+            return ['lat' => 6.816000, 'lng' => -5.274000];
+        } elseif (strpos($vLower, 'san-p') !== false || strpos($vLower, 'san pedro') !== false) {
+            return ['lat' => 4.748500, 'lng' => -6.636300];
+        } elseif (strpos($vLower, 'korhogo') !== false) {
+            return ['lat' => 9.458000, 'lng' => -5.629600];
+        }
+
+        // Par défaut : Abidjan
+        return ['lat' => 5.348440, 'lng' => -4.010550];
+    }
+
+    private function queryNominatim(string $query): ?array
+    {
+        if (empty(trim($query))) return null;
+        $url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" . urlencode($query);
+        $opts = [
+            'http' => [
+                'method' => 'GET',
+                'header' => "User-Agent: LavexApp/1.0 (contact@lavex.ci)\r\n",
+                'timeout' => 3
+            ]
+        ];
+        $context = stream_context_create($opts);
+
+        try {
+            $json = @file_get_contents($url, false, $context);
+            if ($json) {
+                $data = json_decode($json, true);
+                if (!empty($data[0]['lat']) && !empty($data[0]['lon'])) {
+                    return ['lat' => (float)$data[0]['lat'], 'lng' => (float)$data[0]['lon']];
+                }
+            }
+        } catch (Exception $e) {
+            // ignore
+        }
+        return null;
     }
 }

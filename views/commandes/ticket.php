@@ -155,20 +155,41 @@ $isPaye = ($statutPaiement === 'valide');
       </tbody>
     </table>
 
+    <?php
+      $remiseTicket = (float)($commande['remise_commande'] ?? 0);
+      $fraisCollTicket = (float)($commande['frais_collecte_commande'] ?? 0);
+      $fraisLivTicket = (float)($commande['frais_livraison_commande'] ?? 0);
+      $totalTicket = (float)($commande['montant_total_commande'] ?? 0);
+      $subtotalArticlesTicket = 0;
+      if (!empty($details)) {
+        foreach ($details as $d) {
+          $subtotalArticlesTicket += (float)($d['sous_total_commande_detail'] ?? 0);
+        }
+      }
+      if ($subtotalArticlesTicket <= 0) {
+        $subtotalArticlesTicket = max(0, $totalTicket + $remiseTicket - $fraisCollTicket - $fraisLivTicket);
+      }
+    ?>
     <div class="totals-section">
       <div class="total-row">
         <span>Sous-total articles :</span>
-        <span><?= number_format($commande['montant_total_commande'] - ($commande['frais_collecte_commande'] ?? 0) - ($commande['frais_livraison_commande'] ?? 0), 0, ',', ' ') ?> FCFA</span>
+        <span><?= number_format($subtotalArticlesTicket, 0, ',', ' ') ?> FCFA</span>
       </div>
-      <?php if (($commande['frais_collecte_commande'] ?? 0) > 0 || ($commande['frais_livraison_commande'] ?? 0) > 0): ?>
+      <?php if ($fraisCollTicket > 0 || $fraisLivTicket > 0): ?>
         <div class="total-row">
           <span>Frais collecte & livraison :</span>
-          <span><?= number_format(($commande['frais_collecte_commande'] ?? 0) + ($commande['frais_livraison_commande'] ?? 0), 0, ',', ' ') ?> FCFA</span>
+          <span><?= number_format($fraisCollTicket + $fraisLivTicket, 0, ',', ' ') ?> FCFA</span>
+        </div>
+      <?php endif; ?>
+      <?php if ($remiseTicket > 0): ?>
+        <div class="total-row" style="color: #059669; font-weight: bold;">
+          <span>Remise / Code promo :</span>
+          <span>-<?= number_format($remiseTicket, 0, ',', ' ') ?> FCFA</span>
         </div>
       <?php endif; ?>
       <div class="total-row total-main">
         <span>TOTAL À PAYER :</span>
-        <span><?= number_format($commande['montant_total_commande'], 0, ',', ' ') ?> FCFA</span>
+        <span><?= number_format($totalTicket, 0, ',', ' ') ?> FCFA</span>
       </div>
     </div>
 

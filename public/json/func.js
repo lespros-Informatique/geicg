@@ -1,11 +1,38 @@
 function loading(selector, status, message) {
     const el = typeof selector === 'string' ? $(selector) : $(selector);
-    if (el.find('.btn-text').length) {
-        el.find('.btn-text').html(message);
-    } else {
-        el.html(message);
+    if (!el || !el.length) return;
+
+    if (!document.getElementById('globalSpinnerStyle')) {
+        const style = document.createElement('style');
+        style.id = 'globalSpinnerStyle';
+        style.innerHTML = `
+            @keyframes lvxSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            .lvx-spinner-icon { animation: lvxSpin 0.75s linear infinite; vertical-align: -2px; margin-right: 6px; display: inline-block; }
+            .btn-is-loading { opacity: 0.75 !important; cursor: not-allowed !important; pointer-events: none !important; }
+        `;
+        document.head.appendChild(style);
     }
-    el.prop('disabled', status);
+
+    const spinnerSvg = '<svg class="lvx-spinner-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>';
+
+    if (status) {
+        const cleanMsg = (message || 'Patientez...').replace(/<i class="[^"]*"><\/i>/g, '').trim();
+        const htmlContent = spinnerSvg + '<span>' + cleanMsg + '</span>';
+        if (el.find('.btn-text').length) {
+            el.find('.btn-text').html(htmlContent);
+        } else {
+            el.html(htmlContent);
+        }
+        el.prop('disabled', true).addClass('btn-is-loading');
+    } else {
+        const resetMsg = message || el.data('original-html') || 'Valider';
+        if (el.find('.btn-text').length) {
+            el.find('.btn-text').html(resetMsg);
+        } else {
+            el.html(resetMsg);
+        }
+        el.prop('disabled', false).removeClass('btn-is-loading');
+    }
 }
 
 function showToast(message, type = 'success', title = null) {

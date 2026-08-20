@@ -138,7 +138,7 @@ if (!$activeDestination) {
         <div class="card" style="padding: 0; border-radius: 16px; overflow: hidden; border: 1px solid #E2E8F0; min-height: 600px; position: relative;">
           
           <button type="button" class="btn btn-sm btn-primary" onclick="LivreurGpsTracker.toggleFollowMode()" style="position: absolute; top: 14px; right: 14px; z-index: 1000; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.15); background: #1E3A5F; border-color: #1E3A5F;">
-            <i class="fa fa-crosshairs"></i> Suivre ma position 🛵
+            <i data-lucide="crosshair" style="width: 14px; height: 14px;"></i> Suivre ma position
           </button>
 
           <div id="tourneeMap" style="width: 100%; height: 100%; min-height: 600px;"></div>
@@ -170,8 +170,8 @@ if (!$activeDestination) {
                 <div class="mission-point-card" onclick="selectMissionDestination(<?= $mLat ?>, <?= $mLng ?>, '<?= htmlspecialchars($m['nom_client'] ?? 'Client') ?>', '<?= htmlspecialchars($mAdr) ?>', '<?= htmlspecialchars($m['code_mission']) ?>')" style="padding: 12px; border-radius: 10px; border: <?= $isEnCours ? '2px solid #2563EB' : '1px solid #E2E8F0' ?>; background: <?= $isEnCours ? '#EFF6FF' : '#F8FAFC' ?>; cursor: pointer; transition: all 0.2s ease;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                     <strong style="font-size: 13px; color: #1E293B;">#<?= htmlspecialchars($m['code_mission']) ?></strong>
-                    <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: <?= $isCol ? '#FEF3C7' : '#EFF6FF' ?>; color: <?= $isCol ? '#92400E' : '#1E40AF' ?>;">
-                      <?= $isCol ? '📦 Collecte' : '🚚 Livraison' ?>
+                    <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: <?= $isCol ? '#FEF3C7' : '#EFF6FF' ?>; color: <?= $isCol ? '#92400E' : '#1E40AF' ?>; display: inline-flex; align-items: center; gap: 4px;">
+                      <i data-lucide="<?= $isCol ? 'package' : 'truck' ?>" style="width: 12px; height: 12px;"></i> <?= $isCol ? 'Collecte' : 'Livraison' ?>
                     </span>
                   </div>
                   <div style="font-size: 12px; color: #475569; margin-bottom: 6px;">
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div style="font-family: inherit; font-size: 13px; line-height: 1.5; min-width: 200px;">
         <strong style="color: #1E293B; font-size: 14px; display: block;">#${m.code_mission}</strong>
         <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${isCol ? '#FEF3C7' : '#EFF6FF'}; color: ${isCol ? '#92400E' : '#1E40AF'}; font-weight: 700;">
-          ${isCol ? '📦 Collecte' : '🚚 Livraison'}
+          ${isCol ? 'Collecte' : 'Livraison'}
         </span>
         <div style="margin: 8px 0 4px; color: #475569;">
           <strong>Client :</strong> ${m.nom_client || 'Client'}<br>
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
           <button onclick="selectMissionDestination(${lat}, ${lng}, '${m.nom_client || 'Client'}', '${targetAdr}', '${m.code_mission}')" style="background: #2563EB; color: #FFF; border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer;">
-            📍 Tracer l'itinéraire vers ce point
+            <i class="fa fa-crosshairs"></i> Tracer l'itinéraire vers ce point
           </button>
           <a href="${gpsUrl}" target="_blank" style="background: #1E3A5F; color: #FFF; text-align: center; padding: 6px 10px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 11px;">
             <i class="fa fa-location-arrow"></i> Ouvrir GPS Google Maps

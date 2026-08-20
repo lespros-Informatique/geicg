@@ -28,10 +28,17 @@ $panierDetailController = new PanierDetailController();
 $retraitController = new RetraitController();
 $geniusPayWebhookController = new GeniusPayWebhookController();
 $settingController = new SettingController();
+$promotionController = new PromotionController();
 
 $route->addRoute('/', [$homeController, 'index']);
 $route->addRoute('/home/dashboardData', [$homeController, 'dashboardData']);
 $route->addRoute('/setting/list', [$settingController, 'list']);
+
+$route->addRoute('/promotion/list', [$promotionController, 'list']);
+$route->addRoute('/promotion/add', [$promotionController, 'add']);
+$route->addRoute('/promotion/edit/{param}', [$promotionController, 'edit']);
+$route->addRoute('/promotion/changer', [$promotionController, 'changer']);
+$route->addRoute('/promotion/delete/{param}', [$promotionController, 'delete']);
 
 $route->addRoute('/article/list', [$articleController, 'list']);
 $route->addRoute('/article/apiList', [$articleController, 'apiList']);

@@ -139,11 +139,21 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                 </div>
 
                 <div class="form-field" style="grid-column: 1 / -1;">
-                  <label for="adresse_pressing">Adresse / Localisation précise</label>
+                  <label for="adresse_pressing" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <span>Adresse / Localisation précise</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="getCurrentGpsLocation()" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                      <i data-lucide="crosshair" style="width: 13px; height: 13px;"></i> Detecter ma position GPS
+                    </button>
+                  </label>
                   <div class="input-with-icon">
                     <span class="input-icon"><?= Validator::icon('navigation'); ?></span>
                     <textarea class="form-control" id="adresse_pressing" name="adresse_pressing" rows="2" placeholder="Rue, Carrefour, Repère..."><?= htmlspecialchars($pressing['adresse_pressing'] ?? '') ?></textarea>
                   </div>
+                  <input type="hidden" id="latitude_pressing" name="latitude_pressing" value="<?= htmlspecialchars($pressing['latitude_pressing'] ?? '') ?>">
+                  <input type="hidden" id="longitude_pressing" name="longitude_pressing" value="<?= htmlspecialchars($pressing['longitude_pressing'] ?? '') ?>">
+                  <small id="gps-status-info" style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">
+                    <?= (!empty($pressing['latitude_pressing']) && !empty($pressing['longitude_pressing'])) ? '📍 Coordonnées GPS enregistrées : ' . htmlspecialchars($pressing['latitude_pressing']) . ', ' . htmlspecialchars($pressing['longitude_pressing']) : 'Si non renseigné, la position GPS (latitude/longitude) sera automatiquement récupérée par le serveur à l\'enregistrement.' ?>
+                  </small>
                 </div>
 
                 <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
@@ -400,11 +410,12 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                 </div>
 
                 <div class="form-field">
-                  <label for="password_user">Mot de passe de connexion <span style="color:#ef4444;">*</span></label>
+                  <label for="password_user">Mot de passe de connexion initial <span style="color:#ef4444;">*</span></label>
                   <div class="input-with-icon">
                     <span class="input-icon"><?= Validator::icon('lock'); ?></span>
-                    <input type="password" class="form-control" id="password_user" name="password_user" placeholder="••••••••" required>
+                    <input type="text" class="form-control" id="password_user" name="password_user" value="12345" readonly style="background-color: #f1f5f9; color: #475569; cursor: not-allowed; font-weight: 700;">
                   </div>
+                  <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Mot de passe par défaut généré automatiquement pour le premier accès (12345).</small>
                 </div>
 
                 <div class="form-field">
@@ -736,6 +747,33 @@ function toggleLogisticsFields(mode) {
     $('#propose_livraison').prop('checked', false);
   }
   if (window.lucide) window.lucide.createIcons();
+}
+
+function getCurrentGpsLocation() {
+  const statusEl = document.getElementById('gps-status-info');
+  if (!navigator.geolocation) {
+    alert("La géolocalisation n'est pas supportée par votre navigateur.");
+    return;
+  }
+  if (statusEl) {
+    statusEl.style.color = "#2563EB";
+    statusEl.textContent = "Recherche de votre position GPS en cours...";
+  }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    document.getElementById('latitude_pressing').value = lat;
+    document.getElementById('longitude_pressing').value = lng;
+    if (statusEl) {
+      statusEl.style.color = "#059669";
+      statusEl.innerHTML = "✓ Coordonnées GPS capturées (" + lat.toFixed(6) + ", " + lng.toFixed(6) + ")";
+    }
+  }, function(err) {
+    if (statusEl) {
+      statusEl.style.color = "#D97706";
+      statusEl.textContent = "Impossible d'accéder au GPS direct. La position sera calculée automatiquement par le serveur à l'enregistrement.";
+    }
+  }, { enableHighAccuracy: true, timeout: 10000 });
 }
 
 $(document).ready(function() {

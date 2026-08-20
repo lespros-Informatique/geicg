@@ -127,78 +127,97 @@ if (!$nextMission) {
             ? "https://www.google.com/maps/dir/?api=1&destination={$gpsLat},{$gpsLng}"
             : "https://www.google.com/maps/search/?api=1&query=" . urlencode($targetAdresse . ' Abidjan');
       ?>
-      <div class="card" style="border: 2px solid <?= $isNextColis ? '#F59E0B' : '#2563EB' ?>; border-radius: 16px; padding: 22px; margin-bottom: 26px; background: <?= $isNextColis ? '#FFFDF5' : '#F8FAFF' ?>; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.06);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
-          <div>
-            <span style="background: <?= $isNextColis ? '#FEF3C7' : '#EFF6FF' ?>; color: <?= $isNextColis ? '#92400E' : '#1E40AF' ?>; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
-              ⚡ Course Prioritaire • <?= $isNextColis ? '📦 Collecte de linge' : '🚚 Livraison au client' ?>
+      <div class="card" style="border: 1px solid <?= $isNextColis ? '#F59E0B' : '#2563EB' ?>; border-left: 5px solid <?= $isNextColis ? '#D97706' : '#2563EB' ?>; border-radius: 16px; padding: 22px; margin-bottom: 26px; background: #FFFFFF; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+        
+        <!-- En-tête de carte -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; border-bottom: 1px solid #F1F5F9; padding-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="background: <?= $isNextColis ? '#FEF3C7' : '#EFF6FF' ?>; color: <?= $isNextColis ? '#92400E' : '#1E40AF' ?>; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="<?= $isNextColis ? 'package' : 'truck' ?>" style="width: 15px; height: 15px;"></i>
+              <?= $isNextColis ? 'Collecte de linge' : 'Livraison au client' ?>
             </span>
-            <h2 style="margin: 8px 0 2px; font-size: 18px; font-weight: 800; color: #1E293B;">
-              Mission #<?= htmlspecialchars($nextMission['code_mission']) ?> — Commande #<?= htmlspecialchars($nextMission['commande_code']) ?>
-            </h2>
-            <p style="margin: 0; color: #64748B; font-size: 13px;">
-              Pressing : <strong><?= htmlspecialchars($nextMission['libelle_pressing'] ?? 'Pressing') ?></strong>
-            </p>
+            <span style="background: #F1F5F9; color: #475569; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="tag" style="width: 14px; height: 14px;"></i> Mission #<?= htmlspecialchars($nextMission['code_mission']) ?>
+            </span>
+            <span style="color: #64748B; font-size: 13px; font-weight: 600;">
+              Commande #<?= htmlspecialchars($nextMission['commande_code']) ?>
+            </span>
           </div>
 
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <?php if (!empty($nextMission['telephone_client'])): ?>
-              <a href="tel:<?= htmlspecialchars($nextMission['telephone_client']) ?>" class="btn btn-success" style="background: #059669; border-color: #059669; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-                <i class="fa fa-phone"></i> Appeler le client (<?= htmlspecialchars($nextMission['telephone_client']) ?>)
+              <a href="tel:<?= htmlspecialchars($nextMission['telephone_client']) ?>" class="btn btn-sm btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 8px 14px; color: #059669; border-color: #A7F3D0;">
+                <i data-lucide="phone" style="width: 15px; height: 15px;"></i> Appeler client
               </a>
             <?php endif; ?>
-            <a href="<?= RACINE ?>mission/carte?mission=<?= urlencode($nextMission['code_mission']) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-              <i class="fa fa-location-arrow"></i> Lancer le GPS & Guidage Trajet Live
+            <a href="<?= RACINE ?>mission/carte?mission=<?= urlencode($nextMission['code_mission']) ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 8px 14px;">
+              <i data-lucide="navigation" style="width: 15px; height: 15px;"></i> Trajet & GPS Live
             </a>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; padding: 14px; background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; margin-bottom: 16px;">
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; display: block; text-transform: uppercase;">Client</span>
-            <strong style="font-size: 15px; color: #1E293B; display: block;"><?= htmlspecialchars($nextMission['nom_client'] ?? 'Client') ?></strong>
-            <small style="color: #64748B;"><i class="fa fa-phone" style="font-size: 11px;"></i> <?= htmlspecialchars($nextMission['telephone_client'] ?? '-') ?></small>
+        <!-- Informations Logistiques séparées proprement -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px; border-radius: 12px;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; display: flex; align-items: center; gap: 6px; text-transform: uppercase; margin-bottom: 6px;">
+              <i data-lucide="user" style="width: 14px; height: 14px; color: #2563EB;"></i> Client & Contact
+            </span>
+            <strong style="font-size: 15px; color: #1E293B; display: block; margin-bottom: 2px;"><?= htmlspecialchars($nextMission['nom_client'] ?? 'Client') ?></strong>
+            <span style="color: #475569; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+              <i data-lucide="phone-call" style="width: 13px; height: 13px; color: #059669;"></i> <?= htmlspecialchars($nextMission['telephone_client'] ?? 'Non renseigné') ?>
+            </span>
           </div>
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; display: block; text-transform: uppercase;">Adresse de destination</span>
-            <strong style="font-size: 14px; color: #1E293B; display: block;"><i class="fa fa-map-marker-alt" style="color: #DC2626;"></i> <?= htmlspecialchars($targetAdresse) ?></strong>
-            <small style="color: #64748B;">Quartier : <?= htmlspecialchars($nextMission['quartier_client'] ?? 'Abidjan') ?></small>
+
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px; border-radius: 12px;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; display: flex; align-items: center; gap: 6px; text-transform: uppercase; margin-bottom: 6px;">
+              <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #DC2626;"></i> Destination / Adresse
+            </span>
+            <strong style="font-size: 14px; color: #1E293B; display: block; margin-bottom: 2px;"><?= htmlspecialchars($targetAdresse) ?></strong>
+            <span style="color: #64748B; font-size: 12px;">Quartier : <strong><?= htmlspecialchars($nextMission['quartier_client'] ?? 'Abidjan') ?></strong></span>
           </div>
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; display: block; text-transform: uppercase;">Pressing Partenaire</span>
-            <strong style="font-size: 14px; color: #1E293B; display: block;"><i class="fa fa-store" style="color: #2563EB;"></i> <?= htmlspecialchars($nextMission['libelle_pressing'] ?? 'Pressing') ?></strong>
-            <small style="color: #64748B;"><?= htmlspecialchars($nextMission['adresse_pressing'] ?? '') ?></small>
+
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px; border-radius: 12px;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; display: flex; align-items: center; gap: 6px; text-transform: uppercase; margin-bottom: 6px;">
+              <i data-lucide="store" style="width: 14px; height: 14px; color: #D97706;"></i> Pressing Partenaire
+            </span>
+            <strong style="font-size: 14px; color: #1E293B; display: block; margin-bottom: 2px;"><?= htmlspecialchars($nextMission['libelle_pressing'] ?? 'Pressing') ?></strong>
+            <span style="color: #64748B; font-size: 12px;"><?= htmlspecialchars($nextMission['adresse_pressing'] ?? 'Abidjan') ?></span>
           </div>
+
         </div>
 
         <!-- ACTIONS IMMÉDIATES 1-CLIC POUR LE LIVREUR -->
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-          <div style="font-size: 13px; color: #475569;">
-            Statut actuel : <span class="badge-status <?= $nextMission['statut_mission'] === 'en_cours' ? 'badge-status-progress' : '' ?>"><?= htmlspecialchars($nextMission['statut_mission']) ?></span>
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; background: #F1F5F9; padding: 14px 16px; border-radius: 12px;">
+          <div style="font-size: 13px; color: #475569; display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 600;">Statut de la course :</span>
+            <span class="badge-status <?= $nextMission['statut_mission'] === 'en_cours' ? 'badge-status-progress' : '' ?>" style="text-transform: uppercase; font-weight: 700; font-size: 11px;">
+              <?= str_replace('_', ' ', htmlspecialchars($nextMission['statut_mission'])) ?>
+            </span>
           </div>
 
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <?php if ($isNextColis): ?>
               <?php if ($nextMission['statut_mission'] === 'en_attente'): ?>
-                <button type="button" class="btn btn-primary" onclick="triggerLivreurAction('enRouteCollecte', '<?= $nextMission['code_mission'] ?>')" style="background: #D97706; border-color: #D97706; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa fa-motorcycle"></i> 1. Démarrer la collecte
+                <button type="button" class="btn btn-primary" onclick="triggerLivreurAction('enRouteCollecte', '<?= $nextMission['code_mission'] ?>')" style="background: #D97706; border-color: #D97706; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px;">
+                  <i data-lucide="play" style="width: 15px; height: 15px;"></i> Démarrer la collecte
                 </button>
               <?php elseif ($nextMission['statut_mission'] === 'en_cours'): ?>
-                <button type="button" class="btn btn-primary" onclick="triggerLivreurAction('lingeCollecte', '<?= $nextMission['code_mission'] ?>')" style="background: #2563EB; border-color: #2563EB; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa fa-box"></i> 2. Confirmer linge collecté
+                <button type="button" class="btn btn-primary" onclick="triggerLivreurAction('lingeCollecte', '<?= $nextMission['code_mission'] ?>')" style="background: #2563EB; border-color: #2563EB; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px;">
+                  <i data-lucide="package-check" style="width: 15px; height: 15px;"></i> Confirmer linge collecté
                 </button>
-                <button type="button" class="btn btn-success" onclick="triggerLivreurAction('deposeAuPressing', '<?= $nextMission['code_mission'] ?>')" style="background: #059669; border-color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa fa-store"></i> 3. Déposé au pressing (Terminer)
+                <button type="button" class="btn btn-success" onclick="triggerLivreurAction('deposeAuPressing', '<?= $nextMission['code_mission'] ?>')" style="background: #059669; border-color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px;">
+                  <i data-lucide="store" style="width: 15px; height: 15px;"></i> Déposé au pressing
                 </button>
               <?php endif; ?>
             <?php else: ?>
               <?php if ($nextMission['statut_mission'] === 'en_attente'): ?>
-                <button type="button" class="btn btn-primary" onclick="triggerLivreurAction('enRouteLivraison', '<?= $nextMission['code_mission'] ?>')" style="background: #2563EB; border-color: #2563EB; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa fa-truck"></i> 1. En route pour livrer
+                <button type="button" class="btn btn-primary" onclick="triggerLivreurAction('enRouteLivraison', '<?= $nextMission['code_mission'] ?>')" style="background: #2563EB; border-color: #2563EB; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px;">
+                  <i data-lucide="truck" style="width: 15px; height: 15px;"></i> En route pour livrer
                 </button>
               <?php elseif ($nextMission['statut_mission'] === 'en_cours'): ?>
-                <button type="button" class="btn btn-success" onclick="triggerLivreurAction('remiseAuClient', '<?= $nextMission['code_mission'] ?>')" style="background: #059669; border-color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                  <i class="fa fa-check-circle"></i> 2. Confirmer la remise au client
+                <button type="button" class="btn btn-success" onclick="triggerLivreurAction('remiseAuClient', '<?= $nextMission['code_mission'] ?>')" style="background: #059669; border-color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px;">
+                  <i data-lucide="check-circle" style="width: 15px; height: 15px;"></i> Confirmer la remise au client
                 </button>
               <?php endif; ?>
             <?php endif; ?>

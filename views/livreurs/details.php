@@ -174,11 +174,11 @@ $nomComplet = trim(($livreur['nom_livreur'] ?? '') . ' ' . ($livreur['prenom_liv
                       <td style="padding: 12px 16px;">
                         <?php if ($isCollecte): ?>
                           <span style="background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                            📦 Collecte
+                            <i data-lucide="package" style="width: 13px; height: 13px;"></i> Collecte
                           </span>
                         <?php else: ?>
                           <span style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                            🚚 Livraison
+                            <i data-lucide="truck" style="width: 13px; height: 13px;"></i> Livraison
                           </span>
                         <?php endif; ?>
                       </td>
