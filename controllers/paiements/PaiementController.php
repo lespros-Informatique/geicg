@@ -2,8 +2,6 @@
 
 class PaiementController extends BaseController
 {
-    use PressingAware;
-
     protected function resolveModel()
     {
         return new ModelPaiement();
@@ -18,39 +16,16 @@ class PaiementController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $pressingCode = $this->getCurrentPressingCode();
-
-        $sql = "SELECT p.* FROM " . TABLES::PAIEMENTS . " p
-                INNER JOIN " . TABLES::COMMANDES . " c ON c.code_commande = p.commande_code";
-        $params = [];
-
-        if ($pressingCode !== null) {
-            $sql .= " WHERE c.pressing_code = ?";
-            $params[] = $pressingCode;
-        }
-
-        $sql .= " ORDER BY p.created_at_paiement DESC";
-
-        $stmt = $this->model->getCon()->prepare($sql);
-        $stmt->execute($params);
-        $paiements = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+        $items = $this->model->getAll();
         $data = [];
-
-        foreach ($paiements as $p) {
-            $idCrypte = $this->validator->crypter($p['id_paiement']);
-            $data[] = [
-                'code' => $p['code_paiement'],
-                'commande_code' => $p['commande_code'],
-                'montant' => $p['montant_paiement'],
-                'mode' => $p['mode_paiement'],
-                'statut' => $p['statut_paiement'],
-                'created_at' => $p['created_at_paiement'] ?? '',
-                'id' => $p['id_paiement'],
+        foreach ($items as $i) {
+            $id = $i['id_paiement'];
+            $idCrypte = $this->validator->crypter($id);
+            $data[] = array_merge($i, [
+                'id' => $id,
                 'editId' => $idCrypte
-            ];
+            ]);
         }
-
         $this->json(['data' => $data]);
     }
 
@@ -58,36 +33,25 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields([
-            'commande_code' => $_POST['commande_code'] ?? '',
-            'montant_paiement' => $_POST['montant_paiement'] ?? ''
-        ]);
-
-        if ($notEmpty === true) {
-            $code = $this->post('code') ?: $this->validator->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'PAY-', 6);
-            $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-            $mode = in_array($this->post('mode_paiement'), ['especes', 'orange_money', 'mtn_money', 'wave']) ? $this->post('mode_paiement') : 'especes';
-            $datePaiement = $this->post('date_paiement');
-            $createdAt = $datePaiement
-                ? date('Y-m-d H:i:s', strtotime($datePaiement . ' ' . date('H:i:s')))
-                : date('Y-m-d H:i:s');
-            $data = [
-                'code_paiement' => $code,
-                'commande_code' => $this->post('commande_code'),
-                'montant_paiement' => $this->post('montant_paiement'),
-                'mode_paiement' => $mode,
-                'user_code' => $userCode,
-                'statut_paiement' => 'valide',
-                'created_at_paiement' => $createdAt
-            ];
-
-            if ($this->model->create($data)) {
-                $this->success('Paiement ajouté!');
-            } else {
-                $this->error('Erreur ajout');
-            }
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $etabCode = '5454544456';
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (empty($data['code_paiement'])) {
+            $data['code_paiement'] = $this->validator->generateCode('paiements', 'code_paiement', 'PAI-', 8);
+        }
+        $data['statut_paiement'] = $data['statut_paiement'] ?? 'actif';
+        $data['date_paiement'] = date('Y-m-d H:i:s');
+        $cols = $this->model->getCon()->query("DESCRIBE paiements")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
+        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
+        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $filteredData = array_intersect_key($data, array_flip($cols));
+        if ($this->model->create($filteredData)) {
+            $this->success('Item créé avec succès!');
         } else {
-            $this->error('Champs requis!');
+            $this->error('Erreur lors de la création');
         }
     }
 
@@ -95,35 +59,16 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields([
-            'commande_code' => $_POST['commande_code'] ?? '',
-            'montant_paiement' => $_POST['montant_paiement'] ?? '',
-            'id_paiement' => $_POST['id_paiement'] ?? ''
-        ]);
-
-        if ($notEmpty === true) {
-            $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-            $mode = in_array($this->post('mode_paiement'), ['especes', 'orange_money', 'mtn_money', 'wave']) ? $this->post('mode_paiement') : 'especes';
-            $statut = in_array($this->post('statut_paiement'), ['valide', 'annule', 'en_attente']) ? $this->post('statut_paiement') : 'valide';
-            $id = (int) $this->post('id_paiement');
-
-            $data = [
-                'id_paiement' => $id,
-                'commande_code' => $this->post('commande_code'),
-                'montant_paiement' => $this->post('montant_paiement'),
-                'mode_paiement' => $mode,
-                'user_code' => $userCode,
-                'statut_paiement' => $statut,
-                'updated_at_paiement' => date('Y-m-d H:i:s')
-            ];
-
-            if ($this->model->update($data, $id)) {
-                $this->success('Paiement modifié!');
-            } else {
-                $this->error('Erreur modification');
-            }
+        $id = (int)$this->post('id_paiement');
+        if (!$id) { $this->error('Identifiant invalide'); return; }
+        $data = $_POST;
+        unset($data['csrf_token']);
+        $cols = $this->model->getCon()->query("DESCRIBE paiements")->fetchAll(PDO::FETCH_COLUMN);
+        $filteredData = array_intersect_key($data, array_flip($cols));
+        if ($this->model->update($filteredData, $id)) {
+            $this->success('Item modifié avec succès!');
         } else {
-            $this->error('Champs requis!');
+            $this->error('Erreur lors de la modification');
         }
     }
 
@@ -132,14 +77,14 @@ class PaiementController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $id = $this->post('id');
-        if (isset($id) && $this->model->getById($id)) {
+        if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
-                $this->success('Statut modifié avec succès!', ['id' => $id, 'reload' => true]);
+                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
-                $this->error('Erreur');
+                $this->error('Erreur lors de la mise à jour du statut');
             }
         } else {
-            $this->error('Paiement introuvable!');
+            $this->error('Item introuvable');
         }
     }
 
@@ -147,37 +92,33 @@ class PaiementController extends BaseController
     {
         $this->requireAuth();
         try {
-            $paiementId = $this->validator->decrypter($details);
-            $paiementProfile = $this->model->getById($paiementId);
-            if (!$paiementProfile) {
-                header('Location: ' . RACINE . 'paiement/list');
-                exit();
-            }
-            $encryptedId = $this->validator->crypter($paiementId);
+            $id = $this->validator->decrypter($details);
+            $item = $this->model->getById($id);
+            if (!$item) { header('Location: ' . RACINE . 'paiement/list'); exit(); }
+            $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'paiement/list');
-            exit();
+            header('Location: ' . RACINE . 'paiement/list'); exit();
         }
-
-        $this->loadView('../views/paiements/details.php', ['paiement' => $paiementProfile, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/paiements/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
 
     public function edition($details)
     {
         $this->requireAuth();
         try {
-            $decryptedId = $this->validator->decrypter($details);
-            $paiement = $this->model->getById($decryptedId);
-
-            if (!$paiement) {
-                header('Location: ' . RACINE . 'paiement/list');
-                exit();
-            }
+            $id = $this->validator->decrypter($details);
+            $item = $this->model->getById($id);
+            if (!$item) { header('Location: ' . RACINE . 'paiement/list'); exit(); }
+            $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'paiement/list');
-            exit();
+            header('Location: ' . RACINE . 'paiement/list'); exit();
         }
+        $this->loadView('../views/paiements/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+    }
 
-        $this->loadView('../views/paiements/edit.php', ['paiement' => $paiement]);
+    public function formulaire()
+    {
+        $this->requireAuth();
+        $this->loadView('../views/paiements/edit.php', ['item' => []]);
     }
 }

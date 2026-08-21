@@ -1,4 +1,4 @@
-const LINK = window.location.origin + '/admin-lavex/';
+const LINK = window.location.origin + '/geicg/';
 
 $.ajaxSetup({
     xhrFields: {
@@ -721,11 +721,11 @@ if (modalSave) {
     });
 
     function updateBottomNavActive() {
-        const path = window.location.pathname.replace(/^\/admin-lavex\/?/, '/');
+        const path = window.location.pathname.replace(/^\/geicg\/?/, '/');
         document.querySelectorAll('.bottom-nav-item').forEach(function(item) {
             item.classList.remove('active');
             const href = item.getAttribute('href') || '';
-            const cleanHref = href.replace(/^\/admin-lavex\/?/, '/');
+            const cleanHref = href.replace(/^\/geicg\/?/, '/');
             if (path === cleanHref || path.startsWith(cleanHref + '/')) {
                 item.classList.add('active');
             }

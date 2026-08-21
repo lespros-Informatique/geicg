@@ -286,7 +286,7 @@ abstract class BaseController
     {
         $this->requireAuth();
         if (!$this->isSuperAdmin()) {
-            $msg = !empty($customMessage) ? $customMessage : "Accès réservé exclusivement au Super Administrateur Lavex.";
+            $msg = !empty($customMessage) ? $customMessage : "Accès réservé exclusivement au Super Administrateur GEICG.";
             if ($_SERVER['REQUEST_METHOD'] === 'POST' || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
                 $this->json(['status' => 0, 'message' => $msg], 403);
             } else {

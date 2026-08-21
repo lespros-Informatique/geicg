@@ -1,94 +1,33 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$service = isset($service) ? $service : [];
-?>
+$item = $item ?? [];
 
+?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
-
-    <div class="content-wrapper">
-      <div class="page-header">
-        <div>
-          <h1><?= isset($service['id_service']) ? 'Modifier le service' : 'Ajouter un service' ?></h1>
-          <p class="page-subtitle">Gestion des services</p>
-        </div>
-        <a href="<?= RACINE ?>service/list" class="btn btn-sm btn-outline-secondary">
-          <i data-lucide="arrow-left"></i>
-          Retour à la liste
-        </a>
+    <div class="content-wrapper" style="padding: 24px;">
+      <div class="page-header" style="margin-bottom: 24px;">
+        <h1 style="font-size: 20px; font-weight: 800; color: #0F172A;"><?= !empty($item['id_service']) ? 'Modifier Service RH' : 'Créer un Service RH' ?></h1>
       </div>
-
-      <div class="form-card">
-        <div class="card-header">
-          <div>
-            <h2>Informations du service</h2>
-          </div>
-          <?php if (isset($service['statut_service'])): ?>
-            <span class="badge-status <?= $service['statut_service'] == 'actif' ? 'delivered' : 'cancelled' ?>">
-              <?= $service['statut_service'] == 'actif' ? 'Actif' : 'Inactif' ?>
-            </span>
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; max-width: 650px;">
+        <form id="form-services" action="<?= RACINE ?>service/<?= !empty($item['id_service']) ? 'edit' : 'add' ?>" method="POST">
+          <?= Validator::csrfField() ?>
+          <?php if(!empty($item['id_service'])): ?>
+            <input type="hidden" name="id_service" value="<?= $item['id_service'] ?>">
           <?php endif; ?>
-        </div>
-
-        <div class="card-body">
-          <form class="formEditService">
-            <?= Validator::csrfField() ?>
-            <input type="hidden" id="id_service" name="id_service" value="<?= htmlspecialchars($service['id_service'] ?? '') ?>">
-
-             <div class="form-grid">
-               <div class="form-field">
-                 <label for="libelle_service">Libellé du service</label>
-                 <div class="input-with-icon">
-                   <span class="input-icon"><?= Validator::icon('file-text'); ?></span>
-                   <input type="text" class="form-control" id="libelle_service" name="libelle_service"
-                          placeholder="ex: Lavage, Repassage, Nettoyage à sec..."
-                          value="<?= htmlspecialchars($service['libelle_service'] ?? '') ?>" required>
-                 </div>
-                 <div class="error-message" id="libelleError"></div>
-               </div>
-
-               <div class="form-field">
-                 <label for="description_service">Description</label>
-                 <textarea class="form-control" id="description_service" name="description_service" placeholder="Description détaillée du service offert..."><?= htmlspecialchars($service['description_service'] ?? '') ?></textarea>
-                 <div class="error-message" id="descriptionError"></div>
-               </div>
-
-               <?php if (isset($service['statut_service'])): ?>
-               <div class="form-field">
-                 <label for="actif">Statut</label>
-                 <div class="input-with-icon">
-                   <span class="input-icon"><?= Validator::icon('toggle-left'); ?></span>
-                   <select class="form-control" id="actif" name="actif">
-                     <option value="1" <?= ($service['statut_service'] ?? '') == 'actif' ? 'selected' : '' ?>>Actif</option>
-                     <option value="0" <?= ($service['statut_service'] ?? '') == 'inactif' ? 'selected' : '' ?>>Inactif</option>
-                   </select>
-                 </div>
-                 <div class="error-message" id="actifError"></div>
-               </div>
-               <?php endif; ?>
-             </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary btn_actions btnEditService">
-                <span class="btn-text">
-                  <i data-lucide="save"></i>
-                  Sauvegarder
-                </span>
-              </button>
-              <a href="<?= RACINE ?>service/list" class="btn btn-secondary">
-                <i data-lucide="x"></i>
-                Annuler
-              </a>
-            </div>
-          </form>
-        </div>
+          <div class="form-field" style="margin-bottom: 16px;">
+            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom du service</label>
+            <input type="text" class="form-control" name="libelle_service" value="<?= htmlspecialchars($item['libelle_service'] ?? '') ?>" required>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 24px;">
+            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700;">Enregistrer</button>
+            <a href="<?= RACINE ?>service/list" class="btn btn-secondary" style="font-weight: 600;">Annuler</a>
+          </div>
+        </form>
       </div>
-
     </div>
   </main>
 </div>
-
-<script src="<?= RACINE ?>json/entities/services.js?v=4"></script>
-<?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

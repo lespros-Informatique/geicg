@@ -1,147 +1,190 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$isPressing = isset($isPressing) ? $isPressing : false;
-$isSuperAdmin = isset($isSuperAdmin) ? $isSuperAdmin : false;
-$isLivreur = isset($isLivreur) ? $isLivreur : false;
+$stats = $stats ?? [];
+$recentInscriptions = $recentInscriptions ?? [];
+$recentPaiements = $recentPaiements ?? [];
 ?>
-
-<style>
-/* === MOBILE PWA OPTIMIZATIONS FOR PRESSING MANAGERS === */
-@media (max-width: 768px) {
-  .content-wrapper {
-    padding: 12px 10px 80px 10px !important;
-  }
-  .page-header {
-    margin-bottom: 16px !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-  }
-  .page-header-actions {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    width: 100% !important;
-  }
-  .page-header-actions .btn {
-    width: 100% !important;
-    justify-content: center !important;
-    height: 46px !important;
-    font-size: 14px !important;
-  }
-  .kpi-grid-responsive {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-    margin-bottom: 18px !important;
-  }
-  .kpi-card-item {
-    padding: 12px 10px !important;
-  }
-  .kpi-card-val {
-    font-size: 18px !important;
-  }
-  .wallet-mobile-banner {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    padding: 16px !important;
-  }
-  .wallet-mobile-banner .btn {
-    width: 100% !important;
-    justify-content: center !important;
-    height: 46px !important;
-  }
-}
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
 
-    <div class="content-wrapper">
+    <div class="content-wrapper" style="padding: 24px;">
       <!-- HEADER DU DASHBOARD -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="layout-dashboard" style="color: #2563EB;"></i> 
-            <span id="dash-title">
-              <?= $isSuperAdmin ? 'Supervision Réseau' : ($isLivreur ? 'Espace Livreur' : 'Tableau de bord Atelier') ?>
-            </span>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="layout-dashboard" style="color: #1E3A5F;"></i> 
+            <span>Tableau de Bord - GEICG</span>
           </h1>
-          <p id="dash-subtitle" class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0; font-size: 14px;">
-            <?= $isSuperAdmin ? 'Vue globale du réseau de pressings, abonnements B2B et métriques financières' : ($isLivreur ? 'Gestion des tournées, collectes et livraisons de colis' : 'Aperçu en temps réel de votre activité et suivi des commandes') ?>
+          <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0; font-size: 13px;">
+            Aperçu général de l'établissement - Année Académique <strong><?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '2025-2026') ?></strong>
           </p>
         </div>
 
         <div class="page-header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <?php if ($isSuperAdmin): ?>
-            <a href="<?= RACINE ?>pressing/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-              <i class="fa fa-store"></i> Pressings
-            </a>
-            <a href="<?= RACINE ?>abonnement/list" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-              <i class="fa fa-credit-card"></i> Gérer Abonnements
-            </a>
-          <?php elseif ($isLivreur): ?>
-            <a href="<?= RACINE ?>mission/list" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-              <i class="fa fa-route"></i> Mes Tournées
-            </a>
-          <?php else: ?>
-            <a href="<?= RACINE ?>retrait/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 10px 18px; border-radius: 10px; background: #ECFDF5; color: #059669; border: 1.5px solid #A7F3D0;">
-              <i data-lucide="wallet" style="width: 18px; height: 18px;"></i> Mon Portefeuille & Retraits
-            </a>
-            <a href="<?= RACINE ?>commande/list" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 10px 18px; border-radius: 10px;">
-              <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle commande
-            </a>
-          <?php endif; ?>
+          <a href="<?= RACINE ?>inscription/list" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
+            <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> Inscriptions
+          </a>
+          <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #059669; border-color: #059669; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
+            <i data-lucide="credit-card" style="width: 16px; height: 16px;"></i> Caisse & Encaissements
+          </a>
         </div>
       </div>
 
-      <!-- BANDEAU PORTEFEUILLE & RETRAITS MOBILE MONEY POUR LE PRESSING -->
-      <?php if (!empty($isPressing)): ?>
-        <div class="wallet-mobile-banner" style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; color: #FFFFFF; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
-              <i data-lucide="wallet"></i>
-            </div>
-            <div>
-              <span style="font-size: 12px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Portefeuille & Solde En Ligne (GeniusPay)</span>
-              <div style="display: flex; align-items: baseline; gap: 10px;">
-                <h2 id="dash-wallet-balance" style="font-size: 26px; font-weight: 900; color: #10B981; margin: 2px 0 0 0;">0 FCFA</h2>
-                <small style="color: #94A3B8; font-size: 12px;">Disponible au retrait</small>
-              </div>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #CBD5E1;">Vos encaissements en ligne sont automatiquement crédités ici. Demandez un reversement à tout moment.</p>
+      <!-- KPI GRID -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <!-- KPI 1 : Inscriptions -->
+        <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Effectif Étudiants</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="users" style="width: 20px; height: 20px;"></i>
             </div>
           </div>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <a href="<?= RACINE ?>retrait/list" class="btn btn-primary" style="background: #10B981; border-color: #10B981; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px;">
-              <i data-lucide="arrow-up-right" style="width: 18px; height: 18px;"></i> Demander un Retrait
-            </a>
+          <div style="font-size: 26px; font-weight: 800; color: #0F172A; line-height: 1;">
+            <?= number_format($stats['total_etudiants'] ?? 0, 0, ',', ' ') ?>
           </div>
-        </div>
-      <?php endif; ?>
-
-      <!-- CARTES KPI PRINCIPALES -->
-      <div class="kpi-grid-responsive" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 24px;">
-        <!-- KPI 1 : CA TOTAL -->
-        <div class="kpi-card-item" style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Chiffre d'Affaires</span>
-            <h2 id="kpi-ca" class="kpi-card-val" style="font-size: 24px; font-weight: 800; color: #059669; margin: 4px 0 2px 0;">0 FCFA</h2>
-            <small style="color: #94A3B8; font-size: 11px;">Total généré</small>
-          </div>
-          <div style="width: 52px; height: 52px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
-            <i data-lucide="banknote"></i>
+          <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
+            Inscriptions validées cette année
           </div>
         </div>
 
-        <!-- KPI 2 : COMMANDES TOTALES -->
-        <div class="kpi-card-item" style="background: #FFFFFF; border-radius: 14px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Commandes</span>
-            <h2 id="kpi-commandes" class="kpi-card-val" style="font-size: 24px; font-weight: 800; color: #1E293B; margin: 4px 0 2px 0;">0</h2>
-            <small style="color: #94A3B8; font-size: 11px;">Toutes commandes confondues</small>
+        <!-- KPI 2 : Recouvrement -->
+        <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Caisse Encaissees</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="wallet" style="width: 20px; height: 20px;"></i>
+            </div>
           </div>
-          <div style="width: 52px; height: 52px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
-            <i data-lucide="clipboard-list"></i>
+          <div style="font-size: 24px; font-weight: 800; color: #047857; line-height: 1;">
+            <?= number_format($stats['ca_encaisse'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 14px; font-weight: 600;">FCFA</span>
+          </div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
+            Total des règlements confirmés
+          </div>
+        </div>
+
+        <!-- KPI 3 : Impayés / Reliquat -->
+        <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Reliquat Scolarite</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEF2F2; color: #B91C1C; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+            </div>
+          </div>
+          <div style="font-size: 24px; font-weight: 800; color: #B91C1C; line-height: 1;">
+            <?= number_format($stats['reliquat_impayes'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 14px; font-weight: 600;">FCFA</span>
+          </div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
+            Reste à recouvrer sur la scolarité
+          </div>
+        </div>
+
+        <!-- KPI 4 : Enseignants & Cours -->
+        <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Classes & Professeurs</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i>
+            </div>
+          </div>
+          <div style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1;">
+            <?= (int)($stats['total_classes'] ?? 0) ?> <span style="font-size: 13px; font-weight: 600; color: #64748B;">Classes</span> / <?= (int)($stats['total_enseignants'] ?? 0) ?> <span style="font-size: 13px; font-weight: 600; color: #64748B;">Enseignants</span>
+          </div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
+            <?= (int)($stats['total_matieres'] ?? 0) ?> Matières au programme
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLES RECENTES -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 24px;">
+        <!-- Dernières Inscriptions -->
+        <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
+            <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="user-plus" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Inscriptions Récentes
+            </h3>
+            <a href="<?= RACINE ?>inscription/list" style="font-size: 12px; font-weight: 600; color: #1E3A5F; text-decoration: none;">Voir tout</a>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B; border-bottom: 1px solid #E2E8F0;">
+                  <th style="padding: 10px 12px;">Matricule</th>
+                  <th style="padding: 10px 12px;">Nom & Prénoms</th>
+                  <th style="padding: 10px 12px;">Classe</th>
+                  <th style="padding: 10px 12px; text-align: right;">Scolarité</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($recentInscriptions)): ?>
+                  <tr>
+                    <td colspan="4" style="padding: 16px; text-align: center; color: #94A3B8;">Aucune inscription récente</td>
+                  </tr>
+                <?php else: ?>
+                  <?php foreach ($recentInscriptions as $insc): ?>
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                      <td style="padding: 10px 12px; font-weight: 700; color: #1E3A5F;"><?= htmlspecialchars($insc['matricule_etudiant'] ?? '') ?></td>
+                      <td style="padding: 10px 12px; font-weight: 600; color: #0F172A;"><?= htmlspecialchars(($insc['nom_etudiant'] ?? '') . ' ' . ($insc['prenom_etudiant'] ?? '')) ?></td>
+                      <td style="padding: 10px 12px; color: #475569;"><?= htmlspecialchars($insc['libelle_classe'] ?? 'Non assigné') ?></td>
+                      <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #0F172A;"><?= number_format((float)($insc['montant_scolarite_inscription'] ?? 0), 0, ',', ' ') ?> FCFA</td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Derniers Paiements de Caisse -->
+        <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
+            <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="credit-card" style="width: 18px; height: 18px; color: #059669;"></i> Derniers Règlements Caisse
+            </h3>
+            <a href="<?= RACINE ?>paiement/list" style="font-size: 12px; font-weight: 600; color: #059669; text-decoration: none;">Voir tout</a>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B; border-bottom: 1px solid #E2E8F0;">
+                  <th style="padding: 10px 12px;">Réf. Reçu</th>
+                  <th style="padding: 10px 12px;">Étudiant</th>
+                  <th style="padding: 10px 12px;">Mode</th>
+                  <th style="padding: 10px 12px; text-align: right;">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($recentPaiements)): ?>
+                  <tr>
+                    <td colspan="4" style="padding: 16px; text-align: center; color: #94A3B8;">Aucun paiement récent</td>
+                  </tr>
+                <?php else: ?>
+                  <?php foreach ($recentPaiements as $p): ?>
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                      <td style="padding: 10px 12px; font-weight: 700; color: #059669;"><?= htmlspecialchars($p['code_paiement'] ?? '') ?></td>
+                      <td style="padding: 10px 12px; font-weight: 600; color: #0F172A;"><?= htmlspecialchars(($p['nom_etudiant'] ?? '') . ' ' . ($p['prenom_etudiant'] ?? '')) ?></td>
+                      <td style="padding: 10px 12px; color: #475569; text-transform: uppercase; font-size: 11px;"><span class="badge" style="background: #E0F2FE; color: #0369A1; padding: 4px 8px; border-radius: 6px; font-weight: 700;"><?= htmlspecialchars($p['mode_paiement'] ?? 'Caisse') ?></span></td>
+                      <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #047857;"><?= number_format((float)($p['montant_paiement'] ?? 0), 0, ',', ' ') ?> FCFA</td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
           </div>
         </div>
 

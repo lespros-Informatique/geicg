@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#1E3A5F">
-    <title>LAVEX Admin - Dashboard</title>
+    <title><?= htmlspecialchars(TITLE) ?></title>
     <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
@@ -126,71 +126,7 @@
         $unreadNotifsCount = 0;
     }
 
-    $targetOneSignalCode = !empty($currentPressingCode) ? $currentPressingCode : (!empty($currentLivreurCode) ? $currentLivreurCode : ($currentUserCode ?? ''));
     ?>
-    <script>
-      window.hasAdminUserCode = <?= !empty($targetOneSignalCode) ? 'true' : 'false' ?>;
-      window.adminUserCode = "<?= $targetOneSignalCode ?>";
-      window.ONESIGNAL_APP_ID = "<?= defined('ONESIGNAL_APP_ID') ? ONESIGNAL_APP_ID : '' ?>";
-      console.log('[OneSignal Admin Debug] Variables initiales:', {
-        appId: window.ONESIGNAL_APP_ID,
-        hasAdminUserCode: window.hasAdminUserCode,
-        adminUserCode: window.adminUserCode,
-        browserPermission: (typeof Notification !== 'undefined' ? Notification.permission : 'non supporte')
-      });
-    </script>
-    <!-- OneSignal Web Push SDK -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        console.log('[OneSignal Admin Debug] Execution de OneSignalDeferred...');
-        try {
-          const appId = window.ONESIGNAL_APP_ID;
-          if (!appId) {
-            console.warn('[OneSignal Admin Debug] ONESIGNAL_APP_ID est vide !');
-            return;
-          }
-          console.log('[OneSignal Admin Debug] Appel de OneSignal.init()...');
-          await OneSignal.init({
-            appId: appId,
-            notifyButton: { enable: false },
-            allowLocalhostAsSecureOrigin: true,
-            serviceWorkerParam: { scope: '/' },
-            serviceWorkerPath: 'OneSignalSDKWorker.js'
-          });
-          console.log('[OneSignal Admin Debug] OneSignal.init() reussi !');
-
-          if (window.hasAdminUserCode && window.adminUserCode) {
-            console.log('[OneSignal Admin Debug] Connexion de l\'utilisateur OneSignal:', window.adminUserCode);
-            if (typeof OneSignal.login === 'function') {
-              await OneSignal.login(window.adminUserCode);
-              console.log('[OneSignal Admin Debug] OneSignal.login() reussi.');
-            }
-
-            const currentPermission = typeof Notification !== 'undefined' ? Notification.permission : 'unknown';
-            console.log('[OneSignal Admin Debug] Permission actuelle du navigateur:', currentPermission);
-
-            if (currentPermission === 'default') {
-              console.log('[OneSignal Admin Debug] Demande d\'autorisation Push en cours...');
-              if (typeof OneSignal.Notifications !== 'undefined' && typeof OneSignal.Notifications.requestPermission === 'function') {
-                await OneSignal.Notifications.requestPermission();
-                console.log('[OneSignal Admin Debug] requestPermission() invoque.');
-              } else if (typeof OneSignal.Slidedown !== 'undefined' && typeof OneSignal.Slidedown.promptPush === 'function') {
-                await OneSignal.Slidedown.promptPush();
-                console.log('[OneSignal Admin Debug] promptPush() invoque.');
-              }
-            } else {
-              console.log('[OneSignal Admin Debug] Statut de permission du navigateur:', currentPermission);
-            }
-          } else {
-            console.warn('[OneSignal Admin Debug] Aucun code utilisateur trouve (hasAdminUserCode=false).');
-          }
-        } catch (e) {
-          console.error('[OneSignal Admin Debug] Erreur pendant l\'initialisation:', e);
-        }
-      });
-    </script>
 </head>
 <body>
     <input type="hidden" id="csrf_token" value="<?= Validator::generateCsrfToken() ?>">

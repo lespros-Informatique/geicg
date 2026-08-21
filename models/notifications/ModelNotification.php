@@ -2,10 +2,8 @@
 
 class ModelNotification extends BaseModel
 {
-    protected string $table = 'notifications';
-    protected string $primaryKey = 'id_notification';
-    protected ?string $statusField = 'statut_notification';
-    protected ?string $createdAtField = 'created_at_notification';
+    protected string $table = 'messages';
+    protected string $primaryKey = 'id_message';
 
     /**
      * Récupère les notifications filtrées selon le rôle (Livreur, Pressing ou Super Admin)
@@ -13,66 +11,11 @@ class ModelNotification extends BaseModel
     public function getAllWithClient(?string $pressingCode = null, ?string $livreurCode = null, int $limit = 500): array
     {
         try {
-            if ($livreurCode !== null && $livreurCode !== '') {
-                $sql = "
-                    SELECT 
-                        n.*,
-                        c.nom_client,
-                        c.telephone_client,
-                        c.email_client
-                    FROM {$this->table} n
-                    LEFT JOIN " . TABLES::CLIENTS . " c ON n.client_code = c.code_client
-                    WHERE n.livreur_code = :livreurCode
-                    ORDER BY n.id_notification DESC
-                    LIMIT :limit
-                ";
-                $stmt = $this->getCon()->prepare($sql);
-                $stmt->bindValue(':livreurCode', $livreurCode);
-                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-                $stmt->execute();
-                return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            }
-
-            if ($pressingCode !== null && $pressingCode !== '') {
-                $sql = "
-                    SELECT 
-                        n.*,
-                        c.nom_client,
-                        c.telephone_client,
-                        c.email_client
-                    FROM {$this->table} n
-                    LEFT JOIN " . TABLES::CLIENTS . " c ON n.client_code = c.code_client
-                    WHERE n.reference_code IN (SELECT code_commande FROM commandes WHERE pressing_code = :pressingCode)
-                       OR n.client_code IN (SELECT code_client FROM clients WHERE pressing_code = :pressingCode2)
-                    ORDER BY n.id_notification DESC
-                    LIMIT :limit
-                ";
-                $stmt = $this->getCon()->prepare($sql);
-                $stmt->bindValue(':pressingCode', $pressingCode);
-                $stmt->bindValue(':pressingCode2', $pressingCode);
-                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-                $stmt->execute();
-                return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            }
-
-            $sql = "
-                SELECT 
-                    n.*,
-                    c.nom_client,
-                    c.telephone_client,
-                    c.email_client
-                FROM {$this->table} n
-                LEFT JOIN " . TABLES::CLIENTS . " c ON n.client_code = c.code_client
-                ORDER BY n.id_notification DESC
-                LIMIT :limit
-            ";
-
-            $stmt = $this->getCon()->prepare($sql);
+            $stmt = $this->getCon()->prepare("SELECT * FROM messages ORDER BY id_message DESC LIMIT :limit");
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
-            error_log('[ModelNotification::getAllWithClient] ' . $e->getMessage());
             return [];
         }
     }
@@ -83,66 +26,23 @@ class ModelNotification extends BaseModel
     public function getStats(?string $pressingCode = null, ?string $livreurCode = null): array
     {
         try {
-            $stats = [
+            $stmt = $this->getCon()->query("SELECT COUNT(*) as total FROM messages WHERE statut_message = 'en_attente'");
+            $count = (int)($stmt ? $stmt->fetchColumn() : 0);
+            return [
+                'total' => $count,
+                'non_lues' => $count,
+                'lues' => 0,
+                'commandes' => 0,
+                'alertes' => 0
+            ];
+        } catch (Exception $e) {
+            return [
                 'total' => 0,
                 'non_lues' => 0,
                 'lues' => 0,
                 'commandes' => 0,
                 'alertes' => 0
             ];
-
-            if ($livreurCode !== null && $livreurCode !== '') {
-                $stmt = $this->getCon()->prepare("
-                    SELECT 
-                        COUNT(*) as total,
-                        COALESCE(SUM(CASE WHEN lu_notification = 0 THEN 1 ELSE 0 END), 0) as non_lues,
-                        COALESCE(SUM(CASE WHEN lu_notification = 1 THEN 1 ELSE 0 END), 0) as lues,
-                        COALESCE(SUM(CASE WHEN type_notification LIKE 'commande%' OR type_notification LIKE 'mission%' THEN 1 ELSE 0 END), 0) as commandes,
-                        COALESCE(SUM(CASE WHEN type_notification NOT LIKE 'commande%' AND type_notification NOT LIKE 'mission%' THEN 1 ELSE 0 END), 0) as alertes
-                    FROM {$this->table} n
-                    WHERE n.livreur_code = :livreurCode
-                ");
-                $stmt->execute([':livreurCode' => $livreurCode]);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            } elseif ($pressingCode !== null && $pressingCode !== '') {
-                $stmt = $this->getCon()->prepare("
-                    SELECT 
-                        COUNT(*) as total,
-                        COALESCE(SUM(CASE WHEN lu_notification = 0 THEN 1 ELSE 0 END), 0) as non_lues,
-                        COALESCE(SUM(CASE WHEN lu_notification = 1 THEN 1 ELSE 0 END), 0) as lues,
-                        COALESCE(SUM(CASE WHEN type_notification LIKE 'commande%' THEN 1 ELSE 0 END), 0) as commandes,
-                        COALESCE(SUM(CASE WHEN type_notification NOT LIKE 'commande%' THEN 1 ELSE 0 END), 0) as alertes
-                    FROM {$this->table} n
-                    WHERE n.reference_code IN (SELECT code_commande FROM commandes WHERE pressing_code = :pressingCode)
-                       OR n.client_code IN (SELECT code_client FROM clients WHERE pressing_code = :pressingCode2)
-                ");
-                $stmt->execute([':pressingCode' => $pressingCode, ':pressingCode2' => $pressingCode]);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            } else {
-                $stmt = $this->getCon()->query("
-                    SELECT 
-                        COUNT(*) as total,
-                        COALESCE(SUM(CASE WHEN lu_notification = 0 THEN 1 ELSE 0 END), 0) as non_lues,
-                        COALESCE(SUM(CASE WHEN lu_notification = 1 THEN 1 ELSE 0 END), 0) as lues,
-                        COALESCE(SUM(CASE WHEN type_notification LIKE 'commande%' THEN 1 ELSE 0 END), 0) as commandes,
-                        COALESCE(SUM(CASE WHEN type_notification NOT LIKE 'commande%' THEN 1 ELSE 0 END), 0) as alertes
-                    FROM {$this->table}
-                ");
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            }
-
-            if ($row) {
-                $stats['total'] = (int)($row['total'] ?? 0);
-                $stats['non_lues'] = (int)($row['non_lues'] ?? 0);
-                $stats['lues'] = (int)($row['lues'] ?? 0);
-                $stats['commandes'] = (int)($row['commandes'] ?? 0);
-                $stats['alertes'] = (int)($row['alertes'] ?? 0);
-            }
-
-            return $stats;
-        } catch (Exception $e) {
-            error_log('[ModelNotification::getStats] ' . $e->getMessage());
-            return ['total' => 0, 'non_lues' => 0, 'lues' => 0, 'commandes' => 0, 'alertes' => 0];
         }
     }
 

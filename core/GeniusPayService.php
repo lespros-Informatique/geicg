@@ -18,20 +18,20 @@ class GeniusPayService
         $orderCode = $data['order_code'] ?? ('CMD-' . strtoupper(uniqid()));
         $amount = (float)($data['amount'] ?? 0);
         $provider = strtolower($data['provider'] ?? 'wave');
-        $customerName = trim($data['customer_name'] ?? 'Client LAVEX');
-        $customerPhone = trim($data['customer_phone'] ?? '+2250748123456');
-        $customerEmail = trim($data['customer_email'] ?? 'client@lavex.ci');
-        $callbackUrl = $data['callback_url'] ?? (defined('RACINE') ? RACINE : 'http://localhost/lavex/');
-        $webhookUrl = $data['webhook_url'] ?? ($config['webhook_url'] ?? 'https://shawn-viscid-malcontentedly.ngrok-free.dev/admin-lavex/webhooks/geniuspay');
+        $customerName = trim($data['customer_name'] ?? 'Élève / Étudiant GEICG');
+        $customerPhone = trim($data['customer_phone'] ?? '+2250102030405');
+        $customerEmail = trim($data['customer_email'] ?? 'contact@geicg.ci');
+        $callbackUrl = $data['callback_url'] ?? (defined('RACINE') ? RACINE : 'http://localhost/geicg/');
+        $webhookUrl = $data['webhook_url'] ?? ($config['webhook_url'] ?? 'http://localhost/geicg/webhooks/geniuspay');
 
         $payload = [
             'amount' => (int)$amount,
             'currency' => 'XOF',
-            'description' => "Commande Pressing #{$orderCode}",
+            'description' => "Paiement Scolarité #{$orderCode}",
             'customer' => [
-                'name' => $customerName ?: 'Client LAVEX',
-                'phone' => $customerPhone ?: '+2250748123456',
-                'email' => $customerEmail ?: 'client@lavex.ci'
+                'name' => $customerName ?: 'Élève GEICG',
+                'phone' => $customerPhone ?: '+2250102030405',
+                'email' => $customerEmail ?: 'contact@geicg.ci'
             ],
             'callback_url' => $callbackUrl,
             'webhook_url' => $webhookUrl,
@@ -218,7 +218,7 @@ class GeniusPayService
                     'title' => 'MTN Mobile Money CI',
                     'steps' => [
                         'Composez le *133# sur votre mobile MTN.',
-                        'Autorisez le débit de ' . $amtStr . ' pour le service LAVEX.'
+                        'Autorisez le débit de ' . $amtStr . ' pour le service GEICG.'
                     ]
                 ];
             case 'moov_money':

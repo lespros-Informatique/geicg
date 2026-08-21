@@ -387,7 +387,7 @@ class UserController extends BaseController
                         'role_code' => $roleCode
                     ]);
 
-                    $this->success('Bienvenue sur Lavex Admin!');
+                    $this->success('Bienvenue sur GEICG Admin!');
                 } else {
                     $this->error('Ce compte utilisateur est inactif'.$user['nom_user']);
                 }

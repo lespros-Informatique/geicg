@@ -5,7 +5,7 @@ $httpHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $isLocalEnvironment = (strpos($httpHost, 'localhost') !== false || strpos($httpHost, '127.0.0.1') !== false);
 
 if (!defined('RACINE')) {
-    define('RACINE', $isLocalEnvironment ? 'http://localhost/admin-lavex/' : 'https://admin-lavex.kassanngroup.com/');
+    define('RACINE', $isLocalEnvironment ? 'http://localhost/geicg/' : 'https://geicg.kassanngroup.com/');
 }
 
 if (!defined('ONESIGNAL_APP_ID')) {
@@ -16,71 +16,67 @@ if (!defined('ONESIGNAL_REST_API_KEY')) {
 }
 
 
-define('LOGO', '<img src="' .RACINE. 'public/assets/images/logo/logo.png" class="img-circle" alt="Logo" width="80" style="border-radius: 70%; object-fit: covers;">');
+define('LOGO', '<span class="fw-bold fs-4 text-primary" style="letter-spacing: 1px;">GEICG</span>');
 
-define('ICON', '<img src="'.RACINE.'public/assets/images/logo/icon.png" alt="LOGO" style="position: relative; bottom:12px; border-radius: 70%; object-fit: covers;" width="50" height="50";>');
+define('ICON', '<span class="fw-bold fs-4 text-primary">G</span>');
 
-define('TITLE', 'LAVEX Admin');
+define('TITLE', 'GEICG - Administration Grande École');
 
 const USERS_AUTH = 'users_auth';
 
 class TABLES
 {
-    // PRESSING
-    public const PRESSINGS           = 'pressings';
+    // INSTITUTION & ACCÈS
+    public const ETABLISSEMENTS         = 'etablissements';
+    public const SERVICES               = 'services';
+    public const FONCTIONS              = 'fonctions';
+    public const USERS                  = 'users';
+    public const ROLES                  = 'roles';
+    public const PERMISSIONS            = 'permissions';
+    public const ROLE_PERMISSIONS       = 'role_permissions';
+    public const USER_PERMISSIONS       = 'user_permissions';
+    public const USER_ROLES             = 'user_roles';
 
-    // CATALOGUE
-    public const CATEGORIES_ARTICLES = 'categories_articles';
-    public const ARTICLES_PRESSINGS   = 'articles_pressings';
-    public const TARIFS_ARTICLES      = 'tarifs_articles';
-    public const SERVICES             = 'services';
+    // ACADÉMIQUE & LMD (STRUCTURE GLOBALE OU ANNUELLE)
+    public const ANNEES                 = 'annees';
+    public const CYCLES                 = 'cycles';
+    public const FILIERES               = 'filieres';
+    public const NIVEAUX                = 'niveaux';
+    public const CLASSES                = 'classes';
+    public const SEMESTRES              = 'semestres';
+    public const UNITES_ENSEIGNEMENT    = 'unites_enseignement';
+    public const MATIERES               = 'matieres';
+    public const SALLES                 = 'salles';
 
-    // CLIENTS
-    public const CLIENTS             = 'clients';
+    // SCOLAIRITÉ & ÉTUDIANTS
+    public const ETUDIANTS              = 'etudiants';
+    public const PARENTS                = 'parents';
+    public const INSCRIPTIONS           = 'inscriptions';
+    public const ACCESSOIRES            = 'accessoires';
+    public const ACCESSOIRE_INSCRIPTION = 'accessoire_inscription';
+    public const DOSSIER_ETUDIANT       = 'dossier_etudiant';
 
-    // UTILISATEURS
-    public const USERS               = 'users';
-    public const ROLES               = 'roles';
-    public const PERMISSIONS         = 'permissions';
-    public const ROLES_PERMISSIONS   = 'roles_permissions';
-    public const USERS_PRESSINGS     = 'users_pressings';
+    // FINANCE & CAISSE
+    public const SCOLARITES             = 'scolarites';
+    public const TRANCHES_SCOLARITE     = 'tranches_scolarite';
+    public const PAIEMENTS              = 'paiements';
+    public const CLOTURES_CAISSE        = 'clotures_caisse';
+    public const DEPENSES               = 'depenses';
+    public const TYPE_DEPENSES          = 'type_depenses';
 
-    // COMMANDES
-    public const COMMANDES           = 'commandes';
-    public const COMMANDE_DETAILS    = 'commande_details';
+    // PÉDAGOGIE & ÉVALUATIONS
+    public const ENSEIGNANTS            = 'enseignants';
+    public const ENSEIGNANT_MATIERE     = 'enseignant_matiere';
+    public const EMPLOIS_TEMPS          = 'emplois_temps';
+    public const NOTES                  = 'notes';
+    public const ABSENCES               = 'absences';
 
-    // PAIEMENTS
-    public const PAIEMENTS           = 'paiements';
-    public const PAIEMENTS_ABONNEMENTS = 'paiements_abonnements';
-
-    // ABONNEMENTS
-    public const ABONNEMENTS_PRESSINGS = 'abonnements_pressings';
-    public const FORFAITS              = 'forfaits';
-    public const FORFAITS_AVANTAGES     = 'forfaits_avantages';
-
-    // FAVORIS
-    public const FAVORIS             = 'favoris';
-
-    // PANIERS
-    public const PANIERS             = 'paniers';
-    public const PANIER_DETAILS      = 'panier_details';
-
-    // LIVRAISONS
-    public const LIVREURS            = 'livreurs';
-    public const MISSIONS            = 'missions';
-
-    // HORAIRES
-    public const HORAIRES_PRESSINGS  = 'horaires_pressings';
-
-    // NOTIFICATIONS
-    public const NOTIFICATIONS       = 'notifications';
-
-    // ZONES TERRITORIALES
-    public const VILLES              = 'villes';
-    public const QUARTIERS           = 'quartiers';
-
-    // COMMISSIONS
-    public const COMMISSIONS_PRESSINGS = 'commissions_pressings';
+    // COMMUNICATION & MÉDIAS
+    public const DOCUMENTS              = 'documents';
+    public const MESSAGES               = 'messages';
+    public const EVENEMENTS             = 'evenements';
+    public const GALERIES               = 'galeries';
+    public const GALERIE_MEDIAS         = 'galerie_medias';
 }
 
 class ROLES

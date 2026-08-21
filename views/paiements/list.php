@@ -1,168 +1,59 @@
-﻿<?php
-require_once __DIR__ . '/../../public/inc/header.php';
-$csrfToken = Validator::generateCsrfToken();
-?>
-
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
-
-    <div class="content-wrapper">
-      <div class="page-header">
-        <h1>Paiements</h1>
-        <button class="btn btn-primary" id="openPaiementModal">
-          <i class="fa fa-plus"></i> Nouveau paiement
-        </button>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <div class="table-responsive-mobile">
-            <table class="table" id="dataTable">
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Commande</th>
-                  <th>Montant</th>
-                  <th>Mode</th>
-                  <th>Statut</th>
-                  <th>Date</th>
-                  <th class="text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
+    <div class="content-wrapper" style="padding: 24px;">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Caisse & Encaissements Scolarité</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Caisse & Encaissements Scolarité</p>
         </div>
+        <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Règlement Caisse
+        </a>
+      </div>
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto;">
+        <table id="table-paiements" class="table display nowrap" style="width:100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
+              <th style="padding: 12px;">ID</th>
+              <th style="padding: 12px;">Réf. Reçu</th>
+              <th style="padding: 12px;">Réf. Inscription</th>
+              <th style="padding: 12px;">Montant (FCFA)</th>
+              <th style="padding: 12px;">Mode</th>
+              <th style="padding: 12px;">Statut</th>
+              <th style="padding: 12px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
   </main>
 </div>
-
-<div class="modal-overlay" id="paiementModal">
-  <div class="modal" style="max-width: 480px;">
-    <div class="modal-header">
-      <h3 class="modal-title">Enregistrer un paiement</h3>
-      <button class="modal-close" id="paiementModalClose"><i data-lucide="x"></i></button>
-    </div>
-    <div class="modal-body">
-      <form id="paiementForm">
-        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
-        <div class="form-group">
-          <label>Code commande</label>
-          <div class="input-wrapper">
-            <input type="text" name="commande_code" id="payCommandeCode" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Date</label>
-            <div class="input-wrapper">
-              <input type="text" name="date_paiement" id="payDate" readonly>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Montant (FCFA)</label>
-            <div class="input-wrapper">
-              <input type="number" name="montant_paiement" id="payMontant" required min="1" step="1">
-            </div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Mode de paiement</label>
-            <div class="input-wrapper">
-              <select name="mode_paiement" id="payMode">
-                <option value="especes">Espèce</option>
-                <option value="orange_money">Orange Money</option>
-                <option value="mtn_money">MTN Money</option>
-                <option value="wave">Wave</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Référence</label>
-            <div class="input-wrapper">
-              <input type="text" name="reference_paiement" id="payReference">
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Observation</label>
-          <div class="input-wrapper">
-            <textarea name="observation_paiement" id="payObservation" rows="2"></textarea>
-          </div>
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" id="paiementModalCancel">Annuler</button>
-      <button class="btn-primary" id="paiementModalSave">Enregistrer</button>
-    </div>
-  </div>
-</div>
-
-<?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
-
 <script>
-$(function() {
-    const modal = document.getElementById('paiementModal');
-    const openBtn = document.getElementById('openPaiementModal');
-    const closeBtn = document.getElementById('paiementModalClose');
-    const cancelBtn = document.getElementById('paiementModalCancel');
-    const saveBtn = document.getElementById('paiementModalSave');
-    const form = document.getElementById('paiementForm');
-
-    function setToday() {
-        var d = new Date();
-        var str = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-        document.getElementById('payDate').value = str;
-    }
-
-    function openModal() {
-        setToday();
-        form.reset();
-        modal.classList.add('active');
-    }
-
-    function closeModal() {
-        modal.classList.remove('active');
-    }
-
-    if (openBtn) openBtn.addEventListener('click', openModal);
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
-
-    if (saveBtn) {
-        saveBtn.addEventListener('click', function() {
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-            loading(saveBtn, true, '<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
-            $.ajax({
-                url: LINK + 'paiement/add',
-                type: 'POST',
-                data: form.serialize(),
-                dataType: 'json',
-                success: function(resp) {
-                    loading(saveBtn, false, 'Enregistrer');
-                    if (resp && resp.status) {
-                        showToast(resp.message || 'Paiement enregistré', 'success');
-                        closeModal();
-                        $('#dataTable').DataTable().ajax.reload(null, false);
-                    } else {
-                        showToast(resp ? resp.message : 'Erreur', 'error');
-                    }
-                },
-                error: function() {
-                    loading(saveBtn, false, 'Enregistrer');
-                    showToast('Erreur serveur', 'error');
-                }
-            });
-        });
-    }
+$(document).ready(function() {
+  $('#table-paiements').DataTable({
+    ajax: '<?= RACINE ?>paiement/apiList',
+    scrollX: true,
+    autoWidth: false,
+    columns: [
+      { data: 'id_paiement', defaultContent: '-' },
+      { data: 'code_paiement', defaultContent: '-' },
+      { data: 'inscription_code', defaultContent: '-' },
+      { data: 'montant_paiement', defaultContent: '-' },
+      { data: 'mode_paiement', defaultContent: '-' },
+      { data: 'statut_paiement', render: function(d) {
+        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
+      } },
+      { data: null, render: function(d) {
+        return '<a href="' + window.RACINE + 'paiement/edition/' + d.editId + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+               '<a href="' + window.RACINE + 'paiement/details/' + d.editId + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      }, className: 'text-end' }
+    ],
+    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
 });
 </script>
+<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

@@ -21,8 +21,12 @@ class NotificationController extends BaseController
         // Récupérer la liste des clients pour le formulaire d'envoi (si pas livreur)
         $clients = [];
         if (!$isLivreur) {
-            $clientModel = new ModelClient();
-            $clients = $clientModel->getAll();
+            try {
+                $etudiantModel = new ModelEtudiant();
+                $clients = $etudiantModel->getAll();
+            } catch (Exception $e) {
+                $clients = [];
+            }
         }
 
         $this->loadView('../views/notifications/list.php', [
@@ -193,5 +197,10 @@ class NotificationController extends BaseController
 
         $stats = $this->model->getStats($pressingCode, $livreurCode);
         $this->json($stats);
+    }
+
+    public function formulaire()
+    {
+        $this->list();
     }
 }

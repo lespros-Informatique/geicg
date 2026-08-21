@@ -2,8 +2,6 @@
 
 class HomeController extends BaseController
 {
-    use PressingAware;
-
     protected function resolveModel()
     {
         return new ModelHome();
@@ -12,31 +10,16 @@ class HomeController extends BaseController
     public function index()
     {
         if (Validator::isConnected()) {
-            $isSuperAdmin = $this->isSuperAdmin();
-            $isPressing = $this->isPressing();
-            $isLivreur = $this->isLivreur();
             $model = $this->resolveModel();
-
-            if ($isLivreur) {
-                $livreurCode = $this->getCurrentLivreurCode();
-                $stats = $model->getLivreurStats($livreurCode);
-                $missions = $model->getLivreurMissions($livreurCode, 20);
-
-                $this->loadView('../views/home/livreur_dashboard.php', [
-                    'isSuperAdmin' => false,
-                    'isPressing' => false,
-                    'isLivreur' => true,
-                    'livreurCode' => $livreurCode,
-                    'stats' => $stats,
-                    'missions' => $missions
-                ]);
-                return;
-            }
+            $anneeCode = $_SESSION['annee_active_code'] ?? null;
+            $stats = $model->getStats($anneeCode);
+            $recentInscriptions = $model->getRecentInscriptions(5, $stats['annee_code']);
+            $recentPaiements = $model->getRecentPaiements(5, $stats['annee_code']);
 
             $this->loadView('../views/home/index.php', [
-                'isSuperAdmin' => $isSuperAdmin,
-                'isPressing' => $isPressing,
-                'isLivreur' => false
+                'stats' => $stats,
+                'recentInscriptions' => $recentInscriptions,
+                'recentPaiements' => $recentPaiements
             ]);
         } else {
             $this->loadView('../views/users/connexion.php');
@@ -47,30 +30,12 @@ class HomeController extends BaseController
     {
         $this->requireAuth();
         $model = $this->resolveModel();
-
-        if ($this->isLivreur()) {
-            $livreurCode = $this->getCurrentLivreurCode();
-            $stats = $model->getLivreurStats($livreurCode);
-            $missions = $model->getLivreurMissions($livreurCode, 20);
-
-            $this->json([
-                'is_livreur' => true,
-                'stats' => $stats,
-                'missions' => $missions
-            ]);
-            return;
-        }
-
-        $pressingCode = $this->getCurrentPressingCode();
-        $stats = $model->getStats($pressingCode);
-        $recentOrders = $model->getRecentOrders(10, $pressingCode);
+        $anneeCode = $_SESSION['annee_active_code'] ?? null;
+        $stats = $model->getStats($anneeCode);
 
         $this->json([
-            'is_livreur' => false,
-            'stats' => $stats,
-            'salesByDay' => [],
-            'topProducts' => [],
-            'recentOrders' => $recentOrders
+            'status' => 1,
+            'stats' => $stats
         ]);
     }
 }

@@ -1,122 +1,64 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$paiement = isset($paiement) ? $paiement : [];
-?>
+$item = $item ?? [];
 
+$inscriptions = (new ModelInscription())->getAll();
+?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
-
-    <div class="content-wrapper">
-      <div class="page-header">
-        <div>
-          <h1>Modifier le paiement</h1>
-          <p class="page-subtitle">Mettez à jour les informations du paiement.</p>
-        </div>
-        <a href="<?= RACINE ?>paiement/list" class="btn btn-sm btn-outline-secondary">
-          <i data-lucide="arrow-left"></i>
-          Retour à la liste
-        </a>
+    <div class="content-wrapper" style="padding: 24px;">
+      <div class="page-header" style="margin-bottom: 24px;">
+        <h1 style="font-size: 20px; font-weight: 800; color: #0F172A;"><?= !empty($item['id_paiement']) ? 'Modifier Règlement Caisse' : 'Créer un Règlement Caisse' ?></h1>
       </div>
-
-      <div class="form-card">
-        <div class="card-header">
-          <div>
-            <h2>Informations du paiement</h2>
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; max-width: 650px;">
+        <form id="form-paiements" action="<?= RACINE ?>paiement/<?= !empty($item['id_paiement']) ? 'edit' : 'add' ?>" method="POST">
+          <?= Validator::csrfField() ?>
+          <?php if(!empty($item['id_paiement'])): ?>
+            <input type="hidden" name="id_paiement" value="<?= $item['id_paiement'] ?>">
+          <?php endif; ?>
+          <div class="form-field" style="margin-bottom: 16px;">
+            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Inscription Élève</label>
+            <select class="form-control" name="inscription_code" required>
+              <option value="">-- Sélectionner une inscription élève --</option>
+              <?php foreach($inscriptions as $ins): ?>
+                <option value="<?= $ins['code_inscription'] ?>" <?= (($item['inscription_code'] ?? '') == $ins['code_inscription']) ? 'selected' : '' ?>><?= htmlspecialchars($ins['code_inscription']) ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
-          <span class="badge-status <?= ($paiement['statut_paiement'] ?? '') == 'valide' ? 'delivered' : (($paiement['statut_paiement'] ?? '') == 'annule' ? 'cancelled' : 'pending') ?>">
-            <?= htmlspecialchars($paiement['statut_paiement'] ?? '') ?>
-          </span>
-        </div>
-
-        <div class="card-body">
-          <form class="formEditPaiement">
-            <?= Validator::csrfField() ?>
-            <input type="hidden" id="id_paiement" name="id_paiement" value="<?= htmlspecialchars($paiement['id_paiement'] ?? '') ?>">
-
-            <div class="form-grid">
-              <div class="form-field">
-                <label for="commande_code">Code commande</label>
-                <div class="input-with-icon">
-                  <span class="input-icon"><?= Validator::icon('shopping-cart'); ?></span>
-                  <input type="text" class="form-control" id="commande_code" name="commande_code"
-                         value="<?= htmlspecialchars($paiement['commande_code'] ?? '') ?>" required>
-                </div>
-                <div class="error-message" id="commande_codeError"></div>
-              </div>
-
-              <div class="form-field">
-                <label for="montant_paiement">Montant (FCFA)</label>
-                <div class="input-with-icon">
-                  <span class="input-icon"><?= Validator::icon('dollar-sign'); ?></span>
-                  <input type="number" class="form-control" id="montant_paiement" name="montant_paiement"
-                         value="<?= htmlspecialchars($paiement['montant_paiement'] ?? 0) ?>" required>
-                </div>
-                <div class="error-message" id="montant_paiementError"></div>
-              </div>
-
-              <div class="form-field">
-                <label for="mode_paiement">Mode de paiement</label>
-                <div class="input-with-icon">
-                  <span class="input-icon"><?= Validator::icon('credit-card'); ?></span>
-                  <select class="form-control" id="mode_paiement" name="mode_paiement">
-                    <?php foreach (['especes','orange_money','mtn_money','wave'] as $m): ?>
-                    <option value="<?= $m ?>" <?= ($paiement['mode_paiement'] ?? '') === $m ? 'selected' : '' ?>><?= ucfirst(str_replace('_',' ',$m)) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="error-message" id="mode_paiementError"></div>
-              </div>
-
-              <div class="form-field">
-                <label for="statut_paiement">Statut</label>
-                <div class="input-with-icon">
-                  <span class="input-icon"><?= Validator::icon('signal'); ?></span>
-                  <select class="form-control" id="statut_paiement" name="statut_paiement">
-                    <?php foreach (['valide','annule','en_attente'] as $s): ?>
-                    <option value="<?= $s ?>" <?= ($paiement['statut_paiement'] ?? '') == $s ? 'selected' : '' ?>><?= ucfirst($s) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="error-message" id="statut_paiementError"></div>
-              </div>
-
-              <div class="form-field">
-                <label for="reference_paiement">Référence</label>
-                <div class="input-with-icon">
-                  <span class="input-icon"><?= Validator::icon('hashtag'); ?></span>
-                  <input type="text" class="form-control" id="reference_paiement" name="reference_paiement"
-                         value="<?= htmlspecialchars($paiement['reference_paiement'] ?? '') ?>">
-                </div>
-                <div class="error-message" id="reference_paiementError"></div>
-              </div>
-
-              <div class="readonly-grid">
-                <div class="readonly-field">
-                  <label>Code paiement</label>
-                  <p><?= htmlspecialchars($paiement['code_paiement'] ?? '') ?></p>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary btn_actions btnEditPaiement">
-                <span class="btn-text">
-                  <i data-lucide="save"></i>
-                  Sauvegarder
-                </span>
-              </button>
-              <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary">
-                <i data-lucide="x"></i>
-                Annuler
-              </a>
-            </div>
-          </form>
-        </div>
+          <div class="form-field" style="margin-bottom: 16px;">
+            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Montant versé (FCFA)</label>
+            <input type="number"  class="form-control" name="montant_paiement" value="<?= htmlspecialchars($item['montant_paiement'] ?? '') ?>" required>
+          </div>
+          <div class="form-field" style="margin-bottom: 16px;">
+            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Mode de règlement</label>
+            <select class="form-control" name="mode_paiement" required>
+              <option value="espece" <?= (($item['mode_paiement'] ?? '') === 'espece') ? 'selected' : '' ?>>Espèces (Caisse)</option>
+              <option value="mobile_money" <?= (($item['mode_paiement'] ?? '') === 'mobile_money') ? 'selected' : '' ?>>Mobile Money (Wave, Orange, MTN, Moov)</option>
+              <option value="cheque" <?= (($item['mode_paiement'] ?? '') === 'cheque') ? 'selected' : '' ?>>Chèque bancaire</option>
+              <option value="virement" <?= (($item['mode_paiement'] ?? '') === 'virement') ? 'selected' : '' ?>>Virement bancaire</option>
+            </select>
+          </div>
+          <div class="form-field" style="margin-bottom: 16px;">
+            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Motif du versement</label>
+            <input type="text" class="form-control" name="type_paiement" value="<?= htmlspecialchars($item['type_paiement'] ?? '') ?>" required>
+          </div>
+          <div class="form-field" style="margin-bottom: 16px;">
+            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Référence transaction / N° Chèque</label>
+            <input type="text" class="form-control" name="reference_paiement" value="<?= htmlspecialchars($item['reference_paiement'] ?? '') ?>" >
+          </div>
+          <div class="form-field" style="margin-bottom: 16px;">
+            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Observations</label>
+            <textarea class="form-control" name="observations"  rows="3"><?= htmlspecialchars($item['observations'] ?? '') ?></textarea>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 24px;">
+            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700;">Enregistrer</button>
+            <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary" style="font-weight: 600;">Annuler</a>
+          </div>
+        </form>
       </div>
     </div>
   </main>
 </div>
-
-<?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

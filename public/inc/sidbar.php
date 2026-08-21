@@ -5,145 +5,172 @@
             <i data-lucide="menu"></i>
         </button>
     </div>
+
+    <!-- Active Academic Year Indicator -->
+    <div class="p-3 mx-2 my-2 rounded bg-light border text-center">
+        <div class="text-uppercase text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">Année Académique</div>
+        <div class="fw-bold text-primary" style="font-size: 13px;">
+            <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '2025-2026') ?>
+        </div>
+    </div>
+
     <nav class="sidebar-nav">
         <a href="<?= RACINE ?>" class="nav-item">
             <i data-lucide="layout-dashboard"></i> <span>Tableau de bord</span>
         </a>
 
-        <?php if ($isSuperAdmin): ?>
-        <!-- === SUPER ADMIN : HUB PRESSINGS & GESTION GLOBALE === -->
+        <!-- === MODULE 1 : STRUCTURE & RÉFÉRENTIELS GLOBAUX === -->
         <div class="nav-section">
             <div class="nav-section-title">
-                <i data-lucide="store"></i> <span>Partenaires & Finances</span>
+                <i data-lucide="building"></i> <span>Structure Globale</span>
             </div>
-            <a href="<?= RACINE ?>pressing/list" class="nav-item sub">
-                <i data-lucide="map-pin"></i> <span>Pressings (Hub 360°)</span>
+            <a href="<?= RACINE ?>etablissement/list" class="nav-item sub">
+                <i data-lucide="landmark"></i> <span>Établissement & Siège</span>
             </a>
-            <a href="<?= RACINE ?>livreur/list" class="nav-item sub">
-                <i data-lucide="truck"></i> <span>Flotte Livreurs (Global)</span>
+            <a href="<?= RACINE ?>cycle/list" class="nav-item sub">
+                <i data-lucide="layers"></i> <span>Cycles d'Études</span>
             </a>
-            <a href="<?= RACINE ?>retrait/list" class="nav-item sub">
-                <i data-lucide="wallet"></i> <span>Retraits Pressings</span>
+            <a href="<?= RACINE ?>filiere/list" class="nav-item sub">
+                <i data-lucide="git-branch"></i> <span>Filières & Spécialités</span>
             </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">
-                <i data-lucide="layers"></i> <span>Marketplace & Offres</span>
-            </div>
-            <a href="<?= RACINE ?>categorie/list" class="nav-item sub">
-                <i data-lucide="tag"></i> <span>Catégories de vêtements</span>
+            <a href="<?= RACINE ?>niveau/list" class="nav-item sub">
+                <i data-lucide="trending-up"></i> <span>Niveaux d'Études</span>
             </a>
-            <a href="<?= RACINE ?>forfait/list" class="nav-item sub">
-                <i data-lucide="award"></i> <span>Forfaits B2B</span>
-            </a>
-            <a href="<?= RACINE ?>abonnement/list" class="nav-item sub">
-                <i data-lucide="credit-card"></i> <span>Abonnements Pressings</span>
-            </a>
-            <a href="<?= RACINE ?>ville/list" class="nav-item sub">
-                <i data-lucide="navigation"></i> <span>Villes & Quartiers</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">
-                <i data-lucide="shield-check"></i> <span>Comptes & Sécurité</span>
-            </div>
-            <a href="<?= RACINE ?>user/list" class="nav-item sub">
-                <i data-lucide="users"></i> <span>Utilisateurs & Gérants</span>
-            </a>
-            <a href="<?= RACINE ?>role/list" class="nav-item sub">
-                <i data-lucide="shield"></i> <span>Rôles & Accès</span>
-            </a>
-            <a href="<?= RACINE ?>permission/list" class="nav-item sub">
-                <i data-lucide="key"></i> <span>Permissions</span>
-            </a>
-            <a href="<?= RACINE ?>client/list" class="nav-item sub">
-                <i data-lucide="contact"></i> <span>Clients Marketplace</span>
-            </a>
-            <a href="<?= RACINE ?>setting/list" class="nav-item sub">
-                <i data-lucide="sliders"></i> <span>Paramètres Système Lavex</span>
-            </a>
-        </div>
-
-        <?php elseif ($isPressing): ?>
-        <!-- === PRESSING PRO : GESTION DE L'ÉTABLISSEMENT === -->
-        <div class="nav-section">
-            <div class="nav-section-title">
-                <i data-lucide="shopping-bag"></i> <span>Activité Commerciale</span>
-            </div>
-            <a href="<?= RACINE ?>commande/list" class="nav-item sub">
-                <i data-lucide="clipboard-list"></i> <span>Mes Commandes</span>
-            </a>
-            <a href="<?= RACINE ?>retrait/list" class="nav-item sub">
-                <i data-lucide="wallet"></i> <span>Mon Portefeuille & Retraits</span>
-            </a>
-            <a href="<?= RACINE ?>client/list" class="nav-item sub">
-                <i data-lucide="contact"></i> <span>Mes Clients</span>
-            </a>
-        </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">
-                <i data-lucide="store"></i> <span>Mon Établissement</span>
-            </div>
-            <a href="<?= RACINE ?>pressing/config" class="nav-item sub">
-                <i data-lucide="settings"></i> <span>Configuration Pressing</span>
-            </a>
-            <a href="<?= RACINE ?>tarif/list" class="nav-item sub">
-                <i data-lucide="dollar-sign"></i> <span>Grille Tarifaire</span>
-            </a>
-            <a href="<?= RACINE ?>article/list" class="nav-item sub">
-                <i data-lucide="shirt"></i> <span>Vêtements & Articles</span>
+            <a href="<?= RACINE ?>salle/list" class="nav-item sub">
+                <i data-lucide="door-open"></i> <span>Salles de Cours</span>
             </a>
             <a href="<?= RACINE ?>service/list" class="nav-item sub">
-                <i data-lucide="sparkles"></i> <span>Mes Services</span>
+                <i data-lucide="briefcase"></i> <span>Services RH</span>
             </a>
-            <a href="<?= RACINE ?>horaire/list" class="nav-item sub">
-                <i data-lucide="clock"></i> <span>Mes Horaires</span>
+            <a href="<?= RACINE ?>fonction/list" class="nav-item sub">
+                <i data-lucide="user-check"></i> <span>Fonctions & Postes</span>
             </a>
         </div>
 
+        <!-- === MODULE 2 : PARAMÉTRAGE ACADÉMIQUE ANNUEL === -->
         <div class="nav-section">
             <div class="nav-section-title">
-                <i data-lucide="truck"></i> <span>Logistique & Équipe</span>
+                <i data-lucide="calendar"></i> <span>Cadre Académique</span>
             </div>
-            <a href="<?= RACINE ?>livreur/list" class="nav-item sub">
-                <i data-lucide="truck"></i> <span>Mes Livreurs</span>
+            <a href="<?= RACINE ?>annee/list" class="nav-item sub">
+                <i data-lucide="calendar-range"></i> <span>Années Académiques</span>
             </a>
+            <a href="<?= RACINE ?>classe/list" class="nav-item sub">
+                <i data-lucide="graduation-cap"></i> <span>Classes & Promotion</span>
+            </a>
+            <a href="<?= RACINE ?>semestre/list" class="nav-item sub">
+                <i data-lucide="clock"></i> <span>Semestres & Périodes</span>
+            </a>
+            <a href="<?= RACINE ?>ue/list" class="nav-item sub">
+                <i data-lucide="box"></i> <span>Unités d'Enseignement (UE)</span>
+            </a>
+            <a href="<?= RACINE ?>matiere/list" class="nav-item sub">
+                <i data-lucide="book-open"></i> <span>Matières, Coefficients & ECTS</span>
+            </a>
+            <a href="<?= RACINE ?>scolarite/list" class="nav-item sub">
+                <i data-lucide="receipt"></i> <span>Grille des Scolarités</span>
+            </a>
+            <a href="<?= RACINE ?>tranche/list" class="nav-item sub">
+                <i data-lucide="list-checks"></i> <span>Échéanciers de Paiement</span>
+            </a>
+        </div>
+
+        <!-- === MODULE 3 : SCOLAIRITÉ & ADMISSIONS === -->
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <i data-lucide="users"></i> <span>Scolarité & Élèves</span>
+            </div>
+            <a href="<?= RACINE ?>etudiant/list" class="nav-item sub">
+                <i data-lucide="user"></i> <span>Registre des Étudiants</span>
+            </a>
+            <a href="<?= RACINE ?>parent/list" class="nav-item sub">
+                <i data-lucide="contact"></i> <span>Parents & Tuteurs</span>
+            </a>
+            <a href="<?= RACINE ?>inscription/list" class="nav-item sub">
+                <i data-lucide="user-plus"></i> <span>Inscriptions Annuelles</span>
+            </a>
+            <a href="<?= RACINE ?>accessoire/list" class="nav-item sub">
+                <i data-lucide="package"></i> <span>Accessoires & Kits</span>
+            </a>
+        </div>
+
+        <!-- === MODULE 4 : FINANCE, CAISSE & DÉPENSES === -->
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <i data-lucide="wallet"></i> <span>Finance & Caisse</span>
+            </div>
+            <a href="<?= RACINE ?>paiement/list" class="nav-item sub">
+                <i data-lucide="credit-card"></i> <span>Caisse & Encaissements</span>
+            </a>
+            <a href="<?= RACINE ?>cloture_caisse/list" class="nav-item sub">
+                <i data-lucide="lock"></i> <span>Clôture Caisse Journalière</span>
+            </a>
+            <a href="<?= RACINE ?>impayes/list" class="nav-item sub">
+                <i data-lucide="alert-triangle"></i> <span>Relances & Impayés</span>
+            </a>
+            <a href="<?= RACINE ?>type_depense/list" class="nav-item sub">
+                <i data-lucide="tags"></i> <span>Types de Dépenses</span>
+            </a>
+            <a href="<?= RACINE ?>depense/list" class="nav-item sub">
+                <i data-lucide="file-minus"></i> <span>Dépenses & Engagements</span>
+            </a>
+        </div>
+
+        <!-- === MODULE 5 : PÉDAGOGIE & ÉVALUATIONS === -->
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <i data-lucide="award"></i> <span>Pédagogie & Évaluations</span>
+            </div>
+            <a href="<?= RACINE ?>enseignant/list" class="nav-item sub">
+                <i data-lucide="user-check"></i> <span>Corps Enseignant</span>
+            </a>
+            <a href="<?= RACINE ?>enseignant_matiere/list" class="nav-item sub">
+                <i data-lucide="link"></i> <span>Affectations Cours</span>
+            </a>
+            <a href="<?= RACINE ?>emploi/list" class="nav-item sub">
+                <i data-lucide="calendar"></i> <span>Emplois du Temps</span>
+            </a>
+            <a href="<?= RACINE ?>absence/list" class="nav-item sub">
+                <i data-lucide="user-x"></i> <span>Gestion des Absences</span>
+            </a>
+            <a href="<?= RACINE ?>note/list" class="nav-item sub">
+                <i data-lucide="edit-3"></i> <span>Saisie des Notes</span>
+            </a>
+            <a href="<?= RACINE ?>bulletin/list" class="nav-item sub">
+                <i data-lucide="file-text"></i> <span>Bulletins & PV de Notes</span>
+            </a>
+        </div>
+
+        <!-- === MODULE 6 : COMMUNICATION & MÉDIAS === -->
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <i data-lucide="globe"></i> <span>Portail & Médias</span>
+            </div>
+            <a href="<?= RACINE ?>evenement/list" class="nav-item sub">
+                <i data-lucide="bell"></i> <span>Actualités & Événements</span>
+            </a>
+            <a href="<?= RACINE ?>galerie/list" class="nav-item sub">
+                <i data-lucide="image"></i> <span>Galeries Photos/Vidéos</span>
+            </a>
+            <a href="<?= RACINE ?>document/list" class="nav-item sub">
+                <i data-lucide="folder-down"></i> <span>Documents & Supports</span>
+            </a>
+        </div>
+
+        <!-- === MODULE 7 : COMPTES & SÉCURITÉ (RBAC) === -->
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <i data-lucide="shield-check"></i> <span>Sécurité & Accès</span>
+            </div>
             <a href="<?= RACINE ?>user/list" class="nav-item sub">
-                <i data-lucide="user-check"></i> <span>Mon Équipe & Personnel</span>
+                <i data-lucide="users"></i> <span>Utilisateurs Système</span>
             </a>
-            <a href="<?= RACINE ?>abonnement/list" class="nav-item sub">
-                <i data-lucide="credit-card"></i> <span>Mon Abonnement B2B</span>
+            <a href="<?= RACINE ?>role/list" class="nav-item sub">
+                <i data-lucide="shield"></i> <span>Rôles & Groupes</span>
             </a>
-        </div>
-
-        <?php elseif ($isLivreur): ?>
-        <!-- === LIVREUR : ESPACE LOGISTIQUE & TERRAIN === -->
-        <div class="nav-section">
-            <div class="nav-section-title">
-                <i data-lucide="truck"></i> <span>Mes Tournées</span>
-            </div>
-            <a href="<?= RACINE ?>mission/list" class="nav-item sub">
-                <i data-lucide="clipboard-list"></i> <span>Missions & Courses</span>
-            </a>
-            <a href="<?= RACINE ?>mission/carte" class="nav-item sub">
-                <i data-lucide="map"></i> <span>Carte des Tournées</span>
+            <a href="<?= RACINE ?>permission/list" class="nav-item sub">
+                <i data-lucide="key"></i> <span>Permissions Granulaires</span>
             </a>
         </div>
-
-        <div class="nav-section">
-            <div class="nav-section-title">
-                <i data-lucide="bell"></i> <span>Alertes & Compte</span>
-            </div>
-            <a href="<?= RACINE ?>notification/list" class="nav-item sub">
-                <i data-lucide="bell-ring"></i> <span>Notifications</span>
-            </a>
-            <a href="<?= RACINE ?>user/profil" class="nav-item sub">
-                <i data-lucide="user"></i> <span>Mon Profil</span>
-            </a>
-        </div>
-        <?php endif; ?>
     </nav>
 </aside>

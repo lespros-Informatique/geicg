@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
+    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/geicg/');
 
     if ($('#dataTable').length) {
         const columns = [

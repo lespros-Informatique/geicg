@@ -1,11 +1,11 @@
 window.openCommandeModal = function(clientCode) {
-    const base = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
+    const base = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/geicg/');
     window.location.href = base + 'commande/list' + (clientCode ? '?client=' + encodeURIComponent(clientCode) : '');
 };
 
 $(document).ready(function() {
     const isSuperAdmin = (typeof window.IS_SUPER_ADMIN !== 'undefined' && window.IS_SUPER_ADMIN === true);
-    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
+    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/geicg/');
 
     if ($('#dataTable').length) {
         const columns = [
