@@ -60,8 +60,8 @@ $observation  = $order['observation_commande'] ?? '';
               <select name="client_code" required class="form-control" style="width: 100%; padding: 10px 12px; font-size: 14px;">
                 <option value="">-- Choisir un client --</option>
                 <?php foreach ($clients as $c): ?>
-                  <option value="<?= htmlspecialchars($c['code_client']) ?>" <?= $c['code_client'] === $clientCode ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($c['nom_client']) ?> (<?= htmlspecialchars($c['telephone_client']) ?>)
+                  <option value="<?= htmlspecialchars($c['code_client'] ?? '') ?>" <?= ($c['code_client'] ?? '') === $clientCode ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($c['nom_client'] ?? 'Client') ?> (<?= htmlspecialchars($c['telephone_client'] ?? '-') ?>)
                   </option>
                 <?php endforeach; ?>
               </select>

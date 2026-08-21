@@ -102,9 +102,17 @@ require_once __DIR__ . '/../../public/inc/header.php';
         </div>
       </div>
 
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Description générale</label>
+        <textarea class="form-control" name="description_forfait" rows="2" placeholder="Ex: Idéal pour démarrer votre activité..."></textarea>
+      </div>
+
       <div class="form-group" style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Description / Avantages</label>
-        <textarea class="form-control" name="description_forfait" rows="2" placeholder="Description des services inclus..."></textarea>
+        <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+          Avantages & Fonctionnalités Incluses
+        </label>
+        <small style="display: block; font-size: 11px; color: #64748B; margin-bottom: 6px;">Indiquez 1 avantage par ligne (s'affichera avec coche ✓ dans l'application).</small>
+        <textarea class="form-control" name="avantages_forfait" rows="4" placeholder="3 Mois offerts à l'inscription&#10;Jusqu'à 250 commandes mensuelles&#10;3 Comptes utilisateurs&#10;Badge 'Partenaire Certifié'"></textarea>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px;">

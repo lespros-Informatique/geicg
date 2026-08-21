@@ -17,9 +17,21 @@ $(document).ready(function() {
             },
             { 
                 data: 'libelle', 
-                title: 'Libellé Forfait',
-                render: function(data) {
-                    return '<strong style="color: #1E293B;">' + (data || '') + '</strong>';
+                title: 'Libellé Forfait & Avantages Inclus',
+                render: function(data, type, row) {
+                    let html = '<div><strong style="color: #1E293B; font-size: 14px;">' + (data || '') + '</strong>';
+                    if (row.description) {
+                      html += '<div style="font-size: 12px; color: #64748B; margin-top: 2px;">' + row.description + '</div>';
+                    }
+                    if (row.avantages && row.avantages.length > 0) {
+                      html += '<div style="margin-top: 8px; display: flex; flex-direction: column; gap: 3px;">';
+                      row.avantages.forEach(adv => {
+                        html += '<div style="font-size: 11px; font-weight: 600; color: #047857; display: inline-flex; align-items: center; gap: 5px;"><i class="fa fa-check-circle" style="color: #10B981; font-size: 11px;"></i> <span>' + adv + '</span></div>';
+                      });
+                      html += '</div>';
+                    }
+                    html += '</div>';
+                    return html;
                 }
             },
             { 

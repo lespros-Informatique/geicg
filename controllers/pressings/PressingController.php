@@ -16,7 +16,13 @@ class PressingController extends BaseController
 
         $villes = $db->query("SELECT code_ville, libelle_ville FROM " . TABLES::VILLES . " WHERE statut_ville = 'actif' ORDER BY libelle_ville ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $quartiers = $db->query("SELECT code_quartier, ville_code, libelle_quartier FROM " . TABLES::QUARTIERS . " WHERE statut_quartier = 'actif' ORDER BY libelle_quartier ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $forfaits = $db->query("SELECT code_forfait, libelle_forfait, montant_forfait, duree_mois_forfait FROM " . TABLES::FORFAITS . " WHERE statut_forfait = 'actif' ORDER BY montant_forfait ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $modelForfait = new ModelForfait();
+        $forfaits = $db->query("SELECT * FROM " . TABLES::FORFAITS . " WHERE statut_forfait = 'actif' ORDER BY montant_forfait ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($forfaits as &$f) {
+            $f['avantages'] = $modelForfait->getAvantagesByCode($f['code_forfait']);
+            $f['avantages_forfait'] = json_encode($f['avantages'], JSON_UNESCAPED_UNICODE);
+        }
+        unset($f);
 
         $this->loadView('../views/pressings/list.php', [
             'villes' => $villes,
@@ -400,11 +406,19 @@ class PressingController extends BaseController
 
         $villes = $db->query("SELECT code_ville, libelle_ville FROM " . TABLES::VILLES . " WHERE statut_ville = 'actif' ORDER BY libelle_ville ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $quartiers = $db->query("SELECT code_quartier, ville_code, libelle_quartier FROM " . TABLES::QUARTIERS . " WHERE statut_quartier = 'actif' ORDER BY libelle_quartier ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $modelForfait = new ModelForfait();
+        $forfaits = $db->query("SELECT * FROM " . TABLES::FORFAITS . " WHERE statut_forfait = 'actif' ORDER BY montant_forfait ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($forfaits as &$f) {
+            $f['avantages'] = $modelForfait->getAvantagesByCode($f['code_forfait']);
+            $f['avantages_forfait'] = json_encode($f['avantages'], JSON_UNESCAPED_UNICODE);
+        }
+        unset($f);
 
         $this->loadView('../views/pressings/edit.php', [
             'pressing' => $item,
             'villes' => $villes,
-            'quartiers' => $quartiers
+            'quartiers' => $quartiers,
+            'forfaits' => $forfaits
         ]);
     }
 
@@ -427,7 +441,13 @@ class PressingController extends BaseController
 
         $villes = $db->query("SELECT code_ville, libelle_ville FROM " . TABLES::VILLES . " WHERE statut_ville = 'actif' ORDER BY libelle_ville ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $quartiers = $db->query("SELECT code_quartier, ville_code, libelle_quartier FROM " . TABLES::QUARTIERS . " WHERE statut_quartier = 'actif' ORDER BY libelle_quartier ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $forfaits = $db->query("SELECT code_forfait, libelle_forfait, description_forfait, montant_forfait, duree_mois_forfait FROM " . TABLES::FORFAITS . " WHERE statut_forfait = 'actif' ORDER BY montant_forfait ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $modelForfait = new ModelForfait();
+        $forfaits = $db->query("SELECT * FROM " . TABLES::FORFAITS . " WHERE statut_forfait = 'actif' ORDER BY montant_forfait ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($forfaits as &$f) {
+            $f['avantages'] = $modelForfait->getAvantagesByCode($f['code_forfait']);
+            $f['avantages_forfait'] = json_encode($f['avantages'], JSON_UNESCAPED_UNICODE);
+        }
+        unset($f);
 
         $this->loadView('../views/pressings/edit.php', [
             'pressing' => [],

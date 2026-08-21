@@ -23,12 +23,17 @@ class ForfaitController extends BaseController
 
         foreach ($items as $i) {
             $idCrypte = $this->validator->crypter($i['id_forfait']);
+            // Fetch advantages directly from dedicated relational table forfaits_avantages
+            $advList = $this->model->getAvantagesByCode($i['code_forfait']);
+
             $data[] = [
                 'code' => $i['code_forfait'],
                 'libelle' => $i['libelle_forfait'],
                 'montant' => (float)($i['montant_forfait'] ?? 0),
                 'duree_mois' => (int)($i['duree_mois_forfait'] ?? 1),
                 'description' => $i['description_forfait'] ?? '',
+                'avantages' => $advList,
+                'avantages_raw' => implode("\n", $advList),
                 'statut' => $i['statut_forfait'] ?? 'actif',
                 'id' => (int)$i['id_forfait'],
                 'editId' => $idCrypte
@@ -47,6 +52,7 @@ class ForfaitController extends BaseController
         $montant = (float)$this->post('montant_forfait');
         $duree = (int)$this->post('duree_mois_forfait') ?: 1;
         $description = trim($this->post('description_forfait'));
+        $rawAdv = trim($this->post('avantages_forfait'));
 
         if (empty($libelle) || $montant <= 0) {
             $this->error('Veuillez renseigner le libellé et un montant valide supérieur à 0 !');
@@ -65,10 +71,14 @@ class ForfaitController extends BaseController
             return;
         }
 
+        $advList = array_values(array_filter(array_map('trim', explode("\n", $rawAdv))));
+        $jsonAdv = !empty($advList) ? json_encode($advList, JSON_UNESCAPED_UNICODE) : null;
+
         $data = [
             'code_forfait' => $code,
             'libelle_forfait' => $libelle,
             'description_forfait' => $description,
+            'avantages_forfait' => $jsonAdv,
             'montant_forfait' => $montant,
             'duree_mois_forfait' => $duree,
             'statut_forfait' => 'actif',
@@ -76,6 +86,8 @@ class ForfaitController extends BaseController
         ];
 
         if ($this->model->create($data)) {
+            // Sync to dedicated relational table forfaits_avantages
+            $this->model->syncAvantages($code, $advList);
             $this->success('Forfait créé avec succès !', ['code_forfait' => $code]);
         } else {
             $this->error('Erreur lors de la création du forfait');
@@ -92,6 +104,7 @@ class ForfaitController extends BaseController
         $montant = (float)$this->post('montant_forfait');
         $duree = (int)$this->post('duree_mois_forfait') ?: 1;
         $description = trim($this->post('description_forfait'));
+        $rawAdv = trim($this->post('avantages_forfait'));
         $statut = in_array($this->post('statut_forfait'), ['actif', 'inactif']) ? $this->post('statut_forfait') : 'actif';
 
         if (!$id || empty($libelle) || $montant <= 0) {
@@ -99,10 +112,20 @@ class ForfaitController extends BaseController
             return;
         }
 
+        $forfait = $this->model->getById($id);
+        if (!$forfait) {
+            $this->error('Forfait introuvable !');
+            return;
+        }
+
+        $advList = array_values(array_filter(array_map('trim', explode("\n", $rawAdv))));
+        $jsonAdv = !empty($advList) ? json_encode($advList, JSON_UNESCAPED_UNICODE) : null;
+
         $data = [
             'id_forfait' => $id,
             'libelle_forfait' => $libelle,
             'description_forfait' => $description,
+            'avantages_forfait' => $jsonAdv,
             'montant_forfait' => $montant,
             'duree_mois_forfait' => $duree,
             'statut_forfait' => $statut,
@@ -110,6 +133,8 @@ class ForfaitController extends BaseController
         ];
 
         if ($this->model->update($data, $id)) {
+            // Sync to dedicated relational table forfaits_avantages
+            $this->model->syncAvantages($forfait['code_forfait'], $advList);
             $this->success('Forfait modifié avec succès !');
         } else {
             $this->error('Erreur lors de la modification du forfait');

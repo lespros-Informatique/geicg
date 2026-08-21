@@ -54,8 +54,27 @@ $encryptedId = isset($encryptedId) ? $encryptedId : '';
           </div>
 
           <div class="form-group" style="margin-bottom: 16px;">
-            <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Description / Avantages</label>
-            <textarea class="form-control" id="description_forfait" name="description_forfait" rows="3" placeholder="Détails des fonctionnalités débloquées..."><?= htmlspecialchars($forfait['description_forfait'] ?? '') ?></textarea>
+            <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Description générale</label>
+            <textarea class="form-control" id="description_forfait" name="description_forfait" rows="2" placeholder="Détails du forfait..."><?= htmlspecialchars($forfait['description_forfait'] ?? '') ?></textarea>
+          </div>
+
+          <?php
+          $advVal = '';
+          if (!empty($forfait['avantages_forfait'])) {
+              $decoded = json_decode($forfait['avantages_forfait'], true);
+              if (is_array($decoded)) {
+                  $advVal = implode("\n", $decoded);
+              } else {
+                  $advVal = $forfait['avantages_forfait'];
+              }
+          }
+          ?>
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+              Avantages & Fonctionnalités Incluses
+            </label>
+            <small style="display: block; font-size: 11px; color: #64748B; margin-bottom: 6px;">Entrez 1 avantage par ligne. Ils s'afficheront sous forme de liste avec coches ✓ dans l'application.</small>
+            <textarea class="form-control" id="avantages_forfait" name="avantages_forfait" rows="5" placeholder="3 Mois offerts à l'inscription&#10;Jusqu'à 250 commandes mensuelles&#10;3 Comptes utilisateurs&#10;Badge 'Partenaire Certifié'"><?= htmlspecialchars($advVal) ?></textarea>
           </div>
 
           <div class="form-group" style="margin-bottom: 24px;">

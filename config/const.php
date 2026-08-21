@@ -56,6 +56,7 @@ class TABLES
     // ABONNEMENTS
     public const ABONNEMENTS_PRESSINGS = 'abonnements_pressings';
     public const FORFAITS              = 'forfaits';
+    public const FORFAITS_AVANTAGES     = 'forfaits_avantages';
 
     // FAVORIS
     public const FAVORIS             = 'favoris';

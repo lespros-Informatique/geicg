@@ -492,39 +492,78 @@ $forfaits = isset($forfaits) ? $forfaits : [];
                 <i data-lucide="credit-card" style="color: #2563eb;"></i> Choix du Forfait B2B & Abonnement Initial
               </h3>
 
-              <div class="forfaits-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+              <div class="forfaits-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; margin-bottom: 24px;">
                 <?php foreach ($forfaits as $idx => $f): ?>
                   <?php 
                     $isSelected = ($idx === 0); 
                     $isGratuit = ((float)$f['montant_forfait'] == 0);
-                    $badgeText = $isGratuit ? 'Essai Gratuit' : ((float)$f['montant_forfait'] >= 30000 ? 'Recommandé' : 'Populaire');
-                    $badgeBg = $isGratuit ? '#10b981' : ((float)$f['montant_forfait'] >= 30000 ? '#f59e0b' : '#2563eb');
+                    $badgeText = $isGratuit ? 'Essai Gratuit' : ((float)$f['montant_forfait'] >= 50000 ? 'Formule Premium' : ((float)$f['montant_forfait'] >= 30000 ? 'Recommandé' : 'Standard'));
+                    $badgeBg = $isSelected ? '#0F766E' : '#64748B';
+
+                    $advList = [];
+                    if (!empty($f['avantages_forfait'])) {
+                        $decoded = json_decode($f['avantages_forfait'], true);
+                        if (is_array($decoded)) {
+                            $advList = $decoded;
+                        } else {
+                            $advList = array_values(array_filter(array_map('trim', explode("\n", $f['avantages_forfait']))));
+                        }
+                    }
                   ?>
                   <div class="forfait-card-box <?= $isSelected ? 'selected' : '' ?>" 
                        id="forfait-card-<?= $f['code_forfait'] ?>"
                        onclick="selectForfaitCard('<?= $f['code_forfait'] ?>', <?= (float)$f['montant_forfait'] ?>, <?= (int)$f['duree_mois_forfait'] ?>)"
-                       style="position: relative; border: 2px solid <?= $isSelected ? '#2563eb' : '#e2e8f0' ?>; background: <?= $isSelected ? '#f0f6ff' : '#ffffff' ?>; border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.25s ease; box-shadow: <?= $isSelected ? '0 8px 24px rgba(37,99,235,0.12)' : '0 2px 8px rgba(0,0,0,0.02)' ?>;">
+                       style="position: relative; border: 1.5px solid <?= $isSelected ? '#0F766E' : '#E2E8F0' ?>; background: #FFFFFF; border-radius: 14px; padding: 20px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; box-shadow: <?= $isSelected ? '0 4px 16px rgba(15,118,110,0.12)' : '0 1px 3px rgba(0,0,0,0.04)' ?>;">
                     
-                    <!-- Badge & Check Icon -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 20px; background: <?= $badgeBg ?>; color: #ffffff;">
-                        <?= $badgeText ?>
-                      </span>
-                      <div class="card-radio-icon" style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid <?= $isSelected ? '#2563eb' : '#cbd5e1' ?>; background: <?= $isSelected ? '#2563eb' : '#fff' ?>; display: flex; align-items: center; justify-content: center; color: #fff; transition: all 0.2s;">
-                        <?php if ($isSelected): ?><i data-lucide="check" style="width: 14px; height: 14px; stroke-width: 3;"></i><?php endif; ?>
+                    <div>
+                      <!-- En-tête Badge & Radio Status -->
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 3px 9px; border-radius: 6px; background: <?= $badgeBg ?>; color: #FFFFFF;">
+                          <?= $badgeText ?>
+                        </span>
+                        <div class="card-radio-icon" style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid <?= $isSelected ? '#0F766E' : '#CBD5E1' ?>; background: <?= $isSelected ? '#0F766E' : '#FFF' ?>; display: flex; align-items: center; justify-content: center; color: #FFF; transition: all 0.2s;">
+                          <?php if ($isSelected): ?><i data-lucide="check" style="width: 14px; height: 14px; stroke-width: 3;"></i><?php endif; ?>
+                        </div>
                       </div>
+
+                      <input type="radio" name="forfait_code" value="<?= $f['code_forfait'] ?>" <?= $isSelected ? 'checked' : '' ?> style="display: none;" id="radio-forfait-<?= $f['code_forfait'] ?>">
+
+                      <!-- Titre du Plan -->
+                      <h4 style="font-weight: 800; font-size: 17px; color: #0F172A; margin: 0 0 4px 0;"><?= htmlspecialchars($f['libelle_forfait']) ?></h4>
+                      
+                      <!-- Bloc Prix -->
+                      <div style="display: flex; align-items: baseline; gap: 4px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+                        <span style="font-size: 24px; font-weight: 800; color: #0F766E;"><?= number_format($f['montant_forfait'], 0, ',', ' ') ?></span>
+                        <span style="font-size: 12px; font-weight: 600; color: #64748B;">FCFA / <?= (int)$f['duree_mois_forfait'] ?> mois</span>
+                      </div>
+
+                      <?php if (!empty($f['description_forfait'])): ?>
+                        <p style="font-size: 12px; color: #64748B; margin: 0 0 14px 0; line-height: 1.4;">
+                          <?= htmlspecialchars($f['description_forfait']) ?>
+                        </p>
+                      <?php endif; ?>
+
+                      <!-- Liste verticale des Avantages -->
+                      <?php if (!empty($advList)): ?>
+                        <div style="margin-bottom: 14px;">
+                          <div style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Avantages inclus :</div>
+                          <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <?php foreach ($advList as $adv): ?>
+                              <div style="font-size: 13px; font-weight: 500; color: #1E293B; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4;">
+                                <svg width="15" height="15" fill="none" stroke="#0F766E" viewBox="0 0 24 24" style="flex-shrink: 0; margin-top: 2px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                <span><?= htmlspecialchars($adv) ?></span>
+                              </div>
+                            <?php endforeach; ?>
+                          </div>
+                        </div>
+                      <?php endif; ?>
                     </div>
 
-                    <input type="radio" name="forfait_code" value="<?= $f['code_forfait'] ?>" <?= $isSelected ? 'checked' : '' ?> style="display: none;" id="radio-forfait-<?= $f['code_forfait'] ?>">
-
-                    <div style="font-weight: 800; font-size: 17px; color: #1e293b; margin-bottom: 4px;"><?= htmlspecialchars($f['libelle_forfait']) ?></div>
-                    <div style="font-size: 13px; color: #64748b; margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 38px;">
-                      <?= htmlspecialchars($f['description_forfait'] ?: 'Accès aux fonctionnalités d\'administration B2B.') ?>
-                    </div>
-
-                    <div style="display: flex; align-items: baseline; gap: 6px; border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 8px;">
-                      <span style="font-size: 22px; font-weight: 900; color: #2563eb;"><?= number_format($f['montant_forfait'], 0, ',', ' ') ?></span>
-                      <span style="font-size: 12px; font-weight: 700; color: #64748b;">FCFA / <?= (int)$f['duree_mois_forfait'] ?> mois</span>
+                    <!-- Bouton Sélection -->
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #F1F5F9;">
+                      <button type="button" class="btn-select-plan" style="width: 100%; height: 38px; border-radius: 8px; font-size: 13px; font-weight: 700; border: <?= $isSelected ? 'none' : '1px solid #CBD5E1' ?>; background: <?= $isSelected ? '#0F766E' : '#F8FAFC' ?>; color: <?= $isSelected ? '#FFFFFF' : '#334155' ?>; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <span><?= $isSelected ? 'Sélectionné' : 'Choisir ce forfait' ?></span>
+                      </button>
                     </div>
                   </div>
                 <?php endforeach; ?>
@@ -619,29 +658,41 @@ function goToStep(step) {
 
 function selectForfaitCard(code, montant, duree) {
   $('.forfait-card-box').css({
-    'border-color': '#e2e8f0',
-    'background': '#ffffff',
-    'box-shadow': '0 2px 8px rgba(0,0,0,0.02)',
+    'border-color': '#E2E8F0',
+    'background': '#FFFFFF',
+    'box-shadow': '0 1px 3px rgba(0,0,0,0.04)',
     'transform': 'scale(1)'
   }).removeClass('selected');
 
   $('.card-radio-icon').css({
-    'border-color': '#cbd5e1',
-    'background': '#ffffff'
+    'border-color': '#CBD5E1',
+    'background': '#FFFFFF'
   }).html('');
+
+  $('.btn-select-plan').css({
+    'border': '1px solid #CBD5E1',
+    'background': '#F8FAFC',
+    'color': '#334155'
+  }).html('Choisir ce forfait');
 
   const selectedCard = $('#forfait-card-' + code);
   selectedCard.css({
-    'border-color': '#2563eb',
-    'background': '#f0f6ff',
-    'box-shadow': '0 8px 24px rgba(37,99,235,0.15)',
-    'transform': 'translateY(-2px)'
+    'border-color': '#0F766E',
+    'background': '#FFFFFF',
+    'box-shadow': '0 4px 16px rgba(15,118,110,0.12)',
+    'transform': 'translateY(-1px)'
   }).addClass('selected');
 
   selectedCard.find('.card-radio-icon').css({
-    'border-color': '#2563eb',
-    'background': '#2563eb'
+    'border-color': '#0F766E',
+    'background': '#0F766E'
   }).html('<i data-lucide="check" style="width: 14px; height: 14px; stroke-width: 3; color: #fff;"></i>');
+
+  selectedCard.find('.btn-select-plan').css({
+    'border': 'none',
+    'background': '#0F766E',
+    'color': '#FFFFFF'
+  }).html('Sélectionné');
 
   $('#radio-forfait-' + code).prop('checked', true);
 

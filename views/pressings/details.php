@@ -369,7 +369,7 @@ $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ?
               <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
                 <?php foreach ($horaires as $h): ?>
                   <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px;">
-                    <div style="font-weight: 700; text-transform: capitalize; color: #1E293B; margin-bottom: 4px;"><?= htmlspecialchars($h['jour']) ?></div>
+                    <div style="font-weight: 700; text-transform: capitalize; color: #1E293B; margin-bottom: 4px;"><?= htmlspecialchars($h['jour'] ?? '') ?></div>
                     <?php if (!empty($h['est_ferme']) && $h['est_ferme'] == 1): ?>
                       <span style="color: #DC2626; font-weight: 600; font-size: 13px;">Fermé</span>
                     <?php else: ?>
@@ -411,8 +411,8 @@ $miniature    = !empty($miniatureStr) ? ((strpos($miniatureStr, 'http') === 0) ?
                   <tbody>
                     <?php foreach ($clients as $c): ?>
                       <tr>
-                        <td><strong><?= htmlspecialchars($c['nom_client']) ?></strong></td>
-                        <td><?= htmlspecialchars($c['telephone_client']) ?></td>
+                        <td><strong><?= htmlspecialchars($c['nom_client'] ?? 'Client') ?></strong></td>
+                        <td><?= htmlspecialchars($c['telephone_client'] ?? '-') ?></td>
                         <td><small style="color: #64748B;"><?= htmlspecialchars($c['adresse_client'] ?? '-') ?></small></td>
                         <td><span style="font-weight: 700; color: #1E3A5F;"><?= $c['nb_commandes'] ?></span></td>
                         <td><strong style="color: #059669;"><?= number_format((float)$c['total_depense'], 0, ',', ' ') ?> FCFA</strong></td>
