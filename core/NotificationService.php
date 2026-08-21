@@ -114,11 +114,13 @@ class NotificationService
             return null;
         }
 
+        self::sendOneSignalPush($livreurCode, $title, $message, $codeNotification, $referenceCode, $extraData);
+
         return $codeNotification;
     }
 
     /**
-     * Envoie une notification dédiée au pressing (In-App)
+     * Envoie une notification dédiée au pressing (In-App + Push OneSignal)
      */
     public static function notifyPressing(
         string $pressingCode,
@@ -156,6 +158,8 @@ class NotificationService
             error_log("Erreur BDD NotificationService (Pressing): " . $e->getMessage());
             return null;
         }
+
+        self::sendOneSignalPush($pressingCode, $title, $message, $codeNotification, $referenceCode, $extraData);
 
         return $codeNotification;
     }

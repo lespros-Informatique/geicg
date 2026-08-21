@@ -8,6 +8,13 @@ if (!defined('RACINE')) {
     define('RACINE', $isLocalEnvironment ? 'http://localhost/admin-lavex/' : 'https://admin-lavex.kassanngroup.com/');
 }
 
+if (!defined('ONESIGNAL_APP_ID')) {
+    define('ONESIGNAL_APP_ID', '54d8db10-a446-4542-9b2c-2d49d1433d59');
+}
+if (!defined('ONESIGNAL_REST_API_KEY')) {
+    define('ONESIGNAL_REST_API_KEY', getenv('ONESIGNAL_REST_API_KEY') ?: '');
+}
+
 
 define('LOGO', '<img src="' .RACINE. 'public/assets/images/logo/logo.png" class="img-circle" alt="Logo" width="80" style="border-radius: 70%; object-fit: covers;">');
 
