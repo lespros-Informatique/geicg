@@ -65,10 +65,6 @@
         window.RACINE = '<?= RACINE ?>';
         window.LINK = '<?= RACINE ?>';
     </script>
-</head>
-<body>
-    <input type="hidden" id="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
-    <div class="js-toast-container"></div>
 
     <?php
     $currentUserCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
@@ -118,7 +114,6 @@
     $currentUserEmail = $_SESSION[USERS_AUTH]['email_user'] ?? ($_SESSION[USERS_AUTH]['email'] ?? '');
     $currentUserPhoto = !empty($_SESSION[USERS_AUTH]['photo_user']) ? RACINE . 'public/assets/images/users/' . $_SESSION[USERS_AUTH]['photo_user'] : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
 
-    // Notifications récentes filtrées par rôle (Livreur, Pressing ou Super Admin)
     $recentAdminNotifs = [];
     $unreadNotifsCount = 0;
     try {
@@ -130,4 +125,46 @@
         $recentAdminNotifs = [];
         $unreadNotifsCount = 0;
     }
+
+    $targetOneSignalCode = !empty($currentPressingCode) ? $currentPressingCode : (!empty($currentLivreurCode) ? $currentLivreurCode : ($currentUserCode ?? ''));
     ?>
+    <script>
+      window.hasAdminUserCode = <?= !empty($targetOneSignalCode) ? 'true' : 'false' ?>;
+      window.adminUserCode = "<?= $targetOneSignalCode ?>";
+      window.ONESIGNAL_APP_ID = "<?= defined('ONESIGNAL_APP_ID') ? ONESIGNAL_APP_ID : '' ?>";
+    </script>
+    <!-- OneSignal Web Push SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          const appId = window.ONESIGNAL_APP_ID;
+          if (appId && typeof OneSignal.init === 'function') {
+            await OneSignal.init({
+              appId: appId,
+              notifyButton: { enable: false },
+              allowLocalhostAsSecureOrigin: true,
+              serviceWorkerParam: { scope: '/' },
+              serviceWorkerPath: 'OneSignalSDKWorker.js'
+            });
+            if (window.hasAdminUserCode && window.adminUserCode) {
+              if (typeof OneSignal.login === 'function') {
+                await OneSignal.login(window.adminUserCode);
+              }
+              if (typeof OneSignal.Notifications !== 'undefined' && typeof OneSignal.Notifications.requestPermission === 'function') {
+                if (!OneSignal.Notifications.permission) {
+                  await OneSignal.Notifications.requestPermission();
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.log("OneSignal push actif uniquement sur le domaine enregistré.");
+        }
+      });
+    </script>
+</head>
+<body>
+    <input type="hidden" id="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+    <div class="js-toast-container"></div>

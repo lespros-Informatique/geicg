@@ -259,11 +259,3 @@
     </a>
 </div>
 <?php endif; ?>
-
-<div id="pushBannerAdmin" style="display:none; background: linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%); color: #fff; padding: 10px 16px; border-radius: 8px; margin: 10px 16px 0 16px; font-size: 13px; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 4px 12px rgba(37,99,235,0.2);">
-    <div style="display:flex; align-items:center; gap:8px;">
-        <i data-lucide="bell-ring" style="width:18px; height:18px; color:#F59E0B;"></i>
-        <span><strong>Activer les notifications Push</strong> pour recevoir les alertes instantanées sur cet appareil.</span>
-    </div>
-    <button onclick="window.requestPushPermission()" style="background:#F59E0B; color:#0F172A; border:none; padding:6px 14px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap;">Activer en 1 clic</button>
-</div>
