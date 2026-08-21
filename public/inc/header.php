@@ -132,35 +132,62 @@
       window.hasAdminUserCode = <?= !empty($targetOneSignalCode) ? 'true' : 'false' ?>;
       window.adminUserCode = "<?= $targetOneSignalCode ?>";
       window.ONESIGNAL_APP_ID = "<?= defined('ONESIGNAL_APP_ID') ? ONESIGNAL_APP_ID : '' ?>";
+      console.log('[OneSignal Admin Debug] Variables initiales:', {
+        appId: window.ONESIGNAL_APP_ID,
+        hasAdminUserCode: window.hasAdminUserCode,
+        adminUserCode: window.adminUserCode,
+        browserPermission: (typeof Notification !== 'undefined' ? Notification.permission : 'non supporte')
+      });
     </script>
     <!-- OneSignal Web Push SDK -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
+        console.log('[OneSignal Admin Debug] Execution de OneSignalDeferred...');
         try {
           const appId = window.ONESIGNAL_APP_ID;
-          if (appId && typeof OneSignal.init === 'function') {
-            await OneSignal.init({
-              appId: appId,
-              notifyButton: { enable: false },
-              allowLocalhostAsSecureOrigin: true,
-              serviceWorkerParam: { scope: '/' },
-              serviceWorkerPath: 'OneSignalSDKWorker.js'
-            });
-            if (window.hasAdminUserCode && window.adminUserCode) {
-              if (typeof OneSignal.login === 'function') {
-                await OneSignal.login(window.adminUserCode);
-              }
-              if (typeof OneSignal.Notifications !== 'undefined' && typeof OneSignal.Notifications.requestPermission === 'function') {
-                if (!OneSignal.Notifications.permission) {
-                  await OneSignal.Notifications.requestPermission();
-                }
-              }
+          if (!appId) {
+            console.warn('[OneSignal Admin Debug] ONESIGNAL_APP_ID est vide !');
+            return;
+          }
+          console.log('[OneSignal Admin Debug] Appel de OneSignal.init()...');
+          await OneSignal.init({
+            appId: appId,
+            notifyButton: { enable: false },
+            allowLocalhostAsSecureOrigin: true,
+            serviceWorkerParam: { scope: '/' },
+            serviceWorkerPath: 'OneSignalSDKWorker.js'
+          });
+          console.log('[OneSignal Admin Debug] OneSignal.init() reussi !');
+
+          if (window.hasAdminUserCode && window.adminUserCode) {
+            console.log('[OneSignal Admin Debug] Connexion de l\'utilisateur OneSignal:', window.adminUserCode);
+            if (typeof OneSignal.login === 'function') {
+              await OneSignal.login(window.adminUserCode);
+              console.log('[OneSignal Admin Debug] OneSignal.login() reussi.');
             }
+
+            const currentPermission = typeof Notification !== 'undefined' ? Notification.permission : 'unknown';
+            console.log('[OneSignal Admin Debug] Permission actuelle du navigateur:', currentPermission);
+
+            if (currentPermission === 'default') {
+              console.log('[OneSignal Admin Debug] Demande d\'autorisation Push en cours...');
+              if (typeof OneSignal.Notifications !== 'undefined' && typeof OneSignal.Notifications.requestPermission === 'function') {
+                await OneSignal.Notifications.requestPermission();
+                console.log('[OneSignal Admin Debug] requestPermission() invoque.');
+              } else if (typeof OneSignal.Slidedown !== 'undefined' && typeof OneSignal.Slidedown.promptPush === 'function') {
+                await OneSignal.Slidedown.promptPush();
+                console.log('[OneSignal Admin Debug] promptPush() invoque.');
+              }
+            } else {
+              console.log('[OneSignal Admin Debug] Statut de permission du navigateur:', currentPermission);
+            }
+          } else {
+            console.warn('[OneSignal Admin Debug] Aucun code utilisateur trouve (hasAdminUserCode=false).');
           }
         } catch (e) {
-          console.log("OneSignal push actif uniquement sur le domaine enregistré.");
+          console.error('[OneSignal Admin Debug] Erreur pendant l\'initialisation:', e);
         }
       });
     </script>
