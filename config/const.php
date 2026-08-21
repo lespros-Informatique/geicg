@@ -1,6 +1,13 @@
 <?php
 define('ROOT', $_SERVER['DOCUMENT_ROOT'] ?? 'C:/wamp64/www');
-define('RACINE', 'http://localhost/admin-lavex/');
+
+$httpHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$isLocalEnvironment = (strpos($httpHost, 'localhost') !== false || strpos($httpHost, '127.0.0.1') !== false);
+
+if (!defined('RACINE')) {
+    define('RACINE', $isLocalEnvironment ? 'http://localhost/admin-lavex/' : 'https://admin-lavex.kassanngroup.com/');
+}
+
 
 define('LOGO', '<img src="' .RACINE. 'public/assets/images/logo/logo.png" class="img-circle" alt="Logo" width="80" style="border-radius: 70%; object-fit: covers;">');
 

@@ -303,6 +303,14 @@ if (strpos($url, '/admin-lavex/public') === 0) {
 } elseif (strpos($url, '/admin-lavex') === 0) {
     $url = str_replace('/admin-lavex', '', $url);
 }
+
+if ($url === '/OneSignalSDKWorker.js' || $url === '/OneSignalSDKUpdaterWorker.js') {
+    header('Content-Type: application/javascript; charset=utf-8');
+    header('Service-Worker-Allowed: /');
+    echo 'importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");';
+    exit;
+}
+
 $url = rtrim($url, '/');
 if ($url === '') {
     $url = '/';
