@@ -232,8 +232,8 @@ $accessoires = (new ModelAccessoire())->getAll();
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe d'affectation <span style="color: #EF4444;">*</span></label>
-                <select class="form-control" id="wiz_classe" name="classe_code" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;" required>
-                  <option value="">-- Sélectionner la classe --</option>
+                <select class="form-control select2" id="wiz_classe" name="classe_code" style="width: 100%;" required>
+                  <option value="">-- Rechercher / Sélectionner la classe --</option>
                   <?php foreach($classes as $cl): ?>
                     <option value="<?= $cl['code_classe'] ?>"><?= htmlspecialchars($cl['libelle_classe']) ?></option>
                   <?php endforeach; ?>
@@ -539,6 +539,13 @@ $(document).ready(function() {
 
   // Restore state on load
   restoreFormData();
+  if ($.fn.select2) {
+    $('.select2').select2({
+      placeholder: "-- Rechercher / Sélectionner --",
+      allowClear: true,
+      width: '100%'
+    });
+  }
   updateWizardUI();
 });
 </script>

@@ -188,6 +188,9 @@
                 <a href="<?= RACINE ?>paiement/list" class="nav-item sub <?= strpos($currentUri, '/paiement/') !== false ? 'active' : '' ?>">
                     <i data-lucide="credit-card"></i> <span>Caisse & Encaissements</span>
                 </a>
+                <a href="<?= RACINE ?>ouverture_caisse/list" class="nav-item sub <?= strpos($currentUri, '/ouverture_caisse/') !== false ? 'active' : '' ?>">
+                    <i data-lucide="unlock"></i> <span>Ouverture de Caisse</span>
+                </a>
                 <a href="<?= RACINE ?>cloture_caisse/list" class="nav-item sub <?= strpos($currentUri, '/cloture_caisse/') !== false ? 'active' : '' ?>">
                     <i data-lucide="lock"></i> <span>Clôture Caisse Journalière</span>
                 </a>

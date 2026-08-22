@@ -29,6 +29,67 @@ class ClotureCaisseController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    public function getDailyTotals()
+    {
+        $this->requireAuth();
+        $date = $_GET['date'] ?? ($_POST['date'] ?? date('Y-m-d'));
+        $db = $this->model->getCon();
+
+        $stmt = $db->prepare("
+            SELECT mode_paiement, SUM(montant_paiement) as sum_mode, COUNT(*) as count_mode
+            FROM paiements
+            WHERE DATE(date_paiement) = ? AND statut_paiement != 'annule'
+            GROUP BY mode_paiement
+        ");
+        $stmt->execute([$date]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalEspeces = 0;
+        $totalMobileMoney = 0;
+        $totalChequeVirement = 0;
+        $nbEncaissements = 0;
+
+        foreach ($rows as $r) {
+            $mode = strtolower($r['mode_paiement'] ?? '');
+            $sum = (float)($r['sum_mode'] ?? 0);
+            $cnt = (int)($r['count_mode'] ?? 0);
+
+            $nbEncaissements += $cnt;
+
+            if ($mode === 'espece' || $mode === 'especes') {
+                $totalEspeces += $sum;
+            } elseif ($mode === 'mobile_money' || $mode === 'wave' || $mode === 'orange' || $mode === 'mtn' || $mode === 'moov') {
+                $totalMobileMoney += $sum;
+            } else {
+                $totalChequeVirement += $sum;
+            }
+        }
+
+        $totalGeneral = $totalEspeces + $totalMobileMoney + $totalChequeVirement;
+
+        $stmtCheck = $db->prepare("SELECT * FROM clotures_caisse WHERE date_cloture = ? AND statut_cloture != 'annule' LIMIT 1");
+        $stmtCheck->execute([$date]);
+        $alreadyClosed = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+        $this->json([
+            'status' => 1,
+            'data' => [
+                'date' => $date,
+                'is_already_closed' => !empty($alreadyClosed),
+                'existing_code' => $alreadyClosed['code_cloture'] ?? null,
+                'total_especes' => $totalEspeces,
+                'total_mobile_money' => $totalMobileMoney,
+                'total_cheque_virement' => $totalChequeVirement,
+                'total_general' => $totalGeneral,
+                'nb_encaissements' => $nbEncaissements,
+                'total_especes_fmt' => number_format($totalEspeces, 0, ',', ' ') . ' FCFA',
+                'total_mobile_money_fmt' => number_format($totalMobileMoney, 0, ',', ' ') . ' FCFA',
+                'total_cheque_virement_fmt' => number_format($totalChequeVirement, 0, ',', ' ') . ' FCFA',
+                'total_general_fmt' => number_format($totalGeneral, 0, ',', ' ') . ' FCFA'
+            ]
+        ]);
+    }
+
     public function add()
     {
         $this->requirePost(false);
@@ -38,20 +99,51 @@ class ClotureCaisseController extends BaseController
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $dateCloture = $data['date_cloture'] ?? date('Y-m-d');
+        $db = $this->model->getCon();
+
+        // 1. Control: Single closing per day rule
+        $stmtCheck = $db->prepare("SELECT * FROM clotures_caisse WHERE date_cloture = ? AND statut_cloture != 'annule' LIMIT 1");
+        $stmtCheck->execute([$dateCloture]);
+        $existingCloture = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+        if ($existingCloture) {
+            $dateFmt = date('d/m/Y', strtotime($dateCloture));
+            $this->error("La caisse a déjà été clôturée pour la journée du $dateFmt (Réf: {$existingCloture['code_cloture']}). Une seule clôture de caisse par jour est autorisée.");
+            return;
+        }
+
+        // Get Fond Initial from active ouverture
+        $stmtOuv = $db->prepare("SELECT * FROM ouvertures_caisse WHERE date_ouverture = ? AND statut_ouverture = 'ouverte' ORDER BY id_ouverture DESC LIMIT 1");
+        $stmtOuv->execute([$dateCloture]);
+        $ouv = $stmtOuv->fetch(PDO::FETCH_ASSOC);
+
+        $fondInitial = $ouv ? (float)$ouv['fond_initial'] : (float)($data['fond_initial'] ?? 0);
+        $totalEspeces = (float)($data['total_especes'] ?? 0);
+
+        $data['fond_initial'] = $fondInitial;
+        $data['solde_attendu_caisse'] = $fondInitial + $totalEspeces;
         if (empty($data['code_cloture'])) {
             $data['code_cloture'] = $this->validator->generateCode('clotures_caisse', 'code_cloture', 'CLO-', 8);
         }
-        $data['statut_cloture'] = $data['statut_cloture'] ?? 'actif';
+        $data['statut_cloture'] = 'valide';
         $data['created_at_cloture'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE clotures_caisse")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+
+        $cols = $db->query("DESCRIBE clotures_caisse")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
+
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            // Mark ouverture as cloturee
+            $stmtClose = $db->prepare("UPDATE ouvertures_caisse SET statut_ouverture = 'cloturee' WHERE date_ouverture = ?");
+            $stmtClose->execute([$dateCloture]);
+
+            $this->success('Clôture de caisse effectuée avec succès! La caisse de la journée est désormais fermée.');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de l\'enregistrement de la clôture de caisse');
         }
     }
 

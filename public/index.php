@@ -23,6 +23,7 @@ $parentController = new ParentController();
 $inscriptionController = new InscriptionController();
 $accessoireController = new AccessoireController();
 $paiementController = new PaiementController();
+$ouvertureCaisseController = new OuvertureCaisseController();
 $clotureCaisseController = new ClotureCaisseController();
 $impayesController = new ImpayesController();
 $typeDepenseController = new TypeDepenseController();
@@ -249,6 +250,7 @@ $route->addRoute('/accessoire/formulaire', [$accessoireController, 'formulaire']
 // Module: paiement (PaiementController)
 $route->addRoute('/paiement/list', [$paiementController, 'list']);
 $route->addRoute('/paiement/apiList', [$paiementController, 'apiList']);
+$route->addRoute('/paiement/getStudentFinancialSummary', [$paiementController, 'getStudentFinancialSummary']);
 $route->addRoute('/paiement/add', [$paiementController, 'add']);
 $route->addRoute('/paiement/edit', [$paiementController, 'edit']);
 $route->addRoute('/paiement/changer', [$paiementController, 'changer']);
@@ -256,9 +258,20 @@ $route->addRoute('/paiement/details/{param}', [$paiementController, 'details']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);
 $route->addRoute('/paiement/formulaire', [$paiementController, 'formulaire']);
 
+// Module: ouverture_caisse (OuvertureCaisseController)
+$route->addRoute('/ouverture_caisse/list', [$ouvertureCaisseController, 'list']);
+$route->addRoute('/ouverture_caisse/apiList', [$ouvertureCaisseController, 'apiList']);
+$route->addRoute('/ouverture_caisse/add', [$ouvertureCaisseController, 'add']);
+$route->addRoute('/ouverture_caisse/edit', [$ouvertureCaisseController, 'edit']);
+$route->addRoute('/ouverture_caisse/changer', [$ouvertureCaisseController, 'changer']);
+$route->addRoute('/ouverture_caisse/details/{param}', [$ouvertureCaisseController, 'details']);
+$route->addRoute('/ouverture_caisse/edition/{param}', [$ouvertureCaisseController, 'edition']);
+$route->addRoute('/ouverture_caisse/formulaire', [$ouvertureCaisseController, 'formulaire']);
+
 // Module: cloture_caisse (ClotureCaisseController)
 $route->addRoute('/cloture_caisse/list', [$clotureCaisseController, 'list']);
 $route->addRoute('/cloture_caisse/apiList', [$clotureCaisseController, 'apiList']);
+$route->addRoute('/cloture_caisse/getDailyTotals', [$clotureCaisseController, 'getDailyTotals']);
 $route->addRoute('/cloture_caisse/add', [$clotureCaisseController, 'add']);
 $route->addRoute('/cloture_caisse/edit', [$clotureCaisseController, 'edit']);
 $route->addRoute('/cloture_caisse/changer', [$clotureCaisseController, 'changer']);

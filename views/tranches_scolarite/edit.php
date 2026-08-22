@@ -38,8 +38,8 @@ $enseignants = (new ModelEnseignant())->getAll();
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Grille de scolarité <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="scolarite_code" required>
-                <option value="">-- Choisir le tarif scolarité --</option>
+              <select class="form-control select2" style="width: 100%; box-sizing: border-box;" name="scolarite_code" required>
+                <option value="">-- Rechercher / Choisir le tarif scolarité --</option>
                 <?php foreach($scolarites as $sc): ?>
                   <?php
                     $filiereNom = $sc['libelle_filiere'] ?? $sc['filiere_code'] ?? '';
@@ -56,7 +56,7 @@ $enseignants = (new ModelEnseignant())->getAll();
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Libellé de la tranche <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_tranche" value="<?= htmlspecialchars($item['libelle_tranche'] ?? '') ?>" placeholder="Ex: 1ère Tranche à l\'inscription" required>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_tranche" value="<?= htmlspecialchars($item['libelle_tranche'] ?? '') ?>" placeholder="Ex: 1ère Tranche à l'inscription" required>
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Montant de la tranche (FCFA) <span style="color: #EF4444;">*</span></label>
@@ -76,5 +76,16 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
+<script>
+$(document).ready(function() { 
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('.select2').select2({
+      placeholder: "-- Rechercher / Choisir --",
+      allowClear: true,
+      width: '100%'
+    });
+  }
+});
+</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

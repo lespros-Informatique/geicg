@@ -29,6 +29,88 @@ class PaiementController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    public function getStudentFinancialSummary()
+    {
+        $this->requireAuth();
+        $inscriptionCode = $_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? '');
+        $etudiantCode = $_GET['etudiant_code'] ?? ($_POST['etudiant_code'] ?? '');
+
+        $db = $this->model->getCon();
+
+        if (!empty($inscriptionCode)) {
+            $stmt = $db->prepare("
+                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, c.libelle_classe
+                FROM inscriptions i
+                LEFT JOIN etudiants e ON i.etudiant_code = e.code_etudiant
+                LEFT JOIN classes c ON i.classe_code = c.code_classe
+                WHERE i.code_inscription = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$inscriptionCode]);
+            $ins = $stmt->fetch(PDO::FETCH_ASSOC);
+        } elseif (!empty($etudiantCode)) {
+            $stmt = $db->prepare("
+                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, c.libelle_classe
+                FROM etudiants e
+                LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant
+                LEFT JOIN classes c ON i.classe_code = c.code_classe
+                WHERE e.code_etudiant = ? OR e.matricule_etudiant = ?
+                ORDER BY i.id_inscription DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$etudiantCode, $etudiantCode]);
+            $ins = $stmt->fetch(PDO::FETCH_ASSOC);
+        } else {
+            $this->json(['status' => 0, 'message' => 'Code inscription ou matricule manquant']);
+            return;
+        }
+
+        if (!$ins) {
+            $this->json(['status' => 0, 'message' => 'Aucun dossier d\'inscription trouvé pour cet étudiant.']);
+            return;
+        }
+
+        $codeInscription = $ins['code_inscription'] ?? '';
+        $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+
+        $stmtPay = $db->prepare("SELECT SUM(montant_paiement) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+        $stmtPay->execute([$codeInscription]);
+        $totalPaye = (float)($stmtPay->fetchColumn() ?: 0);
+
+        $soldeRestant = max(0, $scolariteDue - $totalPaye);
+
+        $statutReglement = 'Non Réglé';
+        $badgeClass = 'badge-danger';
+        if ($totalPaye >= $scolariteDue && $scolariteDue > 0) {
+            $statutReglement = 'Scolarité Totalement Soldée';
+            $badgeClass = 'badge-success';
+        } elseif ($totalPaye > 0) {
+            $statutReglement = 'Acompte Payé / Solde Débiteurs';
+            $badgeClass = 'badge-warning';
+        }
+
+        $nomComplet = trim(($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? ''));
+
+        $this->json([
+            'status' => 1,
+            'data' => [
+                'code_inscription' => $codeInscription,
+                'code_etudiant' => $ins['code_etudiant'] ?? '',
+                'matricule' => $ins['matricule_etudiant'] ?? '-',
+                'nom_complet' => $nomComplet,
+                'classe' => $ins['libelle_classe'] ?? 'Classe non définie',
+                'scolarite_due' => $scolariteDue,
+                'scolarite_due_fmt' => number_format($scolariteDue, 0, ',', ' ') . ' FCFA',
+                'total_paye' => $totalPaye,
+                'total_paye_fmt' => number_format($totalPaye, 0, ',', ' ') . ' FCFA',
+                'solde_restant' => $soldeRestant,
+                'solde_restant_fmt' => number_format($soldeRestant, 0, ',', ' ') . ' FCFA',
+                'statut_reglement' => $statutReglement,
+                'badge_class' => $badgeClass
+            ]
+        ]);
+    }
+
     public function add()
     {
         $this->requirePost(false);
