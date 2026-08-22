@@ -19,7 +19,7 @@ class ImpayesController extends BaseController
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
-            $id = $i['id_inscription'];
+            $id = $i['id_relance'];
             $idCrypte = $this->validator->crypter($id);
             $data[] = array_merge($i, [
                 'id' => $id,
@@ -38,15 +38,23 @@ class ImpayesController extends BaseController
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);
-        $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+
+        if (empty($data['code_relance'])) {
+            $data['code_relance'] = $this->validator->generateCode('relances_impayes', 'code_relance', 'REL-', 8);
+        }
+        $data['statut_relance'] = 'envoye';
+        $data['created_at_relance'] = date('Y-m-d H:i:s');
+        $data['user_code'] = $userCode;
+        $data['annee_code'] = $anneeCode;
+        $data['etablissement_code'] = $etabCode;
+
+        $cols = $this->model->getCon()->query("DESCRIBE relances_impayes")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
+
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Relance d\'impayé enregistrée et expédiée avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de l\'enregistrement de la relance');
         }
     }
 
