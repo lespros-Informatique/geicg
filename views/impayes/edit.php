@@ -56,7 +56,7 @@ $overdueList = (new ModelImpayes())->getOverdueStudents();
 
       <!-- Form Card -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>impayes/<?= !empty($item['id_relance']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form id="form-relance-impaye" action="<?= RACINE ?>impayes/<?= !empty($item['id_relance']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_relance'])): ?>
             <input type="hidden" name="id_relance" value="<?= $item['id_relance'] ?>">
@@ -105,34 +105,32 @@ $overdueList = (new ModelImpayes())->getOverdueStudents();
               </select>
             </div>
 
-            <!-- Canal de communication -->
+            <!-- Canal de communication WhatsApp Unique -->
+            <input type="hidden" name="canal_relance" value="whatsapp">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Canal de transmission <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" name="canal_relance" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1;" required>
-                <option value="sms" <?= (($item['canal_relance'] ?? '') === 'sms') ? 'selected' : '' ?>>SMS Téléphone Direct</option>
-                <option value="whatsapp" <?= (($item['canal_relance'] ?? '') === 'whatsapp') ? 'selected' : '' ?>>Message WhatsApp Pro</option>
-                <option value="email" <?= (($item['canal_relance'] ?? '') === 'email') ? 'selected' : '' ?>>Email Courrier Officiel</option>
-                <option value="appel" <?= (($item['canal_relance'] ?? '') === 'appel') ? 'selected' : '' ?>>Appel Téléphonique Direct</option>
-              </select>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Canal de transmission <span style="color: #166534;">*</span></label>
+              <div style="padding: 11px 14px; background: #DCFCE7; border: 1.5px solid #86EFAC; border-radius: 8px; font-weight: 800; color: #166534; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="message-square" style="width: 18px; height: 18px; color: #16A34A;"></i> Message WhatsApp Pro (Canal Unique)
+              </div>
             </div>
 
-            <!-- Numéro destinataire -->
+            <!-- Numéro WhatsApp destinataire -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone Destinataire <span style="color: #EF4444;">*</span></label>
-              <input type="text" id="inp_telephone_destinataire" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700;" name="telephone_destinataire" value="<?= htmlspecialchars($item['telephone_destinataire'] ?? '') ?>" placeholder="Ex: 0708091011" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro WhatsApp Parent / Tuteur <span style="color: #EF4444;">*</span></label>
+              <input type="text" id="inp_telephone_destinataire" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700;" name="telephone_destinataire" value="<?= htmlspecialchars($item['telephone_destinataire'] ?? '') ?>" placeholder="Ex: 0708091011 ou 2250708091011" required>
             </div>
 
-            <!-- Message pré-rédigé -->
+            <!-- Message pré-rédigé WhatsApp -->
             <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Message de relance (Généré automatiquement) <span style="color: #EF4444;">*</span></label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Contenu du message WhatsApp (Généré automatiquement) <span style="color: #EF4444;">*</span></label>
               <textarea id="inp_message_relance" class="form-control" style="width: 100%; box-sizing: border-box; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; line-height: 1.5; color: #0F172A;" name="message_relance" rows="4" required><?= htmlspecialchars($item['message_relance'] ?? '') ?></textarea>
             </div>
 
           </div>
 
-          <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" class="btn btn-primary" style="background: #D97706; border-color: #D97706; font-weight: 800; border-radius: 8px; padding: 11px 28px; display: inline-flex; align-items: center; gap: 8px;">
-              <i data-lucide="send" style="width: 18px; height: 18px;"></i> Émettre et Enregistrer la Relance
+          <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%; flex-wrap: wrap;">
+            <button type="submit" id="btn_save_and_send_wa" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; font-weight: 800; border-radius: 8px; padding: 11px 28px; display: inline-flex; align-items: center; gap: 8px; color: #FFF;">
+              <i data-lucide="message-square" style="width: 18px; height: 18px;"></i> Envoyer par WhatsApp & Enregistrer
             </button>
             <a href="<?= RACINE ?>impayes/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px;">Annuler</a>
           </div>
@@ -215,6 +213,48 @@ $(document).ready(function() {
   if ($('#select_overdue_student').val()) {
     updateRelanceTemplate();
   }
+
+  // AJAX submit to guarantee database persistence THEN open WhatsApp
+  $('#form-relance-impaye').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var actionUrl = $form.attr('action');
+    var formData = $form.serialize();
+
+    var rawPhone = $('#inp_telephone_destinataire').val().replace(/[^0-9]/g, '');
+    if (rawPhone && !rawPhone.startsWith('225') && rawPhone.length === 10) {
+      rawPhone = '225' + rawPhone;
+    }
+    var text = encodeURIComponent($('#inp_message_relance').val());
+    var waUrl = 'https://api.whatsapp.com/send?phone=' + rawPhone + '&text=' + text;
+
+    loading('#btn_save_and_send_wa', true, 'Enregistrement en cours...');
+
+    $.ajax({
+      url: actionUrl,
+      type: 'POST',
+      data: formData,
+      dataType: 'json',
+      success: function(res) {
+        loading('#btn_save_and_send_wa', false, 'Envoyer par WhatsApp & Enregistrer');
+        if (res.status === 1 || res.status === true) {
+          showToast('Relance d\'impayé enregistrée avec succès dans le système !', 'success');
+          if (rawPhone) {
+            window.open(waUrl, '_blank');
+          }
+          setTimeout(function() {
+            window.location.href = window.RACINE + 'impayes/list';
+          }, 600);
+        } else {
+          showToast(res.message || 'Erreur lors de l\'enregistrement de la relance', 'error');
+        }
+      },
+      error: function(xhr) {
+        loading('#btn_save_and_send_wa', false, 'Envoyer par WhatsApp & Enregistrer');
+        showToast('Erreur lors de l\'enregistrement de la relance', 'error');
+      }
+    });
+  });
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

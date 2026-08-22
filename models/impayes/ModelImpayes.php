@@ -4,6 +4,21 @@ class ModelImpayes extends BaseModel
 {
     protected string $table = 'relances_impayes';
     protected string $primaryKey = 'id_relance';
+    protected ?string $createdAtField = 'created_at_relance';
+
+    public function getAll(): array
+    {
+        try {
+            $sql = "SELECT r.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant 
+                    FROM relances_impayes r
+                    LEFT JOIN etudiants e ON r.etudiant_code = e.code_etudiant
+                    ORDER BY r.id_relance DESC";
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Get all relances_impayes: " . $e->getMessage());
+            return [];
+        }
+    }
     
     public function getOverdueStudents()
     {

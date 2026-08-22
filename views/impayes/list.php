@@ -15,22 +15,24 @@
         </a>
       </div>
 
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box;">
-        <table id="table-impayes" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%;">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Code Relance</th>
-              <th>Élève / Étudiant</th>
-              <th>Niveau de Relance</th>
-              <th>Canal</th>
-              <th>Montant Impayé</th>
-              <th>Date d'Émission</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table id="table-impayes" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
+                <th style="padding: 12px;">ID</th>
+                <th style="padding: 12px;">Code Relance</th>
+                <th style="padding: 12px;">Élève / Étudiant</th>
+                <th style="padding: 12px;">Niveau de Relance</th>
+                <th style="padding: 12px;">Canal</th>
+                <th style="padding: 12px;">Montant Impayé</th>
+                <th style="padding: 12px;">Date d'Émission</th>
+                <th style="padding: 12px; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
 
     </div>
@@ -46,6 +48,8 @@ $(document).ready(function() {
       url: '<?= RACINE ?>impayes/apiList',
       type: 'GET'
     },
+    scrollX: true,
+    autoWidth: false,
     columns: [
       { data: 'id_relance', defaultContent: '-' },
       { 
@@ -54,7 +58,15 @@ $(document).ready(function() {
           return '<code style="font-weight:700; color:#D97706;">' + (d || '-') + '</code>';
         }
       },
-      { data: 'etudiant_code', defaultContent: '-' },
+      { 
+        data: null,
+        render: function(d) {
+          if (d.nom_etudiant) {
+            return '<strong>' + (d.nom_etudiant + ' ' + (d.prenom_etudiant || '')).trim() + '</strong><br><small style="color:#64748B;">' + (d.matricule_etudiant || d.etudiant_code) + '</small>';
+          }
+          return d.etudiant_code || '-';
+        }
+      },
       { 
         data: 'niveau_relance', 
         render: function(d) {
