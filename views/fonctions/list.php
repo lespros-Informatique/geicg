@@ -21,8 +21,8 @@
                 <th style="padding: 12px;">ID</th>
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Intitulé du Poste</th>
-                <th style="padding: 12px;">Statut</th>
-                <th style="padding: 12px; text-align: right;">Actions</th>
+                <th class="text-center" style="padding: 12px;">Statut</th>
+                <th class="text-end" style="padding: 12px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -42,7 +42,7 @@ $(document).ready(function() {
       { data: 'id_fonction', defaultContent: '-' },
       { data: 'code_fonction', defaultContent: '-' },
       { data: 'libelle_fonction', defaultContent: '-' },
-      { data: 'statut_fonction', render: function(d) {
+      { data: 'statut_fonction', className: 'text-center', render: function(d) {
         return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
       } },
       { data: null, render: function(d) {

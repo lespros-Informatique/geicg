@@ -38,13 +38,24 @@ class FonctionController extends BaseController
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);
+
+        if (!empty($data['libelle_fonction'])) {
+            if (!$this->checkUnique('fonctions', 'libelle_fonction', $data['libelle_fonction'], 'Intitulé de la fonction')) return;
+        }
+
+        if (empty($data['code_fonction'])) {
+            $data['code_fonction'] = $this->validator->generateCode('fonctions', 'code_fonction', 'FCT-', 8);
+        }
+        $data['statut_fonction'] = $data['statut_fonction'] ?? 'actif';
+        $data['created_at_fonction'] = date('Y-m-d H:i:s');
+
         $cols = $this->model->getCon()->query("DESCRIBE fonctions")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Fonction créée avec succès!');
         } else {
             $this->error('Erreur lors de la création');
         }
@@ -58,10 +69,15 @@ class FonctionController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
+        if (!empty($data['libelle_fonction'])) {
+            if (!$this->checkUnique('fonctions', 'libelle_fonction', $data['libelle_fonction'], 'Intitulé de la fonction', 'id_fonction', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE fonctions")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Fonction modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
         }

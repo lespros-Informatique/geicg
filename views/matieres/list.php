@@ -6,8 +6,8 @@
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Matières, Coefficients & ECTS</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Matières, Coefficients & ECTS</p>
+          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Matières & Coefficients</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Matières & Coefficients</p>
         </div>
         <a href="<?= RACINE ?>matiere/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Matière / Cours
@@ -22,9 +22,8 @@
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Nom de la Matière</th>
                 <th style="padding: 12px;">Coefficient</th>
-                <th style="padding: 12px;">ECTS</th>
-                <th style="padding: 12px;">Statut</th>
-                <th style="padding: 12px; text-align: right;">Actions</th>
+                <th class="text-center" style="padding: 12px;">Statut</th>
+                <th class="text-end" style="padding: 12px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -42,11 +41,10 @@ $(document).ready(function() {
     autoWidth: false,
     columns: [
       { data: 'id_matiere', defaultContent: '-' },
-      { data: 'code_matiere', defaultContent: '-' },
-      { data: 'libelle_matiere', defaultContent: '-' },
-      { data: 'coefficient', defaultContent: '-' },
-      { data: 'credits_ects', defaultContent: '-' },
-      { data: 'statut_matiere', render: function(d) {
+      { data: 'code_matiere', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
+      { data: 'libelle_matiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>'; } },
+      { data: 'coefficient', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '1.0') + '</span>'; } },
+      { data: 'statut_matiere', className: 'text-center', render: function(d) {
         return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
       } },
       { data: null, render: function(d) {

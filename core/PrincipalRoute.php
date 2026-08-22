@@ -25,7 +25,7 @@ require_once __DIR__ . '/../models/salles/ModelSalle.php';
 require_once __DIR__ . '/../models/annees/ModelAnnee.php';
 require_once __DIR__ . '/../models/classes/ModelClasse.php';
 require_once __DIR__ . '/../models/semestres/ModelSemestre.php';
-require_once __DIR__ . '/../models/unites_enseignement/ModelUe.php';
+// require_once __DIR__ . '/../models/unites_enseignement/ModelUe.php';
 require_once __DIR__ . '/../models/matieres/ModelMatiere.php';
 
 // Scolarité & Finances Models
@@ -69,7 +69,7 @@ require_once __DIR__ . '/../controllers/salles/SalleController.php';
 require_once __DIR__ . '/../controllers/annees/AnneeController.php';
 require_once __DIR__ . '/../controllers/classes/ClasseController.php';
 require_once __DIR__ . '/../controllers/semestres/SemestreController.php';
-require_once __DIR__ . '/../controllers/unites_enseignement/UeController.php';
+// require_once __DIR__ . '/../controllers/unites_enseignement/UeController.php';
 require_once __DIR__ . '/../controllers/matieres/MatiereController.php';
 
 // Scolarité & Finances Controllers
@@ -97,8 +97,8 @@ require_once __DIR__ . '/../controllers/evenements/EvenementController.php';
 require_once __DIR__ . '/../controllers/galeries/GalerieController.php';
 require_once __DIR__ . '/../controllers/documents/DocumentController.php';
 
-require_once __DIR__ . '/../models/services/ModelService.php';
-require_once __DIR__ . '/../controllers/services/ServiceController.php';
+// require_once __DIR__ . '/../models/services/ModelService.php';
+// require_once __DIR__ . '/../controllers/services/ServiceController.php';
 
 require_once __DIR__ . '/../models/fonctions/ModelFonction.php';
 require_once __DIR__ . '/../models/impayes/ModelImpayes.php';
@@ -112,6 +112,9 @@ require_once __DIR__ . '/../controllers/bulletin/BulletinController.php';
 
 require_once __DIR__ . '/../models/ModelFiliereCycle.php';
 require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.php';
+
+require_once __DIR__ . '/../models/ModelFiliereNiveau.php';
+require_once __DIR__ . '/../controllers/filiere_niveaux/FiliereNiveauController.php';
 
 
 

@@ -43,6 +43,7 @@ class TABLES
     public const FILIERES               = 'filieres';
     public const FILIERE_CYCLES         = 'filiere_cycles';
     public const NIVEAUX                = 'niveaux';
+    public const FILIERE_NIVEAUX        = 'filiere_niveaux';
     public const CLASSES                = 'classes';
     public const SEMESTRES              = 'semestres';
     public const UNITES_ENSEIGNEMENT    = 'unites_enseignement';

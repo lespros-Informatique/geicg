@@ -38,20 +38,20 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
             <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Filière concernée</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['filiere_code']) ? htmlspecialchars($item['filiere_code']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
+            <div style="font-size: 15px; font-weight: 700; color: #0F172A; word-break: break-word;">
+              <?= !empty($item['libelle_filiere']) ? htmlspecialchars($item['libelle_filiere']) : (!empty($item['filiere_code']) ? htmlspecialchars($item['filiere_code']) : '<span style="color:#94A3B8; font-style:italic;">Non renseignée</span>') ?>
             </div>
           </div>
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Niveau d\'études</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['niveau_code']) ? htmlspecialchars($item['niveau_code']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Niveau d'études</div>
+            <div style="font-size: 15px; font-weight: 700; color: #1E3A5F; word-break: break-word;">
+              <?= !empty($item['libelle_niveau']) ? htmlspecialchars($item['libelle_niveau']) : (!empty($item['niveau_code']) ? htmlspecialchars($item['niveau_code']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>') ?>
             </div>
           </div>
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Montant Scolarité Annuelle (FCFA)</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['montant_scolarite']) ? htmlspecialchars($item['montant_scolarite']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Montant Scolarité Annuelle</div>
+            <div style="font-size: 16px; font-weight: 800; color: #0F172A; word-break: break-word;">
+              <?= !empty($item['montant_scolarite']) ? number_format((float)$item['montant_scolarite'], 0, ',', ' ') . ' FCFA' : '<span style="color:#94A3B8; font-style:italic;">0 FCFA</span>' ?>
             </div>
           </div>
         </div>

@@ -5,17 +5,16 @@ $route = new Router();
 $homeController = new HomeController();
 $userController = new UserController();
 $etablissementController = new EtablissementController();
-$serviceController = new ServiceController();
 $fonctionController = new FonctionController();
 $cycleController = new CycleController();
 $filiereController = new FiliereController();
 $filiereCycleController = new FiliereCycleController();
 $niveauController = new NiveauController();
+$filiereNiveauController = new FiliereNiveauController();
 $salleController = new SalleController();
 $anneeController = new AnneeController();
 $classeController = new ClasseController();
 $semestreController = new SemestreController();
-$ueController = new UeController();
 $matiereController = new MatiereController();
 $scolariteController = new ScolariteController();
 $trancheController = new TrancheController();
@@ -71,15 +70,7 @@ $route->addRoute('/etablissement/details/{param}', [$etablissementController, 'd
 $route->addRoute('/etablissement/edition/{param}', [$etablissementController, 'edition']);
 $route->addRoute('/etablissement/formulaire', [$etablissementController, 'formulaire']);
 
-// Module: service (ServiceController)
-$route->addRoute('/service/list', [$serviceController, 'list']);
-$route->addRoute('/service/apiList', [$serviceController, 'apiList']);
-$route->addRoute('/service/add', [$serviceController, 'add']);
-$route->addRoute('/service/edit', [$serviceController, 'edit']);
-$route->addRoute('/service/changer', [$serviceController, 'changer']);
-$route->addRoute('/service/details/{param}', [$serviceController, 'details']);
-$route->addRoute('/service/edition/{param}', [$serviceController, 'edition']);
-$route->addRoute('/service/formulaire', [$serviceController, 'formulaire']);
+
 
 // Module: fonction (FonctionController)
 $route->addRoute('/fonction/list', [$fonctionController, 'list']);
@@ -131,6 +122,16 @@ $route->addRoute('/niveau/details/{param}', [$niveauController, 'details']);
 $route->addRoute('/niveau/edition/{param}', [$niveauController, 'edition']);
 $route->addRoute('/niveau/formulaire', [$niveauController, 'formulaire']);
 
+// Module: filiere_niveau (FiliereNiveauController)
+$route->addRoute('/filiere_niveau/list', [$filiereNiveauController, 'list']);
+$route->addRoute('/filiere_niveau/apiList', [$filiereNiveauController, 'apiList']);
+$route->addRoute('/filiere_niveau/add', [$filiereNiveauController, 'add']);
+$route->addRoute('/filiere_niveau/edit', [$filiereNiveauController, 'edit']);
+$route->addRoute('/filiere_niveau/changer', [$filiereNiveauController, 'changer']);
+$route->addRoute('/filiere_niveau/details/{param}', [$filiereNiveauController, 'details']);
+$route->addRoute('/filiere_niveau/edition/{param}', [$filiereNiveauController, 'edition']);
+$route->addRoute('/filiere_niveau/formulaire', [$filiereNiveauController, 'formulaire']);
+
 // Module: salle (SalleController)
 $route->addRoute('/salle/list', [$salleController, 'list']);
 $route->addRoute('/salle/apiList', [$salleController, 'apiList']);
@@ -171,15 +172,7 @@ $route->addRoute('/semestre/details/{param}', [$semestreController, 'details']);
 $route->addRoute('/semestre/edition/{param}', [$semestreController, 'edition']);
 $route->addRoute('/semestre/formulaire', [$semestreController, 'formulaire']);
 
-// Module: ue (UeController)
-$route->addRoute('/ue/list', [$ueController, 'list']);
-$route->addRoute('/ue/apiList', [$ueController, 'apiList']);
-$route->addRoute('/ue/add', [$ueController, 'add']);
-$route->addRoute('/ue/edit', [$ueController, 'edit']);
-$route->addRoute('/ue/changer', [$ueController, 'changer']);
-$route->addRoute('/ue/details/{param}', [$ueController, 'details']);
-$route->addRoute('/ue/edition/{param}', [$ueController, 'edition']);
-$route->addRoute('/ue/formulaire', [$ueController, 'formulaire']);
+
 
 // Module: matiere (MatiereController)
 $route->addRoute('/matiere/list', [$matiereController, 'list']);

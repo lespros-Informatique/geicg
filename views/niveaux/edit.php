@@ -6,7 +6,7 @@ $niveaux = (new ModelNiveau())->getAll();
 $classes = (new ModelClasse())->getAll();
 $salles = (new ModelSalle())->getAll();
 $scolarites = (new ModelScolarite())->getAll();
-$ues = (new ModelUe())->getAll();
+$ues = [];
 $matieres = (new ModelMatiere())->getAll();
 $semestres = (new ModelSemestre())->getAll();
 $etudiants = (new ModelEtudiant())->getAll();
@@ -39,15 +39,6 @@ $enseignants = (new ModelEnseignant())->getAll();
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Intitulé du niveau (ex: L1, L2) <span style="color: #EF4444;">*</span></label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_niveau" value="<?= htmlspecialchars($item['libelle_niveau'] ?? '') ?>" placeholder="Ex: Licence 2 (L2)" required>
-            </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Filière rattachée <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="filiere_code" required>
-                <option value="">-- Choisir une filière --</option>
-                <?php foreach($filieres as $f): ?>
-                  <option value="<?= $f['code_filiere'] ?>" <?= (($item['filiere_code'] ?? '') == $f['code_filiere']) ? 'selected' : '' ?>><?= htmlspecialchars($f['libelle_filiere']) ?></option>
-                <?php endforeach; ?>
-              </select>
             </div>
           </div>
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">

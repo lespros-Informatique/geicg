@@ -6,7 +6,7 @@ $niveaux = (new ModelNiveau())->getAll();
 $classes = (new ModelClasse())->getAll();
 $salles = (new ModelSalle())->getAll();
 $scolarites = (new ModelScolarite())->getAll();
-$ues = (new ModelUe())->getAll();
+$ues = [];
 $matieres = (new ModelMatiere())->getAll();
 $semestres = (new ModelSemestre())->getAll();
 $etudiants = (new ModelEtudiant())->getAll();
@@ -41,7 +41,16 @@ $enseignants = (new ModelEnseignant())->getAll();
               <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="scolarite_code" required>
                 <option value="">-- Choisir le tarif scolarité --</option>
                 <?php foreach($scolarites as $sc): ?>
-                  <option value="<?= $sc['code_scolarite'] ?>" <?= (($item['scolarite_code'] ?? '') == $sc['code_scolarite']) ? 'selected' : '' ?>><?= htmlspecialchars($sc['montant_scolarite'] . ' FCFA') ?></option>
+                  <?php
+                    $filiereNom = $sc['libelle_filiere'] ?? $sc['filiere_code'] ?? '';
+                    $niveauNom = $sc['libelle_niveau'] ?? $sc['niveau_code'] ?? '';
+                    $montantVal = (float)($sc['montant_scolarite'] ?? 0);
+                    $montantFmt = number_format($montantVal, 0, ',', ' ');
+                    $labelOpt = trim("$filiereNom $niveauNom") . " ($montantFmt FCFA)";
+                  ?>
+                  <option value="<?= $sc['code_scolarite'] ?>" <?= (($item['scolarite_code'] ?? '') == $sc['code_scolarite']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($labelOpt) ?>
+                  </option>
                 <?php endforeach; ?>
               </select>
             </div>
