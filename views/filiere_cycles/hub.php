@@ -117,17 +117,43 @@ $(document).ready(function() {
     $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
   });
 
+  // Renderer de Statut Pro & Cohérent avec le Template
+  function renderStatusBadge(statut) {
+    if (statut === 'actif') {
+      return '<span class="badge" style="background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">' +
+        '<i data-lucide="check-circle" style="width: 13px; height: 13px;"></i> Actif</span>';
+    } else {
+      return '<span class="badge" style="background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">' +
+        '<i data-lucide="x-circle" style="width: 13px; height: 13px;"></i> Inactif</span>';
+    }
+  }
+
+  // Renderer de Boutons d'Action Pro & Cohérent
+  function renderActionButtons(editUrl, detailsUrl) {
+    var html = '<div style="display: flex; justify-content: flex-end; gap: 8px;">';
+    if (editUrl) {
+      html += '<a href="' + editUrl + '" class="btn btn-sm btn-outline-primary" style="font-weight: 700; font-size: 12px; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #CBD5E1; color: #1E3A5F; background: #F8FAFC;" title="Modifier">' +
+        '<i data-lucide="edit-3" style="width: 14px; height: 14px; color: #1E3A5F;"></i> Éditer</a>';
+    }
+    if (detailsUrl) {
+      html += '<a href="' + detailsUrl + '" class="btn btn-sm btn-outline-secondary" style="font-weight: 700; font-size: 12px; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #CBD5E1; color: #475569; background: #F1F5F9;" title="Détails">' +
+        '<i data-lucide="eye" style="width: 14px; height: 14px; color: #475569;"></i> Détails</a>';
+    }
+    html += '</div>';
+    return html;
+  }
+
   // Table 1: Assignations
   var tableAssign = $('#table-assignations').DataTable({
     ajax: '<?= RACINE ?>filiere_cycle/apiList',
     columns: [
       { data: 'libelle_cycle', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Non défini') + '</span>'; } },
       { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>'; } },
-      { data: 'statut_filiere_cycle', render: function(d) { return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Inactif</span>'; } },
+      { data: 'statut_filiere_cycle', render: function(d) { return renderStatusBadge(d); } },
       {
         data: null, orderable: false, className: 'text-end',
         render: function(data, type, row) {
-          return '<a href="<?= RACINE ?>filiere_cycle/edition/' + row.editId + '" class="btn btn-sm" style="background:#F1F5F9; color:#334155; border-radius:6px; padding:6px 10px;" title="Modifier"><i data-lucide="edit" style="width:14px;height:14px;"></i></a>';
+          return renderActionButtons('<?= RACINE ?>filiere_cycle/edition/' + row.editId, '<?= RACINE ?>filiere_cycle/details/' + row.editId);
         }
       }
     ],
@@ -138,14 +164,14 @@ $(document).ready(function() {
   var tableFilieres = $('#table-filieres-catalogue').DataTable({
     ajax: '<?= RACINE ?>filiere/apiList',
     columns: [
-      { data: 'code_filiere', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
+      { data: 'code_filiere', render: function(d) { return '<code style="font-weight:700; color:#475569; background:#F1F5F9; padding:3px 8px; border-radius:4px;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>'; } },
-      { data: 'description_filiere', render: function(d) { return d || '-'; } },
-      { data: 'statut_filiere', render: function(d) { return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Inactif</span>'; } },
+      { data: 'description_filiere', render: function(d) { return d || '<span style="color:#94A3B8; font-style:italic;">Aucune description</span>'; } },
+      { data: 'statut_filiere', render: function(d) { return renderStatusBadge(d); } },
       {
         data: null, orderable: false, className: 'text-end',
         render: function(data, type, row) {
-          return '<a href="<?= RACINE ?>filiere/edition/' + row.editId + '" class="btn btn-sm" style="background:#F1F5F9; color:#334155; border-radius:6px; padding:6px 10px;" title="Modifier"><i data-lucide="edit" style="width:14px;height:14px;"></i></a>';
+          return renderActionButtons('<?= RACINE ?>filiere/edition/' + row.editId, '<?= RACINE ?>filiere/details/' + row.editId);
         }
       }
     ],
@@ -156,14 +182,14 @@ $(document).ready(function() {
   var tableCycles = $('#table-cycles-list').DataTable({
     ajax: '<?= RACINE ?>cycle/apiList',
     columns: [
-      { data: 'code_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
+      { data: 'code_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569; background:#F1F5F9; padding:3px 8px; border-radius:4px;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_cycle', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>'; } },
-      { data: 'description_cycle', render: function(d) { return d || '-'; } },
-      { data: 'statut_cycle', render: function(d) { return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Inactif</span>'; } },
+      { data: 'description_cycle', render: function(d) { return d || '<span style="color:#94A3B8; font-style:italic;">Aucune description</span>'; } },
+      { data: 'statut_cycle', render: function(d) { return renderStatusBadge(d); } },
       {
         data: null, orderable: false, className: 'text-end',
         render: function(data, type, row) {
-          return '<a href="<?= RACINE ?>cycle/edition/' + row.editId + '" class="btn btn-sm" style="background:#F1F5F9; color:#334155; border-radius:6px; padding:6px 10px;" title="Modifier"><i data-lucide="edit" style="width:14px;height:14px;"></i></a>';
+          return renderActionButtons('<?= RACINE ?>cycle/edition/' + row.editId, '<?= RACINE ?>cycle/details/' + row.editId);
         }
       }
     ],

@@ -36,12 +36,7 @@
           </div>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-          <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Cycle d\'études rattaché</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['cycle_code']) ? htmlspecialchars($item['cycle_code']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
-            </div>
-          </div>
+
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
             <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Intitulé de la Filière</div>
             <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">

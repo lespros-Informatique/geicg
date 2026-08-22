@@ -36,18 +36,9 @@ $enseignants = (new ModelEnseignant())->getAll();
             <input type="hidden" name="id_filiere" value="<?= $item['id_filiere'] ?>">
           <?php endif; ?>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%;">
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de la filière <span style="color: #EF4444;">*</span></label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_filiere" value="<?= htmlspecialchars($item['libelle_filiere'] ?? '') ?>" placeholder="Ex: Génie Informatique & Réseaux" required>
-            </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle rattaché <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="cycle_code" required>
-                <option value="">-- Choisir un cycle --</option>
-                <?php foreach($cycles as $c): ?>
-                  <option value="<?= $c['code_cycle'] ?>" <?= (($item['cycle_code'] ?? '') == $c['code_cycle']) ? 'selected' : '' ?>><?= htmlspecialchars($c['libelle_cycle']) ?></option>
-                <?php endforeach; ?>
-              </select>
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Description & Débouchés</label>
