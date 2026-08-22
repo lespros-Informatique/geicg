@@ -38,8 +38,8 @@ $enseignants = (new ModelEnseignant())->getAll();
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Compte Utilisateur rattaché <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="user_code" required>
-                <option value="">-- Choisir un compte utilisateur --</option>
+              <select class="form-control select2" id="select_user_code" style="width: 100%;" name="user_code" required>
+                <option value="">-- Rechercher un compte utilisateur --</option>
                 <?php foreach($users as $u): ?>
                   <option value="<?= $u['code_user'] ?>" <?= (($item['user_code'] ?? '') == $u['code_user']) ? 'selected' : '' ?>><?= htmlspecialchars($u['nom_user'] . ' ' . ($u['prenom_user'] ?? '')) ?></option>
                 <?php endforeach; ?>
@@ -67,5 +67,16 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
+<script>
+$(document).ready(function() { 
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('.select2').select2({
+      placeholder: "-- Rechercher un compte utilisateur --",
+      allowClear: true,
+      width: '100%'
+    });
+  }
+});
+</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

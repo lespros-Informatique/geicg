@@ -12,7 +12,17 @@ abstract class BaseModel
     {
         $this->pdo = new Database();
         if ($this->createdAtField === null) {
-            $this->createdAtField = $this->resolveCreatedAtField($this->table);
+            $resolved = $this->resolveCreatedAtField($this->table);
+            try {
+                $cols = $this->pdo->getCon()->query("DESCRIBE `{$this->table}`")->fetchAll(PDO::FETCH_COLUMN);
+                if (in_array($resolved, $cols)) {
+                    $this->createdAtField = $resolved;
+                } else {
+                    $this->createdAtField = '';
+                }
+            } catch (Exception $e) {
+                $this->createdAtField = '';
+            }
         }
     }
 
@@ -37,7 +47,7 @@ abstract class BaseModel
     public function getAll(): array
     {
         try {
-            $orderBy = $this->createdAtField ? " ORDER BY {$this->createdAtField} DESC" : '';
+            $orderBy = !empty($this->createdAtField) ? " ORDER BY {$this->createdAtField} DESC" : " ORDER BY {$this->primaryKey} DESC";
             $sql = "SELECT * FROM {$this->table}{$orderBy}";
             return $this->pdo->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
