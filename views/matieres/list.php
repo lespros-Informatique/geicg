@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -37,21 +37,23 @@
 $(document).ready(function() {
   $('#table-matieres').DataTable({
     ajax: '<?= RACINE ?>matiere/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_matiere', defaultContent: '-' },
       { data: 'code_matiere', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_matiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>'; } },
       { data: 'coefficient', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '1.0') + '</span>'; } },
-      { data: 'statut_matiere', className: 'text-center', render: function(d) {
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
+      { data: 'statut_matiere', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
       } },
-      { data: null, render: function(d) {
+      { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'matiere/edition/' + (d.editId || d.id_matiere) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                '<a href="' + window.RACINE + 'matiere/details/' + (d.editId || d.id_matiere) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 });

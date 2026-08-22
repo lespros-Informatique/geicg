@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -83,7 +83,7 @@
 $(document).ready(function() {
   var tableScolarites = $('#table-scolarites').DataTable({
     ajax: '<?= RACINE ?>scolarite/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_scolarite', defaultContent: '-' },
@@ -93,20 +93,22 @@ $(document).ready(function() {
       { data: 'montant_scolarite', render: function(d) { 
         return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>'; 
       } },
-      { data: 'statut_scolarite', className: 'text-center', render: function(d) {
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
+      { data: 'statut_scolarite', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
       } },
-      { data: null, render: function(d) {
+      { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'scolarite/edition/' + (d.editId || d.id_scolarite) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                '<a href="' + window.RACINE + 'scolarite/details/' + (d.editId || d.id_scolarite) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
   var tableTranches = $('#table-tranches_scolarite').DataTable({
     ajax: '<?= RACINE ?>tranche/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_tranche', defaultContent: '-' },
@@ -116,14 +118,16 @@ $(document).ready(function() {
         return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>'; 
       } },
       { data: 'date_limite', render: function(d) { return '<span style="font-weight:600; color:#475569;">' + (d || '-') + '</span>'; } },
-      { data: 'statut_tranche', className: 'text-center', render: function(d) {
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
+      { data: 'statut_tranche', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
       } },
-      { data: null, render: function(d) {
+      { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'tranche/edition/' + (d.editId || d.id_tranche) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                '<a href="' + window.RACINE + 'tranche/details/' + (d.editId || d.id_tranche) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 

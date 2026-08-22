@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -41,25 +41,30 @@
 $(document).ready(function() {
   $('#table-emplois_temps').DataTable({
     ajax: '<?= RACINE ?>emploi/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_emploi', defaultContent: '-' },
-      { data: 'classe_code', defaultContent: '-' },
-      { data: 'matiere_code', defaultContent: '-' },
-      { data: 'enseignant_code', defaultContent: '-' },
-      { data: 'salle_code', defaultContent: '-' },
-      { data: 'jour', defaultContent: '-' },
-      { data: 'heure_debut', defaultContent: '-' },
-      { data: 'heure_fin', defaultContent: '-' },
-      { data: 'statut_emploi', render: function(d) {
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
-      } },
-      { data: null, render: function(d) {
-        return '<a href="' + window.RACINE + 'emploi/edition/' + (d.editId || d.id_emploi) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-               '<a href="' + window.RACINE + 'emploi/details/' + (d.editId || d.id_emploi) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      { data: 'id_emploi',       defaultContent: '-', width: '50px' },
+      { data: 'classe_code',     defaultContent: '-', width: '110px' },
+      { data: 'matiere_code',    defaultContent: '-', width: '120px' },
+      { data: 'enseignant_code', defaultContent: '-', width: '130px' },
+      { data: 'salle_code',      defaultContent: '-', width: '90px' },
+      { data: 'jour',            defaultContent: '-', width: '90px' },
+      { data: 'heure_debut',     defaultContent: '-', width: '70px' },
+      { data: 'heure_fin',       defaultContent: '-', width: '70px' },
+      { data: 'statut_emploi',   defaultContent: '-', width: '90px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        if (!d) return '-';
+        return d === 'actif'
+          ? '<span style="background:#DCFCE7;color:#15803D;padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>'
+          : '<span style="background:#FEE2E2;color:#B91C1C;padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
+      }},
+      { data: null, width: '160px', orderable: false, render: function(d) {
+        return '<a href="' + window.RACINE + 'emploi/edition/' + (d.editId || d.id_emploi) + '" class="btn btn-sm btn-secondary" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>'
+             + '<a href="' + window.RACINE + 'emploi/details/' + (d.editId || d.id_emploi) + '" class="btn btn-sm btn-info" style="font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 });

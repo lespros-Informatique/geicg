@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -37,23 +37,34 @@
 $(document).ready(function() {
   $('#table-galeries').DataTable({
     ajax: '<?= RACINE ?>galerie/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_galerie', defaultContent: '-' },
-      { data: 'code_galerie', defaultContent: '-' },
+      { data: 'id_galerie',    defaultContent: '-', width: '50px' },
+      { data: 'code_galerie',  defaultContent: '-', width: '130px' },
       { data: 'titre_galerie', defaultContent: '-' },
-      { data: 'type_galerie', defaultContent: '-' },
-      { data: 'statut_galerie', render: function(d) {
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
-      } },
-      { data: null, render: function(d) {
-        return '<a href="' + window.RACINE + 'galerie/edition/' + (d.editId || d.id_galerie) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-               '<a href="' + window.RACINE + 'galerie/details/' + (d.editId || d.id_galerie) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      { data: 'type_galerie',  defaultContent: '-', width: '110px', render: function(d) {
+        if (!d) return '-';
+        return d === 'video'
+          ? '<span style="background:#F1F5F9;color:#475569;padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Vidéo</span>'
+          : '<span style="background:#EFF6FF;color:#1E3A5F;padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Photo</span>';
+      }},
+      { data: 'statut_galerie', defaultContent: '-', width: '90px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        if (!d) return '-';
+        return d === 'actif'
+          ? '<span style="background:#DCFCE7;color:#15803D;padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>'
+          : '<span style="background:#FEE2E2;color:#B91C1C;padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
+      }},
+      { data: null, width: '160px', orderable: false, render: function(d) {
+        return '<a href="' + window.RACINE + 'galerie/edition/' + (d.editId || d.id_galerie) + '" class="btn btn-sm btn-secondary" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>'
+             + '<a href="' + window.RACINE + 'galerie/details/' + (d.editId || d.id_galerie) + '" class="btn btn-sm btn-info" style="font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+

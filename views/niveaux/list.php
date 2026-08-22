@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -99,41 +99,45 @@ $(document).ready(function() {
   // Table 1: Assignations Filières - Niveaux
   var tableAssignNiv = $('#table-assignations-niveaux').DataTable({
     ajax: '<?= RACINE ?>filiere_niveau/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_filiere_niveau', defaultContent: '-' },
       { data: 'code_filiere_niveau', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Non définie') + '</span>'; } },
       { data: 'libelle_niveau', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>'; } },
-      { data: 'statut_filiere_niveau', className: 'text-center', render: function(d) {
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
+      { data: 'statut_filiere_niveau', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
       } },
       { data: null, className: 'text-end', render: function(d) {
         return '<a href="<?= RACINE ?>filiere_niveau/edition/' + (d.editId || d.id_filiere_niveau) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                '<a href="<?= RACINE ?>filiere_niveau/details/' + (d.editId || d.id_filiere_niveau) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       } }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
   // Table 2: Catalogue Niveaux
   var tableNiveauxCat = $('#table-niveaux-catalogue').DataTable({
     ajax: '<?= RACINE ?>niveau/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_niveau', defaultContent: '-' },
       { data: 'code_niveau', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_niveau', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>'; } },
-      { data: 'statut_niveau', className: 'text-center', render: function(d) {
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700;">Inactif</span>';
+      { data: 'statut_niveau', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
       } },
       { data: null, className: 'text-end', render: function(d) {
         return '<a href="<?= RACINE ?>niveau/edition/' + (d.editId || d.id_niveau) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                '<a href="<?= RACINE ?>niveau/details/' + (d.editId || d.id_niveau) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       } }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 });

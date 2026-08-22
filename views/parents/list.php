@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -39,7 +39,7 @@
 $(document).ready(function() {
   $('#table-parents').DataTable({
     ajax: '<?= RACINE ?>parent/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_parent', defaultContent: '-' },
@@ -49,11 +49,12 @@ $(document).ready(function() {
       { data: 'nom_mere', defaultContent: '-' },
       { data: 'telephone_mere', defaultContent: '-' },
       { data: 'nom_tuteur', defaultContent: '-' },
-      { data: null, render: function(d) {
+      { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'parent/edition/' + (d.editId || d.id_parent) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                '<a href="' + window.RACINE + 'parent/details/' + (d.editId || d.id_parent) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 });

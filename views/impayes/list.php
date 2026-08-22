@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -48,7 +48,7 @@ $(document).ready(function() {
       url: '<?= RACINE ?>impayes/apiList',
       type: 'GET'
     },
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_relance', defaultContent: '-' },

@@ -37,19 +37,20 @@
 $(document).ready(function() {
   $('#table-absences').DataTable({
     ajax: '<?= RACINE ?>absence/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_absence', defaultContent: '-' },
-      { data: 'inscription_code', defaultContent: '-' },
-      { data: 'matiere_code', defaultContent: '-' },
-      { data: 'date_absence', defaultContent: '-' },
-      { data: 'duree_heures', defaultContent: '-' },
-      { data: null, render: function(d) {
-        return '<a href="' + window.RACINE + 'absence/edition/' + (d.editId || d.id_absence) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-               '<a href="' + window.RACINE + 'absence/details/' + (d.editId || d.id_absence) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      { data: 'id_absence',       defaultContent: '-', width: '50px' },
+      { data: 'inscription_code', defaultContent: '-', width: '130px' },
+      { data: 'matiere_code',     defaultContent: '-', width: '130px' },
+      { data: 'date_absence',     defaultContent: '-', width: '110px' },
+      { data: 'duree_heures',     defaultContent: '-', width: '80px' },
+      { data: null, width: '160px', orderable: false, render: function(d) {
+        return '<a href="' + window.RACINE + 'absence/edition/' + (d.editId || d.id_absence) + '" class="btn btn-sm btn-secondary" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>'
+             + '<a href="' + window.RACINE + 'absence/details/' + (d.editId || d.id_absence) + '" class="btn btn-sm btn-info" style="font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 });
