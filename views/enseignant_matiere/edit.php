@@ -38,8 +38,8 @@ $enseignants = (new ModelEnseignant())->getAll();
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Enseignant <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="enseignant_code" required>
-                <option value="">-- Choisir un enseignant --</option>
+              <select class="form-control select2" id="sel_ens_em" style="width: 100%;" name="enseignant_code" required>
+                <option value="">-- Rechercher un enseignant --</option>
                 <?php foreach($enseignants as $ens): ?>
                   <option value="<?= $ens['code_enseignant'] ?>" <?= (($item['enseignant_code'] ?? '') == $ens['code_enseignant']) ? 'selected' : '' ?>><?= htmlspecialchars($ens['code_enseignant'] . ' - ' . ($ens['specialite_enseignant'] ?? 'Enseignant')) ?></option>
                 <?php endforeach; ?>
@@ -47,8 +47,8 @@ $enseignants = (new ModelEnseignant())->getAll();
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matière affectée <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="matiere_code" required>
-                <option value="">-- Choisir une matière --</option>
+              <select class="form-control select2" id="sel_mat_em" style="width: 100%;" name="matiere_code" required>
+                <option value="">-- Rechercher une matière --</option>
                 <?php foreach($matieres as $m): ?>
                   <option value="<?= $m['code_matiere'] ?>" <?= (($item['matiere_code'] ?? '') == $m['code_matiere']) ? 'selected' : '' ?>><?= htmlspecialchars($m['libelle_matiere']) ?></option>
                 <?php endforeach; ?>
@@ -56,8 +56,8 @@ $enseignants = (new ModelEnseignant())->getAll();
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe attribuée <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="classe_code" required>
-                <option value="">-- Choisir une classe --</option>
+              <select class="form-control select2" id="sel_cls_em" style="width: 100%;" name="classe_code" required>
+                <option value="">-- Rechercher une classe --</option>
                 <?php foreach($classes as $cl): ?>
                   <option value="<?= $cl['code_classe'] ?>" <?= (($item['classe_code'] ?? '') == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
                 <?php endforeach; ?>
@@ -73,5 +73,14 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
+<script>
+$(document).ready(function() {
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('#sel_ens_em').select2({ placeholder: "-- Rechercher un enseignant --", allowClear: true, width: '100%' });
+    $('#sel_mat_em').select2({ placeholder: "-- Rechercher une matière --", allowClear: true, width: '100%' });
+    $('#sel_cls_em').select2({ placeholder: "-- Rechercher une classe --", allowClear: true, width: '100%' });
+  }
+});
+</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

@@ -41,6 +41,18 @@ class GalerieController extends BaseController
         if (empty($data['code_galerie'])) {
             $data['code_galerie'] = $this->validator->generateCode('galeries', 'code_galerie', 'GAL-', 8);
         }
+        // Gestion upload fichier
+        if (!empty($_FILES['fichier_upload']['name']) && $_FILES['fichier_upload']['error'] === UPLOAD_ERR_OK) {
+            $uploadResult = $this->handleFileUpload($_FILES['fichier_upload']);
+            if ($uploadResult['success']) {
+                $data['url_fichier'] = $uploadResult['path'];
+            } else {
+                $this->error($uploadResult['message']); return;
+            }
+        }
+        if (empty($data['url_fichier'])) {
+            $this->error('Veuillez fournir un fichier ou une URL.'); return;
+        }
         $data['statut_galerie'] = $data['statut_galerie'] ?? 'actif';
         $data['created_at_galerie'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE galeries")->fetchAll(PDO::FETCH_COLUMN);
@@ -63,6 +75,15 @@ class GalerieController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        // Gestion upload fichier
+        if (!empty($_FILES['fichier_upload']['name']) && $_FILES['fichier_upload']['error'] === UPLOAD_ERR_OK) {
+            $uploadResult = $this->handleFileUpload($_FILES['fichier_upload']);
+            if ($uploadResult['success']) {
+                $data['url_fichier'] = $uploadResult['path'];
+            } else {
+                $this->error($uploadResult['message']); return;
+            }
+        }
         $cols = $this->model->getCon()->query("DESCRIBE galeries")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
@@ -70,6 +91,40 @@ class GalerieController extends BaseController
         } else {
             $this->error('Erreur lors de la modification');
         }
+    }
+
+    /**
+     * Gère l'upload d'un fichier image ou vidéo vers public/uploads/galeries/
+     */
+    private function handleFileUpload(array $file): array
+    {
+        $allowedImages = ['image/jpeg','image/png','image/gif','image/webp','image/svg+xml'];
+        $allowedVideos = ['video/mp4','video/quicktime','video/x-msvideo','video/webm','video/mpeg'];
+        $allowed = array_merge($allowedImages, $allowedVideos);
+        $maxSize = 50 * 1024 * 1024; // 50 Mo
+
+        $mime = mime_content_type($file['tmp_name']);
+        if (!in_array($mime, $allowed)) {
+            return ['success' => false, 'message' => 'Format non autorisé : ' . $mime];
+        }
+        if ($file['size'] > $maxSize) {
+            return ['success' => false, 'message' => 'Le fichier dépasse 50 Mo.'];
+        }
+
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $ext = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $ext));
+        $newName = 'GAL_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $uploadDir = __DIR__ . '/../../public/uploads/galeries/';
+        if (!is_dir($uploadDir)) { mkdir($uploadDir, 0755, true); }
+        $dest = $uploadDir . $newName;
+
+        if (!move_uploaded_file($file['tmp_name'], $dest)) {
+            return ['success' => false, 'message' => 'Échec du déplacement du fichier uploadé.'];
+        }
+
+        // Chemin relatif accessible depuis le web
+        $relativePath = RACINE . 'uploads/galeries/' . $newName;
+        return ['success' => true, 'path' => $relativePath];
     }
 
     public function changer()

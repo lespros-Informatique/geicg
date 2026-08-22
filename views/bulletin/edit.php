@@ -38,8 +38,8 @@ $enseignants = (new ModelEnseignant())->getAll();
           <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 750px;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Étudiant <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="etudiant_code" required>
-                <option value="">-- Choisir un étudiant --</option>
+              <select class="form-control select2" id="sel_etu_bu" style="width: 100%;" name="etudiant_code" required>
+                <option value="">-- Rechercher un étudiant --</option>
                 <?php foreach($etudiants as $e): ?>
                   <option value="<?= $e['code_etudiant'] ?>" <?= (($item['etudiant_code'] ?? '') == $e['code_etudiant']) ? 'selected' : '' ?>><?= htmlspecialchars($e['matricule_etudiant'] . ' - ' . $e['nom_etudiant'] . ' ' . $e['prenom_etudiant']) ?></option>
                 <?php endforeach; ?>
@@ -47,8 +47,8 @@ $enseignants = (new ModelEnseignant())->getAll();
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="classe_code" required>
-                <option value="">-- Choisir une classe --</option>
+              <select class="form-control select2" id="sel_cls_bu" style="width: 100%;" name="classe_code" required>
+                <option value="">-- Rechercher une classe --</option>
                 <?php foreach($classes as $cl): ?>
                   <option value="<?= $cl['code_classe'] ?>" <?= (($item['classe_code'] ?? '') == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
                 <?php endforeach; ?>
@@ -64,5 +64,13 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
+<script>
+$(document).ready(function() {
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('#sel_etu_bu').select2({ placeholder: "-- Rechercher un étudiant --", allowClear: true, width: '100%' });
+    $('#sel_cls_bu').select2({ placeholder: "-- Rechercher une classe --", allowClear: true, width: '100%' });
+  }
+});
+</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
