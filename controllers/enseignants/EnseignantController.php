@@ -33,11 +33,18 @@ class EnseignantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['email_enseignant'])) {
+            if (!$this->checkUnique('enseignants', 'email_enseignant', $data['email_enseignant'], 'Email enseignant')) return;
+        }
+        if (!empty($data['telephone_enseignant'])) {
+            if (!$this->checkUnique('enseignants', 'telephone_enseignant', $data['telephone_enseignant'], 'Telephone enseignant')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_enseignant'])) {
             $data['code_enseignant'] = $this->validator->generateCode('enseignants', 'code_enseignant', 'ENS-', 8);
         }
@@ -63,6 +70,13 @@ class EnseignantController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['email_enseignant'])) {
+            if (!$this->checkUnique('enseignants', 'email_enseignant', $data['email_enseignant'], 'Email enseignant', 'id_enseignant', $id)) return;
+        }
+        if (!empty($data['telephone_enseignant'])) {
+            if (!$this->checkUnique('enseignants', 'telephone_enseignant', $data['telephone_enseignant'], 'Telephone enseignant', 'id_enseignant', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE enseignants")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {

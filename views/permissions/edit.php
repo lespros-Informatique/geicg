@@ -80,5 +80,5 @@ $permission = isset($permission) ? $permission : [];
   </main>
 </div>
 
-<script src="<?= RACINE ?>json/entities/permissions.js?v=1"></script>
+<script src="<?= RACINE ?>public/json/entities/permissions.js?v=1"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

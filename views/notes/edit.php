@@ -1,75 +1,93 @@
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-require_once __DIR__ . '/../../public/inc/header.php';
-$item = $item ?? [];
-
+$cycles = (new ModelCycle())->getAll();
+$filieres = (new ModelFiliere())->getAll();
+$niveaux = (new ModelNiveau())->getAll();
+$classes = (new ModelClasse())->getAll();
+$salles = (new ModelSalle())->getAll();
+$scolarites = (new ModelScolarite())->getAll();
+$ues = (new ModelUe())->getAll();
 $matieres = (new ModelMatiere())->getAll();
 $semestres = (new ModelSemestre())->getAll();
+$etudiants = (new ModelEtudiant())->getAll();
 $inscriptions = (new ModelInscription())->getAll();
+$typeDepenses = (new ModelTypeDepense())->getAll();
+$users = (new ModelUser())->getAll();
+$enseignants = (new ModelEnseignant())->getAll();
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px;">
-      <div class="page-header" style="margin-bottom: 24px;">
-        <h1 style="font-size: 20px; font-weight: 800; color: #0F172A;"><?= !empty($item['id_note']) ? 'Modifier Note / Évaluation' : 'Créer un Note / Évaluation' ?></h1>
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_note']) ? 'Éditer ' : 'Ajouter ' ?> Note / Évaluation</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Saisie des données du module Saisie des Notes & Évaluations</p>
+        </div>
+        <a href="<?= RACINE ?>note/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
+        </a>
       </div>
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; max-width: 650px;">
-        <form id="form-notes" action="<?= RACINE ?>note/<?= !empty($item['id_note']) ? 'edit' : 'add' ?>" method="POST">
-          <?= Validator::csrfField() ?>
-          <?php if(!empty($item['id_note'])): ?>
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+        <form action="<?= RACINE ?>note/<?= !empty($item['id_note']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+          <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+          <?php if (!empty($item['id_note'])): ?>
             <input type="hidden" name="id_note" value="<?= $item['id_note'] ?>">
           <?php endif; ?>
-          <div class="form-field" style="margin-bottom: 16px;">
-            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Élève / Inscription</label>
-            <select class="form-control" name="inscription_code" required>
-              <option value="">-- Sélectionner une inscription élève --</option>
-              <?php foreach($inscriptions as $ins): ?>
-                <option value="<?= $ins['code_inscription'] ?>" <?= (($item['inscription_code'] ?? '') == $ins['code_inscription']) ? 'selected' : '' ?>><?= htmlspecialchars($ins['code_inscription']) ?></option>
-              <?php endforeach; ?>
-            </select>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Étudiant inscrit <span style="color: #EF4444;">*</span></label>
+              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="inscription_code" required>
+                <option value="">-- Choisir une inscription élève --</option>
+                <?php foreach($inscriptions as $ins): ?>
+                  <option value="<?= $ins['code_inscription'] ?>" <?= (($item['inscription_code'] ?? '') == $ins['code_inscription']) ? 'selected' : '' ?>><?= htmlspecialchars($ins['code_inscription']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matière évaluée <span style="color: #EF4444;">*</span></label>
+              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="matiere_code" required>
+                <option value="">-- Choisir une matière --</option>
+                <?php foreach($matieres as $m): ?>
+                  <option value="<?= $m['code_matiere'] ?>" <?= (($item['matiere_code'] ?? '') == $m['code_matiere']) ? 'selected' : '' ?>><?= htmlspecialchars($m['libelle_matiere']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Semestre académique <span style="color: #EF4444;">*</span></label>
+              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="semestre_code" required>
+                <option value="">-- Choisir un semestre --</option>
+                <?php foreach($semestres as $sm): ?>
+                  <option value="<?= $sm['code_semestre'] ?>" <?= (($item['semestre_code'] ?? '') == $sm['code_semestre']) ? 'selected' : '' ?>><?= htmlspecialchars($sm['libelle_semestre']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Type d\'évaluation <span style="color: #EF4444;">*</span></label>
+              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="type_evaluation_code" required>
+                <option value="Devoir" <?= (($item['type_evaluation_code'] ?? '') === 'Devoir') ? 'selected' : '' ?>>Devoir Surveillé</option>
+                <option value="Examen" <?= (($item['type_evaluation_code'] ?? '') === 'Examen') ? 'selected' : '' ?>>Examen Semestriel</option>
+                <option value="TP" <?= (($item['type_evaluation_code'] ?? '') === 'TP') ? 'selected' : '' ?>>Travaux Pratiques (TP)</option>
+              </select>
+            </div>
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Note sur 20 <span style="color: #EF4444;">*</span></label>
+              <input type="number"  class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="valeur_note" value="<?= htmlspecialchars($item['valeur_note'] ?? '') ?>" placeholder="Ex: 15.5" required>
+            </div>
+            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Appréciation du professeur</label>
+              <textarea class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="appreciation" placeholder="Ex: Excellent travail, bonne maîtrise du sujet"  rows="3"><?= htmlspecialchars($item['appreciation'] ?? '') ?></textarea>
+            </div>
           </div>
-          <div class="form-field" style="margin-bottom: 16px;">
-            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Matière</label>
-            <select class="form-control" name="matiere_code" required>
-              <option value="">-- Sélectionner une matière --</option>
-              <?php foreach($matieres as $m): ?>
-                <option value="<?= $m['code_matiere'] ?>" <?= (($item['matiere_code'] ?? '') == $m['code_matiere']) ? 'selected' : '' ?>><?= htmlspecialchars($m['libelle_matiere']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="form-field" style="margin-bottom: 16px;">
-            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Semestre</label>
-            <select class="form-control" name="semestre_code" required>
-              <option value="">-- Sélectionner un semestre --</option>
-              <?php foreach($semestres as $sm): ?>
-                <option value="<?= $sm['code_semestre'] ?>" <?= (($item['semestre_code'] ?? '') == $sm['code_semestre']) ? 'selected' : '' ?>><?= htmlspecialchars($sm['libelle_semestre']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="form-field" style="margin-bottom: 16px;">
-            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Type d'évaluation</label>
-            <select class="form-control" name="type_evaluation_code" required>
-              <option value="Devoir" <?= (($item['type_evaluation_code'] ?? '') === 'Devoir') ? 'selected' : '' ?>>Devoir Surveillé</option>
-              <option value="Examen" <?= (($item['type_evaluation_code'] ?? '') === 'Examen') ? 'selected' : '' ?>>Examen Semestriel</option>
-              <option value="TP" <?= (($item['type_evaluation_code'] ?? '') === 'TP') ? 'selected' : '' ?>>Travaux Pratiques (TP)</option>
-            </select>
-          </div>
-          <div class="form-field" style="margin-bottom: 16px;">
-            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Note sur 20</label>
-            <input type="number" step="0.01" class="form-control" name="valeur_note" value="<?= htmlspecialchars($item['valeur_note'] ?? '') ?>" required>
-          </div>
-          <div class="form-field" style="margin-bottom: 16px;">
-            <label style="display:block; font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px;">Observations</label>
-            <textarea class="form-control" name="observations"  rows="3"><?= htmlspecialchars($item['observations'] ?? '') ?></textarea>
-          </div>
-          <div style="display: flex; gap: 10px; margin-top: 24px;">
-            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700;">Enregistrer</button>
-            <a href="<?= RACINE ?>note/list" class="btn btn-secondary" style="font-weight: 600;">Annuler</a>
+          <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
+            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer</button>
+            <a href="<?= RACINE ?>note/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
           </div>
         </form>
       </div>
     </div>
   </main>
 </div>
+<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

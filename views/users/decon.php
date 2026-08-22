@@ -30,5 +30,5 @@ require_once __DIR__ . '/../../public/inc/header.php';
   </main>
 </div>
 
-<script src="<?= RACINE ?>json/auth.js"></script>
+<script src="<?= RACINE ?>public/json/auth.js"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

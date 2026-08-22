@@ -110,5 +110,8 @@ require_once __DIR__ . '/../controllers/impayes/ImpayesController.php';
 require_once __DIR__ . '/../controllers/enseignant_matiere/EnseignantMatiereController.php';
 require_once __DIR__ . '/../controllers/bulletin/BulletinController.php';
 
+require_once __DIR__ . '/../models/ModelFiliereCycle.php';
+require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.php';
+
 
 

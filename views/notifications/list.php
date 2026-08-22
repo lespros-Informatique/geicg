@@ -168,6 +168,6 @@ $clients = isset($clients) ? $clients : [];
   </div>
 </div>
 
-<script src="<?= RACINE ?>json/mobile-list.js"></script>
-<script src="<?= RACINE ?>json/entities/notifications.js?v=2"></script>
+<script src="<?= RACINE ?>public/json/mobile-list.js"></script>
+<script src="<?= RACINE ?>public/json/entities/notifications.js?v=2"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

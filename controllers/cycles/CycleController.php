@@ -33,11 +33,15 @@ class CycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['libelle_cycle'])) {
+            if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libelle du cycle')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_cycle'])) {
             $data['code_cycle'] = $this->validator->generateCode('cycles', 'code_cycle', 'CYC-', 8);
         }
@@ -63,6 +67,10 @@ class CycleController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['libelle_cycle'])) {
+            if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libelle du cycle', 'id_cycle', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE cycles")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {

@@ -175,46 +175,8 @@ class NotificationService
         ?string $referenceCode = null,
         array $extraData = []
     ): void {
-        $appId = defined('ONESIGNAL_APP_ID') ? ONESIGNAL_APP_ID : (getenv('ONESIGNAL_APP_ID') ?: '');
-        $apiKey = defined('ONESIGNAL_REST_API_KEY') ? ONESIGNAL_REST_API_KEY : (getenv('ONESIGNAL_REST_API_KEY') ?: '');
-
-        if (empty($appId) || empty($apiKey) || $appId === 'YOUR_ONESIGNAL_APP_ID') {
-            return;
-        }
-
-        $payload = [
-            'app_id' => $appId,
-            'include_aliases' => [
-                'external_id' => [$clientCode]
-            ],
-            'target_channel' => 'push',
-            'headings' => ['fr' => $title, 'en' => $title],
-            'contents' => ['fr' => $message, 'en' => $message],
-            'data' => array_merge([
-                'notification_code' => $codeNotification,
-                'reference_code' => $referenceCode,
-                'client_code' => $clientCode
-            ], $extraData)
-        ];
-
-        try {
-            $ch = curl_init('https://onesignal.com/api/v1/notifications');
-            curl_setopt_array($ch, [
-                CURLOPT_POST => true,
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json; charset=utf-8',
-                    'Authorization: Key ' . $apiKey
-                ],
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POSTFIELDS => json_encode($payload),
-                CURLOPT_TIMEOUT => 3,
-                CURLOPT_SSL_VERIFYPEER => false
-            ]);
-            curl_exec($ch);
-            curl_close($ch);
-        } catch (Exception $e) {
-            error_log("Erreur OneSignal Push: " . $e->getMessage());
-        }
+        // Push désactivé pour le projet GEICG (notifications BDD uniquement)
+        return;
     }
 
     // --- Helpers Événements Métier Client ---

@@ -66,8 +66,8 @@ require_once __DIR__ . '/../../public/inc/header.php';
            </div>
        </div>
 
-      <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/horaires.js?v=5"></script>
+      <script src="<?= RACINE ?>public/json/mobile-list.js"></script>
+      <script src="<?= RACINE ?>public/json/entities/horaires.js?v=5"></script>
     </div>
   </main>
 </div>

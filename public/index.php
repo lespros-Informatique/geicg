@@ -9,6 +9,7 @@ $serviceController = new ServiceController();
 $fonctionController = new FonctionController();
 $cycleController = new CycleController();
 $filiereController = new FiliereController();
+$filiereCycleController = new FiliereCycleController();
 $niveauController = new NiveauController();
 $salleController = new SalleController();
 $anneeController = new AnneeController();
@@ -60,6 +61,7 @@ $route->addRoute('/user/formulaire', [$userController, 'formulaire']);
 // Routes pour les modules GEICG
 
 // Module: etablissement (EtablissementController)
+$route->addRoute('/etablissement/config', [$etablissementController, 'config']);
 $route->addRoute('/etablissement/list', [$etablissementController, 'list']);
 $route->addRoute('/etablissement/apiList', [$etablissementController, 'apiList']);
 $route->addRoute('/etablissement/add', [$etablissementController, 'add']);
@@ -108,6 +110,16 @@ $route->addRoute('/filiere/changer', [$filiereController, 'changer']);
 $route->addRoute('/filiere/details/{param}', [$filiereController, 'details']);
 $route->addRoute('/filiere/edition/{param}', [$filiereController, 'edition']);
 $route->addRoute('/filiere/formulaire', [$filiereController, 'formulaire']);
+
+// Module: filiere_cycle (FiliereCycleController)
+$route->addRoute('/filiere_cycle/list', [$filiereCycleController, 'list']);
+$route->addRoute('/filiere_cycle/apiList', [$filiereCycleController, 'apiList']);
+$route->addRoute('/filiere_cycle/add', [$filiereCycleController, 'add']);
+$route->addRoute('/filiere_cycle/edit', [$filiereCycleController, 'edit']);
+$route->addRoute('/filiere_cycle/changer', [$filiereCycleController, 'changer']);
+$route->addRoute('/filiere_cycle/details/{param}', [$filiereCycleController, 'details']);
+$route->addRoute('/filiere_cycle/edition/{param}', [$filiereCycleController, 'edition']);
+$route->addRoute('/filiere_cycle/formulaire', [$filiereCycleController, 'formulaire']);
 
 // Module: niveau (NiveauController)
 $route->addRoute('/niveau/list', [$niveauController, 'list']);

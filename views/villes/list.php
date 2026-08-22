@@ -82,6 +82,6 @@ require_once __DIR__ . '/../../public/inc/header.php';
   </div>
 </div>
 
-<script src="<?= RACINE ?>json/mobile-list.js"></script>
-<script src="<?= RACINE ?>json/entities/villes.js?v=4"></script>
+<script src="<?= RACINE ?>public/json/mobile-list.js"></script>
+<script src="<?= RACINE ?>public/json/entities/villes.js?v=4"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

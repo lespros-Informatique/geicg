@@ -105,5 +105,5 @@ $csrfToken = Validator::generateCsrfToken();
   </main>
 </div>
 
-<script src="<?= RACINE ?>json/entities/clients.js?v=<?= time() ?>"></script>
+<script src="<?= RACINE ?>public/json/entities/clients.js?v=<?= time() ?>"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

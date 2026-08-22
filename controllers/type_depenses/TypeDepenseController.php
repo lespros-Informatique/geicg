@@ -33,14 +33,20 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['libelle_type_depense'])) {
+            if (!$this->checkUnique('type_depenses', 'libelle_type_depense', $data['libelle_type_depense'], 'Type de depense')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_type_depense'])) {
             $data['code_type_depense'] = $this->validator->generateCode('type_depenses', 'code_type_depense', 'TYP-', 8);
         }
+        $data['statut_type_depense'] = $data['statut_type_depense'] ?? 'actif';
+        $data['created_at_type_depense'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE type_depenses")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
@@ -61,12 +67,32 @@ class TypeDepenseController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['libelle_type_depense'])) {
+            if (!$this->checkUnique('type_depenses', 'libelle_type_depense', $data['libelle_type_depense'], 'Type de depense', 'id_type_depense', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE type_depenses")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
+        }
+    }
+
+    public function changer()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $id = $this->post('id');
+        if ($id && $this->model->getById($id)) {
+            if ($this->model->toggleStatus($id)) {
+                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+            } else {
+                $this->error('Erreur lors de la mise à jour du statut');
+            }
+        } else {
+            $this->error('Item introuvable');
         }
     }
 

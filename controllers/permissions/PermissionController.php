@@ -2,8 +2,6 @@
 
 class PermissionController extends BaseController
 {
-    use PressingAware;
-
     protected function resolveModel()
     {
         return new ModelPermission();
@@ -18,24 +16,16 @@ class PermissionController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $groups = $this->model->getGrouped();
+        $items = $this->model->getAll();
         $data = [];
-
-        foreach ($groups as $group => $items) {
-            foreach ($items as $i) {
-                $idCrypte = $this->validator->crypter($i['id_permission']);
-                $data[] = [
-                    'code' => $i['code_permission'],
-                    'libelle' => $i['libelle_permission'],
-                    'description' => $i['description_permission'] ?? '',
-                    'groupe' => $group,
-                    'statut' => $i['statut_permission'],
-                    'id' => $i['id_permission'],
-                    'editId' => $idCrypte
-                ];
-            }
+        foreach ($items as $i) {
+            $id = $i['id_permission'];
+            $idCrypte = $this->validator->crypter($id);
+            $data[] = array_merge($i, [
+                'id' => $id,
+                'editId' => $idCrypte
+            ]);
         }
-
         $this->json(['data' => $data]);
     }
 
@@ -43,28 +33,30 @@ class PermissionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['code_permission' => $_POST['code_permission'] ?? '', 'libelle_permission' => $_POST['libelle_permission'] ?? '']);
-
-        if ($notEmpty !== true) {
-            $this->error('Veuillez renseigner tous les champs!');
-            return;
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['libelle_permission'])) {
+            if (!$this->checkUnique('permissions', 'libelle_permission', $data['libelle_permission'], 'Libelle de la permission')) return;
+        }
+        if (!empty($data['code_permission'])) {
+            if (!$this->checkUnique('permissions', 'code_permission', $data['code_permission'], 'Code permission')) return;
         }
 
-        if ($this->validator->getByElement(TABLES::PERMISSIONS, 'code_permission', $this->post('code_permission'))) {
-            $this->error('Ce code permission existe déjà!');
-            return;
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $etabCode = '5454544456';
+        if (empty($data['code_permission'])) {
+            $data['code_permission'] = $this->validator->generateCode('permissions', 'code_permission', 'PER-', 8);
         }
-
-        $data = [
-            'code_permission' => $this->post('code_permission'),
-            'libelle_permission' => $this->post('libelle_permission'),
-            'description_permission' => $this->post('description_permission') ?? '',
-            'statut_permission' => 'actif',
-            'created_at_permission' => date('Y-m-d H:i:s')
-        ];
-
-        if ($this->model->create($data)) {
-            $this->success('Permission créée avec succès!');
+        $data['statut_permission'] = $data['statut_permission'] ?? 'actif';
+        $data['created_at_permission'] = date('Y-m-d H:i:s');
+        $cols = $this->model->getCon()->query("DESCRIBE permissions")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
+        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
+        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $filteredData = array_intersect_key($data, array_flip($cols));
+        if ($this->model->create($filteredData)) {
+            $this->success('Item créé avec succès!');
         } else {
             $this->error('Erreur lors de la création');
         }
@@ -74,26 +66,21 @@ class PermissionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['code_permission' => $_POST['code_permission'] ?? '', 'libelle_permission' => $_POST['libelle_permission'] ?? '', 'id_permission' => $_POST['id_permission'] ?? '']);
-
-        if ($notEmpty !== true) {
-            $this->error('Veuillez renseigner tous les champs!');
-            return;
+        $id = (int)$this->post('id_permission');
+        if (!$id) { $this->error('Identifiant invalide'); return; }
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['libelle_permission'])) {
+            if (!$this->checkUnique('permissions', 'libelle_permission', $data['libelle_permission'], 'Libelle de la permission', 'id_permission', $id)) return;
+        }
+        if (!empty($data['code_permission'])) {
+            if (!$this->checkUnique('permissions', 'code_permission', $data['code_permission'], 'Code permission', 'id_permission', $id)) return;
         }
 
-        $statut = in_array($this->post('statut_permission'), ['actif', 'inactif']) ? $this->post('statut_permission') : 'actif';
-        $id = (int) $this->post('id_permission');
-
-        $data = [
-            'code_permission' => $this->post('code_permission'),
-            'libelle_permission' => $this->post('libelle_permission'),
-            'description_permission' => $this->post('description_permission') ?? '',
-            'statut_permission' => $statut,
-            'updated_at_permission' => date('Y-m-d H:i:s')
-        ];
-
-        if ($this->model->update($data)) {
-            $this->success('Permission modifiée avec succès!');
+        $cols = $this->model->getCon()->query("DESCRIBE permissions")->fetchAll(PDO::FETCH_COLUMN);
+        $filteredData = array_intersect_key($data, array_flip($cols));
+        if ($this->model->update($filteredData, $id)) {
+            $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -104,14 +91,14 @@ class PermissionController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $id = $this->post('id');
-        if (isset($id) && $this->model->getById($id)) {
+        if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
-                $this->success('Statut modifié avec succès!', ['id' => $id, 'reload' => true]);
+                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
-                $this->error('Erreur');
+                $this->error('Erreur lors de la mise à jour du statut');
             }
         } else {
-            $this->error('Permission introuvable!');
+            $this->error('Item introuvable');
         }
     }
 
@@ -121,20 +108,12 @@ class PermissionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) {
-                header('Location: ' . RACINE . 'permission/list');
-                exit();
-            }
+            if (!$item) { header('Location: ' . RACINE . 'permission/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'permission/list');
-            exit();
+            header('Location: ' . RACINE . 'permission/list'); exit();
         }
-
-        $this->loadView('../views/permissions/details.php', [
-            'permission' => $item,
-            'encryptedId' => $encryptedId
-        ]);
+        $this->loadView('../views/permissions/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
 
     public function edition($details)
@@ -143,21 +122,17 @@ class PermissionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) {
-                header('Location: ' . RACINE . 'permission/list');
-                exit();
-            }
+            if (!$item) { header('Location: ' . RACINE . 'permission/list'); exit(); }
+            $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'permission/list');
-            exit();
+            header('Location: ' . RACINE . 'permission/list'); exit();
         }
-
-        $this->loadView('../views/permissions/edit.php', ['permission' => $item]);
+        $this->loadView('../views/permissions/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/permissions/edit.php', ['permission' => []]);
+        $this->loadView('../views/permissions/edit.php', ['item' => []]);
     }
 }

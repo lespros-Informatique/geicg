@@ -33,11 +33,15 @@ class FiliereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['libelle_filiere'])) {
+            if (!$this->checkUnique('filieres', 'libelle_filiere', $data['libelle_filiere'], 'Nom de la filière')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_filiere'])) {
             $data['code_filiere'] = $this->validator->generateCode('filieres', 'code_filiere', 'FIL-', 8);
         }
@@ -63,6 +67,10 @@ class FiliereController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['libelle_filiere'])) {
+            if (!$this->checkUnique('filieres', 'libelle_filiere', $data['libelle_filiere'], 'Nom de la filière', 'id_filiere', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE filieres")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {

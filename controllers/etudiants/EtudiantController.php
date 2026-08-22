@@ -33,11 +33,21 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['matricule_etudiant'])) {
+            if (!$this->checkUnique('etudiants', 'matricule_etudiant', $data['matricule_etudiant'], 'Matricule etudiant')) return;
+        }
+        if (!empty($data['email_etudiant'])) {
+            if (!$this->checkUnique('etudiants', 'email_etudiant', $data['email_etudiant'], 'Email etudiant')) return;
+        }
+        if (!empty($data['telephone_etudiant'])) {
+            if (!$this->checkUnique('etudiants', 'telephone_etudiant', $data['telephone_etudiant'], 'Telephone etudiant')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_etudiant'])) {
             $data['code_etudiant'] = $this->validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
         }
@@ -63,6 +73,16 @@ class EtudiantController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['matricule_etudiant'])) {
+            if (!$this->checkUnique('etudiants', 'matricule_etudiant', $data['matricule_etudiant'], 'Matricule etudiant', 'id_etudiant', $id)) return;
+        }
+        if (!empty($data['email_etudiant'])) {
+            if (!$this->checkUnique('etudiants', 'email_etudiant', $data['email_etudiant'], 'Email etudiant', 'id_etudiant', $id)) return;
+        }
+        if (!empty($data['telephone_etudiant'])) {
+            if (!$this->checkUnique('etudiants', 'telephone_etudiant', $data['telephone_etudiant'], 'Telephone etudiant', 'id_etudiant', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE etudiants")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {

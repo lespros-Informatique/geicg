@@ -268,8 +268,8 @@ $isSuperAdmin = isset($isSuperAdmin) ? $isSuperAdmin : false;
       </div>
       <?php endif; ?>
 
-      <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/abonnements_pressings.js?v=3"></script>
+      <script src="<?= RACINE ?>public/json/mobile-list.js"></script>
+      <script src="<?= RACINE ?>public/json/entities/abonnements_pressings.js?v=3"></script>
     </div>
   </main>
 </div>

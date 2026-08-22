@@ -57,14 +57,33 @@ abstract class BaseController
         exit;
     }
 
+    protected function isAjax(): bool
+    {
+        return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    }
+
     protected function success(string $message, array $extra = []): void
     {
-        $this->json(array_merge(['status' => 1, 'message' => $message], $extra));
+        if ($this->isAjax()) {
+            $this->json(array_merge(['status' => 1, 'message' => $message], $extra));
+        } else {
+            $_SESSION['flash_success'] = $message;
+            $referer = $_SERVER['HTTP_REFERER'] ?? RACINE;
+            header('Location: ' . $referer);
+            exit;
+        }
     }
 
     protected function error(string $message, int $code = 200): void
     {
-        $this->json(['status' => 0, 'message' => $message], $code);
+        if ($this->isAjax()) {
+            $this->json(['status' => 0, 'message' => $message], $code);
+        } else {
+            $_SESSION['flash_error'] = $message;
+            $referer = $_SERVER['HTTP_REFERER'] ?? RACINE;
+            header('Location: ' . $referer);
+            exit;
+        }
     }
 
     protected function checkUnique(string $table, string $field, $value, string $label, ?string $idField = null, $idVal = null): bool
@@ -81,6 +100,36 @@ abstract class BaseController
 
         if ($exists) {
             $this->error("Ce $label ($val) est déjà utilisé dans le système !");
+            return false;
+        }
+        return true;
+    }
+
+    protected function checkUniquePair(string $table, array $conditions, string $label, ?string $idField = null, $idVal = null): bool
+    {
+        if (empty($conditions)) return true;
+
+        $pdo = ($this->model && method_exists($this->model, 'getCon')) ? $this->model->getCon() : (new Database())->getCon();
+        $where = [];
+        $params = [];
+
+        foreach ($conditions as $col => $val) {
+            $where[] = "`$col` = ?";
+            $params[] = trim((string)$val);
+        }
+
+        $sql = "SELECT COUNT(*) FROM `$table` WHERE " . implode(' AND ', $where);
+        if ($idField && !empty($idVal)) {
+            $sql .= " AND `$idField` != ?";
+            $params[] = $idVal;
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $count = (int)$stmt->fetchColumn();
+
+        if ($count > 0) {
+            $this->error("Ce $label existe déjà pour cette association !");
             return false;
         }
         return true;

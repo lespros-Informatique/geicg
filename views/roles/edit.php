@@ -178,6 +178,6 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
   </main>
 </div>
 
-<script src="<?= RACINE ?>json/mobile-list.js"></script>
-<script src="<?= RACINE ?>json/entities/roles.js?v=2"></script>
+<script src="<?= RACINE ?>public/json/mobile-list.js"></script>
+<script src="<?= RACINE ?>public/json/entities/roles.js?v=2"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

@@ -41,6 +41,7 @@ class TABLES
     public const ANNEES                 = 'annees';
     public const CYCLES                 = 'cycles';
     public const FILIERES               = 'filieres';
+    public const FILIERE_CYCLES         = 'filiere_cycles';
     public const NIVEAUX                = 'niveaux';
     public const CLASSES                = 'classes';
     public const SEMESTRES              = 'semestres';

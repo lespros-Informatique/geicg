@@ -33,14 +33,22 @@ class ParentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['telephone_parent'])) {
+            if (!$this->checkUnique('parents', 'telephone_parent', $data['telephone_parent'], 'Telephone du parent')) return;
+        }
+        if (!empty($data['email_parent'])) {
+            if (!$this->checkUnique('parents', 'email_parent', $data['email_parent'], 'Email du parent')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_parent'])) {
             $data['code_parent'] = $this->validator->generateCode('parents', 'code_parent', 'PAR-', 8);
         }
+        $data['statut_parent'] = $data['statut_parent'] ?? 'actif';
         $data['created_at_parent'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE parents")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
@@ -62,12 +70,35 @@ class ParentController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['telephone_parent'])) {
+            if (!$this->checkUnique('parents', 'telephone_parent', $data['telephone_parent'], 'Telephone du parent', 'id_parent', $id)) return;
+        }
+        if (!empty($data['email_parent'])) {
+            if (!$this->checkUnique('parents', 'email_parent', $data['email_parent'], 'Email du parent', 'id_parent', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE parents")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
+        }
+    }
+
+    public function changer()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $id = $this->post('id');
+        if ($id && $this->model->getById($id)) {
+            if ($this->model->toggleStatus($id)) {
+                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+            } else {
+                $this->error('Erreur lors de la mise à jour du statut');
+            }
+        } else {
+            $this->error('Item introuvable');
         }
     }
 

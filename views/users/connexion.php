@@ -1,12 +1,28 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
+
+try {
+    $db = (new Database())->getCon();
+    $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
+    $etabRow = $stmt->fetch(PDO::FETCH_ASSOC);
+    $loginLogo = $etabRow['logo_etablissement'] ?? '';
+} catch (Exception $e) {
+    $loginLogo = '';
+}
 ?>
 
 <div class="app-layout auth-layout">
   <main class="auth-content">
     <div class="auth-card">
       <div class="auth-header">
-        <div class="logo"> <?= LOGO ?> </div>
+        <div class="logo">
+          <?php if (!empty($loginLogo)): ?>
+            <?php $logoUrl = (strpos($loginLogo, 'http') === 0) ? $loginLogo : RACINE . ltrim($loginLogo, '/'); ?>
+            <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo" style="max-height: 50px; max-width: 180px; object-fit: contain;">
+          <?php else: ?>
+            <?= LOGO ?>
+          <?php endif; ?>
+        </div>
         <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin-top: 10px;">Système d'Information GEICG</h1>
         <p style="color: #64748B; font-size: 13px;">Connexion à l'administration de l'établissement</p>
       </div>
@@ -51,5 +67,5 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
 <?php 
 require_once __DIR__ . '/../../public/inc/footer-link.php';
- ?>
+?>
 

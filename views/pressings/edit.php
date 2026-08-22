@@ -887,5 +887,5 @@ $(document).ready(function() {
 });
 </script>
 
-<script src="<?= RACINE ?>json/entities/pressings.js?v=5"></script>
+<script src="<?= RACINE ?>public/json/entities/pressings.js?v=5"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

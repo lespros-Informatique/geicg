@@ -1,6 +1,29 @@
+<?php
+  if (!isset($globalEtablissementLogo)) {
+      try {
+          $db = (new Database())->getCon();
+          $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
+          $etabRow = $stmt->fetch(PDO::FETCH_ASSOC);
+          $globalEtablissementLogo = $etabRow['logo_etablissement'] ?? '';
+          $globalEtablissementNom = $etabRow['libelle_etablissement'] ?? 'GEICG';
+      } catch (Exception $e) {
+          $globalEtablissementLogo = '';
+          $globalEtablissementNom = 'GEICG';
+      }
+  }
+?>
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <div class="logo"> <?= LOGO ?> </div>
+        <div class="logo" style="display: flex; align-items: center; justify-content: center; max-height: 48px;">
+            <?php if (!empty($globalEtablissementLogo)): ?>
+                <?php $logoUrl = (strpos($globalEtablissementLogo, 'http') === 0) ? $globalEtablissementLogo : RACINE . ltrim($globalEtablissementLogo, '/'); ?>
+                <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo GEICG" style="max-height: 42px; max-width: 140px; object-fit: contain;">
+            <?php else: ?>
+                <span style="letter-spacing: 1px; color: #1E3A5F; font-size: 20px; font-weight: 800;">
+                    <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
+                </span>
+            <?php endif; ?>
+        </div>
         <button class="sidebar-toggle" id="sidebarToggle">
             <i data-lucide="menu"></i>
         </button>
@@ -24,14 +47,11 @@
             <div class="nav-section-title">
                 <i data-lucide="building"></i> <span>Structure Globale</span>
             </div>
-            <a href="<?= RACINE ?>etablissement/list" class="nav-item sub">
-                <i data-lucide="landmark"></i> <span>Établissement & Siège</span>
+            <a href="<?= RACINE ?>etablissement/config" class="nav-item sub">
+                <i data-lucide="landmark"></i> <span>Configuration Établissement</span>
             </a>
-            <a href="<?= RACINE ?>cycle/list" class="nav-item sub">
-                <i data-lucide="layers"></i> <span>Cycles d'Études</span>
-            </a>
-            <a href="<?= RACINE ?>filiere/list" class="nav-item sub">
-                <i data-lucide="git-branch"></i> <span>Filières & Spécialités</span>
+            <a href="<?= RACINE ?>filiere_cycle/list" class="nav-item sub">
+                <i data-lucide="layers"></i> <span>Filières & Cycles</span>
             </a>
             <a href="<?= RACINE ?>niveau/list" class="nav-item sub">
                 <i data-lucide="trending-up"></i> <span>Niveaux d'Études</span>

@@ -49,8 +49,8 @@ $isSuperAdmin = isset($isSuperAdmin) ? $isSuperAdmin : false;
       <script>
         window.IS_SUPER_ADMIN = <?= $isSuperAdmin ? 'true' : 'false' ?>;
       </script>
-      <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/clients.js?v=5"></script>
+      <script src="<?= RACINE ?>public/json/mobile-list.js"></script>
+      <script src="<?= RACINE ?>public/json/entities/clients.js?v=5"></script>
     </div>
   </main>
 </div>

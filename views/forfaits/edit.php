@@ -98,5 +98,5 @@ $encryptedId = isset($encryptedId) ? $encryptedId : '';
   </main>
 </div>
 
-<script src="<?= RACINE ?>json/entities/forfaits.js?v=3"></script>
+<script src="<?= RACINE ?>public/json/entities/forfaits.js?v=3"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

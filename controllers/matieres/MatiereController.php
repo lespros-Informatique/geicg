@@ -33,11 +33,15 @@ class MatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['libelle_matiere'])) {
+            if (!$this->checkUnique('matieres', 'libelle_matiere', $data['libelle_matiere'], 'Nom de la matiere')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_matiere'])) {
             $data['code_matiere'] = $this->validator->generateCode('matieres', 'code_matiere', 'MAT-', 8);
         }
@@ -63,6 +67,10 @@ class MatiereController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['libelle_matiere'])) {
+            if (!$this->checkUnique('matieres', 'libelle_matiere', $data['libelle_matiere'], 'Nom de la matiere', 'id_matiere', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE matieres")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {

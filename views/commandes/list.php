@@ -248,8 +248,8 @@ $tarifs    = isset($tarifs) ? $tarifs : [];
       </div>
       <?php endif; ?>
 
-      <script src="<?= RACINE ?>json/mobile-list.js"></script>
-      <script src="<?= RACINE ?>json/entities/commandes.js?v=6"></script>
+      <script src="<?= RACINE ?>public/json/mobile-list.js"></script>
+      <script src="<?= RACINE ?>public/json/entities/commandes.js?v=6"></script>
 
       <script>
       const tarifsCatalogue = <?= json_encode($tarifs, JSON_UNESCAPED_UNICODE) ?>;

@@ -180,7 +180,7 @@ $encryptedId = isset($encryptedId) ? $encryptedId : '';
   </div>
 </div>
 
-<script src="<?= RACINE ?>json/entities/villes.js?v=4"></script>
+<script src="<?= RACINE ?>public/json/entities/villes.js?v=4"></script>
 <script>
 function openAddQuartierModalDirect(code, nom) {
     $('#directVilleCode').val(code);

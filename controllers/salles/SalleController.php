@@ -33,16 +33,20 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['libelle_salle'])) {
+            if (!$this->checkUnique('salles', 'libelle_salle', $data['libelle_salle'], 'Nom de la salle')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_salle'])) {
             $data['code_salle'] = $this->validator->generateCode('salles', 'code_salle', 'SAL-', 8);
         }
         $data['statut_salle'] = $data['statut_salle'] ?? 'actif';
-        $data['created_at'] = date('Y-m-d H:i:s');
+        $data['created_at_salle'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE salles")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
@@ -63,6 +67,10 @@ class SalleController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['libelle_salle'])) {
+            if (!$this->checkUnique('salles', 'libelle_salle', $data['libelle_salle'], 'Nom de la salle', 'id_salle', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE salles")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {

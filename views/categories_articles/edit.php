@@ -146,5 +146,5 @@ function previewCategoryIcon(input) {
   }
 }
 </script>
-<script src="<?= RACINE ?>json/entities/categories.js?v=5"></script>
+<script src="<?= RACINE ?>public/json/entities/categories.js?v=5"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

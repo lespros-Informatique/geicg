@@ -33,13 +33,20 @@ class UeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $data = $_POST;
+        unset($data['csrf_token']);
+        if (!empty($data['libelle_ue'])) {
+            if (!$this->checkUnique('unites_enseignement', 'libelle_ue', $data['libelle_ue'], 'Libelle de l UE')) return;
+        }
+        if (!empty($data['code_ue'])) {
+            if (!$this->checkUnique('unites_enseignement', 'code_ue', $data['code_ue'], 'Code UE')) return;
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
         $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
         if (empty($data['code_ue'])) {
-            $data['code_ue'] = $this->validator->generateCode('unites_enseignement', 'code_ue', 'UNI-', 8);
+            $data['code_ue'] = $this->validator->generateCode('unites_enseignement', 'code_ue', 'UE-', 8);
         }
         $data['statut_ue'] = $data['statut_ue'] ?? 'actif';
         $data['created_at_ue'] = date('Y-m-d H:i:s');
@@ -63,6 +70,13 @@ class UeController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($data['libelle_ue'])) {
+            if (!$this->checkUnique('unites_enseignement', 'libelle_ue', $data['libelle_ue'], 'Libelle de l UE', 'id_ue', $id)) return;
+        }
+        if (!empty($data['code_ue'])) {
+            if (!$this->checkUnique('unites_enseignement', 'code_ue', $data['code_ue'], 'Code UE', 'id_ue', $id)) return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE unites_enseignement")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
