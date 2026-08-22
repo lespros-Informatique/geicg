@@ -208,11 +208,13 @@ $route->addRoute('/tranche/formulaire', [$trancheController, 'formulaire']);
 $route->addRoute('/etudiant/list', [$etudiantController, 'list']);
 $route->addRoute('/etudiant/apiList', [$etudiantController, 'apiList']);
 $route->addRoute('/etudiant/add', [$etudiantController, 'add']);
+$route->addRoute('/etudiant/addWizard', [$etudiantController, 'addWizard']);
 $route->addRoute('/etudiant/edit', [$etudiantController, 'edit']);
 $route->addRoute('/etudiant/changer', [$etudiantController, 'changer']);
 $route->addRoute('/etudiant/details/{param}', [$etudiantController, 'details']);
 $route->addRoute('/etudiant/edition/{param}', [$etudiantController, 'edition']);
 $route->addRoute('/etudiant/formulaire', [$etudiantController, 'formulaire']);
+$route->addRoute('/etudiant/wizard', [$etudiantController, 'wizard']);
 
 // Module: parent (ParentController)
 $route->addRoute('/parent/list', [$parentController, 'list']);
