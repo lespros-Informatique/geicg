@@ -183,8 +183,8 @@ class EtudiantController extends BaseController
             // 1. Insert Student into `etudiants`
             $stmtEtu = $db->prepare("
                 INSERT INTO etudiants 
-                (code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance, lieu_naissance, nationalite, telephone_etudiant, email_etudiant, adresse_etudiant, user_code, annee_code, etablissement_code, statut_etudiant, created_at_etudiant)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+                (code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
             ");
             $stmtEtu->execute([
                 $codeEtudiant,
@@ -192,14 +192,13 @@ class EtudiantController extends BaseController
                 $nomEtudiant,
                 $prenomEtudiant,
                 $data['sexe_etudiant'] ?? 'M',
-                !empty($data['date_naissance']) ? $data['date_naissance'] : null,
-                !empty($data['lieu_naissance']) ? $data['lieu_naissance'] : null,
-                !empty($data['nationalite']) ? $data['nationalite'] : 'Ivoirienne',
+                !empty($data['date_naissance_etudiant']) ? $data['date_naissance_etudiant'] : (!empty($data['date_naissance']) ? $data['date_naissance'] : null),
+                !empty($data['lieu_naissance_etudiant']) ? $data['lieu_naissance_etudiant'] : (!empty($data['lieu_naissance']) ? $data['lieu_naissance'] : null),
+                !empty($data['nationalite_etudiant']) ? $data['nationalite_etudiant'] : (!empty($data['nationalite']) ? $data['nationalite'] : 'Ivoirienne'),
                 $telephoneEtudiant,
                 !empty($data['email_etudiant']) ? $data['email_etudiant'] : null,
-                !empty($data['adresse_etudiant']) ? $data['adresse_etudiant'] : null,
+                !empty($data['lieu_residence_etudiant']) ? $data['lieu_residence_etudiant'] : (!empty($data['adresse_etudiant']) ? $data['adresse_etudiant'] : null),
                 $userCode,
-                $anneeCode,
                 $etabCode
             ]);
 
@@ -208,8 +207,8 @@ class EtudiantController extends BaseController
                 $codeParent = $this->validator->generateCode('parents', 'code_parent', 'PAR-', 8);
                 $stmtPar = $db->prepare("
                     INSERT INTO parents 
-                    (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, nom_tuteur, telephone_tuteur, user_code, annee_code, etablissement_code, statut_parent, created_at_parent)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+                    (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, nom_tuteur, telephone_tuteur, user_code, etablissement_code, created_at_parent)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
                 $stmtPar->execute([
                     $codeParent,
@@ -222,7 +221,6 @@ class EtudiantController extends BaseController
                     !empty($data['nom_tuteur']) ? $data['nom_tuteur'] : null,
                     !empty($data['telephone_tuteur']) ? $data['telephone_tuteur'] : null,
                     $userCode,
-                    $anneeCode,
                     $etabCode
                 ]);
             }
@@ -232,16 +230,14 @@ class EtudiantController extends BaseController
                 $codeInscription = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
                 $stmtIns = $db->prepare("
                     INSERT INTO inscriptions
-                    (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, remise_accordee, date_inscription, user_code, annee_code, etablissement_code, statut_inscription, created_at_inscription)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+                    (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, user_code, annee_code, etablissement_code, statut_inscription, created_at_inscription)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
                 ");
                 $stmtIns->execute([
                     $codeInscription,
                     $codeEtudiant,
                     $data['classe_code'],
                     (float)($data['montant_scolarite_inscription'] ?? 0),
-                    (float)($data['remise_accordee'] ?? 0),
-                    !empty($data['date_inscription']) ? $data['date_inscription'] : date('Y-m-d'),
                     $userCode,
                     $anneeCode,
                     $etabCode

@@ -28,6 +28,7 @@ $accessoires = (new ModelAccessoire())->getAll();
     padding: 6px 12px;
     border-radius: 8px;
     transition: all 0.25s ease;
+    cursor: pointer;
   }
   .wizard-step-item.active {
     color: #1E3A5F;
@@ -91,9 +92,14 @@ $accessoires = (new ModelAccessoire())->getAll();
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Nouveau Dossier d'Inscription Étudiant</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Assistant étape par étape pour l'enregistrement complet d'un étudiant</p>
         </div>
-        <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-          <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
-        </a>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button type="button" id="btn-reset-draft" class="btn" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 10px 16px; border: 1px solid #FCA5A5; color: #DC2626; background: #FEF2F2; cursor: pointer;">
+            <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i> Effacer le brouillon
+          </button>
+          <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
+          </a>
+        </div>
       </div>
 
       <!-- Stepper Navigation -->
@@ -156,15 +162,15 @@ $accessoires = (new ModelAccessoire())->getAll();
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Date de naissance</label>
-                <input type="date" class="form-control" name="date_naissance" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="date" class="form-control" name="date_naissance_etudiant" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Lieu de naissance</label>
-                <input type="text" class="form-control" name="lieu_naissance" placeholder="Ex: Abidjan Treichville" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="text" class="form-control" name="lieu_naissance_etudiant" placeholder="Ex: Abidjan Treichville" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nationalité</label>
-                <input type="text" class="form-control" name="nationalite" value="Ivoirienne" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="text" class="form-control" name="nationalite_etudiant" value="Ivoirienne" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone étudiant <span style="color: #EF4444;">*</span></label>
@@ -176,7 +182,7 @@ $accessoires = (new ModelAccessoire())->getAll();
               </div>
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse de résidence</label>
-                <textarea class="form-control" name="adresse_etudiant" rows="2" placeholder="Ex: Cocody Riviera 3, Abidjan" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;"></textarea>
+                <textarea class="form-control" name="lieu_residence_etudiant" rows="2" placeholder="Ex: Cocody Riviera 3, Abidjan" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;"></textarea>
               </div>
             </div>
           </div>
@@ -341,6 +347,60 @@ $(document).ready(function() {
   var currentStep = 1;
   var totalSteps = 5;
 
+  // Persist form inputs to localStorage
+  function saveFormData() {
+    var formData = {};
+    $('#form-wizard-etudiant').find('input, select, textarea').each(function() {
+      var name = $(this).attr('name');
+      if (!name || name === 'csrf_token') return;
+      
+      if ($(this).attr('type') === 'checkbox') {
+        if (!formData[name]) formData[name] = [];
+        if ($(this).is(':checked')) {
+          formData[name].push($(this).val());
+        }
+      } else {
+        formData[name] = $(this).val();
+      }
+    });
+    localStorage.setItem('geicg_etudiant_wizard_data', JSON.stringify(formData));
+    localStorage.setItem('geicg_etudiant_wizard_step', currentStep);
+  }
+
+  // Restore form inputs from localStorage
+  function restoreFormData() {
+    var savedDataStr = localStorage.getItem('geicg_etudiant_wizard_data');
+    if (savedDataStr) {
+      try {
+        var formData = JSON.parse(savedDataStr);
+        $.each(formData, function(name, val) {
+          var $field = $('#form-wizard-etudiant').find('[name="' + name + '"]');
+          if ($field.length) {
+            if ($field.attr('type') === 'checkbox') {
+              if (Array.isArray(val)) {
+                $field.each(function() {
+                  if (val.indexOf($(this).val()) !== -1) {
+                    $(this).prop('checked', true);
+                  }
+                });
+              }
+            } else {
+              $field.val(val);
+            }
+          }
+        });
+      } catch(e) { console.error('Erreur restauration brouillon', e); }
+    }
+
+    var savedStep = localStorage.getItem('geicg_etudiant_wizard_step');
+    if (savedStep) {
+      var parsedStep = parseInt(savedStep);
+      if (parsedStep >= 1 && parsedStep <= totalSteps) {
+        currentStep = parsedStep;
+      }
+    }
+  }
+
   function updateWizardUI() {
     $('.wizard-step-content').removeClass('active').hide();
     $('.wizard-step-content[data-step="' + currentStep + '"]').addClass('active').show();
@@ -370,6 +430,7 @@ $(document).ready(function() {
       $('#btn-wizard-submit').hide();
     }
 
+    saveFormData();
     if (window.lucide) lucide.createIcons();
   }
 
@@ -379,7 +440,7 @@ $(document).ready(function() {
       var prenom = $('#wiz_prenom').val().trim();
       var tel = $('#wiz_tel').val().trim();
       if (!nom || !prenom || !tel) {
-        alert('Veuillez remplir le nom, les prénoms et le téléphone de l\'étudiant avant de continuer.');
+        showToast('Veuillez remplir le nom, les prénoms et le téléphone de l\'étudiant avant de continuer.', 'warning', 'Champs requis');
         return false;
       }
     }
@@ -387,7 +448,7 @@ $(document).ready(function() {
       var classe = $('#wiz_classe').val();
       var montant = $('#wiz_montant_scolarite').val();
       if (!classe || !montant) {
-        alert('Veuillez sélectionner la classe et renseigner la scolarité due.');
+        showToast('Veuillez sélectionner la classe et renseigner la scolarité due.', 'warning', 'Champs requis');
         return false;
       }
     }
@@ -420,6 +481,12 @@ $(document).ready(function() {
     $('#recap_remise').text(Number(remise).toLocaleString('fr-FR') + ' FCFA');
   }
 
+  // Auto save on any input change
+  $('#form-wizard-etudiant').on('input change keyup', 'input, select, textarea', function() {
+    saveFormData();
+  });
+
+  // Next Step
   $('#btn-wizard-next').on('click', function() {
     if (validateStep(currentStep)) {
       if (currentStep < totalSteps) {
@@ -429,6 +496,7 @@ $(document).ready(function() {
     }
   });
 
+  // Previous Step
   $('#btn-wizard-prev').on('click', function() {
     if (currentStep > 1) {
       currentStep--;
@@ -436,6 +504,7 @@ $(document).ready(function() {
     }
   });
 
+  // Direct Step click
   $('.wizard-step-item').on('click', function() {
     var targetStep = parseInt($(this).attr('data-step'));
     if (targetStep < currentStep) {
@@ -447,7 +516,30 @@ $(document).ready(function() {
     }
   });
 
-  if (window.lucide) lucide.createIcons();
+  // Manual Reset Draft button (Custom Pro Modal)
+  $('#btn-reset-draft').on('click', function() {
+    showConfirm(
+      'Voulez-vous réinitialiser le formulaire et effacer toutes les données saisies ? Cette action est irréversible.',
+      function() {
+        localStorage.removeItem('geicg_etudiant_wizard_data');
+        localStorage.removeItem('geicg_etudiant_wizard_step');
+        location.reload();
+      },
+      'Réinitialiser le brouillon',
+      'Effacer tout',
+      true
+    );
+  });
+
+  // Clear storage on form submit
+  $('#form-wizard-etudiant').on('submit', function() {
+    localStorage.removeItem('geicg_etudiant_wizard_data');
+    localStorage.removeItem('geicg_etudiant_wizard_step');
+  });
+
+  // Restore state on load
+  restoreFormData();
+  updateWizardUI();
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
