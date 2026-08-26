@@ -6,8 +6,8 @@
     <div class="content-wrapper" style="padding: 24px;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Détaillée : <?= htmlspecialchars($item['libelle_classe'] ?? 'Classe / Promotion') ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Consultation complète des données rattachées au module Classes & Promotions</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Détaillée : <?= htmlspecialchars($item['libelle_classe'] ?? 'Classe') ?></h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Consultation complète des données de la promotion</p>
         </div>
         <div style="display: flex; gap: 12px;">
           <a href="<?= RACINE ?>classe/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
@@ -21,11 +21,11 @@
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #F1F5F9;">
           <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
+            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
-            <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Informations d'Enregistrement</h3>
-            <span style="font-size: 12px; color: #64748B;">Réf ID #<?= htmlspecialchars($item['id_classe'] ?? '-') ?></span>
+            <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Informations de la Classe</h3>
+            <span style="font-size: 12px; color: #64748B;">Réf ID #<?= htmlspecialchars($item['id_classe'] ?? '-') ?> &bull; Code : <?= htmlspecialchars($item['code_classe'] ?? '-') ?></span>
           </div>
           <div style="margin-left: auto;">
             <?php if (($item['statut_classe'] ?? '') === 'actif'): ?>
@@ -35,29 +35,29 @@
             <?php endif; ?>
           </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
+          <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Libellé de la Classe</div>
+            <div style="font-size: 16px; font-weight: 800; color: #0F172A; word-break: break-word;">
+              <?= !empty($item['libelle_classe']) ? htmlspecialchars($item['libelle_classe']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
+            </div>
+          </div>
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
             <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Filière</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['filiere_code']) ? htmlspecialchars($item['filiere_code']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
+            <div style="font-size: 15px; font-weight: 700; color: #1E3A5F; word-break: break-word;">
+              <?= !empty($item['libelle_filiere']) ? htmlspecialchars($item['libelle_filiere']) : htmlspecialchars($item['filiere_code'] ?? 'Non renseignée') ?>
             </div>
           </div>
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Niveau d\'études</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['niveau_code']) ? htmlspecialchars($item['niveau_code']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Niveau d'études</div>
+            <div style="font-size: 15px; font-weight: 700; color: #334155; word-break: break-word;">
+              <?= !empty($item['libelle_niveau']) ? htmlspecialchars($item['libelle_niveau']) : htmlspecialchars($item['niveau_code'] ?? 'Non renseigné') ?>
             </div>
           </div>
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Salle principale attribuée</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['salle_code']) ? htmlspecialchars($item['salle_code']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
-            </div>
-          </div>
-          <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Nom de la Classe (ex: BTS IDA 1A)</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['libelle_classe']) ? htmlspecialchars($item['libelle_classe']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Capacité Maximale</div>
+            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; word-break: break-word;">
+              <?= !empty($item['capacite_max_classe']) ? htmlspecialchars($item['capacite_max_classe']) . ' places' : '<span style="color:#94A3B8; font-style:italic;">Non définie</span>' ?>
             </div>
           </div>
         </div>

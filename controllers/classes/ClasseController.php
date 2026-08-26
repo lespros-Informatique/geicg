@@ -16,7 +16,14 @@ class ClasseController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $sql = "SELECT c.*, 
+                       f.libelle_filiere,
+                       n.libelle_niveau
+                FROM classes c
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                ORDER BY c.id_classe DESC";
+        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_classe'];
@@ -35,6 +42,22 @@ class ClasseController extends BaseController
         $this->requireAuth();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        // Génération automatique intelligente de secours si le champ libelle_classe est vide
+        if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
+            $stmtF = $this->model->getCon()->prepare("SELECT libelle_filiere FROM filieres WHERE code_filiere = ?");
+            $stmtF->execute([$data['filiere_code']]);
+            $fName = $stmtF->fetchColumn();
+
+            $stmtN = $this->model->getCon()->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ?");
+            $stmtN->execute([$data['niveau_code']]);
+            $nName = $stmtN->fetchColumn();
+
+            if ($fName && $nName) {
+                $data['libelle_classe'] = trim($fName) . ' - ' . trim($nName);
+            }
+        }
+
         if (!empty($data['libelle_classe'])) {
             if (!$this->checkUnique('classes', 'libelle_classe', $data['libelle_classe'], 'Nom de la classe')) return;
         }
@@ -53,9 +76,9 @@ class ClasseController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Classe créée avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de la création de la classe.');
         }
     }
 
@@ -67,6 +90,22 @@ class ClasseController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
+        // Génération automatique intelligente de secours si le champ libelle_classe est vide
+        if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
+            $stmtF = $this->model->getCon()->prepare("SELECT libelle_filiere FROM filieres WHERE code_filiere = ?");
+            $stmtF->execute([$data['filiere_code']]);
+            $fName = $stmtF->fetchColumn();
+
+            $stmtN = $this->model->getCon()->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ?");
+            $stmtN->execute([$data['niveau_code']]);
+            $nName = $stmtN->fetchColumn();
+
+            if ($fName && $nName) {
+                $data['libelle_classe'] = trim($fName) . ' - ' . trim($nName);
+            }
+        }
+
         if (!empty($data['libelle_classe'])) {
             if (!$this->checkUnique('classes', 'libelle_classe', $data['libelle_classe'], 'Nom de la classe', 'id_classe', $id)) return;
         }
@@ -74,9 +113,9 @@ class ClasseController extends BaseController
         $cols = $this->model->getCon()->query("DESCRIBE classes")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Classe modifiée avec succès!');
         } else {
-            $this->error('Erreur lors de la modification');
+            $this->error('Erreur lors de la modification de la classe.');
         }
     }
 
@@ -101,7 +140,17 @@ class ClasseController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT c.*, 
+                       f.libelle_filiere,
+                       n.libelle_niveau
+                FROM classes c
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                WHERE c.id_classe = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'classe/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
