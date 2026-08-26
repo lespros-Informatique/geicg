@@ -16,144 +16,18 @@ class BulletinController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $sql = "SELECT b.*, 
-                       i.code_inscription,
+        $sql = "SELECT i.*, 
                        CONCAT(e.nom_etudiant, ' ', e.prenom_etudiant) AS etudiant_nom,
+                       e.matricule_etudiant,
                        cl.libelle_classe AS classe_nom,
-                       s.libelle_semestre AS semestre_nom
-                FROM bulletins b
-                LEFT JOIN inscriptions i ON i.code_inscription = b.inscription_code
+                       a.libelle_annee AS annee_nom,
+                       (SELECT COUNT(*) FROM notes n WHERE n.inscription_code = i.code_inscription AND n.statut_note = 'actif') AS nb_notes
+                FROM inscriptions i
                 LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
                 LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-                LEFT JOIN semestres s ON s.code_semestre = b.semestre_code
-                ORDER BY b.id_bulletin DESC";
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
+                ORDER BY i.id_inscription DESC";
         $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        $data = [];
-        foreach ($items as $i) {
-            $id = $i['id_bulletin'];
-            $idCrypte = $this->validator->crypter($id);
-            $data[] = array_merge($i, [
-                'id' => $id,
-                'editId' => $idCrypte
-            ]);
-        }
-        $this->json(['data' => $data]);
-    }
-
-    public function add()
-    {
-        $this->requirePost(false);
-        $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
-
-        $inscriptionCode = $data['inscription_code'] ?? '';
-        $semestreCode    = $data['semestre_code'] ?? '';
-
-        if (empty($inscriptionCode)) {
-            $this->error('Veuillez sélectionner une inscription.');
-            return;
-        }
-
-        // Vérifier si un bulletin existe déjà pour cette inscription + semestre + année
-        $stmt = $this->model->getCon()->prepare(
-            "SELECT id_bulletin FROM bulletins WHERE inscription_code = ? AND semestre_code = ? AND annee_code = ?"
-        );
-        $stmt->execute([$inscriptionCode, $semestreCode ?: null, $anneeCode]);
-        if ($stmt->fetch()) {
-            $this->error('Un bulletin existe déjà pour cette inscription et ce semestre.');
-            return;
-        }
-
-        $data['code_bulletin'] = $this->validator->generateCode('bulletins', 'code_bulletin', 'BUL-', 8);
-        $data['user_code'] = $userCode;
-        $data['etablissement_code'] = $etabCode;
-        $data['annee_code'] = $anneeCode;
-        $data['created_at_bulletin'] = date('Y-m-d H:i:s');
-
-        $cols = $this->model->getCon()->query("DESCRIBE bulletins")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
-
-        if ($this->model->create($filteredData)) {
-            $this->success('Bulletin créé avec succès!');
-        } else {
-            $this->error('Erreur lors de la création du bulletin.');
-        }
-    }
-
-    public function edit()
-    {
-        $this->requirePost(false);
-        $this->requireAuth();
-        $id = (int)$this->post('id_bulletin');
-        if (!$id) { $this->error('Identifiant invalide'); return; }
-        $data = $_POST;
-        unset($data['csrf_token']);
-
-        $data['updated_at_bulletin'] = date('Y-m-d H:i:s');
-
-        $cols = $this->model->getCon()->query("DESCRIBE bulletins")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
-        if ($this->model->update($filteredData, $id)) {
-            $this->success('Bulletin modifié avec succès!');
-        } else {
-            $this->error('Erreur lors de la modification.');
-        }
-    }
-
-    public function details($details)
-    {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'bulletin/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'bulletin/list'); exit();
-        }
-        $this->loadView('../views/bulletin/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
-    }
-
-    public function edition($details)
-    {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'bulletin/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'bulletin/list'); exit();
-        }
-        $this->loadView('../views/bulletin/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
-    }
-
-    public function formulaire()
-    {
-        $this->requireAuth();
-        $this->loadView('../views/bulletin/edit.php', ['item' => []]);
-    }
-}
-
-    protected function resolveModel()
-    {
-        return new ModelBulletin();
-    }
-
-    public function list()
-    {
-        $this->requireAuth();
-        $this->loadView('../views/bulletin/list.php');
-    }
-
-    public function apiList()
-    {
-        $this->requireAuth();
-        $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_inscription'];
@@ -166,104 +40,230 @@ class BulletinController extends BaseController
         $this->json(['data' => $data]);
     }
 
-    public function add()
-    {
-        $this->requirePost(false);
-        $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
-        $data = $_POST;
-        unset($data['csrf_token']);
-
-        $etudiantCode = $data['etudiant_code'] ?? '';
-        $classeCode   = $data['classe_code'] ?? '';
-
-        if (empty($etudiantCode) || empty($classeCode)) {
-            $this->error('Veuillez sélectionner un étudiant et une classe.');
-            return;
-        }
-
-        // Vérifier si cet étudiant est déjà inscrit pour cette année
-        $stmt = $this->model->getCon()->prepare(
-            "SELECT id_inscription FROM inscriptions WHERE etudiant_code = ? AND annee_code = ?"
-        );
-        $stmt->execute([$etudiantCode, $anneeCode]);
-        if ($stmt->fetch()) {
-            $this->error('Cet étudiant est déjà inscrit pour l\'année académique en cours.');
-            return;
-        }
-
-        // Générer le code_inscription unique
-        $data['code_inscription'] = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
-
-        // Ajouter les champs système
-        $data['user_code'] = $userCode;
-        $data['etablissement_code'] = $etabCode;
-        $data['annee_code'] = $anneeCode;
-        $data['created_at_inscription'] = date('Y-m-d H:i:s');
-
-        $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
-
-        if ($this->model->create($filteredData)) {
-            $this->success('Inscription créée avec succès!');
-        } else {
-            $this->error('Erreur lors de la création.');
-        }
-    }
-
-    public function edit()
-    {
-        $this->requirePost(false);
-        $this->requireAuth();
-        $id = (int)$this->post('id_inscription');
-        if (!$id) { $this->error('Identifiant invalide'); return; }
-        $data = $_POST;
-        unset($data['csrf_token']);
-
-        $data['updated_at_inscription'] = date('Y-m-d H:i:s');
-
-        $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
-        if ($this->model->update($filteredData, $id)) {
-            $this->success('Inscription modifiée avec succès!');
-        } else {
-            $this->error('Erreur lors de la modification');
-        }
-    }
-
     public function details($details)
     {
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'bulletin/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'bulletin/list'); exit();
-        }
-        $this->loadView('../views/bulletin/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
-    }
+            
+            // Récupérer l'inscription avec les détails de l'étudiant, de la classe et de l'année
+            $stmt = $this->model->getCon()->prepare("
+                SELECT i.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.genre_etudiant,
+                       e.date_naissance_etudiant, e.lieu_naissance_etudiant, e.telephone_etudiant,
+                       e.email_etudiant, e.photo_etudiant, e.adresse_etudiant,
+                       cl.libelle_classe, cl.code_classe,
+                       a.libelle_annee, a.code_annee
+                FROM inscriptions i
+                LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+                LEFT JOIN classes cl ON cl.code_classe = i.classe_code
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
+                WHERE i.id_inscription = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$item) {
+                header('Location: ' . RACINE . 'bulletin/list');
+                exit();
+            }
 
-    public function edition($details)
-    {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'bulletin/list'); exit(); }
+            // Récupérer la liste des semestres
+            $semestres = $this->model->getCon()->query("
+                SELECT * FROM semestres WHERE statut_semestre = 'actif' ORDER BY id_semestre ASC
+            ")->fetchAll(PDO::FETCH_ASSOC);
+
+            // Semestre sélectionné (par paramètre GET ou le premier avec des notes, ou le premier disponible)
+            $selectedSemestreCode = $_GET['semestre'] ?? '';
+            if (empty($selectedSemestreCode)) {
+                // Trouver le premier semestre ayant des notes pour cette inscription
+                $stmtCheck = $this->model->getCon()->prepare("
+                    SELECT semestre_code FROM notes 
+                    WHERE inscription_code = ? AND statut_note = 'actif' 
+                    LIMIT 1
+                ");
+                $stmtCheck->execute([$item['code_inscription']]);
+                $foundSem = $stmtCheck->fetchColumn();
+                $selectedSemestreCode = $foundSem ?: ($semestres[0]['code_semestre'] ?? '');
+            }
+
+            // Récupérer les notes pour le semestre sélectionné avec le coefficient par classe
+            $sqlNotes = "
+                SELECT n.*, 
+                       m.libelle_matiere, 
+                       COALESCE(em.coefficient, 1.00) AS coefficient, 
+                       m.code_matiere
+                FROM notes n
+                LEFT JOIN matieres m ON m.code_matiere = n.matiere_code
+                LEFT JOIN enseignant_matiere em ON (em.matiere_code = n.matiere_code AND em.classe_code = ?)
+                WHERE n.inscription_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+                ORDER BY m.libelle_matiere ASC, n.type_evaluation_code ASC
+            ";
+            $stmtNotes = $this->model->getCon()->prepare($sqlNotes);
+            $stmtNotes->execute([$item['classe_code'], $item['code_inscription'], $selectedSemestreCode]);
+            $rawNotes = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
+
+            // Structurer les notes par matière
+            $matieresNotes = [];
+            foreach ($rawNotes as $n) {
+                $matCode = $n['matiere_code'] ?: 'MAT_INCONNUE';
+                if (!isset($matieresNotes[$matCode])) {
+                    $matieresNotes[$matCode] = [
+                        'libelle' => $n['libelle_matiere'] ?: 'Matière sans nom',
+                        'coefficient' => (float)($n['coefficient'] ?? 1),
+                        'evaluations' => [],
+                        'notes' => []
+                    ];
+                }
+                $matieresNotes[$matCode]['evaluations'][] = [
+                    'type' => $n['type_evaluation_code'],
+                    'note' => (float)$n['valeur_note'],
+                    'observations' => $n['observations'] ?? ''
+                ];
+                $matieresNotes[$matCode]['notes'][] = (float)$n['valeur_note'];
+            }
+
+            // Calculer la moyenne par matière, les points pondérés et les totaux
+            $totalPoints = 0;
+            $totalCoefficients = 0;
+            foreach ($matieresNotes as $k => &$m) {
+                $nb = count($m['notes']);
+                $moyenneMatiere = $nb > 0 ? (array_sum($m['notes']) / $nb) : 0;
+                $m['moyenne'] = round($moyenneMatiere, 2);
+                $m['points'] = round($moyenneMatiere * $m['coefficient'], 2);
+
+                // Appréciation automatique par matière
+                if ($m['moyenne'] >= 16) $m['appreciation'] = 'Très Bien';
+                elseif ($m['moyenne'] >= 14) $m['appreciation'] = 'Bien';
+                elseif ($m['moyenne'] >= 12) $m['appreciation'] = 'Assez Bien';
+                elseif ($m['moyenne'] >= 10) $m['appreciation'] = 'Passable';
+                elseif ($m['moyenne'] >= 8)  $m['appreciation'] = 'Insuffisant';
+                else $m['appreciation'] = 'Très Insuffisant';
+
+                $totalPoints += $m['points'];
+                $totalCoefficients += $m['coefficient'];
+            }
+            unset($m);
+
+            // Moyenne générale
+            $moyenneGenerale = $totalCoefficients > 0 ? round($totalPoints / $totalCoefficients, 2) : 0;
+
+            // Mention générale
+            $mention = 'Non évalué';
+            $decision = 'En attente';
+            if ($totalCoefficients > 0) {
+                if ($moyenneGenerale >= 16) {
+                    $mention = 'Très Bien';
+                    $decision = 'Félicitations du Conseil de Faculté / Jury';
+                } elseif ($moyenneGenerale >= 14) {
+                    $mention = 'Bien';
+                    $decision = 'Tableau d\'Honneur';
+                } elseif ($moyenneGenerale >= 12) {
+                    $mention = 'Assez Bien';
+                    $decision = 'Encouragements';
+                } elseif ($moyenneGenerale >= 10) {
+                    $mention = 'Passable';
+                    $decision = 'Admis(e) au semestre';
+                } else {
+                    $mention = 'Ajourné(e)';
+                    $decision = 'Non validé / Session de rattrapage';
+                }
+            }
+
+            // Calcul du rang et des statistiques de la classe pour ce semestre
+            $rang = 1;
+            $totalElevesClasse = 1;
+            $moyenneMinClasse = $moyenneGenerale;
+            $moyenneMaxClasse = $moyenneGenerale;
+            $moyenneMoyClasse = $moyenneGenerale;
+
+            if (!empty($item['classe_code']) && !empty($selectedSemestreCode)) {
+                $sqlClassmates = "
+                    SELECT i.code_inscription,
+                           n.valeur_note,
+                           COALESCE(em.coefficient, 1.00) AS coefficient
+                    FROM inscriptions i
+                    INNER JOIN notes n ON n.inscription_code = i.code_inscription
+                    INNER JOIN matieres m ON m.code_matiere = n.matiere_code
+                    LEFT JOIN enseignant_matiere em ON (em.matiere_code = n.matiere_code AND em.classe_code = i.classe_code)
+                    WHERE i.classe_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+                ";
+                $stmtClass = $this->model->getCon()->prepare($sqlClassmates);
+                $stmtClass->execute([$item['classe_code'], $selectedSemestreCode]);
+                $classNotes = $stmtClass->fetchAll(PDO::FETCH_ASSOC);
+
+                // Regrouper par inscription
+                $etudiantsMoyennes = [];
+                foreach ($classNotes as $cn) {
+                    $insc = $cn['code_inscription'];
+                    if (!isset($etudiantsMoyennes[$insc])) {
+                        $etudiantsMoyennes[$insc] = ['total_pts' => 0, 'total_coef' => 0];
+                    }
+                    $etudiantsMoyennes[$insc]['total_pts'] += ($cn['valeur_note'] * $cn['coefficient']);
+                    $etudiantsMoyennes[$insc]['total_coef'] += $cn['coefficient'];
+                }
+
+                if (!empty($etudiantsMoyennes)) {
+                    $classeMoyennesArray = [];
+                    foreach ($etudiantsMoyennes as $inscCode => $stats) {
+                        if ($stats['total_coef'] > 0) {
+                            $classeMoyennesArray[$inscCode] = round($stats['total_pts'] / $stats['total_coef'], 2);
+                        }
+                    }
+
+                    if (!empty($classeMoyennesArray)) {
+                        arsort($classeMoyennesArray);
+                        $totalElevesClasse = count($classeMoyennesArray);
+                        $moyenneMaxClasse = max($classeMoyennesArray);
+                        $moyenneMinClasse = min($classeMoyennesArray);
+                        $moyenneMoyClasse = round(array_sum($classeMoyennesArray) / $totalElevesClasse, 2);
+
+                        $pos = 1;
+                        foreach ($classeMoyennesArray as $inscCode => $moy) {
+                            if ($inscCode === $item['code_inscription']) {
+                                $rang = $pos;
+                                break;
+                            }
+                            $pos++;
+                        }
+                    }
+                }
+            }
+
             $encryptedId = $this->validator->crypter($id);
+
+            $this->loadView('../views/bulletin/details.php', [
+                'item' => $item,
+                'encryptedId' => $encryptedId,
+                'semestres' => $semestres,
+                'selectedSemestreCode' => $selectedSemestreCode,
+                'matieresNotes' => $matieresNotes,
+                'totalPoints' => $totalPoints,
+                'totalCoefficients' => $totalCoefficients,
+                'moyenneGenerale' => $moyenneGenerale,
+                'mention' => $mention,
+                'decision' => $decision,
+                'rang' => $rang,
+                'totalElevesClasse' => $totalElevesClasse,
+                'moyenneMinClasse' => $moyenneMinClasse,
+                'moyenneMaxClasse' => $moyenneMaxClasse,
+                'moyenneMoyClasse' => $moyenneMoyClasse
+            ]);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'bulletin/list'); exit();
+            header('Location: ' . RACINE . 'bulletin/list');
+            exit();
         }
-        $this->loadView('../views/bulletin/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/bulletin/edit.php', ['item' => []]);
+        header('Location: ' . RACINE . 'bulletin/list');
+        exit();
+    }
+
+    public function edition($details)
+    {
+        $this->requireAuth();
+        $this->details($details);
     }
 }

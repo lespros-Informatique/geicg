@@ -67,7 +67,9 @@ $enseignants = (new ModelEnseignant())->getAll();
                 <div id="preview_zone" style="display:none; margin-top: 14px; border-radius: 10px; overflow: hidden; border: 1px solid #E2E8F0; background: #0F172A; position: relative; max-width: 100%;">
                   <img id="preview_img" src="" alt="Aperçu" style="display:none; width:100%; max-height:320px; object-fit:contain; border-radius:10px;">
                   <video id="preview_vid" src="" controls style="display:none; width:100%; max-height:320px; border-radius:10px;"></video>
-                  <button type="button" onclick="clearFile()" style="position:absolute;top:8px;right:8px;background:#EF4444;color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+                  <button type="button" onclick="clearFile()" title="Supprimer le fichier" style="position:absolute;top:8px;right:8px;background:#EF4444;color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                    <i data-lucide="x" style="width:16px;height:16px;"></i>
+                  </button>
                 </div>
                 <div id="file_info" style="display:none; margin-top: 8px; font-size: 12px; color: #64748B;"></div>
               </div>
@@ -151,7 +153,8 @@ function handleFile(file) {
       document.getElementById('preview_img').style.display = 'none';
     }
     document.getElementById('file_info').style.display = '';
-    document.getElementById('file_info').innerHTML = '📎 <strong>' + file.name + '</strong> &nbsp;(' + (file.size/1024/1024).toFixed(2) + ' Mo)';
+    document.getElementById('file_info').innerHTML = '<i data-lucide="file" style="width:14px;height:14px;vertical-align:middle;display:inline-block;margin-right:4px;"></i> <strong>' + file.name + '</strong> &nbsp;(' + (file.size/1024/1024).toFixed(2) + ' Mo)';
+    if (window.lucide) lucide.createIcons();
     document.getElementById('url_fichier').value = '';
   };
   reader.readAsDataURL(file);

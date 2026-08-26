@@ -65,10 +65,15 @@
             <i data-lucide="info" style="width: 16px; height: 16px;"></i> Identité Institutionnelle
           </div>
           
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
             <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de l'Établissement <span style="color: #EF4444;">*</span></label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="libelle_etablissement" value="<?= htmlspecialchars($item['libelle_etablissement'] ?? 'Institut Supérieur GEICG') ?>" placeholder="Ex: Institut Supérieur GEICG - Campus Principal" required>
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro d'Autorisation / Arrêté</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="numero_autorisation_etablissement" value="<?= htmlspecialchars($item['numero_autorisation_etablissement'] ?? '') ?>" placeholder="Ex: N° 045/MESRS/DGES/DESP/KK">
             </div>
             
             <div class="form-group" style="width: 100%;">

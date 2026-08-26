@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -21,6 +21,7 @@
                 <th style="padding: 12px;">ID</th>
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Libellé Semestre</th>
+                <th style="padding: 12px;">Année Académique</th>
                 <th style="padding: 12px;">Date Début</th>
                 <th style="padding: 12px;">Date Fin</th>
                 <th style="padding: 12px;">Statut</th>
@@ -41,9 +42,19 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_semestre', defaultContent: '-' },
-      { data: 'code_semestre', defaultContent: '-' },
-      { data: 'libelle_semestre', defaultContent: '-' },
+      { data: 'id_semestre', defaultContent: '-', width: '50px' },
+      { data: 'code_semestre', defaultContent: '-', width: '110px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
+      }},
+      { data: 'libelle_semestre', defaultContent: '-', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
+      }},
+      { data: 'libelle_annee', defaultContent: '<span style="color:#94A3B8; font-style:italic;">Non définie</span>', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<span style="color:#1E3A5F; font-weight:600;">' + (d || '<span style="color:#94A3B8; font-style:italic;">Non définie</span>') + '</span>';
+      }},
       { data: 'date_debut_semestre', defaultContent: '-' },
       { data: 'date_fin_semestre', defaultContent: '-' },
       { data: 'statut_semestre', render: function(d, type) {

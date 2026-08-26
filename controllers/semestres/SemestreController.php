@@ -16,7 +16,11 @@ class SemestreController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $sql = "SELECT s.*, a.libelle_annee 
+                FROM semestres s
+                LEFT JOIN annees a ON a.code_annee = s.annee_code
+                ORDER BY s.id_semestre DESC";
+        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_semestre'];
@@ -29,19 +33,54 @@ class SemestreController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    private function normalizeLibelle(string $raw): ?string
+    {
+        $trim = trim($raw);
+        $upper = strtoupper($trim);
+        if ($upper === 'SEMESTRE 1' || $upper === 'SEMESTRE1' || $upper === 'S1') {
+            return 'Semestre 1';
+        }
+        if ($upper === 'SEMESTRE 2' || $upper === 'SEMESTRE2' || $upper === 'S2') {
+            return 'Semestre 2';
+        }
+        return null;
+    }
+
     public function add()
     {
         $this->requirePost(false);
         $this->requireAuth();
         $data = $_POST;
         unset($data['csrf_token']);
-        if (!empty($data['libelle_semestre'])) {
-            if (!$this->checkUnique('semestres', 'libelle_semestre', $data['libelle_semestre'], 'Nom du semestre')) return;
+
+        // Contrôle strict du libellé : uniquement Semestre 1 ou Semestre 2
+        $libelle = $this->normalizeLibelle($data['libelle_semestre'] ?? '');
+        if (!$libelle) {
+            $this->error('Veuillez sélectionner un semestre valide (Semestre 1 ou Semestre 2).');
+            return;
         }
+        $data['libelle_semestre'] = $libelle;
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : ($_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY');
         $etabCode = '5454544456';
+
+        if (empty($anneeCode)) {
+            $this->error('Veuillez sélectionner une année académique.');
+            return;
+        }
+
+        // Contrôle d'unicité : un seul Semestre 1 et un seul Semestre 2 par année académique
+        $stmt = $this->model->getCon()->prepare("
+            SELECT id_semestre FROM semestres 
+            WHERE (libelle_semestre = ? OR UPPER(libelle_semestre) = ?) AND annee_code = ?
+        ");
+        $stmt->execute([$libelle, strtoupper($libelle), $anneeCode]);
+        if ($stmt->fetch()) {
+            $this->error("Le $libelle est déjà enregistré pour l'année académique sélectionnée.");
+            return;
+        }
+
         if (empty($data['code_semestre'])) {
             $data['code_semestre'] = $this->validator->generateCode('semestres', 'code_semestre', 'SEM-', 8);
         }
@@ -53,9 +92,9 @@ class SemestreController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Semestre créé avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de la création du semestre.');
         }
     }
 
@@ -65,18 +104,44 @@ class SemestreController extends BaseController
         $this->requireAuth();
         $id = (int)$this->post('id_semestre');
         if (!$id) { $this->error('Identifiant invalide'); return; }
+        
+        $current = $this->model->getById($id);
+        if (!$current) { $this->error('Semestre introuvable'); return; }
+
         $data = $_POST;
         unset($data['csrf_token']);
-        if (!empty($data['libelle_semestre'])) {
-            if (!$this->checkUnique('semestres', 'libelle_semestre', $data['libelle_semestre'], 'Nom du semestre', 'id_semestre', $id)) return;
+
+        // Contrôle strict du libellé : uniquement Semestre 1 ou Semestre 2
+        $libelle = $this->normalizeLibelle($data['libelle_semestre'] ?? '');
+        if (!$libelle) {
+            $this->error('Veuillez sélectionner un semestre valide (Semestre 1 ou Semestre 2).');
+            return;
+        }
+        $data['libelle_semestre'] = $libelle;
+
+        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : ($current['annee_code'] ?? '');
+        if (empty($anneeCode)) {
+            $this->error('Veuillez sélectionner une année académique.');
+            return;
+        }
+
+        // Contrôle d'unicité par année académique (en excluant l'enregistrement en cours d'édition)
+        $stmt = $this->model->getCon()->prepare("
+            SELECT id_semestre FROM semestres 
+            WHERE (libelle_semestre = ? OR UPPER(libelle_semestre) = ?) AND annee_code = ? AND id_semestre != ?
+        ");
+        $stmt->execute([$libelle, strtoupper($libelle), $anneeCode, $id]);
+        if ($stmt->fetch()) {
+            $this->error("Le $libelle est déjà enregistré pour cette année académique.");
+            return;
         }
 
         $cols = $this->model->getCon()->query("DESCRIBE semestres")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Semestre modifié avec succès!');
         } else {
-            $this->error('Erreur lors de la modification');
+            $this->error('Erreur lors de la modification du semestre.');
         }
     }
 
@@ -101,7 +166,14 @@ class SemestreController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT s.*, a.libelle_annee 
+                FROM semestres s
+                LEFT JOIN annees a ON a.code_annee = s.annee_code
+                WHERE s.id_semestre = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'semestre/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

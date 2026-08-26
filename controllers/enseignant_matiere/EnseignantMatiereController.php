@@ -16,7 +16,18 @@ class EnseignantMatiereController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $sql = "SELECT em.*, 
+                       m.libelle_matiere,
+                       cl.libelle_classe,
+                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom,
+                       e.code_enseignant
+                FROM enseignant_matiere em
+                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
+                LEFT JOIN classes cl ON cl.code_classe = em.classe_code
+                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+                LEFT JOIN users u ON u.code_user = e.user_code
+                ORDER BY em.id_enseignant_matiere DESC";
+        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_enseignant_matiere'];
@@ -38,13 +49,23 @@ class EnseignantMatiereController extends BaseController
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);
+
+        if (empty($data['enseignant_code']) || empty($data['matiere_code']) || empty($data['classe_code'])) {
+            $this->error('Veuillez sélectionner un enseignant, une matière et une classe.');
+            return;
+        }
+
+        $data['coefficient'] = !empty($data['coefficient']) ? (float)$data['coefficient'] : 1.0;
+        $data['statut_enseignant_matiere'] = $data['statut_enseignant_matiere'] ?? 'actif';
+        $data['created_at_enseignant_matiere'] = date('Y-m-d H:i:s');
+
         $cols = $this->model->getCon()->query("DESCRIBE enseignant_matiere")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Affectation de cours créée avec succès!');
         } else {
             $this->error('Erreur lors de la création');
         }
@@ -58,12 +79,35 @@ class EnseignantMatiereController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
+        if (!empty($data['coefficient'])) {
+            $data['coefficient'] = (float)$data['coefficient'];
+        }
+
+        $data['updated_at_enseignant_matiere'] = date('Y-m-d H:i:s');
+
         $cols = $this->model->getCon()->query("DESCRIBE enseignant_matiere")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Affectation modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
+        }
+    }
+
+    public function changer()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $id = $this->post('id');
+        if ($id && $this->model->getById($id)) {
+            if ($this->model->toggleStatus($id)) {
+                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+            } else {
+                $this->error('Erreur lors de la mise à jour du statut');
+            }
+        } else {
+            $this->error('Item introuvable');
         }
     }
 
@@ -72,7 +116,21 @@ class EnseignantMatiereController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT em.*, 
+                       m.libelle_matiere,
+                       cl.libelle_classe,
+                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom,
+                       e.code_enseignant
+                FROM enseignant_matiere em
+                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
+                LEFT JOIN classes cl ON cl.code_classe = em.classe_code
+                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+                LEFT JOIN users u ON u.code_user = e.user_code
+                WHERE em.id_enseignant_matiere = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'enseignant_matiere/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

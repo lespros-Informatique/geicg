@@ -1,19 +1,4 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<?php
-$cycles = (new ModelCycle())->getAll();
-$filieres = (new ModelFiliere())->getAll();
-$niveaux = (new ModelNiveau())->getAll();
-$classes = (new ModelClasse())->getAll();
-$salles = (new ModelSalle())->getAll();
-$scolarites = (new ModelScolarite())->getAll();
-$matieres = (new ModelMatiere())->getAll();
-$semestres = (new ModelSemestre())->getAll();
-$etudiants = (new ModelEtudiant())->getAll();
-$inscriptions = (new ModelInscription())->getAll();
-$typeDepenses = (new ModelTypeDepense())->getAll();
-$users = (new ModelUser())->getAll();
-$enseignants = (new ModelEnseignant())->getAll();
-?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -22,7 +7,7 @@ $enseignants = (new ModelEnseignant())->getAll();
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_matiere']) ? 'Éditer ' : 'Ajouter ' ?> Matière / Cours</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Saisie des données du module Matières & Coefficients</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Saisie et configuration du catalogue des matières & cours</p>
         </div>
         <a href="<?= RACINE ?>matiere/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
@@ -34,14 +19,11 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php if (!empty($item['id_matiere'])): ?>
             <input type="hidden" name="id_matiere" value="<?= $item['id_matiere'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
+          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 600px;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de la matière <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_matiere" value="<?= htmlspecialchars($item['libelle_matiere'] ?? '') ?>" placeholder="Ex: Programmation PHP & Frameworks MVC" required>
-            </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Coefficient <span style="color: #EF4444;">*</span></label>
-              <input type="number" step="0.1" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="coefficient" value="<?= htmlspecialchars($item['coefficient'] ?? '') ?>" placeholder="Ex: 3" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Intitulé / Nom de la matière <span style="color: #EF4444;">*</span></label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_matiere" value="<?= htmlspecialchars($item['libelle_matiere'] ?? '') ?>" placeholder="Ex: Programmation Web & Frameworks PHP" required>
+              <small style="color: #64748B; font-size: 12px; margin-top: 6px; display: block;">Le coefficient et les heures sont définis lors de l'affectation par classe & professeur.</small>
             </div>
           </div>
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">

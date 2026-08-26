@@ -21,11 +21,11 @@
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #F1F5F9;">
           <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
+            <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
             <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Informations d'Enregistrement</h3>
-            <span style="font-size: 12px; color: #64748B;">Réf ID #<?= htmlspecialchars($item['id_semestre'] ?? '-') ?></span>
+            <span style="font-size: 12px; color: #64748B;">Réf ID #<?= htmlspecialchars($item['id_semestre'] ?? '-') ?> &bull; Code : <?= htmlspecialchars($item['code_semestre'] ?? '-') ?></span>
           </div>
           <div style="margin-left: auto;">
             <?php if (($item['statut_semestre'] ?? '') === 'actif'): ?>
@@ -35,11 +35,17 @@
             <?php endif; ?>
           </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Libellé (ex: Semestre 1)</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Libellé du Semestre</div>
+            <div style="font-size: 15px; font-weight: 700; color: #0F172A; word-break: break-word;">
               <?= !empty($item['libelle_semestre']) ? htmlspecialchars($item['libelle_semestre']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
+            </div>
+          </div>
+          <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Année Académique</div>
+            <div style="font-size: 15px; font-weight: 700; color: #1E3A5F; word-break: break-word;">
+              <?= !empty($item['libelle_annee']) ? htmlspecialchars($item['libelle_annee']) : '<span style="color:#94A3B8; font-style:italic;">Non définie</span>' ?>
             </div>
           </div>
           <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
