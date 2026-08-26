@@ -14,7 +14,12 @@ $pct = ($montantScolarite > 0) ? round(($montantTranche / $montantScolarite) * 1
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Tranche : <?= htmlspecialchars($item['libelle_tranche'] ?? 'Tranche') ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong> &bull; Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong></p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span>Année : <strong><?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></strong></span> &bull;
+            <span>Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong></span> &bull; 
+            <span>Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong></span> &bull;
+            <span>Régime : <span class="badge" style="background: <?= (($item['affectation_etat'] ?? '') === 'affecte') ? '#DCFCE7' : '#F1F5F9' ?>; color: <?= (($item['affectation_etat'] ?? '') === 'affecte') ? '#15803D' : '#475569' ?>; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?= (($item['affectation_etat'] ?? '') === 'affecte') ? 'Affecté (État)' : 'Non Affecté (Privé)' ?></span></span>
+          </p>
         </div>
         <div style="display: flex; gap: 12px;">
           <a href="<?= RACINE ?>scolarite/list?tab=tranches" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
@@ -36,19 +41,19 @@ $pct = ($montantScolarite > 0) ? round(($montantTranche / $montantScolarite) * 1
           <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Montant Exigible</span>
             <div style="font-size: 24px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= number_format($montantTranche, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Représente <?= $pct ?>% de la scolarité</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Représente <?= $pct ?>% de la scolarité (<?= number_format($montantScolarite, 0, ',', ' ') ?> FCFA)</div>
           </div>
 
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Ordre & Période</span>
-            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">Tranche N° <?= (int)($item['ordre_tranche'] ?? 1) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Code : <code><?= htmlspecialchars($item['code_tranche'] ?? '-') ?></code></div>
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Code Tranche & Scolarité</span>
+            <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;"><code><?= htmlspecialchars($item['code_tranche'] ?? '-') ?></code></div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Scolarité : <code><?= htmlspecialchars($item['scolarite_code'] ?? '-') ?></code></div>
           </div>
 
           <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Date Limite de Paiement</span>
             <div style="font-size: 18px; font-weight: 800; color: #7E22CE; margin-top: 4px;">
-              <?= !empty($item['date_limite_tranche']) ? date('d/m/Y', strtotime($item['date_limite_tranche'])) : 'À l\'inscription' ?>
+              <?= !empty($item['date_limite']) ? date('d/m/Y', strtotime($item['date_limite'])) : (!empty($item['date_limite_tranche']) ? date('d/m/Y', strtotime($item['date_limite_tranche'])) : 'À l\'inscription') ?>
             </div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Échéance de versement</div>
           </div>

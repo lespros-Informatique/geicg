@@ -4,7 +4,7 @@
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
-      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
         <div>
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Scolarités & Échéanciers de Paiement</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion centralisée des grilles tarifaires et des tranches de versement</p>
@@ -14,6 +14,55 @@
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> <span id="btn-add-label">Ajouter Tarif de Scolarité</span>
           </a>
         </div>
+      </div>
+
+      <!-- Bandeau Résumé / Indicateurs Clés -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        
+        <!-- Total Grilles -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 46px; height: 46px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="calculator" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Grilles Tarifaires</div>
+            <div style="font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.2;"><?= (int)($totalScolarites ?? 0) ?></div>
+          </div>
+        </div>
+
+        <!-- Régime Affecté (État) -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 46px; height: 46px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="check-circle-2" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Tarifs Affectés (État)</div>
+            <div style="font-size: 22px; font-weight: 800; color: #15803D; line-height: 1.2;"><?= (int)($totalAffectes ?? 0) ?></div>
+          </div>
+        </div>
+
+        <!-- Régime Non Affecté (Privé) -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 46px; height: 46px; border-radius: 10px; background: #F1F5F9; color: #475569; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="user-check" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Tarifs Privés (Non Affectés)</div>
+            <div style="font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.2;"><?= (int)($totalNonAffectes ?? 0) ?></div>
+          </div>
+        </div>
+
+        <!-- Échéanciers / Tranches -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 46px; height: 46px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="calendar" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Tranches Configurées</div>
+            <div style="font-size: 22px; font-weight: 800; color: #7E22CE; line-height: 1.2;"><?= (int)($totalTranches ?? 0) ?></div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Nav Tabs -->
@@ -43,6 +92,7 @@
                     <th style="padding: 12px;">Année</th>
                     <th style="padding: 12px;">Filière</th>
                     <th style="padding: 12px;">Niveau</th>
+                    <th style="padding: 12px;">Régime</th>
                     <th style="padding: 12px;">Montant (FCFA)</th>
                     <th class="text-center" style="padding: 12px;">Statut</th>
                     <th class="text-end" style="padding: 12px;">Actions</th>
@@ -63,6 +113,7 @@
                   <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                     <th style="padding: 12px;">ID</th>
                     <th style="padding: 12px;">Code</th>
+                    <th style="padding: 12px;">Scolarité Rattachée</th>
                     <th style="padding: 12px;">Libellé Tranche</th>
                     <th style="padding: 12px;">Montant (FCFA)</th>
                     <th style="padding: 12px;">Date Limite</th>
@@ -94,6 +145,11 @@ $(document).ready(function() {
       } },
       { data: 'libelle_filiere', render: function(d, t, r) { return '<span style="font-weight:700; color:#0F172A;">' + (d || r.filiere_code || 'Non définie') + '</span>'; } },
       { data: 'libelle_niveau', render: function(d, t, r) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || r.niveau_code || 'Non défini') + '</span>'; } },
+      { data: 'affectation_etat', render: function(d) {
+        return (d === 'affecte')
+          ? '<span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px;">Affecté (État)</span>'
+          : '<span class="badge" style="background:#F1F5F9; color:#475569; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px;">Non Affecté (Privé)</span>';
+      } },
       { data: 'montant_scolarite', render: function(d) { 
         return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>'; 
       } },
@@ -117,7 +173,14 @@ $(document).ready(function() {
     columns: [
       { data: 'id_tranche', defaultContent: '-' },
       { data: 'code_tranche', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
-      { data: 'libelle_tranche', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>'; } },
+      { data: 'libelle_filiere', render: function(d, t, r) {
+        var fil = d || r.filiere_code || 'Filière';
+        var niv = r.libelle_niveau || r.niveau_code || '';
+        var ann = r.libelle_annee ? ' (' + r.libelle_annee + ')' : '';
+        return '<span style="font-weight:700; color:#0F172A;">' + fil + ' ' + niv + '</span>' +
+               '<div style="font-size:11.5px; color:#64748B;">' + (r.montant_scolarite ? Number(r.montant_scolarite).toLocaleString('fr-FR') + ' FCFA' : '') + ann + '</div>';
+      } },
+      { data: 'libelle_tranche', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>'; } },
       { data: 'montant_tranche', render: function(d) { 
         return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>'; 
       } },
@@ -135,7 +198,7 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  // Switch Tab Handler (Standalone jQuery)
+  // Switch Tab Handler (Standalone jQuery) - Default: Grille des Scolarités
   function switchScolariteTab(targetId) {
     $('.nav-tabs .nav-link').removeClass('active').css({ 'color': '#64748B', 'background': '#F8FAFC' });
     $('.tab-pane').removeClass('show active').hide();
@@ -162,10 +225,12 @@ $(document).ready(function() {
     switchScolariteTab(target);
   });
 
-  // Check URL query param ?tab=tranches
+  // Default active tab on load is #tab-scolarites unless ?tab=tranches
   var urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('tab') === 'tranches') {
     switchScolariteTab('#tab-tranches');
+  } else {
+    switchScolariteTab('#tab-scolarites');
   }
 });
 </script>

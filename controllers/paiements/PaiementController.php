@@ -43,10 +43,10 @@ class PaiementController extends BaseController
                 FROM inscriptions i
                 LEFT JOIN etudiants e ON i.etudiant_code = e.code_etudiant
                 LEFT JOIN classes c ON i.classe_code = c.code_classe
-                WHERE i.code_inscription = ?
+                WHERE i.code_inscription = ? OR i.id_inscription = ?
                 LIMIT 1
             ");
-            $stmt->execute([$inscriptionCode]);
+            $stmt->execute([$inscriptionCode, is_numeric($inscriptionCode) ? (int)$inscriptionCode : 0]);
             $ins = $stmt->fetch(PDO::FETCH_ASSOC);
         } elseif (!empty($etudiantCode)) {
             $stmt = $db->prepare("

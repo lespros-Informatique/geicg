@@ -10,7 +10,18 @@ class ScolariteController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/scolarites/list.php');
+        $db = $this->model->getCon();
+        $totalScolarites = (int)$db->query("SELECT COUNT(*) FROM scolarites")->fetchColumn();
+        $totalAffectes = (int)$db->query("SELECT COUNT(*) FROM scolarites WHERE affectation_etat = 'affecte'")->fetchColumn();
+        $totalNonAffectes = (int)$db->query("SELECT COUNT(*) FROM scolarites WHERE affectation_etat = 'non_affecte' OR affectation_etat IS NULL OR affectation_etat = ''")->fetchColumn();
+        $totalTranches = (int)$db->query("SELECT COUNT(*) FROM tranches_scolarite")->fetchColumn();
+
+        $this->loadView('../views/scolarites/list.php', [
+            'totalScolarites' => $totalScolarites,
+            'totalAffectes' => $totalAffectes,
+            'totalNonAffectes' => $totalNonAffectes,
+            'totalTranches' => $totalTranches
+        ]);
     }
 
     public function apiList()

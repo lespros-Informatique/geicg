@@ -111,34 +111,13 @@
 
     if ($currentUserCode !== '') {
         try {
-            $db = (new Database())->getCon();
-
-            if ($currentRoleCode === '') {
-                $stmtR = $db->prepare("SELECT role_code FROM " . TABLES::USERS . " WHERE code_user = ? LIMIT 1");
-                $stmtR->execute([$currentUserCode]);
-                $currentRoleCode = $stmtR->fetchColumn() ?: '';
+            $userRoles = $_SESSION[USERS_AUTH]['roles'] ?? (!empty($currentRoleCode) ? [$currentRoleCode] : []);
+            if (empty($userRoles)) {
+                $userRoles = (new ModelUser())->getUserRoleCodes($currentUserCode);
             }
-
-            if ($currentRoleCode !== '') {
-                $currentRoles[] = $currentRoleCode;
-            }
-
-            $isSuperAdmin = in_array(ROLES::SUPER_ADMIN, $currentRoles, true);
-            $isPressing = in_array(ROLES::PRESSING, $currentRoles, true);
-            $isLivreur = in_array(ROLES::LIVREUR, $currentRoles, true);
-
-            if ($isPressing) {
-                $stmtP = $db->prepare("SELECT pressing_code FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND statut_user_pressing = 'actif' LIMIT 1");
-                $stmtP->execute([$currentUserCode]);
-                $currentPressingCode = $stmtP->fetchColumn() ?: null;
-            }
-
-            if ($isLivreur) {
-                $stmtL = $db->prepare("SELECT l.code_livreur FROM " . TABLES::LIVREURS . " l WHERE l.user_code = ? AND l.statut_livreur = 'actif' LIMIT 1");
-                $stmtL->execute([$currentUserCode]);
-                $currentLivreurCode = $stmtL->fetchColumn() ?: null;
-            }
-        } catch (Exception $e) {
+            $currentRoles = $userRoles;
+            $isSuperAdmin = in_array('ROLE_SUPERADMIN', $currentRoles, true) || in_array('ROLE_DIR_GENERAL', $currentRoles, true);
+        } catch (\Throwable $e) {
             $currentRoles = [];
         }
     }

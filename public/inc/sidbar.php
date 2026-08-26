@@ -11,7 +11,7 @@
           $globalEtablissementNom = 'GEICG';
       }
   }
-  $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+  $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
 
   // --- SYSTÈME D'AUTORISATIONS & RBAC DU SIDEBAR (MULTI-RÔLES) ---
   $userRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];

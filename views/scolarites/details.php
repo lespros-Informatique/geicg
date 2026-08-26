@@ -16,7 +16,12 @@ $totalGeneral = $montantScolarite + $fraisInscription + $fraisAnnexes;
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Grille Tarifaire Scolarité</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong> &bull; Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong></p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span>Année : <strong><?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></strong></span> &bull; 
+            <span>Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong></span> &bull; 
+            <span>Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong></span> &bull; 
+            <span>Régime : <span class="badge" style="background: <?= (($item['affectation_etat'] ?? '') === 'affecte') ? '#DCFCE7' : '#F1F5F9' ?>; color: <?= (($item['affectation_etat'] ?? '') === 'affecte') ? '#15803D' : '#475569' ?>; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?= (($item['affectation_etat'] ?? '') === 'affecte') ? 'Affecté (État)' : 'Non Affecté (Privé)' ?></span></span>
+          </p>
         </div>
         <div style="display: flex; gap: 12px;">
           <a href="<?= RACINE ?>scolarite/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">

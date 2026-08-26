@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -20,6 +20,7 @@
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                 <th style="padding: 12px;">ID</th>
                 <th style="padding: 12px;">Code</th>
+                <th style="padding: 12px;">Scolarité Rattachée</th>
                 <th style="padding: 12px;">Libellé Tranche</th>
                 <th style="padding: 12px;">Montant (FCFA)</th>
                 <th style="padding: 12px;">Date Limite</th>
@@ -43,8 +44,17 @@ $(document).ready(function() {
     columns: [
       { data: 'id_tranche', defaultContent: '-' },
       { data: 'code_tranche', defaultContent: '-' },
-      { data: 'libelle_tranche', defaultContent: '-' },
-      { data: 'montant_tranche', defaultContent: '-' },
+      { data: 'libelle_filiere', render: function(d, t, r) {
+        var fil = d || r.filiere_code || 'Filière';
+        var niv = r.libelle_niveau || r.niveau_code || '';
+        var ann = r.libelle_annee ? ' (' + r.libelle_annee + ')' : '';
+        return '<span style="font-weight:700; color:#0F172A;">' + fil + ' ' + niv + '</span>' +
+               '<div style="font-size:11.5px; color:#64748B;">' + (r.montant_scolarite ? Number(r.montant_scolarite).toLocaleString('fr-FR') + ' FCFA' : '') + ann + '</div>';
+      } },
+      { data: 'libelle_tranche', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>'; } },
+      { data: 'montant_tranche', render: function(d) { 
+        return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>'; 
+      } },
       { data: 'date_limite', defaultContent: '-' },
       { data: 'statut_tranche', render: function(d, type) {
         if (type !== 'display') return d || '';

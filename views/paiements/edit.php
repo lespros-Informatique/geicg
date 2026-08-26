@@ -215,8 +215,10 @@ $(document).ready(function() {
       return;
     }
 
+    var requestUrl = '<?= RACINE ?>paiement/getStudentFinancialSummary';
+
     $.ajax({
-      url: window.RACINE + 'paiement/getStudentFinancialSummary',
+      url: requestUrl,
       type: 'GET',
       data: { inscription_code: inscriptionCode },
       dataType: 'json',
@@ -225,7 +227,7 @@ $(document).ready(function() {
           var d = res.data;
           
           // Compute initials
-          var initials = d.nom_complet.split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
+          var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
           $('#prev_avatar').text(initials || 'ET');
 
           $('#prev_nom').text(d.nom_complet);
@@ -240,18 +242,20 @@ $(document).ready(function() {
             $('#inp_montant_paiement').val(d.solde_restant);
           }
 
-          $('#financial-preview-banner').slideDown(250);
+          $('#financial-preview-banner').stop(true, true).slideDown(250);
+          if (window.lucide) lucide.createIcons();
         } else {
           $('#financial-preview-banner').slideUp(200);
         }
       },
-      error: function() {
+      error: function(err) {
+        console.error('Erreur chargement synthèse financière:', err);
         $('#financial-preview-banner').slideUp(200);
       }
     });
   }
 
-  $('#select_inscription_code').on('change', function() {
+  $('#select_inscription_code').on('change select2:select', function() {
     var val = $(this).val();
     fetchStudentFinancialSummary(val);
   });

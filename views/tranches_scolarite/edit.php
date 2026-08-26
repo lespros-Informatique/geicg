@@ -37,16 +37,19 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php endif; ?>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Grille de scolarité <span style="color: #EF4444;">*</span></label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Grille de scolarité rattachée <span style="color: #EF4444;">*</span></label>
               <select class="form-control select2" style="width: 100%; box-sizing: border-box;" name="scolarite_code" required>
-                <option value="">-- Rechercher / Choisir le tarif scolarité --</option>
+                <option value="">-- Rechercher / Choisir la scolarité et son régime --</option>
                 <?php foreach($scolarites as $sc): ?>
                   <?php
-                    $filiereNom = $sc['libelle_filiere'] ?? $sc['filiere_code'] ?? '';
-                    $niveauNom = $sc['libelle_niveau'] ?? $sc['niveau_code'] ?? '';
+                    $filiereNom = $sc['libelle_filiere'] ?? $sc['filiere_code'] ?? 'Filière non définie';
+                    $niveauNom = $sc['libelle_niveau'] ?? $sc['niveau_code'] ?? 'Niveau non défini';
+                    $anneeNom = $sc['libelle_annee'] ?? '';
+                    $regimeLabel = (($sc['affectation_etat'] ?? '') === 'affecte') ? 'Affecté (État)' : 'Non Affecté (Privé)';
                     $montantVal = (float)($sc['montant_scolarite'] ?? 0);
-                    $montantFmt = number_format($montantVal, 0, ',', ' ');
-                    $labelOpt = trim("$filiereNom $niveauNom") . " ($montantFmt FCFA)";
+                    $montantFmt = number_format($montantVal, 0, ',', ' ') . ' FCFA';
+                    
+                    $labelOpt = "$filiereNom - $niveauNom" . ($anneeNom ? " ($anneeNom)" : '') . " [$regimeLabel] - $montantFmt";
                   ?>
                   <option value="<?= $sc['code_scolarite'] ?>" <?= (($item['scolarite_code'] ?? '') == $sc['code_scolarite']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($labelOpt) ?>
