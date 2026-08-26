@@ -72,7 +72,7 @@
   }
   .sidebar-accordion-toggle:hover {
     background: rgba(30, 58, 95, 0.05);
-    color: #1E3A5F;
+    color: var(--primary-color);
   }
   .sidebar-accordion-toggle .chevron-icon {
     width: 14px;
@@ -83,7 +83,7 @@
     transform: rotate(180deg);
   }
   .sidebar-accordion-toggle[aria-expanded="true"] {
-    color: #1E3A5F;
+    color: var(--primary-color);
   }
   .sidebar-nav .nav-section-items {
     padding-left: 6px;
@@ -101,9 +101,9 @@
   }
   .sidebar-nav .nav-item.sub.active,
   .sidebar-nav .nav-item.sub:hover {
-    border-left-color: #1E3A5F;
+    border-left-color: var(--primary-color);
     background: rgba(30, 58, 95, 0.06);
-    color: #1E3A5F;
+    color: var(--primary-color);
     font-weight: 700;
   }
 
@@ -134,7 +134,7 @@
     height: 38px !important;
     border-radius: 8px !important;
     background: #EFF6FF !important;
-    color: #1E3A5F !important;
+    color: var(--primary-color) !important;
     border: 1.5px solid #BFDBFE !important;
     margin: 0 auto !important;
     cursor: pointer !important;
@@ -154,7 +154,7 @@
     display: block !important;
     font-size: 11px !important;
     font-weight: 800 !important;
-    color: #1E3A5F !important;
+    color: var(--primary-color) !important;
   }
 
   .sidebar.collapsed .sidebar-accordion-toggle {
@@ -194,7 +194,7 @@
     margin: 0 !important;
   }
   .sidebar.collapsed .nav-item.active {
-    background: #1E3A5F !important;
+    background: var(--primary-color) !important;
     color: #FFFFFF !important;
   }
   .sidebar.collapsed .nav-item.active i,

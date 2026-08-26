@@ -92,50 +92,97 @@
             </div>
         </div>
         <div class="theme-wrapper" style="position: relative;">
-            <button class="btn-icon" id="themeBtn" title="Thèmes">
+            <button class="btn-icon" id="themeBtn" title="Personnaliser les couleurs & thèmes">
                 <i data-lucide="palette"></i>
             </button>
-            <div class="dropdown-panel" id="themePanel" style="min-width:320px; padding: 16px;">
-                <div class="theme-panel-header">
-                    <h3><i data-lucide="sun" style="width:16px;height:16px;"></i> Apparence</h3>
-                    <button class="theme-panel-close" id="themePanelClose"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+            <div class="dropdown-panel" id="themePanel" style="min-width:340px; padding: 18px;">
+                <div class="theme-panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #E2E8F0;">
+                    <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="palette" style="width:18px;height:18px; color: #18385F;"></i> Thèmes & Couleurs
+                    </h3>
+                    <button class="theme-panel-close" id="themePanelClose" style="background: none; border: none; cursor: pointer; color: #64748B;"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
                 </div>
-                <div class="theme-section">
-                    <div class="theme-section-label">Barre supérieure</div>
-                    <div class="theme-options" id="topbarOptions">
-                        <div class="theme-option active" data-value="light">
-                            <div class="theme-swatch" style="background: #FFFFFF; border-color: #E5E7EB;"></div>
-                            <span class="theme-option-label">Claire</span>
+
+                <!-- Thème Principal / Accents École -->
+                <div class="theme-section" style="margin-bottom: 16px;">
+                    <div class="theme-section-label" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 8px;">Couleur Principale (École)</div>
+                    <div class="theme-options" id="primaryOptions" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                        <div class="theme-option active" data-category="primary" data-value="navy" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid #CBD5E1;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #18385F; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Bleu Marine</span>
                         </div>
-                        <div class="theme-option" data-value="dark">
-                            <div class="theme-swatch" style="background: #1F2937;"></div>
-                            <span class="theme-option-label">Sombre</span>
+                        <div class="theme-option" data-category="primary" data-value="bordeaux" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #5C0808; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Bordeaux</span>
+                        </div>
+                        <div class="theme-option" data-category="primary" data-value="royal" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #2563EB; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Bleu Royal</span>
+                        </div>
+                        <div class="theme-option" data-category="primary" data-value="emerald" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #047857; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Émeraude</span>
                         </div>
                     </div>
                 </div>
-                <div class="theme-section">
-                    <div class="theme-section-label">Barre latérale</div>
-                    <div class="theme-options" id="sidebarOptions">
-                        <div class="theme-option active" data-value="light">
-                            <div class="theme-swatch" style="background: #FFFFFF; border-color: #E5E7EB;"></div>
-                            <span class="theme-option-label">Claire</span>
+
+                <!-- Thème Barre Supérieure -->
+                <div class="theme-section" style="margin-bottom: 16px;">
+                    <div class="theme-section-label" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 8px;">Barre Supérieure (Topbar)</div>
+                    <div class="theme-options" id="topbarOptions" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                        <div class="theme-option active" data-category="topbar" data-value="light" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid #CBD5E1;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; border: 2px solid #CBD5E1;"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Claire</span>
                         </div>
-                        <div class="theme-option" data-value="dark">
-                            <div class="theme-swatch" style="background: #0F172A;"></div>
-                            <span class="theme-option-label">Sombre</span>
+                        <div class="theme-option" data-category="topbar" data-value="dark" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #1F2937; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Sombre</span>
+                        </div>
+                        <div class="theme-option" data-category="topbar" data-value="navy" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #18385F; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Marine</span>
+                        </div>
+                        <div class="theme-option" data-category="topbar" data-value="bordeaux" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #5C0808; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Bordeaux</span>
                         </div>
                     </div>
                 </div>
-                <div class="theme-section">
-                    <div class="theme-section-label">Contenu principal</div>
-                    <div class="theme-options" id="contentOptions">
-                        <div class="theme-option active" data-value="light">
-                            <div class="theme-swatch" style="background: #F8F9FA; border-color: #E5E7EB;"></div>
-                            <span class="theme-option-label">Clair</span>
+
+                <!-- Thème Barre Latérale -->
+                <div class="theme-section" style="margin-bottom: 16px;">
+                    <div class="theme-section-label" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 8px;">Barre Latérale (Sidebar)</div>
+                    <div class="theme-options" id="sidebarOptions" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                        <div class="theme-option active" data-category="sidebar" data-value="light" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid #CBD5E1;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; border: 2px solid #CBD5E1;"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Claire</span>
                         </div>
-                        <div class="theme-option" data-value="dark">
-                            <div class="theme-swatch" style="background: #111827;"></div>
-                            <span class="theme-option-label">Sombre</span>
+                        <div class="theme-option" data-category="sidebar" data-value="dark" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #0F172A; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Sombre</span>
+                        </div>
+                        <div class="theme-option" data-category="sidebar" data-value="navy" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #18385F; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Marine</span>
+                        </div>
+                        <div class="theme-option" data-category="sidebar" data-value="bordeaux" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 26px; height: 26px; border-radius: 50%; background: #5C0808; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 10px; font-weight: 700; color: #334155;">Bordeaux</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thème Contenu Principal -->
+                <div class="theme-section">
+                    <div class="theme-section-label" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 8px;">Mode Sombre / Clair</div>
+                    <div class="theme-options" id="contentOptions" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        <div class="theme-option active" data-category="content" data-value="light" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 1.5px solid #CBD5E1;">
+                            <div class="theme-swatch" style="width: 20px; height: 20px; border-radius: 50%; background: #F8FAFC; border: 2px solid #CBD5E1;"></div>
+                            <span class="theme-option-label" style="font-size: 12px; font-weight: 700; color: #334155;">Mode Clair</span>
+                        </div>
+                        <div class="theme-option" data-category="content" data-value="dark" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent;">
+                            <div class="theme-swatch" style="width: 20px; height: 20px; border-radius: 50%; background: #111827; border: 2px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                            <span class="theme-option-label" style="font-size: 12px; font-weight: 700; color: #334155;">Dark Mode</span>
                         </div>
                     </div>
                 </div>

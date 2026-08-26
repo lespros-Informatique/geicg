@@ -1,49 +1,73 @@
+/**
+ * GEICG - Theme & Color Manager
+ * Gestion interactive des thèmes et des couleurs institutionnelles de l'école
+ */
 (function() {
-    const STORAGE_KEY = 'woli-theme-prefs';
-    const DEFAULT_PREFS = { topbar: 'light', sidebar: 'light', content: 'light' };
+    const ZONES = ['primary', 'topbar', 'sidebar', 'content'];
+    const DEFAULTS = {
+        primary: 'navy',
+        topbar: 'light',
+        sidebar: 'light',
+        content: 'light'
+    };
 
-    function loadPrefs() {
+    function getSavedPref(zone) {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed && typeof parsed === 'object') {
-                    return { ...DEFAULT_PREFS, ...parsed };
-                }
+            return localStorage.getItem('theme_' + zone) || DEFAULTS[zone];
+        } catch (e) {
+            return DEFAULTS[zone];
+        }
+    }
+
+    function setSavedPref(zone, value) {
+        try {
+            localStorage.setItem('theme_' + zone, value);
+        } catch (e) {
+            console.warn('[theme-manager] storage error:', e);
+        }
+    }
+
+    const COLOR_HEX_MAP = {
+        navy: '#18385F',
+        bordeaux: '#5C0808',
+        royal: '#2563EB',
+        emerald: '#047857'
+    };
+
+    function applyThemeToDOM(zone, value) {
+        document.documentElement.setAttribute('data-theme-' + zone, value);
+        
+        // Si c'est la couleur principale, injecter directement la variable CSS
+        if (zone === 'primary' && COLOR_HEX_MAP[value]) {
+            const hex = COLOR_HEX_MAP[value];
+            document.documentElement.style.setProperty('--primary-color', hex);
+            document.documentElement.style.setProperty('--primary', hex);
+            document.documentElement.style.setProperty('--btn-primary-bg', hex);
+            document.documentElement.style.setProperty('--secondary-color', hex);
+            document.documentElement.style.setProperty('--sidebar-active-text', hex);
+        }
+        
+        // Mettre à jour l'état visuel actif dans le panneau
+        const options = document.querySelectorAll('.theme-option[data-category="' + zone + '"]');
+        options.forEach(function(opt) {
+            const optVal = opt.getAttribute('data-value');
+            if (optVal === value) {
+                opt.classList.add('active');
+                opt.style.borderColor = (zone === 'primary' && COLOR_HEX_MAP[value]) ? COLOR_HEX_MAP[value] : '#18385F';
+                opt.style.background = 'rgba(24, 56, 95, 0.08)';
+            } else {
+                opt.classList.remove('active');
+                opt.style.borderColor = 'transparent';
+                opt.style.background = 'transparent';
             }
-        } catch (e) {
-            console.warn('[theme-manager] failed to load prefs:', e);
-        }
-        return { ...DEFAULT_PREFS };
-    }
-
-    function savePrefs(prefs) {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-        } catch (e) {
-            console.warn('[theme-manager] failed to save prefs:', e);
-        }
-    }
-
-    function applyTheme(prefs) {
-        document.documentElement.setAttribute('data-theme-topbar', prefs.topbar);
-        document.documentElement.setAttribute('data-theme-sidebar', prefs.sidebar);
-        document.documentElement.setAttribute('data-theme-content', prefs.content);
-
-        document.querySelectorAll('#topbarOptions .theme-option').forEach(function(el) {
-            el.classList.toggle('active', el.dataset.value === prefs.topbar);
-        });
-        document.querySelectorAll('#sidebarOptions .theme-option').forEach(function(el) {
-            el.classList.toggle('active', el.dataset.value === prefs.sidebar);
-        });
-        document.querySelectorAll('#contentOptions .theme-option').forEach(function(el) {
-            el.classList.toggle('active', el.dataset.value === prefs.content);
         });
     }
 
-    function init() {
-        const prefs = loadPrefs();
-        applyTheme(prefs);
+    function initThemeManager() {
+        // 1. Appliquer les thèmes mémorisés
+        ZONES.forEach(function(zone) {
+            applyThemeToDOM(zone, getSavedPref(zone));
+        });
 
         const themeBtn = document.getElementById('themeBtn');
         const themePanel = document.getElementById('themePanel');
@@ -51,63 +75,81 @@
 
         if (!themeBtn || !themePanel) return;
 
+        // 2. Gestion de l'ouverture / fermeture du panneau au clic sur le bouton Palette
         themeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
-            const isActive = themePanel.classList.contains('active');
-            document.querySelectorAll('.dropdown-panel').forEach(function(p) { p.classList.remove('active'); });
-            if (!isActive) {
+            
+            const isOpen = themePanel.classList.contains('active');
+            
+            // Fermer les autres dropdowns
+            document.querySelectorAll('.dropdown-panel').forEach(function(p) {
+                if (p !== themePanel) p.classList.remove('active');
+            });
+
+            if (isOpen) {
+                themePanel.classList.remove('active');
+            } else {
                 themePanel.classList.add('active');
             }
         });
 
+        // 3. Fermeture via le bouton X dans le panneau
         if (themePanelClose) {
             themePanelClose.addEventListener('click', function(e) {
+                e.preventDefault();
                 e.stopPropagation();
                 themePanel.classList.remove('active');
             });
         }
 
+        // 4. Empêcher la fermeture quand on clique à l'intérieur du panneau
         themePanel.addEventListener('click', function(e) {
             e.stopPropagation();
         });
 
-        function setupZone(containerId, zone) {
-            var container = document.getElementById(containerId);
-            if (!container) return;
-            container.addEventListener('click', function(e) {
-                var option = e.target.closest('.theme-option');
-                if (!option) return;
+        // 5. Clic sur les options de couleur
+        document.querySelectorAll('.theme-option').forEach(function(opt) {
+            opt.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                prefs[zone] = option.dataset.value;
-                savePrefs(prefs);
-                applyTheme(prefs);
-                try { lucide.createIcons(); } catch(e) {}
+                
+                const category = this.getAttribute('data-category');
+                const value = this.getAttribute('data-value');
+                
+                if (category && value) {
+                    setSavedPref(category, value);
+                    applyThemeToDOM(category, value);
+                    
+                    if (window.lucide) {
+                        try { lucide.createIcons(); } catch(err) {}
+                    }
+                }
             });
-        }
+        });
 
-        setupZone('topbarOptions', 'topbar');
-        setupZone('sidebarOptions', 'sidebar');
-        setupZone('contentOptions', 'content');
-
+        // 6. Fermeture au clic en dehors
         document.addEventListener('click', function(e) {
-            if (!themePanel.contains(e.target) && e.target !== themeBtn) {
+            if (!themePanel.contains(e.target) && !e.target.closest('#themeBtn')) {
                 themePanel.classList.remove('active');
             }
         });
 
+        // 7. Fermeture avec la touche Échap
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && themePanel.classList.contains('active')) {
                 themePanel.classList.remove('active');
             }
         });
 
-        try { lucide.createIcons(); } catch(e) {}
+        if (window.lucide) {
+            try { lucide.createIcons(); } catch(err) {}
+        }
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', initThemeManager);
     } else {
-        init();
+        initThemeManager();
     }
 })();

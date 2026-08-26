@@ -3,8 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#1E3A5F">
+    <meta name="theme-color" content="#18385F">
     <title><?= htmlspecialchars(TITLE) ?></title>
+    <script>
+        (function() {
+            try {
+                var map = { navy: '#18385F', bordeaux: '#5C0808', royal: '#2563EB', emerald: '#047857' };
+                var topbar = localStorage.getItem('theme_topbar') || 'light';
+                var sidebar = localStorage.getItem('theme_sidebar') || 'light';
+                var content = localStorage.getItem('theme_content') || 'light';
+                var primary = localStorage.getItem('theme_primary') || 'navy';
+                
+                document.documentElement.setAttribute('data-theme-topbar', topbar);
+                document.documentElement.setAttribute('data-theme-sidebar', sidebar);
+                document.documentElement.setAttribute('data-theme-content', content);
+                document.documentElement.setAttribute('data-theme-primary', primary);
+
+                if (map[primary]) {
+                    document.documentElement.style.setProperty('--primary-color', map[primary]);
+                    document.documentElement.style.setProperty('--primary', map[primary]);
+                    document.documentElement.style.setProperty('--btn-primary-bg', map[primary]);
+                    document.documentElement.style.setProperty('--secondary-color', map[primary]);
+                    document.documentElement.style.setProperty('--sidebar-active-text', map[primary]);
+                }
+            } catch(e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">

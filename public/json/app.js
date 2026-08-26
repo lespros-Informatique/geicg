@@ -707,7 +707,7 @@ if (modalSave) {
         });
     }
 
-    ['notification', 'profile', 'quickActions', 'theme'].forEach(function(name) {
+    ['notification', 'profile', 'quickActions'].forEach(function(name) {
         const btn = document.getElementById(name + 'Btn');
         const panel = document.getElementById(name + 'Panel');
         if (btn && panel) {
@@ -720,15 +720,6 @@ if (modalSave) {
             });
         }
     });
-
-    const themePanelClose = document.getElementById('themePanelClose');
-    if (themePanelClose) {
-        themePanelClose.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const panel = document.getElementById('themePanel');
-            if (panel) panel.classList.remove('active');
-        });
-    }
 
     ['bnProfil'].forEach(function(id) {
         const btn = document.getElementById(id);

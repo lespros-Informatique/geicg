@@ -445,11 +445,11 @@ html, body {
 .quick-actions, .theme-wrapper, .notification-wrapper, .admin-profile { position: relative; }
 .dropdown-panel {
     position: absolute; top: calc(100% + 8px); right: 0; left: auto;
-    background: var(--dropdown-bg); border: 1px solid var(--dropdown-border);
-    border-radius: var(--radius-md); box-shadow: var(--dropdown-shadow);
-    min-width: 280px; display: none; z-index: 1002; padding: var(--spacing-xs);
+    background: var(--card-bg, #FFFFFF); border: 1px solid var(--border-color, #CBD5E1);
+    border-radius: var(--radius-md, 12px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    min-width: 280px; display: none; z-index: 10005; padding: var(--spacing-xs);
 }
-.dropdown-panel.active { display: block; }
+.dropdown-panel.active { display: block !important; }
 .dropdown-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-xs) var(--spacing-sm); border-bottom: 1px solid var(--border-color); }
 .dropdown-header h3 { font-size: 0.875rem; font-weight: 600; margin: 0; }
 .mark-all { font-size: 0.75rem; color: var(--primary-color); cursor: pointer; }
@@ -2012,8 +2012,53 @@ body {
 }
 
 /* =============================================================================
-   THEME MANAGER - DARK THEMES
+   THEME MANAGER - SCHOOL BRAND & DARK THEMES
    ============================================================================= */
+
+/* --- PRIMARY BRAND THEME ACCENTS --- */
+:root[data-theme-primary="navy"], html[data-theme-primary="navy"], [data-theme-primary="navy"] {
+    --primary-color: #18385F !important;
+    --primary: #18385F !important;
+    --primary-hover: #102640 !important;
+    --btn-primary-bg: #18385F !important;
+    --secondary-color: #18385F !important;
+    --sidebar-active-text: #18385F !important;
+}
+:root[data-theme-primary="bordeaux"], html[data-theme-primary="bordeaux"], [data-theme-primary="bordeaux"] {
+    --primary-color: #5C0808 !important;
+    --primary: #5C0808 !important;
+    --primary-hover: #450606 !important;
+    --btn-primary-bg: #5C0808 !important;
+    --secondary-color: #5C0808 !important;
+    --sidebar-active-text: #5C0808 !important;
+}
+:root[data-theme-primary="royal"], html[data-theme-primary="royal"], [data-theme-primary="royal"] {
+    --primary-color: #2563EB !important;
+    --primary: #2563EB !important;
+    --primary-hover: #1D4ED8 !important;
+    --btn-primary-bg: #2563EB !important;
+    --secondary-color: #2563EB !important;
+    --sidebar-active-text: #2563EB !important;
+}
+:root[data-theme-primary="emerald"], html[data-theme-primary="emerald"], [data-theme-primary="emerald"] {
+    --primary-color: #047857 !important;
+    --primary: #047857 !important;
+    --primary-hover: #065F46 !important;
+    --btn-primary-bg: #047857 !important;
+    --secondary-color: #047857 !important;
+    --sidebar-active-text: #047857 !important;
+}
+
+/* --- TOPBAR THEMES --- */
+/* Topbar Light */
+[data-theme-topbar="light"] .topbar {
+    --topbar-bg: #FFFFFF;
+    --topbar-text: #1E293B;
+    --topbar-border: #E2E8F0;
+    background: #FFFFFF;
+    color: #1E293B;
+    border-bottom-color: #E2E8F0;
+}
 
 /* Topbar Dark */
 [data-theme-topbar="dark"] .topbar {
@@ -2040,6 +2085,62 @@ body {
     box-shadow: 0 0 0 2px #1F2937;
 }
 
+/* Topbar Bleu Marine (#18385F) */
+[data-theme-topbar="navy"] .topbar {
+    background: #18385F;
+    color: #FFFFFF;
+    border-bottom-color: #102640;
+}
+[data-theme-topbar="navy"] .topbar .search-box {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+[data-theme-topbar="navy"] .topbar .search-box input {
+    color: #FFFFFF;
+}
+[data-theme-topbar="navy"] .topbar .search-box input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+[data-theme-topbar="navy"] .topbar .btn-icon {
+    color: #FFFFFF;
+}
+[data-theme-topbar="navy"] .topbar .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+}
+
+/* Topbar Bordeaux (#5C0808) */
+[data-theme-topbar="bordeaux"] .topbar {
+    background: #5C0808;
+    color: #FFFFFF;
+    border-bottom-color: #450606;
+}
+[data-theme-topbar="bordeaux"] .topbar .search-box {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+[data-theme-topbar="bordeaux"] .topbar .search-box input {
+    color: #FFFFFF;
+}
+[data-theme-topbar="bordeaux"] .topbar .search-box input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+[data-theme-topbar="bordeaux"] .topbar .btn-icon {
+    color: #FFFFFF;
+}
+[data-theme-topbar="bordeaux"] .topbar .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+}
+
+/* --- SIDEBAR THEMES --- */
+/* Sidebar Light */
+[data-theme-sidebar="light"] .sidebar {
+    background: #FFFFFF;
+    color: #475569;
+    border-right-color: #E2E8F0;
+}
+
 /* Sidebar Dark */
 [data-theme-sidebar="dark"] .sidebar {
     --sidebar-bg: #0F172A;
@@ -2055,16 +2156,13 @@ body {
     box-shadow: var(--sidebar-shadow);
     color: var(--sidebar-text);
 }
-[data-theme-sidebar="dark"] .nav-item {
+[data-theme-sidebar="dark"] .sidebar .nav-item {
     color: var(--sidebar-text);
 }
-[data-theme-sidebar="dark"] .nav-item:hover,
-[data-theme-sidebar="dark"] .nav-item.active {
+[data-theme-sidebar="dark"] .sidebar .nav-item:hover,
+[data-theme-sidebar="dark"] .sidebar .nav-item.active {
     background: var(--sidebar-hover-bg);
     color: var(--sidebar-active-text);
-}
-[data-theme-sidebar="dark"] .nav-item.active {
-    box-shadow: inset 2px 0 0 var(--secondary-color);
 }
 [data-theme-sidebar="dark"] .sidebar-toggle {
     background: #1E293B;
@@ -2075,8 +2173,86 @@ body {
     background: #334155;
     color: #E5E7EB;
 }
-[data-theme-sidebar="dark"] .logo {
+[data-theme-sidebar="dark"] .sidebar .logo span {
     color: #E5E7EB;
+}
+
+/* Sidebar Bleu Marine (#18385F) */
+[data-theme-sidebar="navy"] .sidebar {
+    background: #18385F;
+    color: #DBEAFE;
+    border-right-color: #102640;
+}
+[data-theme-sidebar="navy"] .sidebar .sidebar-header {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+[data-theme-sidebar="navy"] .sidebar .logo span {
+    color: #FFFFFF;
+}
+[data-theme-sidebar="navy"] .sidebar .sidebar-accordion-toggle {
+    color: #BFDBFE;
+}
+[data-theme-sidebar="navy"] .sidebar .sidebar-accordion-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+}
+[data-theme-sidebar="navy"] .sidebar .nav-item {
+    color: #DBEAFE;
+}
+[data-theme-sidebar="navy"] .sidebar .nav-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #FFFFFF;
+}
+[data-theme-sidebar="navy"] .sidebar .nav-item.active {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+}
+[data-theme-sidebar="navy"] .sidebar .sidebar-toggle {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+}
+[data-theme-sidebar="navy"] .sidebar .sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Sidebar Bordeaux (#5C0808) */
+[data-theme-sidebar="bordeaux"] .sidebar {
+    background: #5C0808;
+    color: #FED7D7;
+    border-right-color: #450606;
+}
+[data-theme-sidebar="bordeaux"] .sidebar .sidebar-header {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+[data-theme-sidebar="bordeaux"] .sidebar .logo span {
+    color: #FFFFFF;
+}
+[data-theme-sidebar="bordeaux"] .sidebar .sidebar-accordion-toggle {
+    color: #FED7D7;
+}
+[data-theme-sidebar="bordeaux"] .sidebar .sidebar-accordion-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+}
+[data-theme-sidebar="bordeaux"] .sidebar .nav-item {
+    color: #FED7D7;
+}
+[data-theme-sidebar="bordeaux"] .sidebar .nav-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #FFFFFF;
+}
+[data-theme-sidebar="bordeaux"] .sidebar .nav-item.active {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+}
+[data-theme-sidebar="bordeaux"] .sidebar .sidebar-toggle {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+}
+[data-theme-sidebar="bordeaux"] .sidebar .sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* Content Dark */
