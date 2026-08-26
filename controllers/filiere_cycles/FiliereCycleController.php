@@ -104,13 +104,44 @@ class FiliereCycleController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'filiere_cycle/list'); exit(); }
+            $stmt = $this->model->getCon()->prepare("
+                SELECT fc.*, f.libelle_filiere, c.libelle_cycle
+                FROM filiere_cycles fc
+                LEFT JOIN filieres f ON f.code_filiere = fc.filiere_code
+                LEFT JOIN cycles c ON c.code_cycle = fc.cycle_code
+                WHERE fc.id_filiere_cycle = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$item) { 
+                $this->renderNotFound("L'assignation Filière - Cycle demandée est introuvable.");
+                return;
+            }
+
+            // Classes liées à cette filière
+            $stmtClasses = $this->model->getCon()->prepare("
+                SELECT cl.*, n.libelle_niveau, COUNT(i.id_inscription) as nb_etudiants
+                FROM classes cl
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN inscriptions i ON i.classe_code = cl.code_classe AND i.statut_inscription = 'actif'
+                WHERE cl.filiere_code = ?
+                GROUP BY cl.id_classe
+                ORDER BY cl.libelle_classe ASC
+            ");
+            $stmtClasses->execute([$item['filiere_code']]);
+            $classes = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'filiere_cycle/list'); exit();
+            error_log("FiliereCycleController::details error: " . $e->getMessage());
+            $this->renderNotFound("L'assignation Filière - Cycle demandée est introuvable.");
+            return;
         }
-        $this->loadView('../views/filiere_cycles/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/filiere_cycles/details.php', [
+            'item' => $item, 
+            'classes' => $classes,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

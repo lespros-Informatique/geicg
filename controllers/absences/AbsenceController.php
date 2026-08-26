@@ -76,7 +76,21 @@ class AbsenceController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT abs.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
+                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       m.libelle_matiere
+                FROM absences abs
+                LEFT JOIN etudiants e ON e.code_etudiant = abs.etudiant_code
+                LEFT JOIN classes cl ON cl.code_classe = abs.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN matieres m ON m.code_matiere = abs.matiere_code
+                WHERE abs.id_absence = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'absence/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

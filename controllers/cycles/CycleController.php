@@ -103,11 +103,50 @@ class CycleController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'cycle/list'); exit(); }
+
+            $cycleCode = $item['code_cycle'];
+
+            // Filières associées à ce cycle
+            $stmtFil = $this->model->getCon()->prepare("
+                SELECT f.*,
+                       (SELECT COUNT(*) FROM classes cl WHERE cl.filiere_code = f.code_filiere AND cl.statut_classe = 'actif') as nb_classes
+                FROM filieres f
+                INNER JOIN filiere_cycles fc ON fc.filiere_code = f.code_filiere
+                WHERE fc.cycle_code = ?
+                ORDER BY f.libelle_filiere ASC
+            ");
+            $stmtFil->execute([$cycleCode]);
+            $filieres = $stmtFil->fetchAll(PDO::FETCH_ASSOC);
+
+            // Statistiques du cycle
+            $stmtStats = $this->model->getCon()->prepare("
+                SELECT 
+                    COUNT(DISTINCT fc.filiere_code) as total_filieres,
+                    (SELECT COUNT(*) FROM classes cl 
+                     WHERE cl.filiere_code IN (SELECT fc2.filiere_code FROM filiere_cycles fc2 WHERE fc2.cycle_code = ?) 
+                       AND cl.statut_classe = 'actif') as total_classes,
+                    (SELECT COUNT(*) FROM inscriptions ins 
+                     JOIN classes cl2 ON cl2.code_classe = ins.classe_code
+                     WHERE cl2.filiere_code IN (SELECT fc3.filiere_code FROM filiere_cycles fc3 WHERE fc3.cycle_code = ?)
+                       AND ins.statut_inscription = 'actif') as total_etudiants
+                FROM filiere_cycles fc
+                WHERE fc.cycle_code = ?
+            ");
+            $stmtStats->execute([$cycleCode, $cycleCode, $cycleCode]);
+            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [
+                'total_filieres' => count($filieres), 'total_classes' => 0, 'total_etudiants' => 0
+            ];
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'cycle/list'); exit();
         }
-        $this->loadView('../views/cycles/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/cycles/details.php', [
+            'item' => $item, 
+            'stats' => $stats,
+            'filieres' => $filieres,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

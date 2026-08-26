@@ -185,13 +185,38 @@ class ClotureCaisseController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT c.*, u.nom_user, u.prenom_user
+                FROM clotures_caisse c
+                LEFT JOIN users u ON u.code_user = c.user_code
+                WHERE c.id_cloture = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'cloture_caisse/list'); exit(); }
+
+            // Encaissements de cette journée
+            $stmtP = $this->model->getCon()->prepare("
+                SELECT p.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, cl.libelle_classe
+                FROM paiements p
+                LEFT JOIN etudiants e ON e.code_etudiant = p.etudiant_code
+                LEFT JOIN inscriptions ins ON (ins.code_inscription = p.inscription_code OR (ins.etudiant_code = p.etudiant_code AND ins.statut_inscription = 'actif'))
+                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                WHERE DATE(p.date_paiement) = ? AND p.statut_paiement = 'valide'
+                ORDER BY p.date_paiement DESC
+            ");
+            $stmtP->execute([$item['date_cloture']]);
+            $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'cloture_caisse/list'); exit();
         }
-        $this->loadView('../views/clotures_caisse/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/clotures_caisse/details.php', [
+            'item' => $item, 
+            'paiements' => $paiements,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

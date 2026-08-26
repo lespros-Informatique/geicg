@@ -107,13 +107,34 @@ class UeController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT ue.*, f.libelle_filiere
+                FROM unites_enseignement ue
+                LEFT JOIN filieres f ON f.code_filiere = ue.filiere_code
+                WHERE ue.id_ue = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'ue/list'); exit(); }
+
+            // Matières associées à cette UE
+            $stmtMat = $this->model->getCon()->prepare("
+                SELECT m.* FROM matieres m 
+                WHERE m.ue_code = ? OR m.filiere_code = ?
+                ORDER BY m.libelle_matiere ASC
+            ");
+            $stmtMat->execute([$item['code_ue'], $item['filiere_code']]);
+            $matieres = $stmtMat->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'ue/list'); exit();
         }
-        $this->loadView('../views/unites_enseignement/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/unites_enseignement/details.php', [
+            'item' => $item, 
+            'matieres' => $matieres,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

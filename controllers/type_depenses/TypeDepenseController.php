@@ -103,11 +103,34 @@ class TypeDepenseController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'type_depense/list'); exit(); }
+
+            // Dépenses de cette catégorie
+            $stmtDep = $this->model->getCon()->prepare("
+                SELECT * FROM depenses 
+                WHERE type_depense_code = ? 
+                ORDER BY id_depense DESC
+            ");
+            $stmtDep->execute([$item['code_type_depense']]);
+            $depenses = $stmtDep->fetchAll(PDO::FETCH_ASSOC);
+
+            $totalDepenses = 0;
+            foreach ($depenses as $d) {
+                if (($d['statut_depense'] ?? '') !== 'annule') {
+                    $totalDepenses += (float)($d['montant_depense'] ?? 0);
+                }
+            }
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'type_depense/list'); exit();
+            error_log("TypeDepenseController::details error: " . $e->getMessage());
+            $this->renderNotFound("Le type de dépense demandé est introuvable.");
         }
-        $this->loadView('../views/type_depenses/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/type_depenses/details.php', [
+            'item' => $item, 
+            'depenses' => $depenses,
+            'totalDepenses' => $totalDepenses,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

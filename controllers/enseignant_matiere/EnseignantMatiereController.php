@@ -19,7 +19,7 @@ class EnseignantMatiereController extends BaseController
         $sql = "SELECT em.*, 
                        m.libelle_matiere,
                        cl.libelle_classe,
-                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom,
+                       CONCAT(COALESCE(e.nom_enseignant, u.nom_user, ''), ' ', COALESCE(e.prenom_enseignant, u.prenom_user, '')) AS enseignant_nom,
                        e.code_enseignant
                 FROM enseignant_matiere em
                 LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
@@ -120,23 +120,45 @@ class EnseignantMatiereController extends BaseController
                 SELECT em.*, 
                        m.libelle_matiere,
                        cl.libelle_classe,
-                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom,
-                       e.code_enseignant
+                       f.libelle_filiere,
+                       n.libelle_niveau,
+                       COALESCE(e.nom_enseignant, u.nom_user) AS nom_prof,
+                       COALESCE(e.prenom_enseignant, u.prenom_user) AS prenom_prof,
+                       e.grade_enseignant,
+                       e.email_enseignant,
+                       e.telephone_enseignant
                 FROM enseignant_matiere em
                 LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
                 LEFT JOIN classes cl ON cl.code_classe = em.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
                 LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN users u ON u.code_user = e.user_code
+                LEFT JOIN users u ON u.code_user = em.user_code
                 WHERE em.id_enseignant_matiere = ?
             ");
             $stmt->execute([$id]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'enseignant_matiere/list'); exit(); }
+
+            // Notes saisies pour ce cours dans cette classe
+            $stmtNotes = $this->model->getCon()->prepare("
+                SELECT COUNT(*) FROM notes n
+                JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
+                WHERE ins.classe_code = ? AND n.matiere_code = ? AND (n.statut_note = 'actif' OR n.statut_note IS NULL)
+            ");
+            $stmtNotes->execute([$item['classe_code'], $item['matiere_code']]);
+            $nbNotes = (int)$stmtNotes->fetchColumn();
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'enseignant_matiere/list'); exit();
+            error_log("EnseignantMatiereController::details error: " . $e->getMessage());
+            $this->renderNotFound("L'affectation de cours demandée est introuvable.");
         }
-        $this->loadView('../views/enseignant_matiere/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/enseignant_matiere/details.php', [
+            'item' => $item, 
+            'nbNotes' => $nbNotes,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

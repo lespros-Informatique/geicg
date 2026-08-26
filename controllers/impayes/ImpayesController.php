@@ -80,7 +80,24 @@ class ImpayesController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT r.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
+                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       a.libelle_annee,
+                       u.nom_user, u.prenom_user
+                FROM relances_impayes r
+                LEFT JOIN etudiants e ON e.code_etudiant = r.etudiant_code
+                LEFT JOIN inscriptions ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription = 'actif'))
+                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN annees a ON a.code_annee = r.annee_code
+                LEFT JOIN users u ON u.code_user = r.user_code
+                WHERE r.id_relance = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'impayes/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

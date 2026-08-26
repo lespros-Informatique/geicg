@@ -89,12 +89,34 @@ class FonctionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'fonction/list'); exit(); }
+            if (!$item) { 
+                $this->renderNotFound("La fonction demandée est introuvable.");
+                return;
+            }
+
+            // Utilisateurs / Personnel occupant cette fonction
+            $stmtUsers = $this->model->getCon()->prepare("
+                SELECT u.*, r.libelle_role 
+                FROM users u
+                LEFT JOIN user_roles ur ON ur.user_code = u.code_user
+                LEFT JOIN roles r ON r.code_role = ur.role_code
+                WHERE u.fonction_code = ?
+                ORDER BY u.nom_user ASC, u.prenom_user ASC
+            ");
+            $stmtUsers->execute([$item['code_fonction']]);
+            $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'fonction/list'); exit();
+            error_log("FonctionController::details error: " . $e->getMessage());
+            $this->renderNotFound("La fonction demandée est introuvable.");
+            return;
         }
-        $this->loadView('../views/fonctions/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/fonctions/details.php', [
+            'item' => $item, 
+            'users' => $users,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

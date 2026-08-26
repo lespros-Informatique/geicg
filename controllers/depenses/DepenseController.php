@@ -93,7 +93,19 @@ class DepenseController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT d.*, 
+                       td.libelle_type_depense, 
+                       a.libelle_annee, 
+                       u.nom_user, u.prenom_user
+                FROM depenses d
+                LEFT JOIN type_depenses td ON td.code_type_depense = d.type_depense_code
+                LEFT JOIN annees a ON a.code_annee = d.annee_code
+                LEFT JOIN users u ON u.code_user = d.user_code
+                WHERE d.id_depense = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'depense/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

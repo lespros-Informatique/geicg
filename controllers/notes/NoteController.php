@@ -93,11 +93,32 @@ class NoteController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT n.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
+                       m.libelle_matiere,
+                       cl.libelle_classe, f.libelle_filiere, niv.libelle_niveau,
+                       s.libelle_semestre, a.libelle_annee,
+                       COALESCE(em.coefficient_enseignant_matiere, em.coefficient, 1.0) as coef_cours
+                FROM notes n
+                LEFT JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
+                LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
+                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux niv ON niv.code_niveau = cl.niveau_code
+                LEFT JOIN matieres m ON m.code_matiere = n.matiere_code
+                LEFT JOIN semestres s ON s.code_semestre = n.semestre_code
+                LEFT JOIN annees a ON a.code_annee = n.annee_code
+                LEFT JOIN enseignant_matiere em ON (em.classe_code = ins.classe_code AND em.matiere_code = n.matiere_code)
+                WHERE n.id_note = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'note/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'note/list'); exit();
+            error_log("NoteController::details error: " . $e->getMessage());
+            $this->renderNotFound("L'évaluation / note demandée est introuvable.");
         }
         $this->loadView('../views/notes/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

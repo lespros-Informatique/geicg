@@ -175,11 +175,31 @@ class SemestreController extends BaseController
             $stmt->execute([$id]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'semestre/list'); exit(); }
+
+            $semestreCode = $item['code_semestre'];
+
+            // Statistiques d'évaluations et de notes
+            $stmtStats = $this->model->getCon()->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM notes WHERE semestre_code = ? AND statut_note = 'actif') as total_notes,
+                    (SELECT COUNT(DISTINCT ins.classe_code) FROM notes n JOIN inscriptions ins ON ins.code_inscription = n.inscription_code WHERE n.semestre_code = ?) as total_classes_evaluees,
+                    (SELECT COUNT(DISTINCT ins.etudiant_code) FROM notes n JOIN inscriptions ins ON ins.code_inscription = n.inscription_code WHERE n.semestre_code = ?) as total_etudiants_notes
+            ");
+            $stmtStats->execute([$semestreCode, $semestreCode, $semestreCode]);
+            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [
+                'total_notes' => 0, 'total_classes_evaluees' => 0, 'total_etudiants_notes' => 0
+            ];
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'semestre/list'); exit();
+            error_log("SemestreController::details error: " . $e->getMessage());
+            $this->renderNotFound("Le semestre demandé est introuvable.");
         }
-        $this->loadView('../views/semestres/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/semestres/details.php', [
+            'item' => $item, 
+            'stats' => $stats,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

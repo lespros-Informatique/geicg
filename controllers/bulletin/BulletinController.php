@@ -49,9 +49,9 @@ class BulletinController extends BaseController
             // Récupérer l'inscription avec les détails de l'étudiant, de la classe et de l'année
             $stmt = $this->model->getCon()->prepare("
                 SELECT i.*, 
-                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.genre_etudiant,
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant,
                        e.date_naissance_etudiant, e.lieu_naissance_etudiant, e.telephone_etudiant,
-                       e.email_etudiant, e.photo_etudiant, e.adresse_etudiant,
+                       e.email_etudiant, e.photo_etudiant, e.lieu_residence_etudiant,
                        cl.libelle_classe, cl.code_classe,
                        a.libelle_annee, a.code_annee
                 FROM inscriptions i
@@ -63,8 +63,8 @@ class BulletinController extends BaseController
             $stmt->execute([$id]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) {
-                header('Location: ' . RACINE . 'bulletin/list');
-                exit();
+                $this->renderNotFound("Le bulletin demandé est introuvable.");
+                return;
             }
 
             // Récupérer la liste des semestres
@@ -249,8 +249,9 @@ class BulletinController extends BaseController
                 'moyenneMoyClasse' => $moyenneMoyClasse
             ]);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'bulletin/list');
-            exit();
+            error_log("BulletinController::details error: " . $e->getMessage());
+            $this->renderNotFound("Le bulletin demandé est introuvable.");
+            return;
         }
     }
 

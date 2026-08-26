@@ -6,25 +6,16 @@ class ModelUser extends BaseModel
     protected string $primaryKey = 'id_user';
     protected ?string $statusField = 'statut_user';
 
+    /**
+     * Récupère le rôle et les droits d'un utilisateur
+     */
     public function getUserRole(string $userCode): ?array
     {
         try {
-            $sql = "SELECT role_code, libelle_role FROM " . TABLES::ROLES . " r
-                    INNER JOIN " . TABLES::USERS . " u ON u.role_code = r.code_role
-                    WHERE u.code_user = ? LIMIT 1";
-            $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute([$userCode]);
-            $role = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($role) {
-                return $role;
-            }
-
-            $sql = "SELECT r.code_role, r.libelle_role, up.pressing_code
-                    FROM " . TABLES::USERS_PRESSINGS . " up
-                    INNER JOIN " . TABLES::ROLES . " r ON up.role_code = r.code_role
-                    WHERE up.user_code = ? AND up.statut_user_pressing = 'actif'
-                    LIMIT 1";
+            $sql = "SELECT ur.*, r.libelle_role, r.module, r.groupe, r.description 
+                    FROM user_roles ur
+                    INNER JOIN roles r ON r.code_role = ur.role_code
+                    WHERE ur.user_code = ? LIMIT 1";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute([$userCode]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -34,42 +25,32 @@ class ModelUser extends BaseModel
         }
     }
 
-    public function setUserRole(string $userCode, string $roleCode, string $pressingCode = ''): bool
+    /**
+     * Attribue un rôle et des permissions CRUD à un utilisateur
+     */
+    public function setUserRole(string $userCode, string $roleCode, int $create = 1, int $edit = 1, int $show = 1, int $delete = 0): bool
     {
         try {
-            $this->getCon()->beginTransaction();
+            $stmtCheck = $this->getCon()->prepare("SELECT id FROM user_roles WHERE user_code = ? LIMIT 1");
+            $stmtCheck->execute([$userCode]);
+            $existing = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
-            $sqlUpdate = "UPDATE " . TABLES::USERS . " SET role_code = ? WHERE code_user = ?";
-            $stmtUpdate = $this->getCon()->prepare($sqlUpdate);
-            $stmtUpdate->execute([$roleCode, $userCode]);
-
-            if ($pressingCode !== '') {
-                $sqlDelete = "DELETE FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ?";
-                $stmtDelete = $this->getCon()->prepare($sqlDelete);
-                $stmtDelete->execute([$userCode]);
-
-                $sqlInsert = "INSERT INTO " . TABLES::USERS_PRESSINGS . 
-                              " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing) 
-                              VALUES (?, ?, ?, ?, 'actif')";
-                $codeUserPressing = 'UP-' . strtoupper(uniqid());
-                $stmtInsert = $this->getCon()->prepare($sqlInsert);
-                $result = $stmtInsert->execute([$codeUserPressing, $userCode, $pressingCode, $roleCode]);
+            if ($existing) {
+                $stmt = $this->getCon()->prepare("
+                    UPDATE user_roles 
+                    SET role_code = ?, create_permission = ?, edit_permission = ?, show_permission = ?, delete_permission = ? 
+                    WHERE user_code = ?
+                ");
+                return $stmt->execute([$roleCode, $create, $edit, $show, $delete, $userCode]);
             } else {
-                $sqlDelete = "DELETE FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ?";
-                $stmtDelete = $this->getCon()->prepare($sqlDelete);
-                $result = $stmtDelete->execute([$userCode]);
+                $stmt = $this->getCon()->prepare("
+                    INSERT INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission) 
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ");
+                return $stmt->execute([$userCode, $roleCode, $create, $edit, $show, $delete]);
             }
-
-            if ($result) {
-                $this->getCon()->commit();
-                return true;
-            }
-
-            $this->getCon()->rollBack();
-            return false;
         } catch (Exception $e) {
             error_log("ModelUser::setUserRole error: " . $e->getMessage());
-            $this->getCon()->rollBack();
             return false;
         }
     }
@@ -80,7 +61,7 @@ class ModelUser extends BaseModel
     public function updatePassword(string $hashPassword, int $userId): bool
     {
         try {
-            $sql = "UPDATE " . TABLES::USERS . " SET password_user = ?, updated_at_user = ? WHERE id_user = ?";
+            $sql = "UPDATE users SET password_user = ?, updated_at_user = ? WHERE id_user = ?";
             $stmt = $this->getCon()->prepare($sql);
             return $stmt->execute([$hashPassword, date('Y-m-d H:i:s'), $userId]);
         } catch (Exception $e) {

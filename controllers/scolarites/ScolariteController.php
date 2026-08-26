@@ -93,13 +93,44 @@ class ScolariteController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'scolarite/list'); exit(); }
+            $stmt = $this->model->getCon()->prepare("
+                SELECT s.*, 
+                       f.libelle_filiere, 
+                       n.libelle_niveau, 
+                       a.libelle_annee
+                FROM scolarites s
+                LEFT JOIN filieres f ON f.code_filiere = s.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = s.niveau_code
+                LEFT JOIN annees a ON a.code_annee = s.annee_code
+                WHERE s.id_scolarite = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$item) { 
+                $this->renderNotFound("La grille de scolarité demandée est introuvable.");
+                return;
+            }
+
+            // Tranches / Échéancier de cette scolarité
+            $stmtTranches = $this->model->getCon()->prepare("
+                SELECT * FROM tranches_scolarite 
+                WHERE (scolarite_code = ? OR (filiere_code = ? AND niveau_code = ?))
+                ORDER BY date_limite ASC, id_tranche ASC
+            ");
+            $stmtTranches->execute([$item['code_scolarite'], $item['filiere_code'], $item['niveau_code']]);
+            $tranches = $stmtTranches->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'scolarite/list'); exit();
+            error_log("ScolariteController::details error: " . $e->getMessage());
+            $this->renderNotFound("La grille de scolarité demandée est introuvable.");
+            return;
         }
-        $this->loadView('../views/scolarites/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/scolarites/details.php', [
+            'item' => $item, 
+            'tranches' => $tranches,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

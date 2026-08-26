@@ -1,8 +1,7 @@
 <?php
+
 class UserController extends BaseController
 {
-    use PressingAware;
-
     protected function resolveModel()
     {
         return new ModelUser();
@@ -17,37 +16,29 @@ class UserController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $users = $this->model->getAll();
-        $pressingCode = $this->getCurrentPressingCode();
-
-        if ($pressingCode !== null) {
-            $pressingUserCodes = [];
-            try {
-                $sql = "SELECT user_code FROM " . TABLES::USERS_PRESSINGS . " WHERE pressing_code = ? AND statut_user_pressing = 'actif'";
-                $stmt = $this->model->getCon()->prepare($sql);
-                $stmt->execute([$pressingCode]);
-                $pressingUserCodes = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            } catch (Exception $e) {
-                $pressingUserCodes = [];
-            }
-
-            $users = array_filter($users, function($u) use ($pressingUserCodes) {
-                return in_array($u['code_user'], $pressingUserCodes, true);
-            });
-        }
+        $sql = "SELECT u.*, 
+                       r.libelle_role, 
+                       r.code_role,
+                       f.libelle_fonction
+                FROM users u
+                LEFT JOIN user_roles ur ON ur.user_code = u.code_user
+                LEFT JOIN roles r ON r.code_role = ur.role_code
+                LEFT JOIN fonctions f ON f.code_fonction = u.fonction_code
+                ORDER BY u.id_user DESC";
+        $users = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
         $data = [];
-
         foreach ($users as $u) {
             $idCrypte = $this->validator->crypter($u['id_user']);
-            $role = $this->model->getUserRole($u['code_user']);
             $data[] = [
                 'code' => $u['code_user'],
                 'nom' => $u['nom_user'],
                 'prenom' => $u['prenom_user'] ?? '',
+                'email' => $u['email_user'] ?? '',
                 'telephone' => $u['telephone_user'] ?? '',
-                'role' => $role ? $role['libelle_role'] : '-',
-                'role_code' => $role ? ($role['code_role'] ?? '') : '',
+                'fonction' => $u['libelle_fonction'] ?? '-',
+                'role' => $u['libelle_role'] ?? 'Non attribué',
+                'role_code' => $u['code_role'] ?? '',
                 'statut' => $u['statut_user'],
                 'id' => $u['id_user'],
                 'editId' => $idCrypte
@@ -61,98 +52,66 @@ class UserController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['nom' => $_POST['nom'] ?? '', 'telephone' => $_POST['telephone'] ?? '']);
 
-        if ($notEmpty === true) {
-            if (!Validator::validNumber($this->post('telephone'), 10)) {
-                $this->error('Le numéro de téléphone doit contenir 10 chiffres!');
-            } elseif ($this->validator->getByElement(TABLES::USERS, 'telephone_user', $this->post('telephone'))) {
-                $this->error('Ce numéro de téléphone existe déjà!');
-            } else {
-                $code_user = $this->validator->generateCode(TABLES::USERS, 'code_user', 'US-', 6);
-                $email = $this->post('email') ?: ($this->post('email_user') ?: null);
-                $rawPassword = !empty($this->post('password')) ? $this->post('password') : '12345';
-                $password = Validator::hashPassword($rawPassword);
-                $statut = 'actif';
+        $nom = trim($_POST['nom'] ?? '');
+        $prenom = trim($_POST['prenom'] ?? '');
+        $telephone = trim($_POST['telephone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $roleCode = $_POST['role_code'] ?? 'ROLE_SCOLARITE';
+        $fonctionCode = $_POST['fonction_code'] ?? null;
+        $rawPassword = !empty($_POST['password']) ? trim($_POST['password']) : '123456';
 
-                $data = [
-                    'code_user' => $code_user,
-                    'nom_user' => $this->post('nom'),
-                    'prenom_user' => $this->post('prenom') ?? '',
-                    'telephone_user' => $this->post('telephone'),
-                    'email_user' => $email,
-                    'password_user' => $password,
-                    'statut_user' => $statut,
-                    'created_at_user' => date('Y-m-d H:i:s')
-                ];
+        if (empty($nom)) {
+            $this->error('Le nom de l\'utilisateur est obligatoire !');
+            return;
+        }
 
-                if ($this->model->create($data)) {
-                    $roleCode = $this->post('role_code') ?: 'ROLE-PRO';
-                    $this->model->setUserRole($code_user, $roleCode);
-
-                    $pressingCode = $this->getCurrentPressingCode();
-                    if ($pressingCode) {
-                        // Contrôle du nombre maximal d'utilisateurs selon le forfait B2B du pressing (100% dynamique depuis la BDD)
-                        $stmtSub = $this->model->getCon()->prepare("
-                            SELECT f.code_forfait, f.libelle_forfait, f.nb_comptes_max
-                            FROM abonnements_pressings ab
-                            JOIN forfaits f ON ab.forfait_code = f.code_forfait
-                            WHERE ab.pressing_code = ? AND ab.statut_abonnement_pressing = 'actif'
-                            ORDER BY ab.id_abonnement_pressing DESC LIMIT 1
-                        ");
-                        $stmtSub->execute([$pressingCode]);
-                        $sub = $stmtSub->fetch(PDO::FETCH_ASSOC);
-
-                        if ($sub) {
-                            $maxUsersAllowed = (int)($sub['nb_comptes_max'] ?? 0);
-                            if ($maxUsersAllowed > 0) {
-                                $stmtUsersCount = $this->model->getCon()->prepare("
-                                    SELECT COUNT(*) FROM " . TABLES::USERS_PRESSINGS . " WHERE pressing_code = ? AND statut_user_pressing = 'actif'
-                                ");
-                                $stmtUsersCount->execute([$pressingCode]);
-                                $currentUsersCount = (int)$stmtUsersCount->fetchColumn();
-
-                                if ($currentUsersCount >= $maxUsersAllowed) {
-                                    $this->error("Votre forfait actuel (" . $sub['libelle_forfait'] . ") est limité à $maxUsersAllowed compte(s) utilisateur(s). Passez à la formule supérieure pour ajouter du personnel !");
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    if ($pressingCode && in_array($roleCode, ['ROLE-PRO', 'ROLE-GEST', 'ROLE-LIV'])) {
-                        try {
-                            $userPressingCode = $this->validator->generateCode(TABLES::USERS_PRESSINGS, 'code_user_pressing', 'USP-', 6);
-                            $stmtCheckUp = $this->model->getCon()->prepare("SELECT id_user_pressing FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ? AND pressing_code = ? LIMIT 1");
-                            $stmtCheckUp->execute([$code_user, $pressingCode]);
-                            if (!$stmtCheckUp->fetch()) {
-                                $stmtUp = $this->model->getCon()->prepare("
-                                    INSERT INTO " . TABLES::USERS_PRESSINGS . " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing, created_at_user_pressing)
-                                    VALUES (?, ?, ?, ?, 'actif', NOW())
-                                ");
-                                $stmtUp->execute([$userPressingCode, $code_user, $pressingCode, $roleCode]);
-                            }
-
-                            if ($roleCode === 'ROLE-LIV') {
-                                $codeLivreur = $this->validator->generateCode(TABLES::LIVREURS, 'code_livreur', 'LIV-', 6);
-                                $stmtLiv = $this->model->getCon()->prepare("
-                                    INSERT INTO " . TABLES::LIVREURS . " (code_livreur, pressing_code, user_code, nom_livreur, prenom_livreur, telephone_livreur, statut_livreur, created_at_livreur)
-                                    VALUES (?, ?, ?, ?, ?, ?, 'actif', NOW())
-                                ");
-                                $stmtLiv->execute([$codeLivreur, $pressingCode, $code_user, $this->post('nom'), $this->post('prenom') ?? '', $this->post('telephone')]);
-                            }
-                        } catch (Exception $e) {
-                            error_log("Erreur de liaison pressing dans UserController::add : " . $e->getMessage());
-                        }
-                    }
-
-                    $this->success('Utilisateur ajouté avec succès ! (Mot de passe par défaut : 12345)');
-                } else {
-                    $this->error('Erreur lors de l\'ajout de l\'utilisateur');
-                }
+        if (!empty($email)) {
+            $stmtCheckEmail = $this->model->getCon()->prepare("SELECT id_user FROM users WHERE email_user = ?");
+            $stmtCheckEmail->execute([$email]);
+            if ($stmtCheckEmail->fetch()) {
+                $this->error('Cette adresse email est déjà attribuée à un compte !');
+                return;
             }
+        }
+
+        if (!empty($telephone)) {
+            $stmtCheckTel = $this->model->getCon()->prepare("SELECT id_user FROM users WHERE telephone_user = ?");
+            $stmtCheckTel->execute([$telephone]);
+            if ($stmtCheckTel->fetch()) {
+                $this->error('Ce numéro de téléphone est déjà attribué à un compte !');
+                return;
+            }
+        }
+
+        $code_user = $this->validator->generateCode('users', 'code_user', 'USR-', 8);
+        $password = password_hash($rawPassword, PASSWORD_DEFAULT);
+        $etabCode = '5454544456';
+
+        $data = [
+            'code_user' => $code_user,
+            'nom_user' => $nom,
+            'prenom_user' => $prenom,
+            'telephone_user' => $telephone ?: null,
+            'email_user' => $email ?: null,
+            'sexe_user' => $_POST['sexe_user'] ?? 'M',
+            'password_user' => $password,
+            'fonction_code' => $fonctionCode,
+            'etablissement_code' => $etabCode,
+            'statut_user' => 'actif',
+            'created_at_user' => date('Y-m-d H:i:s')
+        ];
+
+        if ($this->model->create($data)) {
+            $createP = isset($_POST['create_permission']) ? 1 : 0;
+            $editP = isset($_POST['edit_permission']) ? 1 : 0;
+            $showP = isset($_POST['show_permission']) ? 1 : 1;
+            $deleteP = isset($_POST['delete_permission']) ? 1 : 0;
+
+            $this->model->setUserRole($code_user, $roleCode, $createP, $editP, $showP, $deleteP);
+            $this->success('Utilisateur créé avec succès ! (Mot de passe initial : ' . $rawPassword . ')');
         } else {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Erreur lors de la création de l\'utilisateur.');
         }
     }
 
@@ -160,47 +119,71 @@ class UserController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $notEmpty = Validator::validateRequiredFields(['nom' => $_POST['nom'] ?? '', 'telephone' => $_POST['telephone'] ?? '', 'id_user' => $_POST['id_user'] ?? '']);
+        $id = (int)$this->post('id_user');
+        if (!$id) { $this->error('Identifiant invalide'); return; }
 
-        if ($notEmpty === true) {
-            if (!Validator::validNumber($this->post('telephone'), 10)) {
-                $this->error('Le numéro de téléphone doit contenir 10 chiffres!');
-            } elseif ($this->validator->_verif(TABLES::USERS, 'telephone_user', $this->post('telephone'), 'id_user', $this->post('id_user'))) {
-                $this->error('Ce numéro de téléphone est déjà utilisé par un autre utilisateur!');
-            } else {
-                $actif = $this->post('actif');
-                if ($actif === 'actif' || $actif === 1 || $actif === '1') {
-                    $statut = 'actif';
-                } else {
-                    $statut = 'inactif';
-                }
-                $id = (int) $this->post('id_user');
-                
-                $data = [
-                    'id_user' => $id,
-                    'nom_user' => $this->post('nom'),
-                    'prenom_user' => $this->post('prenom') ?? '',
-                    'telephone_user' => $this->post('telephone'),
-                    'email_user' => $this->post('email') ?: null,
-                    'statut_user' => $statut,
-                    'updated_at_user' => date('Y-m-d H:i:s')
-                ];
+        $user = $this->model->getById($id);
+        if (!$user) { $this->error('Utilisateur introuvable'); return; }
 
-                if ($this->model->update($data, $id)) {
-                    $roleCode = $this->post('role_code');
-                    if ($roleCode) {
-                        $user = $this->model->getById($id);
-                        if ($user) {
-                            $this->model->setUserRole($user['code_user'], $roleCode);
-                        }
-                    }
-                    $this->success('Utilisateur modifié avec succès!');
-                } else {
-                    $this->error('Erreur lors de la modification');
-                }
+        $nom = trim($_POST['nom'] ?? '');
+        $prenom = trim($_POST['prenom'] ?? '');
+        $telephone = trim($_POST['telephone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $roleCode = $_POST['role_code'] ?? '';
+        $fonctionCode = $_POST['fonction_code'] ?? null;
+        $statut = ($_POST['actif'] ?? '') === '0' || ($_POST['actif'] ?? '') === 'inactif' ? 'inactif' : 'actif';
+
+        if (empty($nom)) {
+            $this->error('Le nom est obligatoire !');
+            return;
+        }
+
+        if (!empty($email)) {
+            $stmtCheck = $this->model->getCon()->prepare("SELECT id_user FROM users WHERE email_user = ? AND id_user != ?");
+            $stmtCheck->execute([$email, $id]);
+            if ($stmtCheck->fetch()) {
+                $this->error('Cette adresse email est déjà utilisée par un autre compte.');
+                return;
             }
+        }
+
+        if (!empty($telephone)) {
+            $stmtCheck = $this->model->getCon()->prepare("SELECT id_user FROM users WHERE telephone_user = ? AND id_user != ?");
+            $stmtCheck->execute([$telephone, $id]);
+            if ($stmtCheck->fetch()) {
+                $this->error('Ce numéro de téléphone est déjà utilisé par un autre compte.');
+                return;
+            }
+        }
+
+        $data = [
+            'id_user' => $id,
+            'nom_user' => $nom,
+            'prenom_user' => $prenom,
+            'telephone_user' => $telephone ?: null,
+            'email_user' => $email ?: null,
+            'sexe_user' => $_POST['sexe_user'] ?? 'M',
+            'fonction_code' => $fonctionCode,
+            'statut_user' => $statut,
+            'updated_at_user' => date('Y-m-d H:i:s')
+        ];
+
+        if (!empty($_POST['password'])) {
+            $data['password_user'] = password_hash(trim($_POST['password']), PASSWORD_DEFAULT);
+        }
+
+        if ($this->model->update($data, $id)) {
+            if (!empty($roleCode)) {
+                $createP = isset($_POST['create_permission']) ? 1 : 0;
+                $editP = isset($_POST['edit_permission']) ? 1 : 0;
+                $showP = isset($_POST['show_permission']) ? 1 : 1;
+                $deleteP = isset($_POST['delete_permission']) ? 1 : 0;
+
+                $this->model->setUserRole($user['code_user'], $roleCode, $createP, $editP, $showP, $deleteP);
+            }
+            $this->success('Utilisateur et permissions mis à jour avec succès !');
         } else {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Erreur lors de la modification de l\'utilisateur.');
         }
     }
 
@@ -213,66 +196,11 @@ class UserController extends BaseController
             if ($this->model->toggleStatus($id)) {
                 $this->success('Statut modifié avec succès!', ['id' => $id, 'reload' => true]);
             } else {
-                $this->error('Erreur');
+                $this->error('Erreur lors du changement de statut.');
             }
         } else {
             $this->error('Utilisateur introuvable!');
         }
-    }
-
-    public function setRole()
-    {
-        $this->requirePost(false);
-        $this->requireAuth();
-
-        if (!$this->isSuperAdmin()) {
-            $this->error('Accès refusé', 403);
-            return;
-        }
-
-        $id = (int) $this->post('id_user');
-        $roleCode = $this->post('role_code');
-
-        if (!$id || !$roleCode) {
-            $this->error('Identifiant et rôle requis');
-            return;
-        }
-
-        $user = $this->model->getById($id);
-        if (!$user) {
-            $this->error('Utilisateur introuvable');
-            return;
-        }
-
-        $allowedRoles = [ROLES::SUPER_ADMIN, ROLES::PRESSING, ROLES::LIVREUR];
-        if (!in_array($roleCode, $allowedRoles, true)) {
-            $this->error('Rôle invalide');
-            return;
-        }
-
-        if ($this->model->setUserRole($user['code_user'], $roleCode)) {
-            $this->success('Rôle attribué avec succès');
-        } else {
-            $this->error('Erreur lors de l\'attribution du rôle');
-        }
-    }
-
-    public function decon()
-    {
-        $this->unsetSession();
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            @session_destroy();
-        }
-        $_SESSION = [];
-
-        header('Location: ' . RACINE . 'user/connexion');
-        exit();
-    }
-
-    public function logout()
-    {
-        $this->decon();
     }
 
     public function details($details)
@@ -299,27 +227,17 @@ class UserController extends BaseController
         ]);
     }
 
-    public function checkPhone()
-    {
-        $this->requireAuth();
-        $phone = trim($_POST['telephone'] ?? ($_GET['telephone'] ?? ''));
-        if (empty($phone)) {
-            $this->error('Numéro de téléphone requis');
-            return;
-        }
-
-        $exists = $this->validator->verif(TABLES::USERS, 'telephone_user', $phone);
-        if ($exists) {
-            $this->error('Ce numéro de téléphone est déjà attribué à un compte !');
-        } else {
-            $this->success('Numéro disponible');
-        }
-    }
-
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/users/edit.php', ['user' => [], 'role' => []]);
+        $roles = (new ModelRole())->getAll();
+        $fonctions = (new ModelFonction())->getAll();
+        $this->loadView('../views/users/edit.php', [
+            'user' => [],
+            'role' => [],
+            'roles' => $roles,
+            'fonctions' => $fonctions
+        ]);
     }
 
     public function edition($details)
@@ -334,6 +252,8 @@ class UserController extends BaseController
                 exit();
             }
             $role = $this->model->getUserRole($userProfile['code_user']);
+            $roles = (new ModelRole())->getAll();
+            $fonctions = (new ModelFonction())->getAll();
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'user/list');
             exit();
@@ -341,7 +261,9 @@ class UserController extends BaseController
 
         $this->loadView('../views/users/edit.php', [
             'user' => $userProfile,
-            'role' => $role
+            'role' => $role,
+            'roles' => $roles,
+            'fonctions' => $fonctions
         ]);
     }
 
@@ -351,7 +273,11 @@ class UserController extends BaseController
         $auth = $_SESSION[USERS_AUTH] ?? null;
         $userId = $auth['id_user'] ?? 0;
         $editId = $this->validator->crypter($userId);
+        $userProfile = $this->model->getById((int)$userId);
+        $role = $this->model->getUserRole($userProfile['code_user'] ?? '');
         $this->loadView('../views/users/profil.php', [
+            'user' => $userProfile,
+            'role' => $role,
             'editId' => $editId
         ]);
     }
@@ -367,36 +293,123 @@ class UserController extends BaseController
         $notEmpty = Validator::validateRequiredFields($_POST);
 
         if ($notEmpty === true) {
-            $login = $this->post('login');
-            $user = $this->validator->getByElement(TABLES::USERS, 'telephone_user', $login);
+            $login = trim($this->post('login'));
+            $password = $this->post('password');
+
+            // 1. Recherche dans la table USERS
+            $user = $this->validator->getByElement('users', 'telephone_user', $login);
             if (!$user) {
-                $user = $this->validator->getByElement(TABLES::USERS, 'email_user', $login);
+                $user = $this->validator->getByElement('users', 'email_user', $login);
             }
 
-            if (isset($user) && !empty($user) && password_verify($this->post('password'), $user['password_user'] ?? '')) {
-                if ($user['statut_user'] == STATUTS::USERS[0]) {
-                    $roleCode = $this->model->getUserRole($user['code_user']);
-                    $roleCode = $roleCode ? ($roleCode['code_role'] ?? '') : '';
+            if (isset($user) && !empty($user) && password_verify($password, $user['password_user'] ?? '')) {
+                if ($user['statut_user'] === 'actif') {
+                    $userRole = $this->model->getUserRole($user['code_user']);
+                    $roleCode = $userRole ? ($userRole['role_code'] ?? 'ROLE_USER') : 'ROLE_USER';
 
-                    Validator::saveSesion(USERS_AUTH, [
+                    // Vérifier si lié à un profil enseignant
+                    $stmtEns = $this->model->getCon()->prepare("
+                        SELECT * FROM enseignants WHERE user_code = ? AND statut_enseignant = 'actif' LIMIT 1
+                    ");
+                    $stmtEns->execute([$user['code_user']]);
+                    $enseignantProfile = $stmtEns->fetch(PDO::FETCH_ASSOC);
+
+                    $sessionData = [
                         'id_user' => $user['id_user'],
                         'code_user' => $user['code_user'],
                         'nom' => $user['nom_user'],
+                        'prenom' => $user['prenom_user'] ?? '',
                         'email' => $user['email_user'] ?? '',
                         'tel' => $user['telephone_user'] ?? '',
-                        'role_code' => $roleCode
-                    ]);
+                        'role_code' => $roleCode,
+                        'is_enseignant' => !empty($enseignantProfile),
+                        'code_enseignant' => $enseignantProfile['code_enseignant'] ?? null,
+                        'grade_enseignant' => $enseignantProfile['grade_enseignant'] ?? null,
+                        'type_contrat' => $enseignantProfile['type_contrat'] ?? null,
+                        'permissions' => [
+                            'create' => (int)($userRole['create_permission'] ?? 1),
+                            'edit' => (int)($userRole['edit_permission'] ?? 1),
+                            'show' => (int)($userRole['show_permission'] ?? 1),
+                            'delete' => (int)($userRole['delete_permission'] ?? 0)
+                        ]
+                    ];
 
-                    $this->success('Bienvenue sur GEICG Admin!');
+                    Validator::saveSesion(USERS_AUTH, $sessionData);
+                    $welcomeMsg = !empty($enseignantProfile) 
+                        ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user']) . ' !'
+                        : 'Connexion réussie ! Bienvenue sur GEICG.';
+
+                    $this->success($welcomeMsg);
+                    return;
                 } else {
-                    $this->error('Ce compte utilisateur est inactif'.$user['nom_user']);
+                    $this->error('Ce compte utilisateur est inactif ou suspendu. Veuillez contacter l\'administrateur.');
+                    return;
                 }
-            } else {
-                $this->error('Identifiants incorrects. Veuillez vérifier votre téléphone/email et mot de passe.');
             }
+
+            // 2. Si pas trouvé dans USERS, recherche directe dans la table ENSEIGNANTS
+            $stmtEnsLogin = $this->model->getCon()->prepare("
+                SELECT * FROM enseignants 
+                WHERE (email_enseignant = ? OR telephone_enseignant = ?)
+                LIMIT 1
+            ");
+            $stmtEnsLogin->execute([$login, $login]);
+            $ens = $stmtEnsLogin->fetch(PDO::FETCH_ASSOC);
+
+            if ($ens && !empty($ens['password_enseignant']) && password_verify($password, $ens['password_enseignant'])) {
+                if ($ens['statut_enseignant'] === 'actif') {
+                    $sessionData = [
+                        'id_user' => $ens['id_enseignant'],
+                        'code_user' => $ens['code_enseignant'],
+                        'nom' => $ens['nom_enseignant'],
+                        'prenom' => $ens['prenom_enseignant'] ?? '',
+                        'email' => $ens['email_enseignant'] ?? '',
+                        'tel' => $ens['telephone_enseignant'] ?? '',
+                        'role_code' => 'ROLE_ENSEIGNANT',
+                        'is_enseignant' => true,
+                        'code_enseignant' => $ens['code_enseignant'],
+                        'grade_enseignant' => $ens['grade_enseignant'] ?? 'Enseignant',
+                        'type_contrat' => $ens['type_contrat'] ?? 'permanent',
+                        'taux_horaire' => (float)($ens['taux_horaire'] ?? 0),
+                        'permissions' => [
+                            'create' => 1,
+                            'edit' => 1,
+                            'show' => 1,
+                            'delete' => 0
+                        ]
+                    ];
+
+                    Validator::saveSesion(USERS_AUTH, $sessionData);
+                    $this->success('Bienvenue Professeur ' . htmlspecialchars($ens['nom_enseignant']) . ' !');
+                    return;
+                } else {
+                    $this->error('Ce compte enseignant est inactif ou suspendu. Veuillez contacter l\'administration.');
+                    return;
+                }
+            }
+
+            $this->error('Identifiants incorrects. Veuillez vérifier votre adresse email / téléphone et mot de passe.');
         } else {
-            $this->error('Veuillez renseigner tous les champs!');
+            $this->error('Veuillez renseigner tous les champs !');
         }
+    }
+
+    public function decon()
+    {
+        $this->unsetSession();
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_unset();
+            @session_destroy();
+        }
+        $_SESSION = [];
+
+        header('Location: ' . RACINE . 'user/connexion');
+        exit();
+    }
+
+    public function logout()
+    {
+        $this->decon();
     }
 
     public function editPassword()
@@ -432,17 +445,7 @@ class UserController extends BaseController
         }
 
         $userId = $_SESSION[USERS_AUTH]['id_user'] ?? 0;
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $user = null;
-        if ($userId) {
-            $user = $this->model->getById((int)$userId);
-        }
-        if (!$user && $userCode) {
-            $user = $this->validator->getByElement(TABLES::USERS, 'code_user', $userCode);
-            if ($user) {
-                $userId = (int)$user['id_user'];
-            }
-        }
+        $user = $this->model->getById((int)$userId);
 
         if (!$user) {
             $this->error('Utilisateur introuvable !');
@@ -454,11 +457,11 @@ class UserController extends BaseController
             return;
         }
 
-        $hash = Validator::hashPassword($newPassword);
+        $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         if ($this->model->updatePassword($hash, (int)$userId)) {
             $this->success('Votre mot de passe a été modifié avec succès !');
         } else {
-            $this->error('Erreur lors de la mise à jour du mot de passe');
+            $this->error('Erreur lors de la mise à jour du mot de passe.');
         }
     }
 }

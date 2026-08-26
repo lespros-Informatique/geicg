@@ -2,8 +2,6 @@
 
 abstract class BaseController
 {
-    use PressingAware;
-
     protected $validator;
     protected $model;
 
@@ -18,18 +16,79 @@ abstract class BaseController
     protected function requirePost(bool $checkCsrf = true): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->json(['status' => 0, 'message' => 'Methode non autorisee'], 405);
+            if ($this->isAjax()) {
+                $this->json(['status' => 0, 'message' => 'Méthode non autorisée (POST requis)'], 405);
+            } else {
+                $this->renderForbidden('Cette page accepte uniquement les requêtes POST.');
+            }
         }
 
         if ($checkCsrf && !Validator::validateCsrfToken($_POST['csrf_token'] ?? null)) {
-            $this->json(['status' => 0, 'message' => 'Token de securite invalide ou expire'], 419);
+            if ($this->isAjax()) {
+                $this->json(['status' => 0, 'message' => 'Session ou jeton de sécurité expiré. Veuillez réactualiser la page.'], 419);
+            } else {
+                $this->renderError('Jeton de sécurité CSRF expiré ou invalide. Veuillez rafraîchir la page et réessayer.', 419);
+            }
         }
     }
 
     protected function requireAuth(): void
     {
-        if (!isset($_SESSION[USERS_AUTH]['id_user'])) {
-            $this->json(['status' => 0, 'message' => 'Authentification requise'], 401);
+        if (!isset($_SESSION[USERS_AUTH]['id_user']) && !isset($_SESSION[USERS_AUTH]['code_user'])) {
+            if ($this->isAjax()) {
+                $this->json(['status' => 0, 'message' => 'Authentification requise pour cette opération'], 401);
+            } else {
+                header('Location: ' . RACINE . 'user/connexion');
+                exit();
+            }
+        }
+    }
+
+    /**
+     * Affiche la page complète d'erreur 403 (Accès Refusé / Privilèges Insuffisants)
+     */
+    public function renderForbidden(string $message = "Vous ne disposez pas des autorisations nécessaires pour accéder à cette page ou exécuter cette action.", string $permissionCode = ''): void
+    {
+        if ($this->isAjax()) {
+            $this->json(['status' => 0, 'message' => $message, 'required_permission' => $permissionCode], 403);
+        } else {
+            if (!headers_sent()) {
+                http_response_code(403);
+            }
+            require __DIR__ . '/../views/errors/403.php';
+            exit();
+        }
+    }
+
+    /**
+     * Affiche la page complète d'erreur 404 (Ressource Introuvable)
+     */
+    public function renderNotFound(string $message = "La page, l'enregistrement ou la ressource demandée n'existe pas."): void
+    {
+        if ($this->isAjax()) {
+            $this->json(['status' => 0, 'message' => $message], 404);
+        } else {
+            if (!headers_sent()) {
+                http_response_code(404);
+            }
+            require __DIR__ . '/../views/errors/404.php';
+            exit();
+        }
+    }
+
+    /**
+     * Affiche la page complète d'erreur 500 (Incident Système)
+     */
+    public function renderError(string $message = "Une anomalie est survenue lors de l'exécution de la requête.", int $code = 500): void
+    {
+        if ($this->isAjax()) {
+            $this->json(['status' => 0, 'message' => $message], $code);
+        } else {
+            if (!headers_sent()) {
+                http_response_code($code);
+            }
+            require __DIR__ . '/../views/errors/500.php';
+            exit();
         }
     }
 
@@ -38,7 +97,7 @@ abstract class BaseController
         $_SESSION = [];
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_unset();
-            session_destroy();
+            @session_destroy();
         }
     }
 
@@ -142,44 +201,10 @@ abstract class BaseController
 
     protected function loadView(string $path, array $data = []): void
     {
-        $isSuperAdmin = $data['isSuperAdmin'] ?? $this->isSuperAdmin();
-        $isPressing = $data['isPressing'] ?? $this->isPressing();
-        $isLivreur = $data['isLivreur'] ?? $this->isLivreur();
-        $livreurCode = $data['livreurCode'] ?? ($isLivreur ? $this->getCurrentLivreurCode() : null);
-        $pressingCode = $data['pressingCode'] ?? (($isPressing && !$isLivreur) ? $this->getCurrentPressingCode() : null);
-
-        $data['isSuperAdmin'] = $isSuperAdmin;
-        $data['isPressing'] = $isPressing;
-        $data['isLivreur'] = $isLivreur;
-        $data['livreurCode'] = $livreurCode;
-        $data['pressingCode'] = $pressingCode;
+        $data['isSuperAdmin'] = $this->isSuperAdmin();
         $data['currentUserName'] = $data['currentUserName'] ?? ($_SESSION[USERS_AUTH]['nom'] ?? ($_SESSION[USERS_AUTH]['nom_user'] ?? 'Utilisateur'));
         $data['currentUserEmail'] = $data['currentUserEmail'] ?? ($_SESSION[USERS_AUTH]['email'] ?? ($_SESSION[USERS_AUTH]['email_user'] ?? ''));
-
-        // Vérification de l'état d'abonnement pour les pressings
-        $isSubscriptionActive = true;
-        $subscriptionDetails = null;
-        if ($isPressing && !empty($pressingCode)) {
-            $isSubscriptionActive = method_exists($this, 'hasActiveAbonnement') 
-                ? $this->hasActiveAbonnement($pressingCode) 
-                : true;
-            $subscriptionDetails = method_exists($this, 'getActiveAbonnementDetails') 
-                ? $this->getActiveAbonnementDetails($pressingCode) 
-                : null;
-        }
-        $data['isSubscriptionActive'] = $data['isSubscriptionActive'] ?? $isSubscriptionActive;
-        $data['subscriptionDetails'] = $data['subscriptionDetails'] ?? $subscriptionDetails;
-
-        // Calcul dynamique et filtré des notifications pour le badge de la cloche et le dropdown d'aperçu
-        try {
-            $notifModel = new ModelNotification();
-            $notifStats = $notifModel->getStats($pressingCode, $livreurCode);
-            $data['unreadNotifsCount'] = $notifStats['non_lues'] ?? 0;
-            $data['recentAdminNotifs'] = $notifModel->getAllWithClient($pressingCode, $livreurCode, 5);
-        } catch (Exception $e) {
-            $data['unreadNotifsCount'] = 0;
-            $data['recentAdminNotifs'] = [];
-        }
+        $data['currentUserRole'] = $_SESSION[USERS_AUTH]['role_code'] ?? 'ROLE_USER';
 
         if (!file_exists($path)) {
             $candidate = __DIR__ . '/../' . ltrim(str_replace('../', '', $path), '/\\');
@@ -227,30 +252,8 @@ abstract class BaseController
 
     protected function getCurrentUserRoles(): array
     {
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        if ($userCode === '') {
-            return [];
-        }
-
-        $roles = [];
-        try {
-            $roleCode = $_SESSION[USERS_AUTH]['role_code'] ?? '';
-            if ($roleCode === '') {
-                $sql = "SELECT role_code FROM " . TABLES::USERS . " WHERE code_user = ? LIMIT 1";
-                $pdo = ($this->model && method_exists($this->model, 'getCon')) ? $this->model->getCon() : (new Database())->getCon();
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$userCode]);
-                $roleCode = $stmt->fetchColumn() ?: '';
-            }
-
-            if ($roleCode !== '') {
-                $roles[] = $roleCode;
-            }
-        } catch (Exception $e) {
-            // ignore
-        }
-
-        return $roles;
+        $roleCode = $_SESSION[USERS_AUTH]['role_code'] ?? '';
+        return $roleCode !== '' ? [$roleCode] : [];
     }
 
     protected function hasRole(string $roleCode): bool
@@ -260,88 +263,18 @@ abstract class BaseController
 
     protected function isSuperAdmin(): bool
     {
-        return $this->hasRole(ROLES::SUPER_ADMIN) || $this->hasRole('ROLE-SUPER-ADMIN') || $this->hasRole('ROLE-ADMIN') || $this->hasRole('ADMIN');
-    }
-
-    protected function isPressing(): bool
-    {
-        return $this->hasRole(ROLES::PRESSING);
-    }
-
-    protected function isLivreur(): bool
-    {
-        return $this->hasRole(ROLES::LIVREUR);
-    }
-
-    protected function getCurrentLivreurCode(): ?string
-    {
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        if ($userCode === '') {
-            return null;
-        }
-
-        if (!$this->isLivreur() && !$this->isSuperAdmin()) {
-            return null;
-        }
-
-        try {
-            $pdo = ($this->model && method_exists($this->model, 'getCon')) ? $this->model->getCon() : (new Database())->getCon();
-            $sql = "SELECT code_livreur FROM " . TABLES::LIVREURS . " WHERE user_code = ? AND statut_livreur = 'actif' LIMIT 1";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$userCode]);
-            $code = $stmt->fetchColumn();
-            if ($code) {
-                return $code;
-            }
-
-            // Fallback par téléphone ou nom
-            $userTel = $_SESSION[USERS_AUTH]['tel'] ?? ($_SESSION[USERS_AUTH]['telephone_user'] ?? '');
-            if ($userTel !== '') {
-                $stmtTel = $pdo->prepare("SELECT code_livreur FROM " . TABLES::LIVREURS . " WHERE telephone_livreur = ? LIMIT 1");
-                $stmtTel->execute([$userTel]);
-                $codeTel = $stmtTel->fetchColumn();
-                if ($codeTel) {
-                    return $codeTel;
-                }
-            }
-
-            return null;
-        } catch (Exception $e) {
-            return null;
-        }
-    }
-
-    protected function requireLivreurAccess(string $livreurCode): void
-    {
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        if ($userCode === '') {
-            $this->json(['status' => 0, 'message' => 'Authentification requise'], 401);
-        }
-
-        if ($this->isSuperAdmin()) {
-            return;
-        }
-
-        $current = $this->getCurrentLivreurCode();
-        if ($current === null || $current !== $livreurCode) {
-            $this->json(['status' => 0, 'message' => 'Accès refusé : vous n\'êtes pas assigné à ce livreur'], 403);
-        }
+        return $this->hasRole('ROLE_SUPERADMIN') || $this->hasRole('ROLE_DIR_GENERAL');
     }
 
     /**
-     * Exige que l'utilisateur connecté possède le rôle Super Admin
+     * Exige que l'utilisateur connecté possède le rôle Super Admin ou Direction Générale
      */
     protected function requireSuperAdmin(string $customMessage = ''): void
     {
         $this->requireAuth();
         if (!$this->isSuperAdmin()) {
-            $msg = !empty($customMessage) ? $customMessage : "Accès réservé exclusivement au Super Administrateur GEICG.";
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
-                $this->json(['status' => 0, 'message' => $msg], 403);
-            } else {
-                header('Location: ' . RACINE . '?error=forbidden');
-                exit();
-            }
+            $msg = !empty($customMessage) ? $customMessage : "Cette action est réservée exclusivement à la Direction Générale et à l'Administration Système.";
+            $this->renderForbidden($msg, 'ROLE_SUPERADMIN');
         }
     }
 
@@ -364,10 +297,9 @@ abstract class BaseController
             $inClause = implode(',', array_fill(0, count($roles), '?'));
             $sql = "
                 SELECT DISTINCT rp.permission_code 
-                FROM " . TABLES::ROLES_PERMISSIONS . " rp
-                JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
+                FROM role_permissions rp
+                JOIN permissions p ON rp.permission_code = p.code_permission
                 WHERE rp.role_code IN ($inClause)
-                  AND rp.statut_role_permission = 'actif'
                   AND p.statut_permission = 'actif'
             ";
             $stmt = $pdo->prepare($sql);
@@ -380,7 +312,7 @@ abstract class BaseController
     }
 
     /**
-     * Vérifie si l'utilisateur possède une permission donnée
+     * Vérifie si l'utilisateur possède une permission métier donnée
      */
     protected function hasPermission(string $permissionCode): bool
     {
@@ -393,20 +325,47 @@ abstract class BaseController
     }
 
     /**
-     * Bloque la requête avec une erreur 403 si l'utilisateur ne possède pas la permission requise
+     * Vérifie les droits d'action unitaire CRUD (create, edit, show, delete)
+     */
+    protected function hasActionPermission(string $action): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        $perms = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+        return !empty($perms[$action]);
+    }
+
+    /**
+     * Bloque la requête avec une page complète 403 si l'utilisateur ne possède pas la permission requise
      */
     protected function requirePermission(string $permissionCode, string $customMessage = ''): void
     {
         $this->requireAuth();
 
         if (!$this->hasPermission($permissionCode)) {
-            $msg = !empty($customMessage) ? $customMessage : "Accès refusé : privilège [{$permissionCode}] requis pour cette action.";
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
-                $this->json(['status' => 0, 'message' => $msg], 403);
-            } else {
-                header('Location: ' . RACINE . '?error=forbidden');
-                exit();
-            }
+            $msg = !empty($customMessage) ? $customMessage : "Accès refusé : vous ne possédez pas le privilège [{$permissionCode}] requis pour accéder à cette section.";
+            $this->renderForbidden($msg, $permissionCode);
+        }
+    }
+
+    /**
+     * Bloque la requête avec une page complète 403 si l'action CRUD n'est pas autorisée
+     */
+    protected function requireAction(string $action, string $customMessage = ''): void
+    {
+        $this->requireAuth();
+
+        if (!$this->hasActionPermission($action)) {
+            $actionLabels = [
+                'create' => 'la création de nouveaux enregistrements',
+                'edit' => 'la modification d\'enregistrements',
+                'show' => 'la consultation de ces données',
+                'delete' => 'la suppression d\'enregistrements'
+            ];
+            $lbl = $actionLabels[$action] ?? $action;
+            $msg = !empty($customMessage) ? $customMessage : "Votre compte ne vous autorise pas {$lbl}.";
+            $this->renderForbidden($msg, strtoupper($action) . '_PRIVILEGE');
         }
     }
 }

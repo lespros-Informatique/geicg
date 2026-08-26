@@ -104,13 +104,43 @@ class FiliereNiveauController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'filiere_niveau/list'); exit(); }
+            $stmt = $this->model->getCon()->prepare("
+                SELECT fn.*, f.libelle_filiere, n.libelle_niveau
+                FROM filiere_niveaux fn
+                LEFT JOIN filieres f ON f.code_filiere = fn.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = fn.niveau_code
+                WHERE fn.id_filiere_niveau = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$item) { 
+                $this->renderNotFound("L'assignation Filière - Niveau demandée est introuvable.");
+                return;
+            }
+
+            // Classes liées
+            $stmtClasses = $this->model->getCon()->prepare("
+                SELECT c.*, COUNT(i.id_inscription) as nb_etudiants
+                FROM classes c
+                LEFT JOIN inscriptions i ON i.classe_code = c.code_classe AND i.statut_inscription = 'actif'
+                WHERE c.filiere_code = ? AND c.niveau_code = ?
+                GROUP BY c.id_classe
+                ORDER BY c.libelle_classe ASC
+            ");
+            $stmtClasses->execute([$item['filiere_code'], $item['niveau_code']]);
+            $classes = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'filiere_niveau/list'); exit();
+            error_log("FiliereNiveauController::details error: " . $e->getMessage());
+            $this->renderNotFound("L'assignation Filière - Niveau demandée est introuvable.");
+            return;
         }
-        $this->loadView('../views/filiere_niveaux/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/filiere_niveaux/details.php', [
+            'item' => $item, 
+            'classes' => $classes,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

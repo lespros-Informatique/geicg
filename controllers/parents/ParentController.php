@@ -107,7 +107,18 @@ class ParentController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT p.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
+                       cl.libelle_classe
+                FROM parents p
+                LEFT JOIN etudiants e ON e.code_etudiant = p.etudiant_code
+                LEFT JOIN inscriptions ins ON (ins.etudiant_code = e.code_etudiant AND ins.statut_inscription = 'actif')
+                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                WHERE p.id_parent = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'parent/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

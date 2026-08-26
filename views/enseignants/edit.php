@@ -1,19 +1,6 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<?php
-$cycles = (new ModelCycle())->getAll();
-$filieres = (new ModelFiliere())->getAll();
-$niveaux = (new ModelNiveau())->getAll();
-$classes = (new ModelClasse())->getAll();
-$salles = (new ModelSalle())->getAll();
-$scolarites = (new ModelScolarite())->getAll();
-$ues = [];
-$matieres = (new ModelMatiere())->getAll();
-$semestres = (new ModelSemestre())->getAll();
-$etudiants = (new ModelEtudiant())->getAll();
-$inscriptions = (new ModelInscription())->getAll();
-$typeDepenses = (new ModelTypeDepense())->getAll();
-$users = (new ModelUser())->getAll();
-$enseignants = (new ModelEnseignant())->getAll();
+<?php 
+require_once __DIR__ . '/../../public/inc/header.php';
+$users = isset($users) ? $users : (new ModelUser())->getAll();
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -22,8 +9,8 @@ $enseignants = (new ModelEnseignant())->getAll();
     <div class="content-wrapper" style="padding: 24px;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_enseignant']) ? 'Éditer ' : 'Ajouter ' ?> Enseignant</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Saisie des données du module Corps Enseignant</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_enseignant']) ? 'Éditer ' : 'Ajouter ' ?> un Enseignant</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Création et gestion directe du corps enseignant et de ses accès</p>
         </div>
         <a href="<?= RACINE ?>enseignant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
@@ -35,31 +22,88 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php if (!empty($item['id_enseignant'])): ?>
             <input type="hidden" name="id_enseignant" value="<?= $item['id_enseignant'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
+
+          <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 8px;">
+            <i data-lucide="user" style="width: 18px; height: 18px;"></i> Identité & Identifiants de Connexion
+          </h3>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Compte Utilisateur rattaché <span style="color: #EF4444;">*</span></label>
-              <select class="form-control select2" id="select_user_code" style="width: 100%;" name="user_code" required>
-                <option value="">-- Rechercher un compte utilisateur --</option>
-                <?php foreach($users as $u): ?>
-                  <option value="<?= $u['code_user'] ?>" <?= (($item['user_code'] ?? '') == $u['code_user']) ? 'selected' : '' ?>><?= htmlspecialchars($u['nom_user'] . ' ' . ($u['prenom_user'] ?? '')) ?></option>
-                <?php endforeach; ?>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de famille <span style="color: #EF4444;">*</span></label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="nom_enseignant" value="<?= htmlspecialchars($item['nom_enseignant'] ?? '') ?>" placeholder="Ex: KOUASSI" required>
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Prénom(s) <span style="color: #EF4444;">*</span></label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="prenom_enseignant" value="<?= htmlspecialchars($item['prenom_enseignant'] ?? '') ?>" placeholder="Ex: Jean-Marc" required>
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse Email (Login enseignant)</label>
+              <input type="email" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="email_enseignant" value="<?= htmlspecialchars($item['email_enseignant'] ?? '') ?>" placeholder="Ex: prof.kouassi@geicg.ci">
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro Téléphone (Contact & Login)</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="telephone_enseignant" value="<?= htmlspecialchars($item['telephone_enseignant'] ?? '') ?>" placeholder="Ex: (+225) 07 08 09 10 11">
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Genre / Sexe</label>
+              <select class="form-control" name="sexe_enseignant" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;">
+                <option value="M" <?= (($item['sexe_enseignant'] ?? 'M') === 'M') ? 'selected' : '' ?>>Masculin (M)</option>
+                <option value="F" <?= (($item['sexe_enseignant'] ?? '') === 'F') ? 'selected' : '' ?>>Féminin (F)</option>
               </select>
             </div>
+
+            <?php if (empty($item['id_enseignant'])): ?>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Spécialité / Discipline</label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="specialite_enseignant" value="<?= htmlspecialchars($item['specialite_enseignant'] ?? '') ?>" placeholder="Ex: Génie Logiciel & Bases de données" >
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                Mot de passe initial <span style="color: #EF4444;">*</span>
+              </label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="password_enseignant" value="123456" placeholder="123456">
+              <small style="color: #64748B; font-size: 11px; margin-top: 4px; display: block;">Permet à l'enseignant de se connecter directement (défaut : 123456).</small>
             </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Grade académique</label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="grade_enseignant" value="<?= htmlspecialchars($item['grade_enseignant'] ?? '') ?>" placeholder="Ex: Docteur en Informatique / Enseignant-Chercheur" >
-            </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Taux Horaire (FCFA/h)</label>
-              <input type="number"  class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="taux_horaire" value="<?= htmlspecialchars($item['taux_horaire'] ?? '') ?>" placeholder="Ex: 15000" >
-            </div>
+            <?php endif; ?>
           </div>
+
+          <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 24px 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 8px;">
+            <i data-lucide="award" style="width: 18px; height: 18px;"></i> Statut Académique & Carrière
+          </h3>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%;">
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Grade / Titre académique</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="grade_enseignant" value="<?= htmlspecialchars($item['grade_enseignant'] ?? '') ?>" placeholder="Ex: Docteur, Ingénieur, Professeur, Maître-Assistant...">
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Type de contrat</label>
+              <select class="form-control" name="type_contrat" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;">
+                <option value="permanent" <?= (($item['type_contrat'] ?? 'permanent') === 'permanent') ? 'selected' : '' ?>>Permanent / Titulaire</option>
+                <option value="vacataire" <?= (($item['type_contrat'] ?? '') === 'vacataire') ? 'selected' : '' ?>>Vacataire (Paiement à l'heure)</option>
+                <option value="prestataire" <?= (($item['type_contrat'] ?? '') === 'prestataire') ? 'selected' : '' ?>>Prestataire / Consultant externe</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Taux Horaire de Vacation (FCFA / heure)</label>
+              <input type="number" step="100" min="0" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="taux_horaire" value="<?= htmlspecialchars($item['taux_horaire'] ?? '0') ?>" placeholder="Ex: 15000">
+            </div>
+
+            <?php if (!empty($item['id_enseignant'])): ?>
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut d'activité</label>
+              <select class="form-control" name="statut_enseignant" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;">
+                <option value="actif" <?= (($item['statut_enseignant'] ?? 'actif') === 'actif') ? 'selected' : '' ?>>Actif (En service)</option>
+                <option value="inactif" <?= (($item['statut_enseignant'] ?? '') === 'inactif') ? 'selected' : '' ?>>Inactif / Suspendu</option>
+              </select>
+            </div>
+            <?php endif; ?>
+          </div>
+
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer</button>
+            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer l'Enseignant</button>
             <a href="<?= RACINE ?>enseignant/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
           </div>
         </form>
@@ -67,16 +111,5 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('.select2').select2({
-      placeholder: "-- Rechercher un compte utilisateur --",
-      allowClear: true,
-      width: '100%'
-    });
-  }
-});
-</script>
+<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

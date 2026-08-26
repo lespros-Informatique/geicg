@@ -143,20 +143,62 @@ class ClasseController extends BaseController
             $stmt = $this->model->getCon()->prepare("
                 SELECT c.*, 
                        f.libelle_filiere,
-                       n.libelle_niveau
+                       n.libelle_niveau,
+                       a.libelle_annee
                 FROM classes c
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN annees a ON a.code_annee = c.annee_code
                 WHERE c.id_classe = ?
             ");
             $stmt->execute([$id]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$item) { header('Location: ' . RACINE . 'classe/list'); exit(); }
+            if (!$item) { 
+                $this->renderNotFound("La classe demandée est introuvable.");
+                return;
+            }
+
+            $classeCode = $item['code_classe'];
+
+            // Liste des étudiants inscrits dans cette classe
+            $stmtEtu = $this->model->getCon()->prepare("
+                SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription
+                FROM etudiants e
+                INNER JOIN inscriptions ins ON ins.etudiant_code = e.code_etudiant
+                WHERE ins.classe_code = ? AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)
+                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            ");
+            $stmtEtu->execute([$classeCode]);
+            $etudiants = $stmtEtu->fetchAll(PDO::FETCH_ASSOC);
+
+            // Liste des matières & enseignants assignés
+            $stmtMat = $this->model->getCon()->prepare("
+                SELECT em.*, m.libelle_matiere, m.code_matiere,
+                       COALESCE(e.nom_enseignant, u.nom_user) as nom_prof,
+                       COALESCE(e.prenom_enseignant, u.prenom_user) as prenom_prof,
+                       e.grade_enseignant
+                FROM enseignant_matiere em
+                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
+                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+                LEFT JOIN users u ON u.code_user = em.user_code
+                WHERE em.classe_code = ?
+                ORDER BY m.libelle_matiere ASC
+            ");
+            $stmtMat->execute([$classeCode]);
+            $matieres = $stmtMat->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'classe/list'); exit();
+            error_log("ClasseController::details error: " . $e->getMessage());
+            $this->renderNotFound("La classe demandée est introuvable.");
+            return;
         }
-        $this->loadView('../views/classes/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/classes/details.php', [
+            'item' => $item, 
+            'etudiants' => $etudiants,
+            'matieres' => $matieres,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

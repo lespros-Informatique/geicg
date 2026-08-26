@@ -93,13 +93,58 @@ class InscriptionController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'inscription/list'); exit(); }
+            $stmt = $this->model->getCon()->prepare("
+                SELECT ins.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant, e.sexe_etudiant, e.date_naissance_etudiant,
+                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       a.libelle_annee
+                FROM inscriptions ins
+                LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
+                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN annees a ON a.code_annee = ins.annee_code
+                WHERE ins.id_inscription = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$item) { 
+                $this->renderNotFound("L'inscription demandée est introuvable.");
+                return;
+            }
+
+            // Paiements pour cette inscription
+            $stmtP = $this->model->getCon()->prepare("
+                SELECT * FROM paiements 
+                WHERE inscription_code = ?
+                ORDER BY date_paiement DESC
+            ");
+            $stmtP->execute([$item['code_inscription']]);
+            $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC);
+
+            $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
+            $totalPaye = 0;
+            foreach ($paiements as $p) {
+                if (($p['statut_paiement'] ?? '') !== 'annule') {
+                    $totalPaye += (float)($p['montant_paiement'] ?? 0);
+                }
+            }
+            $solde = max(0, $scolarite - $totalPaye);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'inscription/list'); exit();
+            error_log("InscriptionController::details error: " . $e->getMessage());
+            $this->renderNotFound("L'inscription demandée est introuvable.");
+            return;
         }
-        $this->loadView('../views/inscriptions/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/inscriptions/details.php', [
+            'item' => $item, 
+            'paiements' => $paiements,
+            'totalPaye' => $totalPaye,
+            'solde' => $solde,
+            'scolarite' => $scolarite,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

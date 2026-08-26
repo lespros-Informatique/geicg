@@ -93,7 +93,26 @@ class EmploiController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT edt.*, 
+                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       m.libelle_matiere,
+                       s.libelle_salle, s.capacite_salle,
+                       COALESCE(e.nom_enseignant, u.nom_user) as nom_prof,
+                       COALESCE(e.prenom_enseignant, u.prenom_user) as prenom_prof,
+                       e.grade_enseignant
+                FROM emplois_temps edt
+                LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+                LEFT JOIN salles s ON s.code_salle = edt.salle_code
+                LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+                LEFT JOIN users u ON u.code_user = edt.user_code
+                WHERE edt.id_emploi = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'emploi/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

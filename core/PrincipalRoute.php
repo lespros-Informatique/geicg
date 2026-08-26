@@ -25,7 +25,7 @@ require_once __DIR__ . '/../models/salles/ModelSalle.php';
 require_once __DIR__ . '/../models/annees/ModelAnnee.php';
 require_once __DIR__ . '/../models/classes/ModelClasse.php';
 require_once __DIR__ . '/../models/semestres/ModelSemestre.php';
-// require_once __DIR__ . '/../models/unites_enseignement/ModelUe.php';
+require_once __DIR__ . '/../models/unites_enseignement/ModelUe.php';
 require_once __DIR__ . '/../models/matieres/ModelMatiere.php';
 
 // Scolarité & Finances Models
@@ -70,7 +70,7 @@ require_once __DIR__ . '/../controllers/salles/SalleController.php';
 require_once __DIR__ . '/../controllers/annees/AnneeController.php';
 require_once __DIR__ . '/../controllers/classes/ClasseController.php';
 require_once __DIR__ . '/../controllers/semestres/SemestreController.php';
-// require_once __DIR__ . '/../controllers/unites_enseignement/UeController.php';
+require_once __DIR__ . '/../controllers/unites_enseignement/UeController.php';
 require_once __DIR__ . '/../controllers/matieres/MatiereController.php';
 
 // Scolarité & Finances Controllers

@@ -175,13 +175,49 @@ class PaiementController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT p.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
+                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       a.libelle_annee,
+                       u.nom_user as nom_caissier, u.prenom_user as prenom_caissier,
+                       ins.montant_scolarite_inscription
+                FROM paiements p
+                LEFT JOIN etudiants e ON e.code_etudiant = p.etudiant_code
+                LEFT JOIN inscriptions ins ON (ins.code_inscription = p.inscription_code OR (ins.etudiant_code = p.etudiant_code AND ins.statut_inscription = 'actif'))
+                LEFT JOIN classes cl ON (cl.code_classe = ins.classe_code OR cl.code_classe = p.classe_code)
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN annees a ON (a.code_annee = p.annee_code OR a.code_annee = ins.annee_code)
+                LEFT JOIN users u ON u.code_user = p.user_code
+                WHERE p.id_paiement = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'paiement/list'); exit(); }
+
+            // Calcul du cumul payé par l'étudiant à ce jour
+            $stmtCumul = $this->model->getCon()->prepare("
+                SELECT COALESCE(SUM(montant_paye), 0) FROM paiements 
+                WHERE etudiant_code = ? AND statut_paiement = 'valide'
+            ");
+            $stmtCumul->execute([$item['etudiant_code']]);
+            $totalPayeCumul = (float)$stmtCumul->fetchColumn();
+
+            $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
+            $soldeRestant = max(0, $scolarite - $totalPayeCumul);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'paiement/list'); exit();
         }
-        $this->loadView('../views/paiements/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/paiements/details.php', [
+            'item' => $item, 
+            'totalPayeCumul' => $totalPayeCumul,
+            'soldeRestant' => $soldeRestant,
+            'scolarite' => $scolarite,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

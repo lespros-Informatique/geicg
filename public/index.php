@@ -40,6 +40,7 @@ $documentController = new DocumentController();
 $roleController = new RoleController();
 $permissionController = new PermissionController();
 $notificationController = new NotificationController();
+$ueController = new UeController();
 
 // Route d'accueil & Authentification
 $route->addRoute('/', [$homeController, 'index']);
@@ -174,6 +175,20 @@ $route->addRoute('/semestre/edition/{param}', [$semestreController, 'edition']);
 $route->addRoute('/semestre/formulaire', [$semestreController, 'formulaire']);
 
 
+
+// Module: ue / unites_enseignement (UeController)
+$route->addRoute('/ue/list', [$ueController, 'list']);
+$route->addRoute('/ue/apiList', [$ueController, 'apiList']);
+$route->addRoute('/ue/add', [$ueController, 'add']);
+$route->addRoute('/ue/edit', [$ueController, 'edit']);
+$route->addRoute('/ue/changer', [$ueController, 'changer']);
+$route->addRoute('/ue/details/{param}', [$ueController, 'details']);
+$route->addRoute('/ue/edition/{param}', [$ueController, 'edition']);
+$route->addRoute('/ue/formulaire', [$ueController, 'formulaire']);
+$route->addRoute('/unites_enseignement/list', [$ueController, 'list']);
+$route->addRoute('/unites_enseignement/apiList', [$ueController, 'apiList']);
+$route->addRoute('/unites_enseignement/details/{param}', [$ueController, 'details']);
+$route->addRoute('/unites_enseignement/edition/{param}', [$ueController, 'edition']);
 
 // Module: matiere (MatiereController)
 $route->addRoute('/matiere/list', [$matiereController, 'list']);

@@ -2,11 +2,11 @@
 <?php
 $classes = (new ModelClasse())->getAll();
 $matieres = (new ModelMatiere())->getAll();
-// Récupérer les enseignants avec le nom de l'utilisateur associé
-$sqlEns = "SELECT e.*, CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_complet 
+// Récupérer les enseignants avec le nom direct ou de l'utilisateur associé
+$sqlEns = "SELECT e.*, CONCAT(COALESCE(e.nom_enseignant, u.nom_user, ''), ' ', COALESCE(e.prenom_enseignant, u.prenom_user, '')) AS nom_complet 
            FROM enseignants e 
            LEFT JOIN users u ON u.code_user = e.user_code 
-           ORDER BY u.nom_user ASC";
+           ORDER BY nom_complet ASC";
 $enseignants = (new ModelEnseignant())->getCon()->query($sqlEns)->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="app-layout">

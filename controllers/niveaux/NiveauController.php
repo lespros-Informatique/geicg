@@ -103,11 +103,42 @@ class NiveauController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'niveau/list'); exit(); }
+
+            $niveauCode = $item['code_niveau'];
+
+            // Classes rattachées à ce niveau
+            $stmtCls = $this->model->getCon()->prepare("
+                SELECT cl.*, f.libelle_filiere,
+                       (SELECT COUNT(*) FROM inscriptions ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription = 'actif') as nb_eleves
+                FROM classes cl
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                WHERE cl.niveau_code = ?
+                ORDER BY cl.libelle_classe ASC
+            ");
+            $stmtCls->execute([$niveauCode]);
+            $classes = $stmtCls->fetchAll(PDO::FETCH_ASSOC);
+
+            // Statistiques globales
+            $stmtStats = $this->model->getCon()->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM classes WHERE niveau_code = ? AND statut_classe = 'actif') as total_classes,
+                    (SELECT COUNT(*) FROM inscriptions ins 
+                     JOIN classes cl ON cl.code_classe = ins.classe_code 
+                     WHERE cl.niveau_code = ? AND ins.statut_inscription = 'actif') as total_etudiants
+            ");
+            $stmtStats->execute([$niveauCode, $niveauCode]);
+            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: ['total_classes' => count($classes), 'total_etudiants' => 0];
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'niveau/list'); exit();
         }
-        $this->loadView('../views/niveaux/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/niveaux/details.php', [
+            'item' => $item, 
+            'classes' => $classes,
+            'stats' => $stats,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)
