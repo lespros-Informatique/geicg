@@ -1,14 +1,31 @@
 /**
- * GEICG - Theme & Color Manager
- * Gestion interactive des thèmes et des couleurs institutionnelles de l'école
+ * GEICG - Theme, Color, Typography & Layout Manager
+ * Gestion interactive des thèmes, polices, tailles et couleurs institutionnelles
  */
 (function() {
-    const ZONES = ['primary', 'topbar', 'sidebar', 'content'];
+    const ZONES = ['primary', 'font', 'fontsize', 'radius', 'topbar', 'sidebar', 'content'];
     const DEFAULTS = {
         primary: 'navy',
+        font: 'inter',
+        fontsize: 'normal',
+        radius: 'normal',
         topbar: 'light',
         sidebar: 'light',
         content: 'light'
+    };
+
+    const COLOR_HEX_MAP = {
+        navy: '#18385F',
+        bordeaux: '#5C0808',
+        royal: '#2563EB',
+        emerald: '#047857'
+    };
+
+    const FONT_FAMILY_MAP = {
+        inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        poppins: "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        roboto: "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif",
+        merriweather: "'Merriweather', Georgia, serif"
     };
 
     function getSavedPref(zone) {
@@ -27,17 +44,10 @@
         }
     }
 
-    const COLOR_HEX_MAP = {
-        navy: '#18385F',
-        bordeaux: '#5C0808',
-        royal: '#2563EB',
-        emerald: '#047857'
-    };
-
     function applyThemeToDOM(zone, value) {
         document.documentElement.setAttribute('data-theme-' + zone, value);
         
-        // Si c'est la couleur principale, injecter directement la variable CSS
+        // Si c'est la couleur principale
         if (zone === 'primary' && COLOR_HEX_MAP[value]) {
             const hex = COLOR_HEX_MAP[value];
             document.documentElement.style.setProperty('--primary-color', hex);
@@ -46,14 +56,31 @@
             document.documentElement.style.setProperty('--secondary-color', hex);
             document.documentElement.style.setProperty('--sidebar-active-text', hex);
         }
-        
+
+        // Si c'est la typographie
+        if (zone === 'font' && FONT_FAMILY_MAP[value]) {
+            document.documentElement.style.setProperty('--font-family', FONT_FAMILY_MAP[value]);
+            document.body.style.fontFamily = FONT_FAMILY_MAP[value];
+        }
+
+        // Si c'est la taille de texte
+        if (zone === 'fontsize') {
+            if (value === 'small') {
+                document.documentElement.style.fontSize = '13px';
+            } else if (value === 'large') {
+                document.documentElement.style.fontSize = '15.5px';
+            } else {
+                document.documentElement.style.fontSize = '14px';
+            }
+        }
+
         // Mettre à jour l'état visuel actif dans le panneau
         const options = document.querySelectorAll('.theme-option[data-category="' + zone + '"]');
         options.forEach(function(opt) {
             const optVal = opt.getAttribute('data-value');
             if (optVal === value) {
                 opt.classList.add('active');
-                opt.style.borderColor = (zone === 'primary' && COLOR_HEX_MAP[value]) ? COLOR_HEX_MAP[value] : '#18385F';
+                opt.style.borderColor = (zone === 'primary' && COLOR_HEX_MAP[value]) ? COLOR_HEX_MAP[value] : 'var(--primary-color, #18385F)';
                 opt.style.background = 'rgba(24, 56, 95, 0.08)';
             } else {
                 opt.classList.remove('active');
@@ -61,6 +88,16 @@
                 opt.style.background = 'transparent';
             }
         });
+    }
+
+    function resetToDefaults() {
+        ZONES.forEach(function(zone) {
+            setSavedPref(zone, DEFAULTS[zone]);
+            applyThemeToDOM(zone, DEFAULTS[zone]);
+        });
+        if (window.lucide) {
+            try { lucide.createIcons(); } catch(e) {}
+        }
     }
 
     function initThemeManager() {
@@ -72,17 +109,16 @@
         const themeBtn = document.getElementById('themeBtn');
         const themePanel = document.getElementById('themePanel');
         const themePanelClose = document.getElementById('themePanelClose');
+        const themeResetBtn = document.getElementById('themeResetBtn');
 
         if (!themeBtn || !themePanel) return;
 
-        // 2. Gestion de l'ouverture / fermeture du panneau au clic sur le bouton Palette
+        // 2. Bascule du panneau
         themeBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
             const isOpen = themePanel.classList.contains('active');
-            
-            // Fermer les autres dropdowns
             document.querySelectorAll('.dropdown-panel').forEach(function(p) {
                 if (p !== themePanel) p.classList.remove('active');
             });
@@ -94,7 +130,7 @@
             }
         });
 
-        // 3. Fermeture via le bouton X dans le panneau
+        // 3. Fermeture via bouton X
         if (themePanelClose) {
             themePanelClose.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -103,12 +139,12 @@
             });
         }
 
-        // 4. Empêcher la fermeture quand on clique à l'intérieur du panneau
+        // 4. Empêcher la fermeture lors des clics à l'intérieur
         themePanel.addEventListener('click', function(e) {
             e.stopPropagation();
         });
 
-        // 5. Clic sur les options de couleur
+        // 5. Clic sur les options de configuration
         document.querySelectorAll('.theme-option').forEach(function(opt) {
             opt.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -128,14 +164,23 @@
             });
         });
 
-        // 6. Fermeture au clic en dehors
+        // 6. Réinitialisation
+        if (themeResetBtn) {
+            themeResetBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                resetToDefaults();
+            });
+        }
+
+        // 7. Fermeture au clic en dehors
         document.addEventListener('click', function(e) {
             if (!themePanel.contains(e.target) && !e.target.closest('#themeBtn')) {
                 themePanel.classList.remove('active');
             }
         });
 
-        // 7. Fermeture avec la touche Échap
+        // 8. Touche Échap
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && themePanel.classList.contains('active')) {
                 themePanel.classList.remove('active');

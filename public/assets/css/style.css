@@ -2040,13 +2040,113 @@ body {
     --secondary-color: #2563EB !important;
     --sidebar-active-text: #2563EB !important;
 }
-:root[data-theme-primary="emerald"], html[data-theme-primary="emerald"], [data-theme-primary="emerald"] {
-    --primary-color: #047857 !important;
-    --primary: #047857 !important;
-    --primary-hover: #065F46 !important;
-    --btn-primary-bg: #047857 !important;
-    --secondary-color: #047857 !important;
-    --sidebar-active-text: #047857 !important;
+/* --- TYPOGRAPHY (POLICE D'ÉCRITURE) --- */
+:root[data-theme-font="inter"], html[data-theme-font="inter"], body[data-theme-font="inter"] {
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-family: var(--font-family) !important;
+}
+:root[data-theme-font="poppins"], html[data-theme-font="poppins"], body[data-theme-font="poppins"] {
+    --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-family: var(--font-family) !important;
+}
+:root[data-theme-font="roboto"], html[data-theme-font="roboto"], body[data-theme-font="roboto"] {
+    --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+    font-family: var(--font-family) !important;
+}
+:root[data-theme-font="merriweather"], html[data-theme-font="merriweather"], body[data-theme-font="merriweather"] {
+    --font-family: 'Merriweather', Georgia, serif !important;
+    font-family: var(--font-family) !important;
+}
+
+/* --- TAILLE DU TEXTE & DENSITÉ (FONT SIZE) --- */
+:root[data-theme-fontsize="small"], html[data-theme-fontsize="small"] {
+    font-size: 13px;
+    --font-size-base: 13px;
+}
+:root[data-theme-fontsize="small"] .main-content {
+    font-size: 13px;
+}
+:root[data-theme-fontsize="small"] table.dataTable td,
+:root[data-theme-fontsize="small"] table.dataTable th {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+}
+
+:root[data-theme-fontsize="normal"], html[data-theme-fontsize="normal"] {
+    font-size: 14px;
+    --font-size-base: 14px;
+}
+
+:root[data-theme-fontsize="large"], html[data-theme-fontsize="large"] {
+    font-size: 15.5px;
+    --font-size-base: 15.5px;
+}
+:root[data-theme-fontsize="large"] .main-content {
+    font-size: 15.5px;
+}
+:root[data-theme-fontsize="large"] table.dataTable td,
+:root[data-theme-fontsize="large"] table.dataTable th {
+    padding: 12px 14px !important;
+    font-size: 14.5px !important;
+}
+
+/* --- STYLE DES COINS / ARRONDIS (RADIUS) --- */
+:root[data-theme-radius="sharp"], html[data-theme-radius="sharp"], [data-theme-radius="sharp"] {
+    --radius-sm: 2px !important;
+    --radius-md: 4px !important;
+    --radius-lg: 6px !important;
+}
+:root[data-theme-radius="normal"], html[data-theme-radius="normal"], [data-theme-radius="normal"] {
+    --radius-sm: 6px !important;
+    --radius-md: 10px !important;
+    --radius-lg: 14px !important;
+}
+:root[data-theme-radius="round"], html[data-theme-radius="round"], [data-theme-radius="round"] {
+    --radius-sm: 10px !important;
+    --radius-md: 16px !important;
+    --radius-lg: 24px !important;
+}
+
+/* --- THEME EXPANDED POPUP MODAL --- */
+.theme-expanded-panel {
+    border: 1px solid var(--border-color, #E2E8F0);
+    background: var(--card-bg, #FFFFFF);
+    color: var(--text-primary, #1E293B);
+    z-index: 10050 !important;
+}
+.theme-expanded-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.theme-expanded-panel::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 4px;
+}
+.theme-expanded-panel::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+.theme-expanded-panel::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+.theme-option {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.theme-option:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+}
+.theme-option.active {
+    box-shadow: 0 0 0 2px var(--primary-color, #18385F), 0 4px 8px -2px rgba(24, 56, 95, 0.25) !important;
+}
+
+@media (max-width: 640px) {
+    .theme-expanded-panel {
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        right: -60px !important;
+        padding: 16px !important;
+    }
 }
 
 /* --- TOPBAR THEMES --- */

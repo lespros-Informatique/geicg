@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#18385F">
     <title><?= htmlspecialchars(TITLE) ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <script>
         (function() {
             try {
@@ -13,11 +16,17 @@
                 var sidebar = localStorage.getItem('theme_sidebar') || 'light';
                 var content = localStorage.getItem('theme_content') || 'light';
                 var primary = localStorage.getItem('theme_primary') || 'navy';
+                var font = localStorage.getItem('theme_font') || 'inter';
+                var fontsize = localStorage.getItem('theme_fontsize') || 'normal';
+                var radius = localStorage.getItem('theme_radius') || 'normal';
                 
                 document.documentElement.setAttribute('data-theme-topbar', topbar);
                 document.documentElement.setAttribute('data-theme-sidebar', sidebar);
                 document.documentElement.setAttribute('data-theme-content', content);
                 document.documentElement.setAttribute('data-theme-primary', primary);
+                document.documentElement.setAttribute('data-theme-font', font);
+                document.documentElement.setAttribute('data-theme-fontsize', fontsize);
+                document.documentElement.setAttribute('data-theme-radius', radius);
 
                 if (map[primary]) {
                     document.documentElement.style.setProperty('--primary-color', map[primary]);
