@@ -245,6 +245,8 @@ $route->addRoute('/parent/formulaire', [$parentController, 'formulaire']);
 // Module: inscription (InscriptionController)
 $route->addRoute('/inscription/list', [$inscriptionController, 'list']);
 $route->addRoute('/inscription/apiList', [$inscriptionController, 'apiList']);
+$route->addRoute('/inscription/getStudentProfileSummary', [$inscriptionController, 'getStudentProfileSummary']);
+$route->addRoute('/inscription/getTuitionByClass', [$inscriptionController, 'getTuitionByClass']);
 $route->addRoute('/inscription/add', [$inscriptionController, 'add']);
 $route->addRoute('/inscription/edit', [$inscriptionController, 'edit']);
 $route->addRoute('/inscription/changer', [$inscriptionController, 'changer']);
@@ -347,6 +349,8 @@ $route->addRoute('/enseignant_matiere/formulaire', [$enseignantMatiereController
 // Module: emploi (EmploiController)
 $route->addRoute('/emploi/list', [$emploiController, 'list']);
 $route->addRoute('/emploi/apiList', [$emploiController, 'apiList']);
+$route->addRoute('/emploi/getAssignedTeacher', [$emploiController, 'getAssignedTeacher']);
+$route->addRoute('/emploi/checkScheduleConflicts', [$emploiController, 'checkScheduleConflicts']);
 $route->addRoute('/emploi/add', [$emploiController, 'add']);
 $route->addRoute('/emploi/edit', [$emploiController, 'edit']);
 $route->addRoute('/emploi/changer', [$emploiController, 'changer']);
