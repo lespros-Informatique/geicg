@@ -35,6 +35,8 @@ class EtudiantController extends BaseController
         $this->requireAuth();
         $data = $_POST;
         unset($data['csrf_token']);
+        $this->cleanPhoneFields($data);
+
         if (!empty($data['matricule_etudiant'])) {
             if (!$this->checkUnique('etudiants', 'matricule_etudiant', $data['matricule_etudiant'], 'Matricule etudiant')) return;
         }
@@ -73,6 +75,8 @@ class EtudiantController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        $this->cleanPhoneFields($data);
+
         if (!empty($data['matricule_etudiant'])) {
             if (!$this->checkUnique('etudiants', 'matricule_etudiant', $data['matricule_etudiant'], 'Matricule etudiant', 'id_etudiant', $id)) return;
         }
@@ -229,10 +233,11 @@ class EtudiantController extends BaseController
 
         $data = $_POST;
         unset($data['csrf_token']);
+        $this->cleanPhoneFields($data);
 
         $nomEtudiant = trim($data['nom_etudiant'] ?? '');
         $prenomEtudiant = trim($data['prenom_etudiant'] ?? '');
-        $telephoneEtudiant = trim($data['telephone_etudiant'] ?? '');
+        $telephoneEtudiant = $data['telephone_etudiant'] ?? '';
 
         if (empty($nomEtudiant) || empty($prenomEtudiant) || empty($telephoneEtudiant)) {
             $this->error('Veuillez renseigner le nom, prénoms et téléphone de l\'étudiant.');

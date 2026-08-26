@@ -783,4 +783,38 @@ class Validator
         }
         return null;
     }
+
+    /**
+     * Nettoie et formate un numéro de téléphone pour retirer systématiquement l'indicatif +225 ou 225
+     * Retourne toujours un numéro national de 10 chiffres (ex: 0701020304)
+     */
+    public static function cleanPhone(?string $phone): string
+    {
+        if (empty($phone)) {
+            return '';
+        }
+        // Enlever tous les caractères non numériques
+        $cleaned = preg_replace('/[^0-9]/', '', (string)$phone);
+        
+        // Si commence par 00225, enlever les 5 premiers chiffres
+        if (substr($cleaned, 0, 5) === '00225') {
+            $cleaned = substr($cleaned, 5);
+        }
+        // Si commence par 225 et fait plus de 10 chiffres (ex: 2250701020304)
+        elseif (substr($cleaned, 0, 3) === '225' && strlen($cleaned) > 10) {
+            $cleaned = substr($cleaned, 3);
+        }
+
+        return trim($cleaned);
+    }
+
+    /**
+     * Valide qu'un numéro de téléphone fait exactement 10 chiffres (standard ivoirien)
+     */
+    public static function validPhone(?string $phone): bool
+    {
+        $cleaned = self::cleanPhone($phone);
+        return (bool)preg_match('/^[0-9]{10}$/', $cleaned);
+    }
 }
+

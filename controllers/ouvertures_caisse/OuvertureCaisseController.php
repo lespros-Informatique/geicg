@@ -104,13 +104,39 @@ class OuvertureCaisseController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'ouverture_caisse/list'); exit(); }
+            $stmt = $this->model->getCon()->prepare("
+                SELECT o.*, u.nom_user, u.prenom_user
+                FROM ouvertures_caisse o
+                LEFT JOIN users u ON u.code_user = o.user_code
+                WHERE o.id_ouverture = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$item) { 
+                $this->renderNotFound("L'ouverture de caisse demandée est introuvable.");
+                return;
+            }
+
+            // Total encaissé sur cette journée
+            $stmtP = $this->model->getCon()->prepare("
+                SELECT COALESCE(SUM(montant_paiement), 0) as total_jour, COUNT(*) as nb_paiements
+                FROM paiements 
+                WHERE DATE(date_paiement) = ? AND statut_paiement != 'annule'
+            ");
+            $stmtP->execute([$item['date_ouverture']]);
+            $statsJour = $stmtP->fetch(PDO::FETCH_ASSOC) ?: ['total_jour' => 0, 'nb_paiements' => 0];
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'ouverture_caisse/list'); exit();
+            error_log("OuvertureCaisseController::details error: " . $e->getMessage());
+            $this->renderNotFound("L'ouverture de caisse demandée est introuvable.");
+            return;
         }
-        $this->loadView('../views/ouvertures_caisse/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/ouvertures_caisse/details.php', [
+            'item' => $item, 
+            'statsJour' => $statsJour,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

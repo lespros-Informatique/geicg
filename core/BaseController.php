@@ -235,6 +235,24 @@ abstract class BaseController
         return $result;
     }
 
+    /**
+     * Nettoie automatiquement les champs téléphoniques pour retirer +225 / 225
+     */
+    protected function cleanPhoneFields(array &$data): void
+    {
+        $phoneKeys = [
+            'telephone', 'telephone_user', 'telephone_etudiant', 'telephone_enseignant',
+            'telephone_pere', 'telephone_mere', 'telephone_tuteur', 'telephone_etablissement',
+            'telephone_etablissement2', 'telephone_client', 'telephone_livreur', 'contact', 'contact_urgence'
+        ];
+
+        foreach ($phoneKeys as $key) {
+            if (isset($data[$key]) && is_string($data[$key])) {
+                $data[$key] = Validator::cleanPhone($data[$key]);
+            }
+        }
+    }
+
     protected function redirect(string $url): void
     {
         if (!headers_sent()) {

@@ -48,7 +48,7 @@ class EnseignantController extends BaseController
         $nom = trim($data['nom_enseignant'] ?? '');
         $prenom = trim($data['prenom_enseignant'] ?? '');
         $email = trim($data['email_enseignant'] ?? '');
-        $telephone = trim($data['telephone_enseignant'] ?? '');
+        $telephone = Validator::cleanPhone($data['telephone_enseignant'] ?? '');
         $passwordRaw = trim($data['password_enseignant'] ?? '123456');
         $userCode = !empty($data['user_code']) ? trim($data['user_code']) : null;
         $etabCode = '5454544456';
@@ -116,7 +116,7 @@ class EnseignantController extends BaseController
         $nom = trim($data['nom_enseignant'] ?? '');
         $prenom = trim($data['prenom_enseignant'] ?? '');
         $email = trim($data['email_enseignant'] ?? '');
-        $telephone = trim($data['telephone_enseignant'] ?? '');
+        $telephone = Validator::cleanPhone($data['telephone_enseignant'] ?? '');
         $userCode = !empty($data['user_code']) ? trim($data['user_code']) : null;
 
         if (empty($nom)) {

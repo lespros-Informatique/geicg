@@ -55,7 +55,7 @@ class UserController extends BaseController
 
         $nom = trim($_POST['nom'] ?? '');
         $prenom = trim($_POST['prenom'] ?? '');
-        $telephone = trim($_POST['telephone'] ?? '');
+        $telephone = Validator::cleanPhone($_POST['telephone'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $roleCode = $_POST['role_code'] ?? 'ROLE_SCOLARITE';
         $fonctionCode = $_POST['fonction_code'] ?? null;
@@ -127,7 +127,7 @@ class UserController extends BaseController
 
         $nom = trim($_POST['nom'] ?? '');
         $prenom = trim($_POST['prenom'] ?? '');
-        $telephone = trim($_POST['telephone'] ?? '');
+        $telephone = Validator::cleanPhone($_POST['telephone'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $roleCode = $_POST['role_code'] ?? '';
         $fonctionCode = $_POST['fonction_code'] ?? null;

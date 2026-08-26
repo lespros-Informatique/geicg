@@ -9,6 +9,15 @@ $stmtIns = $db->query("
   ORDER BY e.nom_etudiant ASC
 ");
 $inscriptionsList = $stmtIns->fetchAll(PDO::FETCH_ASSOC);
+
+$today = date('Y-m-d');
+$stmtCaisseToday = $db->prepare("SELECT * FROM ouvertures_caisse WHERE date_ouverture = ? AND statut_ouverture = 'ouverte' LIMIT 1");
+$stmtCaisseToday->execute([$today]);
+$caisseOuverte = $stmtCaisseToday->fetch(PDO::FETCH_ASSOC);
+
+$stmtClotureToday = $db->prepare("SELECT * FROM clotures_caisse WHERE date_cloture = ? AND statut_cloture != 'annule' LIMIT 1");
+$stmtClotureToday->execute([$today]);
+$caisseCloturee = $stmtClotureToday->fetch(PDO::FETCH_ASSOC);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -17,7 +26,7 @@ $inscriptionsList = $stmtIns->fetchAll(PDO::FETCH_ASSOC);
     <div class="content-wrapper" style="padding: 24px;">
       
       <!-- Page Header -->
-      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_paiement']) ? 'Éditer ' : 'Nouveau ' ?> Règlement Caisse</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Guichet d'encaissement intelligent des frais de scolarité</p>
@@ -26,6 +35,54 @@ $inscriptionsList = $stmtIns->fetchAll(PDO::FETCH_ASSOC);
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
+
+      <!-- BANDEAU D'ÉTAT DE LA CAISSE DU JOUR -->
+      <?php if (!empty($caisseCloturee)): ?>
+        <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+              <i data-lucide="lock" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+              <strong style="color: #991B1B; font-size: 14px;">Caisse de la journée Clôturée (Réf : <?= htmlspecialchars($caisseCloturee['code_cloture']) ?>)</strong>
+              <div style="color: #7F1D1D; font-size: 12px; margin-top: 2px;">La caisse du jour a déjà été arrêtée. Tout nouvel encaissement doit être validé ou reporté sur la session suivante.</div>
+            </div>
+          </div>
+          <a href="<?= RACINE ?>cloture_caisse/details/<?= $this->validator->crypter($caisseCloturee['id_cloture']) ?>" class="btn btn-sm btn-outline-danger" style="font-weight: 700; border-radius: 6px; font-size: 12px;">
+            Voir le PV de Clôture
+          </a>
+        </div>
+      <?php elseif (!empty($caisseOuverte)): ?>
+        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+              <strong style="color: #166534; font-size: 13px;">Caisse du jour Ouverte &bull; Session active</strong>
+              <div style="color: #15803D; font-size: 12px;">Fond initial : <strong><?= number_format((float)$caisseOuverte['fond_initial'], 0, ',', ' ') ?> FCFA</strong> (Réf : <?= htmlspecialchars($caisseOuverte['code_ouverture']) ?>)</div>
+            </div>
+          </div>
+          <a href="<?= RACINE ?>cloture_caisse/formulaire" class="btn btn-sm btn-outline-success" style="font-weight: 700; border-radius: 6px; font-size: 12px; background:#FFFFFF;">
+            <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Clôturer en fin de journée
+          </a>
+        </div>
+      <?php else: ?>
+        <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+              <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+              <strong style="color: #92400E; font-size: 14px;">Attention : La caisse de la journée n'est pas encore OUVERTE</strong>
+              <div style="color: #B45309; font-size: 12px; margin-top: 2px;">Pour assurer la traçabilité des espèces et le rapprochement du soir, veuillez ouvrir la caisse du jour.</div>
+            </div>
+          </div>
+          <a href="<?= RACINE ?>ouverture_caisse/formulaire" class="btn btn-warning" style="background: #D97706; border-color: #D97706; color: #FFF; font-weight: 700; border-radius: 8px; padding: 9px 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="unlock" style="width: 16px; height: 16px;"></i> Ouvrir la Caisse Maintenant
+          </a>
+        </div>
+      <?php endif; ?>
 
       <!-- Bande Preview Financière Dynamique (Fiche Synthèse Élève) -->
       <div id="financial-preview-banner" class="card" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(15,23,42,0.06); transition: all 0.3s ease;">

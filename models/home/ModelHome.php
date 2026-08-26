@@ -10,7 +10,10 @@ class ModelHome extends BaseModel
         parent::__construct();
     }
 
-    public function getStats(?string $anneeCode = null): array
+    /**
+     * Récupère l'ensemble des statistiques du Dashboard adaptées aux vues SQL
+     */
+    public function getStats(?string $anneeCode = null, ?string $userCode = null, ?string $roleCode = null): array
     {
         try {
             $db = $this->pdo->getCon();
@@ -28,40 +31,61 @@ class ModelHome extends BaseModel
                 }
             }
 
-            // Total Inscriptions
-            $stmtCountInsc = $db->prepare("SELECT COUNT(*) FROM inscriptions WHERE annee_code = ? AND statut_inscription != 'annule'");
-            $stmtCountInsc->execute([$anneeCode ?: '']);
-            $totalEtudiants = (int)$stmtCountInsc->fetchColumn();
+            // 1. Synthèse Annuelle Globale via la Vue SQL v_dash_synthese_annuelle
+            $stmtSynthese = $db->prepare("SELECT * FROM v_dash_synthese_annuelle WHERE code_annee = ?");
+            $stmtSynthese->execute([$anneeCode ?: '']);
+            $synthese = $stmtSynthese->fetch(PDO::FETCH_ASSOC) ?: [];
 
-            // Total Recouvrement (Paiements de l'année)
-            $stmtPaiements = $db->prepare("SELECT COALESCE(SUM(montant_paiement), 0) FROM paiements WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_paiement = 'confirme'");
-            $stmtPaiements->execute([$anneeCode ?: '']);
-            $caEncaisse = (float)$stmtPaiements->fetchColumn();
-
-            // Total Scolarité Attendue
-            $stmtScolAtt = $db->prepare("SELECT COALESCE(SUM(montant_scolarite_inscription), 0) FROM inscriptions WHERE annee_code = ? AND statut_inscription != 'annule'");
-            $stmtScolAtt->execute([$anneeCode ?: '']);
-            $caAttendu = (float)$stmtScolAtt->fetchColumn();
-
+            $totalEtudiants = (int)($synthese['total_inscrits'] ?? 0);
+            $totalClasses = (int)($synthese['total_classes'] ?? 0);
+            $caAttendu = (float)($synthese['total_scolarite_attendue'] ?? 0);
+            $caEncaisse = (float)($synthese['total_encaisse'] ?? 0);
+            $totalDepenses = (float)($synthese['total_depenses'] ?? 0);
             $reliquatImpayes = max(0, $caAttendu - $caEncaisse);
+            $soldeNet = $caEncaisse - $totalDepenses;
 
-            // Classes actives dans l'année
-            $stmtClasses = $db->prepare("SELECT COUNT(*) FROM classes WHERE annee_code = ? AND statut_classe = 'actif'");
-            $stmtClasses->execute([$anneeCode ?: '']);
-            $totalClasses = (int)$stmtClasses->fetchColumn();
+            // 2. Compteurs Pédagogiques
+            $totalEnseignants = (int)$db->query("SELECT COUNT(*) FROM enseignants WHERE statut_enseignant = 'actif'")->fetchColumn();
+            $totalMatieres = (int)$db->query("SELECT COUNT(*) FROM matieres WHERE statut_matiere = 'actif'")->fetchColumn();
+            $totalSalles = (int)$db->query("SELECT COUNT(*) FROM salles WHERE statut_salle = 'actif'")->fetchColumn();
+            
+            // Notes & Absences de l'année
+            $stmtNotes = $db->prepare("
+                SELECT COUNT(*) FROM notes n 
+                INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code 
+                WHERE i.annee_code = ? AND n.statut_note = 'actif'
+            ");
+            $stmtNotes->execute([$anneeCode ?: '']);
+            $totalNotes = (int)$stmtNotes->fetchColumn();
 
-            // Total Enseignants
-            $stmtEns = $db->query("SELECT COUNT(*) FROM enseignants WHERE statut_enseignant = 'actif'");
-            $totalEnseignants = (int)$stmtEns->fetchColumn();
+            $stmtAbs = $db->prepare("
+                SELECT COUNT(*) FROM absences a 
+                INNER JOIN inscriptions i ON i.code_inscription = a.inscription_code 
+                WHERE i.annee_code = ? AND a.statut_absence = 'actif'
+            ");
+            $stmtAbs->execute([$anneeCode ?: '']);
+            $totalAbsences = (int)$stmtAbs->fetchColumn();
 
-            // Total Matières
-            $stmtMat = $db->query("SELECT COUNT(*) FROM matieres WHERE statut_matiere = 'actif'");
-            $totalMatieres = (int)$stmtMat->fetchColumn();
+            // 3. Stats pour le Corps Enseignant (si profil Enseignant)
+            $teacherCoursesCount = 0;
+            $teacherClassesCount = 0;
+            if ($roleCode === 'ROLE_ENSEIGNANT' && $userCode) {
+                // Chercher le code_enseignant relié
+                $stmtTeach = $db->prepare("SELECT code_enseignant FROM enseignants WHERE user_code = ? OR code_enseignant = ?");
+                $stmtTeach->execute([$userCode, $userCode]);
+                $teacherCode = $stmtTeach->fetchColumn() ?: $userCode;
 
-            // Total Dépenses de l'année
-            $stmtDep = $db->prepare("SELECT COALESCE(SUM(montant_depense), 0) FROM depenses WHERE annee_code = ?");
-            $stmtDep->execute([$anneeCode ?: '']);
-            $totalDepenses = (float)$stmtDep->fetchColumn();
+                $stmtTC = $db->prepare("SELECT COUNT(*), COUNT(DISTINCT classe_code) FROM v_dash_pedagogie_affectations WHERE (enseignant_code = ? OR enseignant_code = ?)");
+                $stmtTC->execute([$teacherCode, $userCode]);
+                $resTC = $stmtTC->fetch(PDO::FETCH_NUM);
+                $teacherCoursesCount = (int)($resTC[0] ?? 0);
+                $teacherClassesCount = (int)($resTC[1] ?? 0);
+            }
+
+            // 4. Stats Communication
+            $totalActualites = (int)$db->query("SELECT COUNT(*) FROM actualites WHERE statut_actualite = 'actif'")->fetchColumn();
+            $totalEvenements = (int)$db->query("SELECT COUNT(*) FROM evenements WHERE statut_evenement = 'actif'")->fetchColumn();
+            $totalDocuments = (int)$db->query("SELECT COUNT(*) FROM documents WHERE statut_document = 'actif'")->fetchColumn();
 
             return [
                 'annee_code' => $anneeCode,
@@ -69,56 +93,120 @@ class ModelHome extends BaseModel
                 'ca_encaisse' => $caEncaisse,
                 'ca_attendu' => $caAttendu,
                 'reliquat_impayes' => $reliquatImpayes,
+                'total_depenses' => $totalDepenses,
+                'solde_net' => $soldeNet,
                 'total_classes' => $totalClasses,
                 'total_enseignants' => $totalEnseignants,
                 'total_matieres' => $totalMatieres,
-                'total_depenses' => $totalDepenses,
+                'total_salles' => $totalSalles,
+                'total_notes' => $totalNotes,
+                'total_absences' => $totalAbsences,
+                'teacher_courses' => $teacherCoursesCount,
+                'teacher_classes' => $teacherClassesCount,
+                'total_actualites' => $totalActualites,
+                'total_evenements' => $totalEvenements,
+                'total_documents' => $totalDocuments,
             ];
         } catch (Exception $e) {
             error_log("ModelHome::getStats error: " . $e->getMessage());
             return [
+                'annee_code' => $anneeCode,
                 'total_etudiants' => 0,
                 'ca_encaisse' => 0,
                 'ca_attendu' => 0,
                 'reliquat_impayes' => 0,
+                'total_depenses' => 0,
+                'solde_net' => 0,
                 'total_classes' => 0,
                 'total_enseignants' => 0,
                 'total_matieres' => 0,
-                'total_depenses' => 0,
+                'total_salles' => 0,
+                'total_notes' => 0,
+                'total_absences' => 0,
+                'teacher_courses' => 0,
+                'teacher_classes' => 0,
+                'total_actualites' => 0,
+                'total_evenements' => 0,
+                'total_documents' => 0,
             ];
         }
     }
 
+    /**
+     * Dernières inscriptions depuis la Vue SQL v_dash_inscriptions_details
+     */
     public function getRecentInscriptions(int $limit = 5, ?string $anneeCode = null): array
     {
         try {
             $db = $this->pdo->getCon();
-            $sql = "SELECT i.*, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, c.libelle_classe
-                    FROM inscriptions i
-                    JOIN etudiants e ON i.etudiant_code = e.code_etudiant
-                    LEFT JOIN classes c ON i.classe_code = c.code_classe
-                    WHERE i.annee_code = ?
-                    ORDER BY i.id_inscription DESC
+            $sql = "SELECT * FROM v_dash_inscriptions_details
+                    WHERE annee_code = ? AND (statut_inscription != 'annule' OR statut_inscription IS NULL)
+                    ORDER BY id_inscription DESC
                     LIMIT $limit";
             $stmt = $db->prepare($sql);
             $stmt->execute([$anneeCode ?: '']);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
+            error_log("ModelHome::getRecentInscriptions error: " . $e->getMessage());
             return [];
         }
     }
 
+    /**
+     * Derniers règlements depuis la Vue SQL v_dash_paiements_details
+     */
     public function getRecentPaiements(int $limit = 5, ?string $anneeCode = null): array
     {
         try {
             $db = $this->pdo->getCon();
-            $sql = "SELECT p.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
-                    FROM paiements p
-                    JOIN inscriptions i ON p.inscription_code = i.code_inscription
-                    JOIN etudiants e ON i.etudiant_code = e.code_etudiant
-                    ORDER BY p.id_paiement DESC
+            $sql = "SELECT * FROM v_dash_paiements_details
+                    WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '')
+                      AND (statut_paiement = 'confirme' OR statut_paiement != 'annule')
+                    ORDER BY id_paiement DESC
                     LIMIT $limit";
-            $stmt = $db->query($sql);
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$anneeCode ?: '']);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelHome::getRecentPaiements error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Dernières dépenses engagées depuis la Vue SQL v_dash_depenses_details
+     */
+    public function getRecentDepenses(int $limit = 5, ?string $anneeCode = null): array
+    {
+        try {
+            $db = $this->pdo->getCon();
+            $sql = "SELECT * FROM v_dash_depenses_details
+                    WHERE annee_code = ? AND (statut_depense != 'annule' OR statut_depense IS NULL)
+                    ORDER BY id_depense DESC
+                    LIMIT $limit";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$anneeCode ?: '']);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelHome::getRecentDepenses error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Cours attribués à un enseignant depuis la Vue SQL v_dash_pedagogie_affectations
+     */
+    public function getTeacherCourses(string $userOrTeacherCode, int $limit = 6): array
+    {
+        try {
+            $db = $this->pdo->getCon();
+            $stmt = $db->prepare("
+                SELECT * FROM v_dash_pedagogie_affectations 
+                WHERE enseignant_code = ?
+                ORDER BY libelle_matiere ASC
+                LIMIT $limit
+            ");
+            $stmt->execute([$userOrTeacherCode]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             return [];

@@ -193,16 +193,19 @@ class ClotureCaisseController extends BaseController
             ");
             $stmt->execute([$id]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$item) { header('Location: ' . RACINE . 'cloture_caisse/list'); exit(); }
+            if (!$item) { 
+                $this->renderNotFound("Le procès-verbal de clôture de caisse demandé est introuvable.");
+                return;
+            }
 
             // Encaissements de cette journée
             $stmtP = $this->model->getCon()->prepare("
                 SELECT p.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, cl.libelle_classe
                 FROM paiements p
-                LEFT JOIN etudiants e ON e.code_etudiant = p.etudiant_code
-                LEFT JOIN inscriptions ins ON (ins.code_inscription = p.inscription_code OR (ins.etudiant_code = p.etudiant_code AND ins.statut_inscription = 'actif'))
+                JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
+                JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
                 LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-                WHERE DATE(p.date_paiement) = ? AND p.statut_paiement = 'valide'
+                WHERE DATE(p.date_paiement) = ? AND p.statut_paiement != 'annule'
                 ORDER BY p.date_paiement DESC
             ");
             $stmtP->execute([$item['date_cloture']]);
@@ -210,7 +213,9 @@ class ClotureCaisseController extends BaseController
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'cloture_caisse/list'); exit();
+            error_log("ClotureCaisseController::details error: " . $e->getMessage());
+            $this->renderNotFound("Le procès-verbal de clôture de caisse demandé est introuvable.");
+            return;
         }
         $this->loadView('../views/clotures_caisse/details.php', [
             'item' => $item, 

@@ -74,6 +74,7 @@ class EtablissementController extends BaseController
         $id = (int)$this->post('id_etablissement');
         $data = $_POST;
         unset($data['csrf_token']);
+        $this->cleanPhoneFields($data);
 
         if (!empty($_FILES['logo_file']['name']) && $_FILES['logo_file']['error'] === UPLOAD_ERR_OK) {
             $uploadDir = __DIR__ . '/../../public/uploads/logos/';

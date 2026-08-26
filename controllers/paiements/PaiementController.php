@@ -120,10 +120,36 @@ class PaiementController extends BaseController
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $db = $this->model->getCon();
+        $today = date('Y-m-d');
+        $mode = strtolower($data['mode_paiement'] ?? 'especes');
+
+        // Vérification de la session de caisse pour les encaissements en espèces
+        if ($mode === 'especes' || $mode === 'espece' || $mode === 'cash' || empty($mode)) {
+            // 1. Vérifier si la caisse a déjà été clôturée aujourd'hui
+            $stmtCloture = $db->prepare("SELECT code_cloture FROM clotures_caisse WHERE date_cloture = ? AND statut_cloture != 'annule' LIMIT 1");
+            $stmtCloture->execute([$today]);
+            $cloture = $stmtCloture->fetch(PDO::FETCH_ASSOC);
+            if ($cloture) {
+                $this->error("Encaissement impossible : La caisse du jour a déjà été CLÔTURÉE (Réf: {$cloture['code_cloture']}). Aucun nouvel encaissement en espèces ne peut être enregistré.");
+                return;
+            }
+
+            // 2. Vérifier si la caisse a été ouverte aujourd'hui
+            $stmtOuv = $db->prepare("SELECT * FROM ouvertures_caisse WHERE date_ouverture = ? AND statut_ouverture = 'ouverte' LIMIT 1");
+            $stmtOuv->execute([$today]);
+            $ouv = $stmtOuv->fetch(PDO::FETCH_ASSOC);
+            if (!$ouv) {
+                $this->error("Encaissement impossible : La caisse du jour n'est pas encore OUVERTE. Veuillez effectuer l'ouverture de caisse avant d'encaisser.");
+                return;
+            }
+        }
+
         if (empty($data['code_paiement'])) {
             $data['code_paiement'] = $this->validator->generateCode('paiements', 'code_paiement', 'PAI-', 8);
         }
-        $data['statut_paiement'] = $data['statut_paiement'] ?? 'actif';
+        $data['statut_paiement'] = $data['statut_paiement'] ?? 'confirme';
         $data['date_paiement'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE paiements")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
@@ -131,9 +157,9 @@ class PaiementController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Règlement de caisse enregistré avec succès!', ['reload' => true]);
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de l\'enregistrement du paiement');
         }
     }
 

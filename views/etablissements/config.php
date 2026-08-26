@@ -94,12 +94,12 @@
 
             <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone Principal <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_etablissement" value="<?= htmlspecialchars($item['telephone_etablissement'] ?? '') ?>" placeholder="Ex: +225 07 08 09 10 11" required>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_etablissement" value="<?= htmlspecialchars($item['telephone_etablissement'] ?? '') ?>" placeholder="Ex: 0708091011" required>
             </div>
 
             <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone Secondaire</label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_etablissement2" value="<?= htmlspecialchars($item['telephone_etablissement2'] ?? '') ?>" placeholder="Ex: +225 01 02 03 04 05">
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_etablissement2" value="<?= htmlspecialchars($item['telephone_etablissement2'] ?? '') ?>" placeholder="Ex: 0102030405">
             </div>
           </div>
 
