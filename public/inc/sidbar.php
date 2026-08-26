@@ -13,22 +13,31 @@
   }
   $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-  // --- SYSTÈME D'AUTORISATIONS & RBAC DU SIDEBAR ---
-  $userRoleCode = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? 'ROLE_USER');
-  $isSuperAdmin = in_array($userRoleCode, ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
+  // --- SYSTÈME D'AUTORISATIONS & RBAC DU SIDEBAR (MULTI-RÔLES) ---
+  $userRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];
+  if (empty($userRoles)) {
+      $singleRole = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? 'ROLE_USER');
+      $userRoles = !empty($singleRole) ? [$singleRole] : ['ROLE_USER'];
+  }
+  if (is_string($userRoles)) {
+      $userRoles = [$userRoles];
+  }
+  $userRoleCode = $userRoles[0] ?? 'ROLE_USER';
+  $isSuperAdmin = !empty(array_intersect($userRoles, ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']));
 
-  // Récupérer les permissions de l'utilisateur
+  // Récupérer les permissions cumulées de tous les rôles de l'utilisateur
   $userPermissions = $_SESSION['permissions'] ?? [];
   if (!$isSuperAdmin && empty($userPermissions)) {
       try {
           $dbConn = (new Database())->getCon();
+          $inClause = implode(',', array_fill(0, count($userRoles), '?'));
           $stmtP = $dbConn->prepare("
-              SELECT rp.permission_code 
+              SELECT DISTINCT rp.permission_code 
               FROM role_permissions rp
               JOIN permissions p ON rp.permission_code = p.code_permission
-              WHERE rp.role_code = ? AND p.statut_permission = 'actif'
+              WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
           ");
-          $stmtP->execute([$userRoleCode]);
+          $stmtP->execute($userRoles);
           $userPermissions = $stmtP->fetchAll(PDO::FETCH_COLUMN) ?: [];
           $_SESSION['permissions'] = $userPermissions;
       } catch (Exception $e) {
@@ -38,10 +47,11 @@
 
   /**
    * Helper d'autorisation granulaire pour les éléments du menu
+   * Débloque le module si l'utilisateur possède AU MOINS UN des rôles autorisés
    */
-  $canAccess = function(array $requiredPerms = [], array $allowedRoles = []) use ($isSuperAdmin, $userRoleCode, $userPermissions) {
+  $canAccess = function(array $requiredPerms = [], array $allowedRoles = []) use ($isSuperAdmin, $userRoles, $userPermissions) {
       if ($isSuperAdmin) return true;
-      if (!empty($allowedRoles) && in_array($userRoleCode, $allowedRoles, true)) return true;
+      if (!empty($allowedRoles) && !empty(array_intersect($userRoles, $allowedRoles))) return true;
       if (in_array('*', $userPermissions, true)) return true;
       foreach ($requiredPerms as $perm) {
           if (in_array($perm, $userPermissions, true)) return true;

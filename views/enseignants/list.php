@@ -67,9 +67,9 @@ $(document).ready(function() {
         if (type !== 'display') return d || '';
         var badge = d === 'vacataire' 
           ? '<span style="background:#FEF3C7; color:#92400E; padding:3px 8px; border-radius:6px; font-weight:700; font-size:11px;">Vacataire</span>'
-          : '<span style="background:#E0F2FE; color:#0369A1; padding:3px 8px; border-radius:6px; font-weight:700; font-size:11px;">Permanent</span>';
-        if (row.taux_horaire > 0) {
-          badge += '<div style="font-size:11px; color:#64748B; margin-top:2px;">' + parseFloat(row.taux_horaire).toLocaleString('fr-FR') + ' F/h</div>';
+          : (d === 'prestataire' ? '<span style="background:#F1F5F9; color:#475569; padding:3px 8px; border-radius:6px; font-weight:700; font-size:11px;">Prestataire</span>' : '<span style="background:#E0F2FE; color:#0369A1; padding:3px 8px; border-radius:6px; font-weight:700; font-size:11px;">Permanent</span>');
+        if (row.numero_autorisation) {
+          badge += '<div style="font-size:11px; color:#475569; font-weight:600; margin-top:3px;"><i data-lucide="award" style="width:11px;height:11px;display:inline-block;vertical-align:middle;"></i> ' + row.numero_autorisation + '</div>';
         }
         return badge;
       }},

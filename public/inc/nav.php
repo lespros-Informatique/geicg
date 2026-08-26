@@ -319,6 +319,21 @@
                     <div>
                         <strong><?= htmlspecialchars($currentUserName ?? 'Utilisateur') ?></strong>
                         <small style="color: #64748B; display: block;"><?= htmlspecialchars($currentUserEmail ?? '') ?></small>
+                        <?php 
+                          $navRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];
+                          if (empty($navRoles) && !empty($_SESSION[USERS_AUTH]['role_code'])) {
+                              $navRoles = [$_SESSION[USERS_AUTH]['role_code']];
+                          }
+                          if (!empty($navRoles)):
+                        ?>
+                          <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
+                            <?php foreach($navRoles as $nr): ?>
+                              <span style="font-size: 10px; font-weight: 700; background: rgba(24, 56, 95, 0.08); color: var(--primary-color, #18385F); padding: 2px 6px; border-radius: 4px;">
+                                <?= htmlspecialchars(str_replace('ROLE_', '', $nr)) ?>
+                              </span>
+                            <?php endforeach; ?>
+                          </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <a href="<?= RACINE ?>user/profil" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>

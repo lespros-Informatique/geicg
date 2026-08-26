@@ -63,9 +63,16 @@ $(document).ready(function() {
         if (type !== 'display') return d || '';
         return '<span style="color:#334155; font-weight:500;">' + (d || '-') + '</span>';
       }},
-      { data: 'role', render: function(d, type) {
-        if (type !== 'display') return d || '';
-        return '<span style="background:#EFF6FF; color:#1E3A5F; font-weight:700; padding:4px 10px; border-radius:8px; font-size:12px; display:inline-block;">' + (d || 'Non attribué') + '</span>';
+      { data: 'roles_list', render: function(d, type, row) {
+        if (type !== 'display') return (row.roles_list && row.roles_list.length) ? row.roles_list.join(', ') : (row.role || '');
+        var roles = (row.roles_list && row.roles_list.length) ? row.roles_list : (row.role ? [row.role] : []);
+        if (!roles.length || roles[0] === 'Non attribué') {
+          return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Non attribué</span>';
+        }
+        var badges = roles.map(function(r) {
+          return '<span style="background:rgba(24, 56, 95, 0.08); color:var(--primary-color, #18385F); border: 1px solid rgba(24, 56, 95, 0.18); font-weight:700; padding:3px 8px; border-radius:6px; font-size:11.5px; display:inline-block; margin:2px 2px;">' + r + '</span>';
+        });
+        return '<div style="display:flex; flex-wrap:wrap; gap:3px; max-width:260px;">' + badges.join('') + '</div>';
       }},
       { data: 'statut', width: '90px', className: 'text-center', render: function(d, type) {
         if (type !== 'display') return d || '';

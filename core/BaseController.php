@@ -270,8 +270,17 @@ abstract class BaseController
 
     protected function getCurrentUserRoles(): array
     {
-        $roleCode = $_SESSION[USERS_AUTH]['role_code'] ?? '';
-        return $roleCode !== '' ? [$roleCode] : [];
+        $roles = $_SESSION[USERS_AUTH]['roles'] ?? [];
+        if (empty($roles)) {
+            $roleCode = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? '');
+            if ($roleCode !== '') {
+                $roles = [$roleCode];
+            }
+        }
+        if (is_string($roles)) {
+            $roles = [$roles];
+        }
+        return array_values(array_unique(array_filter($roles)));
     }
 
     protected function hasRole(string $roleCode): bool
@@ -279,9 +288,14 @@ abstract class BaseController
         return in_array($roleCode, $this->getCurrentUserRoles(), true);
     }
 
+    protected function hasAnyRole(array $roleCodes): bool
+    {
+        return !empty(array_intersect($this->getCurrentUserRoles(), $roleCodes));
+    }
+
     protected function isSuperAdmin(): bool
     {
-        return $this->hasRole('ROLE_SUPERADMIN') || $this->hasRole('ROLE_DIR_GENERAL');
+        return $this->hasAnyRole(['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
     }
 
     /**

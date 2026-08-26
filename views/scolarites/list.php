@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -40,6 +40,7 @@
                   <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                     <th style="padding: 12px;">ID</th>
                     <th style="padding: 12px;">Code</th>
+                    <th style="padding: 12px;">Année</th>
                     <th style="padding: 12px;">Filière</th>
                     <th style="padding: 12px;">Niveau</th>
                     <th style="padding: 12px;">Montant (FCFA)</th>
@@ -88,6 +89,9 @@ $(document).ready(function() {
     columns: [
       { data: 'id_scolarite', defaultContent: '-' },
       { data: 'code_scolarite', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
+      { data: 'libelle_annee', render: function(d, t, r) { 
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:700; font-size:12px; padding:3px 8px; border-radius:6px;">' + (d || r.annee_code || 'Toutes') + '</span>'; 
+      } },
       { data: 'libelle_filiere', render: function(d, t, r) { return '<span style="font-weight:700; color:#0F172A;">' + (d || r.filiere_code || 'Non définie') + '</span>'; } },
       { data: 'libelle_niveau', render: function(d, t, r) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || r.niveau_code || 'Non défini') + '</span>'; } },
       { data: 'montant_scolarite', render: function(d) { 

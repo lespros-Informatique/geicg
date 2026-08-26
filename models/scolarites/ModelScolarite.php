@@ -10,10 +10,11 @@ class ModelScolarite extends BaseModel
     public function getAll(): array
     {
         $sql = "
-            SELECT s.*, f.libelle_filiere, n.libelle_niveau
+            SELECT s.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
             FROM scolarites s
             LEFT JOIN filieres f ON s.filiere_code = f.code_filiere
             LEFT JOIN niveaux n ON s.niveau_code = n.code_niveau
+            LEFT JOIN annees a ON s.annee_code = a.code_annee
             ORDER BY s.id_scolarite DESC
         ";
         return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
@@ -22,10 +23,11 @@ class ModelScolarite extends BaseModel
     public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT s.*, f.libelle_filiere, n.libelle_niveau
+            SELECT s.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
             FROM scolarites s
             LEFT JOIN filieres f ON s.filiere_code = f.code_filiere
             LEFT JOIN niveaux n ON s.niveau_code = n.code_niveau
+            LEFT JOIN annees a ON s.annee_code = a.code_annee
             WHERE s.id_scolarite = ?
             LIMIT 1
         ");

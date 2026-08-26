@@ -55,10 +55,10 @@ $cours = isset($cours) ? $cours : [];
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Tél : <?= htmlspecialchars($item['telephone_enseignant'] ?? '-') ?></div>
           </div>
 
-          <!-- Contrat & Rémunération -->
+          <!-- Contrat & Autorisation -->
           <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Contrat & Taux Horaire</span>
-            <div style="font-size: 14px; font-weight: 800; color: #15803D;"><?= number_format((float)($item['taux_horaire'] ?? 0), 0, ',', ' ') ?> FCFA / h</div>
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Contrat & Autorisation</span>
+            <div style="font-size: 14px; font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($item['numero_autorisation'] ?? 'Non renseigné') ?></div>
             <div style="font-size: 12px; color: #64748B; text-transform: capitalize; margin-top: 2px;">Contrat <?= htmlspecialchars($item['type_contrat'] ?? 'Permanent') ?></div>
           </div>
 

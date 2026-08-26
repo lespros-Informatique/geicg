@@ -57,18 +57,20 @@ $users = isset($users) ? $users : (new ModelUser())->getAll();
             </div>
 
             <?php if (empty($item['id_enseignant'])): ?>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                Mot de passe initial <span style="color: #EF4444;">*</span>
-              </label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="password_enseignant" value="123456" placeholder="123456">
-              <small style="color: #64748B; font-size: 11px; margin-top: 4px; display: block;">Permet à l'enseignant de se connecter directement (défaut : 123456).</small>
+            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1; background: #F0FDF4; border: 1.5px dashed #86EFAC; border-radius: 8px; padding: 12px 16px;">
+              <div style="font-size: 13px; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="shield-check" style="width: 18px; height: 18px; color: #16A34A;"></i>
+                Accès Enseignant : Mot de passe généré automatiquement
+              </div>
+              <small style="color: #15803D; font-size: 12px; margin-top: 4px; display: block;">
+                Un mot de passe sécurisé sera automatiquement généré et affiché dès l'enregistrement de l'enseignant.
+              </small>
             </div>
             <?php endif; ?>
           </div>
 
           <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 24px 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 8px;">
-            <i data-lucide="award" style="width: 18px; height: 18px;"></i> Statut Académique & Carrière
+            <i data-lucide="award" style="width: 18px; height: 18px;"></i> Statut Académique & Autorisations
           </h3>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%;">
@@ -87,8 +89,9 @@ $users = isset($users) ? $users : (new ModelUser())->getAll();
             </div>
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Taux Horaire de Vacation (FCFA / heure)</label>
-              <input type="number" step="100" min="0" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="taux_horaire" value="<?= htmlspecialchars($item['taux_horaire'] ?? '0') ?>" placeholder="Ex: 15000">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro d'Autorisation d'Enseigner</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="numero_autorisation" value="<?= htmlspecialchars($item['numero_autorisation'] ?? '') ?>" placeholder="Ex: AUT-2024-00892">
+              <small style="color: #64748B; font-size: 11px; margin-top: 4px; display: block;">Numéro d'autorisation ministérielle officielle.</small>
             </div>
 
             <?php if (!empty($item['id_enseignant'])): ?>

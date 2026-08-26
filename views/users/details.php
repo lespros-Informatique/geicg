@@ -63,17 +63,52 @@ $role = isset($role) ? $role : [];
         <!-- Rôle & Privilèges Card -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
-            <i data-lucide="shield-check" style="width: 20px; height: 20px; color: #1E3A5F;"></i> Droits & Privilèges RBAC
+            <i data-lucide="shield-check" style="width: 20px; height: 20px; color: #1E3A5F;"></i> Rôles Attribués & Privilèges RBAC
           </h3>
 
           <div style="margin-bottom: 24px;">
-            <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">Rôle Système</div>
-            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F;">
-              <?= htmlspecialchars($role['libelle_role'] ?? 'Non défini') ?>
-              <span style="font-size: 12px; font-weight: 600; color: #64748B; margin-left: 8px;">(<?= htmlspecialchars($role['groupe'] ?? ($role['module'] ?? 'Standard')) ?>)</span>
-            </div>
-            <?php if (!empty($role['description'])): ?>
-              <p style="color: #64748B; font-size: 13px; margin: 6px 0 0 0;"><?= htmlspecialchars($role['description']) ?></p>
+            <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 8px;">Rôles Système Détenus</div>
+            
+            <?php 
+              $displayRoles = !empty($userRoles) ? $userRoles : (!empty($role) ? [$role] : []);
+            ?>
+
+            <?php if (!empty($displayRoles)): ?>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <?php foreach($displayRoles as $ur): ?>
+                  <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid var(--primary-color, #18385F); border-radius: 8px; padding: 14px 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                      <div style="font-size: 15px; font-weight: 800; color: #1E3A5F; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="award" style="width: 16px; height: 16px; color: var(--primary-color);"></i>
+                        <?= htmlspecialchars($ur['libelle_role'] ?? 'Rôle non défini') ?>
+                      </div>
+                      <span style="background: #E2E8F0; color: #475569; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 6px;">
+                        <?= htmlspecialchars($ur['groupe'] ?? ($ur['module'] ?? 'Standard')) ?>
+                      </span>
+                    </div>
+                    <?php if (!empty($ur['description'])): ?>
+                      <p style="color: #64748B; font-size: 12.5px; margin: 6px 0 0 24px;"><?= htmlspecialchars($ur['description']) ?></p>
+                    <?php endif; ?>
+
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; flex-wrap: wrap; gap: 16px;">
+                      <span style="font-size: 12px; font-weight: 700; color: <?= !empty($ur['create_permission']) ? '#15803D' : '#94A3B8' ?>; display: inline-flex; align-items: center; gap: 4px;">
+                        <i data-lucide="<?= !empty($ur['create_permission']) ? 'check' : 'x' ?>" style="width: 14px; height: 14px;"></i> Créer
+                      </span>
+                      <span style="font-size: 12px; font-weight: 700; color: <?= !empty($ur['edit_permission']) ? '#0284C7' : '#94A3B8' ?>; display: inline-flex; align-items: center; gap: 4px;">
+                        <i data-lucide="<?= !empty($ur['edit_permission']) ? 'check' : 'x' ?>" style="width: 14px; height: 14px;"></i> Modifier
+                      </span>
+                      <span style="font-size: 12px; font-weight: 700; color: <?= (!isset($ur['show_permission']) || $ur['show_permission'] == 1) ? '#475569' : '#94A3B8' ?>; display: inline-flex; align-items: center; gap: 4px;">
+                        <i data-lucide="<?= (!isset($ur['show_permission']) || $ur['show_permission'] == 1) ? 'check' : 'x' ?>" style="width: 14px; height: 14px;"></i> Consulter
+                      </span>
+                      <span style="font-size: 12px; font-weight: 700; color: <?= !empty($ur['delete_permission']) ? '#DC2626' : '#94A3B8' ?>; display: inline-flex; align-items: center; gap: 4px;">
+                        <i data-lucide="<?= !empty($ur['delete_permission']) ? 'check' : 'x' ?>" style="width: 14px; height: 14px;"></i> Supprimer
+                      </span>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php else: ?>
+              <div style="color: #94A3B8; font-style: italic;">Aucun rôle attribué pour le moment.</div>
             <?php endif; ?>
           </div>
 

@@ -17,19 +17,22 @@ class UserController extends BaseController
     {
         $this->requireAuth();
         $sql = "SELECT u.*, 
-                       r.libelle_role, 
-                       r.code_role,
+                       GROUP_CONCAT(DISTINCT r.libelle_role ORDER BY r.id SEPARATOR '||') as roles_libelles,
+                       GROUP_CONCAT(DISTINCT r.code_role ORDER BY r.id SEPARATOR ',') as roles_codes,
                        f.libelle_fonction
                 FROM users u
                 LEFT JOIN user_roles ur ON ur.user_code = u.code_user
                 LEFT JOIN roles r ON r.code_role = ur.role_code
                 LEFT JOIN fonctions f ON f.code_fonction = u.fonction_code
+                GROUP BY u.id_user
                 ORDER BY u.id_user DESC";
         $users = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
         $data = [];
         foreach ($users as $u) {
             $idCrypte = $this->validator->crypter($u['id_user']);
+            $roleNames = !empty($u['roles_libelles']) ? explode('||', $u['roles_libelles']) : [];
+            $roleCodes = !empty($u['roles_codes']) ? explode(',', $u['roles_codes']) : [];
             $data[] = [
                 'code' => $u['code_user'],
                 'nom' => $u['nom_user'],
@@ -37,8 +40,10 @@ class UserController extends BaseController
                 'email' => $u['email_user'] ?? '',
                 'telephone' => $u['telephone_user'] ?? '',
                 'fonction' => $u['libelle_fonction'] ?? '-',
-                'role' => $u['libelle_role'] ?? 'Non attribué',
-                'role_code' => $u['code_role'] ?? '',
+                'role' => !empty($roleNames) ? implode(', ', $roleNames) : 'Non attribué',
+                'roles_list' => $roleNames,
+                'role_code' => !empty($roleCodes) ? $roleCodes[0] : '',
+                'roles_codes' => $roleCodes,
                 'statut' => $u['statut_user'],
                 'id' => $u['id_user'],
                 'editId' => $idCrypte
@@ -57,9 +62,19 @@ class UserController extends BaseController
         $prenom = trim($_POST['prenom'] ?? '');
         $telephone = Validator::cleanPhone($_POST['telephone'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $roleCode = $_POST['role_code'] ?? 'ROLE_SCOLARITE';
+        
+        // Multi-rôles : supporte tableau roles[] ou role_code simple
+        $postedRoles = $_POST['roles'] ?? ($_POST['role_code'] ?? ['ROLE_SCOLARITE']);
+        if (!is_array($postedRoles)) {
+            $postedRoles = [$postedRoles];
+        }
+        $postedRoles = array_values(array_unique(array_filter(array_map('trim', $postedRoles))));
+        if (empty($postedRoles)) {
+            $postedRoles = ['ROLE_SCOLARITE'];
+        }
+
         $fonctionCode = $_POST['fonction_code'] ?? null;
-        $rawPassword = !empty($_POST['password']) ? trim($_POST['password']) : '123456';
+        $rawPassword = !empty($_POST['password']) ? trim($_POST['password']) : ('USR' . rand(100000, 999999));
 
         if (empty($nom)) {
             $this->error('Le nom de l\'utilisateur est obligatoire !');
@@ -103,13 +118,22 @@ class UserController extends BaseController
         ];
 
         if ($this->model->create($data)) {
-            $createP = isset($_POST['create_permission']) ? 1 : 0;
-            $editP = isset($_POST['edit_permission']) ? 1 : 0;
-            $showP = isset($_POST['show_permission']) ? 1 : 1;
-            $deleteP = isset($_POST['delete_permission']) ? 1 : 0;
+            $rolePerms = $_POST['role_perms'] ?? [];
+            $rolesData = [];
+            foreach ($postedRoles as $r) {
+                if (is_string($r) && !empty($r)) {
+                    $rolesData[$r] = [
+                        'create' => isset($rolePerms[$r]['create']) ? 1 : (isset($_POST['create_permission']) ? 1 : 1),
+                        'edit'   => isset($rolePerms[$r]['edit']) ? 1 : (isset($_POST['edit_permission']) ? 1 : 1),
+                        'show'   => isset($rolePerms[$r]['show']) ? 1 : (isset($_POST['show_permission']) ? 1 : 1),
+                        'delete' => isset($rolePerms[$r]['delete']) ? 1 : (isset($_POST['delete_permission']) ? 1 : 0),
+                    ];
+                }
+            }
 
-            $this->model->setUserRole($code_user, $roleCode, $createP, $editP, $showP, $deleteP);
-            $this->success('Utilisateur créé avec succès ! (Mot de passe initial : ' . $rawPassword . ')');
+            $this->model->syncUserRoles($code_user, $rolesData);
+            $idDisplay = $email ?: ($telephone ?: $nom);
+            $this->success("Utilisateur créé avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", ['password' => $rawPassword]);
         } else {
             $this->error('Erreur lors de la création de l\'utilisateur.');
         }
@@ -129,7 +153,14 @@ class UserController extends BaseController
         $prenom = trim($_POST['prenom'] ?? '');
         $telephone = Validator::cleanPhone($_POST['telephone'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $roleCode = $_POST['role_code'] ?? '';
+        
+        // Multi-rôles : supporte tableau roles[] ou role_code simple
+        $postedRoles = $_POST['roles'] ?? ($_POST['role_code'] ?? []);
+        if (!is_array($postedRoles)) {
+            $postedRoles = !empty($postedRoles) ? [$postedRoles] : [];
+        }
+        $postedRoles = array_values(array_unique(array_filter(array_map('trim', $postedRoles))));
+
         $fonctionCode = $_POST['fonction_code'] ?? null;
         $statut = ($_POST['actif'] ?? '') === '0' || ($_POST['actif'] ?? '') === 'inactif' ? 'inactif' : 'actif';
 
@@ -173,15 +204,23 @@ class UserController extends BaseController
         }
 
         if ($this->model->update($data, $id)) {
-            if (!empty($roleCode)) {
-                $createP = isset($_POST['create_permission']) ? 1 : 0;
-                $editP = isset($_POST['edit_permission']) ? 1 : 0;
-                $showP = isset($_POST['show_permission']) ? 1 : 1;
-                $deleteP = isset($_POST['delete_permission']) ? 1 : 0;
+            if (!empty($postedRoles)) {
+                $rolePerms = $_POST['role_perms'] ?? [];
+                $rolesData = [];
+                foreach ($postedRoles as $r) {
+                    if (is_string($r) && !empty($r)) {
+                        $rolesData[$r] = [
+                            'create' => isset($rolePerms[$r]['create']) ? 1 : 0,
+                            'edit'   => isset($rolePerms[$r]['edit']) ? 1 : 0,
+                            'show'   => isset($rolePerms[$r]['show']) ? 1 : 0,
+                            'delete' => isset($rolePerms[$r]['delete']) ? 1 : 0,
+                        ];
+                    }
+                }
 
-                $this->model->setUserRole($user['code_user'], $roleCode, $createP, $editP, $showP, $deleteP);
+                $this->model->syncUserRoles($user['code_user'], $rolesData);
             }
-            $this->success('Utilisateur et permissions mis à jour avec succès !');
+            $this->success('Utilisateur et permissions par rôle mis à jour avec succès !');
         } else {
             $this->error('Erreur lors de la modification de l\'utilisateur.');
         }
@@ -213,7 +252,8 @@ class UserController extends BaseController
                 header('Location: ' . RACINE . 'user/list');
                 exit();
             }
-            $role = $this->model->getUserRole($userProfile['code_user']);
+            $userRoles = $this->model->getUserRoles($userProfile['code_user']);
+            $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
             $encryptedId = $this->validator->crypter($userId);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'user/list');
@@ -222,7 +262,8 @@ class UserController extends BaseController
 
         $this->loadView('../views/users/details.php', [
             'user' => $userProfile,
-            'role' => $role,
+            'role' => $primaryRole,
+            'userRoles' => $userRoles,
             'encryptedId' => $encryptedId
         ]);
     }
@@ -235,6 +276,8 @@ class UserController extends BaseController
         $this->loadView('../views/users/edit.php', [
             'user' => [],
             'role' => [],
+            'userRoles' => [],
+            'userRoleCodes' => [],
             'roles' => $roles,
             'fonctions' => $fonctions
         ]);
@@ -251,7 +294,9 @@ class UserController extends BaseController
                 header('Location: ' . RACINE . 'user/list');
                 exit();
             }
-            $role = $this->model->getUserRole($userProfile['code_user']);
+            $userRoles = $this->model->getUserRoles($userProfile['code_user']);
+            $userRoleCodes = $this->model->getUserRoleCodes($userProfile['code_user']);
+            $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
             $roles = (new ModelRole())->getAll();
             $fonctions = (new ModelFonction())->getAll();
         } catch (Exception $e) {
@@ -261,7 +306,9 @@ class UserController extends BaseController
 
         $this->loadView('../views/users/edit.php', [
             'user' => $userProfile,
-            'role' => $role,
+            'role' => $primaryRole,
+            'userRoles' => $userRoles,
+            'userRoleCodes' => $userRoleCodes,
             'roles' => $roles,
             'fonctions' => $fonctions
         ]);
@@ -274,10 +321,12 @@ class UserController extends BaseController
         $userId = $auth['id_user'] ?? 0;
         $editId = $this->validator->crypter($userId);
         $userProfile = $this->model->getById((int)$userId);
-        $role = $this->model->getUserRole($userProfile['code_user'] ?? '');
+        $userRoles = $this->model->getUserRoles($userProfile['code_user'] ?? '');
+        $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
         $this->loadView('../views/users/profil.php', [
             'user' => $userProfile,
-            'role' => $role,
+            'role' => $primaryRole,
+            'userRoles' => $userRoles,
             'editId' => $editId
         ]);
     }
@@ -304,8 +353,10 @@ class UserController extends BaseController
 
             if (isset($user) && !empty($user) && password_verify($password, $user['password_user'] ?? '')) {
                 if ($user['statut_user'] === 'actif') {
-                    $userRole = $this->model->getUserRole($user['code_user']);
-                    $roleCode = $userRole ? ($userRole['role_code'] ?? 'ROLE_USER') : 'ROLE_USER';
+                    $userRoles = $this->model->getUserRoles($user['code_user']);
+                    $roleCodes = !empty($userRoles) ? array_column($userRoles, 'role_code') : ['ROLE_USER'];
+                    $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
+                    $roleCode = !empty($roleCodes) ? $roleCodes[0] : 'ROLE_USER';
 
                     // Vérifier si lié à un profil enseignant
                     $stmtEns = $this->model->getCon()->prepare("
@@ -313,6 +364,30 @@ class UserController extends BaseController
                     ");
                     $stmtEns->execute([$user['code_user']]);
                     $enseignantProfile = $stmtEns->fetch(PDO::FETCH_ASSOC);
+
+                    // Permissions cumulées
+                    $createPerm = 0; $editPerm = 0; $showPerm = 0; $deletePerm = 0;
+                    if (!empty($userRoles)) {
+                        foreach ($userRoles as $ur) {
+                            if (!empty($ur['create_permission'])) $createPerm = 1;
+                            if (!empty($ur['edit_permission']))   $editPerm = 1;
+                            if (!empty($ur['show_permission']))   $showPerm = 1;
+                            if (!empty($ur['delete_permission'])) $deletePerm = 1;
+                        }
+                    } else {
+                        $createPerm = 1; $editPerm = 1; $showPerm = 1; $deletePerm = 0;
+                    }
+
+                    // Récupérer toutes les permissions métier de l'ensemble des rôles
+                    $inClause = implode(',', array_fill(0, count($roleCodes), '?'));
+                    $stmtPerms = $this->model->getCon()->prepare("
+                        SELECT DISTINCT rp.permission_code 
+                        FROM role_permissions rp
+                        JOIN permissions p ON rp.permission_code = p.code_permission
+                        WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
+                    ");
+                    $stmtPerms->execute($roleCodes);
+                    $allPermissions = $stmtPerms->fetchAll(PDO::FETCH_COLUMN) ?: [];
 
                     $sessionData = [
                         'id_user' => $user['id_user'],
@@ -322,19 +397,24 @@ class UserController extends BaseController
                         'email' => $user['email_user'] ?? '',
                         'tel' => $user['telephone_user'] ?? '',
                         'role_code' => $roleCode,
-                        'is_enseignant' => !empty($enseignantProfile),
+                        'roles' => $roleCodes,
+                        'roles_details' => $userRoles,
+                        'is_enseignant' => !empty($enseignantProfile) || in_array('ROLE_ENSEIGNANT', $roleCodes, true),
                         'code_enseignant' => $enseignantProfile['code_enseignant'] ?? null,
                         'grade_enseignant' => $enseignantProfile['grade_enseignant'] ?? null,
                         'type_contrat' => $enseignantProfile['type_contrat'] ?? null,
                         'permissions' => [
-                            'create' => (int)($userRole['create_permission'] ?? 1),
-                            'edit' => (int)($userRole['edit_permission'] ?? 1),
-                            'show' => (int)($userRole['show_permission'] ?? 1),
-                            'delete' => (int)($userRole['delete_permission'] ?? 0)
+                            'create' => $createPerm,
+                            'edit' => $editPerm,
+                            'show' => $showPerm,
+                            'delete' => $deletePerm
                         ]
                     ];
 
                     Validator::saveSesion(USERS_AUTH, $sessionData);
+                    $_SESSION['permissions'] = $allPermissions;
+                    $_SESSION['roles'] = $roleCodes;
+
                     $welcomeMsg = !empty($enseignantProfile) 
                         ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user']) . ' !'
                         : 'Connexion réussie ! Bienvenue sur GEICG.';

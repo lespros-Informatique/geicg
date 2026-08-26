@@ -68,15 +68,17 @@ class EnseignantController extends BaseController
         }
 
         $codeEnseignant = $this->validator->generateCode('enseignants', 'code_enseignant', 'ENS-', 8);
-        $passwordHashed = password_hash($passwordRaw, PASSWORD_DEFAULT);
+        $rawPassword = !empty($data['password_enseignant']) ? trim($data['password_enseignant']) : ('ENS' . rand(100000, 999999));
+        $passwordHashed = password_hash($rawPassword, PASSWORD_DEFAULT);
+        $numeroAutorisation = trim($data['numero_autorisation'] ?? '');
 
         // Insertion autonome et directe dans la table enseignants
         $stmtEns = $this->model->getCon()->prepare("
             INSERT INTO enseignants (
                 code_enseignant, nom_enseignant, prenom_enseignant, email_enseignant, telephone_enseignant, 
-                sexe_enseignant, password_enseignant, user_code, grade_enseignant, type_contrat, taux_horaire, 
+                sexe_enseignant, password_enseignant, user_code, grade_enseignant, type_contrat, numero_autorisation, taux_horaire, 
                 etablissement_code, statut_enseignant, created_at_enseignant
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
         ");
         $success = $stmtEns->execute([
             $codeEnseignant,
@@ -89,12 +91,14 @@ class EnseignantController extends BaseController
             $userCode,
             $data['grade_enseignant'] ?? 'Enseignant',
             $data['type_contrat'] ?? 'permanent',
+            $numeroAutorisation ?: null,
             !empty($data['taux_horaire']) ? (float)$data['taux_horaire'] : 0.00,
             $etabCode
         ]);
 
         if ($success) {
-            $this->success('Enseignant enregistré avec succès ! Il peut se connecter avec son email/téléphone.');
+            $idDisplay = $email ?: ($telephone ?: $nom);
+            $this->success("Enseignant enregistré avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", ['password' => $rawPassword]);
         } else {
             $this->error('Erreur lors de l\'enregistrement de l\'enseignant.');
         }
@@ -118,6 +122,7 @@ class EnseignantController extends BaseController
         $email = trim($data['email_enseignant'] ?? '');
         $telephone = Validator::cleanPhone($data['telephone_enseignant'] ?? '');
         $userCode = !empty($data['user_code']) ? trim($data['user_code']) : null;
+        $numeroAutorisation = trim($data['numero_autorisation'] ?? '');
 
         if (empty($nom)) {
             $this->error('Le nom de l\'enseignant est obligatoire.');
@@ -136,7 +141,7 @@ class EnseignantController extends BaseController
         $sqlUpdate = "
             UPDATE enseignants 
             SET nom_enseignant = ?, prenom_enseignant = ?, email_enseignant = ?, telephone_enseignant = ?, 
-                sexe_enseignant = ?, user_code = ?, grade_enseignant = ?, type_contrat = ?, taux_horaire = ?, 
+                sexe_enseignant = ?, user_code = ?, grade_enseignant = ?, type_contrat = ?, numero_autorisation = ?, 
                 statut_enseignant = ?, updated_at_enseignant = NOW()";
         $params = [
             $nom,
@@ -147,7 +152,7 @@ class EnseignantController extends BaseController
             $userCode,
             $data['grade_enseignant'] ?? 'Enseignant',
             $data['type_contrat'] ?? 'permanent',
-            !empty($data['taux_horaire']) ? (float)$data['taux_horaire'] : 0.00,
+            $numeroAutorisation ?: null,
             $data['statut_enseignant'] ?? 'actif'
         ];
 

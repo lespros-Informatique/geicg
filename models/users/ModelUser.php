@@ -7,52 +7,119 @@ class ModelUser extends BaseModel
     protected ?string $statusField = 'statut_user';
 
     /**
-     * Récupère le rôle et les droits d'un utilisateur
+     * Récupère tous les rôles et privilèges d'un utilisateur
      */
-    public function getUserRole(string $userCode): ?array
+    public function getUserRoles(string $userCode): array
     {
         try {
             $sql = "SELECT ur.*, r.libelle_role, r.module, r.groupe, r.description 
                     FROM user_roles ur
                     INNER JOIN roles r ON r.code_role = ur.role_code
-                    WHERE ur.user_code = ? LIMIT 1";
+                    WHERE ur.user_code = ?
+                    ORDER BY CASE 
+                        WHEN ur.role_code = 'ROLE_SUPERADMIN' THEN 1 
+                        WHEN ur.role_code = 'ROLE_DIR_GENERAL' THEN 2
+                        WHEN ur.role_code = 'ROLE_DIR_ETUDES' THEN 3
+                        WHEN ur.role_code = 'ROLE_CHEF_DEP' THEN 4
+                        WHEN ur.role_code = 'ROLE_COMPTABLE' THEN 5
+                        WHEN ur.role_code = 'ROLE_SCOLARITE' THEN 6
+                        WHEN ur.role_code = 'ROLE_CAISSIER' THEN 7
+                        WHEN ur.role_code = 'ROLE_ENSEIGNANT' THEN 8
+                        ELSE 9 END, ur.id ASC";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute([$userCode]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
-            error_log("ModelUser::getUserRole error: " . $e->getMessage());
-            return null;
+            error_log("ModelUser::getUserRoles error: " . $e->getMessage());
+            return [];
         }
     }
 
     /**
-     * Attribue un rôle et des permissions CRUD à un utilisateur
+     * Récupère la liste simple des codes de rôles d'un utilisateur
+     */
+    public function getUserRoleCodes(string $userCode): array
+    {
+        $roles = $this->getUserRoles($userCode);
+        return array_values(array_unique(array_filter(array_column($roles, 'role_code'))));
+    }
+
+    /**
+     * Récupère le rôle principal (le plus haut dans la hiérarchie) d'un utilisateur
+     */
+    public function getUserRole(string $userCode): ?array
+    {
+        $roles = $this->getUserRoles($userCode);
+        return !empty($roles) ? $roles[0] : null;
+    }
+
+    /**
+     * Synchronise une liste de rôles multiples avec permissions CRUD spécifiques par rôle
+     * @param string $userCode Code de l'utilisateur
+     * @param array $rolesData [ 'ROLE_CODE' => ['create' => 1, 'edit' => 1, ...], ... ] ou ['ROLE_1', 'ROLE_2']
+     * @param array $defaultCrud Permissions par défaut si non fournies
+     */
+    public function syncUserRoles(string $userCode, array $rolesData, array $defaultCrud = []): bool
+    {
+        try {
+            $pdo = $this->getCon();
+            $pdo->beginTransaction();
+
+            // Supprimer les rôles actuels
+            $stmtDel = $pdo->prepare("DELETE FROM user_roles WHERE user_code = ?");
+            $stmtDel->execute([$userCode]);
+
+            if (empty($rolesData)) {
+                $rolesData = ['ROLE_SCOLARITE' => ['create' => 1, 'edit' => 1, 'show' => 1, 'delete' => 0]];
+            }
+
+            $stmtIns = $pdo->prepare("
+                INSERT INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+
+            foreach ($rolesData as $key => $val) {
+                if (is_array($val)) {
+                    $roleCode = trim($key);
+                    $createP = !empty($val['create']) ? 1 : 0;
+                    $editP   = !empty($val['edit']) ? 1 : 0;
+                    $showP   = isset($val['show']) ? (!empty($val['show']) ? 1 : 0) : 1;
+                    $deleteP = !empty($val['delete']) ? 1 : 0;
+                } else {
+                    $roleCode = trim($val);
+                    $createP = isset($defaultCrud['create']) ? (int)$defaultCrud['create'] : 1;
+                    $editP   = isset($defaultCrud['edit']) ? (int)$defaultCrud['edit'] : 1;
+                    $showP   = isset($defaultCrud['show']) ? (int)$defaultCrud['show'] : 1;
+                    $deleteP = isset($defaultCrud['delete']) ? (int)$defaultCrud['delete'] : 0;
+                }
+
+                if (!empty($roleCode)) {
+                    $stmtIns->execute([$userCode, $roleCode, $createP, $editP, $showP, $deleteP]);
+                }
+            }
+
+            $pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->getCon()->inTransaction()) {
+                $this->getCon()->rollBack();
+            }
+            error_log("ModelUser::syncUserRoles error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Attribue un rôle unique ou ajoute un rôle (rétrocompatibilité)
      */
     public function setUserRole(string $userCode, string $roleCode, int $create = 1, int $edit = 1, int $show = 1, int $delete = 0): bool
     {
-        try {
-            $stmtCheck = $this->getCon()->prepare("SELECT id FROM user_roles WHERE user_code = ? LIMIT 1");
-            $stmtCheck->execute([$userCode]);
-            $existing = $stmtCheck->fetch(PDO::FETCH_ASSOC);
-
-            if ($existing) {
-                $stmt = $this->getCon()->prepare("
-                    UPDATE user_roles 
-                    SET role_code = ?, create_permission = ?, edit_permission = ?, show_permission = ?, delete_permission = ? 
-                    WHERE user_code = ?
-                ");
-                return $stmt->execute([$roleCode, $create, $edit, $show, $delete, $userCode]);
-            } else {
-                $stmt = $this->getCon()->prepare("
-                    INSERT INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission) 
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ");
-                return $stmt->execute([$userCode, $roleCode, $create, $edit, $show, $delete]);
-            }
-        } catch (Exception $e) {
-            error_log("ModelUser::setUserRole error: " . $e->getMessage());
-            return false;
-        }
+        return $this->syncUserRoles($userCode, [$roleCode], [
+            'create' => $create,
+            'edit' => $edit,
+            'show' => $show,
+            'delete' => $delete
+        ]);
     }
 
     /**

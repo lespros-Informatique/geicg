@@ -34,7 +34,7 @@ class ScolariteController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY');
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);
@@ -43,15 +43,15 @@ class ScolariteController extends BaseController
         }
         $data['statut_scolarite'] = $data['statut_scolarite'] ?? 'actif';
         $data['created_at_scolarite'] = date('Y-m-d H:i:s');
+        $data['annee_code'] = $anneeCode;
         $cols = $this->model->getCon()->query("DESCRIBE scolarites")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Tarif de scolarité créé avec succès !');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de la création de la scolarité.');
         }
     }
 
@@ -63,12 +63,15 @@ class ScolariteController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+        if (!empty($_POST['annee_code'])) {
+            $data['annee_code'] = trim($_POST['annee_code']);
+        }
         $cols = $this->model->getCon()->query("DESCRIBE scolarites")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Tarif de scolarité modifié avec succès !');
         } else {
-            $this->error('Erreur lors de la modification');
+            $this->error('Erreur lors de la modification de la scolarité.');
         }
     }
 
