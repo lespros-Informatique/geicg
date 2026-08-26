@@ -618,18 +618,40 @@ if (modalSave) {
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
-        const footer = document.getElementById('footer');
+        const footer = document.getElementById('footer') || document.querySelector('.footer');
         if (sidebar) {
             sidebar.classList.toggle('collapsed');
-            if (mainContent) mainContent.classList.toggle('expanded');
-            if (footer) footer.classList.toggle('expanded');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            if (mainContent) mainContent.classList.toggle('expanded', isCollapsed);
+            if (footer) footer.classList.toggle('expanded', isCollapsed);
+            try {
+                localStorage.setItem('geicg_sidebar_collapsed', isCollapsed ? '1' : '0');
+            } catch (e) {}
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         }
     }
 
+    try {
+        if (localStorage.getItem('geicg_sidebar_collapsed') === '1') {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const footer = document.getElementById('footer') || document.querySelector('.footer');
+            if (sidebar) sidebar.classList.add('collapsed');
+            if (mainContent) mainContent.classList.add('expanded');
+            if (footer) footer.classList.add('expanded');
+        }
+    } catch (e) {}
+
     const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebarToggleNav = document.getElementById('sidebarToggleNav');
-    if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
-    if (sidebarToggleNav) sidebarToggleNav.addEventListener('click', toggleSidebar);
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar();
+        });
+    }
 
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const sidebar = document.getElementById('sidebar');
