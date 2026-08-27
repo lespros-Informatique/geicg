@@ -16,7 +16,15 @@ class DocumentController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $sql = "SELECT d.*, 
+                       COALESCE(f.libelle_filiere, d.filiere_code, 'Toutes les filières') as libelle_filiere, 
+                       COALESCE(n.libelle_niveau, d.niveaux_code, 'Tous les niveaux') as libelle_niveau,
+                       DATE_FORMAT(d.created_at_document, '%d/%m/%Y') as date_creation_formatee
+                FROM documents d
+                LEFT JOIN filieres f ON (f.code_filiere = d.filiere_code OR f.libelle_filiere = d.filiere_code)
+                LEFT JOIN niveaux n ON (n.code_niveau = d.niveaux_code OR n.libelle_niveau = d.niveaux_code)
+                ORDER BY d.id_document DESC";
+        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_document'];
