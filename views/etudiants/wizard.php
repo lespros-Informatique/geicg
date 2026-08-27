@@ -230,27 +230,52 @@ $accessoires = (new ModelAccessoire())->getAll();
               <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i> Étape 3 : Inscription Académique & Scolarité
             </h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-              <div class="form-group">
+              <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe d'affectation <span style="color: #EF4444;">*</span></label>
                 <select class="form-control select2" id="wiz_classe" name="classe_code" style="width: 100%;" required>
-                  <option value="">-- Rechercher / Sélectionner la classe --</option>
+                  <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
                   <?php foreach($classes as $cl): ?>
                     <option value="<?= $cl['code_classe'] ?>"><?= htmlspecialchars($cl['libelle_classe']) ?></option>
                   <?php endforeach; ?>
                 </select>
               </div>
-              <div class="form-group">
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Montant Scolarité Annuelle Due (FCFA) <span style="color: #EF4444;">*</span></label>
-                <input type="number" class="form-control" id="wiz_montant_scolarite" name="montant_scolarite_inscription" placeholder="Ex: 500000" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;" required>
-              </div>
+
+              <!-- Montant auto-récupéré -->
+              <input type="hidden" id="wiz_montant_scolarite" name="montant_scolarite_inscription" value="0">
+
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
-                <input type="number" class="form-control" name="remise_accordee" placeholder="Ex: 50000" value="0" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="number" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="Ex: 50000" value="0" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
-              <div class="form-group">
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Date d'inscription <span style="color: #EF4444;">*</span></label>
-                <input type="date" class="form-control" name="date_inscription" value="<?= date('Y-m-d') ?>" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;" required>
+            </div>
+
+            <!-- FICHE TARIFAIRE AUTOMATIQUE DE LA CLASSE -->
+            <div id="wiz-class-tuition-box" style="display: none; background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 18px 22px; margin-top: 20px; transition: all 0.3s ease;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="info" style="width: 15px; height: 15px;"></i> Modalités & Tarifs de la Classe
+                  </div>
+                  <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;" id="wiz_summary_classe_title">-</div>
+                  <div style="font-size: 13px; color: #475569; margin-top: 2px;" id="wiz_summary_filiere_niveau">-</div>
+                </div>
+
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                  <div style="background: #FFFFFF; border: 1px solid #BBF7D0; padding: 10px 16px; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size: 10.5px; font-weight: 800; color: #15803D; text-transform: uppercase;">Scolarité Totale</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="wiz_summary_total_scolarite">0 FCFA</div>
+                  </div>
+
+                  <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 10px 16px; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size: 10.5px; font-weight: 800; color: #1D4ED8; text-transform: uppercase;" id="wiz_summary_first_tranche_label">Frais Inscription (1ère Tranche)</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin-top: 2px;" id="wiz_summary_frais_inscription">0 FCFA</div>
+                    <div style="font-size: 11px; color: #64748B; margin-top: 2px;" id="wiz_summary_date_limite"></div>
+                  </div>
+                </div>
               </div>
+
+              <!-- Liste des tranches complémentaires si existantes -->
+              <div id="wiz_summary_tranches_list" style="margin-top: 12px; font-size: 12.5px; color: #334155; border-top: 1px dashed #BBF7D0; padding-top: 10px; display: none;"></div>
             </div>
           </div>
 
@@ -446,9 +471,8 @@ $(document).ready(function() {
     }
     if (step === 3) {
       var classe = $('#wiz_classe').val();
-      var montant = $('#wiz_montant_scolarite').val();
-      if (!classe || !montant) {
-        showToast('Veuillez sélectionner la classe et renseigner la scolarité due.', 'warning', 'Champs requis');
+      if (!classe) {
+        showToast('Veuillez sélectionner la classe d\'affectation.', 'warning', 'Champs requis');
         return false;
       }
     }
@@ -474,12 +498,77 @@ $(document).ready(function() {
 
     var classeText = $('#wiz_classe option:selected').text();
     var montant = $('#wiz_montant_scolarite').val();
-    var remise = $('input[name="remise_accordee"]').val() || 0;
+    var remise = $('#wiz_remise').val() || 0;
 
     $('#recap_classe').text(classeText || 'Non choisie');
-    $('#recap_montant').text(montant ? Number(montant).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
+    $('#recap_montant').text(montant && Number(montant) > 0 ? Number(montant).toLocaleString('fr-FR') + ' FCFA' : 'Tarif classe automatique');
     $('#recap_remise').text(Number(remise).toLocaleString('fr-FR') + ' FCFA');
   }
+
+  // Auto-récupération et affichage de la scolarité et de la 1ère tranche sur sélection de la classe
+  $('#wiz_classe').on('change select2:select', function() {
+    var classeCode = $(this).val();
+    if (!classeCode) {
+      $('#wiz-class-tuition-box').slideUp(200);
+      $('#wiz_montant_scolarite').val(0);
+      return;
+    }
+
+    $.ajax({
+      url: '<?= RACINE ?>inscription/getTuitionByClass',
+      type: 'GET',
+      data: { classe_code: classeCode },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 && res.data) {
+          var d = res.data;
+          var totalScolarite = Number(d.montant_scolarite || 0);
+          var fraisInscription = Number(d.frais_inscription || 0);
+
+          $('#wiz_montant_scolarite').val(totalScolarite);
+          $('#wiz_summary_classe_title').text(d.libelle_classe);
+          $('#wiz_summary_filiere_niveau').text((d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau : ''));
+          $('#wiz_summary_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
+
+          if (fraisInscription > 0) {
+            $('#wiz_summary_first_tranche_label').text(d.libelle_premiere_tranche || 'Frais Inscription (1ère Tranche)');
+            $('#wiz_summary_frais_inscription').text(fraisInscription.toLocaleString('fr-FR') + ' FCFA');
+            if (d.date_limite_tranche) {
+              $('#wiz_summary_date_limite').text('Exigible avant le : ' + d.date_limite_tranche).show();
+            } else {
+              $('#wiz_summary_date_limite').hide();
+            }
+          } else {
+            $('#wiz_summary_first_tranche_label').text('Frais Inscription (1ère Tranche)');
+            $('#wiz_summary_frais_inscription').text('Non configuré');
+            $('#wiz_summary_date_limite').hide();
+          }
+
+          if (d.tranches && d.tranches.length > 1) {
+            var trHtml = '<strong>Échéancier des tranches configurées :</strong><div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">';
+            d.tranches.forEach(function(tr, idx) {
+              trHtml += '<span class="badge" style="background:#FFFFFF; color:#1E3A5F; border:1px solid #CBD5E1; padding:4px 8px; border-radius:6px; font-weight:700;">' + 
+                        (tr.libelle_tranche || 'Tranche ' + (idx+1)) + ' : ' + Number(tr.montant_tranche).toLocaleString('fr-FR') + ' FCFA' + 
+                        (tr.date_limite ? ' (au ' + tr.date_limite + ')' : '') + '</span>';
+            });
+            trHtml += '</div>';
+            $('#wiz_summary_tranches_list').html(trHtml).show();
+          } else {
+            $('#wiz_summary_tranches_list').hide();
+          }
+
+          $('#wiz-class-tuition-box').stop(true, true).slideDown(250);
+          if (window.lucide) lucide.createIcons();
+        } else {
+          $('#wiz-class-tuition-box').slideUp(200);
+        }
+      },
+      error: function(err) {
+        console.error('Erreur chargement tarif classe:', err);
+        $('#wiz-class-tuition-box').slideUp(200);
+      }
+    });
+  });
 
   // Auto save on any input change
   $('#form-wizard-etudiant').on('input change keyup', 'input, select, textarea', function() {
@@ -547,6 +636,12 @@ $(document).ready(function() {
     });
   }
   updateWizardUI();
+
+  // Déclencher le chargement des tarifs si une classe est déjà pré-sélectionnée
+  var initClass = $('#wiz_classe').val();
+  if (initClass) {
+    $('#wiz_classe').trigger('change');
+  }
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

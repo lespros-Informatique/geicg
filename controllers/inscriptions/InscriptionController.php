@@ -136,12 +136,33 @@ class InscriptionController extends BaseController
                 'derniere_filiere' => $prevIns['libelle_filiere'] ?? 'Non définie',
                 'dernier_niveau' => $prevIns['libelle_niveau'] ?? 'Non défini',
                 'derniere_classe' => $prevIns['libelle_classe'] ?? 'Nouvel inscrit',
+                'derniere_classe_code' => $prevIns['classe_code'] ?? '',
+                'dernier_niveau_code' => $prevIns['niveau_code'] ?? '',
+                'derniere_filiere_code' => $prevIns['filiere_code'] ?? '',
                 'derniere_annee' => $prevIns['libelle_annee'] ?? '',
                 'prev_regime' => ($prevIns['affectation_etat'] ?? '') === 'affecte' ? 'Affecté (État)' : 'Non Affecté (Privé)',
                 'prev_scolarite' => $prevDue,
                 'prev_paye' => $prevPaye,
                 'prev_solde' => $prevSolde,
-                'statut_etudiant' => $etudiant['statut_etudiant'] ?? 'actif'
+                'statut_etudiant' => $etudiant['statut_etudiant'] ?? 'actif',
+                'accessoires_etudiant' => (function() use ($db, $etudiantCode) {
+                    $stmt = $db->prepare("
+                        SELECT a.code_accessoire, a.libelle_accessoire, COALESCE(ai.statut_accessoire_inscription, 'actif') as statut
+                        FROM accessoire_inscription ai
+                        JOIN inscriptions i ON i.code_inscription = ai.inscription_code
+                        JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
+                        WHERE i.etudiant_code = ?
+                        ORDER BY ai.id_accessoire_inscription DESC
+                    ");
+                    $stmt->execute([$etudiantCode]);
+                    $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    if (empty($res)) {
+                        // Récupérer les kits/accessoires actifs configurés dans l'établissement
+                        $stmtAll = $db->query("SELECT code_accessoire, libelle_accessoire, 'disponible' as statut FROM accessoires WHERE statut_accessoire = 'actif'");
+                        $res = $stmtAll ? $stmtAll->fetchAll(PDO::FETCH_ASSOC) : [];
+                    }
+                    return $res;
+                })()
             ]
         ]);
     }
@@ -158,8 +179,15 @@ class InscriptionController extends BaseController
 
         $db = $this->model->getCon();
 
-        // Récupérer filiere_code et niveau_code de la classe
-        $stmtCl = $db->prepare("SELECT * FROM classes WHERE code_classe = ? LIMIT 1");
+        // Récupérer la classe avec ses libellés filière et niveau
+        $stmtCl = $db->prepare("
+            SELECT c.*, f.libelle_filiere, n.libelle_niveau 
+            FROM classes c
+            LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+            LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+            WHERE c.code_classe = ? 
+            LIMIT 1
+        ");
         $stmtCl->execute([$classeCode]);
         $classe = $stmtCl->fetch(PDO::FETCH_ASSOC);
 
@@ -168,27 +196,59 @@ class InscriptionController extends BaseController
             return;
         }
 
-        // Trouver le tarif de scolarité
+        // Trouver le tarif de scolarité (par filiere/niveau ou filiere)
         $stmtSco = $db->prepare("
             SELECT * FROM scolarites 
-            WHERE (filiere_code = ? AND niveau_code = ?)
-            ORDER BY id_scolarite DESC
+            WHERE (filiere_code = ? AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL))
+               OR (filiere_code = ? OR niveau_code = ?)
+            ORDER BY (CASE WHEN filiere_code = ? AND niveau_code = ? THEN 1 ELSE 2 END), id_scolarite DESC
             LIMIT 1
         ");
-        $stmtSco->execute([$classe['filiere_code'], $classe['niveau_code']]);
+        $stmtSco->execute([$classe['filiere_code'], $classe['niveau_code'], $classe['filiere_code'], $classe['niveau_code'], $classe['filiere_code'], $classe['niveau_code']]);
         $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
 
-        if ($sco) {
-            $this->json([
-                'status' => 1,
-                'data' => [
-                    'montant_scolarite' => (float)$sco['montant_scolarite'],
-                    'affectation_etat' => $sco['affectation_etat'] ?? 'non_affecte'
-                ]
-            ]);
-        } else {
-            $this->json(['status' => 0, 'message' => 'Aucune grille tarifaire trouvée pour cette classe']);
+        $montantScolarite = $sco ? (float)$sco['montant_scolarite'] : 0;
+        $affectationEtat = $sco['affectation_etat'] ?? 'non_affecte';
+        $codeScolarite = $sco['code_scolarite'] ?? '';
+
+        // Récupérer les tranches associées (notamment la 1ère tranche / frais d'inscription)
+        $stmtTr = $db->prepare("
+            SELECT * FROM tranches_scolarite 
+            WHERE (scolarite_code = ? AND scolarite_code != '')
+               OR (filiere_code = ? AND niveau_code = ? AND filiere_code != '')
+               OR (filiere_code = ? AND filiere_code != '')
+               OR (scolarite_code = '' AND filiere_code = '' AND niveau_code = '')
+            ORDER BY id_tranche ASC
+        ");
+        $stmtTr->execute([$codeScolarite, $classe['filiere_code'], $classe['niveau_code'], $classe['filiere_code']]);
+        $tranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
+
+        $fraisInscription = 0;
+        $libellePremiereTranche = '1ere tranche';
+        $dateLimiteTranche = '';
+
+        if (!empty($tranches)) {
+            $firstTranche = $tranches[0];
+            $fraisInscription = (float)$firstTranche['montant_tranche'];
+            $libellePremiereTranche = $firstTranche['libelle_tranche'] ?: $libellePremiereTranche;
+            $dateLimiteTranche = !empty($firstTranche['date_limite']) ? date('d/m/Y', strtotime($firstTranche['date_limite'])) : '';
         }
+
+        $this->json([
+            'status' => 1,
+            'data' => [
+                'classe_code' => $classe['code_classe'],
+                'libelle_classe' => $classe['libelle_classe'],
+                'libelle_filiere' => $classe['libelle_filiere'] ?? '',
+                'libelle_niveau' => $classe['libelle_niveau'] ?? '',
+                'montant_scolarite' => $montantScolarite,
+                'frais_inscription' => $fraisInscription,
+                'libelle_premiere_tranche' => $libellePremiereTranche,
+                'date_limite_tranche' => $dateLimiteTranche,
+                'tranches' => $tranches,
+                'affectation_etat' => $affectationEtat
+            ]
+        ]);
     }
 
     public function add()

@@ -301,21 +301,57 @@ class EtudiantController extends BaseController
 
             // 3. Insert Academic Inscription into `inscriptions` if classe_code provided
             if (!empty($data['classe_code'])) {
+                $montantScolarite = (float)($data['montant_scolarite_inscription'] ?? 0);
+                if ($montantScolarite <= 0) {
+                    $stmtCl = $db->prepare("SELECT * FROM classes WHERE code_classe = ? LIMIT 1");
+                    $stmtCl->execute([$data['classe_code']]);
+                    $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
+                    if ($cl) {
+                        $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? ORDER BY id_scolarite DESC LIMIT 1");
+                        $stmtSco->execute([$cl['filiere_code'], $cl['niveau_code']]);
+                        $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
+                        if ($sco) {
+                            $montantScolarite = (float)$sco['montant_scolarite'];
+                        }
+                    }
+                }
+
                 $codeInscription = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
                 $stmtIns = $db->prepare("
                     INSERT INTO inscriptions
-                    (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, user_code, annee_code, etablissement_code, statut_inscription, created_at_inscription)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+                    (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, user_code, annee_code, etablissement_code, statut_inscription, affectation_etat, created_at_inscription)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'valide', 'non', NOW())
                 ");
                 $stmtIns->execute([
                     $codeInscription,
                     $codeEtudiant,
                     $data['classe_code'],
-                    (float)($data['montant_scolarite_inscription'] ?? 0),
+                    $montantScolarite,
                     $userCode,
                     $anneeCode,
                     $etabCode
                 ]);
+            }
+
+            // 4. Insert Accessoires / Kits into `accessoire_inscription`
+            if (!empty($data['accessoires']) && is_array($data['accessoires'])) {
+                $stmtAcc = $db->prepare("
+                    INSERT INTO accessoire_inscription
+                    (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+                    VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
+                ");
+                foreach ($data['accessoires'] as $accCode) {
+                    if (empty($accCode)) continue;
+                    $codeAccIns = $this->validator->generateCode('accessoire_inscription', 'code_accessoire_inscription', 'ACI-', 8);
+                    $stmtAcc->execute([
+                        $codeAccIns,
+                        !empty($codeInscription) ? $codeInscription : '',
+                        $accCode,
+                        $anneeCode,
+                        $userCode,
+                        $etabCode
+                    ]);
+                }
             }
 
             $db->commit();

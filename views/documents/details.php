@@ -59,6 +59,23 @@ $item = isset($item) ? $item : [];
             <strong style="color: #64748B;">Description / Objet :</strong> <?= htmlspecialchars($item['description_document']) ?>
           </div>
         <?php endif; ?>
+
+        <?php if (!empty($item['lien_document']) || !empty($item['chemin_fichier'])): 
+          $fileUrl = !empty($item['lien_document']) ? $item['lien_document'] : $item['chemin_fichier'];
+        ?>
+          <div style="padding-top: 16px; border-top: 1px solid #F1F5F9; margin-top: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: #F8FAFC; padding: 14px 18px; border-radius: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i data-lucide="file-check" style="width: 20px; height: 20px; color: #1E3A5F;"></i>
+              <div>
+                <strong style="color: #0F172A; font-size: 13.5px;"><?= htmlspecialchars(basename($fileUrl)) ?></strong>
+                <div style="font-size: 12px; color: #64748B;"><?= htmlspecialchars($fileUrl) ?></div>
+              </div>
+            </div>
+            <a href="<?= htmlspecialchars($fileUrl) ?>" target="_blank" download class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px;">
+              <i data-lucide="download" style="width: 15px; height: 15px;"></i> Télécharger / Ouvrir le fichier
+            </a>
+          </div>
+        <?php endif; ?>
       </div>
 
     </div>
