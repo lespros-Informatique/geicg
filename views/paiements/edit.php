@@ -11,13 +11,9 @@ $stmtIns = $db->query("
 $inscriptionsList = $stmtIns->fetchAll(PDO::FETCH_ASSOC);
 
 $today = date('Y-m-d');
-$stmtCaisseToday = $db->prepare("SELECT * FROM ouvertures_caisse WHERE date_ouverture = ? AND statut_ouverture = 'ouverte' LIMIT 1");
-$stmtCaisseToday->execute([$today]);
-$caisseOuverte = $stmtCaisseToday->fetch(PDO::FETCH_ASSOC);
-
-$stmtClotureToday = $db->prepare("SELECT * FROM clotures_caisse WHERE date_cloture = ? AND statut_cloture != 'annule' LIMIT 1");
-$stmtClotureToday->execute([$today]);
-$caisseCloturee = $stmtClotureToday->fetch(PDO::FETCH_ASSOC);
+$stmtSessionToday = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
+$stmtSessionToday->execute([$today]);
+$sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -36,35 +32,35 @@ $caisseCloturee = $stmtClotureToday->fetch(PDO::FETCH_ASSOC);
         </a>
       </div>
 
-      <!-- BANDEAU D'ÉTAT DE LA CAISSE DU JOUR -->
-      <?php if (!empty($caisseCloturee)): ?>
+      <!-- BANDEAU D'ÉTAT DE LA SESSION DE CAISSE DU JOUR -->
+      <?php if (!empty($sessionJour) && in_array($sessionJour['statut_session'], ['cloturee', 'valide'])): ?>
         <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="width: 40px; height: 40px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 20px;">
               <i data-lucide="lock" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-              <strong style="color: #991B1B; font-size: 14px;">Caisse de la journée Clôturée (Réf : <?= htmlspecialchars($caisseCloturee['code_cloture']) ?>)</strong>
-              <div style="color: #7F1D1D; font-size: 12px; margin-top: 2px;">La caisse du jour a déjà été arrêtée. Tout nouvel encaissement doit être validé ou reporté sur la session suivante.</div>
+              <strong style="color: #991B1B; font-size: 14px;">Session de caisse du jour CLÔTURÉE (Réf : <?= htmlspecialchars($sessionJour['code_session']) ?>)</strong>
+              <div style="color: #7F1D1D; font-size: 12px; margin-top: 2px;">La session du jour a déjà été arrêtée. Tout nouvel encaissement en espèces est bloqué.</div>
             </div>
           </div>
-          <a href="<?= RACINE ?>cloture_caisse/details/<?= $this->validator->crypter($caisseCloturee['id_cloture']) ?>" class="btn btn-sm btn-outline-danger" style="font-weight: 700; border-radius: 6px; font-size: 12px;">
+          <a href="<?= RACINE ?>session_caisse/details/<?= $this->validator->crypter($sessionJour['id_session']) ?>" class="btn btn-sm btn-outline-danger" style="font-weight: 700; border-radius: 6px; font-size: 12px;">
             Voir le PV de Clôture
           </a>
         </div>
-      <?php elseif (!empty($caisseOuverte)): ?>
+      <?php elseif (!empty($sessionJour) && $sessionJour['statut_session'] === 'ouverte'): ?>
         <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="width: 36px; height: 36px; border-radius: 8px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center;">
               <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-              <strong style="color: #166534; font-size: 13px;">Caisse du jour Ouverte &bull; Session active</strong>
-              <div style="color: #15803D; font-size: 12px;">Fond initial : <strong><?= number_format((float)$caisseOuverte['fond_initial'], 0, ',', ' ') ?> FCFA</strong> (Réf : <?= htmlspecialchars($caisseOuverte['code_ouverture']) ?>)</div>
+              <strong style="color: #166534; font-size: 13px;">Session de Caisse Active &bull; Ouverte</strong>
+              <div style="color: #15803D; font-size: 12px;">Fond initial : <strong><?= number_format((float)$sessionJour['fond_initial'], 0, ',', ' ') ?> FCFA</strong> (Réf : <?= htmlspecialchars($sessionJour['code_session']) ?>)</div>
             </div>
           </div>
-          <a href="<?= RACINE ?>cloture_caisse/formulaire" class="btn btn-sm btn-outline-success" style="font-weight: 700; border-radius: 6px; font-size: 12px; background:#FFFFFF;">
-            <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Clôturer en fin de journée
+          <a href="<?= RACINE ?>session_caisse/cloturer/<?= $this->validator->crypter($sessionJour['id_session']) ?>" class="btn btn-sm btn-outline-success" style="font-weight: 700; border-radius: 6px; font-size: 12px; background:#FFFFFF;">
+            <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Clôturer la Session
           </a>
         </div>
       <?php else: ?>
@@ -74,12 +70,12 @@ $caisseCloturee = $stmtClotureToday->fetch(PDO::FETCH_ASSOC);
               <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-              <strong style="color: #92400E; font-size: 14px;">Attention : La caisse de la journée n'est pas encore OUVERTE</strong>
-              <div style="color: #B45309; font-size: 12px; margin-top: 2px;">Pour assurer la traçabilité des espèces et le rapprochement du soir, veuillez ouvrir la caisse du jour.</div>
+              <strong style="color: #92400E; font-size: 14px;">Attention : Aucune session de caisse n'est OUVERTE pour aujourd'hui</strong>
+              <div style="color: #B45309; font-size: 12px; margin-top: 2px;">Pour assurer la traçabilité des espèces et le rapprochement du soir, veuillez démarrer la session de caisse.</div>
             </div>
           </div>
-          <a href="<?= RACINE ?>ouverture_caisse/formulaire" class="btn btn-warning" style="background: #D97706; border-color: #D97706; color: #FFF; font-weight: 700; border-radius: 8px; padding: 9px 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
-            <i data-lucide="unlock" style="width: 16px; height: 16px;"></i> Ouvrir la Caisse Maintenant
+          <a href="<?= RACINE ?>session_caisse/formulaire" class="btn btn-sm btn-warning" style="background: #D97706; border-color: #D97706; color: #FFF; font-weight: 700; border-radius: 6px; font-size: 12px;">
+            <i data-lucide="unlock" style="width: 14px; height: 14px;"></i> Ouvrir la Caisse
           </a>
         </div>
       <?php endif; ?>
@@ -146,8 +142,7 @@ $caisseCloturee = $stmtClotureToday->fetch(PDO::FETCH_ASSOC);
                 <th style="padding: 10px 14px; text-align: right;">Montant Exigible</th>
                 <th style="padding: 10px 14px; text-align: right;">Déjà Payé</th>
                 <th style="padding: 10px 14px; text-align: right;">Reste Dû</th>
-                <th style="padding: 10px 14px; text-align: center;">État</th>
-                <th style="padding: 10px 14px; text-align: center; width: 130px;">Action</th>
+                <th style="padding: 10px 14px; text-align: center; width: 160px;">Statut</th>
               </tr>
             </thead>
             <tbody id="student-tranches-tbody">
@@ -206,7 +201,7 @@ $caisseCloturee = $stmtClotureToday->fetch(PDO::FETCH_ASSOC);
             <!-- Montant versé -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Montant versé (FCFA) <span style="color: #EF4444;">*</span></label>
-              <input type="number" id="inp_montant_paiement" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 15px; font-weight: 700; border-radius: 8px; border: 1px solid #CBD5E1; color: #0F172A;" name="montant_paiement" value="<?= htmlspecialchars($item['montant_paiement'] ?? '') ?>" placeholder="Ex: 150000" min="1" step="500" required>
+              <input type="number" id="inp_montant_paiement" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 15px; font-weight: 700; border-radius: 8px; border: 1px solid #CBD5E1; color: #0F172A;" name="montant_paiement" value="<?= htmlspecialchars($item['montant_paiement'] ?? '') ?>" placeholder="Ex: 150000" min="0" step="any" required>
             </div>
 
             <!-- Mode de paiement -->
@@ -327,14 +322,9 @@ $(document).ready(function() {
           tr.reste_a_payer_fmt +
         '</td>' +
         '<td style="padding:12px 14px; text-align:center;">' +
-          '<span class="badge" style="background:' + tr.badge_bg + '; color:' + tr.badge_color + '; font-weight:700; font-size:11.5px; padding:4px 10px; border-radius:8px;">' +
+          '<span class="badge" style="background:' + tr.badge_bg + '; color:' + tr.badge_color + '; font-weight:700; font-size:12px; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; border:1px solid ' + (tr.is_soldee ? '#86EFAC' : (tr.statut_code === 'partiel' ? '#FCD34D' : '#BFDBFE')) + ';">' +
             badgeIcon + tr.statut_libelle +
           '</span>' +
-        '</td>' +
-        '<td style="padding:12px 14px; text-align:center;">' +
-          (tr.is_soldee 
-            ? '<span style="font-size:12px; font-weight:700; color:#15803D;"><i data-lucide="check-circle" style="width:16px;height:16px;vertical-align:-3px;"></i> Réglée</span>' 
-            : '<button type="button" class="btn btn-sm btn-select-tranche-row" data-code="' + tr.code_tranche + '" style="background:#1E3A5F; color:#FFF; font-weight:700; font-size:11.5px; border-radius:6px; padding:5px 10px; border:none; cursor:pointer;">Encaisser</button>') +
         '</td>' +
       '</tr>';
 

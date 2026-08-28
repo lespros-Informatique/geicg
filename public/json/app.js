@@ -758,4 +758,15 @@ if (modalSave) {
     function escapeHtml(str) {
         return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
+
+    // Désactiver l'incrémentation / décrémentation automatique sur les champs input de type number
+    $(document).on('wheel', 'input[type="number"]', function(e) {
+        $(this).blur();
+    });
+
+    $(document).on('keydown', 'input[type="number"]', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+        }
+    });
 });

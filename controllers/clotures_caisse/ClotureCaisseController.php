@@ -10,7 +10,8 @@ class ClotureCaisseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/clotures_caisse/list.php');
+        header('Location: ' . RACINE . 'ouverture_caisse/list?tab=clotures');
+        exit();
     }
 
     public function apiList()

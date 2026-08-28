@@ -81,7 +81,27 @@ class PaiementController extends BaseController
         }
 
         $codeInscription = $ins['code_inscription'] ?? '';
-        $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+        $filiereCode = $ins['filiere_code'] ?? '';
+        $niveauCode = $ins['niveau_code'] ?? '';
+        $affectation = $ins['affectation_etat'] ?? '';
+
+        // 1. Recherche du tarif officiel de scolarité pour la filière / niveau de la classe
+        $stmtSco = $db->prepare("
+            SELECT * FROM scolarites 
+            WHERE filiere_code = ? AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
+              AND statut_scolarite = 'actif'
+            ORDER BY (CASE WHEN affectation_etat = ? THEN 1 ELSE 2 END), id_scolarite DESC
+            LIMIT 1
+        ");
+        $stmtSco->execute([$filiereCode, $niveauCode, $affectation]);
+        $scoGrid = $stmtSco->fetch(PDO::FETCH_ASSOC);
+
+        $codeScolarite = $scoGrid['code_scolarite'] ?? '';
+        if ($scoGrid && (float)$scoGrid['montant_scolarite'] > 0) {
+            $scolariteDue = (float)$scoGrid['montant_scolarite'];
+        } else {
+            $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+        }
 
         // Récupération de tous les paiements existants pour cette inscription
         $stmtPay = $db->prepare("SELECT * FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule' ORDER BY date_paiement ASC, id_paiement ASC");
@@ -105,10 +125,7 @@ class PaiementController extends BaseController
             $badgeClass = 'badge-warning';
         }
 
-        // Récupération des tranches actives pour la filière et le niveau de la classe de l'élève
-        $filiereCode = $ins['filiere_code'] ?? '';
-        $niveauCode = $ins['niveau_code'] ?? '';
-
+        // 2. Récupération des tranches actives pour la filière et le niveau de la classe ou rattachées à la scolarité
         $stmtTr = $db->prepare("
             SELECT t.*, s.montant_scolarite as scolarite_globale
             FROM tranches_scolarite t
@@ -117,10 +134,11 @@ class PaiementController extends BaseController
               AND (
                 (t.filiere_code = ? AND t.niveau_code = ?)
                 OR (s.filiere_code = ? AND s.niveau_code = ?)
+                OR (t.scolarite_code != '' AND t.scolarite_code = ?)
               )
             ORDER BY t.date_limite ASC, t.id_tranche ASC
         ");
-        $stmtTr->execute([$filiereCode, $niveauCode, $filiereCode, $niveauCode]);
+        $stmtTr->execute([$filiereCode, $niveauCode, $filiereCode, $niveauCode, $codeScolarite]);
         $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
 
         // Calcul des paiements par tranche
@@ -265,21 +283,16 @@ class PaiementController extends BaseController
 
         // Vérification de la session de caisse pour les encaissements en espèces
         if ($mode === 'especes' || $mode === 'espece' || $mode === 'cash' || empty($mode)) {
-            // 1. Vérifier si la caisse a déjà été clôturée aujourd'hui
-            $stmtCloture = $db->prepare("SELECT code_cloture FROM clotures_caisse WHERE date_cloture = ? AND statut_cloture != 'annule' LIMIT 1");
-            $stmtCloture->execute([$today]);
-            $cloture = $stmtCloture->fetch(PDO::FETCH_ASSOC);
-            if ($cloture) {
-                $this->error("Encaissement impossible : La caisse du jour a déjà été CLÔTURÉE (Réf: {$cloture['code_cloture']}). Aucun nouvel encaissement en espèces ne peut être enregistré.");
-                return;
-            }
+            $stmtSession = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
+            $stmtSession->execute([$today]);
+            $sess = $stmtSession->fetch(PDO::FETCH_ASSOC);
 
-            // 2. Vérifier si la caisse a été ouverte aujourd'hui
-            $stmtOuv = $db->prepare("SELECT * FROM ouvertures_caisse WHERE date_ouverture = ? AND statut_ouverture = 'ouverte' LIMIT 1");
-            $stmtOuv->execute([$today]);
-            $ouv = $stmtOuv->fetch(PDO::FETCH_ASSOC);
-            if (!$ouv) {
-                $this->error("Encaissement impossible : La caisse du jour n'est pas encore OUVERTE. Veuillez effectuer l'ouverture de caisse avant d'encaisser.");
+            if (!$sess || $sess['statut_session'] !== 'ouverte') {
+                if ($sess && in_array($sess['statut_session'], ['cloturee', 'valide'])) {
+                    $this->error("Encaissement impossible : La session de caisse du jour a déjà été CLÔTURÉE (Réf: {$sess['code_session']}). Aucun nouvel encaissement en espèces ne peut être enregistré.");
+                } else {
+                    $this->error("Encaissement impossible : Aucune session de caisse n'est OUVERTE pour aujourd'hui. Veuillez ouvrir la session de caisse avant d'encaisser.");
+                }
                 return;
             }
         }

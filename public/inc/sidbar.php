@@ -441,14 +441,9 @@
                     <i data-lucide="credit-card"></i> <span>Caisse & Encaissements</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showOuvCaisse): ?>
-                <a href="<?= RACINE ?>ouverture_caisse/list" class="nav-item sub <?= strpos($currentUri, '/ouverture_caisse/') !== false ? 'active' : '' ?>" data-title="Ouverture de Caisse">
-                    <i data-lucide="unlock"></i> <span>Ouverture de Caisse</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showClotCaisse): ?>
-                <a href="<?= RACINE ?>cloture_caisse/list" class="nav-item sub <?= strpos($currentUri, '/cloture_caisse/') !== false ? 'active' : '' ?>" data-title="Clôture Caisse Journalière">
-                    <i data-lucide="lock"></i> <span>Clôture Caisse Journalière</span>
+                <?php if ($showOuvCaisse || $showClotCaisse): ?>
+                <a href="<?= RACINE ?>session_caisse/list" class="nav-item sub <?= (strpos($currentUri, '/session_caisse/') !== false || strpos($currentUri, '/ouverture_caisse/') !== false || strpos($currentUri, '/cloture_caisse/') !== false) ? 'active' : '' ?>" data-title="Sessions de Caisse">
+                    <i data-lucide="vault"></i> <span>Sessions de Caisse</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showImpayes): ?>

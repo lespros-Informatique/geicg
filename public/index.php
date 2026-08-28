@@ -23,6 +23,7 @@ $parentController = new ParentController();
 $inscriptionController = new InscriptionController();
 $accessoireController = new AccessoireController();
 $paiementController = new PaiementController();
+$sessionCaisseController = new SessionCaisseController();
 $ouvertureCaisseController = new OuvertureCaisseController();
 $clotureCaisseController = new ClotureCaisseController();
 $impayesController = new ImpayesController();
@@ -280,26 +281,40 @@ $route->addRoute('/paiement/details/{param}', [$paiementController, 'details']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);
 $route->addRoute('/paiement/formulaire', [$paiementController, 'formulaire']);
 
-// Module: ouverture_caisse (OuvertureCaisseController)
-$route->addRoute('/ouverture_caisse/list', [$ouvertureCaisseController, 'list']);
+// Module: session_caisse (SessionCaisseController)
+$route->addRoute('/session_caisse/list', [$sessionCaisseController, 'list']);
+$route->addRoute('/session_caisse/apiList', [$sessionCaisseController, 'apiList']);
+$route->addRoute('/session_caisse/add', [$sessionCaisseController, 'add']);
+$route->addRoute('/session_caisse/edit', [$sessionCaisseController, 'edit']);
+$route->addRoute('/session_caisse/changer', [$sessionCaisseController, 'changer']);
+$route->addRoute('/session_caisse/cloturer', [$sessionCaisseController, 'cloturer']);
+$route->addRoute('/session_caisse/cloturer/{param}', [$sessionCaisseController, 'cloturer']);
+$route->addRoute('/session_caisse/saveCloture', [$sessionCaisseController, 'saveCloture']);
+$route->addRoute('/session_caisse/details/{param}', [$sessionCaisseController, 'details']);
+$route->addRoute('/session_caisse/edition/{param}', [$sessionCaisseController, 'edition']);
+$route->addRoute('/session_caisse/formulaire', [$sessionCaisseController, 'formulaire']);
+$route->addRoute('/session_caisse/getDailyTotals', [$sessionCaisseController, 'getDailyTotals']);
+
+// Module: ouverture_caisse (Compatibilité)
+$route->addRoute('/ouverture_caisse/list', [$sessionCaisseController, 'list']);
 $route->addRoute('/ouverture_caisse/apiList', [$ouvertureCaisseController, 'apiList']);
 $route->addRoute('/ouverture_caisse/add', [$ouvertureCaisseController, 'add']);
 $route->addRoute('/ouverture_caisse/edit', [$ouvertureCaisseController, 'edit']);
 $route->addRoute('/ouverture_caisse/changer', [$ouvertureCaisseController, 'changer']);
 $route->addRoute('/ouverture_caisse/details/{param}', [$ouvertureCaisseController, 'details']);
 $route->addRoute('/ouverture_caisse/edition/{param}', [$ouvertureCaisseController, 'edition']);
-$route->addRoute('/ouverture_caisse/formulaire', [$ouvertureCaisseController, 'formulaire']);
+$route->addRoute('/ouverture_caisse/formulaire', [$sessionCaisseController, 'formulaire']);
 
-// Module: cloture_caisse (ClotureCaisseController)
-$route->addRoute('/cloture_caisse/list', [$clotureCaisseController, 'list']);
+// Module: cloture_caisse (Compatibilité)
+$route->addRoute('/cloture_caisse/list', [$sessionCaisseController, 'list']);
 $route->addRoute('/cloture_caisse/apiList', [$clotureCaisseController, 'apiList']);
-$route->addRoute('/cloture_caisse/getDailyTotals', [$clotureCaisseController, 'getDailyTotals']);
+$route->addRoute('/cloture_caisse/getDailyTotals', [$sessionCaisseController, 'getDailyTotals']);
 $route->addRoute('/cloture_caisse/add', [$clotureCaisseController, 'add']);
 $route->addRoute('/cloture_caisse/edit', [$clotureCaisseController, 'edit']);
 $route->addRoute('/cloture_caisse/changer', [$clotureCaisseController, 'changer']);
 $route->addRoute('/cloture_caisse/details/{param}', [$clotureCaisseController, 'details']);
 $route->addRoute('/cloture_caisse/edition/{param}', [$clotureCaisseController, 'edition']);
-$route->addRoute('/cloture_caisse/formulaire', [$clotureCaisseController, 'formulaire']);
+$route->addRoute('/cloture_caisse/formulaire', [$sessionCaisseController, 'cloturer']);
 
 // Module: impayes (ImpayesController)
 $route->addRoute('/impayes/list', [$impayesController, 'list']);

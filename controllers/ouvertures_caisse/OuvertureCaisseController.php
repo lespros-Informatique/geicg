@@ -10,7 +10,26 @@ class OuvertureCaisseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/ouvertures_caisse/list.php');
+        $db = $this->model->getCon();
+        $today = date('Y-m-d');
+
+        $totalOuvertures = (int)($db->query("SELECT COUNT(*) FROM ouvertures_caisse")->fetchColumn() ?: 0);
+        $totalClotures = (int)($db->query("SELECT COUNT(*) FROM clotures_caisse")->fetchColumn() ?: 0);
+
+        $stmtOuv = $db->prepare("SELECT * FROM ouvertures_caisse WHERE date_ouverture = ? AND statut_ouverture = 'ouverte' LIMIT 1");
+        $stmtOuv->execute([$today]);
+        $caisseJourOuverte = $stmtOuv->fetch(PDO::FETCH_ASSOC);
+
+        $stmtClot = $db->prepare("SELECT * FROM clotures_caisse WHERE date_cloture = ? AND statut_cloture != 'annule' LIMIT 1");
+        $stmtClot->execute([$today]);
+        $caisseJourCloturee = $stmtClot->fetch(PDO::FETCH_ASSOC);
+
+        $this->loadView('../views/ouvertures_caisse/list.php', [
+            'totalOuvertures' => $totalOuvertures,
+            'totalClotures' => $totalClotures,
+            'caisseJourOuverte' => $caisseJourOuverte,
+            'caisseJourCloturee' => $caisseJourCloturee
+        ]);
     }
 
     public function apiList()

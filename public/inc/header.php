@@ -47,6 +47,17 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* Désactiver les flèches d'incrémentation/décrémentation sur input[type=number] */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield !important;
+            appearance: textfield !important;
+        }
+
         .select2-container--default .select2-selection--single {
             height: 42px !important;
             border: 1px solid #CBD5E1 !important;
