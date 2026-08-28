@@ -315,7 +315,7 @@ class PaiementController extends BaseController
             return;
         }
 
-        // Vérification du montant par rapport à la tranche
+        // Vérification stricte du montant par rapport à la tranche sélectionnée
         if ($trancheCode !== 'SCOLARITE_GLOBALE') {
             $stmtTr = $db->prepare("SELECT * FROM tranches_scolarite WHERE code_tranche = ? LIMIT 1");
             $stmtTr->execute([$trancheCode]);
@@ -331,9 +331,15 @@ class PaiementController extends BaseController
             $montantMaxTr = (float)$tranche['montant_tranche'];
             $resteAutorise = max(0, $montantMaxTr - $dejaPayeTr);
 
-            if ($montantPaiement > $resteAutorise && $resteAutorise > 0) {
+            if ($resteAutorise <= 0) {
+                $this->error("Paiement impossible : La tranche « {$tranche['libelle_tranche']} » a déjà été intégralement soldée (" . number_format($montantMaxTr, 0, ',', ' ') . " FCFA déjà payé). Veuillez sélectionner une autre tranche impayée.");
+                return;
+            }
+
+            if ($montantPaiement > $resteAutorise) {
                 $resteFmt = number_format($resteAutorise, 0, ',', ' ');
-                $this->error("Le montant saisi dépasse le solde restant exigible de cette tranche ($resteFmt FCFA).");
+                $montantSaisiFmt = number_format($montantPaiement, 0, ',', ' ');
+                $this->error("Le montant saisi ($montantSaisiFmt FCFA) dépasse le solde restant dû pour cette tranche ($resteFmt FCFA). Veuillez saisir un montant inférieur ou égal à $resteFmt FCFA.");
                 return;
             }
         }

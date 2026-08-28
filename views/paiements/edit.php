@@ -286,8 +286,25 @@ $(document).ready(function() {
       var rowBg = isSelected ? '#EFF6FF' : '#FFFFFF';
       var rowBorder = isSelected ? '2px solid #3B82F6' : '1px solid #F1F5F9';
 
-      var badgeIcon = tr.is_soldee ? '✓ ' : '';
-      var optLabel = tr.libelle_tranche + ' - Total: ' + tr.montant_tranche_fmt + ' (Reste: ' + tr.reste_a_payer_fmt + ') [' + tr.statut_libelle + ']';
+      var isPaid = (tr.is_soldee === true || tr.is_soldee === 1 || tr.is_soldee === '1' || tr.statut_code === 'soldee' || parseFloat(tr.reste_a_payer) <= 0);
+      var isPartiel = (!isPaid && (tr.statut_code === 'partiel' || parseFloat(tr.deja_paye) > 0));
+
+      var statusBadgeHtml = '';
+      if (isPaid) {
+        statusBadgeHtml = '<button type="button" class="btn btn-sm btn-tranche-soldee" disabled style="background:#DCFCE7 !important; color:#15803D !important; font-weight:800; font-size:12px; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; border:1px solid #86EFAC !important; cursor:not-allowed; opacity:0.85;">' +
+                            '✓ Payée (Soldée)' +
+                          '</button>';
+      } else if (isPartiel) {
+        statusBadgeHtml = '<button type="button" class="btn btn-sm btn-select-tranche-row" data-code="' + tr.code_tranche + '" style="background:#FEF3C7 !important; color:#B45309 !important; font-weight:800; font-size:12px; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; border:1px solid #FCD34D !important; cursor:pointer;">' +
+                            '⏳ Partielle (Reste : ' + tr.reste_a_payer_fmt + ')' +
+                          '</button>';
+      } else {
+        statusBadgeHtml = '<button type="button" class="btn btn-sm btn-select-tranche-row" data-code="' + tr.code_tranche + '" style="background:#EFF6FF !important; color:#1E3A5F !important; font-weight:800; font-size:12px; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; border:1px solid #BFDBFE !important; cursor:pointer;">' +
+                            '● À Payer' +
+                          '</button>';
+      }
+
+      var optLabel = tr.libelle_tranche + (isPaid ? ' - [Soldée - 0 F restant]' : ' - Total: ' + tr.montant_tranche_fmt + ' (Reste: ' + tr.reste_a_payer_fmt + ')');
 
       // Option in dropdown
       var $opt = $('<option></option>')
@@ -296,15 +313,20 @@ $(document).ready(function() {
         .attr('data-reste', tr.reste_a_payer)
         .attr('data-total', tr.montant_tranche)
         .attr('data-libelle', tr.libelle_tranche)
-        .attr('data-soldee', tr.is_soldee ? '1' : '0');
+        .attr('data-soldee', isPaid ? '1' : '0');
 
-      if (isSelected) {
+      if (isPaid) {
+        $opt.prop('disabled', true);
+      } else if (isSelected) {
         $opt.prop('selected', true);
       }
       $select.append($opt);
 
       // Table Row
-      var rowHtml = '<tr class="tranche-item-row" data-code="' + tr.code_tranche + '" style="background:' + rowBg + '; border-bottom:' + rowBorder + '; cursor:pointer; transition:background 0.2s;">' +
+      var rowClass = isPaid ? 'tranche-item-row-soldee' : 'tranche-item-row';
+      var rowCursor = isPaid ? 'not-allowed' : 'pointer';
+      var rowOpacity = isPaid ? '0.75' : '1';
+      var rowHtml = '<tr class="' + rowClass + '" data-code="' + tr.code_tranche + '" data-soldee="' + (isPaid ? '1' : '0') + '" style="background:' + rowBg + '; border-bottom:' + rowBorder + '; cursor:' + rowCursor + '; opacity:' + rowOpacity + '; transition:background 0.2s;">' +
         '<td style="padding:12px 14px;">' +
           '<div style="font-weight:800; color:#0F172A; font-size:13.5px;">' + $('<div>').text(tr.libelle_tranche).html() + '</div>' +
           '<code style="font-size:11px; color:#64748B;">' + tr.code_tranche + '</code>' +
@@ -318,13 +340,11 @@ $(document).ready(function() {
         '<td style="padding:12px 14px; text-align:right; font-weight:700; color:#15803D;">' +
           tr.deja_paye_fmt +
         '</td>' +
-        '<td style="padding:12px 14px; text-align:right; font-weight:800; color:' + (tr.reste_a_payer > 0 ? '#DC2626' : '#15803D') + ';">' +
+        '<td style="padding:12px 14px; text-align:right; font-weight:800; color:' + (isPaid ? '#15803D' : '#DC2626') + ';">' +
           tr.reste_a_payer_fmt +
         '</td>' +
         '<td style="padding:12px 14px; text-align:center;">' +
-          '<span class="badge" style="background:' + tr.badge_bg + '; color:' + tr.badge_color + '; font-weight:700; font-size:12px; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; border:1px solid ' + (tr.is_soldee ? '#86EFAC' : (tr.statut_code === 'partiel' ? '#FCD34D' : '#BFDBFE')) + ';">' +
-            badgeIcon + tr.statut_libelle +
-          '</span>' +
+          statusBadgeHtml +
         '</td>' +
       '</tr>';
 
@@ -334,7 +354,7 @@ $(document).ready(function() {
     $('#student-tranches-card').stop(true, true).slideDown(250);
     if (window.lucide) lucide.createIcons();
 
-    // Trigger selection
+    // Trigger selection if target is valid and not soldee
     if (targetSelectCode) {
       applySelectedTranche(targetSelectCode);
     }
@@ -353,6 +373,20 @@ $(document).ready(function() {
       }
     });
 
+    if (!selectedTr) return;
+
+    var isPaid = (selectedTr.is_soldee === true || selectedTr.is_soldee === 1 || selectedTr.is_soldee === '1' || selectedTr.statut_code === 'soldee' || parseFloat(selectedTr.reste_a_payer) <= 0);
+
+    if (isPaid) {
+      $('#select_tranche_code').val('');
+      $('#inp_montant_paiement').val('');
+      $('#tranche-helper-hint')
+        .html('<span style="color:#DC2626; font-weight:700;">⚠️ La tranche <strong>' + selectedTr.libelle_tranche + '</strong> est déjà intégralement payée (Soldée). Veuillez choisir une tranche impayée.</span>')
+        .show();
+      if (window.toastr) toastr.warning('Cette tranche est déjà totalement soldée.');
+      return;
+    }
+
     // Update select
     $('#select_tranche_code').val(tCode);
 
@@ -362,26 +396,67 @@ $(document).ready(function() {
       if (rowCode === tCode) {
         $(this).css('background', '#EFF6FF');
       } else {
-        $(this).css('background', '#FFFFFF');
+        $(this).css('background', $(this).data('soldee') === '1' ? '#F8FAFC' : '#FFFFFF');
       }
     });
 
-    if (selectedTr) {
-      // Auto set amount to remaining balance if not in manual edit mode
-      var currentAmount = parseFloat($('#inp_montant_paiement').val()) || 0;
-      if (currentAmount === 0 || !preSelectedTrancheCode) {
-        $('#inp_montant_paiement').val(selectedTr.reste_a_payer > 0 ? selectedTr.reste_a_payer : selectedTr.montant_tranche);
-      }
+    // Auto set amount strictly to remaining balance
+    var maxAmount = parseFloat(selectedTr.reste_a_payer) || 0;
+    $('#inp_montant_paiement').val(maxAmount).attr('max', maxAmount);
 
-      // Auto set wording
-      $('#inp_type_paiement').val('Règlement ' + selectedTr.libelle_tranche);
+    // Auto set wording
+    $('#inp_type_paiement').val('Règlement ' + selectedTr.libelle_tranche);
 
-      // Helper hint
-      $('#tranche-helper-hint')
-        .html('<strong>' + selectedTr.libelle_tranche + '</strong> : Solde restant exigible de <strong>' + selectedTr.reste_a_payer_fmt + '</strong> (Montant total de la tranche : ' + selectedTr.montant_tranche_fmt + ').')
-        .show();
+    // Helper hint
+    $('#tranche-helper-hint')
+      .html('Tranche sélectionnée : <strong>' + selectedTr.libelle_tranche + '</strong> • Reste dû exigible : <strong style="color:#DC2626;">' + selectedTr.reste_a_payer_fmt + '</strong> (Montant total de la tranche : ' + selectedTr.montant_tranche_fmt + ').')
+      .show();
+    
+    validateMontant();
+  }
+
+  function validateMontant() {
+    var tCode = $('#select_tranche_code').val();
+    var enteredAmount = parseFloat($('#inp_montant_paiement').val()) || 0;
+
+    if (!tCode) return true;
+
+    var selectedTr = currentTranchesData.find(function(t) { return t.code_tranche === tCode; });
+    if (!selectedTr) return true;
+
+    var maxAllowed = parseFloat(selectedTr.reste_a_payer) || 0;
+
+    if (enteredAmount <= 0) {
+      $('#inp_montant_paiement').css('border-color', '#EF4444');
+      return false;
+    } else if (enteredAmount > maxAllowed) {
+      $('#inp_montant_paiement').css('border-color', '#EF4444');
+      $('#tranche-helper-hint').html('<span style="color:#DC2626; font-weight:800;">⛔ Le montant saisi (' + enteredAmount.toLocaleString('fr-FR') + ' FCFA) dépasse le solde restant dû de cette tranche (' + selectedTr.reste_a_payer_fmt + ').</span>').show();
+      return false;
+    } else {
+      $('#inp_montant_paiement').css('border-color', '#CBD5E1');
+      $('#tranche-helper-hint').html('Tranche sélectionnée : <strong>' + selectedTr.libelle_tranche + '</strong> • Reste dû exigible : <strong style="color:#15803D;">' + selectedTr.reste_a_payer_fmt + '</strong>.').show();
+      return true;
     }
   }
+
+  $('#inp_montant_paiement').on('input change keyup', function() {
+    validateMontant();
+  });
+
+  $('#form-paiement').on('submit', function(e) {
+    var tCode = $('#select_tranche_code').val();
+    if (!tCode) {
+      e.preventDefault();
+      alert('Veuillez sélectionner une tranche impayée.');
+      return false;
+    }
+    if (!validateMontant()) {
+      e.preventDefault();
+      alert('Le montant du versement doit être valide et ne pas dépasser le reste dû de la tranche sélectionnée.');
+      return false;
+    }
+  });
 
   function fetchStudentFinancialSummary(inscriptionCode) {
     if (!inscriptionCode) {
@@ -444,6 +519,11 @@ $(document).ready(function() {
   });
 
   $(document).on('click', '.btn-select-tranche-row, .tranche-item-row', function(e) {
+    var isSoldee = $(this).closest('tr').data('soldee');
+    if (isSoldee === '1' || isSoldee === 1) {
+      if (window.toastr) toastr.info('Cette tranche est déjà totalement soldée.');
+      return;
+    }
     var tCode = $(this).closest('tr').data('code');
     applySelectedTranche(tCode);
   });
