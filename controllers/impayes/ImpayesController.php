@@ -125,4 +125,27 @@ class ImpayesController extends BaseController
         $this->requireAuth();
         $this->loadView('../views/impayes/edit.php', ['item' => []]);
     }
+
+    public function changer()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $id = (int)$this->post('id');
+        $statut = $this->post('statut') ?: $this->post('status');
+        if ($id && $this->model->getById($id)) {
+            $allowed = ['en_attente', 'envoye', 'regle'];
+            if (!empty($statut) && in_array($statut, $allowed, true)) {
+                $success = $this->model->updateStatus($id, $statut, 'statut_relance');
+            } else {
+                $success = $this->model->toggleStatus($id);
+            }
+            if ($success) {
+                $this->success('Statut de la relance mis à jour avec succès!', ['reload' => true]);
+            } else {
+                $this->error('Erreur lors de la mise à jour du statut');
+            }
+        } else {
+            $this->error('Relance introuvable');
+        }
+    }
 }

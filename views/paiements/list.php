@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -36,19 +36,59 @@
 </div>
 <script>
 $(document).ready(function() {
-  $('#table-paiements').DataTable({
+  var table = $('#table-paiements').DataTable({
     ajax: '<?= RACINE ?>paiement/apiList',
     processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_paiement', defaultContent: '-' },
-      { data: 'code_paiement', defaultContent: '-' },
-      { data: 'inscription_code', defaultContent: '-' },
-      { data: 'montant_paiement', defaultContent: '-' },
-      { data: 'mode_paiement', defaultContent: '-' },
-      { data: 'statut_paiement', render: function(d, type) {
-        if (type !== 'display') return d || '';
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
+      { data: 'code_paiement', render: function(d) {
+        return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
+      } },
+      { data: 'inscription_code', render: function(d, type, row) {
+        var eleve = row.etudiant_nom ? '<div style="font-weight:700; color:#0F172A;">' + row.etudiant_nom + '</div>' : '';
+        return eleve + '<code style="color:#64748B; font-size:11.5px;">' + (d || '-') + '</code>';
+      } },
+      { data: 'montant_paiement', render: function(d) {
+        return d ? '<strong style="color:#0F172A;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
+      } },
+      { data: 'mode_paiement', render: function(d) {
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:700; padding:4px 8px; border-radius:6px;">' + (d || 'Espèces') + '</span>';
+      } },
+      { data: 'statut_paiement', width: '135px', className: 'text-center', render: function(d, type, row) {
+        var val = d || 'confirme';
+        var bgColors = {
+          'confirme': '#DCFCE7',
+          'en_attente': '#FEF3C7',
+          'annule': '#FEE2E2',
+          'rembourse': '#F3E8FF',
+          'echoue': '#F1F5F9'
+        };
+        var textColors = {
+          'confirme': '#15803D',
+          'en_attente': '#B45309',
+          'annule': '#B91C1C',
+          'rembourse': '#7E22CE',
+          'echoue': '#475569'
+        };
+        var borderColors = {
+          'confirme': '#86EFAC',
+          'en_attente': '#FCD34D',
+          'annule': '#FCA5A5',
+          'rembourse': '#D8B4FE',
+          'echoue': '#CBD5E1'
+        };
+        var currentBg = bgColors[val] || '#F1F5F9';
+        var currentText = textColors[val] || '#334155';
+        var currentBorder = borderColors[val] || '#CBD5E1';
+
+        return '<select class="select-statut-paiement" data-id="' + row.id_paiement + '" style="background:' + currentBg + '; color:' + currentText + '; border:1px solid ' + currentBorder + '; font-weight:700; font-size:12px; border-radius:8px; padding:4px 8px; cursor:pointer; outline:none;">' +
+               '<option value="confirme" ' + (val === 'confirme' ? 'selected' : '') + ' style="background:#fff; color:#15803D;">Confirmé</option>' +
+               '<option value="en_attente" ' + (val === 'en_attente' ? 'selected' : '') + ' style="background:#fff; color:#B45309;">En attente</option>' +
+               '<option value="annule" ' + (val === 'annule' ? 'selected' : '') + ' style="background:#fff; color:#B91C1C;">Annulé</option>' +
+               '<option value="rembourse" ' + (val === 'rembourse' ? 'selected' : '') + ' style="background:#fff; color:#7E22CE;">Remboursé</option>' +
+               '<option value="echoue" ' + (val === 'echoue' ? 'selected' : '') + ' style="background:#fff; color:#475569;">Échoué</option>' +
+               '</select>';
       } },
       { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'paiement/edition/' + (d.editId || d.id_paiement) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
@@ -57,6 +97,36 @@ $(document).ready(function() {
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $(document).on('change', '.select-statut-paiement', function() {
+    var id = $(this).data('id');
+    var newStatut = $(this).val();
+
+    $.ajax({
+      url: '<?= RACINE ?>paiement/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        statut: newStatut,
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          table.ajax.reload(null, false);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        table.ajax.reload(null, false);
+      }
+    });
   });
 });
 </script>

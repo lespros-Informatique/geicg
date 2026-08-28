@@ -412,15 +412,22 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = $this->post('id');
+        $id = (int)$this->post('id');
+        $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
-            if ($this->model->toggleStatus($id)) {
-                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+            $allowed = ['valide', 'solde', 'annule'];
+            if (!empty($statut) && in_array($statut, $allowed, true)) {
+                $success = $this->model->updateStatus($id, $statut, 'statut_inscription');
+            } else {
+                $success = $this->model->toggleStatus($id);
+            }
+            if ($success) {
+                $this->success('Statut de l\'inscription mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
             }
         } else {
-            $this->error('Item introuvable');
+            $this->error('Inscription introuvable');
         }
     }
 

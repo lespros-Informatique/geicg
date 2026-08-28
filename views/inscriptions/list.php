@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -36,19 +36,39 @@
 </div>
 <script>
 $(document).ready(function() {
-  $('#table-inscriptions').DataTable({
+  var table = $('#table-inscriptions').DataTable({
     ajax: '<?= RACINE ?>inscription/apiList',
     processing: true,
     autoWidth: false,
     columns: [
       { data: 'id_inscription', defaultContent: '-' },
-      { data: 'code_inscription', defaultContent: '-' },
-      { data: 'etudiant_code', defaultContent: '-' },
-      { data: 'classe_code', defaultContent: '-' },
-      { data: 'montant_scolarite_inscription', defaultContent: '-' },
-      { data: 'statut_inscription', render: function(d, type) {
-        if (type !== 'display') return d || '';
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
+      { data: 'code_inscription', render: function(d) {
+        return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
+      } },
+      { data: 'etudiant_nom', render: function(d, type, row) {
+        var nom = d || row.etudiant_code || '-';
+        return '<strong style="color:#0F172A;">' + nom + '</strong>';
+      } },
+      { data: 'libelle_classe', render: function(d, type, row) {
+        return '<span style="color:#1E3A5F; font-weight:600;">' + (d || row.classe_code || '-') + '</span>';
+      } },
+      { data: 'montant_scolarite_inscription', render: function(d) {
+        return d ? '<span style="font-weight:700; color:#0F172A;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</span>' : '-';
+      } },
+      { data: 'statut_inscription', width: '130px', className: 'text-center', render: function(d, type, row) {
+        var val = d || 'valide';
+        var bgColors = { 'valide': '#DCFCE7', 'solde': '#DBEAFE', 'annule': '#FEE2E2' };
+        var textColors = { 'valide': '#15803D', 'solde': '#1E40AF', 'annule': '#B91C1C' };
+        var borderColors = { 'valide': '#86EFAC', 'solde': '#93C5FD', 'annule': '#FCA5A5' };
+        var currentBg = bgColors[val] || '#F1F5F9';
+        var currentText = textColors[val] || '#334155';
+        var currentBorder = borderColors[val] || '#CBD5E1';
+
+        return '<select class="select-statut-inscription" data-id="' + row.id_inscription + '" style="background:' + currentBg + '; color:' + currentText + '; border:1px solid ' + currentBorder + '; font-weight:700; font-size:12px; border-radius:8px; padding:4px 8px; cursor:pointer; outline:none;">' +
+               '<option value="valide" ' + (val === 'valide' ? 'selected' : '') + ' style="background:#fff; color:#15803D;">Validée</option>' +
+               '<option value="solde" ' + (val === 'solde' ? 'selected' : '') + ' style="background:#fff; color:#1E40AF;">Soldée</option>' +
+               '<option value="annule" ' + (val === 'annule' ? 'selected' : '') + ' style="background:#fff; color:#B91C1C;">Annulée</option>' +
+               '</select>';
       } },
       { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'inscription/edition/' + (d.editId || d.id_inscription) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
@@ -57,6 +77,36 @@ $(document).ready(function() {
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $(document).on('change', '.select-statut-inscription', function() {
+    var id = $(this).data('id');
+    var newStatut = $(this).val();
+
+    $.ajax({
+      url: '<?= RACINE ?>inscription/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        statut: newStatut,
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          table.ajax.reload(null, false);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        table.ajax.reload(null, false);
+      }
+    });
   });
 });
 </script>

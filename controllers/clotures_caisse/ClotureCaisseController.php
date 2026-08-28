@@ -168,15 +168,27 @@ class ClotureCaisseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = $this->post('id');
+        $id = (int)$this->post('id');
+        $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
-            if ($this->model->toggleStatus($id)) {
-                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+            $allowed = ['attente', 'valide', 'rejete'];
+            if (!empty($statut) && in_array($statut, $allowed, true)) {
+                $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? null;
+                $extraData = ['statut_cloture' => $statut];
+                if ($statut === 'valide') {
+                    $extraData['user_validation'] = $userCode;
+                }
+                $success = $this->model->update($extraData, $id);
+            } else {
+                $success = $this->model->toggleStatus($id);
+            }
+            if ($success) {
+                $this->success('Statut de la clôture mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
             }
         } else {
-            $this->error('Item introuvable');
+            $this->error('Clôture de caisse introuvable');
         }
     }
 

@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -27,6 +27,7 @@
                 <th style="padding: 12px;">Canal</th>
                 <th style="padding: 12px;">Montant Impayé</th>
                 <th style="padding: 12px;">Date d'Émission</th>
+                <th class="text-center" style="padding: 12px;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -43,7 +44,7 @@
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
 
-  $('#table-impayes').DataTable({
+  var table = $('#table-impayes').DataTable({
     ajax: {
       url: '<?= RACINE ?>impayes/apiList',
       type: 'GET'
@@ -95,17 +96,67 @@ $(document).ready(function() {
         }
       },
       { 
+        data: 'statut_relance', 
+        width: '130px', 
+        className: 'text-center', 
+        render: function(d, type, row) {
+          var val = d || 'envoye';
+          var bgColors = { 'regle': '#DCFCE7', 'envoye': '#DBEAFE', 'en_attente': '#FEF3C7' };
+          var textColors = { 'regle': '#15803D', 'envoye': '#1E40AF', 'en_attente': '#B45309' };
+          var borderColors = { 'regle': '#86EFAC', 'envoye': '#93C5FD', 'en_attente': '#FCD34D' };
+          var currentBg = bgColors[val] || '#F1F5F9';
+          var currentText = textColors[val] || '#334155';
+          var currentBorder = borderColors[val] || '#CBD5E1';
+
+          return '<select class="select-statut-relance" data-id="' + row.id_relance + '" style="background:' + currentBg + '; color:' + currentText + '; border:1px solid ' + currentBorder + '; font-weight:700; font-size:12px; border-radius:8px; padding:4px 8px; cursor:pointer; outline:none;">' +
+                 '<option value="envoye" ' + (val === 'envoye' ? 'selected' : '') + ' style="background:#fff; color:#1E40AF;">Envoyée</option>' +
+                 '<option value="en_attente" ' + (val === 'en_attente' ? 'selected' : '') + ' style="background:#fff; color:#B45309;">En attente</option>' +
+                 '<option value="regle" ' + (val === 'regle' ? 'selected' : '') + ' style="background:#fff; color:#15803D;">Réglée</option>' +
+                 '</select>';
+        } 
+      },
+      { 
         data: null, 
         orderable: false,
         render: function(d) {
-          return '<a href="' + window.RACINE + 'impayes/edition/' + (d.editId || d.id_relance) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; padding:4px 10px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Voir</a>';
+          return '<a href="' + window.RACINE + 'impayes/details/' + (d.editId || d.id_relance) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; padding:4px 10px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Voir</a>';
         }
       }
     ],
     language: {
-      url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+      url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json'
     },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $(document).on('change', '.select-statut-relance', function() {
+    var id = $(this).data('id');
+    var newStatut = $(this).val();
+
+    $.ajax({
+      url: '<?= RACINE ?>impayes/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        statut: newStatut,
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          table.ajax.reload(null, false);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        table.ajax.reload(null, false);
+      }
+    });
   });
 });
 </script>

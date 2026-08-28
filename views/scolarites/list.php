@@ -153,9 +153,17 @@ $(document).ready(function() {
       { data: 'montant_scolarite', render: function(d) { 
         return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>'; 
       } },
-      { data: 'statut_scolarite', className: 'text-center', render: function(d, type) {
-        if (type !== 'display') return d || '';
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
+      { data: 'statut_scolarite', width: '90px', className: 'text-center', render: function(d, type, row) {
+        var isActif = (d === 'actif');
+        var checkedAttr = isActif ? 'checked' : '';
+        return '<div style="display:flex; justify-content:center; align-items:center;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+               '<input type="checkbox" class="toggle-statut-scolarite" data-id="' + row.id_scolarite + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+               '</span>' +
+               '</label>' +
+               '</div>';
       } },
       { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'scolarite/edition/' + (d.editId || d.id_scolarite) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
@@ -185,9 +193,17 @@ $(document).ready(function() {
         return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>'; 
       } },
       { data: 'date_limite', render: function(d) { return '<span style="font-weight:600; color:#475569;">' + (d || '-') + '</span>'; } },
-      { data: 'statut_tranche', className: 'text-center', render: function(d, type) {
-        if (type !== 'display') return d || '';
-        return d === 'actif' ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>' : '<span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
+      { data: 'statut_tranche', width: '90px', className: 'text-center', render: function(d, type, row) {
+        var isActif = (d === 'actif');
+        var checkedAttr = isActif ? 'checked' : '';
+        return '<div style="display:flex; justify-content:center; align-items:center;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+               '<input type="checkbox" class="toggle-statut-tranche" data-id="' + row.id_tranche + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+               '</span>' +
+               '</label>' +
+               '</div>';
       } },
       { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'tranche/edition/' + (d.editId || d.id_tranche) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
@@ -197,6 +213,37 @@ $(document).ready(function() {
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
+
+  function bindAjaxToggle(selector, url, tableRef) {
+    $(document).on('change', selector, function() {
+      var id = $(this).data('id');
+      var isChecked = $(this).is(':checked');
+      var $input = $(this);
+      $.ajax({
+        url: url,
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: { id: id, csrf_token: '<?= Validator::generateCsrfToken() ?>' },
+        dataType: 'json',
+        success: function(res) {
+          if (res.status === 1 || res.success) {
+            if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+            tableRef.ajax.reload(null, false);
+          } else {
+            if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+            $input.prop('checked', !isChecked);
+          }
+        },
+        error: function() {
+          if (window.toastr) toastr.error('Erreur réseau');
+          $input.prop('checked', !isChecked);
+        }
+      });
+    });
+  }
+
+  bindAjaxToggle('.toggle-statut-scolarite', '<?= RACINE ?>scolarite/changer', tableScolarites);
+  bindAjaxToggle('.toggle-statut-tranche', '<?= RACINE ?>tranche/changer', tableTranches);
 
   // Switch Tab Handler (Standalone jQuery) - Default: Grille des Scolarités
   function switchScolariteTab(targetId) {

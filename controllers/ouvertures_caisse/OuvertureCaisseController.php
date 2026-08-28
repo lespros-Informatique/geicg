@@ -87,15 +87,25 @@ class OuvertureCaisseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = $this->post('id');
+        $id = (int)$this->post('id');
+        $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
-            if ($this->model->toggleStatus($id)) {
-                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+            $allowed = ['ouverte', 'cloturee'];
+            if (!empty($statut) && in_array($statut, $allowed, true)) {
+                $success = $this->model->updateStatus($id, $statut, 'statut_ouverture');
+            } else {
+                // Custom toggle between 'ouverte' and 'cloturee'
+                $cur = $this->model->getById($id);
+                $newStat = ($cur['statut_ouverture'] === 'ouverte') ? 'cloturee' : 'ouverte';
+                $success = $this->model->updateStatus($id, $newStat, 'statut_ouverture');
+            }
+            if ($success) {
+                $this->success('Statut de l\'ouverture de caisse mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
             }
         } else {
-            $this->error('Item introuvable');
+            $this->error('Ouverture de caisse introuvable');
         }
     }
 

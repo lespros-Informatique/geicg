@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -36,7 +36,7 @@
 </div>
 <script>
 $(document).ready(function() {
-  $('#table-notes').DataTable({
+  var table = $('#table-notes').DataTable({
     ajax: '<?= RACINE ?>note/apiList',
     processing: true,
     autoWidth: false,
@@ -45,13 +45,20 @@ $(document).ready(function() {
       { data: 'inscription_code',    defaultContent: '-', width: '130px' },
       { data: 'matiere_code',        defaultContent: '-', width: '130px' },
       { data: 'type_evaluation_code',defaultContent: '-', width: '110px' },
-      { data: 'valeur_note',         defaultContent: '-', width: '80px' },
-      { data: 'statut_note', defaultContent: '-', width: '90px', render: function(d, type) {
-        if (type !== 'display') return d || '';
-        if (!d) return '-';
-        return d === 'actif'
-          ? '<span style="background:#DCFCE7;color:#15803D;padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Actif</span>'
-          : '<span style="background:#FEE2E2;color:#B91C1C;padding:3px 10px;border-radius:10px;font-weight:700;font-size:12px;display:inline-block;">Inactif</span>';
+      { data: 'valeur_note',         defaultContent: '-', width: '80px', render: function(d) {
+        return '<strong style="color:#0F172A;">' + (d || '0') + '/20</strong>';
+      } },
+      { data: 'statut_note', width: '90px', className: 'text-center', render: function(d, type, row) {
+        var isActif = (d === 'actif');
+        var checkedAttr = isActif ? 'checked' : '';
+        return '<div style="display:flex; justify-content:center; align-items:center;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+               '<input type="checkbox" class="toggle-statut-note" data-id="' + row.id_note + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+               '</span>' +
+               '</label>' +
+               '</div>';
       }},
       { data: null, width: '160px', orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'note/edition/' + (d.editId || d.id_note) + '" class="btn btn-sm btn-secondary" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>'
@@ -60,6 +67,36 @@ $(document).ready(function() {
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $(document).on('change', '.toggle-statut-note', function() {
+    var id = $(this).data('id');
+    var isChecked = $(this).is(':checked');
+    var $input = $(this);
+
+    $.ajax({
+      url: '<?= RACINE ?>note/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          $input.prop('checked', !isChecked);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        $input.prop('checked', !isChecked);
+      }
+    });
   });
 });
 </script>

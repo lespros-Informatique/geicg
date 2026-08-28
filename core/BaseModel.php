@@ -151,10 +151,22 @@ abstract class BaseModel
     {
         try {
             $field = $this->statusField ?? "statut_{$this->table}";
-            $sql = "UPDATE {$this->table} SET {$field} = CASE WHEN {$field} = 'actif' THEN 'inactif' ELSE 'actif' END WHERE {$this->primaryKey} = ?";
+            $sql = "UPDATE `{$this->table}` SET `{$field}` = CASE WHEN `{$field}` = 'actif' THEN 'inactif' ELSE 'actif' END WHERE `{$this->primaryKey}` = ?";
             return $this->pdo->getCon()->prepare($sql)->execute([$id]);
         } catch (Exception $e) {
             error_log("Toggle status {$this->table}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateStatus(int $id, string $status, ?string $statusCol = null): bool
+    {
+        try {
+            $field = $statusCol ?? ($this->statusField ?? "statut_{$this->table}");
+            $sql = "UPDATE `{$this->table}` SET `{$field}` = ? WHERE `{$this->primaryKey}` = ?";
+            return $this->pdo->getCon()->prepare($sql)->execute([$status, $id]);
+        } catch (Exception $e) {
+            error_log("Update status {$this->table}: " . $e->getMessage());
             return false;
         }
     }

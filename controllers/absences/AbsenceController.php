@@ -118,4 +118,29 @@ class AbsenceController extends BaseController
         $this->requireAuth();
         $this->loadView('../views/absences/edit.php', ['item' => []]);
     }
+
+    public function changer()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $id = (int)$this->post('id');
+        $statut = $this->post('statut') ?: $this->post('status');
+        if ($id && $this->model->getById($id)) {
+            $allowed = ['oui', 'non'];
+            if (!empty($statut) && in_array($statut, $allowed, true)) {
+                $success = $this->model->updateStatus($id, $statut, 'justifiee');
+            } else {
+                $cur = $this->model->getById($id);
+                $newStat = ($cur['justifiee'] === 'oui') ? 'non' : 'oui';
+                $success = $this->model->updateStatus($id, $newStat, 'justifiee');
+            }
+            if ($success) {
+                $this->success('Statut de justification mis à jour avec succès!', ['reload' => true]);
+            } else {
+                $this->error('Erreur lors de la mise à jour du statut');
+            }
+        } else {
+            $this->error('Absence introuvable');
+        }
+    }
 }

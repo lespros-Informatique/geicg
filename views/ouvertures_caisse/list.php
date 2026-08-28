@@ -74,27 +74,65 @@ $(document).ready(function() {
       },
       { 
         data: 'statut_ouverture',
-        render: function(data) {
-          if (data === 'ouverte') {
-            return '<span class="badge" style="background:#DCFCE7; color:#166534; padding:5px 10px; border-radius:6px; font-weight:700;">OUVERTE</span>';
-          }
-          return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:5px 10px; border-radius:6px; font-weight:700;">CLÔTURÉE</span>';
+        width: '130px',
+        className: 'text-center',
+        render: function(d, type, row) {
+          var val = d || 'ouverte';
+          var isOuverte = (val === 'ouverte');
+          var currentBg = isOuverte ? '#DCFCE7' : '#F1F5F9';
+          var currentText = isOuverte ? '#166534' : '#475569';
+          var currentBorder = isOuverte ? '#86EFAC' : '#CBD5E1';
+
+          return '<select class="select-statut-ouverture" data-id="' + row.id_ouverture + '" style="background:' + currentBg + '; color:' + currentText + '; border:1px solid ' + currentBorder + '; font-weight:700; font-size:12px; border-radius:8px; padding:4px 8px; cursor:pointer; outline:none;">' +
+                 '<option value="ouverte" ' + (isOuverte ? 'selected' : '') + ' style="background:#fff; color:#166534;">Ouverte</option>' +
+                 '<option value="cloturee" ' + (!isOuverte ? 'selected' : '') + ' style="background:#fff; color:#475569;">Clôturée</option>' +
+                 '</select>';
         }
       },
       { 
         data: null,
         orderable: false,
         render: function(data, type, row) {
-          return '<a href="' + window.RACINE + 'ouverture_caisse/edition/' + row.editId + '" class="btn btn-sm btn-info" style="border-radius:6px; font-weight:600; padding:4px 10px;"><i data-lucide="edit-3" style="width:14px; height:14px;"></i> Éditer</a>';
+          return '<a href="' + window.RACINE + 'ouverture_caisse/edition/' + (row.editId || row.id_ouverture) + '" class="btn btn-sm btn-info" style="border-radius:6px; font-weight:600; padding:4px 10px;"><i data-lucide="edit-3" style="width:14px; height:14px;"></i> Éditer</a>';
         }
       }
     ],
     language: {
-      url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+      url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json'
     },
     drawCallback: function() {
       if (window.lucide) lucide.createIcons();
     }
+  });
+
+  $(document).on('change', '.select-statut-ouverture', function() {
+    var id = $(this).data('id');
+    var newStatut = $(this).val();
+
+    $.ajax({
+      url: window.RACINE + 'ouverture_caisse/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        statut: newStatut,
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          table.ajax.reload(null, false);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        table.ajax.reload(null, false);
+      }
+    });
   });
 });
 </script>
