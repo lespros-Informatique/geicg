@@ -105,6 +105,28 @@ $soldeRestant = $soldeRestant ?? 0;
           </div>
         </div>
 
+        <!-- Tranche Rattachée au Paiement -->
+        <?php if (!empty($item['libelle_tranche']) || !empty($item['type_paiement'])): ?>
+        <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Tranche / Objet du Versement</span>
+            <div style="font-size: 15px; font-weight: 800; color: #581C87; margin-top: 2px;">
+              <i data-lucide="layers" style="width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px;"></i>
+              <?= htmlspecialchars($item['libelle_tranche'] ?? ($item['type_paiement'] ?? 'Règlement Scolarité')) ?>
+              <?php if (!empty($item['tranche_code'])): ?>
+                <code style="font-size: 11.5px; font-weight: 700; color: #7E22CE; margin-left: 6px;">(<?= htmlspecialchars($item['tranche_code']) ?>)</code>
+              <?php endif; ?>
+            </div>
+          </div>
+          <?php if (!empty($item['montant_tranche'])): ?>
+            <div style="text-align: right;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Montant Total Exigible Tranche</span>
+              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;"><?= number_format((float)$item['montant_tranche'], 0, ',', ' ') ?> FCFA</div>
+            </div>
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- Référence, Caisse & Signature -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #E2E8F0;">
           <div>

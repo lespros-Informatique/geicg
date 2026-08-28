@@ -39,10 +39,15 @@ class PaiementController extends BaseController
 
         if (!empty($inscriptionCode)) {
             $stmt = $db->prepare("
-                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, c.libelle_classe
+                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant,
+                       c.libelle_classe, c.filiere_code, c.niveau_code,
+                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
                 FROM inscriptions i
                 LEFT JOIN etudiants e ON i.etudiant_code = e.code_etudiant
                 LEFT JOIN classes c ON i.classe_code = c.code_classe
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
                 WHERE i.code_inscription = ? OR i.id_inscription = ?
                 LIMIT 1
             ");
@@ -50,10 +55,15 @@ class PaiementController extends BaseController
             $ins = $stmt->fetch(PDO::FETCH_ASSOC);
         } elseif (!empty($etudiantCode)) {
             $stmt = $db->prepare("
-                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, c.libelle_classe
+                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant,
+                       c.libelle_classe, c.filiere_code, c.niveau_code,
+                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
                 FROM etudiants e
                 LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant
                 LEFT JOIN classes c ON i.classe_code = c.code_classe
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
                 WHERE e.code_etudiant = ? OR e.matricule_etudiant = ?
                 ORDER BY i.id_inscription DESC
                 LIMIT 1
@@ -73,20 +83,143 @@ class PaiementController extends BaseController
         $codeInscription = $ins['code_inscription'] ?? '';
         $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
 
-        $stmtPay = $db->prepare("SELECT SUM(montant_paiement) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+        // Récupération de tous les paiements existants pour cette inscription
+        $stmtPay = $db->prepare("SELECT * FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule' ORDER BY date_paiement ASC, id_paiement ASC");
         $stmtPay->execute([$codeInscription]);
-        $totalPaye = (float)($stmtPay->fetchColumn() ?: 0);
+        $allPayments = $stmtPay->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalPaye = 0;
+        foreach ($allPayments as $p) {
+            $totalPaye += (float)$p['montant_paiement'];
+        }
 
         $soldeRestant = max(0, $scolariteDue - $totalPaye);
 
         $statutReglement = 'Non Réglé';
         $badgeClass = 'badge-danger';
         if ($totalPaye >= $scolariteDue && $scolariteDue > 0) {
-            $statutReglement = 'Scolarité Totalement Soldée';
+            $statutReglement = 'Scolarité Totalement Soldée';
             $badgeClass = 'badge-success';
         } elseif ($totalPaye > 0) {
-            $statutReglement = 'Acompte Payé / Solde Débiteurs';
+            $statutReglement = 'Acompte Payé / Solde Débiteur';
             $badgeClass = 'badge-warning';
+        }
+
+        // Récupération des tranches actives pour la filière et le niveau de la classe de l'élève
+        $filiereCode = $ins['filiere_code'] ?? '';
+        $niveauCode = $ins['niveau_code'] ?? '';
+
+        $stmtTr = $db->prepare("
+            SELECT t.*, s.montant_scolarite as scolarite_globale
+            FROM tranches_scolarite t
+            LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
+            WHERE t.statut_tranche = 'actif'
+              AND (
+                (t.filiere_code = ? AND t.niveau_code = ?)
+                OR (s.filiere_code = ? AND s.niveau_code = ?)
+              )
+            ORDER BY t.date_limite ASC, t.id_tranche ASC
+        ");
+        $stmtTr->execute([$filiereCode, $niveauCode, $filiereCode, $niveauCode]);
+        $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
+
+        // Calcul des paiements par tranche
+        $tranchesList = [];
+        $unassignedPayments = 0;
+
+        // Somme des paiements explicitement attribués par code_tranche
+        $paymentsByTranche = [];
+        foreach ($allPayments as $p) {
+            $tCode = $p['tranche_code'] ?? '';
+            if (!empty($tCode)) {
+                $paymentsByTranche[$tCode] = ($paymentsByTranche[$tCode] ?? 0) + (float)$p['montant_paiement'];
+            } else {
+                $unassignedPayments += (float)$p['montant_paiement'];
+            }
+        }
+
+        $suggestedTrancheCode = null;
+
+        if (!empty($dbTranches)) {
+            foreach ($dbTranches as $tr) {
+                $tCode = $tr['code_tranche'];
+                $montantTranche = (float)$tr['montant_tranche'];
+                $dejaPaye = $paymentsByTranche[$tCode] ?? 0;
+
+                // Si paiements antérieurs sans tranche_code, allocation séquentielle
+                if ($unassignedPayments > 0 && $dejaPaye < $montantTranche) {
+                    $needed = $montantTranche - $dejaPaye;
+                    $allocated = min($unassignedPayments, $needed);
+                    $dejaPaye += $allocated;
+                    $unassignedPayments -= $allocated;
+                }
+
+                $resteAPayer = max(0, $montantTranche - $dejaPaye);
+                $isSoldee = ($resteAPayer <= 0);
+                $isPartiel = ($dejaPaye > 0 && $resteAPayer > 0);
+
+                if ($isSoldee) {
+                    $statutCode = 'soldee';
+                    $statutLibelle = 'Payée (Soldée)';
+                    $badgeBg = '#DCFCE7';
+                    $badgeColor = '#15803D';
+                } elseif ($isPartiel) {
+                    $statutCode = 'partiel';
+                    $statutLibelle = 'Partielle (Reste : ' . number_format($resteAPayer, 0, ',', ' ') . ' F)';
+                    $badgeBg = '#FEF3C7';
+                    $badgeColor = '#B45309';
+                } else {
+                    $statutCode = 'a_payer';
+                    $statutLibelle = 'À Payer';
+                    $badgeBg = '#EFF6FF';
+                    $badgeColor = '#1E3A5F';
+                }
+
+                if (!$isSoldee && $suggestedTrancheCode === null) {
+                    $suggestedTrancheCode = $tCode;
+                }
+
+                $tranchesList[] = [
+                    'id_tranche' => $tr['id_tranche'],
+                    'code_tranche' => $tCode,
+                    'libelle_tranche' => $tr['libelle_tranche'],
+                    'montant_tranche' => $montantTranche,
+                    'montant_tranche_fmt' => number_format($montantTranche, 0, ',', ' ') . ' FCFA',
+                    'date_limite' => $tr['date_limite'],
+                    'date_limite_fmt' => !empty($tr['date_limite']) ? date('d/m/Y', strtotime($tr['date_limite'])) : 'Non définie',
+                    'deja_paye' => $dejaPaye,
+                    'deja_paye_fmt' => number_format($dejaPaye, 0, ',', ' ') . ' FCFA',
+                    'reste_a_payer' => $resteAPayer,
+                    'reste_a_payer_fmt' => number_format($resteAPayer, 0, ',', ' ') . ' FCFA',
+                    'is_soldee' => $isSoldee,
+                    'statut_code' => $statutCode,
+                    'statut_libelle' => $statutLibelle,
+                    'badge_bg' => $badgeBg,
+                    'badge_color' => $badgeColor
+                ];
+            }
+        } else {
+            // Pas de tranches distinctes configurées pour cette filière/niveau
+            $isSoldee = ($soldeRestant <= 0);
+            $tranchesList[] = [
+                'id_tranche' => 0,
+                'code_tranche' => 'SCOLARITE_GLOBALE',
+                'libelle_tranche' => 'Scolarité Complète',
+                'montant_tranche' => $scolariteDue,
+                'montant_tranche_fmt' => number_format($scolariteDue, 0, ',', ' ') . ' FCFA',
+                'date_limite' => '',
+                'date_limite_fmt' => 'Annuelle',
+                'deja_paye' => $totalPaye,
+                'deja_paye_fmt' => number_format($totalPaye, 0, ',', ' ') . ' FCFA',
+                'reste_a_payer' => $soldeRestant,
+                'reste_a_payer_fmt' => number_format($soldeRestant, 0, ',', ' ') . ' FCFA',
+                'is_soldee' => $isSoldee,
+                'statut_code' => $isSoldee ? 'soldee' : ($totalPaye > 0 ? 'partiel' : 'a_payer'),
+                'statut_libelle' => $isSoldee ? 'Payée (Soldée)' : 'À Payer',
+                'badge_bg' => $isSoldee ? '#DCFCE7' : '#EFF6FF',
+                'badge_color' => $isSoldee ? '#15803D' : '#1E3A5F'
+            ];
+            $suggestedTrancheCode = 'SCOLARITE_GLOBALE';
         }
 
         $nomComplet = trim(($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? ''));
@@ -99,6 +232,9 @@ class PaiementController extends BaseController
                 'matricule' => $ins['matricule_etudiant'] ?? '-',
                 'nom_complet' => $nomComplet,
                 'classe' => $ins['libelle_classe'] ?? 'Classe non définie',
+                'filiere' => $ins['libelle_filiere'] ?? '-',
+                'niveau' => $ins['libelle_niveau'] ?? '-',
+                'annee' => $ins['libelle_annee'] ?? '-',
                 'scolarite_due' => $scolariteDue,
                 'scolarite_due_fmt' => number_format($scolariteDue, 0, ',', ' ') . ' FCFA',
                 'total_paye' => $totalPaye,
@@ -106,7 +242,9 @@ class PaiementController extends BaseController
                 'solde_restant' => $soldeRestant,
                 'solde_restant_fmt' => number_format($soldeRestant, 0, ',', ' ') . ' FCFA',
                 'statut_reglement' => $statutReglement,
-                'badge_class' => $badgeClass
+                'badge_class' => $badgeClass,
+                'tranches' => $tranchesList,
+                'suggested_tranche_code' => $suggestedTrancheCode
             ]
         ]);
     }
@@ -123,7 +261,7 @@ class PaiementController extends BaseController
 
         $db = $this->model->getCon();
         $today = date('Y-m-d');
-        $mode = strtolower($data['mode_paiement'] ?? 'especes');
+        $mode = strtolower($data['mode_paiement'] ?? 'espece');
 
         // Vérification de la session de caisse pour les encaissements en espèces
         if ($mode === 'especes' || $mode === 'espece' || $mode === 'cash' || empty($mode)) {
@@ -146,6 +284,47 @@ class PaiementController extends BaseController
             }
         }
 
+        $inscriptionCode = trim($data['inscription_code'] ?? '');
+        if (empty($inscriptionCode)) {
+            $this->error("Veuillez sélectionner un dossier d'inscription valide.");
+            return;
+        }
+
+        $montantPaiement = (float)($data['montant_paiement'] ?? 0);
+        if ($montantPaiement <= 0) {
+            $this->error("Le montant du versement doit être supérieur à 0 FCFA.");
+            return;
+        }
+
+        $trancheCode = trim($data['tranche_code'] ?? '');
+        if (empty($trancheCode)) {
+            $this->error("Veuillez obligatoirement sélectionner la tranche correspondante à ce versement.");
+            return;
+        }
+
+        // Vérification du montant par rapport à la tranche
+        if ($trancheCode !== 'SCOLARITE_GLOBALE') {
+            $stmtTr = $db->prepare("SELECT * FROM tranches_scolarite WHERE code_tranche = ? LIMIT 1");
+            $stmtTr->execute([$trancheCode]);
+            $tranche = $stmtTr->fetch(PDO::FETCH_ASSOC);
+            if (!$tranche) {
+                $this->error("La tranche sélectionnée est introuvable.");
+                return;
+            }
+
+            $stmtPayTr = $db->prepare("SELECT SUM(montant_paiement) FROM paiements WHERE inscription_code = ? AND tranche_code = ? AND statut_paiement != 'annule'");
+            $stmtPayTr->execute([$inscriptionCode, $trancheCode]);
+            $dejaPayeTr = (float)($stmtPayTr->fetchColumn() ?: 0);
+            $montantMaxTr = (float)$tranche['montant_tranche'];
+            $resteAutorise = max(0, $montantMaxTr - $dejaPayeTr);
+
+            if ($montantPaiement > $resteAutorise && $resteAutorise > 0) {
+                $resteFmt = number_format($resteAutorise, 0, ',', ' ');
+                $this->error("Le montant saisi dépasse le solde restant exigible de cette tranche ($resteFmt FCFA).");
+                return;
+            }
+        }
+
         if (empty($data['code_paiement'])) {
             $data['code_paiement'] = $this->validator->generateCode('paiements', 'code_paiement', 'PAI-', 8);
         }
@@ -155,8 +334,25 @@ class PaiementController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        if (in_array('tranche_code', $cols)) $data['tranche_code'] = $trancheCode;
+
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
+            // Mettre à jour le statut d'inscription si la totalité de la scolarité est soldée
+            $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE code_inscription = ? LIMIT 1");
+            $stmtIns->execute([$inscriptionCode]);
+            $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
+            if ($ins) {
+                $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+                $stmtTot = $db->prepare("SELECT SUM(montant_paiement) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+                $stmtTot->execute([$inscriptionCode]);
+                $totalPayeCumul = (float)($stmtTot->fetchColumn() ?: 0);
+
+                if ($totalPayeCumul >= $scolariteDue && $scolariteDue > 0) {
+                    $db->prepare("UPDATE inscriptions SET statut_inscription = 'solde' WHERE code_inscription = ?")->execute([$inscriptionCode]);
+                }
+            }
+
             $this->success('Règlement de caisse enregistré avec succès!', ['reload' => true]);
         } else {
             $this->error('Erreur lors de l\'enregistrement du paiement');
@@ -207,34 +403,23 @@ class PaiementController extends BaseController
     {
         $this->requireAuth();
         try {
-            $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT p.*, 
-                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
-                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
-                       a.libelle_annee,
-                       u.nom_user as nom_caissier, u.prenom_user as prenom_caissier,
-                       ins.montant_scolarite_inscription
-                FROM paiements p
-                LEFT JOIN etudiants e ON e.code_etudiant = p.etudiant_code
-                LEFT JOIN inscriptions ins ON (ins.code_inscription = p.inscription_code OR (ins.etudiant_code = p.etudiant_code AND ins.statut_inscription = 'actif'))
-                LEFT JOIN classes cl ON (cl.code_classe = ins.classe_code OR cl.code_classe = p.classe_code)
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN annees a ON (a.code_annee = p.annee_code OR a.code_annee = ins.annee_code)
-                LEFT JOIN users u ON u.code_user = p.user_code
-                WHERE p.id_paiement = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$item) { header('Location: ' . RACINE . 'paiement/list'); exit(); }
+            $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
+            if (!$id && is_numeric($details)) {
+                $id = (int)$details;
+            }
+            $item = $this->model->getById($id);
+            if (!$item) { 
+                $this->renderNotFound("Le paiement demandé est introuvable.");
+                return;
+            }
 
-            // Calcul du cumul payé par l'étudiant à ce jour
+            // Calcul du cumul payé par l'étudiant pour cette inscription
+            $inscriptionCode = $item['inscription_code'] ?? '';
             $stmtCumul = $this->model->getCon()->prepare("
-                SELECT COALESCE(SUM(montant_paye), 0) FROM paiements 
-                WHERE etudiant_code = ? AND statut_paiement = 'valide'
+                SELECT COALESCE(SUM(montant_paiement), 0) FROM paiements 
+                WHERE inscription_code = ? AND statut_paiement != 'annule'
             ");
-            $stmtCumul->execute([$item['etudiant_code']]);
+            $stmtCumul->execute([$inscriptionCode]);
             $totalPayeCumul = (float)$stmtCumul->fetchColumn();
 
             $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
@@ -242,7 +427,9 @@ class PaiementController extends BaseController
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'paiement/list'); exit();
+            error_log("PaiementController::details error: " . $e->getMessage());
+            $this->renderNotFound("Le paiement demandé est introuvable.");
+            return;
         }
         $this->loadView('../views/paiements/details.php', [
             'item' => $item, 
@@ -257,7 +444,10 @@ class PaiementController extends BaseController
     {
         $this->requireAuth();
         try {
-            $id = $this->validator->decrypter($details);
+            $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
+            if (!$id && is_numeric($details)) {
+                $id = (int)$details;
+            }
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'paiement/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);

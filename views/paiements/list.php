@@ -47,7 +47,9 @@ $(document).ready(function() {
       } },
       { data: 'inscription_code', render: function(d, type, row) {
         var eleve = row.etudiant_nom ? '<div style="font-weight:700; color:#0F172A;">' + row.etudiant_nom + '</div>' : '';
-        return eleve + '<code style="color:#64748B; font-size:11.5px;">' + (d || '-') + '</code>';
+        var classe = row.libelle_classe ? '<span style="font-size:11.5px; color:#475569;">' + row.libelle_classe + '</span> &bull; ' : '';
+        var tranche = row.libelle_tranche ? '<div style="font-size:12px; font-weight:700; color:#7E22CE; margin-top:2px;">' + row.libelle_tranche + '</div>' : '';
+        return eleve + '<div>' + classe + '<code style="color:#64748B; font-size:11px;">' + (d || '-') + '</code></div>' + tranche;
       } },
       { data: 'montant_paiement', render: function(d) {
         return d ? '<strong style="color:#0F172A;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
