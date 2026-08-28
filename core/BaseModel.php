@@ -136,16 +136,6 @@ abstract class BaseModel
         }
     }
 
-    public function delete(int $id): bool
-    {
-        try {
-            $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = ?";
-            return $this->pdo->getCon()->prepare($sql)->execute([$id]);
-        } catch (Exception $e) {
-            error_log("Delete {$this->table}: " . $e->getMessage());
-            return false;
-        }
-    }
 
     public function toggleStatus(int $id): bool
     {

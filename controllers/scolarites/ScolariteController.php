@@ -46,12 +46,18 @@ class ScolariteController extends BaseController
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY');
+        $filiereCode = !empty($_POST['filiere_code']) ? trim($_POST['filiere_code']) : '';
+        $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : '';
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);
+        unset($data['tranches']);
+        unset($data['deleted_tranches_ids']);
+
         if (empty($data['code_scolarite'])) {
             $data['code_scolarite'] = $this->validator->generateCode('scolarites', 'code_scolarite', 'SCO-', 8);
         }
+        $codeScolarite = $data['code_scolarite'];
         $data['statut_scolarite'] = $data['statut_scolarite'] ?? 'actif';
         $data['created_at_scolarite'] = date('Y-m-d H:i:s');
         $data['annee_code'] = $anneeCode;
@@ -59,8 +65,47 @@ class ScolariteController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
+
         if ($this->model->create($filteredData)) {
-            $this->success('Tarif de scolarité créé avec succès !');
+            // Enregistrer les tranches créées dynamiquement dans le formulaire
+            if (!empty($_POST['tranches']) && is_array($_POST['tranches'])) {
+                $db = $this->model->getCon();
+                $trancheModel = new ModelTranche();
+                $trancheCols = $db->query("DESCRIBE tranches_scolarite")->fetchAll(PDO::FETCH_COLUMN);
+
+                foreach ($_POST['tranches'] as $tData) {
+                    $libelle = trim($tData['libelle_tranche'] ?? '');
+                    $montant = (float)($tData['montant_tranche'] ?? 0);
+                    if (empty($libelle) && $montant <= 0) {
+                        continue;
+                    }
+                    if (empty($libelle)) {
+                        $libelle = 'Tranche';
+                    }
+                    $dateLimite = !empty($tData['date_limite']) ? $tData['date_limite'] : date('Y-m-d');
+                    $codeTranche = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
+
+                    $newTranche = [
+                        'code_tranche' => $codeTranche,
+                        'libelle_tranche' => $libelle,
+                        'montant_tranche' => $montant,
+                        'date_limite' => $dateLimite,
+                        'scolarite_code' => $codeScolarite,
+                        'filiere_code' => $filiereCode,
+                        'niveau_code' => $niveauCode,
+                        'annee_code' => $anneeCode,
+                        'etablissement_code' => $etabCode,
+                        'statut_tranche' => $tData['statut_tranche'] ?? 'actif',
+                        'created_at_tranche' => date('Y-m-d H:i:s')
+                    ];
+                    if (in_array('user_code', $trancheCols)) {
+                        $newTranche['user_code'] = $userCode;
+                    }
+                    $filteredTranche = array_intersect_key($newTranche, array_flip($trancheCols));
+                    $trancheModel->create($filteredTranche);
+                }
+            }
+            $this->success('Tarif de scolarité et tranches enregistrés avec succès !');
         } else {
             $this->error('Erreur lors de la création de la scolarité.');
         }
@@ -72,15 +117,98 @@ class ScolariteController extends BaseController
         $this->requireAuth();
         $id = (int)$this->post('id_scolarite');
         if (!$id) { $this->error('Identifiant invalide'); return; }
+
+        $item = $this->model->getById($id);
+        if (!$item) { $this->error('Scolarité introuvable'); return; }
+
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($item['annee_code'] ?? '');
+        $filiereCode = !empty($_POST['filiere_code']) ? trim($_POST['filiere_code']) : ($item['filiere_code'] ?? '');
+        $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : ($item['niveau_code'] ?? '');
+        $codeScolarite = $item['code_scolarite'];
+        $etabCode = '5454544456';
+
         $data = $_POST;
         unset($data['csrf_token']);
+        unset($data['tranches']);
+        unset($data['deleted_tranches_ids']);
+
         if (!empty($_POST['annee_code'])) {
             $data['annee_code'] = trim($_POST['annee_code']);
         }
         $cols = $this->model->getCon()->query("DESCRIBE scolarites")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
+
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Tarif de scolarité modifié avec succès !');
+            $db = $this->model->getCon();
+            $trancheModel = new ModelTranche();
+            $trancheCols = $db->query("DESCRIBE tranches_scolarite")->fetchAll(PDO::FETCH_COLUMN);
+
+            // Gestion de la suppression des tranches retirées du panier
+            if (!empty($_POST['deleted_tranches_ids'])) {
+                $deletedIds = explode(',', $_POST['deleted_tranches_ids']);
+                foreach ($deletedIds as $delId) {
+                    $delId = (int)trim($delId);
+                    if ($delId > 0) {
+                        $trancheModel->delete($delId);
+                    }
+                }
+            }
+
+            // Enregistrement / mise à jour des tranches
+            if (!empty($_POST['tranches']) && is_array($_POST['tranches'])) {
+                foreach ($_POST['tranches'] as $tData) {
+                    $libelle = trim($tData['libelle_tranche'] ?? '');
+                    $montant = (float)($tData['montant_tranche'] ?? 0);
+                    if (empty($libelle) && $montant <= 0) {
+                        continue;
+                    }
+                    if (empty($libelle)) {
+                        $libelle = 'Tranche';
+                    }
+                    $dateLimite = !empty($tData['date_limite']) ? $tData['date_limite'] : date('Y-m-d');
+                    $trancheId = !empty($tData['id_tranche']) ? (int)$tData['id_tranche'] : null;
+
+                    if ($trancheId && $trancheId > 0) {
+                        // Mise à jour de la tranche existante
+                        $updateTranche = [
+                            'libelle_tranche' => $libelle,
+                            'montant_tranche' => $montant,
+                            'date_limite' => $dateLimite,
+                            'scolarite_code' => $codeScolarite,
+                            'filiere_code' => $filiereCode,
+                            'niveau_code' => $niveauCode,
+                            'annee_code' => $anneeCode,
+                            'statut_tranche' => $tData['statut_tranche'] ?? 'actif'
+                        ];
+                        $filteredTranche = array_intersect_key($updateTranche, array_flip($trancheCols));
+                        $trancheModel->update($filteredTranche, $trancheId);
+                    } else {
+                        // Création d'une nouvelle tranche
+                        $codeTranche = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
+                        $newTranche = [
+                            'code_tranche' => $codeTranche,
+                            'libelle_tranche' => $libelle,
+                            'montant_tranche' => $montant,
+                            'date_limite' => $dateLimite,
+                            'scolarite_code' => $codeScolarite,
+                            'filiere_code' => $filiereCode,
+                            'niveau_code' => $niveauCode,
+                            'annee_code' => $anneeCode,
+                            'etablissement_code' => $etabCode,
+                            'statut_tranche' => $tData['statut_tranche'] ?? 'actif',
+                            'created_at_tranche' => date('Y-m-d H:i:s')
+                        ];
+                        if (in_array('user_code', $trancheCols)) {
+                            $newTranche['user_code'] = $userCode;
+                        }
+                        $filteredTranche = array_intersect_key($newTranche, array_flip($trancheCols));
+                        $trancheModel->create($filteredTranche);
+                    }
+                }
+            }
+
+            $this->success('Tarif de scolarité et tranches mis à jour avec succès !');
         } else {
             $this->error('Erreur lors de la modification de la scolarité.');
         }
@@ -154,16 +282,33 @@ class ScolariteController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'scolarite/list'); exit(); }
+            
+            // Récupérer les tranches existantes associées à cette scolarité
+            $stmtTranches = $this->model->getCon()->prepare("
+                SELECT * FROM tranches_scolarite 
+                WHERE (scolarite_code = ? OR (filiere_code = ? AND niveau_code = ? AND annee_code = ?))
+                ORDER BY date_limite ASC, id_tranche ASC
+            ");
+            $stmtTranches->execute([$item['code_scolarite'], $item['filiere_code'], $item['niveau_code'], $item['annee_code']]);
+            $tranches = $stmtTranches->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'scolarite/list'); exit();
         }
-        $this->loadView('../views/scolarites/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/scolarites/edit.php', [
+            'item' => $item, 
+            'tranches' => $tranches ?? [], 
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/scolarites/edit.php', ['item' => []]);
+        $this->loadView('../views/scolarites/edit.php', [
+            'item' => [], 
+            'tranches' => []
+        ]);
     }
 }

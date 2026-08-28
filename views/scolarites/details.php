@@ -102,10 +102,12 @@ $totalGeneral = $montantScolarite + $fraisInscription + $fraisAnnexes;
                       <?= number_format((float)($t['montant_tranche'] ?? 0), 0, ',', ' ') ?> FCFA
                     </td>
                     <td style="padding: 10px; text-align: center; color: #334155;">
-                      <?= !empty($t['date_limite_tranche']) ? date('d/m/Y', strtotime($t['date_limite_tranche'])) : 'À l\'inscription' ?>
+                      <?= !empty($t['date_limite']) ? date('d/m/Y', strtotime($t['date_limite'])) : (!empty($t['date_limite_tranche']) ? date('d/m/Y', strtotime($t['date_limite_tranche'])) : 'À l\'inscription') ?>
                     </td>
                     <td style="padding: 10px; text-align: center;">
-                      <span class="badge" style="background:#DCFCE7; color:#15803D; padding:2px 8px; border-radius:8px; font-weight:700; font-size:11px;">Actif</span>
+                      <span class="badge" style="background:<?= (($t['statut_tranche'] ?? 'actif') === 'actif') ? '#DCFCE7' : '#FEE2E2' ?>; color:<?= (($t['statut_tranche'] ?? 'actif') === 'actif') ? '#15803D' : '#B91C1C' ?>; padding:2px 8px; border-radius:8px; font-weight:700; font-size:11px;">
+                        <?= (($t['statut_tranche'] ?? 'actif') === 'actif') ? 'Actif' : 'Inactif' ?>
+                      </span>
                     </td>
                   </tr>
                 <?php endforeach; ?>

@@ -87,6 +87,63 @@ $niveaux = (new ModelNiveau())->getAll();
 
           </div>
 
+          <!-- SECTION DYNAMIQUE : ÉCHÉANCIER / TRANCHES DE SCOLARITÉ (PANIER) -->
+          <input type="hidden" name="deleted_tranches_ids" id="deleted_tranches_ids" value="">
+
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 2px dashed #E2E8F0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="shopping-cart" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Échéancier des Tranches de Paiement
+                </h3>
+                <p style="color: #64748B; font-size: 12.5px; margin: 3px 0 0 0;">
+                  Ajoutez et planifiez directement les tranches / versements pour cette scolarité (optionnel).
+                </p>
+              </div>
+              
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" id="btn-add-tranche" class="btn btn-outline-primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 8px 16px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #F8FAFC; cursor: pointer;">
+                  <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Ajouter une tranche
+                </button>
+              </div>
+            </div>
+
+            <!-- Résumé de répartition / Badge indicateur de cumul -->
+            <div id="tranches-summary-bar" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center; font-size: 13px;">
+                <div>Montant Scolarité : <strong id="lbl-total-scolarite" style="color: #0F172A;">0 FCFA</strong></div>
+                <div>Total Tranches : <strong id="lbl-cumul-tranches" style="color: #1E3A5F;">0 FCFA</strong></div>
+                <div>Reste à répartir : <strong id="lbl-reste-scolarite" style="color: #64748B;">0 FCFA</strong></div>
+              </div>
+              <div id="badge-repartition-status" style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #EFF6FF; color: #1E3A5F;">
+                0 tranche(s)
+              </div>
+            </div>
+
+            <!-- Table dynamique Panier Tranches -->
+            <div style="width: 100%; overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 10px;">
+              <table class="table" id="table-panier-tranches" style="width: 100%; margin: 0; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #F1F5F9; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+                    <th style="padding: 10px 12px; width: 45px; text-align: center;">#</th>
+                    <th style="padding: 10px 12px; min-width: 200px;">Libellé de la tranche *</th>
+                    <th style="padding: 10px 12px; width: 180px;">Montant (FCFA) *</th>
+                    <th style="padding: 10px 12px; width: 170px;">Date Limite *</th>
+                    <th style="padding: 10px 12px; width: 110px; text-align: center;">Statut</th>
+                    <th style="padding: 10px 12px; width: 60px; text-align: center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-tranches">
+                  <!-- Lignes injectées dynamiquement -->
+                </tbody>
+              </table>
+              <div id="tranches-empty-state" style="padding: 24px; text-align: center; color: #94A3B8; font-size: 13px; font-style: italic;">
+                <i data-lucide="layers" style="width: 28px; height: 28px; display: block; margin: 0 auto 6px auto; opacity: 0.6;"></i>
+                Aucune tranche ajoutée pour le moment. Cliquez sur <strong>"+ Ajouter une tranche"</strong> pour définir l'échéancier.
+              </div>
+            </div>
+          </div>
+
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
             <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer</button>
             <a href="<?= RACINE ?>scolarite/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
@@ -104,6 +161,125 @@ $(document).ready(function() {
     $('#sel_filiere_scolarite').select2({ placeholder: "-- Choisir une filière --", allowClear: true, width: '100%' });
     $('#sel_niveau_scolarite').select2({ placeholder: "-- Choisir un niveau --", allowClear: true, width: '100%' });
     $('#sel_affectation_scolarite').select2({ minimumResultsForSearch: Infinity, width: '100%' });
+  }
+
+  var existingTranches = <?= json_encode($tranches ?? []) ?>;
+  var trancheCounter = 0;
+  var deletedTrancheIds = [];
+
+  function formatFcfa(val) {
+    return Number(val || 0).toLocaleString('fr-FR') + ' FCFA';
+  }
+
+  function updateTranchesSummary() {
+    var montantScolarite = parseFloat($('input[name="montant_scolarite"]').val()) || 0;
+    var totalTranches = 0;
+    var rowCount = 0;
+
+    $('#tbody-tranches tr').each(function(idx) {
+      rowCount++;
+      $(this).find('.tranche-index-label').text(rowCount);
+      var montant = parseFloat($(this).find('.input-tranche-montant').val()) || 0;
+      totalTranches += montant;
+    });
+
+    $('#lbl-total-scolarite').text(formatFcfa(montantScolarite));
+    $('#lbl-cumul-tranches').text(formatFcfa(totalTranches));
+
+    var diff = montantScolarite - totalTranches;
+    var $lblReste = $('#lbl-reste-scolarite');
+    var $badge = $('#badge-repartition-status');
+
+    if (rowCount === 0) {
+      $('#tranches-empty-state').show();
+      $lblReste.text(formatFcfa(montantScolarite)).css('color', '#64748B');
+      $badge.text('0 tranche').css({ 'background': '#F1F5F9', 'color': '#64748B' });
+    } else {
+      $('#tranches-empty-state').hide();
+      if (montantScolarite > 0) {
+        if (Math.abs(diff) < 0.01) {
+          $lblReste.text('0 FCFA (Équilibré)').css('color', '#15803D');
+          $badge.text(rowCount + ' tranche(s) - 100% planifié').css({ 'background': '#DCFCE7', 'color': '#15803D' });
+        } else if (diff > 0) {
+          $lblReste.text(formatFcfa(diff) + ' restant').css('color', '#B45309');
+          $badge.text(rowCount + ' tranche(s) - Incomplet').css({ 'background': '#FEF3C7', 'color': '#B45309' });
+        } else {
+          $lblReste.text('Dépassement de ' + formatFcfa(Math.abs(diff))).css('color', '#B91C1C');
+          $badge.text(rowCount + ' tranche(s) - Dépassement !').css({ 'background': '#FEE2E2', 'color': '#B91C1C' });
+        }
+      } else {
+        $lblReste.text(formatFcfa(diff)).css('color', '#64748B');
+        $badge.text(rowCount + ' tranche(s)').css({ 'background': '#EFF6FF', 'color': '#1E3A5F' });
+      }
+    }
+  }
+
+  function addTrancheRow(data) {
+    trancheCounter++;
+    var idx = trancheCounter;
+    var id = data ? (data.id_tranche || '') : '';
+    var libelle = data ? (data.libelle_tranche || '') : ('Tranche ' + ($('#tbody-tranches tr').length + 1));
+    var montant = data ? (data.montant_tranche || '') : '';
+    var dateLimite = data ? (data.date_limite || '') : '';
+    var statut = data ? (data.statut_tranche || 'actif') : 'actif';
+
+    var escapedLibelle = $('<div>').text(libelle).html();
+
+    var rowHtml = '<tr class="tranche-row" data-idx="' + idx + '" style="border-bottom:1px solid #F1F5F9;">' +
+      '<td style="padding:8px 12px; text-align:center; font-weight:800; color:#1E3A5F;" class="tranche-index-label">1</td>' +
+      '<td style="padding:8px 12px;">' +
+        (id ? '<input type="hidden" name="tranches[' + idx + '][id_tranche]" value="' + id + '">' : '') +
+        '<input type="text" name="tranches[' + idx + '][libelle_tranche]" class="form-control form-control-sm input-tranche-libelle" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-weight:600; font-size:13px;" value="' + escapedLibelle + '" placeholder="Ex: 1ère Tranche (Inscription)" required>' +
+      '</td>' +
+      '<td style="padding:8px 12px;">' +
+        '<input type="number" step="1000" min="0" name="tranches[' + idx + '][montant_tranche]" class="form-control form-control-sm input-tranche-montant" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-weight:700; color:#0F172A; font-size:13px;" value="' + montant + '" placeholder="Ex: 250000" required>' +
+      '</td>' +
+      '<td style="padding:8px 12px;">' +
+        '<input type="date" name="tranches[' + idx + '][date_limite]" class="form-control form-control-sm input-tranche-date" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-size:13px;" value="' + dateLimite + '" required>' +
+      '</td>' +
+      '<td style="padding:8px 12px; text-align:center;">' +
+        '<select name="tranches[' + idx + '][statut_tranche]" class="form-control form-control-sm" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:5px 8px; font-size:12px; font-weight:700;">' +
+          '<option value="actif" ' + (statut === 'actif' ? 'selected' : '') + '>Actif</option>' +
+          '<option value="inactif" ' + (statut === 'inactif' ? 'selected' : '') + '>Inactif</option>' +
+        '</select>' +
+      '</td>' +
+      '<td style="padding:8px 12px; text-align:center;">' +
+        '<button type="button" class="btn btn-sm btn-danger btn-remove-tranche" data-id="' + id + '" style="background:#FEE2E2; border:none; color:#B91C1C; border-radius:6px; padding:6px 9px; cursor:pointer;" title="Supprimer cette tranche">' +
+          '<i data-lucide="trash-2" style="width:15px; height:15px;"></i>' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+
+    $('#tbody-tranches').append(rowHtml);
+    if (window.lucide) lucide.createIcons();
+    updateTranchesSummary();
+  }
+
+  $('#btn-add-tranche').on('click', function() {
+    addTrancheRow();
+  });
+
+  $(document).on('click', '.btn-remove-tranche', function() {
+    var id = $(this).data('id');
+    if (id) {
+      deletedTrancheIds.push(id);
+      $('#deleted_tranches_ids').val(deletedTrancheIds.join(','));
+    }
+    $(this).closest('tr').remove();
+    updateTranchesSummary();
+  });
+
+  $(document).on('input', 'input[name="montant_scolarite"], .input-tranche-montant', function() {
+    updateTranchesSummary();
+  });
+
+  // Pre-fill existing tranches on load
+  if (existingTranches && existingTranches.length > 0) {
+    existingTranches.forEach(function(t) {
+      addTrancheRow(t);
+    });
+  } else {
+    updateTranchesSummary();
   }
 });
 </script>
