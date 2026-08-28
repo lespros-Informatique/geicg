@@ -160,26 +160,20 @@ class TrancheController extends BaseController
     {
         $this->requireAuth();
         try {
-            $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT t.*, 
-                       s.montant_scolarite, s.frais_inscription,
-                       f.libelle_filiere, 
-                       n.libelle_niveau,
-                       a.libelle_annee
-                FROM tranches_scolarite t
-                LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
-                LEFT JOIN filieres f ON (f.code_filiere = t.filiere_code OR f.code_filiere = s.filiere_code)
-                LEFT JOIN niveaux n ON (n.code_niveau = t.niveau_code OR n.code_niveau = s.niveau_code)
-                LEFT JOIN annees a ON (a.code_annee = t.annee_code OR a.code_annee = s.annee_code)
-                WHERE t.id_tranche = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$item) { header('Location: ' . RACINE . 'scolarite/list?tab=tranches'); exit(); }
+            $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
+            if (!$id && is_numeric($details)) {
+                $id = (int)$details;
+            }
+            $item = $this->model->getById($id);
+            if (!$item) {
+                $this->renderNotFound("La tranche de scolarité demandée est introuvable.");
+                return;
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'scolarite/list?tab=tranches'); exit();
+            error_log("TrancheController::details error: " . $e->getMessage());
+            $this->renderNotFound("La tranche de scolarité demandée est introuvable.");
+            return;
         }
         $this->loadView('../views/tranches_scolarite/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -188,12 +182,19 @@ class TrancheController extends BaseController
     {
         $this->requireAuth();
         try {
-            $id = $this->validator->decrypter($details);
+            $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
+            if (!$id && is_numeric($details)) {
+                $id = (int)$details;
+            }
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'tranche/list'); exit(); }
+            if (!$item) {
+                header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
+                exit();
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'tranche/list'); exit();
+            header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
+            exit();
         }
         $this->loadView('../views/tranches_scolarite/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
