@@ -10,13 +10,35 @@ class EtudiantController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/etudiants/list.php');
+        $db = $this->model->getCon();
+        $annees = $db->query("SELECT * FROM annees WHERE statut_annee = 'actif' ORDER BY date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC);
+        $niveaux = $db->query("SELECT * FROM niveaux WHERE statut_niveau = 'actif' ORDER BY libelle_niveau ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $filieres = $db->query("SELECT * FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $db->query("SELECT * FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $anneeActive = $_SESSION['annee_active_code'] ?? ($annees[0]['code_annee'] ?? '');
+
+        $this->loadView('../views/etudiants/list.php', [
+            'annees' => $annees,
+            'niveaux' => $niveaux,
+            'filieres' => $filieres,
+            'classes' => $classes,
+            'anneeActive' => $anneeActive
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $filters = [
+            'annee_code' => $_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''),
+            'niveau_code' => $_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''),
+            'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
+            'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),
+            'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? '')
+        ];
+
+        $items = $this->model->getFilteredRegistry($filters);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_etudiant'];
