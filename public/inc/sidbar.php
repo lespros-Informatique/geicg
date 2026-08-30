@@ -381,8 +381,8 @@
           $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS', 'MANAGE_STUDENTS'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER', 'ROLE_ENSEIGNANT']);
           $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_STUDENTS'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE']);
           $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ENROLLMENTS'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-          $showAccessoires = $canAccess(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES'], ['ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showAccessoires;
+          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ACCESSOIRES'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER']);
+          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showPiecesFournir;
         ?>
         <?php if ($hasSecEleves): ?>
         <div class="nav-section">
@@ -408,9 +408,12 @@
                     <i data-lucide="user-plus"></i> <span>Inscriptions Annuelles</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showAccessoires): ?>
-                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= strpos($currentUri, '/accessoire/') !== false ? 'active' : '' ?>" data-title="Accessoires & Kits">
-                    <i data-lucide="package"></i> <span>Accessoires & Kits</span>
+                <?php if ($showPiecesFournir): ?>
+                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir/') !== false && strpos($currentUri, '/piece_fournir_cycle/') === false ? 'active' : '' ?>" data-title="Pièces à Fournir">
+                    <i data-lucide="file-check"></i> <span>Pièces à Fournir</span>
+                </a>
+                <a href="<?= RACINE ?>piece_fournir_cycle/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir_cycle/') !== false ? 'active' : '' ?>" data-title="Dossiers par Cycle">
+                    <i data-lucide="folder-check"></i> <span>Dossiers par Cycle</span>
                 </a>
                 <?php endif; ?>
             </div>

@@ -22,6 +22,8 @@ $etudiantController = new EtudiantController();
 $parentController = new ParentController();
 $inscriptionController = new InscriptionController();
 $accessoireController = new AccessoireController();
+$pieceFournirController = new PieceFournirController();
+$pieceFournirCycleController = new PieceFournirCycleController();
 $paiementController = new PaiementController();
 $sessionCaisseController = new SessionCaisseController();
 $ouvertureCaisseController = new OuvertureCaisseController();
@@ -269,6 +271,27 @@ $route->addRoute('/accessoire/changer', [$accessoireController, 'changer']);
 $route->addRoute('/accessoire/details/{param}', [$accessoireController, 'details']);
 $route->addRoute('/accessoire/edition/{param}', [$accessoireController, 'edition']);
 $route->addRoute('/accessoire/formulaire', [$accessoireController, 'formulaire']);
+
+// Module: piece_fournir (PieceFournirController)
+$route->addRoute('/piece_fournir/list', [$pieceFournirController, 'list']);
+$route->addRoute('/piece_fournir/apiList', [$pieceFournirController, 'apiList']);
+$route->addRoute('/piece_fournir/add', [$pieceFournirController, 'add']);
+$route->addRoute('/piece_fournir/edit', [$pieceFournirController, 'edit']);
+$route->addRoute('/piece_fournir/changer', [$pieceFournirController, 'changer']);
+$route->addRoute('/piece_fournir/edition/{param}', [$pieceFournirController, 'edition']);
+$route->addRoute('/piece_fournir/supprimer/{param}', [$pieceFournirController, 'supprimer']);
+$route->addRoute('/piece_fournir/formulaire', [$pieceFournirController, 'formulaire']);
+
+// Module: piece_fournir_cycle (PieceFournirCycleController)
+$route->addRoute('/piece_fournir_cycle/list', [$pieceFournirCycleController, 'list']);
+$route->addRoute('/piece_fournir_cycle/apiList', [$pieceFournirCycleController, 'apiList']);
+$route->addRoute('/piece_fournir_cycle/getByCycleApi', [$pieceFournirCycleController, 'getByCycleApi']);
+$route->addRoute('/piece_fournir_cycle/add', [$pieceFournirCycleController, 'add']);
+$route->addRoute('/piece_fournir_cycle/edit', [$pieceFournirCycleController, 'edit']);
+$route->addRoute('/piece_fournir_cycle/changer', [$pieceFournirCycleController, 'changer']);
+$route->addRoute('/piece_fournir_cycle/edition/{param}', [$pieceFournirCycleController, 'edition']);
+$route->addRoute('/piece_fournir_cycle/supprimer/{param}', [$pieceFournirCycleController, 'supprimer']);
+$route->addRoute('/piece_fournir_cycle/formulaire', [$pieceFournirCycleController, 'formulaire']);
 
 // Module: paiement (PaiementController)
 $route->addRoute('/paiement/list', [$paiementController, 'list']);

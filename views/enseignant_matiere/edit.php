@@ -2,12 +2,7 @@
 <?php
 $classes = (new ModelClasse())->getAll();
 $matieres = (new ModelMatiere())->getAll();
-// Récupérer les enseignants avec le nom direct ou de l'utilisateur associé
-$sqlEns = "SELECT e.*, CONCAT(COALESCE(e.nom_enseignant, u.nom_user, ''), ' ', COALESCE(e.prenom_enseignant, u.prenom_user, '')) AS nom_complet 
-           FROM enseignants e 
-           LEFT JOIN users u ON u.code_user = e.user_code 
-           ORDER BY nom_complet ASC";
-$enseignants = (new ModelEnseignant())->getCon()->query($sqlEns)->fetchAll(PDO::FETCH_ASSOC);
+$enseignants = (new ModelEnseignant())->getActifs();
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

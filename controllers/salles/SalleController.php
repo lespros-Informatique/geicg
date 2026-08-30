@@ -109,14 +109,14 @@ class SalleController extends BaseController
             // Planning / Emplois du temps dans cette salle
             $stmtEdt = $this->model->getCon()->prepare("
                 SELECT edt.*, cl.libelle_classe, m.libelle_matiere,
-                       COALESCE(e.nom_enseignant, u.nom_user) as nom_prof,
-                       COALESCE(e.prenom_enseignant, u.prenom_user) as prenom_prof
-                FROM emplois_temps edt
-                LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
-                LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-                LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-                LEFT JOIN users u ON u.code_user = edt.user_code
-                WHERE edt.salle_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
+                        u.nom_user as nom_prof,
+                        u.prenom_user as prenom_prof
+                 FROM emplois_temps edt
+                 LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+                 LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+                 LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+                 LEFT JOIN users u ON u.code_user = edt.enseignant_code
+                 WHERE edt.salle_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
                 ORDER BY edt.jour ASC, edt.heure_debut ASC
             ");
             $stmtEdt->execute([$salleCode]);

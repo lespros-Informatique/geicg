@@ -174,13 +174,13 @@ class ClasseController extends BaseController
             // Liste des matières & enseignants assignés
             $stmtMat = $this->model->getCon()->prepare("
                 SELECT em.*, m.libelle_matiere, m.code_matiere,
-                       COALESCE(e.nom_enseignant, u.nom_user) as nom_prof,
-                       COALESCE(e.prenom_enseignant, u.prenom_user) as prenom_prof,
+                       u.nom_user as nom_prof,
+                       u.prenom_user as prenom_prof,
                        e.grade_enseignant
                 FROM enseignant_matiere em
                 LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
                 LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN users u ON u.code_user = em.user_code
+                LEFT JOIN users u ON u.code_user = em.enseignant_code
                 WHERE em.classe_code = ?
                 ORDER BY m.libelle_matiere ASC
             ");

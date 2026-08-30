@@ -45,10 +45,11 @@ class EmploiController extends BaseController
         // 1. Recherche précise par classe_code + matiere_code
         $stmt = $db->prepare("
             SELECT em.*, 
-                   e.nom_enseignant, e.prenom_enseignant, e.code_enseignant, e.grade_enseignant,
+                   u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
                    m.libelle_matiere, cl.libelle_classe
             FROM enseignant_matiere em
             JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+            JOIN users u ON u.code_user = em.enseignant_code
             LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
             LEFT JOIN classes cl ON cl.code_classe = em.classe_code
             WHERE em.classe_code = ? AND em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
@@ -61,10 +62,11 @@ class EmploiController extends BaseController
         if (!$row) {
             $stmtGlobal = $db->prepare("
                 SELECT em.*, 
-                       e.nom_enseignant, e.prenom_enseignant, e.code_enseignant, e.grade_enseignant,
+                       u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
                        m.libelle_matiere
                 FROM enseignant_matiere em
                 JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+                JOIN users u ON u.code_user = em.enseignant_code
                 LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
                 WHERE em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
                 LIMIT 1
@@ -116,13 +118,13 @@ class EmploiController extends BaseController
                    cl.libelle_classe, 
                    m.libelle_matiere, 
                    s.libelle_salle, 
-                   COALESCE(CONCAT(e.nom_enseignant, ' ', e.prenom_enseignant), u.nom_user, 'Enseignant') AS nom_prof
+                   CONCAT(u.nom_user, ' ', COALESCE(u.prenom_user, '')) AS nom_prof
             FROM emplois_temps edt
             LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
             LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
             LEFT JOIN salles s ON s.code_salle = edt.salle_code
             LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-            LEFT JOIN users u ON u.code_user = edt.user_code
+            LEFT JOIN users u ON u.code_user = edt.enseignant_code
             WHERE edt.statut_emploi = 'actif'
               AND LOWER(edt.jour) = ?
               AND (edt.heure_debut < ? AND edt.heure_fin > ?)
@@ -312,18 +314,18 @@ class EmploiController extends BaseController
                        cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
                        m.libelle_matiere,
                        s.libelle_salle, s.capacite_salle,
-                       COALESCE(e.nom_enseignant, u.nom_user) as nom_prof,
-                       COALESCE(e.prenom_enseignant, u.prenom_user) as prenom_prof,
-                       e.grade_enseignant
-                FROM emplois_temps edt
-                LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-                LEFT JOIN salles s ON s.code_salle = edt.salle_code
-                LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-                LEFT JOIN users u ON u.code_user = edt.user_code
-                WHERE edt.id_emploi = ?
+                        u.nom_user as nom_prof,
+                        u.prenom_user as prenom_prof,
+                        e.grade_enseignant
+                 FROM emplois_temps edt
+                 LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                 LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+                 LEFT JOIN salles s ON s.code_salle = edt.salle_code
+                 LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+                 LEFT JOIN users u ON u.code_user = edt.enseignant_code
+                 WHERE edt.id_emploi = ?
             ");
             $stmt->execute([$id]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);

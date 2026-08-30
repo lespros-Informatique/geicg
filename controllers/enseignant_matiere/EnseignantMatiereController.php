@@ -19,13 +19,13 @@ class EnseignantMatiereController extends BaseController
         $sql = "SELECT em.*, 
                        m.libelle_matiere,
                        cl.libelle_classe,
-                       CONCAT(COALESCE(e.nom_enseignant, u.nom_user, ''), ' ', COALESCE(e.prenom_enseignant, u.prenom_user, '')) AS enseignant_nom,
+                       CONCAT(u.nom_user, ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom,
                        e.code_enseignant
                 FROM enseignant_matiere em
                 LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
                 LEFT JOIN classes cl ON cl.code_classe = em.classe_code
                 LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN users u ON u.code_user = e.user_code
+                LEFT JOIN users u ON u.code_user = em.enseignant_code
                 ORDER BY em.id_enseignant_matiere DESC";
         $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         $data = [];
@@ -122,18 +122,18 @@ class EnseignantMatiereController extends BaseController
                        cl.libelle_classe,
                        f.libelle_filiere,
                        n.libelle_niveau,
-                       COALESCE(e.nom_enseignant, u.nom_user) AS nom_prof,
-                       COALESCE(e.prenom_enseignant, u.prenom_user) AS prenom_prof,
+                       u.nom_user AS nom_prof,
+                       u.prenom_user AS prenom_prof,
                        e.grade_enseignant,
-                       e.email_enseignant,
-                       e.telephone_enseignant
+                       u.email_user AS email_enseignant,
+                       u.telephone_user AS telephone_enseignant
                 FROM enseignant_matiere em
                 LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
                 LEFT JOIN classes cl ON cl.code_classe = em.classe_code
                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
                 LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN users u ON u.code_user = em.user_code
+                LEFT JOIN users u ON u.code_user = em.enseignant_code
                 WHERE em.id_enseignant_matiere = ?
             ");
             $stmt->execute([$id]);

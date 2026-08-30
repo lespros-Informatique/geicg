@@ -345,10 +345,16 @@ class UserController extends BaseController
             $login = trim($this->post('login'));
             $password = $this->post('password');
 
-            // 1. Recherche dans la table USERS
+            // Recherche dans la table USERS (par email, téléphone ou matricule/code)
             $user = $this->validator->getByElement('users', 'telephone_user', $login);
             if (!$user) {
                 $user = $this->validator->getByElement('users', 'email_user', $login);
+            }
+            if (!$user) {
+                $user = $this->validator->getByElement('users', 'matricule_user', $login);
+            }
+            if (!$user) {
+                $user = $this->validator->getByElement('users', 'code_user', $login);
             }
 
             if (isset($user) && !empty($user) && password_verify($password, $user['password_user'] ?? '')) {
@@ -358,9 +364,9 @@ class UserController extends BaseController
                     $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
                     $roleCode = !empty($roleCodes) ? $roleCodes[0] : 'ROLE_USER';
 
-                    // Vérifier si lié à un profil enseignant
+                    // Vérifier si cet utilisateur a une fiche enseignant active
                     $stmtEns = $this->model->getCon()->prepare("
-                        SELECT * FROM enseignants WHERE user_code = ? AND statut_enseignant = 'actif' LIMIT 1
+                        SELECT * FROM enseignants WHERE code_enseignant = ? AND statut_enseignant = 'actif' LIMIT 1
                     ");
                     $stmtEns->execute([$user['code_user']]);
                     $enseignantProfile = $stmtEns->fetch(PDO::FETCH_ASSOC);
@@ -400,7 +406,7 @@ class UserController extends BaseController
                         'roles' => $roleCodes,
                         'roles_details' => $userRoles,
                         'is_enseignant' => !empty($enseignantProfile) || in_array('ROLE_ENSEIGNANT', $roleCodes, true),
-                        'code_enseignant' => $enseignantProfile['code_enseignant'] ?? null,
+                        'code_enseignant' => $enseignantProfile['code_enseignant'] ?? $user['code_user'],
                         'grade_enseignant' => $enseignantProfile['grade_enseignant'] ?? null,
                         'type_contrat' => $enseignantProfile['type_contrat'] ?? null,
                         'permissions' => [
@@ -416,7 +422,7 @@ class UserController extends BaseController
                     $_SESSION['roles'] = $roleCodes;
 
                     $welcomeMsg = !empty($enseignantProfile) 
-                        ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user']) . ' !'
+                        ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user'] . ' ' . ($user['prenom_user'] ?? '')) . ' !'
                         : 'Connexion réussie ! Bienvenue sur GEICG.';
 
                     $this->success($welcomeMsg);
@@ -427,46 +433,8 @@ class UserController extends BaseController
                 }
             }
 
-            // 2. Si pas trouvé dans USERS, recherche directe dans la table ENSEIGNANTS
-            $stmtEnsLogin = $this->model->getCon()->prepare("
-                SELECT * FROM enseignants 
-                WHERE (email_enseignant = ? OR telephone_enseignant = ?)
-                LIMIT 1
-            ");
-            $stmtEnsLogin->execute([$login, $login]);
-            $ens = $stmtEnsLogin->fetch(PDO::FETCH_ASSOC);
-
-            if ($ens && !empty($ens['password_enseignant']) && password_verify($password, $ens['password_enseignant'])) {
-                if ($ens['statut_enseignant'] === 'actif') {
-                    $sessionData = [
-                        'id_user' => $ens['id_enseignant'],
-                        'code_user' => $ens['code_enseignant'],
-                        'nom' => $ens['nom_enseignant'],
-                        'prenom' => $ens['prenom_enseignant'] ?? '',
-                        'email' => $ens['email_enseignant'] ?? '',
-                        'tel' => $ens['telephone_enseignant'] ?? '',
-                        'role_code' => 'ROLE_ENSEIGNANT',
-                        'is_enseignant' => true,
-                        'code_enseignant' => $ens['code_enseignant'],
-                        'grade_enseignant' => $ens['grade_enseignant'] ?? 'Enseignant',
-                        'type_contrat' => $ens['type_contrat'] ?? 'permanent',
-                        'taux_horaire' => (float)($ens['taux_horaire'] ?? 0),
-                        'permissions' => [
-                            'create' => 1,
-                            'edit' => 1,
-                            'show' => 1,
-                            'delete' => 0
-                        ]
-                    ];
-
-                    Validator::saveSesion(USERS_AUTH, $sessionData);
-                    $this->success('Bienvenue Professeur ' . htmlspecialchars($ens['nom_enseignant']) . ' !');
-                    return;
-                } else {
-                    $this->error('Ce compte enseignant est inactif ou suspendu. Veuillez contacter l\'administration.');
-                    return;
-                }
-            }
+            $this->error('Identifiant ou mot de passe incorrect.');
+            return;
 
             $this->error('Identifiants incorrects. Veuillez vérifier votre adresse email / téléphone et mot de passe.');
         } else {

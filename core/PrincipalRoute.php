@@ -43,6 +43,8 @@ require_once __DIR__ . '/../models/etudiants/ModelEtudiant.php';
 require_once __DIR__ . '/../models/parents/ModelParent.php';
 require_once __DIR__ . '/../models/inscriptions/ModelInscription.php';
 require_once __DIR__ . '/../models/accessoires/ModelAccessoire.php';
+require_once __DIR__ . '/../models/pieces_fournir/ModelPieceFournir.php';
+require_once __DIR__ . '/../models/pieces_fournir/ModelPieceFournirCycle.php';
 
 // Pédagogie, Évaluations & Suivi Models
 require_once __DIR__ . '/../models/enseignants/ModelEnseignant.php';
@@ -89,6 +91,8 @@ require_once __DIR__ . '/../controllers/etudiants/EtudiantController.php';
 require_once __DIR__ . '/../controllers/parents/ParentController.php';
 require_once __DIR__ . '/../controllers/inscriptions/InscriptionController.php';
 require_once __DIR__ . '/../controllers/accessoires/AccessoireController.php';
+require_once __DIR__ . '/../controllers/pieces_fournir/PieceFournirController.php';
+require_once __DIR__ . '/../controllers/pieces_fournir/PieceFournirCycleController.php';
 
 // Pédagogie, Évaluations & Suivi Controllers
 require_once __DIR__ . '/../controllers/enseignants/EnseignantController.php';
