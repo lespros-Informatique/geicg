@@ -33,8 +33,6 @@ require_once __DIR__ . '/../models/scolarites/ModelScolarite.php';
 require_once __DIR__ . '/../models/tranches_scolarite/ModelTranche.php';
 require_once __DIR__ . '/../models/paiements/ModelPaiement.php';
 require_once __DIR__ . '/../models/sessions_caisse/ModelSessionCaisse.php';
-require_once __DIR__ . '/../models/ModelOuvertureCaisse.php';
-require_once __DIR__ . '/../models/clotures_caisse/ModelClotureCaisse.php';
 require_once __DIR__ . '/../models/type_depenses/ModelTypeDepense.php';
 require_once __DIR__ . '/../models/depenses/ModelDepense.php';
 
@@ -45,6 +43,7 @@ require_once __DIR__ . '/../models/inscriptions/ModelInscription.php';
 require_once __DIR__ . '/../models/accessoires/ModelAccessoire.php';
 require_once __DIR__ . '/../models/pieces_fournir/ModelPieceFournir.php';
 require_once __DIR__ . '/../models/pieces_fournir/ModelPieceFournirCycle.php';
+require_once __DIR__ . '/../models/dossier_etudiant/ModelDossierEtudiant.php';
 
 // Pédagogie, Évaluations & Suivi Models
 require_once __DIR__ . '/../models/enseignants/ModelEnseignant.php';
@@ -64,25 +63,25 @@ require_once __DIR__ . '/../controllers/roles/RoleController.php';
 require_once __DIR__ . '/../controllers/permissions/PermissionController.php';
 require_once __DIR__ . '/../controllers/notifications/NotificationController.php';
 
-// School Structure & Academic Controllers
+// Académique & Structure Controllers
 require_once __DIR__ . '/../controllers/etablissements/EtablissementController.php';
+require_once __DIR__ . '/../controllers/annees/AnneeController.php';
 require_once __DIR__ . '/../controllers/cycles/CycleController.php';
 require_once __DIR__ . '/../controllers/filieres/FiliereController.php';
+require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.php';
 require_once __DIR__ . '/../controllers/niveaux/NiveauController.php';
-require_once __DIR__ . '/../controllers/salles/SalleController.php';
-require_once __DIR__ . '/../controllers/annees/AnneeController.php';
+require_once __DIR__ . '/../controllers/filiere_niveaux/FiliereNiveauController.php';
 require_once __DIR__ . '/../controllers/classes/ClasseController.php';
 require_once __DIR__ . '/../controllers/semestres/SemestreController.php';
 require_once __DIR__ . '/../controllers/unites_enseignement/UeController.php';
 require_once __DIR__ . '/../controllers/matieres/MatiereController.php';
+require_once __DIR__ . '/../controllers/salles/SalleController.php';
 
-// Scolarité & Finances Controllers
+// Finance & Scolarité Controllers
 require_once __DIR__ . '/../controllers/scolarites/ScolariteController.php';
 require_once __DIR__ . '/../controllers/tranches_scolarite/TrancheController.php';
 require_once __DIR__ . '/../controllers/paiements/PaiementController.php';
 require_once __DIR__ . '/../controllers/sessions_caisse/SessionCaisseController.php';
-require_once __DIR__ . '/../controllers/ouvertures_caisse/OuvertureCaisseController.php';
-require_once __DIR__ . '/../controllers/clotures_caisse/ClotureCaisseController.php';
 require_once __DIR__ . '/../controllers/type_depenses/TypeDepenseController.php';
 require_once __DIR__ . '/../controllers/depenses/DepenseController.php';
 
