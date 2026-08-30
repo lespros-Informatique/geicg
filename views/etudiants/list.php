@@ -18,7 +18,7 @@
           <table id="table-etudiants" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px;">ID</th>
+                <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Matricule</th>
                 <th style="padding: 12px;">Nom</th>
                 <th style="padding: 12px;">Prénoms</th>
@@ -43,7 +43,9 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_etudiant', defaultContent: '-', width: '50px' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'matricule_etudiant', width: '120px', render: function(d) {
         if (!d) return '-';
         return '<code style="font-weight:700; color:#334155; background:#F1F5F9; padding:2px 6px; border-radius:4px;">' + d + '</code>';

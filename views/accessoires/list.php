@@ -146,7 +146,7 @@ $stats = (new ModelAccessoire())->getStats();
           <table id="table-accessoires" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px;">ID</th>
+                <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Désignation du Kit</th>
                 <th style="padding: 12px;">Statut</th>
@@ -311,7 +311,9 @@ $(document).ready(function() {
         processing: true,
         autoWidth: false,
         columns: [
-          { data: 'id_accessoire', defaultContent: '-', width: '50px' },
+          { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
           { data: 'code_accessoire', width: '130px', render: function(d) {
             if (!d) return '-';
             return '<code style="font-weight:700; color:#334155; background:#F1F5F9; padding:2px 6px; border-radius:4px;">' + d + '</code>';

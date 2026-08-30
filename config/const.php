@@ -34,7 +34,6 @@ class TABLES
     public const ROLES                  = 'roles';
     public const PERMISSIONS            = 'permissions';
     public const ROLE_PERMISSIONS       = 'role_permissions';
-    public const USER_PERMISSIONS       = 'user_permissions';
     public const USER_ROLES             = 'user_roles';
 
     // ACADÉMIQUE & LMD (STRUCTURE GLOBALE OU ANNUELLE)

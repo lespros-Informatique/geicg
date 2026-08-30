@@ -41,7 +41,7 @@
             <table id="table-assignations" class="table display nowrap" style="width: 100%;">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th style="width: 50px;">#</th>
                   <th>Code</th>
                   <th>Cycle D'Études</th>
                   <th>Filière Associée</th>
@@ -68,7 +68,7 @@
             <table id="table-filieres-catalogue" class="table display nowrap" style="width: 100%;">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th style="width: 50px;">#</th>
                   <th>Code</th>
                   <th>Nom de la Filière</th>
                   <th>Description</th>
@@ -95,7 +95,7 @@
             <table id="table-cycles-list" class="table display nowrap" style="width: 100%;">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th style="width: 50px;">#</th>
                   <th>Code Cycle</th>
                   <th>Libellé du Cycle</th>
                   <th>Description</th>
@@ -133,7 +133,9 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_filiere_cycle', defaultContent: '-' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_filiere_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_cycle', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Non défini') + '</span>'; } },
       { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>'; } },

@@ -87,7 +87,7 @@
               <table id="table-scolarites" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
                 <thead>
                   <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                    <th style="padding: 12px;">ID</th>
+                    <th style="padding: 12px; width: 50px;">#</th>
                     <th style="padding: 12px;">Code</th>
                     <th style="padding: 12px;">Année</th>
                     <th style="padding: 12px;">Filière</th>
@@ -111,7 +111,7 @@
               <table id="table-tranches_scolarite" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
                 <thead>
                   <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                    <th style="padding: 12px;">ID</th>
+                    <th style="padding: 12px; width: 50px;">#</th>
                     <th style="padding: 12px;">Code</th>
                     <th style="padding: 12px;">Scolarité Rattachée</th>
                     <th style="padding: 12px;">Libellé Tranche</th>
@@ -138,7 +138,9 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_scolarite', defaultContent: '-' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_scolarite', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_annee', render: function(d, t, r) { 
         return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:700; font-size:12px; padding:3px 8px; border-radius:6px;">' + (d || r.annee_code || 'Toutes') + '</span>'; 

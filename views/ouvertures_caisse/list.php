@@ -106,7 +106,7 @@ $caisseJourCloturee = isset($caisseJourCloturee) ? $caisseJourCloturee : null;
               <table id="table_ouvertures_caisse" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
                 <thead>
                   <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                    <th style="padding: 12px;">ID</th>
+                    <th style="padding: 12px; width: 50px;">#</th>
                     <th style="padding: 12px;">Code Ouverture</th>
                     <th style="padding: 12px;">Date Session</th>
                     <th style="padding: 12px;">Heure</th>
@@ -128,7 +128,7 @@ $caisseJourCloturee = isset($caisseJourCloturee) ? $caisseJourCloturee : null;
               <table id="table_clotures_caisse" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
                 <thead>
                   <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                    <th style="padding: 12px;">ID</th>
+                    <th style="padding: 12px; width: 50px;">#</th>
                     <th style="padding: 12px;">Code Clôture</th>
                     <th style="padding: 12px;">Date Caisse</th>
                     <th style="padding: 12px;">Espèces (FCFA)</th>
@@ -164,7 +164,9 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_ouverture', defaultContent: '-' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { 
         data: 'code_ouverture',
         render: function(data) {

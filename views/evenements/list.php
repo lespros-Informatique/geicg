@@ -18,7 +18,7 @@
           <table id="table-evenements" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px;">ID</th>
+                <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Titre de l'Événement</th>
                 <th style="padding: 12px;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
@@ -38,7 +38,9 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_evenement', defaultContent: '-', width: '50px' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'titre_evenement', render: function(d) {
         return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
       }},

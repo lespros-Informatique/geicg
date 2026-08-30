@@ -38,7 +38,7 @@
             <table id="table-assignations-niveaux" class="table display nowrap" style="width: 100%;">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th style="width: 50px;">#</th>
                   <th>Code</th>
                   <th>Filière d'Études</th>
                   <th>Niveau Rattaché</th>
@@ -65,7 +65,7 @@
             <table id="table-niveaux-catalogue" class="table display nowrap" style="width: 100%;">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th style="width: 50px;">#</th>
                   <th>Code</th>
                   <th>Intitulé du Niveau</th>
                   <th class="text-center">Statut</th>
@@ -102,7 +102,9 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_filiere_niveau', defaultContent: '-' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_filiere_niveau', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Non définie') + '</span>'; } },
       { data: 'libelle_niveau', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>'; } },

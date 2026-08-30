@@ -18,7 +18,7 @@
           <table id="table-depenses" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px;">ID</th>
+                <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code Dépense</th>
                 <th style="padding: 12px;">Montant Engagé (FCFA)</th>
                 <th style="padding: 12px;">Date Engagement</th>
@@ -40,7 +40,9 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_depense', defaultContent: '-' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_depense', defaultContent: '-' },
       { data: 'montant_depense', render: function(d) {
         return d ? '<strong style="color:#0F172A;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
