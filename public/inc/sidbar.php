@@ -282,8 +282,7 @@
           $showFilCycles = $canAccess(['MANAGE_FILIERES', 'VIEW_FILIERES', 'MANAGE_CYCLES', 'VIEW_CYCLES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE']);
           $showNiveaux = $canAccess(['MANAGE_NIVEAUX', 'VIEW_NIVEAUX', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE']);
           $showSalles = $canAccess(['MANAGE_SALLES', 'VIEW_SALLES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE', 'ROLE_ENSEIGNANT']);
-          $showFonctions = $canAccess(['MANAGE_FONCTIONS', 'CONFIG_SYSTEM', 'MANAGE_STAFF'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL', 'ROLE_DIR_ETUDES']);
-          $hasSecStructure = $showEtab || $showFilCycles || $showNiveaux || $showSalles || $showFonctions;
+          $hasSecStructure = $showEtab || $showFilCycles || $showNiveaux || $showSalles;
         ?>
         <?php if ($hasSecStructure): ?>
         <div class="nav-section">
@@ -312,11 +311,6 @@
                 <?php if ($showSalles): ?>
                 <a href="<?= RACINE ?>salle/list" class="nav-item sub <?= strpos($currentUri, '/salle/') !== false ? 'active' : '' ?>" data-title="Salles de Cours">
                     <i data-lucide="door-open"></i> <span>Salles de Cours</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showFonctions): ?>
-                <a href="<?= RACINE ?>fonction/list" class="nav-item sub <?= strpos($currentUri, '/fonction/') !== false ? 'active' : '' ?>" data-title="Fonctions & Postes">
-                    <i data-lucide="user-check"></i> <span>Fonctions & Postes</span>
                 </a>
                 <?php endif; ?>
             </div>
@@ -363,8 +357,8 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showMatieres): ?>
-                <a href="<?= RACINE ?>matiere/list" class="nav-item sub <?= strpos($currentUri, '/matiere/') !== false ? 'active' : '' ?>" data-title="Matières & Coefficients">
-                    <i data-lucide="book-open"></i> <span>Matières & Coefficients</span>
+                <a href="<?= RACINE ?>matiere/list" class="nav-item sub <?= strpos($currentUri, '/matiere/') !== false ? 'active' : '' ?>" data-title="Matières">
+                    <i data-lucide="book-open"></i> <span>Matières</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showScolariteGrille): ?>
@@ -559,9 +553,10 @@
         <!-- === MODULE 7 : COMPTES & SÉCURITÉ (RBAC) === -->
         <?php
           $showUsers = $canAccess(['MANAGE_USERS', 'VIEW_USERS', 'MANAGE_ACCOUNTS'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
+          $showFonctions = $canAccess(['MANAGE_FONCTIONS', 'VIEW_FONCTIONS', 'MANAGE_USERS', 'CONFIG_SECURITY'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
           $showRoles = $canAccess(['MANAGE_ROLES', 'VIEW_ROLES', 'CONFIG_SECURITY'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
           $showPerms = $canAccess(['MANAGE_PERMISSIONS', 'VIEW_PERMISSIONS', 'CONFIG_SECURITY'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
-          $hasSecSecurite = $showUsers || $showRoles || $showPerms;
+          $hasSecSecurite = $showUsers || $showFonctions || $showRoles || $showPerms;
         ?>
         <?php if ($hasSecSecurite): ?>
         <div class="nav-section">
@@ -575,6 +570,11 @@
                 <?php if ($showUsers): ?>
                 <a href="<?= RACINE ?>user/list" class="nav-item sub <?= strpos($currentUri, '/user/') !== false ? 'active' : '' ?>" data-title="Utilisateurs Système">
                     <i data-lucide="users"></i> <span>Utilisateurs Système</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showFonctions): ?>
+                <a href="<?= RACINE ?>fonction/list" class="nav-item sub <?= strpos($currentUri, '/fonction/') !== false ? 'active' : '' ?>" data-title="Fonctions & Postes">
+                    <i data-lucide="user-check"></i> <span>Fonctions & Postes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showRoles): ?>

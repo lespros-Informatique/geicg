@@ -49,7 +49,7 @@ $noteVal = (float)($item['note'] ?? ($item['valeur_note'] ?? 0));
           </div>
 
           <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Matière & Coefficient</span>
+            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Matière</span>
             <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($item['libelle_matiere'] ?? '-') ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Coefficient : <strong><?= htmlspecialchars($item['coef_cours'] ?? '1.0') ?></strong></div>
           </div>
