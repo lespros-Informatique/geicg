@@ -317,15 +317,14 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 2 : CADRE ACADÉMIQUE & SCOLARITÉS === -->
+        <!-- === MODULE 2 : CADRE ACADÉMIQUE === -->
         <?php
           $showAnnees = $canAccess(['MANAGE_ANNEES', 'VIEW_ANNEES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE']);
           $showClasses = $canAccess(['MANAGE_CLASSES', 'VIEW_CLASSES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE']);
           $showSemestres = $canAccess(['MANAGE_SEMESTRES', 'VIEW_SEMESTRES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP']);
           $showUe = $canAccess(['MANAGE_UE', 'VIEW_UE', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP']);
           $showMatieres = $canAccess(['MANAGE_MATIERES', 'VIEW_MATIERES', 'CONFIG_ACADEMIQUE', 'MANAGE_COEFFICIENTS'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_ENSEIGNANT']);
-          $showScolariteGrille = $canAccess(['MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE', 'MANAGE_TRANCHES', 'VIEW_TRANCHES'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-          $hasSecAcademique = $showAnnees || $showClasses || $showSemestres || $showUe || $showMatieres || $showScolariteGrille;
+          $hasSecAcademique = $showAnnees || $showClasses || $showSemestres || $showUe || $showMatieres;
         ?>
         <?php if ($hasSecAcademique): ?>
         <div class="nav-section">
@@ -359,11 +358,6 @@
                 <?php if ($showMatieres): ?>
                 <a href="<?= RACINE ?>matiere/list" class="nav-item sub <?= strpos($currentUri, '/matiere/') !== false ? 'active' : '' ?>" data-title="Matières">
                     <i data-lucide="book-open"></i> <span>Matières</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showScolariteGrille): ?>
-                <a href="<?= RACINE ?>scolarite/list" class="nav-item sub <?= strpos($currentUri, '/scolarite/') !== false || strpos($currentUri, '/tranche/') !== false ? 'active' : '' ?>" data-title="Scolarités & Échéanciers">
-                    <i data-lucide="receipt"></i> <span>Scolarités & Échéanciers</span>
                 </a>
                 <?php endif; ?>
             </div>
@@ -416,13 +410,14 @@
 
         <!-- === MODULE 4 : FINANCE, CAISSE & DÉPENSES === -->
         <?php
+          $showScolariteGrille = $canAccess(['MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE', 'MANAGE_TRANCHES', 'VIEW_TRANCHES'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER']);
           $showPaiements = $canAccess(['MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS'], ['ROLE_COMPTABLE', 'ROLE_CAISSIER']);
           $showOuvCaisse = $canAccess(['MANAGE_CAISSE', 'OUVERTURE_CAISSE', 'MANAGE_PAYMENTS'], ['ROLE_COMPTABLE', 'ROLE_CAISSIER']);
           $showClotCaisse = $canAccess(['CLOTURE_CAISSE', 'VIEW_RAPPORTS_FINANCIERS', 'MANAGE_PAYMENTS'], ['ROLE_COMPTABLE', 'ROLE_CAISSIER']);
           $showImpayes = $canAccess(['MANAGE_IMPAYES', 'VIEW_IMPAYES', 'SEND_RELANCES', 'MANAGE_MORATOIRES'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE']);
           $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_EXPENSES'], ['ROLE_COMPTABLE']);
           $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'VALIDATE_DEPENSES', 'VALIDATE_EXPENSES'], ['ROLE_COMPTABLE']);
-          $hasSecFinance = $showPaiements || $showOuvCaisse || $showClotCaisse || $showImpayes || $showTypeDep || $showDepenses;
+          $hasSecFinance = $showScolariteGrille || $showPaiements || $showOuvCaisse || $showClotCaisse || $showImpayes || $showTypeDep || $showDepenses;
         ?>
         <?php if ($hasSecFinance): ?>
         <div class="nav-section">
@@ -433,6 +428,11 @@
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
             <div class="nav-section-items" id="sec-finance">
+                <?php if ($showScolariteGrille): ?>
+                <a href="<?= RACINE ?>scolarite/list" class="nav-item sub <?= strpos($currentUri, '/scolarite/') !== false || strpos($currentUri, '/tranche/') !== false ? 'active' : '' ?>" data-title="Scolarités & Échéanciers">
+                    <i data-lucide="receipt"></i> <span>Scolarités & Échéanciers</span>
+                </a>
+                <?php endif; ?>
                 <?php if ($showPaiements): ?>
                 <a href="<?= RACINE ?>paiement/list" class="nav-item sub <?= strpos($currentUri, '/paiement/') !== false ? 'active' : '' ?>" data-title="Caisse & Encaissements">
                     <i data-lucide="credit-card"></i> <span>Caisse & Encaissements</span>
