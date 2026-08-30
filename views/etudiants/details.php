@@ -255,6 +255,12 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
         <div style="display: flex; gap: 20px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #F1F5F9; font-size: 13px; margin-top: 16px;">
           <div><strong style="color: #64748B;">Date de Naissance :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_naissance_etudiant']) ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : '-' ?></span> <?= !empty($item['lieu_naissance_etudiant']) ? 'à ' . htmlspecialchars($item['lieu_naissance_etudiant']) : '' ?></div>
           <div><strong style="color: #64748B;">Lieu de Résidence :</strong> <span style="color: #0F172A;"><?= htmlspecialchars($item['lieu_residence_etudiant'] ?? 'Non renseigné') ?></span></div>
+          <?php if (!empty($item['matricule_menet'])): ?>
+            <div><strong style="color: #64748B;">Matricule MENET-FP :</strong> <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px;"><?= htmlspecialchars($item['matricule_menet']) ?></code></div>
+          <?php endif; ?>
+          <?php if (!empty($item['matricule_mesrs'])): ?>
+            <div><strong style="color: #64748B;">Matricule MESRS :</strong> <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px;"><?= htmlspecialchars($item['matricule_mesrs']) ?></code></div>
+          <?php endif; ?>
         </div>
       </div>
 

@@ -8,6 +8,78 @@ class ModelEtudiant extends BaseModel
     protected ?string $createdAtField = 'created_at_etudiant';
 
     /**
+     * Génère automatiquement le matricule officiel de l'étudiant
+     * Règle : 1ère lettre Nom + 1ère lettre Prénom (Majuscule) - Ordre ID / GEB / 2 1ères lettres Filière + 2 derniers chiffres Année
+     * Exemple : MN-123/GEB/ID26 (XX-123/GEB/AA26)
+     */
+    public function generateMatricule(string $nom, string $prenom, ?string $classeCode = null, ?string $anneeCode = null): string
+    {
+        $pdo = $this->getCon();
+
+        // 1. Première lettre du Nom et Première lettre du Prénom en Majuscule
+        $nomClean = trim($nom);
+        $prenomClean = trim($prenom);
+        $lettreNom = !empty($nomClean) ? strtoupper(mb_substr($nomClean, 0, 1, 'UTF-8')) : 'X';
+        $lettrePrenom = !empty($prenomClean) ? strtoupper(mb_substr($prenomClean, 0, 1, 'UTF-8')) : 'X';
+        $initiales = $lettreNom . $lettrePrenom;
+
+        // 2. Ordre / Incrément last ID
+        $lastId = (int)$pdo->query("SELECT MAX(id_etudiant) FROM etudiants")->fetchColumn() ?: 0;
+        $nextOrder = $lastId + 1;
+
+        // 3. Sigle Établissement
+        $sigleEtab = 'GEB';
+
+        // 4. Deux premières lettres de la Filière en Majuscule
+        $filiereCodeLetters = 'GE';
+        if (!empty($classeCode)) {
+            $stmtCls = $pdo->prepare("
+                SELECT f.code_filiere, f.libelle_filiere 
+                FROM classes cl 
+                JOIN filieres f ON f.code_filiere = cl.filiere_code 
+                WHERE cl.code_classe = ? LIMIT 1
+            ");
+            $stmtCls->execute([$classeCode]);
+            $filRow = $stmtCls->fetch(PDO::FETCH_ASSOC);
+            if ($filRow) {
+                $codeFil = str_replace('FIL-', '', $filRow['code_filiere'] ?? '');
+                if (!empty($codeFil)) {
+                    $filiereCodeLetters = strtoupper(substr($codeFil, 0, 2));
+                } else {
+                    $filiereCodeLetters = strtoupper(substr($filRow['libelle_filiere'] ?? 'GE', 0, 2));
+                }
+            }
+        }
+
+        // 5. Deux derniers chiffres de l'année (ex: 2026 -> 26, 2025-2026 -> 26)
+        $anneeSuffix = date('y');
+        if (!empty($anneeCode)) {
+            $stmtAnn = $pdo->prepare("SELECT libelle_annee, date_debut_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtAnn->execute([$anneeCode]);
+            $annRow = $stmtAnn->fetch(PDO::FETCH_ASSOC);
+            if ($annRow) {
+                if (!empty($annRow['libelle_annee']) && preg_match('/(\d{4})/', $annRow['libelle_annee'], $m)) {
+                    $anneeSuffix = substr($m[1], -2);
+                } elseif (!empty($annRow['date_debut_annee'])) {
+                    $anneeSuffix = date('y', strtotime($annRow['date_debut_annee']));
+                }
+            }
+        }
+
+        // Format: XX-123/GEB/AA26
+        $matricule = sprintf('%s-%d/%s/%s%s', $initiales, $nextOrder, $sigleEtab, $filiereCodeLetters, $anneeSuffix);
+
+        // Vérifier l'unicité
+        $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM etudiants WHERE matricule_etudiant = ?");
+        $stmtCheck->execute([$matricule]);
+        if ((int)$stmtCheck->fetchColumn() > 0) {
+            $matricule = sprintf('%s-%d%02d/%s/%s%s', $initiales, $nextOrder, rand(1, 99), $sigleEtab, $filiereCodeLetters, $anneeSuffix);
+        }
+
+        return $matricule;
+    }
+
+    /**
      * Récupère la liste des étudiants avec leurs inscriptions annuelles et filtres dynamiques
      */
     public function getFilteredRegistry(array $filters = []): array
@@ -48,6 +120,8 @@ class ModelEtudiant extends BaseModel
                 e.id_etudiant,
                 e.code_etudiant,
                 e.matricule_etudiant,
+                e.matricule_menet,
+                e.matricule_mesrs,
                 e.nom_etudiant,
                 e.prenom_etudiant,
                 e.sexe_etudiant,

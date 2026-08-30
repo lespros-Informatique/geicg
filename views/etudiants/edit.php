@@ -37,8 +37,16 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php endif; ?>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule officiel <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="matricule_etudiant" value="<?= htmlspecialchars($item['matricule_etudiant'] ?? '') ?>" placeholder="Ex: ETU-2025-0042" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule École (Auto-généré si vide)</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-family: monospace; font-weight: 700;" name="matricule_etudiant" value="<?= htmlspecialchars($item['matricule_etudiant'] ?? '') ?>" placeholder="Auto-généré : XX-123/GEB/AA26">
+            </div>
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule MENET-FP</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-family: monospace; font-weight: 600;" name="matricule_menet" value="<?= htmlspecialchars($item['matricule_menet'] ?? '') ?>" placeholder="Ex: 18094523A (Éducation Nationale)">
+            </div>
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule MESRS</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-family: monospace; font-weight: 600;" name="matricule_mesrs" value="<?= htmlspecialchars($item['matricule_mesrs'] ?? '') ?>" placeholder="Ex: MESRS-2026-00412 (Enseignement Supérieur)">
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de famille <span style="color: #EF4444;">*</span></label>

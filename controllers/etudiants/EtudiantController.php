@@ -71,7 +71,12 @@ class EtudiantController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
+        $nomEtudiant = trim($data['nom_etudiant'] ?? '');
+        $prenomEtudiant = trim($data['prenom_etudiant'] ?? '');
+
+        if (empty($data['matricule_etudiant'])) {
+            $data['matricule_etudiant'] = $this->model->generateMatricule($nomEtudiant, $prenomEtudiant, $data['classe_code'] ?? null, $anneeCode);
+        }
         if (empty($data['code_etudiant'])) {
             $data['code_etudiant'] = $this->validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
         }
@@ -272,8 +277,11 @@ class EtudiantController extends BaseController
 
         $matriculeEtudiant = trim($data['matricule_etudiant'] ?? '');
         if (empty($matriculeEtudiant)) {
-            $matriculeEtudiant = $this->validator->generateCode('etudiants', 'matricule_etudiant', 'ETU-' . date('Y') . '-', 4);
+            $matriculeEtudiant = $this->model->generateMatricule($nomEtudiant, $prenomEtudiant, $data['classe_code'] ?? null, $anneeCode);
         }
+
+        $matriculeMenet = !empty($data['matricule_menet']) ? trim($data['matricule_menet']) : null;
+        $matriculeMesrs = !empty($data['matricule_mesrs']) ? trim($data['matricule_mesrs']) : null;
 
         $codeEtudiant = $this->validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
 
@@ -283,12 +291,14 @@ class EtudiantController extends BaseController
             // 1. Insert Student into `etudiants`
             $stmtEtu = $db->prepare("
                 INSERT INTO etudiants 
-                (code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+                (code_etudiant, matricule_etudiant, matricule_menet, matricule_mesrs, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
             ");
             $stmtEtu->execute([
                 $codeEtudiant,
                 $matriculeEtudiant,
+                $matriculeMenet,
+                $matriculeMesrs,
                 $nomEtudiant,
                 $prenomEtudiant,
                 $data['sexe_etudiant'] ?? 'M',
