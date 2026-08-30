@@ -54,6 +54,9 @@ class PermissionController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        if (!empty($data['nouveau_module'])) {
+            $data['module_permission'] = strtoupper(trim($data['nouveau_module']));
+        }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
             $this->success('Item créé avec succès!');
@@ -78,6 +81,9 @@ class PermissionController extends BaseController
         }
 
         $cols = $this->model->getCon()->query("DESCRIBE permissions")->fetchAll(PDO::FETCH_COLUMN);
+        if (!empty($data['nouveau_module'])) {
+            $data['module_permission'] = strtoupper(trim($data['nouveau_module']));
+        }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
             $this->success('Item modifié avec succès!');

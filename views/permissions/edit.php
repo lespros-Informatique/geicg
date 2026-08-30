@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
 $item = isset($item) ? $item : (isset($permission) ? $permission : []);
+$isEdit = !empty($item['id_permission']);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -9,7 +10,7 @@ $item = isset($item) ? $item : (isset($permission) ? $permission : []);
     <div class="content-wrapper" style="padding: 24px;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_permission']) ? 'Éditer ' : 'Ajouter ' ?> une Permission Granulaire</h1>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= $isEdit ? 'Éditer ' : 'Ajouter ' ?> une Permission Granulaire</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des autorisations unitaires et des privilèges système</p>
         </div>
         <a href="<?= RACINE ?>permission/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
@@ -18,9 +19,9 @@ $item = isset($item) ? $item : (isset($permission) ? $permission : []);
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>permission/<?= !empty($item['id_permission']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form action="<?= RACINE ?>permission/<?= $isEdit ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
-          <?php if (!empty($item['id_permission'])): ?>
+          <?php if ($isEdit): ?>
             <input type="hidden" name="id_permission" value="<?= $item['id_permission'] ?>">
           <?php endif; ?>
 
@@ -33,22 +34,43 @@ $item = isset($item) ? $item : (isset($permission) ? $permission : []);
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Code Système <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" name="code_permission" value="<?= htmlspecialchars($item['code_permission'] ?? '') ?>" placeholder="Ex: MANAGE_GRADES" <?= !empty($item['id_permission']) ? 'readonly' : 'required' ?> style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: <?= !empty($item['id_permission']) ? '#F1F5F9' : '#FFF' ?>; font-family: monospace; font-weight: 700;">
+              <input type="text" class="form-control" name="code_permission" value="<?= htmlspecialchars($item['code_permission'] ?? '') ?>" placeholder="Ex: MANAGE_GRADES" <?= $isEdit ? 'readonly' : 'required' ?> style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: <?= $isEdit ? '#F1F5F9' : '#FFF' ?>; font-family: monospace; font-weight: 700;">
             </div>
 
+            <!-- Choix du Module (Existant ou Nouveau) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Module Métier Associé <span style="color: #EF4444;">*</span></label>
-              <select class="form-control select2" name="module_permission" style="width: 100%;" required>
-                <option value="ACADEMIQUE" <?= (($item['module_permission'] ?? '') === 'ACADEMIQUE') ? 'selected' : '' ?>>Structure Académique (Cycles, Filières, Classes)</option>
-                <option value="PEDAGOGIE" <?= (($item['module_permission'] ?? '') === 'PEDAGOGIE') ? 'selected' : '' ?>>Pédagogie & Notes (Enseignants, Cours, Examens)</option>
-                <option value="SCOLAIRITE" <?= (($item['module_permission'] ?? '') === 'SCOLAIRITE') ? 'selected' : '' ?>>Scolarité & Admissions (Élèves, Inscriptions)</option>
-                <option value="FINANCE" <?= (($item['module_permission'] ?? '') === 'FINANCE') ? 'selected' : '' ?>>Finances & Caisse (Paiements, Dépenses)</option>
-                <option value="ADMINISTRATION" <?= (($item['module_permission'] ?? '') === 'ADMINISTRATION') ? 'selected' : '' ?>>Administration & Sécurité (Users, Rôles)</option>
-                <option value="COMMUNICATION" <?= (($item['module_permission'] ?? '') === 'COMMUNICATION') ? 'selected' : '' ?>>Communication & Médias (Événements, Documents)</option>
-              </select>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-weight: 700; font-size: 13px; color: #334155; margin: 0;">Module Métier Associé <span style="color: #EF4444;">*</span></label>
+                <button type="button" id="btn-toggle-module" onclick="toggleModuleInput()" style="background: none; border: none; color: #1E3A5F; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0;">
+                  <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> + Créer un nouveau module
+                </button>
+              </div>
+
+              <?php
+                $dbConn = (new Database())->getCon();
+                $existingModules = $dbConn->query("SELECT DISTINCT module_permission FROM permissions WHERE module_permission IS NOT NULL AND module_permission != '' ORDER BY module_permission ASC")->fetchAll(PDO::FETCH_COLUMN);
+                $curMod = strtoupper($item['module_permission'] ?? 'ADMINISTRATION');
+              ?>
+
+              <!-- Cas 1 : Sélecteur de module existant -->
+              <div id="bloc-select-module">
+                <select class="form-control" name="module_permission" id="select_module_permission" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600;">
+                  <?php foreach ($existingModules as $m): ?>
+                    <option value="<?= htmlspecialchars($m) ?>" <?= ($curMod === strtoupper($m)) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($m) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <!-- Cas 2 : Champ texte pour taper un nouveau module -->
+              <div id="bloc-text-module" style="display: none;">
+                <input type="text" class="form-control" name="nouveau_module" id="input_nouveau_module" placeholder="Tapez le nom du nouveau module (ex: BIBLIOTHEQUE, STAGES...)" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 2px solid #3B82F6; background: #EFF6FF; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">
+              </div>
+              <small id="help-module" style="color: #64748B; font-size: 11px; margin-top: 4px; display: block;">Choisissez parmi les modules existants ou cliquez ci-dessus pour en créer un nouveau.</small>
             </div>
 
-            <?php if (!empty($item['id_permission'])): ?>
+            <?php if ($isEdit): ?>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
               <select class="form-control" name="statut_permission" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
@@ -69,12 +91,29 @@ $item = isset($item) ? $item : (isset($permission) ? $permission : []);
     </div>
   </main>
 </div>
+
 <script>
+var isCustomModule = false;
+function toggleModuleInput() {
+  isCustomModule = !isCustomModule;
+  if (isCustomModule) {
+    $('#bloc-select-module').hide();
+    $('#bloc-text-module').show();
+    $('#input_nouveau_module').focus();
+    $('#btn-toggle-module').html('<i data-lucide="list" style="width:14px;height:14px;"></i> Choisir un module existant');
+    $('#help-module').text('Saisissez le nom en lettres majuscules (ex: BIBLIOTHEQUE).');
+  } else {
+    $('#bloc-text-module').hide();
+    $('#input_nouveau_module').val('');
+    $('#bloc-select-module').show();
+    $('#btn-toggle-module').html('<i data-lucide="plus-circle" style="width:14px;height:14px;"></i> + Créer un nouveau module');
+    $('#help-module').text('Choisissez parmi les modules existants ou cliquez ci-dessus pour en créer un nouveau.');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
 $(document).ready(function() { 
   if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('.select2').select2({ width: '100%' });
-  }
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
