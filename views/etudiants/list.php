@@ -169,10 +169,7 @@ $(document).ready(function() {
         
         return '<div style="display:flex; align-items:center; gap:10px;">' +
                '<div style="width:32px; height:32px; border-radius:50%; background:#1E3A5F; color:#FFF; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0;">' + initiales + '</div>' +
-               '<div>' +
                '<div style="font-weight:700; color:#0F172A; font-size:13px;">' + nom + ' ' + prenom + '</div>' +
-               '<small style="color:#64748B; font-size:11px;">Réf: ' + (row.code_etudiant || '-') + '</small>' +
-               '</div>' +
                '</div>';
       }},
 
