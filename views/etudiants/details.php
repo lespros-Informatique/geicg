@@ -3,12 +3,22 @@ require_once __DIR__ . '/../../public/inc/header.php';
 $item = isset($item) ? $item : [];
 $parent = isset($parent) ? $parent : [];
 $inscription = isset($inscription) ? $inscription : [];
+$etablissement = isset($etablissement) ? $etablissement : [];
 $paiements = isset($paiements) ? $paiements : [];
 $absences = isset($absences) ? $absences : [];
 $scolariteTotale = $scolariteTotale ?? 0;
 $totalPaye = $totalPaye ?? 0;
 $soldeRestant = $soldeRestant ?? 0;
 $tauxPaiement = ($scolariteTotale > 0) ? min(100, round(($totalPaye / $scolariteTotale) * 100)) : 100;
+
+$nomComplet = trim(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? ''));
+$matricule = $item['matricule_etudiant'] ?? '-';
+$classeLibelle = $inscription['libelle_classe'] ?? 'Non inscrit';
+$anneeLibelle = $inscription['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1);
+$etabNom = $etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE';
+$etabTel = $etablissement['telephone_etablissement'] ?? '+225 01 02 03 04 05';
+$etabEmail = $etablissement['email_etablissement'] ?? 'contact@geicg.ci';
+$etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivoire';
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -19,17 +29,182 @@ $tauxPaiement = ($scolariteTotale > 0) ? min(100, round(($totalPaye / $scolarite
       <!-- En-tête de page -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Dossier Étudiant : <?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Matricule : <strong><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></strong> &bull; Classe : <strong><?= htmlspecialchars($inscription['libelle_classe'] ?? 'Non inscrit') ?></strong></p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="folder-check" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Dossier Étudiant : <?= htmlspecialchars($nomComplet) ?>
+          </h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Matricule : <strong><?= htmlspecialchars($matricule) ?></strong> &bull; Classe : <strong><?= htmlspecialchars($classeLibelle) ?></strong> &bull; Année : <strong><?= htmlspecialchars($anneeLibelle) ?></strong></p>
         </div>
-        <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux étudiants
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour
           </a>
-          <a href="<?= RACINE ?>etudiant/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le dossier
+          <button type="button" onclick="imprimerCarteScolaire()" class="btn btn-warning" style="background: #D97706; border-color: #D97706; color: #FFF; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+            <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer Carte Scolaire
+          </button>
+          <a href="<?= RACINE ?>etudiant/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+            <i data-lucide="edit" style="width: 16px; height: 16px;"></i> Modifier le dossier
           </a>
         </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION NOUVELLE : CARTE SCOLAIRE OFFICIELLE & BADGE ÉTUDIANT (RECTO / VERSO) -->
+      <!-- ========================================================================= -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #EFF6FF; padding-bottom: 12px;">
+          <div>
+            <h3 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="id-card" style="width: 20px; height: 20px; color: #D97706;"></i> Carte d'Identité Scolaire & Badge Étudiant
+            </h3>
+            <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Format PVC Standard (CR-80) - Prête à l'impression et à l'encodage</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" onclick="imprimerCarteScolaire()" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px;">
+              <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Lancer l'impression badge
+            </button>
+          </div>
+        </div>
+
+        <!-- ZONE D'AFFICHAGE DU BADGE (RECTO ET VERSO CÔTE À CÔTE) -->
+        <div id="section-carte-scolaire" style="display: flex; justify-content: center; align-items: center; gap: 28px; flex-wrap: wrap; padding: 10px 0;">
+          
+          <!-- ===== 1. RECTO DU BADGE (FACE AVANT) ===== -->
+          <div class="badge-card-container badge-recto" style="width: 390px; height: 245px; border-radius: 14px; background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, #1E40AF 100%); color: #FFFFFF; position: relative; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35); overflow: hidden; padding: 14px 18px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.15); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            
+            <!-- Décoration holographique de fond -->
+            <div style="position: absolute; right: -40px; bottom: -40px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle, rgba(217,119,6,0.2) 0%, rgba(255,255,255,0) 70%); pointer-events: none;"></div>
+            <div style="position: absolute; left: 0; top: 0; right: 0; height: 5px; background: linear-gradient(90deg, #D97706, #F59E0B, #3B82F6, #D97706);"></div>
+
+            <!-- En-tête Badge -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.18); padding-bottom: 8px; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #D97706; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: #FFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                  G
+                </div>
+                <div>
+                  <div style="font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #FDE68A; line-height: 1.1;">
+                    <?= htmlspecialchars(strtoupper($etabNom)) ?>
+                  </div>
+                  <div style="font-size: 8px; color: #CBD5E1; letter-spacing: 0.5px;">RÉPUBLIQUE DE CÔTE D'IVOIRE</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span style="background: rgba(217,119,6,0.3); border: 1px solid #F59E0B; color: #FEF3C7; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+                  <?= htmlspecialchars($anneeLibelle) ?>
+                </span>
+              </div>
+            </div>
+
+            <!-- Corps du Badge -->
+            <div style="display: flex; gap: 14px; align-items: center; margin-top: 6px;">
+              
+              <!-- Photo / Avatar Étudiant avec cadre sécurité -->
+              <div style="width: 78px; height: 96px; border-radius: 8px; border: 2px solid #F59E0B; background: #0F172A; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0;">
+                <span style="font-size: 24px; font-weight: 900; color: #FDE68A;">
+                  <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
+                </span>
+                <span style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(217,119,6,0.9); font-size: 7px; font-weight: 800; text-align: center; color: #FFF; padding: 1px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                  ÉTUDIANT
+                </span>
+              </div>
+
+              <!-- Informations de l'Étudiant -->
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase; letter-spacing: 0.5px;">NOM & PRÉNOMS</div>
+                <div style="font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+                  <?= htmlspecialchars($nomComplet) ?>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;">
+                  <div>
+                    <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">MATRICULE</div>
+                    <div style="font-size: 10px; font-weight: 800; color: #FDE68A; font-family: monospace; letter-spacing: 0.5px;">
+                      <?= htmlspecialchars($matricule) ?>
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">SEXE</div>
+                    <div style="font-size: 10px; font-weight: 700; color: #FFF;">
+                      <?= htmlspecialchars($item['sexe_etudiant'] ?? 'M') ?>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-top: 6px;">
+                  <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">CLASSE & FILIÈRE</div>
+                  <div style="font-size: 10px; font-weight: 800; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <?= htmlspecialchars($classeLibelle) ?>
+                  </div>
+                </div>
+              </div>
+
+              <!-- QR Code de vérification numérique -->
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; background: #FFFFFF; padding: 4px; border-radius: 6px; border: 1px solid #CBD5E1;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=<?= urlencode('MAT:' . $matricule . '|NOM:' . $nomComplet . '|CLASSE:' . $classeLibelle . '|ANNEE:' . $anneeLibelle) ?>" alt="QR Code" style="width: 54px; height: 54px; display: block;">
+                <span style="font-size: 6px; font-weight: 800; color: #0F172A; margin-top: 2px;">SCAN VALIDE</span>
+              </div>
+
+            </div>
+
+            <!-- Pied du Recto -->
+            <div style="position: absolute; bottom: 8px; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 4px; font-size: 7px; color: #94A3B8;">
+              <span>CARTE D'IDENTITÉ SCOLAIRE OFFICIELLE</span>
+              <span style="color: #FDE68A; font-weight: 700;">VALABLE JUSQU'AU 31/08/2026</span>
+            </div>
+
+          </div>
+
+          <!-- ===== 2. VERSO DU BADGE (FACE ARRIÈRE) ===== -->
+          <div class="badge-card-container badge-verso" style="width: 390px; height: 245px; border-radius: 14px; background: #FFFFFF; color: #1E293B; position: relative; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25); overflow: hidden; padding: 14px 18px; box-sizing: border-box; border: 1px solid #CBD5E1; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            
+            <div style="position: absolute; left: 0; top: 0; right: 0; height: 5px; background: #1E3A5F;"></div>
+
+            <!-- Conditions & Règlement -->
+            <div style="font-size: 8px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">
+              CONDITIONS D'UTILISATION
+            </div>
+            <p style="font-size: 7.5px; line-height: 1.35; color: #475569; margin: 0 0 8px 0;">
+              1. Cette carte est strictement personnelle et engage la responsabilité de son titulaire.<br>
+              2. Elle doit être obligatoirement présentée à toute réquisition et lors des contrôles/examens.<br>
+              3. En cas de perte ou de vol, aviser immédiatement le secrétariat de l'établissement.
+            </p>
+
+            <!-- Contacts d'urgence -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px;">
+              <div style="font-size: 7.5px; font-weight: 800; color: #0F172A;">CONTACTS EN CAS D'URGENCE :</div>
+              <div style="font-size: 7.5px; color: #334155;">
+                Tuteur : <strong><?= htmlspecialchars($parent['nom_tuteur'] ?? ($parent['nom_pere'] ?? 'Administration Scolaire')) ?></strong> - Tél : <strong><?= htmlspecialchars($parent['telephone_tuteur'] ?? ($parent['telephone_pere'] ?? $item['telephone_etudiant'] ?? '-')) ?></strong>
+              </div>
+            </div>
+
+            <!-- Signatures et Cachet -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px;">
+              <div style="text-align: center; width: 110px;">
+                <div style="font-size: 7px; color: #64748B; text-transform: uppercase; margin-bottom: 18px;">Signature du Titulaire</div>
+                <div style="border-bottom: 1px dashed #94A3B8; width: 100%;"></div>
+              </div>
+
+              <!-- Code-barre décoratif -->
+              <div style="text-align: center;">
+                <div style="font-family: monospace; font-size: 16px; letter-spacing: 2px; color: #0F172A; font-weight: 900;">|||| | ||||| || ||||</div>
+                <div style="font-size: 7px; font-family: monospace; color: #64748B;"><?= htmlspecialchars($matricule) ?></div>
+              </div>
+
+              <div style="text-align: center; width: 110px;">
+                <div style="font-size: 7px; color: #1E3A5F; font-weight: 700; text-transform: uppercase; margin-bottom: 18px;">Le Directeur Général</div>
+                <div style="border-bottom: 1px dashed #94A3B8; width: 100%;"></div>
+              </div>
+            </div>
+
+            <!-- Footer Verso -->
+            <div style="position: absolute; bottom: 6px; left: 18px; right: 18px; border-top: 1px solid #E2E8F0; padding-top: 3px; font-size: 6.5px; color: #64748B; text-align: center;">
+              <?= htmlspecialchars($etabNom) ?> &bull; <?= htmlspecialchars($etabAdresse) ?> &bull; Tél : <?= htmlspecialchars($etabTel) ?>
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
 
       <!-- CARD 1 (COL-12) : ÉTAT CIVIL & INSCRIPTION ACTIVE -->
@@ -46,7 +221,7 @@ $tauxPaiement = ($scolariteTotale > 0) ? min(100, round(($totalPaye / $scolarite
             </div>
             <div>
               <h2 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0;">
-                <?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?>
+                <?= htmlspecialchars($nomComplet) ?>
               </h2>
               <span style="font-size: 12px; color: #64748B;">Sexe : <strong><?= htmlspecialchars($item['sexe_etudiant'] ?? 'M') ?></strong> &bull; Nat. : <strong><?= htmlspecialchars($item['nationalite_etudiant'] ?? 'Ivoirienne') ?></strong></span>
             </div>
@@ -60,7 +235,7 @@ $tauxPaiement = ($scolariteTotale > 0) ? min(100, round(($totalPaye / $scolarite
 
           <div>
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classe Actuelle</span>
-            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($inscription['libelle_classe'] ?? 'Non inscrit') ?></div>
+            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($classeLibelle) ?></div>
             <div style="font-size: 12px; color: #64748B;"><?= htmlspecialchars(($inscription['libelle_filiere'] ?? '-') . ' / ' . ($inscription['libelle_niveau'] ?? '-')) ?></div>
           </div>
 
@@ -184,5 +359,48 @@ $tauxPaiement = ($scolariteTotale > 0) ? min(100, round(($totalPaye / $scolarite
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
+
+<!-- ========================================================================= -->
+<!-- STYLES D'IMPRESSION DÉDIÉS : IMPRESSION STRICTEMENT RÉSERVÉE AU BADGE -->
+<!-- ========================================================================= -->
+<style>
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #section-carte-scolaire, #section-carte-scolaire * {
+    visibility: visible !important;
+  }
+  #section-carte-scolaire {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 30px !important;
+    padding: 20px !important;
+    background: #FFF !important;
+  }
+  .badge-card-container {
+    box-shadow: none !important;
+    border: 1px solid #94A3B8 !important;
+    page-break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+</style>
+
+<script>
+function imprimerCarteScolaire() {
+  window.print();
+}
+
+$(document).ready(function() { 
+  if (window.lucide) lucide.createIcons(); 
+});
+</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

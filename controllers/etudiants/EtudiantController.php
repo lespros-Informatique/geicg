@@ -159,11 +159,14 @@ class EtudiantController extends BaseController
                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
                 LEFT JOIN annees a ON a.code_annee = ins.annee_code
-                WHERE ins.etudiant_code = ? AND ins.statut_inscription = 'actif'
+                WHERE ins.etudiant_code = ? AND ins.statut_inscription != 'annule'
                 ORDER BY ins.id_inscription DESC LIMIT 1
             ");
             $stmtIns->execute([$etudiantCode]);
             $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            // 2.bis Établissement
+            $etablissement = $this->model->getCon()->query("SELECT * FROM etablissements LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
 
             // 3. Paiements effectués
             $stmtPaiements = $this->model->getCon()->prepare("
@@ -208,6 +211,7 @@ class EtudiantController extends BaseController
             'item' => $item, 
             'parent' => $parent,
             'inscription' => $inscription,
+            'etablissement' => $etablissement,
             'paiements' => $paiements,
             'totalPaye' => $totalPaye,
             'soldeRestant' => $soldeRestant,
