@@ -515,23 +515,62 @@ class InscriptionController extends BaseController
             return;
         }
 
+        // Récupération sécurisée du barème officiel côté backend
+        $affectationEtat = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'affecte' : 'non_affecte';
+        $data['affectation_etat'] = ($affectationEtat === 'affecte') ? 'oui' : 'non';
+
+        $stmtCl = $db->prepare("SELECT filiere_code, niveau_code, annee_code FROM classes WHERE code_classe = ? LIMIT 1");
+        $stmtCl->execute([$data['classe_code']]);
+        $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
+
+        $officialScolarite = 0;
+        if ($cl) {
+            $stmtSco = $db->prepare("
+                SELECT montant_scolarite FROM scolarites 
+                WHERE filiere_code = ? 
+                  AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
+                  AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+                  AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
+                  AND statut_scolarite = 'actif'
+                ORDER BY 
+                  (CASE WHEN annee_code = ? AND niveau_code = ? AND affectation_etat = ? THEN 1
+                        WHEN niveau_code = ? AND affectation_etat = ? THEN 2
+                        WHEN affectation_etat = ? THEN 3
+                        ELSE 4 END), 
+                  id_scolarite DESC
+                LIMIT 1
+            ");
+            $stmtSco->execute([
+                $cl['filiere_code'], $cl['niveau_code'], $cl['annee_code'], $affectationEtat,
+                $cl['annee_code'], $cl['niveau_code'], $affectationEtat,
+                $cl['niveau_code'], $affectationEtat,
+                $affectationEtat
+            ]);
+            $scol = $stmtSco->fetch(PDO::FETCH_ASSOC);
+            if ($scol) {
+                $officialScolarite = (float)$scol['montant_scolarite'];
+            }
+        }
+
+        // Forcer le montant officiel et la date d'inscription côté backend pour garantir l'intégrité
+        $data['montant_scolarite_inscription'] = $officialScolarite;
+        $data['date_inscription'] = date('Y-m-d');
+
         if (empty($data['code_inscription'])) {
             $data['code_inscription'] = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
         }
-        $data['statut_inscription'] = $data['statut_inscription'] ?? 'actif';
+        $data['statut_inscription'] = $data['statut_inscription'] ?? 'valide';
         $data['created_at_inscription'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        if (isset($data['affectation_etat'])) {
-            $data['affectation_etat'] = in_array($data['affectation_etat'], ['affecte', 'oui']) ? 'oui' : 'non';
-        }
+        
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Inscription enregistrée avec succès!');
+            $this->success('Réinscription enregistrée avec succès !');
         } else {
-            $this->error("Erreur lors de l'inscription");
+            $this->error("Erreur lors de l'enregistrement de la réinscription");
         }
     }
 
@@ -543,13 +582,51 @@ class InscriptionController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
-        $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
-        if (isset($data['affectation_etat'])) {
-            $data['affectation_etat'] = in_array($data['affectation_etat'], ['affecte', 'oui']) ? 'oui' : 'non';
+
+        $db = $this->model->getCon();
+
+        // Récupération sécurisée du barème officiel côté backend si la classe ou le statut change
+        if (!empty($data['classe_code'])) {
+            $affectationEtat = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'affecte' : 'non_affecte';
+            $data['affectation_etat'] = ($affectationEtat === 'affecte') ? 'oui' : 'non';
+
+            $stmtCl = $db->prepare("SELECT filiere_code, niveau_code, annee_code FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmtCl->execute([$data['classe_code']]);
+            $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
+
+            if ($cl) {
+                $stmtSco = $db->prepare("
+                    SELECT montant_scolarite FROM scolarites 
+                    WHERE filiere_code = ? 
+                      AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
+                      AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+                      AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
+                      AND statut_scolarite = 'actif'
+                    ORDER BY 
+                      (CASE WHEN annee_code = ? AND niveau_code = ? AND affectation_etat = ? THEN 1
+                            WHEN niveau_code = ? AND affectation_etat = ? THEN 2
+                            WHEN affectation_etat = ? THEN 3
+                            ELSE 4 END), 
+                      id_scolarite DESC
+                    LIMIT 1
+                ");
+                $stmtSco->execute([
+                    $cl['filiere_code'], $cl['niveau_code'], $cl['annee_code'], $affectationEtat,
+                    $cl['annee_code'], $cl['niveau_code'], $affectationEtat,
+                    $cl['niveau_code'], $affectationEtat,
+                    $affectationEtat
+                ]);
+                $scol = $stmtSco->fetch(PDO::FETCH_ASSOC);
+                if ($scol) {
+                    $data['montant_scolarite_inscription'] = (float)$scol['montant_scolarite'];
+                }
+            }
         }
+
+        $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Inscription modifiée avec succès !');
         } else {
             $this->error('Erreur lors de la modification');
         }

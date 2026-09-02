@@ -124,32 +124,64 @@ $enseignants = (new ModelEnseignant())->getAll();
         <!-- BANDEAU MODALITÉS & TARIFS DE LA CLASSE (DANS LE PREVIEW BANNER) -->
         <!-- ========================================================================= -->
         <div id="prev_class_tuition_section" style="display: none; margin-top: 18px; padding-top: 16px; border-top: 1.5px solid #F1F5F9;">
-          <div style="background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 16px 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 20px 22px; box-shadow: 0 2px 8px rgba(22,101,52,0.06);">
+            
+            <!-- En-tête -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
               <div>
                 <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="calculator" style="width: 15px; height: 15px;"></i> Modalités & Tarifs de la Classe
+                  <i data-lucide="calculator" style="width: 15px; height: 15px;"></i> Modalités Tarifaires & Échéancier de Scolarité
                 </div>
                 <div style="font-size: 17px; font-weight: 900; color: #0F172A; margin-top: 4px;" id="prev_modalite_classe_title">-</div>
                 <div style="font-size: 13px; font-weight: 700; color: #166534; margin-top: 2px;" id="prev_modalite_filiere_niveau">-</div>
               </div>
 
-              <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                <div style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 10px 18px; border-radius: 10px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-                  <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase;">Scolarité Totale</div>
-                  <div style="font-size: 18px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="prev_modalite_total_scolarite">0 FCFA</div>
-                </div>
-
-                <div style="background: #FFFFFF; border: 1px solid #93C5FD; padding: 10px 18px; border-radius: 10px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-                  <div style="font-size: 11px; font-weight: 800; color: #1D4ED8; text-transform: uppercase;" id="prev_modalite_first_tranche_label">1ere tranche</div>
-                  <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 2px;" id="prev_modalite_frais_inscription">0 FCFA</div>
-                  <div style="font-size: 11.5px; font-weight: 700; color: #DC2626; margin-top: 3px;" id="prev_modalite_date_limite"></div>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div style="background: #FFFFFF; border: 1.5px solid #86EFAC; padding: 10px 18px; border-radius: 10px; text-align: right; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                  <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase;">Scolarité Totale Due</div>
+                  <div style="font-size: 19px; font-weight: 900; color: #166534; margin-top: 2px;" id="prev_modalite_total_scolarite">0 FCFA</div>
                 </div>
               </div>
             </div>
 
-            <!-- Échéancier complet des tranches -->
-            <div id="prev_modalite_tranches_list" style="margin-top: 12px; font-size: 12.5px; color: #334155; border-top: 1px dashed #86EFAC; padding-top: 10px; display: none;"></div>
+            <!-- Titre du tableau des tranches -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-top: 1px dashed #86EFAC; padding-top: 14px;">
+              <span style="font-size: 12.5px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="calendar" style="width: 15px; height: 15px;"></i> Détail de Toutes les Tranches de Paiement
+              </span>
+              <span id="prev_tranches_count_badge" style="background: #DCFCE7; color: #166534; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid #86EFAC;">
+                0 tranche(s)
+              </span>
+            </div>
+
+            <!-- Tableau transparent et complet de TOUTES les tranches -->
+            <div style="overflow-x: auto; background: #FFFFFF; border-radius: 8px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <table class="table" style="width: 100%; border-collapse: collapse; margin: 0;">
+                <thead>
+                  <tr style="background: #F8FAFC; color: #475569; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <th style="padding: 10px 14px; border-bottom: 1.5px solid #E2E8F0; width: 50px;">N°</th>
+                    <th style="padding: 10px 14px; border-bottom: 1.5px solid #E2E8F0;">Intitulé de la Tranche</th>
+                    <th style="padding: 10px 14px; border-bottom: 1.5px solid #E2E8F0; text-align: center; width: 120px;">Part</th>
+                    <th style="padding: 10px 14px; border-bottom: 1.5px solid #E2E8F0; text-align: center; width: 180px;">Date Limite</th>
+                    <th style="padding: 10px 14px; border-bottom: 1.5px solid #E2E8F0; text-align: right; width: 160px;">Montant</th>
+                  </tr>
+                </thead>
+                <tbody id="prev_modalite_tranches_table_body">
+                  <!-- Rempli dynamiquement en JS avec toutes les tranches -->
+                </tbody>
+                <tfoot>
+                  <tr style="background: #F0FDF4; font-weight: 800; border-top: 2px solid #86EFAC;">
+                    <td colspan="4" style="padding: 10px 14px; text-align: right; color: #166534; font-size: 12px; text-transform: uppercase;">
+                      Total Échéancier :
+                    </td>
+                    <td style="padding: 10px 14px; text-align: right; color: #166534; font-size: 14px;" id="prev_modalite_tranches_total_sum">
+                      0 FCFA
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
           </div>
         </div>
 
@@ -157,7 +189,7 @@ $enseignants = (new ModelEnseignant())->getAll();
 
       <!-- FORMULAIRE D'INSCRIPTION STANDARD -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>inscription/<?= !empty($item['id_inscription']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form id="form_inscription_main" action="<?= RACINE ?>inscription/<?= !empty($item['id_inscription']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_inscription'])): ?>
             <input type="hidden" name="id_inscription" value="<?= $item['id_inscription'] ?>">
@@ -236,8 +268,10 @@ $enseignants = (new ModelEnseignant())->getAll();
             </div>
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Scolarité Totale Due (FCFA) <span style="color: #EF4444;">*</span></label>
-              <input type="number" id="inp_montant_scolarite" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-weight: 700; outline: none; transition: border-color 0.2s;" name="montant_scolarite_inscription" value="<?= htmlspecialchars($item['montant_scolarite_inscription'] ?? '') ?>" placeholder="Ex: 650000" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                Scolarité Totale Due (FCFA) <span style="color: #64748B; font-size: 12px; font-weight: 600;">(Fixée par barème)</span>
+              </label>
+              <input type="number" id="inp_montant_scolarite" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" name="montant_scolarite_inscription" value="<?= htmlspecialchars($item['montant_scolarite_inscription'] ?? '') ?>" placeholder="0" readonly required>
             </div>
 
           </div>
@@ -251,8 +285,10 @@ $enseignants = (new ModelEnseignant())->getAll();
             </div>
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Date d'inscription <span style="color: #EF4444;">*</span></label>
-              <input type="date" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="date_inscription" value="<?= htmlspecialchars($item['date_inscription'] ?? date('Y-m-d')) ?>" placeholder="Ex: 2025-10-05" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                Date d'inscription <span style="color: #64748B; font-size: 12px; font-weight: 600;">(Automatique)</span>
+              </label>
+              <input type="date" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #334155; font-weight: 600; pointer-events: none; cursor: not-allowed;" name="date_inscription" value="<?= htmlspecialchars($item['date_inscription'] ?? date('Y-m-d')) ?>" readonly required>
             </div>
 
           </div>
@@ -460,42 +496,64 @@ $(document).ready(function() {
         if (res.status === 1 && res.data) {
           var d = res.data;
           var totalScolarite = Number(d.montant_scolarite || 0);
-          var fraisInscription = Number(d.frais_inscription || 0);
 
           // Remplissage automatique du champ montant de scolarité
           $('#inp_montant_scolarite').val(totalScolarite);
 
           var regimeText = d.affectation_etat === 'affecte' ? ' (Affecté État)' : ' (Non Affecté / Privé)';
           var filiereNiveauText = (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau : '');
-          var firstTrancheLabel = d.libelle_premiere_tranche || '1ere tranche';
 
           // Mise à jour de la section Modalités & Tarifs de la Classe dans le Preview Banner
           $('#prev_modalite_classe_title').text(d.libelle_classe + regimeText);
           $('#prev_modalite_filiere_niveau').text(filiereNiveauText);
           $('#prev_modalite_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
-          $('#prev_modalite_first_tranche_label').text(firstTrancheLabel);
-          $('#prev_modalite_frais_inscription').text((fraisInscription > 0 ? fraisInscription.toLocaleString('fr-FR') : '0') + ' FCFA');
 
-          if (d.date_limite_tranche) {
-            $('#prev_modalite_date_limite').text('Exigible avant le : ' + d.date_limite_tranche).show();
-          } else {
-            $('#prev_modalite_date_limite').hide();
-          }
+          // Rendu dynamique de TOUTES les tranches
+          var tranches = d.tranches || [];
+          var tbodyHtml = '';
+          var sumTranches = 0;
 
-          // Détail de l'échéancier complet des tranches si configuré
-          if (d.tranches && d.tranches.length > 0) {
-            var tranchesHtml = '<strong>Échéancier complet des tranches :</strong><div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">';
-            d.tranches.forEach(function(tr, idx) {
-              var dt = tr.date_limite_formatee || tr.date_limite || '';
-              tranchesHtml += '<span class="badge" style="background:#FFFFFF; color:#1E3A5F; border:1px solid #CBD5E1; padding:5px 10px; border-radius:6px; font-weight:700; box-shadow:0 1px 2px rgba(0,0,0,0.03);">' + 
-                              (tr.libelle_tranche || 'Tranche ' + (idx+1)) + ' : ' + Number(tr.montant_tranche).toLocaleString('fr-FR') + ' FCFA' + 
-                              (dt ? ' <span style="color:#DC2626; margin-left:4px;">(avant le ' + dt + ')</span>' : '') + '</span>';
+          if (tranches.length > 0) {
+            $('#prev_tranches_count_badge').text(tranches.length + ' tranche(s) configurée(s)').show();
+
+            tranches.forEach(function(tr, idx) {
+              var mt = Number(tr.montant_tranche || tr.montant_tranche_num || 0);
+              sumTranches += mt;
+              var isFirst = (idx === 0);
+              var pct = totalScolarite > 0 ? Math.round((mt / totalScolarite) * 100) : 0;
+              var dateLimite = tr.date_limite_formatee || (tr.date_limite ? tr.date_limite : 'Non définie');
+
+              tbodyHtml += '<tr style="border-bottom: 1px solid #E2E8F0; background: ' + (isFirst ? '#F8FAFC' : '#FFFFFF') + ';">';
+              tbodyHtml += '  <td style="padding: 10px 14px; font-weight: 800; color: #64748B;">' + (idx + 1) + '</td>';
+              tbodyHtml += '  <td style="padding: 10px 14px;">';
+              tbodyHtml += '    <div style="font-weight: 700; color: #0F172A; font-size: 13px;">' + (tr.libelle_tranche || ('Tranche ' + (idx + 1))) + '</div>';
+              if (isFirst) {
+                tbodyHtml += '    <span style="background:#EFF6FF; color:#1D4ED8; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; border:1px solid #BFDBFE;">Exigible à l\'inscription</span>';
+              }
+              tbodyHtml += '  </td>';
+              tbodyHtml += '  <td style="padding: 10px 14px; text-align: center;">';
+              tbodyHtml += '    <span style="background:#F1F5F9; color:#334155; font-size:11px; font-weight:700; padding:2px 6px; border-radius:4px;">' + pct + '%</span>';
+              tbodyHtml += '  </td>';
+              tbodyHtml += '  <td style="padding: 10px 14px; text-align: center; color: #475569; font-size: 12px; font-weight: 600;">';
+              tbodyHtml += '    <i data-lucide="calendar" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right:4px; color:#64748B;"></i>' + dateLimite;
+              tbodyHtml += '  </td>';
+              tbodyHtml += '  <td style="padding: 10px 14px; text-align: right; font-weight: 800; color: #166534; font-size: 13.5px;">';
+              tbodyHtml += '    ' + mt.toLocaleString('fr-FR') + ' FCFA';
+              tbodyHtml += '  </td>';
+              tbodyHtml += '</tr>';
             });
-            tranchesHtml += '</div>';
-            $('#prev_modalite_tranches_list').html(tranchesHtml).show();
           } else {
-            $('#prev_modalite_tranches_list').hide();
+            $('#prev_tranches_count_badge').text('Paiement Unique');
+            sumTranches = totalScolarite;
+            tbodyHtml += '<tr>';
+            tbodyHtml += '  <td colspan="5" style="padding: 14px; text-align: center; color: #64748B; font-style: italic;">';
+            tbodyHtml += '    Aucune tranche intermédiaire configurée. Règlement unique de la scolarité totale : <strong>' + totalScolarite.toLocaleString('fr-FR') + ' FCFA</strong>';
+            tbodyHtml += '  </td>';
+            tbodyHtml += '</tr>';
           }
+
+          $('#prev_modalite_tranches_table_body').html(tbodyHtml);
+          $('#prev_modalite_tranches_total_sum').text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
 
           $('#prev_class_tuition_section').stop(true, true).slideDown(250);
           if (window.lucide) lucide.createIcons();
@@ -539,11 +597,11 @@ $(document).ready(function() {
   // Chargement initial automatique via paramètre URL ou valeur pré-sélectionnée
   var urlParams = new URLSearchParams(window.location.search);
   var urlEtudiantCode = urlParams.get('etudiant_code');
-  if (urlEtudiantCode) {
+  if (urlEtudiantCode && !$('#sel_etudiant_inscription').val()) {
     $('#sel_etudiant_inscription').val(urlEtudiantCode).trigger('change');
   }
 
-  var initStu = $('#sel_etudiant_inscription').val();
+  var initStu = $('#sel_etudiant_inscription').val() || urlEtudiantCode;
   if (initStu) {
     fetchStudentProfile(initStu);
   }
@@ -552,6 +610,45 @@ $(document).ready(function() {
   if (initClasse) {
     fetchTuitionForClass(initClasse);
   }
+
+  // Soumission unique et sécurisée en AJAX (Évite toute double soumission)
+  $('#form_inscription_main').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $submitBtn = $form.find('button[type="submit"]');
+
+    if ($submitBtn.prop('disabled') || $submitBtn.hasClass('btn-is-loading')) {
+      return false;
+    }
+
+    loading($submitBtn, true, 'Enregistrement en cours...');
+
+    $.ajax({
+      url: $form.attr('action'),
+      type: 'POST',
+      data: $form.serialize(),
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1) {
+          showToast(res.message || 'Réinscription enregistrée avec succès !', 'success');
+          setTimeout(function() {
+            window.location.href = '<?= RACINE ?>inscription/list';
+          }, 1200);
+        } else {
+          loading($submitBtn, false, 'Enregistrer l\'Inscription');
+          showToast(res.message || 'Une erreur est survenue lors de l\'enregistrement', 'error');
+        }
+      },
+      error: function(xhr) {
+        loading($submitBtn, false, 'Enregistrer l\'Inscription');
+        var msg = 'Erreur lors de la communication avec le serveur.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          msg = xhr.responseJSON.message;
+        }
+        showToast(msg, 'error');
+      }
+    });
+  });
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
