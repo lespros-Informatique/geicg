@@ -207,6 +207,17 @@ class EtudiantController extends BaseController
             $stmtAbs->execute([$etudiantCode]);
             $absences = $stmtAbs->fetchAll(PDO::FETCH_ASSOC);
 
+            // 6. Dossier / Pièces physiques fournies
+            $stmtDossier = $this->model->getCon()->prepare("
+                SELECT pf.libelle_piece, pf.description_piece, COALESCE(de.statut_depot, 'en_attente') AS statut_depot, de.date_depot, de.observations, de.id_dossier_etudiant
+                FROM pieces_fournir pf
+                LEFT JOIN dossier_etudiant de ON de.piece_code = pf.code_piece_fournir AND de.etudiant_code = ?
+                WHERE pf.statut_piece = 'actif'
+                ORDER BY pf.id_piece_fournir ASC
+            ");
+            $stmtDossier->execute([$etudiantCode]);
+            $dossierPieces = $stmtDossier->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("EtudiantController::details error: " . $e->getMessage());
@@ -217,6 +228,7 @@ class EtudiantController extends BaseController
             'parent' => $parent,
             'inscription' => $inscription,
             'etablissement' => $etablissement,
+            'dossierPieces' => $dossierPieces ?? [],
             'paiements' => $paiements,
             'totalPaye' => $totalPaye,
             'soldeRestant' => $soldeRestant,
@@ -317,8 +329,8 @@ class EtudiantController extends BaseController
                 $codeParent = $this->validator->generateCode('parents', 'code_parent', 'PAR-', 8);
                 $stmtPar = $db->prepare("
                     INSERT INTO parents 
-                    (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, nom_tuteur, telephone_tuteur, user_code, etablissement_code, created_at_parent)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                    (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, profession_mere, nom_tuteur, telephone_tuteur, profession_tuteur, user_code, etablissement_code, created_at_parent)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
                 $stmtPar->execute([
                     $codeParent,
@@ -328,8 +340,10 @@ class EtudiantController extends BaseController
                     !empty($data['profession_pere']) ? $data['profession_pere'] : null,
                     !empty($data['nom_mere']) ? $data['nom_mere'] : null,
                     !empty($data['telephone_mere']) ? $data['telephone_mere'] : null,
+                    !empty($data['profession_mere']) ? $data['profession_mere'] : null,
                     !empty($data['nom_tuteur']) ? $data['nom_tuteur'] : null,
                     !empty($data['telephone_tuteur']) ? $data['telephone_tuteur'] : null,
+                    !empty($data['profession_tuteur']) ? $data['profession_tuteur'] : null,
                     $userCode,
                     $etabCode
                 ]);
@@ -352,11 +366,12 @@ class EtudiantController extends BaseController
                     }
                 }
 
+                $affectationEtatVal = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'oui' : 'non';
                 $codeInscription = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
                 $stmtIns = $db->prepare("
                     INSERT INTO inscriptions
                     (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, user_code, annee_code, etablissement_code, statut_inscription, affectation_etat, created_at_inscription)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'valide', 'non', NOW())
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'valide', ?, NOW())
                 ");
                 $stmtIns->execute([
                     $codeInscription,
@@ -365,7 +380,8 @@ class EtudiantController extends BaseController
                     $montantScolarite,
                     $userCode,
                     $anneeCode,
-                    $etabCode
+                    $etabCode,
+                    $affectationEtatVal
                 ]);
             }
 
@@ -384,6 +400,34 @@ class EtudiantController extends BaseController
                         !empty($codeInscription) ? $codeInscription : '',
                         $accCode,
                         $anneeCode,
+                        $userCode,
+                        $etabCode
+                    ]);
+                }
+            }
+
+            // 5. Insert Documents / Checklist into `dossier_etudiant`
+            $piecesFournies = !empty($data['pieces_fournies']) && is_array($data['pieces_fournies']) ? $data['pieces_fournies'] : [];
+            $allPieces = $db->query("SELECT code_piece_fournir FROM pieces_fournir WHERE statut_piece = 'actif'")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+            if (!empty($allPieces)) {
+                $stmtDos = $db->prepare("
+                    INSERT INTO dossier_etudiant
+                    (code_dossier_etudiant, inscription_code, etudiant_code, piece_code, statut_depot, date_depot, observations, user_code, etablissement_code, created_at_dossier_etudiant)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+
+                foreach ($allPieces as $pCode) {
+                    $isDepose = in_array($pCode, $piecesFournies);
+                    $codeDos = $this->validator->generateCode('dossier_etudiant', 'code_dossier_etudiant', 'DOS-', 8);
+                    $stmtDos->execute([
+                        $codeDos,
+                        !empty($codeInscription) ? $codeInscription : '',
+                        $codeEtudiant,
+                        $pCode,
+                        $isDepose ? 'depose' : 'en_attente',
+                        $isDepose ? date('Y-m-d H:i:s') : null,
+                        $isDepose ? 'Pièce déposée lors de l\'inscription initiale' : 'En attente de transmission',
                         $userCode,
                         $etabCode
                     ]);

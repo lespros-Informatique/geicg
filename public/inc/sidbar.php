@@ -382,8 +382,8 @@
             </div>
             <div class="nav-section-items" id="sec-eleves">
                 <?php if ($showEtudiants): ?>
-                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= strpos($currentUri, '/etudiant/') !== false ? 'active' : '' ?>" data-title="Registre des Étudiants">
-                    <i data-lucide="user"></i> <span>Registre des Étudiants</span>
+                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= strpos($currentUri, '/etudiant/') !== false ? 'active' : '' ?>" data-title="Nouvel étudiant">
+                    <i data-lucide="user-plus"></i> <span>Nouvel étudiant</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showParents): ?>
@@ -392,8 +392,8 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showInscriptions): ?>
-                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Inscriptions Annuelles">
-                    <i data-lucide="user-plus"></i> <span>Inscriptions Annuelles</span>
+                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Réinscription">
+                    <i data-lucide="user-check"></i> <span>Réinscription</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showPiecesFournir): ?>

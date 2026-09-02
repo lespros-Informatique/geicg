@@ -16,12 +16,12 @@ $anneeActive = $anneeActive ?? '';
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="users" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Registre des Étudiants
+            <i data-lucide="user-plus" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Nouveaux Étudiants
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Consultation et gestion du registre des étudiants avec colonnes et filtres intelligents</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Consultation du registre et enregistrement des nouveaux dossiers étudiants</p>
         </div>
         <a href="<?= RACINE ?>etudiant/wizard" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Inscription / Dossier
+          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Dossier Étudiant
         </a>
       </div>
 

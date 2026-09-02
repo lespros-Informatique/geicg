@@ -2,6 +2,7 @@
 <?php
 $classes = (new ModelClasse())->getAll();
 $accessoires = (new ModelAccessoire())->getAll();
+$pieces = (new ModelPieceFournir())->getAll();
 ?>
 <style>
   .wizard-stepper {
@@ -121,7 +122,7 @@ $accessoires = (new ModelAccessoire())->getAll();
         <div class="wizard-step-divider"></div>
         <div class="wizard-step-item" data-step="4">
           <div class="wizard-step-number">4</div>
-          <i data-lucide="package" style="width: 16px; height: 16px;"></i> <span>Accessoires</span>
+          <i data-lucide="package" style="width: 16px; height: 16px;"></i> <span>Accessoires & Dossier</span>
         </div>
         <div class="wizard-step-divider"></div>
         <div class="wizard-step-item" data-step="5">
@@ -223,12 +224,20 @@ $accessoires = (new ModelAccessoire())->getAll();
                 <input type="text" class="form-control" name="telephone_mere" placeholder="Ex: 0506070809" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Profession de la Mère</label>
+                <input type="text" class="form-control" name="profession_mere" placeholder="Ex: Commerçante" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+              </div>
+              <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom du Tuteur Légal</label>
                 <input type="text" class="form-control" name="nom_tuteur" placeholder="Ex: KOUAME Bernard" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone du Tuteur Légal</label>
                 <input type="text" class="form-control" name="telephone_tuteur" placeholder="Ex: 0707070707" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+              </div>
+              <div class="form-group">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Profession du Tuteur Légal</label>
+                <input type="text" class="form-control" name="profession_tuteur" placeholder="Ex: Cadre d'Administration" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
             </div>
           </div>
@@ -239,6 +248,25 @@ $accessoires = (new ModelAccessoire())->getAll();
               <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i> Étape 3 : Inscription Académique & Scolarité
             </h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+              
+              <!-- RÉGIME / STATUT D'AFFECTATION -->
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 8px;">
+                  Statut d'Affectation État / Régime de l'Étudiant <span style="color: #EF4444;">*</span>
+                </label>
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                  <label class="label-affectation-choice" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid #1E3A5F; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #1E3A5F; background: #EFF6FF; transition: all 0.2s;">
+                    <input type="radio" name="affectation_etat" value="non_affecte" checked style="accent-color: #1E3A5F; width: 16px; height: 16px;">
+                    <span>Non Affecté (Privé)</span>
+                  </label>
+                  <label class="label-affectation-choice" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid #CBD5E1; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #334155; background: #FFFFFF; transition: all 0.2s;">
+                    <input type="radio" name="affectation_etat" value="affecte" style="accent-color: #1E3A5F; width: 16px; height: 16px;">
+                    <span>Affecté (Subventionné par l'État)</span>
+                  </label>
+                </div>
+                <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi.</small>
+              </div>
+
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe d'affectation <span style="color: #EF4444;">*</span></label>
                 <select class="form-control select2" id="wiz_classe" name="classe_code" style="width: 100%;" required>
@@ -258,59 +286,145 @@ $accessoires = (new ModelAccessoire())->getAll();
               </div>
             </div>
 
-            <!-- FICHE TARIFAIRE AUTOMATIQUE DE LA CLASSE -->
-            <div id="wiz-class-tuition-box" style="display: none; background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 18px 22px; margin-top: 20px; transition: all 0.3s ease;">
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <!-- FICHE TARIFAIRE AUTOMATIQUE & ÉCHÉANCIER COMPLET DES TRANCHES -->
+            <div id="wiz-class-tuition-box" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 22px 24px; margin-top: 22px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.06); transition: all 0.3s ease;">
+              
+              <!-- 1. En-tête avec résumé de la classe et total scolarité -->
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 16px; margin-bottom: 18px;">
                 <div>
-                  <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="info" style="width: 15px; height: 15px;"></i> Modalités & Tarifs de la Classe
+                  <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="graduation-cap" style="width: 16px; height: 16px; color: #D97706;"></i> Grille Tarifaire & Échéancier de Scolarité
                   </div>
-                  <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;" id="wiz_summary_classe_title">-</div>
-                  <div style="font-size: 13px; color: #475569; margin-top: 2px;" id="wiz_summary_filiere_niveau">-</div>
+                  <div style="font-size: 17px; font-weight: 900; color: #0F172A; margin-top: 4px;" id="wiz_summary_classe_title">-</div>
+                  <div style="font-size: 13px; color: #64748B; margin-top: 2px;" id="wiz_summary_filiere_niveau">-</div>
                 </div>
 
-                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                  <div style="background: #FFFFFF; border: 1px solid #BBF7D0; padding: 10px 16px; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                    <div style="font-size: 10.5px; font-weight: 800; color: #15803D; text-transform: uppercase;">Scolarité Totale</div>
-                    <div style="font-size: 16px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="wiz_summary_total_scolarite">0 FCFA</div>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                  <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; padding: 10px 18px; border-radius: 10px; text-align: right;">
+                    <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase;">Scolarité Annuelle</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 2px;" id="wiz_summary_total_scolarite">0 FCFA</div>
                   </div>
-
-                  <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 10px 16px; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                    <div style="font-size: 10.5px; font-weight: 800; color: #1D4ED8; text-transform: uppercase;" id="wiz_summary_first_tranche_label">Frais Inscription (1ère Tranche)</div>
-                    <div style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin-top: 2px;" id="wiz_summary_frais_inscription">0 FCFA</div>
-                    <div style="font-size: 11px; color: #64748B; margin-top: 2px;" id="wiz_summary_date_limite"></div>
+                  <div id="wiz_summary_net_box" style="display: none; background: #F0FDF4; border: 1.5px solid #86EFAC; padding: 10px 18px; border-radius: 10px; text-align: right;">
+                    <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase;">Net à Payer (Après Remise)</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 2px;" id="wiz_summary_net_scolarite">0 FCFA</div>
                   </div>
                 </div>
               </div>
 
-              <!-- Liste des tranches complémentaires si existantes -->
-              <div id="wiz_summary_tranches_list" style="margin-top: 12px; font-size: 12.5px; color: #334155; border-top: 1px dashed #BBF7D0; padding-top: 10px; display: none;"></div>
+              <!-- 2. Titre de la section des tranches -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 13px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="calendar" style="width: 15px; height: 15px; color: #2563EB;"></i> Échéancier de Toutes les Tranches de Paiement
+                </span>
+                <span id="wiz_tranches_count_badge" style="background: #F1F5F9; color: #475569; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                  0 tranche(s)
+                </span>
+              </div>
+
+              <!-- 3. Tableau détaillé et visuel de TOUTES les tranches -->
+              <div style="overflow-x: auto;">
+                <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0;">
+                  <thead>
+                    <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                      <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0; width: 60px;">N°</th>
+                      <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0;">Intitulé de l'Échéance / Tranche</th>
+                      <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0; text-align: center; width: 140px;">Part</th>
+                      <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0; text-align: center; width: 180px;">Date Limite d'Exigibilité</th>
+                      <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0; text-align: right; width: 180px;">Montant Tranche</th>
+                    </tr>
+                  </thead>
+                  <tbody id="wiz_tranches_table_body">
+                    <!-- Rempli dynamiquement en JS avec toutes les tranches -->
+                  </tbody>
+                  <tfoot>
+                    <tr style="background: #F8FAFC; font-weight: 800; font-size: 13px; color: #0F172A; border-top: 2px solid #CBD5E1;">
+                      <td colspan="4" style="padding: 12px 16px; text-align: right; text-transform: uppercase;">Total Général Échéancier :</td>
+                      <td style="padding: 12px 16px; text-align: right; color: #1E3A5F; font-size: 15px; font-weight: 900;" id="wiz_tranches_total_sum">0 FCFA</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
             </div>
           </div>
 
-          <!-- ÉTAPE 4 : ACCESSOIRES & KITS -->
+          <!-- ÉTAPE 4 : ACCESSOIRES & DOSSIER ÉTUDIANT (PIÈCES FOURNIES) -->
           <div class="wizard-step-content" data-step="4">
-            <h3 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-bottom: 20px; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="package" style="width: 20px; height: 20px;"></i> Étape 4 : Accessoires & Kits d'Inscription
-            </h3>
-            <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">Sélectionnez les kits et accessoires souscrits lors de cette inscription :</p>
-            <?php if (!empty($accessoires)): ?>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-                <?php foreach($accessoires as $acc): ?>
-                  <label style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; cursor: pointer; transition: all 0.2s;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                      <input type="checkbox" name="accessoires[]" value="<?= $acc['code_accessoire'] ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F;">
-                      <span style="font-weight: 700; color: #0F172A; font-size: 14px;"><?= htmlspecialchars($acc['libelle_accessoire']) ?></span>
-                    </div>
-                    <span style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= number_format((float)$acc['prix_accessoire'], 0, ',', ' ') ?> FCFA</span>
-                  </label>
-                <?php endforeach; ?>
+            
+            <!-- SECTION A : ACCESSOIRES & KITS -->
+            <div style="margin-bottom: 30px;">
+              <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin-bottom: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="package" style="width: 18px; height: 18px;"></i> Accessoires & Kits d'Inscription
+              </h3>
+              <p style="font-size: 13px; color: #64748B; margin-bottom: 14px;">Sélectionnez les kits et accessoires souscrits lors de cette inscription :</p>
+              <?php if (!empty($accessoires)): ?>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                  <?php foreach($accessoires as $acc): ?>
+                    <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; cursor: pointer; transition: all 0.2s;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" name="accessoires[]" value="<?= $acc['code_accessoire'] ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F;">
+                        <span style="font-weight: 700; color: #0F172A; font-size: 13px;"><?= htmlspecialchars($acc['libelle_accessoire']) ?></span>
+                      </div>
+                      <span style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= number_format((float)$acc['prix_accessoire'], 0, ',', ' ') ?> FCFA</span>
+                    </label>
+                  <?php endforeach; ?>
+                </div>
+              <?php else: ?>
+                <div style="padding: 14px; background: #F8FAFC; border-radius: 8px; color: #64748B; font-size: 12.5px; font-weight: 600;">
+                  Aucun kit ou accessoire configuré.
+                </div>
+              <?php endif; ?>
+            </div>
+
+            <!-- SECTION B : DOSSIER DE L'ÉTUDIANT & PIÈCES PHYSIQUES FOURNIES -->
+            <div style="background: #FAFAFA; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 2px solid #E2E8F0; padding-bottom: 10px;">
+                <div>
+                  <h3 style="font-size: 15px; font-weight: 800; color: #15803D; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="folder-check" style="width: 18px; height: 18px;"></i> Dossier de l'Étudiant & Pièces Physiques Fournies
+                  </h3>
+                  <p style="font-size: 12px; color: #64748B; margin: 3px 0 0 0;">Cochez les pièces déposées pour mettre à jour automatiquement le dossier d'inscription</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" id="btn-check-all-pieces" style="background: #DCFCE7; border: 1px solid #86EFAC; color: #15803D; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
+                    Tout cocher (Dossier Complet)
+                  </button>
+                  <button type="button" id="btn-uncheck-all-pieces" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #475569; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer;">
+                    Tout décocher
+                  </button>
+                </div>
               </div>
-            <?php else: ?>
-              <div style="padding: 16px; background: #F8FAFC; border-radius: 8px; color: #64748B; font-size: 13px; font-weight: 600;">
-                Aucun kit ou accessoire configuré. Vous pouvez continuer cette étape.
-              </div>
-            <?php endif; ?>
+
+              <?php if (!empty($pieces)): ?>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
+                  <?php foreach($pieces as $p): ?>
+                    <label class="piece-checkbox-card" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1.5px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
+                      <input type="checkbox" name="pieces_fournies[]" class="chk-piece" value="<?= htmlspecialchars($p['code_piece_fournir']) ?>" style="width: 18px; height: 18px; accent-color: #15803D; margin-top: 2px; flex-shrink: 0;">
+                      <div style="flex: 1;">
+                        <div style="font-weight: 700; color: #0F172A; font-size: 12.5px; line-height: 1.35;">
+                          <?= htmlspecialchars($p['libelle_piece']) ?>
+                        </div>
+                        <?php if (!empty($p['description_piece'])): ?>
+                          <div style="font-size: 11px; color: #64748B; margin-top: 2px; line-height: 1.3;">
+                            <?= htmlspecialchars($p['description_piece']) ?>
+                          </div>
+                        <?php endif; ?>
+                        <div style="margin-top: 5px;">
+                          <span class="piece-status-badge" style="background: #F1F5F9; color: #64748B; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">
+                            En attente de dépôt
+                          </span>
+                        </div>
+                      </div>
+                    </label>
+                  <?php endforeach; ?>
+                </div>
+              <?php else: ?>
+                <div style="padding: 14px; background: #FFFFFF; border-radius: 8px; color: #64748B; font-size: 12.5px; font-weight: 600;">
+                  Aucune pièce configurée dans le catalogue des pièces à fournir.
+                </div>
+              <?php endif; ?>
+            </div>
+
           </div>
 
           <!-- ÉTAPE 5 : RÉCAPITULATIF & CONFIRMATION -->
@@ -512,60 +626,129 @@ $(document).ready(function() {
     $('#recap_classe').text(classeText || 'Non choisie');
     $('#recap_montant').text(montant && Number(montant) > 0 ? Number(montant).toLocaleString('fr-FR') + ' FCFA' : 'Tarif classe automatique');
     $('#recap_remise').text(Number(remise).toLocaleString('fr-FR') + ' FCFA');
+
+    var totalPieces = $('.chk-piece').length;
+    var checkedPieces = $('.chk-piece:checked').length;
+    var totalAccs = $('input[name="accessoires[]"]:checked').length;
+
+    $('#recap_accessoires_count').text(totalAccs > 0 ? totalAccs + ' accessoire(s) / kit(s)' : 'Aucun');
+    $('#recap_dossier').text(checkedPieces + ' / ' + totalPieces + ' pièce(s) déposée(s)' + (totalPieces > 0 && checkedPieces === totalPieces ? ' (Complet)' : ''));
   }
 
-  // Auto-récupération et affichage de la scolarité et de la 1ère tranche sur sélection de la classe
-  $('#wiz_classe').on('change select2:select', function() {
-    var classeCode = $(this).val();
+  // Gestion visuelle et réactive des pièces à fournir
+  function updatePieceCardStyle($chk) {
+    var $card = $chk.closest('.piece-checkbox-card');
+    var $badge = $card.find('.piece-status-badge');
+    if ($chk.is(':checked')) {
+      $card.css({ 'background': '#F0FDF4', 'border-color': '#86EFAC' });
+      $badge.css({ 'background': '#DCFCE7', 'color': '#15803D' }).text('✓ Pièce Déposée');
+    } else {
+      $card.css({ 'background': '#FFFFFF', 'border-color': '#E2E8F0' });
+      $badge.css({ 'background': '#F1F5F9', 'color': '#64748B' }).text('En attente de dépôt');
+    }
+  }
+
+  $(document).on('change', '.chk-piece', function() {
+    updatePieceCardStyle($(this));
+  });
+
+  $('#btn-check-all-pieces').on('click', function() {
+    $('.chk-piece').prop('checked', true).each(function() {
+      updatePieceCardStyle($(this));
+    });
+    saveFormData();
+  });
+
+  $('#btn-uncheck-all-pieces').on('click', function() {
+    $('.chk-piece').prop('checked', false).each(function() {
+      updatePieceCardStyle($(this));
+    });
+    saveFormData();
+  });
+
+  // Auto-récupération et affichage complet de la scolarité et de TOUTES les tranches selon la classe et le statut d'affectation
+  function refreshClassTuition() {
+    var classeCode = $('#wiz_classe').val();
+    var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
+
     if (!classeCode) {
       $('#wiz-class-tuition-box').slideUp(200);
       $('#wiz_montant_scolarite').val(0);
+      updateNetScolarite();
       return;
     }
 
     $.ajax({
       url: '<?= RACINE ?>inscription/getTuitionByClass',
       type: 'GET',
-      data: { classe_code: classeCode },
+      data: { 
+        classe_code: classeCode,
+        affectation_etat: affectationEtat
+      },
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 && res.data) {
           var d = res.data;
           var totalScolarite = Number(d.montant_scolarite || 0);
-          var fraisInscription = Number(d.frais_inscription || 0);
 
           $('#wiz_montant_scolarite').val(totalScolarite);
-          $('#wiz_summary_classe_title').text(d.libelle_classe);
-          $('#wiz_summary_filiere_niveau').text((d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau : ''));
+          var regimeBadge = d.affectation_etat === 'affecte' ? ' <span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #BFDBFE; font-weight:700;">Affecté État</span>' : ' <span class="badge" style="background:#F8FAFC; color:#475569; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #CBD5E1; font-weight:700;">Non Affecté / Privé</span>';
+          $('#wiz_summary_classe_title').html(d.libelle_classe + regimeBadge);
+          $('#wiz_summary_filiere_niveau').text(
+            (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + 
+            (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau + ' • ' : '') + 
+            (d.libelle_annee ? 'Année : ' + d.libelle_annee : '')
+          );
           $('#wiz_summary_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
 
-          if (fraisInscription > 0) {
-            $('#wiz_summary_first_tranche_label').text(d.libelle_premiere_tranche || 'Frais Inscription (1ère Tranche)');
-            $('#wiz_summary_frais_inscription').text(fraisInscription.toLocaleString('fr-FR') + ' FCFA');
-            if (d.date_limite_tranche) {
-              $('#wiz_summary_date_limite').text('Exigible avant le : ' + d.date_limite_tranche).show();
-            } else {
-              $('#wiz_summary_date_limite').hide();
-            }
-          } else {
-            $('#wiz_summary_first_tranche_label').text('Frais Inscription (1ère Tranche)');
-            $('#wiz_summary_frais_inscription').text('Non configuré');
-            $('#wiz_summary_date_limite').hide();
-          }
+          // Rendu dynamique de TOUTES les tranches
+          var tranches = d.tranches || [];
+          var tbodyHtml = '';
+          var sumTranches = 0;
 
-          if (d.tranches && d.tranches.length > 1) {
-            var trHtml = '<strong>Échéancier des tranches configurées :</strong><div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">';
-            d.tranches.forEach(function(tr, idx) {
-              trHtml += '<span class="badge" style="background:#FFFFFF; color:#1E3A5F; border:1px solid #CBD5E1; padding:4px 8px; border-radius:6px; font-weight:700;">' + 
-                        (tr.libelle_tranche || 'Tranche ' + (idx+1)) + ' : ' + Number(tr.montant_tranche).toLocaleString('fr-FR') + ' FCFA' + 
-                        (tr.date_limite ? ' (au ' + tr.date_limite + ')' : '') + '</span>';
+          if (tranches.length > 0) {
+            $('#wiz_tranches_count_badge').text(tranches.length + ' tranche(s) configurée(s)').show();
+
+            tranches.forEach(function(tr, idx) {
+              var mt = Number(tr.montant_tranche || tr.montant_tranche_num || 0);
+              sumTranches += mt;
+              var isFirst = (idx === 0);
+              var pct = totalScolarite > 0 ? Math.round((mt / totalScolarite) * 100) : 0;
+              var dateLimite = tr.date_limite_formatee || (tr.date_limite ? tr.date_limite : 'Non définie');
+
+              tbodyHtml += '<tr style="border-bottom: 1px solid #F1F5F9; background: ' + (isFirst ? '#F8FAFC' : '#FFFFFF') + ';">';
+              tbodyHtml += '  <td style="padding: 12px 16px; font-weight: 800; color: #64748B;">' + (idx + 1) + '</td>';
+              tbodyHtml += '  <td style="padding: 12px 16px;">';
+              tbodyHtml += '    <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;">' + (tr.libelle_tranche || ('Tranche ' + (idx + 1))) + '</div>';
+              if (isFirst) {
+                tbodyHtml += '    <span style="background:#EFF6FF; color:#1D4ED8; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #BFDBFE;">Exigible à l\'inscription</span>';
+              }
+              tbodyHtml += '  </td>';
+              tbodyHtml += '  <td style="padding: 12px 16px; text-align: center;">';
+              tbodyHtml += '    <span style="background:#F1F5F9; color:#334155; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px;">' + pct + '%</span>';
+              tbodyHtml += '  </td>';
+              tbodyHtml += '  <td style="padding: 12px 16px; text-align: center; color: #475569; font-size: 12.5px; font-weight: 600;">';
+              tbodyHtml += '    <i data-lucide="calendar" style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px; color:#64748B;"></i>' + dateLimite;
+              tbodyHtml += '  </td>';
+              tbodyHtml += '  <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #1E3A5F; font-size: 14px;">';
+              tbodyHtml += '    ' + mt.toLocaleString('fr-FR') + ' FCFA';
+              tbodyHtml += '  </td>';
+              tbodyHtml += '</tr>';
             });
-            trHtml += '</div>';
-            $('#wiz_summary_tranches_list').html(trHtml).show();
           } else {
-            $('#wiz_summary_tranches_list').hide();
+            $('#wiz_tranches_count_badge').text('Paiement Unique');
+            sumTranches = totalScolarite;
+            tbodyHtml += '<tr>';
+            tbodyHtml += '  <td colspan="5" style="padding: 16px; text-align: center; color: #64748B; font-style: italic;">';
+            tbodyHtml += '    Aucune tranche intermédiaire configurée pour cette classe. Règlement unique de la scolarité totale : <strong>' + totalScolarite.toLocaleString('fr-FR') + ' FCFA</strong>';
+            tbodyHtml += '  </td>';
+            tbodyHtml += '</tr>';
           }
 
+          $('#wiz_tranches_table_body').html(tbodyHtml);
+          $('#wiz_tranches_total_sum').text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
+
+          updateNetScolarite();
           $('#wiz-class-tuition-box').stop(true, true).slideDown(250);
           if (window.lucide) lucide.createIcons();
         } else {
@@ -577,6 +760,36 @@ $(document).ready(function() {
         $('#wiz-class-tuition-box').slideUp(200);
       }
     });
+  }
+
+  $('#wiz_classe').on('change select2:select', refreshClassTuition);
+  $('input[name="affectation_etat"]').on('change', function() {
+    $('input[name="affectation_etat"]').each(function() {
+      var isChecked = $(this).is(':checked');
+      $(this).closest('label').css({
+        'border-color': isChecked ? '#1E3A5F' : '#CBD5E1',
+        'background': isChecked ? '#EFF6FF' : '#FFFFFF',
+        'color': isChecked ? '#1E3A5F' : '#334155'
+      });
+    });
+    refreshClassTuition();
+  });
+
+  // Calcul dynamique du net à payer après remise
+  function updateNetScolarite() {
+    var total = Number($('#wiz_montant_scolarite').val() || 0);
+    var remise = Number($('#wiz_remise').val() || 0);
+    if (remise > 0 && total > 0) {
+      var net = Math.max(0, total - remise);
+      $('#wiz_summary_net_scolarite').text(net.toLocaleString('fr-FR') + ' FCFA');
+      $('#wiz_summary_net_box').fadeIn(200);
+    } else {
+      $('#wiz_summary_net_box').hide();
+    }
+  }
+
+  $('#wiz_remise').on('input change keyup', function() {
+    updateNetScolarite();
   });
 
   // Auto save on any input change

@@ -10,22 +10,114 @@ class InscriptionController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/inscriptions/list.php');
+        $db = $this->model->getCon();
+        $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code, niveau_code, annee_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $annees = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        $this->loadView('../views/inscriptions/list.php', [
+            'filieres' => $filieres,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
+            'annees' => $annees
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
-        $data = [];
-        foreach ($items as $i) {
-            $id = $i['id_inscription'];
-            $idCrypte = $this->validator->crypter($id);
-            $data[] = array_merge($i, [
-                'id' => $id,
-                'editId' => $idCrypte
-            ]);
+        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $filterFiliere = trim($_GET['filiere_code'] ?? '');
+        $filterNiveau = trim($_GET['niveau_code'] ?? '');
+        $filterClasse = trim($_GET['classe_code'] ?? '');
+
+        $db = $this->model->getCon();
+
+        // 1. Récupérer tous les étudiants
+        $students = $db->query("
+            SELECT id_etudiant, code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, telephone_etudiant, email_etudiant, photo_etudiant, statut_etudiant
+            FROM etudiants
+            ORDER BY id_etudiant DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // 2. Inscriptions de l'année active (pour exclure ceux qui sont déjà inscrits)
+        $stmtCur = $db->prepare("
+            SELECT etudiant_code
+            FROM inscriptions
+            WHERE annee_code = ?
+        ");
+        $stmtCur->execute([$anneeCode]);
+        $curCodes = $stmtCur->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        $curSet = array_flip($curCodes);
+
+        // 3. Dernière inscription passée (N-1)
+        $priorMap = [];
+        $stmtPrior = $db->prepare("
+            SELECT i.*, c.libelle_classe as classe_prev, c.filiere_code as filiere_prev_code, c.niveau_code as niveau_prev_code,
+                   f.libelle_filiere as filiere_prev, n.libelle_niveau as niveau_prev, a.libelle_annee as annee_prev
+            FROM inscriptions i
+            LEFT JOIN classes c ON c.code_classe = i.classe_code
+            LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+            LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+            LEFT JOIN annees a ON a.code_annee = i.annee_code
+            WHERE i.annee_code != ?
+            ORDER BY i.id_inscription DESC
+        ");
+        $stmtPrior->execute([$anneeCode]);
+        while ($row = $stmtPrior->fetch(PDO::FETCH_ASSOC)) {
+            $etuCode = $row['etudiant_code'];
+            if (!isset($priorMap[$etuCode])) {
+                $priorMap[$etuCode] = $row;
+            }
         }
+
+        $data = [];
+        foreach ($students as $etu) {
+            $code = $etu['code_etudiant'];
+
+            // Lister UNIQUEMENT les étudiants à réinscrire (non inscrits pour l'année active)
+            if (isset($curSet[$code])) {
+                continue;
+            }
+
+            $prev = $priorMap[$code] ?? null;
+
+            // Détermination de la filière / niveau / classe N-1
+            $refFiliere = $prev['filiere_prev_code'] ?? '';
+            $refNiveau = $prev['niveau_prev_code'] ?? '';
+            $refClasse = $prev['classe_code'] ?? '';
+
+            // Application des filtres filière / niveau / classe
+            if (!empty($filterFiliere) && $filterFiliere !== 'ALL' && $refFiliere !== $filterFiliere) {
+                continue;
+            }
+            if (!empty($filterNiveau) && $filterNiveau !== 'ALL' && $refNiveau !== $filterNiveau) {
+                continue;
+            }
+            if (!empty($filterClasse) && $filterClasse !== 'ALL' && $refClasse !== $filterClasse) {
+                continue;
+            }
+
+            $data[] = [
+                'id_etudiant' => $etu['id_etudiant'],
+                'code_etudiant' => $code,
+                'matricule_etudiant' => $etu['matricule_etudiant'] ?? '-',
+                'nom_etudiant' => $etu['nom_etudiant'],
+                'prenom_etudiant' => $etu['prenom_etudiant'],
+                'nom_complet' => trim(($etu['nom_etudiant'] ?? '') . ' ' . ($etu['prenom_etudiant'] ?? '')),
+                'sexe' => $etu['sexe_etudiant'] ?? 'M',
+                'telephone' => $etu['telephone_etudiant'] ?? '-',
+                'photo_etudiant' => $etu['photo_etudiant'] ?? '',
+
+                // Cursus antérieur (N-1)
+                'classe_precedente' => $prev['classe_prev'] ?? '',
+                'filiere_precedente' => $prev['filiere_prev'] ?? '',
+                'niveau_precedent' => $prev['niveau_prev'] ?? '',
+                'annee_precedente' => $prev['annee_prev'] ?? ''
+            ];
+        }
+
         $this->json(['data' => $data]);
     }
 
@@ -140,7 +232,8 @@ class InscriptionController extends BaseController
                 'dernier_niveau_code' => $prevIns['niveau_code'] ?? '',
                 'derniere_filiere_code' => $prevIns['filiere_code'] ?? '',
                 'derniere_annee' => $prevIns['libelle_annee'] ?? '',
-                'prev_regime' => ($prevIns['affectation_etat'] ?? '') === 'affecte' ? 'Affecté (État)' : 'Non Affecté (Privé)',
+                'prev_affectation_etat' => (($prevIns['affectation_etat'] ?? '') === 'affecte' || ($prevIns['affectation_etat'] ?? '') === 'oui') ? 'affecte' : 'non_affecte',
+                'prev_regime' => (($prevIns['affectation_etat'] ?? '') === 'affecte' || ($prevIns['affectation_etat'] ?? '') === 'oui') ? 'Affecté (État)' : 'Non Affecté (Privé)',
                 'prev_scolarite' => $prevDue,
                 'prev_paye' => $prevPaye,
                 'prev_solde' => $prevSolde,
@@ -171,6 +264,10 @@ class InscriptionController extends BaseController
     {
         $this->requireAuth();
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? 'non_affecte'));
+        if ($affectationEtat === 'oui') $affectationEtat = 'affecte';
+        if ($affectationEtat === 'non') $affectationEtat = 'non_affecte';
+        if ($affectationEtat !== 'affecte') $affectationEtat = 'non_affecte';
 
         if (empty($classeCode)) {
             $this->json(['status' => 0, 'message' => 'Classe non spécifiée']);
@@ -179,12 +276,13 @@ class InscriptionController extends BaseController
 
         $db = $this->model->getCon();
 
-        // Récupérer la classe avec ses libellés filière et niveau
+        // Récupérer la classe avec ses libellés filière, niveau et année
         $stmtCl = $db->prepare("
-            SELECT c.*, f.libelle_filiere, n.libelle_niveau 
+            SELECT c.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee 
             FROM classes c
             LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
             LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+            LEFT JOIN annees a ON a.code_annee = c.annee_code
             WHERE c.code_classe = ? 
             LIMIT 1
         ");
@@ -196,42 +294,78 @@ class InscriptionController extends BaseController
             return;
         }
 
-        // Trouver le tarif de scolarité (par filiere/niveau ou filiere)
+        $filiereCode = $classe['filiere_code'] ?? '';
+        $niveauCode = $classe['niveau_code'] ?? '';
+        $anneeCode = $classe['annee_code'] ?? '';
+
+        // 1. Trouver le tarif de scolarité actif pour cette classe et ce statut d'affectation
         $stmtSco = $db->prepare("
             SELECT * FROM scolarites 
-            WHERE (filiere_code = ? AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL))
-               OR (filiere_code = ? OR niveau_code = ?)
-            ORDER BY (CASE WHEN filiere_code = ? AND niveau_code = ? THEN 1 ELSE 2 END), id_scolarite DESC
+            WHERE filiere_code = ? 
+              AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
+              AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+              AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
+              AND statut_scolarite = 'actif'
+            ORDER BY 
+              (CASE WHEN annee_code = ? AND niveau_code = ? AND affectation_etat = ? THEN 1
+                    WHEN niveau_code = ? AND affectation_etat = ? THEN 2
+                    WHEN affectation_etat = ? THEN 3
+                    ELSE 4 END), 
+              id_scolarite DESC
             LIMIT 1
         ");
-        $stmtSco->execute([$classe['filiere_code'], $classe['niveau_code'], $classe['filiere_code'], $classe['niveau_code'], $classe['filiere_code'], $classe['niveau_code']]);
+        $stmtSco->execute([$filiereCode, $niveauCode, $anneeCode, $affectationEtat, $anneeCode, $niveauCode, $affectationEtat, $niveauCode, $affectationEtat, $affectationEtat]);
         $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
 
+        if (!$sco) {
+            $stmtSco = $db->prepare("
+                SELECT * FROM scolarites 
+                WHERE filiere_code = ? 
+                  AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
+                  AND statut_scolarite = 'actif'
+                ORDER BY (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END), id_scolarite DESC
+                LIMIT 1
+            ");
+            $stmtSco->execute([$filiereCode, $niveauCode, $niveauCode]);
+            $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
+        }
+
         $montantScolarite = $sco ? (float)$sco['montant_scolarite'] : 0;
-        $affectationEtat = $sco['affectation_etat'] ?? 'non_affecte';
+        $affectationEtatFinal = $sco['affectation_etat'] ?? $affectationEtat;
         $codeScolarite = $sco['code_scolarite'] ?? '';
 
-        // Récupérer les tranches associées (notamment la 1ère tranche / frais d'inscription)
-        $stmtTr = $db->prepare("
-            SELECT * FROM tranches_scolarite 
-            WHERE (scolarite_code = ? AND scolarite_code != '')
-               OR (filiere_code = ? AND niveau_code = ? AND filiere_code != '')
-               OR (filiere_code = ? AND filiere_code != '')
-               OR (scolarite_code = '' AND filiere_code = '' AND niveau_code = '')
-            ORDER BY id_tranche ASC
-        ");
-        $stmtTr->execute([$codeScolarite, $classe['filiere_code'], $classe['niveau_code'], $classe['filiere_code']]);
-        $tranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
+        // 2. Récupérer TOUTES les tranches de scolarité associées
+        $tranches = [];
+        if (!empty($codeScolarite)) {
+            $stmtTr = $db->prepare("
+                SELECT * FROM tranches_scolarite 
+                WHERE scolarite_code = ? 
+                  AND statut_tranche = 'actif'
+                ORDER BY id_tranche ASC
+            ");
+            $stmtTr->execute([$codeScolarite]);
+            $tranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // Formater les tranches avec pourcentages et dates lisibles
+        foreach ($tranches as &$tr) {
+            $mt = (float)($tr['montant_tranche'] ?? 0);
+            $tr['montant_tranche_num'] = $mt;
+            $tr['montant_tranche_formate'] = number_format($mt, 0, ',', ' ') . ' FCFA';
+            $tr['date_limite_formatee'] = !empty($tr['date_limite']) ? date('d/m/Y', strtotime($tr['date_limite'])) : 'Non définie';
+            $tr['pourcentage'] = ($montantScolarite > 0) ? round(($mt / $montantScolarite) * 100) : 0;
+        }
+        unset($tr);
 
         $fraisInscription = 0;
-        $libellePremiereTranche = '1ere tranche';
+        $libellePremiereTranche = '1ère tranche';
         $dateLimiteTranche = '';
 
         if (!empty($tranches)) {
             $firstTranche = $tranches[0];
             $fraisInscription = (float)$firstTranche['montant_tranche'];
             $libellePremiereTranche = $firstTranche['libelle_tranche'] ?: $libellePremiereTranche;
-            $dateLimiteTranche = !empty($firstTranche['date_limite']) ? date('d/m/Y', strtotime($firstTranche['date_limite'])) : '';
+            $dateLimiteTranche = $firstTranche['date_limite_formatee'];
         }
 
         $this->json([
@@ -239,14 +373,21 @@ class InscriptionController extends BaseController
             'data' => [
                 'classe_code' => $classe['code_classe'],
                 'libelle_classe' => $classe['libelle_classe'],
+                'filiere_code' => $filiereCode,
                 'libelle_filiere' => $classe['libelle_filiere'] ?? '',
+                'niveau_code' => $niveauCode,
                 'libelle_niveau' => $classe['libelle_niveau'] ?? '',
+                'annee_code' => $anneeCode,
+                'libelle_annee' => $classe['libelle_annee'] ?? '',
+                'affectation_etat' => $affectationEtatFinal,
                 'montant_scolarite' => $montantScolarite,
+                'montant_scolarite_formate' => number_format($montantScolarite, 0, ',', ' ') . ' FCFA',
                 'frais_inscription' => $fraisInscription,
+                'frais_inscription_formate' => number_format($fraisInscription, 0, ',', ' ') . ' FCFA',
                 'libelle_premiere_tranche' => $libellePremiereTranche,
                 'date_limite_tranche' => $dateLimiteTranche,
-                'tranches' => $tranches,
-                'affectation_etat' => $affectationEtat
+                'nombre_tranches' => count($tranches),
+                'tranches' => $tranches
             ]
         ]);
     }
@@ -383,6 +524,9 @@ class InscriptionController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        if (isset($data['affectation_etat'])) {
+            $data['affectation_etat'] = in_array($data['affectation_etat'], ['affecte', 'oui']) ? 'oui' : 'non';
+        }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
             $this->success('Inscription enregistrée avec succès!');
@@ -400,6 +544,9 @@ class InscriptionController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
         $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
+        if (isset($data['affectation_etat'])) {
+            $data['affectation_etat'] = in_array($data['affectation_etat'], ['affecte', 'oui']) ? 'oui' : 'non';
+        }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
             $this->success('Item modifié avec succès!');

@@ -22,11 +22,11 @@ $enseignants = (new ModelEnseignant())->getAll();
     <div class="content-wrapper" style="padding: 24px;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer ' : 'Ajouter ' ?> Inscription</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Saisie des données du module Inscriptions Annuelles</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Formulaire de Réinscription Étudiant' ?></h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Réinscription annuelle et affectation de la nouvelle classe pour la session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '2025-2026') ?></p>
         </div>
         <a href="<?= RACINE ?>inscription/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-          <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
+          <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux Réinscriptions
         </a>
       </div>
 
@@ -166,12 +166,19 @@ $enseignants = (new ModelEnseignant())->getAll();
           <!-- SÉLECTEUR ÉTUDIANT & STATUT REDOUBLANT (OUI / NON) -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%; margin-bottom: 20px;">
             
+            <?php 
+              $selectedEtu = $item['etudiant_code'] ?? ($_GET['etudiant_code'] ?? '');
+              $isReadonly = !empty($selectedEtu);
+            ?>
+            
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Étudiant <span style="color: #EF4444;">*</span></label>
-              <select class="form-control select2" id="sel_etudiant_inscription" style="width: 100%; box-sizing: border-box;" name="etudiant_code" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                Étudiant <span style="color: #EF4444;">*</span> <?= $isReadonly ? '<span style="color: #64748B; font-size: 12px; font-weight: 600;">(Lecture seule)</span>' : '' ?>
+              </label>
+              <select class="form-control select2 <?= $isReadonly ? 'readonly-select' : '' ?>" id="sel_etudiant_inscription" style="width: 100%; box-sizing: border-box; <?= $isReadonly ? 'background-color: #F1F5F9; color: #334155; pointer-events: none; cursor: not-allowed;' : '' ?>" name="etudiant_code" required>
                 <option value="">-- Rechercher par nom, matricule ou téléphone --</option>
                 <?php foreach($etudiants as $e): ?>
-                  <option value="<?= $e['code_etudiant'] ?>" <?= (($item['etudiant_code'] ?? '') == $e['code_etudiant']) ? 'selected' : '' ?>><?= htmlspecialchars($e['matricule_etudiant'] . ' - ' . $e['nom_etudiant'] . ' ' . $e['prenom_etudiant']) ?></option>
+                  <option value="<?= $e['code_etudiant'] ?>" <?= ($selectedEtu == $e['code_etudiant'] || $selectedEtu == $e['matricule_etudiant']) ? 'selected' : '' ?>><?= htmlspecialchars($e['matricule_etudiant'] . ' - ' . $e['nom_etudiant'] . ' ' . $e['prenom_etudiant']) ?></option>
                 <?php endforeach; ?>
               </select>
             </div>
@@ -193,6 +200,24 @@ $enseignants = (new ModelEnseignant())->getAll();
               </div>
             </div>
 
+          </div>
+
+          <!-- STATUT D'AFFECTATION ÉTAT / RÉGIME -->
+          <div class="form-group" style="width: 100%; grid-column: 1 / -1; margin-bottom: 18px;">
+            <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 8px;">
+              Statut d'Affectation État / Régime Étudiant <span style="color: #EF4444;">*</span>
+            </label>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+              <label class="label-affectation-choice-edit" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid #1E3A5F; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #1E3A5F; background: #EFF6FF; transition: all 0.2s;">
+                <input type="radio" name="affectation_etat" value="non_affecte" <?= (($item['affectation_etat'] ?? '') !== 'oui' && ($item['affectation_etat'] ?? '') !== 'affecte') ? 'checked' : '' ?> style="accent-color: #1E3A5F; width: 16px; height: 16px;">
+                <span>Non Affecté (Privé)</span>
+              </label>
+              <label class="label-affectation-choice-edit" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid #CBD5E1; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #334155; background: #FFFFFF; transition: all 0.2s;">
+                <input type="radio" name="affectation_etat" value="affecte" <?= (($item['affectation_etat'] ?? '') === 'oui' || ($item['affectation_etat'] ?? '') === 'affecte') ? 'checked' : '' ?> style="accent-color: #1E3A5F; width: 16px; height: 16px;">
+                <span>Affecté (Subventionné par l'État)</span>
+              </label>
+            </div>
+            <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le montant et l'échéancier des tranches s'ajustent automatiquement selon le régime sélectionné.</small>
           </div>
 
           <!-- SÉLECTION DE LA CLASSE D'AFFECTATION -->
@@ -248,9 +273,25 @@ $(document).ready(function() {
   if ($.fn.select2) {
     $('#sel_etudiant_inscription').select2({
       placeholder: "-- Rechercher par nom, matricule ou téléphone --",
-      allowClear: true,
+      allowClear: !$('#sel_etudiant_inscription').hasClass('readonly-select'),
       width: '100%'
     });
+
+    if ($('#sel_etudiant_inscription').hasClass('readonly-select')) {
+      $('#sel_etudiant_inscription').next('.select2-container').css({
+        'pointer-events': 'none',
+        'cursor': 'not-allowed'
+      }).find('.select2-selection').css({
+        'background-color': '#F1F5F9',
+        'border-color': '#CBD5E1',
+        'color': '#334155',
+        'cursor': 'not-allowed'
+      });
+      $('#sel_etudiant_inscription').on('select2:opening', function(e) {
+        e.preventDefault();
+      });
+    }
+
     $('#sel_classe_inscription').select2({
       placeholder: "-- Choisir la classe --",
       allowClear: true,
@@ -319,6 +360,21 @@ $(document).ready(function() {
             } else {
               $('#prev_stu_solde').css('color', '#DC2626').text(solde.toLocaleString('fr-FR') + ' FCFA (Reliquat)');
             }
+
+            // Présélection automatique du régime (Affecté / Non Affecté) selon l'historique
+            if (d.prev_affectation_etat === 'affecte') {
+              $('input[name="affectation_etat"][value="affecte"]').prop('checked', true);
+            } else {
+              $('input[name="affectation_etat"][value="non_affecte"]').prop('checked', true);
+            }
+            $('input[name="affectation_etat"]').each(function() {
+              var isChecked = $(this).is(':checked');
+              $(this).closest('label').css({
+                'border-color': isChecked ? '#1E3A5F' : '#CBD5E1',
+                'background': isChecked ? '#EFF6FF' : '#FFFFFF',
+                'color': isChecked ? '#1E3A5F' : '#334155'
+              });
+            });
 
             // Gestion automatique de l'état Redoublant si applicable
             handleRedoublantState();
@@ -390,11 +446,15 @@ $(document).ready(function() {
       $('#prev_class_tuition_section').slideUp(200);
       return;
     }
+    var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
 
     $.ajax({
       url: '<?= RACINE ?>inscription/getTuitionByClass',
       type: 'GET',
-      data: { classe_code: classeCode },
+      data: { 
+        classe_code: classeCode,
+        affectation_etat: affectationEtat
+      },
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 && res.data) {
@@ -405,11 +465,12 @@ $(document).ready(function() {
           // Remplissage automatique du champ montant de scolarité
           $('#inp_montant_scolarite').val(totalScolarite);
 
+          var regimeText = d.affectation_etat === 'affecte' ? ' (Affecté État)' : ' (Non Affecté / Privé)';
           var filiereNiveauText = (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau : '');
           var firstTrancheLabel = d.libelle_premiere_tranche || '1ere tranche';
 
           // Mise à jour de la section Modalités & Tarifs de la Classe dans le Preview Banner
-          $('#prev_modalite_classe_title').text(d.libelle_classe);
+          $('#prev_modalite_classe_title').text(d.libelle_classe + regimeText);
           $('#prev_modalite_filiere_niveau').text(filiereNiveauText);
           $('#prev_modalite_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
           $('#prev_modalite_first_tranche_label').text(firstTrancheLabel);
@@ -425,9 +486,10 @@ $(document).ready(function() {
           if (d.tranches && d.tranches.length > 0) {
             var tranchesHtml = '<strong>Échéancier complet des tranches :</strong><div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">';
             d.tranches.forEach(function(tr, idx) {
+              var dt = tr.date_limite_formatee || tr.date_limite || '';
               tranchesHtml += '<span class="badge" style="background:#FFFFFF; color:#1E3A5F; border:1px solid #CBD5E1; padding:5px 10px; border-radius:6px; font-weight:700; box-shadow:0 1px 2px rgba(0,0,0,0.03);">' + 
                               (tr.libelle_tranche || 'Tranche ' + (idx+1)) + ' : ' + Number(tr.montant_tranche).toLocaleString('fr-FR') + ' FCFA' + 
-                              (tr.date_limite ? ' <span style="color:#DC2626; margin-left:4px;">(avant le ' + tr.date_limite + ')</span>' : '') + '</span>';
+                              (dt ? ' <span style="color:#DC2626; margin-left:4px;">(avant le ' + dt + ')</span>' : '') + '</span>';
             });
             tranchesHtml += '</div>';
             $('#prev_modalite_tranches_list').html(tranchesHtml).show();
@@ -459,7 +521,28 @@ $(document).ready(function() {
     fetchTuitionForClass(val);
   });
 
-  // Chargement initial si une classe ou un étudiant est pré-sélectionné (ex: mode édition)
+  $('input[name="affectation_etat"]').on('change', function() {
+    $('input[name="affectation_etat"]').each(function() {
+      var isChecked = $(this).is(':checked');
+      $(this).closest('label').css({
+        'border-color': isChecked ? '#1E3A5F' : '#CBD5E1',
+        'background': isChecked ? '#EFF6FF' : '#FFFFFF',
+        'color': isChecked ? '#1E3A5F' : '#334155'
+      });
+    });
+    var currentClass = $('#sel_classe_inscription').val();
+    if (currentClass) {
+      fetchTuitionForClass(currentClass);
+    }
+  });
+
+  // Chargement initial automatique via paramètre URL ou valeur pré-sélectionnée
+  var urlParams = new URLSearchParams(window.location.search);
+  var urlEtudiantCode = urlParams.get('etudiant_code');
+  if (urlEtudiantCode) {
+    $('#sel_etudiant_inscription').val(urlEtudiantCode).trigger('change');
+  }
+
   var initStu = $('#sel_etudiant_inscription').val();
   if (initStu) {
     fetchStudentProfile(initStu);

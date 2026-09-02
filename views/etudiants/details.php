@@ -282,14 +282,84 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Mère</span>
             <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($parent['nom_mere'] ?? 'Non renseignée') ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Tél : <?= htmlspecialchars($parent['telephone_mere'] ?? '-') ?></div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Profession : <?= htmlspecialchars($parent['profession_mere'] ?? '-') ?></div>
           </div>
 
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Tuteur Légal / Correspondant</span>
             <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($parent['nom_tuteur'] ?? 'Non renseigné') ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Tél : <?= htmlspecialchars($parent['telephone_tuteur'] ?? '-') ?></div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Profession : <?= htmlspecialchars($parent['profession_tuteur'] ?? '-') ?></div>
           </div>
         </div>
+      </div>
+
+      <!-- CARD : DOSSIER DE L'ÉTUDIANT & PIÈCES PHYSIQUES FOURNIES -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
+        <?php
+          $totalPieces = count($dossierPieces ?? []);
+          $deposedCount = 0;
+          foreach (($dossierPieces ?? []) as $dp) {
+              if (($dp['statut_depot'] ?? '') === 'depose') $deposedCount++;
+          }
+          $isComplet = ($totalPieces > 0 && $deposedCount === $totalPieces);
+        ?>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
+          <div>
+            <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="folder-check" style="width: 18px; height: 18px; color: #15803D;"></i> Dossier Étudiant & Pièces Fournies
+            </h3>
+            <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Pointage et contrôle des documents administratifs physiques déposés</p>
+          </div>
+          <div>
+            <?php if ($isComplet): ?>
+              <span class="badge" style="background: #DCFCE7; color: #15803D; padding: 6px 14px; border-radius: 10px; font-weight: 800; font-size: 12px; border: 1px solid #86EFAC;">
+                ✓ Dossier Complet (<?= $deposedCount ?> / <?= $totalPieces ?>)
+              </span>
+            <?php else: ?>
+              <span class="badge" style="background: #FEF3C7; color: #B45309; padding: 6px 14px; border-radius: 10px; font-weight: 800; font-size: 12px; border: 1px solid #FCD34D;">
+                ⏳ Dossier Incomplet (<?= $deposedCount ?> / <?= $totalPieces ?> pièces fournies)
+              </span>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <?php if (!empty($dossierPieces)): ?>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+            <?php foreach ($dossierPieces as $dp): 
+              $isDep = (($dp['statut_depot'] ?? '') === 'depose');
+            ?>
+              <div style="background: <?= $isDep ? '#F0FDF4' : '#F8FAFC' ?>; border: 1px solid <?= $isDep ? '#BBF7D0' : '#E2E8F0' ?>; border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: <?= $isDep ? '#DCFCE7' : '#E2E8F0' ?>; color: <?= $isDep ? '#15803D' : '#64748B' ?>; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; margin-top: 2px;">
+                  <?= $isDep ? '✓' : '•' ?>
+                </div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 700; color: #0F172A; font-size: 13px; line-height: 1.35;">
+                    <?= htmlspecialchars($dp['libelle_piece']) ?>
+                  </div>
+                  <?php if (!empty($dp['description_piece'])): ?>
+                    <div style="font-size: 11.5px; color: #64748B; margin-top: 3px; line-height: 1.3;">
+                      <?= htmlspecialchars($dp['description_piece']) ?>
+                    </div>
+                  <?php endif; ?>
+                  <div style="margin-top: 6px;">
+                    <?php if ($isDep): ?>
+                      <span style="background: #DCFCE7; color: #15803D; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #86EFAC;">
+                        Déposée <?= !empty($dp['date_depot']) ? 'le ' . date('d/m/Y', strtotime($dp['date_depot'])) : '' ?>
+                      </span>
+                    <?php else: ?>
+                      <span style="background: #FEF2F2; color: #DC2626; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #FECACA;">
+                        Non fournie / En attente
+                      </span>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <p style="color: #94A3B8; text-align: center; padding: 16px 0; font-style: italic;">Aucune pièce répertoriée dans le dossier.</p>
+        <?php endif; ?>
       </div>
 
       <!-- CARD 3 (COL-12) : SITUATION FINANCIÈRE & PAIEMENTS -->
