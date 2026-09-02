@@ -49,6 +49,50 @@ class ModelAnnee extends BaseModel
     }
 
     /**
+     * Vérifie si une année académique peut être activée (date de début arrivée)
+     */
+    public function canActivate(array $annee, ?string &$errorMsg = null): bool
+    {
+        $dateDebut = $annee['date_debut_annee'] ?? '';
+        if (empty($dateDebut)) {
+            $errorMsg = "La date de début de l'année académique n'est pas définie.";
+            return false;
+        }
+
+        $today = date('Y-m-d');
+        if ($dateDebut > $today) {
+            $dateDebutFr = date('d/m/Y', strtotime($dateDebut));
+            $libelle = $annee['libelle_annee'] ?? '';
+            $errorMsg = "Impossible d'activer l'année académique {$libelle} : la date de début ({$dateDebutFr}) n'est pas encore arrivée.";
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Vérifie si une année académique peut être clôturée / désactivée (date de fin arrivée)
+     */
+    public function canClose(array $annee, ?string &$errorMsg = null): bool
+    {
+        $dateFin = $annee['date_fin_annee'] ?? '';
+        if (empty($dateFin)) {
+            $errorMsg = "La date de fin de l'année académique n'est pas définie.";
+            return false;
+        }
+
+        $today = date('Y-m-d');
+        if ($dateFin > $today) {
+            $dateFinFr = date('d/m/Y', strtotime($dateFin));
+            $libelle = $annee['libelle_annee'] ?? '';
+            $errorMsg = "Impossible de clôturer / désactiver l'année académique {$libelle} : la date de fin ({$dateFinFr}) n'est pas encore arrivée.";
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Récupère l'unique année académique active en base
      */
     public function getActiveYear(): ?array

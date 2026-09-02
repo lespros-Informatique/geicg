@@ -39,27 +39,32 @@ class AnneeController extends BaseController
             if (!$this->checkUnique('annees', 'libelle_annee', $data['libelle_annee'], 'Annee academique')) return;
         }
 
+        // Validation de cohérence des dates
+        if (!empty($data['date_debut_annee']) && !empty($data['date_fin_annee'])) {
+            if ($data['date_fin_annee'] <= $data['date_debut_annee']) {
+                $this->error('La date de fin doit être strictement postérieure à la date de début.');
+                return;
+            }
+        }
+
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = '5454544456';
         if (empty($data['code_annee'])) {
             $data['code_annee'] = $this->validator->generateCode('annees', 'code_annee', 'ANN-', 8);
         }
-        $data['statut_annee'] = $data['statut_annee'] ?? 'actif';
+        
+        // Toute nouvelle année académique est obligatoirement créée avec le statut inactif
+        $data['statut_annee'] = 'inactif';
         $data['created_at_annee'] = date('Y-m-d H:i:s');
+        
         $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $insertedId = (int)$this->model->getCon()->lastInsertId();
-            if (($data['statut_annee'] ?? '') === 'actif' && $insertedId > 0) {
-                $this->model->setActiveYear($insertedId);
-                $_SESSION['annee_active_code'] = $data['code_annee'];
-                $_SESSION['annee_active_libelle'] = $data['libelle_annee'];
-            }
-            $this->success('Année académique créée avec succès!');
+            $this->success('Année académique créée avec succès (statut initial : inactif).');
         } else {
             $this->error('Erreur lors de la création');
         }
@@ -71,16 +76,48 @@ class AnneeController extends BaseController
         $this->requireAuth();
         $id = (int)$this->post('id_annee');
         if (!$id) { $this->error('Identifiant invalide'); return; }
+        
+        $currentItem = $this->model->getById($id);
+        if (!$currentItem) { $this->error('Année académique introuvable'); return; }
+
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_annee'])) {
             if (!$this->checkUnique('annees', 'libelle_annee', $data['libelle_annee'], 'Annee academique', 'id_annee', $id)) return;
         }
 
+        // Validation de cohérence des dates
+        $dateDebut = $data['date_debut_annee'] ?? ($currentItem['date_debut_annee'] ?? '');
+        $dateFin = $data['date_fin_annee'] ?? ($currentItem['date_fin_annee'] ?? '');
+        if (!empty($dateDebut) && !empty($dateFin) && $dateFin <= $dateDebut) {
+            $this->error('La date de fin doit être strictement postérieure à la date de début.');
+            return;
+        }
+
+        // Vérification des règles de dates si changement de statut
+        $newStatus = $data['statut_annee'] ?? ($currentItem['statut_annee'] ?? 'inactif');
+        $oldStatus = $currentItem['statut_annee'] ?? 'inactif';
+
+        $evalItem = array_merge($currentItem, $data);
+
+        if ($newStatus === 'actif' && $oldStatus !== 'actif') {
+            $errorMsg = '';
+            if (!$this->model->canActivate($evalItem, $errorMsg)) {
+                $this->error($errorMsg);
+                return;
+            }
+        } elseif ($newStatus === 'inactif' && $oldStatus === 'actif') {
+            $errorMsg = '';
+            if (!$this->model->canClose($evalItem, $errorMsg)) {
+                $this->error($errorMsg);
+                return;
+            }
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            if (($data['statut_annee'] ?? '') === 'actif') {
+            if ($newStatus === 'actif') {
                 $this->model->setActiveYear($id);
                 $updatedRow = $this->model->getById($id);
                 if ($updatedRow) {
@@ -101,6 +138,24 @@ class AnneeController extends BaseController
         $id = (int)$this->post('id');
         $item = $id ? $this->model->getById($id) : null;
         if ($item) {
+            $currentStatus = $item['statut_annee'] ?? 'inactif';
+            $errorMsg = '';
+
+            // 1. Tentative d'activation : la date de début doit être arrivée
+            if ($currentStatus !== 'actif') {
+                if (!$this->model->canActivate($item, $errorMsg)) {
+                    $this->error($errorMsg);
+                    return;
+                }
+            } 
+            // 2. Tentative de clôture / désactivation : la date de fin doit être arrivée
+            else {
+                if (!$this->model->canClose($item, $errorMsg)) {
+                    $this->error($errorMsg);
+                    return;
+                }
+            }
+
             if ($this->model->toggleStatus($id)) {
                 $activeYear = $this->model->getActiveYear();
                 if ($activeYear) {
