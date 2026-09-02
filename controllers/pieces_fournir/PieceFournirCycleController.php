@@ -233,7 +233,7 @@ class PieceFournirCycleController extends BaseController
             'statut_piece_cycle' => $data['statut_piece_cycle'] ?? 'actif'
         ];
 
-        if ($this->model->update($id, $updateData)) {
+        if ($this->model->update($updateData, $id)) {
             $_SESSION['flash_success'] = "Pièce du cycle mise à jour avec succès !";
             header('Location: ' . RACINE . 'piece_fournir_cycle/list');
             exit();
@@ -258,7 +258,7 @@ class PieceFournirCycleController extends BaseController
             $idDecrypte = is_numeric($id) ? (int)$id : 0;
         }
 
-        $res = $this->model->update((int)$idDecrypte, ['statut_piece_cycle' => $statut]);
+        $res = $this->model->update(['statut_piece_cycle' => $statut], (int)$idDecrypte);
         if ($res) {
             $this->json(['status' => 1, 'message' => 'Statut mis à jour avec succès']);
         } else {

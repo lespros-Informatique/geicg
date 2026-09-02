@@ -1,13 +1,21 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $db = (new Database())->getCon();
-$stmtIns = $db->query("
+$activeYear = $_SESSION['annee_active_code'] ?? 'ANN-2025-2026';
+if (empty($activeYear)) {
+    $actRow = $db->query("SELECT code_annee FROM annees WHERE statut_annee = 'actif' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    $activeYear = $actRow['code_annee'] ?? 'ANN-2025-2026';
+}
+
+$stmtIns = $db->prepare("
   SELECT i.code_inscription, i.montant_scolarite_inscription, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, c.libelle_classe 
   FROM inscriptions i 
   LEFT JOIN etudiants e ON i.etudiant_code = e.code_etudiant 
   LEFT JOIN classes c ON i.classe_code = c.code_classe 
-  ORDER BY e.nom_etudiant ASC
+  WHERE (i.annee_code = ? OR ? = '') AND i.statut_inscription != 'annule'
+  ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
 ");
+$stmtIns->execute([$activeYear, $activeYear]);
 $inscriptionsList = $stmtIns->fetchAll(PDO::FETCH_ASSOC);
 
 $today = date('Y-m-d');

@@ -162,16 +162,11 @@ $(document).ready(function() {
         return '<code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + d + '</code>';
       }},
 
-      // 2. Nom & Prénoms avec avatar
+      // 2. Nom & Prénoms
       { data: null, render: function(d, type, row) {
         var nom = (row.nom_etudiant || '').toUpperCase();
         var prenom = row.prenom_etudiant || '';
-        var initiales = (nom.charAt(0) + (prenom.charAt(0) || '')).toUpperCase();
-        
-        return '<div style="display:flex; align-items:center; gap:10px;">' +
-               '<div style="width:32px; height:32px; border-radius:50%; background:#1E3A5F; color:#FFF; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0;">' + initiales + '</div>' +
-               '<div style="font-weight:700; color:#0F172A; font-size:13px;">' + nom + ' ' + prenom + '</div>' +
-               '</div>';
+        return '<div style="font-weight:700; color:#0F172A; font-size:13px;">' + nom + ' ' + prenom + '</div>';
       }},
 
       // 3. Sexe

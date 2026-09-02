@@ -121,26 +121,38 @@ abstract class BaseController
         return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     }
 
-    protected function success(string $message, array $extra = []): void
+    protected function success(string $message, $extra = []): void
     {
+        $extraData = is_array($extra) ? $extra : ['redirect' => (string)$extra];
         if ($this->isAjax()) {
-            $this->json(array_merge(['status' => 1, 'message' => $message], $extra));
+            $this->json(array_merge(['status' => 1, 'message' => $message], $extraData));
         } else {
             $_SESSION['flash_success'] = $message;
-            $referer = $_SERVER['HTTP_REFERER'] ?? RACINE;
-            header('Location: ' . $referer);
+            $redirect = $extraData['redirect'] ?? ($extraData['url'] ?? ($_SERVER['HTTP_REFERER'] ?? RACINE));
+            header('Location: ' . $redirect);
             exit;
         }
     }
 
-    protected function error(string $message, int $code = 200): void
+    protected function error(string $message, $code = 200): void
     {
+        $redirect = null;
+        $httpCode = 200;
+        if (is_string($code)) {
+            $redirect = $code;
+        } elseif (is_int($code)) {
+            $httpCode = $code;
+        } elseif (is_array($code)) {
+            $redirect = $code['redirect'] ?? ($code['url'] ?? null);
+            $httpCode = $code['code'] ?? 200;
+        }
+
         if ($this->isAjax()) {
-            $this->json(['status' => 0, 'message' => $message], $code);
+            $this->json(['status' => 0, 'message' => $message], $httpCode);
         } else {
             $_SESSION['flash_error'] = $message;
-            $referer = $_SERVER['HTTP_REFERER'] ?? RACINE;
-            header('Location: ' . $referer);
+            $target = $redirect ?? ($_SERVER['HTTP_REFERER'] ?? RACINE);
+            header('Location: ' . $target);
             exit;
         }
     }

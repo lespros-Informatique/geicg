@@ -34,33 +34,48 @@ $tauxPaiement = ($scolarite > 0) ? min(100, round(($totalPaye / $scolarite) * 10
           <i data-lucide="file-text" style="width: 18px; height: 18px;"></i> Détails de l'Inscription
         </h3>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Étudiant</span>
-            <div style="font-size: 17px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Matricule : <code><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></code></div>
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          
+          <!-- Photo / Avatar Étudiant -->
+          <div style="width: 72px; height: 86px; min-width: 72px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
+            <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
+              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+            <?php else: ?>
+              <span style="font-size: 20px; font-weight: 900; color: #1E3A5F;">
+                <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
+              </span>
+              <span style="font-size: 8px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 2px;">PHOTO</span>
+            <?php endif; ?>
           </div>
 
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classe Affectée</span>
-            <div style="font-size: 17px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></div>
-            <div style="font-size: 12px; color: #64748B;"><?= htmlspecialchars(($item['libelle_filiere'] ?? '-') . ' / ' . ($item['libelle_niveau'] ?? '-')) ?></div>
-          </div>
+          <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Étudiant</span>
+              <div style="font-size: 17px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Matricule : <code><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></code></div>
+            </div>
 
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Session Universitaire</span>
-            <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></div>
-            <div style="font-size: 12px; color: #64748B;">Date : <?= !empty($item['date_inscription']) ? date('d/m/Y', strtotime($item['date_inscription'])) : date('d/m/Y') ?></div>
-          </div>
+            <div>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classe Affectée</span>
+              <div style="font-size: 17px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></div>
+              <div style="font-size: 12px; color: #64748B;"><?= htmlspecialchars(($item['libelle_filiere'] ?? '-') . ' / ' . ($item['libelle_niveau'] ?? '-')) ?></div>
+            </div>
 
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Statut Inscription</span>
-            <div style="margin-top: 4px;">
-              <?php if (($item['statut_inscription'] ?? '') === 'actif'): ?>
-                <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Validée & Active</span>
-              <?php else: ?>
-                <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Suspendue</span>
-              <?php endif; ?>
+            <div>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Session Universitaire</span>
+              <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></div>
+              <div style="font-size: 12px; color: #64748B;">Date : <?= !empty($item['date_inscription']) ? date('d/m/Y', strtotime($item['date_inscription'])) : date('d/m/Y') ?></div>
+            </div>
+
+            <div>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Statut Inscription</span>
+              <div style="margin-top: 4px;">
+                <?php if (($item['statut_inscription'] ?? '') === 'actif'): ?>
+                  <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Validée & Active</span>
+                <?php else: ?>
+                  <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Suspendue</span>
+                <?php endif; ?>
+              </div>
             </div>
           </div>
         </div>

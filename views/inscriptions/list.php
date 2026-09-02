@@ -119,16 +119,12 @@ $(document).ready(function() {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
       { data: 'nom_complet', render: function(d, type, row) {
-        var initials = (d || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0, 2).toUpperCase();
         var mat = row.matricule_etudiant || '-';
         var tel = row.telephone && row.telephone !== '-' ? '<span style="color:#64748B; font-size:11.5px; margin-left:6px;"><i data-lucide="phone" style="width:11px;height:11px;display:inline-block;vertical-align:middle;"></i> ' + row.telephone + '</span>' : '';
         
-        return '<div style="display:flex; align-items:center; gap:10px;">' +
-               '  <div style="width:34px; height:34px; border-radius:50%; background:#1E3A5F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex-shrink:0;">' + initials + '</div>' +
-               '  <div>' +
-               '    <div style="font-weight:800; color:#0F172A; font-size:13.5px;">' + d + '</div>' +
-               '    <div style="font-size:11.5px; color:#475569; margin-top:1px;"><code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; padding:1px 4px; border-radius:4px;">' + mat + '</code>' + tel + '</div>' +
-               '  </div>' +
+        return '<div>' +
+               '  <div style="font-weight:800; color:#0F172A; font-size:13.5px;">' + d + '</div>' +
+               '  <div style="font-size:11.5px; color:#475569; margin-top:1px;"><code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; padding:1px 4px; border-radius:4px;">' + mat + '</code>' + tel + '</div>' +
                '</div>';
       } },
       { data: 'filiere_precedente', render: function(d, type, row) {

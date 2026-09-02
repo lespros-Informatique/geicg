@@ -27,19 +27,19 @@ $soldeTheorique = $fondInitial + $totalGeneral;
       </div>
 
       <!-- Informations sur la Session en cours -->
-      <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 12px; padding: 18px 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+      <div style="background: #FEF3C7; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 18px 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
         <div>
-          <div style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Session Concernée</div>
-          <div style="font-size: 18px; font-weight: 900; color: #581C87; margin-top: 2px;">
-            <?= htmlspecialchars($session['code_session'] ?? '-') ?> &bull; <span style="font-size: 14px; font-weight: 700; color: #64748B;"><?= date('d/m/Y', strtotime($session['date_session'] ?? date('Y-m-d'))) ?></span>
+          <div style="font-size: 11px; font-weight: 700; color: #92400E; text-transform: uppercase;">Session Concernée</div>
+          <div style="font-size: 18px; font-weight: 900; color: #78350F; margin-top: 2px;">
+            <?= htmlspecialchars($session['code_session'] ?? '-') ?> &bull; <span style="font-size: 14px; font-weight: 700; color: #92400E;"><?= date('d/m/Y', strtotime($session['date_session'] ?? date('Y-m-d'))) ?></span>
           </div>
-          <div style="font-size: 12px; color: #475569; margin-top: 2px;">
+          <div style="font-size: 12px; color: #78350F; margin-top: 2px;">
             Ouverte à <?= htmlspecialchars($session['heure_ouverture'] ?? '--:--') ?> par <strong><?= htmlspecialchars($session['caissier_nom'] ?? 'Caissier') ?></strong>
           </div>
         </div>
         <div style="text-align: right;">
-          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Fond Initial d'Ouverture</div>
-          <div style="font-size: 20px; font-weight: 800; color: #0F172A; margin-top: 2px;"><?= number_format($fondInitial, 0, ',', ' ') ?> FCFA</div>
+          <div style="font-size: 11px; font-weight: 700; color: #92400E; text-transform: uppercase;">Fond Initial d'Ouverture</div>
+          <div style="font-size: 20px; font-weight: 800; color: #78350F; margin-top: 2px;"><?= number_format($fondInitial, 0, ',', ' ') ?> FCFA</div>
         </div>
       </div>
 
@@ -58,7 +58,7 @@ $soldeTheorique = $fondInitial + $totalGeneral;
 
         <div class="card" style="background: #FFFFFF; border-radius: 10px; padding: 16px; border: 1px solid #E2E8F0;">
           <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Chèques & Virements</span>
-          <div style="font-size: 20px; font-weight: 800; color: #7E22CE; margin-top: 4px;"><?= number_format($totalCheque, 0, ',', ' ') ?> FCFA</div>
+          <div style="font-size: 20px; font-weight: 800; color: #B45309; margin-top: 4px;"><?= number_format($totalCheque, 0, ',', ' ') ?> FCFA</div>
         </div>
 
         <div class="card" style="background: #EFF6FF; border-radius: 10px; padding: 16px; border: 1px solid #BFDBFE;">

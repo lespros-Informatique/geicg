@@ -148,7 +148,7 @@ class PieceFournirController extends BaseController
             'statut_piece' => $data['statut_piece'] ?? 'actif'
         ];
 
-        if ($this->model->update($id, $updateData)) {
+        if ($this->model->update($updateData, $id)) {
             $_SESSION['flash_success'] = "Pièce à fournir mise à jour avec succès !";
             header('Location: ' . RACINE . 'piece_fournir/list');
             exit();
@@ -173,7 +173,7 @@ class PieceFournirController extends BaseController
             $idDecrypte = is_numeric($id) ? (int)$id : 0;
         }
 
-        $res = $this->model->update((int)$idDecrypte, ['statut_piece' => $statut]);
+        $res = $this->model->update(['statut_piece' => $statut], (int)$idDecrypte);
         if ($res) {
             $this->json(['status' => 1, 'message' => 'Statut mis à jour avec succès']);
         } else {

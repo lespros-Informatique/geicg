@@ -61,11 +61,24 @@ $soldeRestant = $soldeRestant ?? 0;
           </div>
         </div>
 
-        <!-- Informations Étudiant & Inscription -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 18px 24px; margin-bottom: 24px;">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+        <!-- Informations Étudiant & Inscription avec Card Photo -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          
+          <!-- Photo / Avatar Étudiant -->
+          <div style="width: 72px; height: 86px; min-width: 72px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
+            <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
+              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+            <?php else: ?>
+              <span style="font-size: 20px; font-weight: 900; color: #1E3A5F;">
+                <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
+              </span>
+              <span style="font-size: 8px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 2px;">PHOTO</span>
+            <?php endif; ?>
+          </div>
+
+          <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             <div>
-              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Nom & Prénoms de l'Élève</span>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Nom & Prénoms de l'Étudiant</span>
               <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 3px;"><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></div>
               <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Matricule : <code><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></code></div>
             </div>
@@ -79,6 +92,11 @@ $soldeRestant = $soldeRestant ?? 0;
             <div>
               <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Session Académique</span>
               <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 3px;"><?= htmlspecialchars($item['libelle_annee'] ?? 'En cours') ?></div>
+              <?php if (!empty($item['session_caisse_code'])): ?>
+                <div style="font-size: 11.5px; color: #1E3A5F; font-weight: 700; margin-top: 2px;">
+                  Caisse : <code><?= htmlspecialchars($item['session_caisse_code']) ?></code>
+                </div>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -107,14 +125,14 @@ $soldeRestant = $soldeRestant ?? 0;
 
         <!-- Tranche Rattachée au Paiement -->
         <?php if (!empty($item['libelle_tranche']) || !empty($item['type_paiement'])): ?>
-        <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div>
-            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Tranche / Objet du Versement</span>
-            <div style="font-size: 15px; font-weight: 800; color: #581C87; margin-top: 2px;">
+            <span style="font-size: 11px; font-weight: 700; color: #92400E; text-transform: uppercase;">Tranche / Objet du Versement</span>
+            <div style="font-size: 15px; font-weight: 800; color: #78350F; margin-top: 2px;">
               <i data-lucide="layers" style="width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px;"></i>
               <?= htmlspecialchars($item['libelle_tranche'] ?? ($item['type_paiement'] ?? 'Règlement Scolarité')) ?>
               <?php if (!empty($item['tranche_code'])): ?>
-                <code style="font-size: 11.5px; font-weight: 700; color: #7E22CE; margin-left: 6px;">(<?= htmlspecialchars($item['tranche_code']) ?>)</code>
+                <code style="font-size: 11.5px; font-weight: 700; color: #92400E; margin-left: 6px;">(<?= htmlspecialchars($item['tranche_code']) ?>)</code>
               <?php endif; ?>
             </div>
           </div>

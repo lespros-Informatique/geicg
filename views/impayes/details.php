@@ -30,29 +30,44 @@ $montantDu = (float)($item['montant_restant'] ?? ($item['montant_du'] ?? 0));
           <i data-lucide="bell-ring" style="width: 18px; height: 18px;"></i> Bilan de la Relance Envoyée
         </h3>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-          <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #991B1B; text-transform: uppercase;">Montant Dû / Arriéré</span>
-            <div style="font-size: 24px; font-weight: 900; color: #DC2626; margin-top: 4px;"><?= number_format($montantDu, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Solde débiteur constaté</div>
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          
+          <!-- Photo / Avatar Étudiant -->
+          <div style="width: 72px; height: 86px; min-width: 72px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
+            <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
+              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+            <?php else: ?>
+              <span style="font-size: 20px; font-weight: 900; color: #1E3A5F;">
+                <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
+              </span>
+              <span style="font-size: 8px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 2px;">PHOTO</span>
+            <?php endif; ?>
           </div>
 
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Étudiant Débiteur</span>
-            <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Matricule : <code><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></code></div>
-          </div>
+          <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px;">
+              <span style="font-size: 11px; font-weight: 700; color: #991B1B; text-transform: uppercase;">Montant Dû / Arriéré</span>
+              <div style="font-size: 22px; font-weight: 900; color: #DC2626; margin-top: 4px;"><?= number_format($montantDu, 0, ',', ' ') ?> FCFA</div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Solde débiteur constaté</div>
+            </div>
 
-          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Classe & Année</span>
-            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Année : <?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></div>
-          </div>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Étudiant Débiteur</span>
+              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Matricule : <code><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></code></div>
+            </div>
 
-          <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Canal & Expédition</span>
-            <div style="font-size: 16px; font-weight: 800; color: #7E22CE; margin-top: 4px; text-transform: uppercase;"><?= htmlspecialchars($item['type_relance'] ?? ($item['canal_relance'] ?? 'SMS')) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Date : <?= !empty($item['date_relance']) ? date('d/m/Y', strtotime($item['date_relance'])) : date('d/m/Y') ?></div>
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px;">
+              <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Classe & Année</span>
+              <div style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Année : <?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></div>
+            </div>
+
+            <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px;">
+              <span style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Canal & Expédition</span>
+              <div style="font-size: 15px; font-weight: 800; color: #B45309; margin-top: 4px; text-transform: uppercase;"><?= htmlspecialchars($item['type_relance'] ?? ($item['canal_relance'] ?? 'SMS')) ?></div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Date : <?= !empty($item['date_relance']) ? date('d/m/Y', strtotime($item['date_relance'])) : date('d/m/Y') ?></div>
+            </div>
           </div>
         </div>
 

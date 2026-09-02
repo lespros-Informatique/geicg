@@ -29,22 +29,37 @@ $item = isset($item) ? $item : [];
           <i data-lucide="user" style="width: 18px; height: 18px;"></i> Étudiant Rattaché
         </h3>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Nom & Prénoms</span>
-            <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Matricule : <code><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></code></div>
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          
+          <!-- Photo / Avatar Étudiant -->
+          <div style="width: 72px; height: 86px; min-width: 72px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
+            <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
+              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+            <?php else: ?>
+              <span style="font-size: 20px; font-weight: 900; color: #1E3A5F;">
+                <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
+              </span>
+              <span style="font-size: 8px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 2px;">PHOTO</span>
+            <?php endif; ?>
           </div>
 
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classe Actuelle</span>
-            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? 'Non assigné') ?></div>
-          </div>
+          <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Nom & Prénoms</span>
+              <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Matricule : <code><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></code></div>
+            </div>
 
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Contact Élève</span>
-            <div style="font-size: 13px; font-weight: 700; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['telephone_etudiant'] ?? '-') ?></div>
-            <div style="font-size: 12px; color: #64748B;"><?= htmlspecialchars($item['email_etudiant'] ?? '') ?></div>
+            <div>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classe Actuelle</span>
+              <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? 'Non assigné') ?></div>
+            </div>
+
+            <div>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Contact Étudiant</span>
+              <div style="font-size: 13px; font-weight: 700; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['telephone_etudiant'] ?? '-') ?></div>
+              <div style="font-size: 12px; color: #64748B;"><?= htmlspecialchars($item['email_etudiant'] ?? '') ?></div>
+            </div>
           </div>
         </div>
       </div>

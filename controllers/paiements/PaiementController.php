@@ -10,7 +10,27 @@ class PaiementController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/paiements/list.php');
+        $db = $this->model->getCon();
+        $stats = $db->query("
+            SELECT 
+                COUNT(*) as total_operations,
+                COALESCE(SUM(montant_paiement), 0) as total_encaisse,
+                COALESCE(SUM(CASE WHEN DATE(date_paiement) = CURDATE() THEN montant_paiement ELSE 0 END), 0) as encaisse_aujourdhui,
+                COALESCE(SUM(CASE WHEN YEAR(date_paiement) = YEAR(CURDATE()) AND MONTH(date_paiement) = MONTH(CURDATE()) THEN montant_paiement ELSE 0 END), 0) as encaisse_mois,
+                COUNT(DISTINCT p.inscription_code) as total_eleves_payeurs
+            FROM paiements p
+            WHERE p.statut_paiement != 'annule'
+        ")->fetch(PDO::FETCH_ASSOC) ?: [
+            'total_operations' => 0,
+            'total_encaisse' => 0,
+            'encaisse_aujourdhui' => 0,
+            'encaisse_mois' => 0,
+            'total_eleves_payeurs' => 0
+        ];
+
+        $this->loadView('../views/paiements/list.php', [
+            'stats' => $stats
+        ]);
     }
 
     public function apiList()
@@ -37,9 +57,15 @@ class PaiementController extends BaseController
 
         $db = $this->model->getCon();
 
+        $activeYear = $_SESSION['annee_active_code'] ?? 'ANN-2025-2026';
+        if (empty($activeYear)) {
+            $actRow = $db->query("SELECT code_annee FROM annees WHERE statut_annee = 'actif' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $activeYear = $actRow['code_annee'] ?? 'ANN-2025-2026';
+        }
+
         if (!empty($inscriptionCode)) {
             $stmt = $db->prepare("
-                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant,
+                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant,
                        c.libelle_classe, c.filiere_code, c.niveau_code,
                        f.libelle_filiere, n.libelle_niveau, a.libelle_annee
                 FROM inscriptions i
@@ -55,20 +81,20 @@ class PaiementController extends BaseController
             $ins = $stmt->fetch(PDO::FETCH_ASSOC);
         } elseif (!empty($etudiantCode)) {
             $stmt = $db->prepare("
-                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant,
+                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant,
                        c.libelle_classe, c.filiere_code, c.niveau_code,
                        f.libelle_filiere, n.libelle_niveau, a.libelle_annee
                 FROM etudiants e
-                LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant
+                LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant AND (i.annee_code = ? OR i.annee_code IS NULL) AND (i.statut_inscription != 'annule')
                 LEFT JOIN classes c ON i.classe_code = c.code_classe
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
                 LEFT JOIN annees a ON a.code_annee = i.annee_code
                 WHERE e.code_etudiant = ? OR e.matricule_etudiant = ?
-                ORDER BY i.id_inscription DESC
+                ORDER BY (CASE WHEN i.annee_code = ? THEN 1 ELSE 2 END), i.id_inscription DESC
                 LIMIT 1
             ");
-            $stmt->execute([$etudiantCode, $etudiantCode]);
+            $stmt->execute([$activeYear, $etudiantCode, $etudiantCode, $activeYear]);
             $ins = $stmt->fetch(PDO::FETCH_ASSOC);
         } else {
             $this->json(['status' => 0, 'message' => 'Code inscription ou matricule manquant']);
@@ -83,17 +109,26 @@ class PaiementController extends BaseController
         $codeInscription = $ins['code_inscription'] ?? '';
         $filiereCode = $ins['filiere_code'] ?? '';
         $niveauCode = $ins['niveau_code'] ?? '';
-        $affectation = $ins['affectation_etat'] ?? '';
+        $anneeCode = !empty($ins['annee_code']) ? $ins['annee_code'] : $activeYear;
+        
+        $rawAff = strtolower(trim($ins['affectation_etat'] ?? ''));
+        $isAffecte = ($rawAff === 'oui' || $rawAff === 'affecte' || $rawAff === '1');
+        $affEtat = $isAffecte ? 'affecte' : 'non_affecte';
 
-        // 1. Recherche du tarif officiel de scolarité pour la filière / niveau de la classe
+        // 1. Recherche du tarif officiel de scolarité pour l'année, la filière / niveau et le régime
         $stmtSco = $db->prepare("
             SELECT * FROM scolarites 
-            WHERE filiere_code = ? AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
+            WHERE filiere_code = ? 
+              AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
+              AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+              AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
               AND statut_scolarite = 'actif'
-            ORDER BY (CASE WHEN affectation_etat = ? THEN 1 ELSE 2 END), id_scolarite DESC
+            ORDER BY (CASE WHEN annee_code = ? THEN 1 ELSE 2 END),
+                     (CASE WHEN affectation_etat = ? THEN 1 ELSE 2 END),
+                     id_scolarite DESC
             LIMIT 1
         ");
-        $stmtSco->execute([$filiereCode, $niveauCode, $affectation]);
+        $stmtSco->execute([$filiereCode, $niveauCode, $anneeCode, $affEtat, $anneeCode, $affEtat]);
         $scoGrid = $stmtSco->fetch(PDO::FETCH_ASSOC);
 
         $codeScolarite = $scoGrid['code_scolarite'] ?? '';
@@ -125,20 +160,21 @@ class PaiementController extends BaseController
             $badgeClass = 'badge-warning';
         }
 
-        // 2. Récupération des tranches actives pour la filière et le niveau de la classe ou rattachées à la scolarité
+        // 2. Récupération des tranches actives UNIQUEMENT pour l'année académique de l'inscription
         $stmtTr = $db->prepare("
             SELECT t.*, s.montant_scolarite as scolarite_globale
             FROM tranches_scolarite t
             LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
             WHERE t.statut_tranche = 'actif'
+              AND (t.annee_code = ? OR s.annee_code = ?)
               AND (
-                (t.filiere_code = ? AND t.niveau_code = ?)
+                (t.scolarite_code != '' AND t.scolarite_code = ?)
+                OR (t.scolarite_code = '' AND t.filiere_code = ? AND t.niveau_code = ?)
                 OR (s.filiere_code = ? AND s.niveau_code = ?)
-                OR (t.scolarite_code != '' AND t.scolarite_code = ?)
               )
             ORDER BY t.date_limite ASC, t.id_tranche ASC
         ");
-        $stmtTr->execute([$filiereCode, $niveauCode, $filiereCode, $niveauCode, $codeScolarite]);
+        $stmtTr->execute([$anneeCode, $anneeCode, $codeScolarite, $filiereCode, $niveauCode, $filiereCode, $niveauCode]);
         $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
 
         // Calcul des paiements par tranche
@@ -349,6 +385,25 @@ class PaiementController extends BaseController
         }
         $data['statut_paiement'] = $data['statut_paiement'] ?? 'confirme';
         $data['date_paiement'] = date('Y-m-d H:i:s');
+
+        // Rattachement automatique à la session de caisse ouverte
+        $todayDate = date('Y-m-d');
+        $stmtActiveSes = $db->prepare("SELECT code_session FROM sessions_caisse WHERE date_session = ? AND statut_session = 'ouverte' ORDER BY id_session DESC LIMIT 1");
+        $stmtActiveSes->execute([$todayDate]);
+        $activeSessionCode = $stmtActiveSes->fetchColumn();
+
+        if ($activeSessionCode) {
+            $data['session_caisse_code'] = $activeSessionCode;
+        } else {
+            // S'il n'y a pas de session ouverte, chercher la session la plus récente du jour
+            $stmtAnySes = $db->prepare("SELECT code_session FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
+            $stmtAnySes->execute([$todayDate]);
+            $anySessionCode = $stmtAnySes->fetchColumn();
+            if ($anySessionCode) {
+                $data['session_caisse_code'] = $anySessionCode;
+            }
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE paiements")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;

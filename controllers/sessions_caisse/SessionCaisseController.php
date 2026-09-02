@@ -121,8 +121,8 @@ class SessionCaisseController extends BaseController
             return;
         }
 
-        // Totaux collectés en direct pour cette date de session
-        $financials = $this->model->getDailyFinancialTotals($session['date_session']);
+        // Totaux collectés en direct pour cette session
+        $financials = $this->model->getDailyFinancialTotals($session['date_session'], $session['code_session'] ?? null);
 
         $this->loadView('../views/sessions_caisse/cloturer.php', [
             'session' => $session,
@@ -173,7 +173,7 @@ class SessionCaisseController extends BaseController
             'user_validation' => $userCode
         ];
 
-        $res = $this->model->update($idSession, $updateData);
+        $res = $this->model->update($updateData, $idSession);
         if ($res) {
             $this->success("Arrêté et clôture de la session {$session['code_session']} enregistrés avec succès.", RACINE . 'session_caisse/details/' . $this->validator->crypter($idSession));
         } else {
@@ -204,10 +204,11 @@ class SessionCaisseController extends BaseController
             LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
             LEFT JOIN classes c ON c.code_classe = i.classe_code
             LEFT JOIN tranches_scolarite ts ON ts.code_tranche = p.tranche_code
-            WHERE DATE(p.date_paiement) = ? AND p.statut_paiement != 'annule'
+            WHERE (p.session_caisse_code = ? OR (p.session_caisse_code IS NULL AND DATE(p.date_paiement) = ?))
+              AND p.statut_paiement != 'annule'
             ORDER BY p.id_paiement DESC
         ");
-        $stmtP->execute([$item['date_session']]);
+        $stmtP->execute([$item['code_session'] ?? '', $item['date_session']]);
         $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC);
 
         $this->loadView('../views/sessions_caisse/details.php', [
@@ -251,7 +252,7 @@ class SessionCaisseController extends BaseController
         $cols = $this->model->getCon()->query("DESCRIBE sessions_caisse")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
 
-        $res = $this->model->update($id, $filteredData);
+        $res = $this->model->update($filteredData, $id);
         if ($res) {
             $this->success("Session de caisse mise à jour.", RACINE . 'session_caisse/list');
         } else {

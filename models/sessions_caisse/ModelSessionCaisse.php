@@ -77,17 +77,28 @@ class ModelSessionCaisse extends BaseModel
     }
 
     /**
-     * Calcule en temps réel les totaux encaissés par mode de paiement pour une date
+     * Calcule en temps réel les totaux encaissés par mode de paiement pour une session ou date
      */
-    public function getDailyFinancialTotals(string $date)
+    public function getDailyFinancialTotals(string $date, ?string $sessionCode = null)
     {
-        $stmt = $this->getCon()->prepare("
-            SELECT mode_paiement, SUM(montant_paiement) as sum_mode, COUNT(*) as count_mode
-            FROM paiements
-            WHERE DATE(date_paiement) = ? AND statut_paiement != 'annule'
-            GROUP BY mode_paiement
-        ");
-        $stmt->execute([$date]);
+        if (!empty($sessionCode)) {
+            $stmt = $this->getCon()->prepare("
+                SELECT mode_paiement, SUM(montant_paiement) as sum_mode, COUNT(*) as count_mode
+                FROM paiements
+                WHERE (session_caisse_code = ? OR (session_caisse_code IS NULL AND DATE(date_paiement) = ?))
+                  AND statut_paiement != 'annule'
+                GROUP BY mode_paiement
+            ");
+            $stmt->execute([$sessionCode, $date]);
+        } else {
+            $stmt = $this->getCon()->prepare("
+                SELECT mode_paiement, SUM(montant_paiement) as sum_mode, COUNT(*) as count_mode
+                FROM paiements
+                WHERE DATE(date_paiement) = ? AND statut_paiement != 'annule'
+                GROUP BY mode_paiement
+            ");
+            $stmt->execute([$date]);
+        }
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $totalEspeces = 0;

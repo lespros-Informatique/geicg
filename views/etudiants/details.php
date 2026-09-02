@@ -100,9 +100,13 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
               
               <!-- Photo / Avatar Étudiant avec cadre sécurité -->
               <div style="width: 78px; height: 96px; border-radius: 8px; border: 2px solid #F59E0B; background: #0F172A; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0;">
-                <span style="font-size: 24px; font-weight: 900; color: #FDE68A;">
-                  <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
-                </span>
+                <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
+                  <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+                <?php else: ?>
+                  <span style="font-size: 24px; font-weight: 900; color: #FDE68A;">
+                    <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
+                  </span>
+                <?php endif; ?>
                 <span style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(217,119,6,0.9); font-size: 7px; font-weight: 800; text-align: center; color: #FFF; padding: 1px 0; text-transform: uppercase; letter-spacing: 0.5px;">
                   ÉTUDIANT
                 </span>
@@ -215,9 +219,16 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
           
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="width: 52px; height: 52px; min-width: 52px; border-radius: 50%; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; border: 1px solid #BFDBFE;">
-              <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 64px; height: 76px; min-width: 64px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); flex-shrink: 0;">
+              <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
+                <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+              <?php else: ?>
+                <span style="font-size: 18px; font-weight: 900; color: #1E3A5F;">
+                  <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
+                </span>
+                <span style="font-size: 7.5px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 2px;">PHOTO</span>
+              <?php endif; ?>
             </div>
             <div>
               <h2 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0;">

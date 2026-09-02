@@ -112,9 +112,9 @@ $ecart = (float)($item['ecart_caisse'] ?? 0);
             <div style="font-size: 18px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= number_format((float)$item['total_mobile_money'], 0, ',', ' ') ?> F</div>
           </div>
 
-          <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">4. Total Encaissé</span>
-            <div style="font-size: 18px; font-weight: 800; color: #7E22CE; margin-top: 4px;"><?= number_format($totalGeneral, 0, ',', ' ') ?> F</div>
+          <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px;">
+            <span style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">4. Total Encaissé</span>
+            <div style="font-size: 18px; font-weight: 800; color: #B45309; margin-top: 4px;"><?= number_format($totalGeneral, 0, ',', ' ') ?> F</div>
           </div>
 
           <div style="background: <?= $ecart != 0 ? '#FEF2F2' : '#F0FDF4' ?>; border: 1px solid <?= $ecart != 0 ? '#FECACA' : '#BBF7D0' ?>; border-radius: 10px; padding: 14px;">
@@ -133,7 +133,7 @@ $ecart = (float)($item['ecart_caisse'] ?? 0);
             <thead>
               <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; text-align: left;">
                 <th style="padding: 10px;">Réf. Reçu</th>
-                <th style="padding: 10px;">Élève / Classe</th>
+                <th style="padding: 10px;">Étudiant & Classe</th>
                 <th style="padding: 10px;">Tranche Réglée</th>
                 <th style="padding: 10px;">Mode Règlement</th>
                 <th style="padding: 10px;">Réf. Transaction</th>
@@ -154,7 +154,7 @@ $ecart = (float)($item['ecart_caisse'] ?? 0);
                       <div style="font-size: 11px; color: #64748B;"><?= htmlspecialchars($p['libelle_classe'] ?? '') ?></div>
                     </td>
                     <td style="padding: 10px;">
-                      <span style="font-weight: 700; color: #7E22CE; font-size: 12px;"><?= htmlspecialchars($p['libelle_tranche'] ?? ($p['type_paiement'] ?? 'Scolarité')) ?></span>
+                      <span style="font-weight: 700; color: #1E3A5F; font-size: 12px;"><?= htmlspecialchars($p['libelle_tranche'] ?? ($p['type_paiement'] ?? 'Scolarité')) ?></span>
                     </td>
                     <td style="padding: 10px;">
                       <span class="badge" style="background: #EFF6FF; color: #1E3A5F; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 11px; text-transform: uppercase;">
