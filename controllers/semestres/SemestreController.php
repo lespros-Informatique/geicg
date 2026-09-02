@@ -70,6 +70,16 @@ class SemestreController extends BaseController
             return;
         }
 
+        // Vérification que la date de fin de l'année sélectionnée n'est pas encore passée
+        $stmtAnnee = $this->model->getCon()->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
+        $stmtAnnee->execute([$anneeCode]);
+        $targetAnnee = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
+        if ($targetAnnee && !empty($targetAnnee['date_fin_annee']) && $targetAnnee['date_fin_annee'] < date('Y-m-d')) {
+            $dateFinFr = date('d/m/Y', strtotime($targetAnnee['date_fin_annee']));
+            $this->error("Impossible de créer un semestre sur l'année académique {$targetAnnee['libelle_annee']} car sa date de fin est déjà échue ($dateFinFr).");
+            return;
+        }
+
         // Contrôle d'unicité : un seul Semestre 1 et un seul Semestre 2 par année académique
         $stmt = $this->model->getCon()->prepare("
             SELECT id_semestre FROM semestres 

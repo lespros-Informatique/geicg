@@ -1,6 +1,17 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$annees = (new ModelAnnee())->getAll();
+$db = (new Database())->getCon();
+$today = date('Y-m-d');
+$currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
+
+// Récupération stricte des années dont la date de fin n'est pas encore arrivée (ou l'année du semestre en cours d'édition)
+$stmtAnnees = $db->prepare("
+    SELECT * FROM annees 
+    WHERE (date_fin_annee >= ? OR code_annee = ?)
+    ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), date_debut_annee DESC
+");
+$stmtAnnees->execute([$today, $currentAnneeCode]);
+$annees = $stmtAnnees->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -43,11 +54,11 @@ $annees = (new ModelAnnee())->getAll();
               <select class="form-control select2" id="sel_annee_semestre" name="annee_code" style="width: 100%;" required>
                 <option value="">-- Sélectionner une année académique --</option>
                 <?php 
-                  $currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
                   foreach($annees as $an): 
+                    $dateFinFr = !empty($an['date_fin_annee']) ? date('d/m/Y', strtotime($an['date_fin_annee'])) : '';
                 ?>
                   <option value="<?= htmlspecialchars($an['code_annee']) ?>" <?= ($currentAnneeCode == $an['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($an['libelle_annee']) ?> <?= ($an['statut_annee'] === 'actif') ? '(En cours)' : '' ?>
+                    <?= htmlspecialchars($an['libelle_annee']) ?> <?= ($an['statut_annee'] === 'actif') ? '(En cours)' : ($dateFinFr ? "(Fin: $dateFinFr)" : '') ?>
                   </option>
                 <?php endforeach; ?>
               </select>

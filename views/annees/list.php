@@ -51,8 +51,24 @@ $(document).ready(function() {
       { data: 'libelle_annee', render: function(d) {
         return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
       }},
-      { data: 'date_debut_annee', defaultContent: '-' },
-      { data: 'date_fin_annee', defaultContent: '-' },
+      { 
+        data: 'date_debut_annee', 
+        render: function(d) {
+          if (!d) return '<span style="color:#94A3B8;">-</span>';
+          var p = d.split('-');
+          var formatted = p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : d;
+          return '<span style="font-weight:700; color:#1E293B; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="calendar" style="width:14px;height:14px;color:#1E3A5F;"></i> ' + formatted + '</span>';
+        }
+      },
+      { 
+        data: 'date_fin_annee', 
+        render: function(d) {
+          if (!d) return '<span style="color:#94A3B8;">-</span>';
+          var p = d.split('-');
+          var formatted = p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : d;
+          return '<span style="font-weight:700; color:#1E293B; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="calendar" style="width:14px;height:14px;color:#1E3A5F;"></i> ' + formatted + '</span>';
+        }
+      },
       { data: 'statut_annee', width: '80px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');
         var checkedAttr = isActif ? 'checked' : '';
