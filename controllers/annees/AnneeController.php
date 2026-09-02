@@ -53,7 +53,13 @@ class AnneeController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $insertedId = (int)$this->model->getCon()->lastInsertId();
+            if (($data['statut_annee'] ?? '') === 'actif' && $insertedId > 0) {
+                $this->model->setActiveYear($insertedId);
+                $_SESSION['annee_active_code'] = $data['code_annee'];
+                $_SESSION['annee_active_libelle'] = $data['libelle_annee'];
+            }
+            $this->success('Année académique créée avec succès!');
         } else {
             $this->error('Erreur lors de la création');
         }
@@ -74,7 +80,15 @@ class AnneeController extends BaseController
         $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            if (($data['statut_annee'] ?? '') === 'actif') {
+                $this->model->setActiveYear($id);
+                $updatedRow = $this->model->getById($id);
+                if ($updatedRow) {
+                    $_SESSION['annee_active_code'] = $updatedRow['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $updatedRow['libelle_annee'];
+                }
+            }
+            $this->success('Année académique modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -84,15 +98,24 @@ class AnneeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        $id = (int)$this->post('id');
+        $item = $id ? $this->model->getById($id) : null;
+        if ($item) {
             if ($this->model->toggleStatus($id)) {
-                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+                $activeYear = $this->model->getActiveYear();
+                if ($activeYear) {
+                    $_SESSION['annee_active_code'] = $activeYear['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $activeYear['libelle_annee'];
+                }
+                $this->success('Statut mis à jour avec succès (Une seule année active à la fois) !', [
+                    'reload' => true,
+                    'activeYear' => $activeYear
+                ]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
             }
         } else {
-            $this->error('Item introuvable');
+            $this->error('Année académique introuvable');
         }
     }
 

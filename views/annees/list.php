@@ -91,15 +91,30 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          if (typeof showToast === 'function') {
+            showToast(res.message || 'Statut mis à jour avec succès', 'success');
+          } else if (window.toastr) {
+            toastr.success(res.message || 'Statut mis à jour avec succès');
+          }
+          if (res.activeYear && res.activeYear.libelle_annee) {
+            $('#activeAnneeDisplay').text(res.activeYear.libelle_annee);
+          }
           table.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          if (typeof showToast === 'function') {
+            showToast(res.message || 'Erreur lors du changement de statut', 'error');
+          } else if (window.toastr) {
+            toastr.error(res.message || 'Erreur lors du changement de statut');
+          }
           $input.prop('checked', !isChecked);
         }
       },
       error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
+        if (typeof showToast === 'function') {
+          showToast('Erreur de communication réseau', 'error');
+        } else if (window.toastr) {
+          toastr.error('Erreur réseau');
+        }
         $input.prop('checked', !isChecked);
       }
     });
