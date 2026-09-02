@@ -154,6 +154,8 @@ $route->addRoute('/annee/changer', [$anneeController, 'changer']);
 $route->addRoute('/annee/details/{param}', [$anneeController, 'details']);
 $route->addRoute('/annee/edition/{param}', [$anneeController, 'edition']);
 $route->addRoute('/annee/formulaire', [$anneeController, 'formulaire']);
+$route->addRoute('/annee/setSession', [$anneeController, 'setSession']);
+$route->addRoute('/annee/setActiveSession', [$anneeController, 'setSession']);
 
 // Module: classe (ClasseController)
 $route->addRoute('/classe/list', [$classeController, 'list']);

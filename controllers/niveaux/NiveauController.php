@@ -40,7 +40,7 @@ class NiveauController extends BaseController
         }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = $this->getActiveAnneeCode();
         $etabCode = '5454544456';
         if (empty($data['code_niveau'])) {
             $data['code_niveau'] = $this->validator->generateCode('niveaux', 'code_niveau', 'NIV-', 8);

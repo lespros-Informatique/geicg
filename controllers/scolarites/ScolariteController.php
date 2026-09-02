@@ -45,7 +45,7 @@ class ScolariteController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY');
+        $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($this->getActiveAnneeCode());
         $filiereCode = !empty($_POST['filiere_code']) ? trim($_POST['filiere_code']) : '';
         $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : '';
         $etabCode = '5454544456';

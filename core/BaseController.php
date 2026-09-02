@@ -13,6 +13,56 @@ abstract class BaseController
 
     abstract protected function resolveModel();
 
+    /**
+     * Récupère le code de l'année académique active en session (avec initialisation auto)
+     */
+    protected function getActiveAnneeCode(): string
+    {
+        if (empty($_SESSION['annee_active_code'])) {
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), id_annee DESC LIMIT 1");
+                $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+                if ($row) {
+                    $_SESSION['annee_active_code'] = $row['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $row['libelle_annee'];
+                } else {
+                    $_SESSION['annee_active_code'] = 'ANN-2025-2026';
+                    $_SESSION['annee_active_libelle'] = '2025-2026';
+                }
+            } catch (Exception $e) {
+                $_SESSION['annee_active_code'] = 'ANN-2025-2026';
+                $_SESSION['annee_active_libelle'] = '2025-2026';
+            }
+        }
+        return $_SESSION['annee_active_code'];
+    }
+
+    /**
+     * Récupère le libellé de l'année académique active en session
+     */
+    protected function getActiveAnneeLibelle(): string
+    {
+        $this->getActiveAnneeCode();
+        return $_SESSION['annee_active_libelle'] ?? '2025-2026';
+    }
+
+    /**
+     * Récupère la ligne complète de l'année active
+     */
+    protected function getActiveAnnee(): array
+    {
+        $code = $this->getActiveAnneeCode();
+        try {
+            $db = (new Database())->getCon();
+            $stmt = $db->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmt->execute([$code]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
     protected function requirePost(bool $checkCsrf = true): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

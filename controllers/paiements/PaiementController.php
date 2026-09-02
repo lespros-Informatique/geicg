@@ -57,11 +57,7 @@ class PaiementController extends BaseController
 
         $db = $this->model->getCon();
 
-        $activeYear = $_SESSION['annee_active_code'] ?? 'ANN-2025-2026';
-        if (empty($activeYear)) {
-            $actRow = $db->query("SELECT code_annee FROM annees WHERE statut_annee = 'actif' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-            $activeYear = $actRow['code_annee'] ?? 'ANN-2025-2026';
-        }
+        $activeYear = $this->getActiveAnneeCode();
 
         if (!empty($inscriptionCode)) {
             $stmt = $db->prepare("
@@ -308,7 +304,7 @@ class PaiementController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = $this->getActiveAnneeCode();
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);

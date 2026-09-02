@@ -421,6 +421,21 @@ class UserController extends BaseController
                     $_SESSION['permissions'] = $allPermissions;
                     $_SESSION['roles'] = $roleCodes;
 
+                    // Initialisation automatique de l'année académique active / la plus récente pour la session
+                    try {
+                        $stmtAnnee = $this->model->getCon()->query("
+                            SELECT code_annee, libelle_annee 
+                            FROM annees 
+                            ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), id_annee DESC 
+                            LIMIT 1
+                        ");
+                        $anneeActive = $stmtAnnee ? $stmtAnnee->fetch(PDO::FETCH_ASSOC) : null;
+                        if ($anneeActive) {
+                            $_SESSION['annee_active_code'] = $anneeActive['code_annee'];
+                            $_SESSION['annee_active_libelle'] = $anneeActive['libelle_annee'];
+                        }
+                    } catch (Exception $e) {}
+
                     $welcomeMsg = !empty($enseignantProfile) 
                         ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user'] . ' ' . ($user['prenom_user'] ?? '')) . ' !'
                         : 'Connexion réussie ! Bienvenue sur GEICG.';

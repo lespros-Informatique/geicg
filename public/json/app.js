@@ -707,7 +707,7 @@ if (modalSave) {
         });
     }
 
-    ['notification', 'profile', 'quickActions'].forEach(function(name) {
+    ['notification', 'profile', 'quickActions', 'anneeSwitcher'].forEach(function(name) {
         const btn = document.getElementById(name + 'Btn');
         const panel = document.getElementById(name + 'Panel');
         if (btn && panel) {
@@ -719,6 +719,32 @@ if (modalSave) {
                 panel.classList.toggle('active');
             });
         }
+    });
+
+    // Basculement instantané d'année académique active par Session
+    $(document).on('click', '.btn-select-annee-item', function(e) {
+        e.preventDefault();
+        const code = $(this).data('code');
+        const libelle = $(this).data('libelle');
+        if (!code) return;
+
+        const $btn = $(this);
+        $btn.css('opacity', '0.6').css('pointer-events', 'none');
+
+        $.post(LINK + 'annee/setSession', { code_annee: code, libelle_annee: libelle }, function(res) {
+            if (res && res.status === 1) {
+                showToast(res.message || 'Année académique changée avec succès !', 'success');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 300);
+            } else {
+                $btn.css('opacity', '1').css('pointer-events', 'auto');
+                showToast(res.message || 'Erreur lors du changement d\'année', 'error');
+            }
+        }, 'json').fail(function() {
+            $btn.css('opacity', '1').css('pointer-events', 'auto');
+            showToast('Erreur de communication avec le serveur', 'error');
+        });
     });
 
     ['bnProfil'].forEach(function(id) {
@@ -736,7 +762,7 @@ if (modalSave) {
     });
 
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown-panel') && !e.target.closest('.btn-icon') && !e.target.closest('#profileBtn') && !e.target.closest('.bottom-nav-item')) {
+        if (!e.target.closest('.dropdown-panel') && !e.target.closest('.btn-icon') && !e.target.closest('#profileBtn') && !e.target.closest('#anneeSwitcherBtn') && !e.target.closest('.bottom-nav-item')) {
             document.querySelectorAll('.dropdown-panel').forEach(function(p) { p.classList.remove('active'); });
         }
     });

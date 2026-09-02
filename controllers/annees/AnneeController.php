@@ -40,7 +40,7 @@ class AnneeController extends BaseController
         }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = $this->getActiveAnneeCode();
         $etabCode = '5454544456';
         if (empty($data['code_annee'])) {
             $data['code_annee'] = $this->validator->generateCode('annees', 'code_annee', 'ANN-', 8);
@@ -175,5 +175,40 @@ class AnneeController extends BaseController
     {
         $this->requireAuth();
         $this->loadView('../views/annees/edit.php', ['item' => []]);
+    }
+
+    /**
+     * Active une année académique pour la session PHP de l'utilisateur connecté
+     */
+    public function setSession()
+    {
+        $this->requireAuth();
+        $code = trim($_POST['code_annee'] ?? ($_GET['code_annee'] ?? ''));
+
+        if (empty($code)) {
+            $this->json(['status' => 0, 'message' => 'Code année académique manquant']);
+            return;
+        }
+
+        $db = $this->model->getCon();
+        $stmt = $db->prepare("SELECT * FROM annees WHERE code_annee = ? OR id_annee = ? LIMIT 1");
+        $stmt->execute([$code, is_numeric($code) ? (int)$code : 0]);
+        $annee = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($annee) {
+            $_SESSION['annee_active_code'] = $annee['code_annee'];
+            $_SESSION['annee_active_libelle'] = $annee['libelle_annee'];
+            
+            $this->json([
+                'status' => 1,
+                'message' => "Année académique {$annee['libelle_annee']} activée avec succès pour votre session.",
+                'annee' => [
+                    'code' => $annee['code_annee'],
+                    'libelle' => $annee['libelle_annee']
+                ]
+            ]);
+        } else {
+            $this->json(['status' => 0, 'message' => 'Année académique sélectionnée introuvable']);
+        }
     }
 }

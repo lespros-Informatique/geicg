@@ -70,7 +70,7 @@ class EtudiantController extends BaseController
         }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = $this->getActiveAnneeCode();
         $nomEtudiant = trim($data['nom_etudiant'] ?? '');
         $prenomEtudiant = trim($data['prenom_etudiant'] ?? '');
 
@@ -271,7 +271,7 @@ class EtudiantController extends BaseController
 
         $db = $this->model->getCon();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = $this->getActiveAnneeCode();
         $etabCode = '5454544456';
 
         $data = $_POST;

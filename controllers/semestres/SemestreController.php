@@ -62,7 +62,7 @@ class SemestreController extends BaseController
         $data['libelle_semestre'] = $libelle;
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : ($_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY');
+        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : ($this->getActiveAnneeCode());
         $etabCode = '5454544456';
 
         if (empty($anneeCode)) {
