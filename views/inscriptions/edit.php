@@ -195,6 +195,17 @@ $enseignants = (new ModelEnseignant())->getAll();
             <input type="hidden" name="id_inscription" value="<?= $item['id_inscription'] ?>">
           <?php endif; ?>
 
+          <!-- ALERTE SI ÉTUDIANT DÉJÀ INSCRIT POUR L'ANNÉE EN COURS -->
+          <div id="already_registered_warning" style="display: none; background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; color: #991B1B;">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: #DC2626; flex-shrink: 0; margin-top: 2px;"></i>
+              <div>
+                <strong style="font-size: 14px; display: block; margin-bottom: 2px;">Étudiant Déjà Inscrit pour la Session Active</strong>
+                <span id="already_registered_warning_text" style="font-size: 13px; line-height: 1.4;"></span>
+              </div>
+            </div>
+          </div>
+
           <!-- SÉLECTEUR ÉTUDIANT & STATUT REDOUBLANT (OUI / NON) -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%; margin-bottom: 20px;">
             
@@ -434,6 +445,19 @@ $(document).ready(function() {
             $('#prev_acc_list').html('<span class="badge" style="background:#F1F5F9; color:#64748B; padding:4px 8px; border-radius:6px; font-weight:600;">Aucun kit/accessoire souscrit</span>');
           }
 
+          // Vérification si déjà inscrit pour cette session en cours (en mode ajout)
+          var isEditMode = <?= !empty($item['id_inscription']) ? 'true' : 'false' ?>;
+          if (d.is_already_registered_this_year && !isEditMode) {
+            $('#already_registered_warning_text').html(
+              'L\'étudiant <strong>' + (d.nom_complet || '') + '</strong> est déjà réinscrit pour la session active (<strong>' + (d.already_registered_annee || '2025-2026') + '</strong>) dans la classe <strong>' + (d.already_registered_classe || '-') + '</strong> (Réf Inscription : <code>' + (d.already_registered_code || '-') + '</code>).<br>Une nouvelle réinscription pour cette même année n\'est pas autorisée.'
+            );
+            $('#already_registered_warning').stop(true, true).slideDown(250);
+            $('#form_inscription_main button[type="submit"]').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
+          } else {
+            $('#already_registered_warning').slideUp(200);
+            $('#form_inscription_main button[type="submit"]').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
+          }
+
           $('#student-profile-preview-banner').stop(true, true).slideDown(250);
 
           // Si une classe est déjà choisie, charger immédiatement ses tarifs
@@ -444,6 +468,7 @@ $(document).ready(function() {
 
           if (window.lucide) lucide.createIcons();
         } else {
+          $('#already_registered_warning').slideUp(200);
           $('#student-profile-preview-banner').slideUp(200);
         }
       },

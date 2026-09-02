@@ -24,10 +24,25 @@ class InscriptionController extends BaseController
         ]);
     }
 
+    protected function getActiveAnneeCode(): string
+    {
+        if (!empty($_SESSION['annee_active_code'])) {
+            return $_SESSION['annee_active_code'];
+        }
+        $db = $this->model->getCon();
+        $stmt = $db->query("SELECT code_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
+        $code = $stmt->fetchColumn();
+        if ($code) {
+            $_SESSION['annee_active_code'] = $code;
+            return $code;
+        }
+        return 'ANN-2025-2026';
+    }
+
     public function apiList()
     {
         $this->requireAuth();
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = $this->getActiveAnneeCode();
         $filterFiliere = trim($_GET['filiere_code'] ?? '');
         $filterNiveau = trim($_GET['niveau_code'] ?? '');
         $filterClasse = trim($_GET['classe_code'] ?? '');
@@ -41,15 +56,18 @@ class InscriptionController extends BaseController
             ORDER BY id_etudiant DESC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
-        // 2. Inscriptions de l'année active (pour exclure ceux qui sont déjà inscrits)
+        // 2. Inscriptions actives de l'année active (pour exclure ceux qui sont déjà inscrits/réinscrits)
         $stmtCur = $db->prepare("
-            SELECT etudiant_code
+            SELECT DISTINCT etudiant_code
             FROM inscriptions
-            WHERE annee_code = ?
+            WHERE annee_code = ? AND statut_inscription != 'annule'
         ");
         $stmtCur->execute([$anneeCode]);
         $curCodes = $stmtCur->fetchAll(PDO::FETCH_COLUMN) ?: [];
-        $curSet = array_flip($curCodes);
+        $curSet = [];
+        foreach ($curCodes as $c) {
+            $curSet[trim($c)] = true;
+        }
 
         // 3. Dernière inscription passée (N-1)
         $priorMap = [];
@@ -61,7 +79,7 @@ class InscriptionController extends BaseController
             LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
             LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
             LEFT JOIN annees a ON a.code_annee = i.annee_code
-            WHERE i.annee_code != ?
+            WHERE i.annee_code != ? AND i.statut_inscription != 'annule'
             ORDER BY i.id_inscription DESC
         ");
         $stmtPrior->execute([$anneeCode]);
@@ -75,13 +93,14 @@ class InscriptionController extends BaseController
         $data = [];
         foreach ($students as $etu) {
             $code = $etu['code_etudiant'];
+            $mat = $etu['matricule_etudiant'] ?? '';
 
-            // Lister UNIQUEMENT les étudiants à réinscrire (non inscrits pour l'année active)
-            if (isset($curSet[$code])) {
+            // Si l'étudiant est DÉJÀ inscrit pour cette année active, ON LE MASQUE STRICTEMENT DE LA LISTE !
+            if (isset($curSet[$code]) || (!empty($mat) && isset($curSet[$mat]))) {
                 continue;
             }
 
-            $prev = $priorMap[$code] ?? null;
+            $prev = $priorMap[$code] ?? ($priorMap[$mat] ?? null);
 
             // Détermination de la filière / niveau / classe N-1
             $refFiliere = $prev['filiere_prev_code'] ?? '';
@@ -151,6 +170,21 @@ class InscriptionController extends BaseController
             $this->json(['status' => 0, 'message' => 'Étudiant introuvable']);
             return;
         }
+
+        $anneeActive = $this->getActiveAnneeCode();
+        // Vérifier si l'étudiant est déjà inscrit pour cette année active
+        $stmtThisYear = $db->prepare("
+            SELECT i.*, c.libelle_classe, a.libelle_annee 
+            FROM inscriptions i
+            LEFT JOIN classes c ON c.code_classe = i.classe_code
+            LEFT JOIN annees a ON a.code_annee = i.annee_code
+            WHERE (i.etudiant_code = ? OR i.etudiant_code = ?)
+              AND i.annee_code = ?
+              AND i.statut_inscription != 'annule'
+            LIMIT 1
+        ");
+        $stmtThisYear->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant'], $anneeActive]);
+        $alreadyThisYear = $stmtThisYear->fetch(PDO::FETCH_ASSOC);
 
         // 2. Recherche complète de l'historique de l'inscription précédente (N-1)
         $stmtPrev = $db->prepare("
@@ -238,6 +272,10 @@ class InscriptionController extends BaseController
                 'prev_paye' => $prevPaye,
                 'prev_solde' => $prevSolde,
                 'statut_etudiant' => $etudiant['statut_etudiant'] ?? 'actif',
+                'is_already_registered_this_year' => !empty($alreadyThisYear),
+                'already_registered_classe' => $alreadyThisYear['libelle_classe'] ?? '',
+                'already_registered_code' => $alreadyThisYear['code_inscription'] ?? '',
+                'already_registered_annee' => $alreadyThisYear['libelle_annee'] ?? '',
                 'accessoires_etudiant' => (function() use ($db, $etudiantCode) {
                     $stmt = $db->prepare("
                         SELECT a.code_accessoire, a.libelle_accessoire, COALESCE(ai.statut_accessoire_inscription, 'actif') as statut
@@ -397,7 +435,7 @@ class InscriptionController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
+        $anneeCode = $this->getActiveAnneeCode();
         $etabCode = '5454544456';
         $data = $_POST;
         unset($data['csrf_token']);
@@ -512,6 +550,25 @@ class InscriptionController extends BaseController
 
         if (empty($data['classe_code'])) {
             $this->error("Veuillez choisir la classe d'affectation.");
+            return;
+        }
+
+        // Vérification absolue anti-doublon : L'étudiant est-il déjà inscrit/réinscrit pour l'année active ?
+        $stmtCheck = $db->prepare("
+            SELECT i.id_inscription, i.code_inscription, c.libelle_classe, a.libelle_annee 
+            FROM inscriptions i
+            LEFT JOIN classes c ON c.code_classe = i.classe_code
+            LEFT JOIN annees a ON a.code_annee = i.annee_code
+            WHERE (i.etudiant_code = ? OR i.etudiant_code = (SELECT matricule_etudiant FROM etudiants WHERE code_etudiant = ? LIMIT 1))
+              AND i.annee_code = ?
+              AND i.statut_inscription != 'annule'
+            LIMIT 1
+        ");
+        $stmtCheck->execute([$data['etudiant_code'], $data['etudiant_code'], $anneeCode]);
+        $existing = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            $this->error("Cet étudiant est déjà inscrit/réinscrit pour l'année académique " . ($existing['libelle_annee'] ?? 'en cours') . " dans la classe " . ($existing['libelle_classe'] ?? '') . " [Réf: " . $existing['code_inscription'] . "]. Une double réinscription pour la même session est impossible.");
             return;
         }
 

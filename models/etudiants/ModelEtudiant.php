@@ -149,7 +149,7 @@ class ModelEtudiant extends BaseModel
             JOIN filieres f ON f.code_filiere = cl.filiere_code
             JOIN niveaux n ON n.code_niveau = cl.niveau_code
             WHERE {$whereClause}
-            ORDER BY a.libelle_annee DESC, cl.libelle_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC
+            ORDER BY i.id_inscription DESC, e.id_etudiant DESC
         ";
 
         try {

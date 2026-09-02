@@ -135,6 +135,7 @@ $(document).ready(function() {
   
   // Instance DataTable avec colonnes intelligentes
   var table = $('#table-etudiants').DataTable({
+    order: [],
     ajax: {
       url: '<?= RACINE ?>etudiant/apiList',
       type: 'GET',

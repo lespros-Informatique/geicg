@@ -103,6 +103,7 @@
 <script>
 $(document).ready(function() {
   var table = $('#table-inscriptions').DataTable({
+    order: [],
     ajax: {
       url: '<?= RACINE ?>inscription/apiList',
       data: function(d) {
