@@ -360,12 +360,12 @@ $pieces = (new ModelPieceFournir())->getAll();
               <?php if (!empty($accessoires)): ?>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
                   <?php foreach($accessoires as $acc): ?>
-                    <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; cursor: pointer; transition: all 0.2s;">
+                    <label class="acc-checkbox-card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
                       <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" name="accessoires[]" value="<?= $acc['code_accessoire'] ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F;">
-                        <span style="font-weight: 700; color: #0F172A; font-size: 13px;"><?= htmlspecialchars($acc['libelle_accessoire']) ?></span>
+                        <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire']) ?>" data-prix="<?= (float)$acc['prix_accessoire'] ?>" value="<?= htmlspecialchars($acc['code_accessoire']) ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
+                        <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 13px;"><?= htmlspecialchars($acc['libelle_accessoire']) ?></span>
                       </div>
-                      <span style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= number_format((float)$acc['prix_accessoire'], 0, ',', ' ') ?> FCFA</span>
+                      <span class="acc-price" style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= number_format((float)$acc['prix_accessoire'], 0, ',', ' ') ?> FCFA</span>
                     </label>
                   <?php endforeach; ?>
                 </div>
@@ -427,46 +427,188 @@ $pieces = (new ModelPieceFournir())->getAll();
 
           </div>
 
-          <!-- ÉTAPE 5 : RÉCAPITULATIF & CONFIRMATION -->
+          <!-- ÉTAPE 5 : RÉCAPITULATIF & CONFIRMATION DU DOSSIER -->
           <div class="wizard-step-content" data-step="5">
-            <h3 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-bottom: 20px; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i> Étape 5 : Récapitulatif & Validation du Dossier
-            </h3>
-
-            <div style="background: #F8FAFC; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
               <div>
-                <h4 style="font-size: 13px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="user" style="width: 16px; height: 16px;"></i> Identité Étudiant
-                </h4>
-                <div style="font-size: 13px; color: #334155; line-height: 1.6;">
-                  <div><strong>Nom & Prénoms :</strong> <span id="recap_nom_prenom" style="font-weight: 700; color: #0F172A;">-</span></div>
-                  <div><strong>Téléphone :</strong> <span id="recap_tel">-</span></div>
-                  <div><strong>Sexe :</strong> <span id="recap_sexe">-</span></div>
+                <h3 style="font-size: 18px; font-weight: 900; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="clipboard-check" style="width: 22px; height: 22px; color: #1E3A5F;"></i> Synthèse Générale du Dossier d'Inscription
+                </h3>
+                <p style="font-size: 13px; color: #64748B; margin: 4px 0 0 0;">Veuillez vérifier l'exactitude des renseignements saisis avant la validation définitive de l'inscription.</p>
+              </div>
+              <span class="badge" style="background: #DCFCE7; color: #166534; border: 1.5px solid #86EFAC; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="check" style="width: 14px; height: 14px;"></i> Prêt pour Enregistrement
+              </span>
+            </div>
+
+            <!-- 1. CARTE PROFIL & IDENTITÉ -->
+            <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+              
+              <!-- En-tête avec Avatar et Noms -->
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 16px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <div id="recap_avatar" style="width: 48px; height: 48px; border-radius: 50%; background: #1E3A5F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(30,58,95,0.25);">
+                    ET
+                  </div>
+                  <div>
+                    <div style="font-size: 18px; font-weight: 900; color: #0F172A;" id="recap_nom_prenom">-</div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 3px;">
+                      <span id="recap_sexe_badge" class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">-</span>
+                      <span id="recap_nationalite_badge" class="badge" style="background: #F8FAFC; color: #334155; border: 1px solid #E2E8F0; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">-</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Matricules -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 6px 12px; border-radius: 8px; font-size: 12px;">
+                    <span style="color: #64748B; font-weight: 600; display: block; font-size: 10.5px; text-transform: uppercase;">Matricule Établissement</span>
+                    <strong style="color: #1E3A5F; font-size: 13px;" id="recap_matricule_geb">Généré automatiquement</strong>
+                  </div>
+                  <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 6px 12px; border-radius: 8px; font-size: 12px;">
+                    <span style="color: #64748B; font-weight: 600; display: block; font-size: 10.5px; text-transform: uppercase;">Matricule MENET</span>
+                    <strong style="color: #334155; font-size: 13px;" id="recap_mat_menet">Non renseigné</strong>
+                  </div>
+                  <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 6px 12px; border-radius: 8px; font-size: 12px;">
+                    <span style="color: #64748B; font-weight: 600; display: block; font-size: 10.5px; text-transform: uppercase;">Matricule MESRS</span>
+                    <strong style="color: #334155; font-size: 13px;" id="recap_mat_mesrs">Non renseigné</strong>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <h4 style="font-size: 13px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="users" style="width: 16px; height: 16px;"></i> Parents & Contacts
-                </h4>
-                <div style="font-size: 13px; color: #334155; line-height: 1.6;">
-                  <div><strong>Père :</strong> <span id="recap_pere">-</span></div>
-                  <div><strong>Mère :</strong> <span id="recap_mere">-</span></div>
-                  <div><strong>Tuteur :</strong> <span id="recap_tuteur">-</span></div>
+              <!-- Grille des Coordonnées et État Civil -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; font-size: 13px;">
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Date & Lieu de Naissance</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_naissance_lieu">-</div>
                 </div>
-              </div>
-
-              <div>
-                <h4 style="font-size: 13px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="graduation-cap" style="width: 16px; height: 16px;"></i> Inscription & Scolarité
-                </h4>
-                <div style="font-size: 13px; color: #334155; line-height: 1.6;">
-                  <div><strong>Classe :</strong> <span id="recap_classe" style="font-weight: 700; color: #1E3A5F;">-</span></div>
-                  <div><strong>Scolarité Due :</strong> <span id="recap_montant" style="font-weight: 800; color: #0F172A;">- FCFA</span></div>
-                  <div><strong>Remise Accordée :</strong> <span id="recap_remise" style="font-weight: 700; color: #15803D;">0 FCFA</span></div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Téléphone Principal</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_tel">-</div>
+                </div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Email Étudiant</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_email">Non renseigné</div>
+                </div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Lieu de Résidence</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_residence">Non renseigné</div>
                 </div>
               </div>
             </div>
+
+            <!-- 2. SECTION PARENTS & TUTEURS -->
+            <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+              <div style="font-size: 13px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="users" style="width: 16px; height: 16px;"></i> Parents & Tuteurs Légaux
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                
+                <!-- Bloc Père -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px;">
+                  <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 6px;">Père</div>
+                  <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;" id="recap_pere_nom">Non renseigné</div>
+                  <div style="font-size: 12px; color: #475569; margin-top: 3px;" id="recap_pere_contact">-</div>
+                  <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;" id="recap_pere_prof">-</div>
+                </div>
+
+                <!-- Bloc Mère -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px;">
+                  <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 6px;">Mère</div>
+                  <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;" id="recap_mere_nom">Non renseignée</div>
+                  <div style="font-size: 12px; color: #475569; margin-top: 3px;" id="recap_mere_contact">-</div>
+                  <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;" id="recap_mere_prof">-</div>
+                </div>
+
+                <!-- Bloc Tuteur -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px;">
+                  <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 6px;">Tuteur / Contact d'Urgence</div>
+                  <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;" id="recap_tuteur_nom">Non renseigné</div>
+                  <div style="font-size: 12px; color: #475569; margin-top: 3px;" id="recap_tuteur_contact">-</div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- 3. SECTION SCOLARITÉ & ÉCHÉANCIER -->
+            <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(22,101,52,0.05);">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="calculator" style="width: 16px; height: 16px;"></i> Inscription Académique & Scolarité
+                  </div>
+                  <div style="font-size: 17px; font-weight: 900; color: #0F172A; margin-top: 4px;" id="recap_classe_title">-</div>
+                  <div style="font-size: 12.5px; font-weight: 700; color: #166534; margin-top: 2px;" id="recap_regime_text">-</div>
+                </div>
+
+                <!-- Synthèse des Chiffres -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <div style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 8px 14px; border-radius: 8px; text-align: right;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">Tarif Officiel</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #0F172A;" id="recap_scolarite_officielle">0 FCFA</div>
+                  </div>
+                  <div style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 8px 14px; border-radius: 8px; text-align: right;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #15803D; text-transform: uppercase;">Remise Accordée</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #15803D;" id="recap_remise_val">0 FCFA</div>
+                  </div>
+                  <div style="background: #166534; border: 1px solid #14532D; padding: 8px 16px; border-radius: 8px; text-align: right;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #DCFCE7; text-transform: uppercase;">Net Définitif</div>
+                    <div style="font-size: 17px; font-weight: 900; color: #FFFFFF;" id="recap_net_scolarite">0 FCFA</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tableau Échéancier Récapitulatif -->
+              <div style="background: #FFFFFF; border-radius: 8px; border: 1px solid #BBF7D0; overflow-x: auto;">
+                <table class="table" style="width: 100%; border-collapse: collapse; margin: 0; font-size: 12.5px;">
+                  <thead>
+                    <tr style="background: #F8FAFC; color: #475569; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                      <th style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0; width: 40px;">N°</th>
+                      <th style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0;">Intitulé Tranche</th>
+                      <th style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0; text-align: center; width: 90px;">Part</th>
+                      <th style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0; text-align: center; width: 130px;">Date Limite</th>
+                      <th style="padding: 8px 12px; border-bottom: 1px solid #E2E8F0; text-align: right; width: 140px;">Montant</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recap_tranches_table_body">
+                    <!-- Tranches clonées dynamiquement -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 4. SECTION DOSSIER PHYSIQUE & ACCESSOIRES -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 20px;">
+              
+              <!-- Pièces Fournies -->
+              <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+                  <div style="font-size: 12.5px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="folder-check" style="width: 15px; height: 15px;"></i> Pièces du Dossier
+                  </div>
+                  <span id="recap_dossier_badge" class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">0 / 0</span>
+                </div>
+                <div id="recap_pieces_list" style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px;">
+                  <!-- Liste des pièces avec statuts -->
+                </div>
+              </div>
+
+              <!-- Kits & Accessoires -->
+              <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+                  <div style="font-size: 12.5px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="package" style="width: 15px; height: 15px;"></i> Kits & Accessoires Souscrits
+                  </div>
+                  <span id="recap_acc_badge" class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">0 kit</span>
+                </div>
+                <div id="recap_accessoires_list" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px;">
+                  <!-- Badges des accessoires cochés -->
+                </div>
+              </div>
+
+            </div>
+
           </div>
 
           <!-- Wizard Footer Buttons -->
@@ -529,6 +671,8 @@ $(document).ready(function() {
                 $field.each(function() {
                   if (val.indexOf($(this).val()) !== -1) {
                     $(this).prop('checked', true);
+                    if ($(this).hasClass('chk-piece')) updatePieceCardStyle($(this));
+                    if ($(this).hasClass('chk-accessoire')) updateAccCardStyle($(this));
                   }
                 });
               }
@@ -602,38 +746,160 @@ $(document).ready(function() {
     return true;
   }
 
+  function getFormVal(selector) {
+    try {
+      var $el = $(selector);
+      if (!$el.length) return '';
+      var val = $el.val();
+      if (val === null || val === undefined) return '';
+      return String(val).trim();
+    } catch(e) {
+      return '';
+    }
+  }
+
   function fillRecap() {
-    var nom = $('#wiz_nom').val().trim();
-    var prenom = $('#wiz_prenom').val().trim();
-    var tel = $('#wiz_tel').val().trim();
-    var sexe = $('select[name="sexe_etudiant"]').val() === 'M' ? 'Masculin' : 'Féminin';
+    var nom = getFormVal('#wiz_nom') || getFormVal('[name="nom_etudiant"]');
+    var prenom = getFormVal('#wiz_prenom') || getFormVal('[name="prenom_etudiant"]');
+    var tel = getFormVal('#wiz_tel') || getFormVal('[name="telephone_etudiant"]');
+    var email = getFormVal('[name="email_etudiant"]');
+    var residence = getFormVal('[name="lieu_residence_etudiant"]');
+    var dateNais = getFormVal('[name="date_naissance_etudiant"]');
+    var lieuNais = getFormVal('[name="lieu_naissance_etudiant"]');
+    var nat = getFormVal('[name="nationalite_etudiant"]') || 'Ivoirienne';
+    var sexeVal = getFormVal('[name="sexe_etudiant"]');
+    var sexe = (sexeVal === 'F') ? 'Féminin' : 'Masculin';
 
-    $('#recap_nom_prenom').text((nom + ' ' + prenom).toUpperCase());
+    var matMenet = getFormVal('[name="matricule_menet"]');
+    var matMesrs = getFormVal('[name="matricule_mesrs"]');
+
+    var fullName = (nom + ' ' + prenom).trim().toUpperCase();
+    var initials = ((nom ? nom.charAt(0) : 'E') + (prenom ? prenom.charAt(0) : 'T')).toUpperCase();
+
+    $('#recap_avatar').text(initials || 'ET');
+    $('#recap_nom_prenom').text(fullName || 'NOUVEL ÉTUDIANT');
+    $('#recap_sexe_badge').text(sexe);
+    $('#recap_nationalite_badge').text(nat);
+
+    var naisParts = [];
+    if (dateNais) naisParts.push('Né(e) le ' + dateNais);
+    if (lieuNais) naisParts.push('à ' + lieuNais);
+    $('#recap_naissance_lieu').text(naisParts.length ? naisParts.join(' ') : 'Date non renseignée');
     $('#recap_tel').text(tel || '-');
-    $('#recap_sexe').text(sexe);
+    $('#recap_email').text(email || 'Non renseigné');
+    $('#recap_residence').text(residence || 'Non renseigné');
 
-    var pere = $('input[name="nom_pere"]').val().trim();
-    var mere = $('input[name="nom_mere"]').val().trim();
-    var tuteur = $('input[name="nom_tuteur"]').val().trim();
-    $('#recap_pere').text(pere || 'Non renseigné');
-    $('#recap_mere').text(mere || 'Non renseignée');
-    $('#recap_tuteur').text(tuteur || 'Non renseigné');
+    $('#recap_mat_menet').text(matMenet || 'Non renseigné');
+    $('#recap_mat_mesrs').text(matMesrs || 'Non renseigné');
 
+    // 2. Parents
+    var pereNom = getFormVal('[name="nom_pere"]');
+    var pereTel = getFormVal('[name="telephone_pere"]');
+    var pereProf = getFormVal('[name="profession_pere"]');
+    $('#recap_pere_nom').text(pereNom || 'Non renseigné');
+    $('#recap_pere_contact').text(pereTel ? 'Tél : ' + pereTel : 'Aucun contact');
+    $('#recap_pere_prof').text(pereProf ? 'Profession : ' + pereProf : '-');
+
+    var mereNom = getFormVal('[name="nom_mere"]');
+    var mereTel = getFormVal('[name="telephone_mere"]');
+    var mereProf = getFormVal('[name="profession_mere"]');
+    $('#recap_mere_nom').text(mereNom || 'Non renseignée');
+    $('#recap_mere_contact').text(mereTel ? 'Tél : ' + mereTel : 'Aucun contact');
+    $('#recap_mere_prof').text(mereProf ? 'Profession : ' + mereProf : '-');
+
+    var tuteurNom = getFormVal('[name="nom_tuteur"]');
+    var tuteurTel = getFormVal('[name="telephone_tuteur"]');
+    $('#recap_tuteur_nom').text(tuteurNom || 'Non renseigné');
+    $('#recap_tuteur_contact').text(tuteurTel ? 'Tél : ' + tuteurTel : 'Aucun contact');
+
+    // 3. Scolarité & Échéancier
     var classeText = $('#wiz_classe option:selected').text();
-    var montant = $('#wiz_montant_scolarite').val();
-    var remise = $('#wiz_remise').val() || 0;
+    var isAffecte = $('input[name="affectation_etat"]:checked').val() === 'affecte';
+    var montant = Number(getFormVal('#wiz_montant_scolarite') || getFormVal('[name="montant_scolarite_inscription"]') || 0);
+    var remise = Number(getFormVal('#wiz_remise') || getFormVal('[name="remise_scolarite"]') || 0);
+    var net = Math.max(0, montant - remise);
 
-    $('#recap_classe').text(classeText || 'Non choisie');
-    $('#recap_montant').text(montant && Number(montant) > 0 ? Number(montant).toLocaleString('fr-FR') + ' FCFA' : 'Tarif classe automatique');
-    $('#recap_remise').text(Number(remise).toLocaleString('fr-FR') + ' FCFA');
+    $('#recap_classe_title').text(classeText && classeText.indexOf('Choisir') === -1 ? classeText : 'Classe non sélectionnée');
+    $('#recap_regime_text').html(isAffecte ? '<span style="color:#1E3A5F; font-weight:800;">● Régime Affecté (Subventionné par l\'État)</span>' : '<span style="color:#475569; font-weight:800;">● Régime Non Affecté (Privé)</span>');
+    $('#recap_scolarite_officielle').text(montant > 0 ? montant.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
+    $('#recap_remise_val').text(remise > 0 ? remise.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
+    $('#recap_net_scolarite').text(net.toLocaleString('fr-FR') + ' FCFA');
 
+    // Cloner ou regénérer les tranches dans le récapitulatif
+    var tranchesRows = $('#wiz_tranches_table_body').html();
+    if (tranchesRows && tranchesRows.trim() !== '') {
+      $('#recap_tranches_table_body').html(tranchesRows);
+    } else {
+      $('#recap_tranches_table_body').html('<tr><td colspan="5" style="padding:10px; text-align:center; color:#64748B;">Règlement standard unique de ' + net.toLocaleString('fr-FR') + ' FCFA</td></tr>');
+    }
+
+    // 4. Pièces du Dossier
     var totalPieces = $('.chk-piece').length;
     var checkedPieces = $('.chk-piece:checked').length;
-    var totalAccs = $('input[name="accessoires[]"]:checked').length;
+    $('#recap_dossier_badge').text(checkedPieces + ' / ' + totalPieces + ' pièce(s) fournie(s)');
+    if (checkedPieces === totalPieces && totalPieces > 0) {
+      $('#recap_dossier_badge').css({ 'background': '#DCFCE7', 'color': '#166534', 'border-color': '#86EFAC' });
+    } else {
+      $('#recap_dossier_badge').css({ 'background': '#EFF6FF', 'color': '#1E3A5F', 'border-color': '#BFDBFE' });
+    }
 
-    $('#recap_accessoires_count').text(totalAccs > 0 ? totalAccs + ' accessoire(s) / kit(s)' : 'Aucun');
-    $('#recap_dossier').text(checkedPieces + ' / ' + totalPieces + ' pièce(s) déposée(s)' + (totalPieces > 0 && checkedPieces === totalPieces ? ' (Complet)' : ''));
+    var piecesHtml = '';
+    $('.chk-piece').each(function() {
+      var isChk = $(this).is(':checked');
+      var label = $(this).closest('.piece-checkbox-card').find('div > div:first-child').text().trim();
+      piecesHtml += '<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:6px; background:' + (isChk ? '#F0FDF4' : '#F8FAFC') + '; border:1px solid ' + (isChk ? '#BBF7D0' : '#E2E8F0') + ';">';
+      piecesHtml += '  <span style="color:#0F172A; font-weight:600;">' + label + '</span>';
+      piecesHtml += isChk ? '  <span style="color:#166534; font-weight:800; font-size:11px;"><i data-lucide="check" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> Déposée</span>' : '  <span style="color:#64748B; font-weight:600; font-size:11px;">En attente</span>';
+      piecesHtml += '</div>';
+    });
+    $('#recap_pieces_list').html(piecesHtml || '<span style="color:#64748B; font-style:italic;">Aucune pièce configurée</span>');
+
+    // 5. Accessoires & Kits Souscrits
+    var accsHtml = '';
+    var totalAccs = 0;
+    var seenAccs = {};
+    $('#form-wizard-etudiant .chk-accessoire:checked, #form-wizard-etudiant input[name="accessoires[]"]:checked').each(function() {
+      var val = $(this).val();
+      if (!val || seenAccs[val]) return;
+      seenAccs[val] = true;
+      totalAccs++;
+
+      var label = $(this).attr('data-label') || $(this).closest('.acc-checkbox-card').find('.acc-label').text().trim() || $(this).next('span').text().trim() || $(this).closest('label').text().trim() || val;
+      var prix = Number($(this).attr('data-prix') || 0);
+      var prixFormatted = prix > 0 ? ' (' + prix.toLocaleString('fr-FR') + ' FCFA)' : '';
+      accsHtml += '<div style="background: #EFF6FF; color: #1E3A5F; border: 1.5px solid #BFDBFE; padding: 7px 12px; border-radius: 8px; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(30,58,95,0.06); margin: 3px;">';
+      accsHtml += '  <i data-lucide="check-circle" style="width: 15px; height: 15px; color: #15803D; flex-shrink: 0;"></i>';
+      accsHtml += '  <span>' + label + '</span>';
+      if (prix > 0) {
+        accsHtml += '  <span style="color: #1E3A5F; font-weight: 800; font-size: 11.5px; background: #DBEAFE; padding: 2px 7px; border-radius: 4px;">' + prix.toLocaleString('fr-FR') + ' FCFA</span>';
+      }
+      accsHtml += '</div>';
+    });
+
+    if (totalAccs > 0) {
+      $('#recap_acc_badge').text(totalAccs + ' kit(s) souscrit(s)').css({'background': '#DCFCE7', 'color': '#166534', 'border-color': '#86EFAC'});
+      $('#recap_accessoires_list').html(accsHtml);
+    } else {
+      $('#recap_acc_badge').text('0 kit').css({'background': '#EFF6FF', 'color': '#1E3A5F', 'border-color': '#BFDBFE'});
+      $('#recap_accessoires_list').html('<span style="color: #64748B; font-style: italic; font-size: 12.5px; padding: 4px 0;">Aucun kit ou accessoire supplémentaire sélectionné lors de cette inscription.</span>');
+    }
+
+    if (window.lucide) lucide.createIcons();
   }
+
+  // Gestion visuelle et réactive des kits / accessoires
+  function updateAccCardStyle($chk) {
+    var $card = $chk.closest('.acc-checkbox-card');
+    if ($chk.is(':checked')) {
+      $card.css({ 'background': '#EFF6FF', 'border-color': '#93C5FD' });
+    } else {
+      $card.css({ 'background': '#FFFFFF', 'border-color': '#CBD5E1' });
+    }
+  }
+
+  $(document).on('change', '.chk-accessoire', function() {
+    updateAccCardStyle($(this));
+  });
 
   // Gestion visuelle et réactive des pièces à fournir
   function updatePieceCardStyle($chk) {
