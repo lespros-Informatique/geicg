@@ -29,6 +29,32 @@ class AnneeController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    private function validateDatesAnnee(string $dateDebut, string $dateFin): ?string
+    {
+        if (empty($dateDebut) || empty($dateFin)) {
+            return "Les dates de début et de fin de l'année académique sont obligatoires.";
+        }
+
+        $timeDebut = strtotime($dateDebut);
+        $timeFin = strtotime($dateFin);
+
+        if (!$timeDebut || !$timeFin) {
+            return "Les dates saisies ne sont pas valide (AAAA-MM-JJ).";
+        }
+
+        if ($timeFin <= $timeDebut) {
+            $debutFormatted = date('d/m/Y', $timeDebut);
+            $finFormatted = date('d/m/Y', $timeFin);
+            return "Incohérence des dates : La date de fin ($finFormatted) doit être strictement postérieure à la date de début ($debutFormatted).";
+        }
+
+        if (($timeFin - $timeDebut) < (30 * 86400)) {
+            return "Une année académique doit couvrir une durée minimale d'au moins 30 jours.";
+        }
+
+        return null;
+    }
+
     public function add()
     {
         $this->requirePost(false);
@@ -39,12 +65,11 @@ class AnneeController extends BaseController
             if (!$this->checkUnique('annees', 'libelle_annee', $data['libelle_annee'], 'Annee academique')) return;
         }
 
-        // Validation de cohérence des dates
-        if (!empty($data['date_debut_annee']) && !empty($data['date_fin_annee'])) {
-            if ($data['date_fin_annee'] <= $data['date_debut_annee']) {
-                $this->error('La date de fin doit être strictement postérieure à la date de début.');
-                return;
-            }
+        // Validation stricte des dates
+        $dateErr = $this->validateDatesAnnee($data['date_debut_annee'] ?? '', $data['date_fin_annee'] ?? '');
+        if ($dateErr) {
+            $this->error($dateErr);
+            return;
         }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
@@ -86,11 +111,12 @@ class AnneeController extends BaseController
             if (!$this->checkUnique('annees', 'libelle_annee', $data['libelle_annee'], 'Annee academique', 'id_annee', $id)) return;
         }
 
-        // Validation de cohérence des dates
+        // Validation stricte des dates
         $dateDebut = $data['date_debut_annee'] ?? ($currentItem['date_debut_annee'] ?? '');
         $dateFin = $data['date_fin_annee'] ?? ($currentItem['date_fin_annee'] ?? '');
-        if (!empty($dateDebut) && !empty($dateFin) && $dateFin <= $dateDebut) {
-            $this->error('La date de fin doit être strictement postérieure à la date de début.');
+        $dateErr = $this->validateDatesAnnee($dateDebut, $dateFin);
+        if ($dateErr) {
+            $this->error($dateErr);
             return;
         }
 

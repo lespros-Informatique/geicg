@@ -78,7 +78,6 @@
                 <th style="padding: 12px 14px;">Intitulé du Document / Pièce à Fournir</th>
                 <th style="padding: 12px 14px;">Précisions & Instructions</th>
                 <th style="padding: 12px 14px; text-align: center;">Cycles Assignés</th>
-                <th style="padding: 12px 14px; text-align: center;">Statut</th>
                 <th style="padding: 12px 14px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -115,18 +114,6 @@ $(document).ready(function() {
         }
         return '<span class="badge" style="background:#F1F5F9; color:#94A3B8; font-weight:600; padding:4px 8px; border-radius:6px;">Non assigné</span>';
       } },
-      { data: 'statut_piece', className: 'text-center', render: function(d, type, row) {
-        var val = d || 'actif';
-        var isActif = val === 'actif';
-        var bg = isActif ? '#DCFCE7' : '#FEE2E2';
-        var col = isActif ? '#15803D' : '#B91C1C';
-        var border = isActif ? '#86EFAC' : '#FCA5A5';
-
-        return '<select class="select-statut-piece" data-id="' + row.id_piece_fournir + '" style="background:' + bg + '; color:' + col + '; border:1px solid ' + border + '; font-weight:700; font-size:12px; border-radius:8px; padding:4px 8px; cursor:pointer; outline:none;">' +
-               '<option value="actif" ' + (isActif ? 'selected' : '') + ' style="background:#fff; color:#15803D;">Actif</option>' +
-               '<option value="inactif" ' + (!isActif ? 'selected' : '') + ' style="background:#fff; color:#B91C1C;">Inactif</option>' +
-               '</select>';
-      } },
       { data: null, orderable: false, className: 'text-end', render: function(d) {
         return '<a href="<?= RACINE ?>piece_fournir/edition/' + (d.editId || d.id_piece_fournir) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</a>' +
                '<a href="<?= RACINE ?>piece_fournir/supprimer/' + (d.editId || d.id_piece_fournir) + '" onclick="return confirm(\'Voulez-vous vraiment supprimer cette pièce du répertoire ?\')" class="btn btn-sm btn-danger" style="background:#EF4444; color:#fff; border:none; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></a>';
@@ -134,35 +121,6 @@ $(document).ready(function() {
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
-  });
-
-  // AJAX Status Change
-  $(document).on('change', '.select-statut-piece', function() {
-    var id = $(this).data('id');
-    var newStatut = $(this).val();
-
-    $.ajax({
-      url: '<?= RACINE ?>piece_fournir/changer',
-      type: 'POST',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      data: {
-        id: id,
-        statut: newStatut,
-        csrf_token: '<?= Validator::generateCsrfToken() ?>'
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
-          table.ajax.reload(null, false);
-        } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
-        }
-      },
-      error: function() {
-        if (window.toastr) toastr.error('Erreur réseau ou serveur');
-      }
-    });
   });
 });
 </script>

@@ -74,8 +74,8 @@ $niveaux = (new ModelNiveau())->getAll();
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut d'Affectation <span style="color: #EF4444;">*</span></label>
               <select class="form-control select2" id="sel_affectation_scolarite" name="affectation_etat" style="width: 100%;" required>
-                <option value="non_affecte" <?= (($item['affectation_etat'] ?? 'non_affecte') === 'non_affecte') ? 'selected' : '' ?>>Non Affecté (Privé)</option>
-                <option value="affecte" <?= (($item['affectation_etat'] ?? '') === 'affecte') ? 'selected' : '' ?>>Affecté (de l'État)</option>
+                <option value="affecte" <?= (($item['affectation_etat'] ?? 'affecte') === 'affecte') ? 'selected' : '' ?>>Affecté (de l'État)</option>
+                <option value="non_affecte" <?= (($item['affectation_etat'] ?? '') === 'non_affecte') ? 'selected' : '' ?>>Non Affecté (Privé)</option>
               </select>
             </div>
 

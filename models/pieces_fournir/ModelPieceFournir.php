@@ -77,6 +77,8 @@ class ModelPieceFournir extends BaseModel
         } catch (Exception $e) {
             return ['total' => 0, 'actifs' => 0, 'inactifs' => 0, 'utilises' => 0];
         }
+    }
+
     public function getByLibelle(string $libelle, ?int $excludeId = null): array
     {
         $sql = "

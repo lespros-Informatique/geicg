@@ -46,6 +46,49 @@ class SemestreController extends BaseController
         return null;
     }
 
+    private function validateDatesSemestre(string $dateDebut, string $dateFin, string $anneeCode = ''): ?string
+    {
+        if (empty($dateDebut) || empty($dateFin)) {
+            return null;
+        }
+
+        $timeDebut = strtotime($dateDebut);
+        $timeFin = strtotime($dateFin);
+
+        if (!$timeDebut || !$timeFin) {
+            return "Les dates saisies pour le semestre ne sont pas valides.";
+        }
+
+        if ($timeFin <= $timeDebut) {
+            $debutFormatted = date('d/m/Y', $timeDebut);
+            $finFormatted = date('d/m/Y', $timeFin);
+            return "Incohérence des dates du semestre : La date de fin ($finFormatted) doit être strictement postérieure à la date de début ($debutFormatted).";
+        }
+
+        if (!empty($anneeCode)) {
+            $stmtAnnee = $this->model->getCon()->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtAnnee->execute([$anneeCode]);
+            $annee = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
+
+            if ($annee) {
+                if (!empty($annee['date_debut_annee'])) {
+                    $anneeDebut = strtotime($annee['date_debut_annee']);
+                    if ($timeDebut < $anneeDebut) {
+                        return "La date de début du semestre (" . date('d/m/Y', $timeDebut) . ") ne peut pas être antérieure à la date de début de l'année académique " . $annee['libelle_annee'] . " (" . date('d/m/Y', $anneeDebut) . ").";
+                    }
+                }
+                if (!empty($annee['date_fin_annee'])) {
+                    $anneeFin = strtotime($annee['date_fin_annee']);
+                    if ($timeFin > $anneeFin) {
+                        return "La date de fin du semestre (" . date('d/m/Y', $timeFin) . ") ne peut pas dépasser la date de fin de l'année académique " . $annee['libelle_annee'] . " (" . date('d/m/Y', $anneeFin) . ").";
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function add()
     {
         $this->requirePost(false);
@@ -67,6 +110,13 @@ class SemestreController extends BaseController
 
         if (empty($anneeCode)) {
             $this->error('Veuillez sélectionner une année académique.');
+            return;
+        }
+
+        // Validation de cohérence des dates du semestre
+        $dateErr = $this->validateDatesSemestre($data['date_debut_semestre'] ?? '', $data['date_fin_semestre'] ?? '', $anneeCode);
+        if ($dateErr) {
+            $this->error($dateErr);
             return;
         }
 
@@ -132,6 +182,15 @@ class SemestreController extends BaseController
         $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : ($current['annee_code'] ?? '');
         if (empty($anneeCode)) {
             $this->error('Veuillez sélectionner une année académique.');
+            return;
+        }
+
+        // Validation de cohérence des dates du semestre
+        $dDebut = $data['date_debut_semestre'] ?? ($current['date_debut_semestre'] ?? '');
+        $dFin = $data['date_fin_semestre'] ?? ($current['date_fin_semestre'] ?? '');
+        $dateErr = $this->validateDatesSemestre($dDebut, $dFin, $anneeCode);
+        if ($dateErr) {
+            $this->error($dateErr);
             return;
         }
 

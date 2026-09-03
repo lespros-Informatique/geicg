@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -13,6 +13,34 @@
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Catégorie de Dépense
         </a>
       </div>
+
+      <!-- Navigation Tabs (Dépenses & Engagements vs Types de Dépenses) -->
+      <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
+        <a href="<?= RACINE ?>depense/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="file-minus" style="width: 17px; height: 17px;"></i> Dépenses & Engagements
+        </a>
+        <a href="<?= RACINE ?>type_depense/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="tags" style="width: 17px; height: 17px;"></i> Types / Catégories de Dépenses
+        </a>
+      </div>
+
+      <!-- Quick Add Form Card pour Catégorie de Dépense -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px 24px; border: 1px solid #CBD5E1; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Catégorie / Type de Dépense
+        </h3>
+        <form action="<?= RACINE ?>type_depense/add" method="POST" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; width: 100%;">
+          <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+          <div style="flex: 1; min-width: 280px;">
+            <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom / Désignation de la catégorie *</label>
+            <input type="text" name="libelle_type_depense" required placeholder="Ex: Fournitures de bureau, Électricité & Eau, Maintenance des locaux..." class="form-control" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px; width: 100%; box-sizing: border-box;">
+          </div>
+          <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px; height: 42px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="save" style="width: 16px; height: 16px;"></i> Enregistrer la Catégorie
+          </button>
+        </form>
+      </div>
+
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-type_depenses" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">

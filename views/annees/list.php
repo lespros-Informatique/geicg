@@ -13,6 +13,17 @@
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Année Académique
         </a>
       </div>
+
+      <!-- Navigation Tabs (Années Académiques vs Semestres & Périodes) -->
+      <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
+        <a href="<?= RACINE ?>annee/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="calendar-range" style="width: 17px; height: 17px;"></i> Années Académiques
+        </a>
+        <a href="<?= RACINE ?>semestre/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="clock" style="width: 17px; height: 17px;"></i> Semestres & Périodes
+        </a>
+      </div>
+
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-annees" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">

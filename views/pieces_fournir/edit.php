@@ -135,12 +135,30 @@ $(document).ready(function() {
 
   $('#form-add-pieces').on('submit', function(e) {
     var hasValid = false;
+    var seenLibelles = [];
+    var hasDuplicate = false;
+
     $('.inp-piece-libelle').each(function() {
-      if ($.trim($(this).val()) !== '') hasValid = true;
+      var val = $.trim($(this).val()).toLowerCase();
+      if (val !== '') {
+        hasValid = true;
+        if (seenLibelles.indexOf(val) !== -1) {
+          hasDuplicate = true;
+        } else {
+          seenLibelles.push(val);
+        }
+      }
     });
+
     if (!hasValid) {
       e.preventDefault();
       alert('Veuillez renseigner au moins un document à fournir.');
+      return false;
+    }
+
+    if (hasDuplicate) {
+      e.preventDefault();
+      alert('Vous avez saisi le même intitulé de document plusieurs fois dans ce formulaire.');
       return false;
     }
   });

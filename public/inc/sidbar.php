@@ -335,19 +335,14 @@
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
             <div class="nav-section-items" id="sec-academique">
-                <?php if ($showAnnees): ?>
-                <a href="<?= RACINE ?>annee/list" class="nav-item sub <?= strpos($currentUri, '/annee/') !== false ? 'active' : '' ?>" data-title="Années Académiques">
-                    <i data-lucide="calendar-range"></i> <span>Années Académiques</span>
+                <?php if ($showAnnees || $showSemestres): ?>
+                <a href="<?= RACINE ?>annee/list" class="nav-item sub <?= (strpos($currentUri, '/annee') !== false || strpos($currentUri, '/semestre') !== false) ? 'active' : '' ?>" data-title="Années & Semestres">
+                    <i data-lucide="calendar-range"></i> <span>Années & Semestres</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showClasses): ?>
                 <a href="<?= RACINE ?>classe/list" class="nav-item sub <?= strpos($currentUri, '/classe/') !== false ? 'active' : '' ?>" data-title="Classes & Promotions">
                     <i data-lucide="graduation-cap"></i> <span>Classes & Promotions</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showSemestres): ?>
-                <a href="<?= RACINE ?>semestre/list" class="nav-item sub <?= strpos($currentUri, '/semestre/') !== false ? 'active' : '' ?>" data-title="Semestres & Périodes">
-                    <i data-lucide="clock"></i> <span>Semestres & Périodes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showUe): ?>
@@ -397,11 +392,8 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showPiecesFournir): ?>
-                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir/') !== false && strpos($currentUri, '/piece_fournir_cycle/') === false ? 'active' : '' ?>" data-title="Pièces à Fournir">
-                    <i data-lucide="file-check"></i> <span>Pièces à Fournir</span>
-                </a>
-                <a href="<?= RACINE ?>piece_fournir_cycle/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir_cycle/') !== false ? 'active' : '' ?>" data-title="Dossiers par Cycle">
-                    <i data-lucide="folder-check"></i> <span>Dossiers par Cycle</span>
+                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Pièces & Dossiers à Fournir">
+                    <i data-lucide="file-check-2"></i> <span>Pièces & Dossiers à Fournir</span>
                 </a>
                 <?php endif; ?>
             </div>
@@ -448,13 +440,8 @@
                     <i data-lucide="alert-triangle"></i> <span>Relances & Impayés</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showTypeDep): ?>
-                <a href="<?= RACINE ?>type_depense/list" class="nav-item sub <?= strpos($currentUri, '/type_depense/') !== false ? 'active' : '' ?>" data-title="Types de Dépenses">
-                    <i data-lucide="tags"></i> <span>Types de Dépenses</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showDepenses): ?>
-                <a href="<?= RACINE ?>depense/list" class="nav-item sub <?= strpos($currentUri, '/depense/') !== false ? 'active' : '' ?>" data-title="Dépenses & Engagements">
+                <?php if ($showDepenses || $showTypeDep): ?>
+                <a href="<?= RACINE ?>depense/list" class="nav-item sub <?= (strpos($currentUri, '/depense') !== false || strpos($currentUri, '/type_depense') !== false) ? 'active' : '' ?>" data-title="Dépenses & Engagements">
                     <i data-lucide="file-minus"></i> <span>Dépenses & Engagements</span>
                 </a>
                 <?php endif; ?>

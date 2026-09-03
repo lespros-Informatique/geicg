@@ -58,5 +58,36 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
+<script>
+$(document).ready(function() { 
+  if (window.lucide) lucide.createIcons();
+
+  function displayFormError(msg, $form) {
+    if (window.toastr) {
+      toastr.error(msg);
+    } else if (typeof showToast === 'function') {
+      showToast(msg, 'error');
+    }
+    
+    $form.find('.js-date-error-banner').remove();
+    var alertHtml = '<div class="alert alert-danger js-date-error-banner" style="background:#FEE2E2; border:1px solid #FCA5A5; color:#991B1B; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:10px;">' +
+                    '<i data-lucide="alert-triangle" style="width:18px; height:18px; flex-shrink:0;"></i>' +
+                    '<span>' + msg + '</span>' +
+                    '</div>';
+    $form.prepend(alertHtml);
+    if (window.lucide) lucide.createIcons();
+  }
+
+  $('form').on('submit', function(e) {
+    var dDebut = $('input[name="date_debut_annee"]').val();
+    var dFin = $('input[name="date_fin_annee"]').val();
+
+    if (dDebut && dFin && dFin <= dDebut) {
+      e.preventDefault();
+      displayFormError("Erreur sur les dates : La date de fin doit être strictement supérieure à la date de début.", $(this));
+      return false;
+    }
+  });
+});
+</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

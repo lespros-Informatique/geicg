@@ -69,9 +69,22 @@ class PieceFournirController extends BaseController
         // Ajout par lot
         if (isset($data['pieces']) && is_array($data['pieces'])) {
             $inserted = 0;
+            $duplicates = 0;
+            $seenInBatch = [];
+
             foreach ($data['pieces'] as $p) {
                 $libelle = trim($p['libelle'] ?? '');
                 if (empty($libelle)) continue;
+
+                $libelleLower = mb_strtolower($libelle);
+
+                // Vérifier si le libellé est un doublon dans le formulaire ou existe déjà en BD
+                if (in_array($libelleLower, $seenInBatch) || $this->model->existsByLibelle($libelle)) {
+                    $duplicates++;
+                    continue;
+                }
+
+                $seenInBatch[] = $libelleLower;
 
                 $code = $this->validator->generateCode('pieces_fournir', 'code_piece_fournir', 'DOC-', 8);
                 $save = [
@@ -88,11 +101,19 @@ class PieceFournirController extends BaseController
             }
 
             if ($inserted > 0) {
-                $_SESSION['flash_success'] = "$inserted pièce(s) ajoutée(s) au répertoire avec succès !";
+                if ($duplicates > 0) {
+                    $_SESSION['flash_success'] = "$inserted pièce(s) ajoutée(s) au répertoire avec succès. $duplicates document(s) existant déjà ont été ignoré(s).";
+                } else {
+                    $_SESSION['flash_success'] = "$inserted pièce(s) ajoutée(s) au répertoire avec succès !";
+                }
                 header('Location: ' . RACINE . 'piece_fournir/list');
                 exit();
             } else {
-                $this->error("Aucune pièce valide à enregistrer.");
+                if ($duplicates > 0) {
+                    $this->error("Le(s) document(s) saisi(s) existe(nt) déjà dans le répertoire des pièces.");
+                } else {
+                    $this->error("Aucune pièce valide à enregistrer.");
+                }
             }
             return;
         }
@@ -101,6 +122,11 @@ class PieceFournirController extends BaseController
         $libelle = trim($data['libelle_piece'] ?? '');
         if (empty($libelle)) {
             $this->error("L'intitulé de la pièce à fournir est obligatoire.");
+            return;
+        }
+
+        if ($this->model->existsByLibelle($libelle)) {
+            $this->error("La pièce « $libelle » existe déjà dans le répertoire.");
             return;
         }
 
@@ -139,6 +165,11 @@ class PieceFournirController extends BaseController
         $libelle = trim($data['libelle_piece'] ?? '');
         if (empty($libelle)) {
             $this->error("L'intitulé de la pièce est obligatoire.");
+            return;
+        }
+
+        if ($this->model->existsByLibelle($libelle, $id)) {
+            $this->error("Une autre pièce portant l'intitulé « $libelle » existe déjà dans le répertoire.");
             return;
         }
 
