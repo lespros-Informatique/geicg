@@ -11,12 +11,12 @@ class EtudiantController extends BaseController
     {
         $this->requireAuth();
         $db = $this->model->getCon();
-        $annees = $db->query("SELECT * FROM annees WHERE statut_annee = 'actif' ORDER BY date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC);
+        $annees = $db->query("SELECT * FROM annees ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC);
         $niveaux = $db->query("SELECT * FROM niveaux WHERE statut_niveau = 'actif' ORDER BY libelle_niveau ASC")->fetchAll(PDO::FETCH_ASSOC);
         $filieres = $db->query("SELECT * FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC);
         $classes = $db->query("SELECT * FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        $anneeActive = $_SESSION['annee_active_code'] ?? ($annees[0]['code_annee'] ?? '');
+        $anneeActive = $this->getActiveAnneeCode();
 
         $this->loadView('../views/etudiants/list.php', [
             'annees' => $annees,
@@ -30,8 +30,13 @@ class EtudiantController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $anneeCode = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
+        if ($anneeCode === '' || $anneeCode === null) {
+            $anneeCode = $this->getActiveAnneeCode();
+        }
+
         $filters = [
-            'annee_code' => $_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''),
+            'annee_code' => $anneeCode,
             'niveau_code' => $_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''),
             'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
             'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),

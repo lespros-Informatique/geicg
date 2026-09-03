@@ -376,7 +376,7 @@
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-eleves" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="users" style="width: 16px; height: 16px;"></i> <span>Scolarité & Élèves</span>
+                    <i data-lucide="users" style="width: 16px; height: 16px;"></i> <span>Scolarité & Etudiant</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>

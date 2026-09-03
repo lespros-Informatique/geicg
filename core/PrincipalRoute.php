@@ -128,8 +128,12 @@ if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['annee_active_cod
     try {
         $dbInit = (new Database())->getCon();
         if ($dbInit) {
-            $stmtInit = $dbInit->query("SELECT code_annee, libelle_annee FROM annees ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), id_annee DESC LIMIT 1");
+            $stmtInit = $dbInit->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' LIMIT 1");
             $rowInit = $stmtInit ? $stmtInit->fetch(PDO::FETCH_ASSOC) : null;
+            if (!$rowInit) {
+                $stmtFallback = $dbInit->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+                $rowInit = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
+            }
             if ($rowInit) {
                 $_SESSION['annee_active_code'] = $rowInit['code_annee'];
                 $_SESSION['annee_active_libelle'] = $rowInit['libelle_annee'];

@@ -35,12 +35,12 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php if (!empty($item['id_salle'])): ?>
             <input type="hidden" name="id_salle" value="<?= $item['id_salle'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 750px;">
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
+            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom / Numéro de salle <span style="color: #EF4444;">*</span></label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_salle" value="<?= htmlspecialchars($item['libelle_salle'] ?? '') ?>" placeholder="Ex: Amphi A - Salle 102" required>
             </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Capacité d\'accueil (places)</label>
               <input type="number"  class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="capacite_salle" value="<?= htmlspecialchars($item['capacite_salle'] ?? '') ?>" placeholder="Ex: 120" >
             </div>

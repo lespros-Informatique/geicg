@@ -38,17 +38,28 @@ $anneeActive = $anneeActive ?? '';
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: flex-end;">
           
-          <!-- Filtre Année Académique -->
+          <!-- Filtre Année Académique (Verrouillé sur l'année active en session) -->
           <div class="form-group" style="margin: 0;">
-            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Année Académique</label>
-            <select id="filter-annee" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
-              <option value="ALL">-- Toutes les années --</option>
-              <?php foreach ($annees as $a): ?>
-                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($a['code_annee'] === $anneeActive) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['code_annee'] === $anneeActive) ? '(En cours)' : '' ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
+            <label style="display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
+              <span>Année Académique</span>
+              <span style="font-size: 10px; font-weight: 800; color: #1E3A5F; background: #E2E8F0; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">
+                <i data-lucide="lock" style="width: 10px; height: 10px;"></i> Session
+              </span>
+            </label>
+            <div style="position: relative;">
+              <select id="filter-annee" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 700; background: #F1F5F9; color: #1E3A5F; cursor: not-allowed; pointer-events: none;" readonly tabindex="-1">
+                <?php foreach ($annees as $a): ?>
+                  <?php if ($a['code_annee'] === $anneeActive): ?>
+                    <option value="<?= htmlspecialchars($a['code_annee']) ?>" selected>
+                      <?= htmlspecialchars($a['libelle_annee']) ?> (Année Active)
+                    </option>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+                <?php if (empty($anneeActive)): ?>
+                  <option value="ALL">-- Année Active --</option>
+                <?php endif; ?>
+              </select>
+            </div>
           </div>
 
           <!-- Filtre Filière -->

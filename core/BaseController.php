@@ -21,8 +21,12 @@ abstract class BaseController
         if (empty($_SESSION['annee_active_code'])) {
             try {
                 $db = (new Database())->getCon();
-                $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), id_annee DESC LIMIT 1");
+                $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' LIMIT 1");
                 $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+                if (!$row) {
+                    $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+                    $row = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
+                }
                 if ($row) {
                     $_SESSION['annee_active_code'] = $row['code_annee'];
                     $_SESSION['annee_active_libelle'] = $row['libelle_annee'];

@@ -19,8 +19,8 @@
           <?php if (!empty($item['id_matiere'])): ?>
             <input type="hidden" name="id_matiere" value="<?= $item['id_matiere'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 600px;">
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%;">
+            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Intitulé / Nom de la matière <span style="color: #EF4444;">*</span></label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_matiere" value="<?= htmlspecialchars($item['libelle_matiere'] ?? '') ?>" placeholder="Ex: Programmation Web & Frameworks PHP" required>
               <small style="color: #64748B; font-size: 12px; margin-top: 6px; display: block;">Le coefficient et les heures sont définis lors de l'affectation par classe & professeur.</small>
