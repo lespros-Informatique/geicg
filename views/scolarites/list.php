@@ -92,7 +92,6 @@
                     <th style="padding: 12px;">Année</th>
                     <th style="padding: 12px;">Filière</th>
                     <th style="padding: 12px;">Niveau</th>
-                    <th style="padding: 12px;">Régime</th>
                     <th style="padding: 12px;">Montant (FCFA)</th>
                     <th class="text-center" style="padding: 12px;">Statut</th>
                     <th class="text-end" style="padding: 12px;">Actions</th>
@@ -147,11 +146,6 @@ $(document).ready(function() {
       } },
       { data: 'libelle_filiere', render: function(d, t, r) { return '<span style="font-weight:700; color:#0F172A;">' + (d || r.filiere_code || 'Non définie') + '</span>'; } },
       { data: 'libelle_niveau', render: function(d, t, r) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || r.niveau_code || 'Non défini') + '</span>'; } },
-      { data: 'affectation_etat', render: function(d) {
-        return (d === 'affecte')
-          ? '<span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px;">Affecté (État)</span>'
-          : '<span class="badge" style="background:#F1F5F9; color:#475569; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px;">Non Affecté (Privé)</span>';
-      } },
       { data: 'montant_scolarite', render: function(d) { 
         return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>'; 
       } },
