@@ -334,37 +334,42 @@ class InscriptionController extends BaseController
 
         $filiereCode = $classe['filiere_code'] ?? '';
         $niveauCode = $classe['niveau_code'] ?? '';
-        $anneeCode = $classe['annee_code'] ?? '';
+        $classAnneeCode = $classe['annee_code'] ?? '';
+        $activeAnneeCode = $this->getActiveAnneeCode();
 
-        // 1. Trouver le tarif de scolarité actif pour cette classe et ce statut d'affectation
+        // 1. Trouver le tarif de scolarité actif pour cette classe, l'année active et ce statut d'affectation
         $stmtSco = $db->prepare("
             SELECT * FROM scolarites 
             WHERE filiere_code = ? 
-              AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
-              AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
-              AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
               AND statut_scolarite = 'actif'
             ORDER BY 
-              (CASE WHEN annee_code = ? AND niveau_code = ? AND affectation_etat = ? THEN 1
-                    WHEN niveau_code = ? AND affectation_etat = ? THEN 2
-                    WHEN affectation_etat = ? THEN 3
-                    ELSE 4 END), 
+              (CASE 
+                WHEN (annee_code = ? OR annee_code = ? OR annee_code = '' OR annee_code IS NULL) 
+                     AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL) 
+                     AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL) THEN 1
+                WHEN (annee_code = ? OR annee_code = ?) 
+                     AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL) THEN 2
+                WHEN (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL) THEN 3
+                ELSE 4 END), 
               id_scolarite DESC
             LIMIT 1
         ");
-        $stmtSco->execute([$filiereCode, $niveauCode, $anneeCode, $affectationEtat, $anneeCode, $niveauCode, $affectationEtat, $niveauCode, $affectationEtat, $affectationEtat]);
+        $stmtSco->execute([
+            $filiereCode,
+            $activeAnneeCode, $classAnneeCode, $niveauCode, $affectationEtat,
+            $activeAnneeCode, $classAnneeCode, $affectationEtat,
+            $affectationEtat
+        ]);
         $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
 
         if (!$sco) {
             $stmtSco = $db->prepare("
                 SELECT * FROM scolarites 
-                WHERE filiere_code = ? 
-                  AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
-                  AND statut_scolarite = 'actif'
-                ORDER BY (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END), id_scolarite DESC
+                WHERE filiere_code = ? AND statut_scolarite = 'actif'
+                ORDER BY id_scolarite DESC
                 LIMIT 1
             ");
-            $stmtSco->execute([$filiereCode, $niveauCode, $niveauCode]);
+            $stmtSco->execute([$filiereCode]);
             $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
         }
 

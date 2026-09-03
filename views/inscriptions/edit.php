@@ -263,36 +263,27 @@ $enseignants = (new ModelEnseignant())->getAll();
             <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le montant et l'échéancier des tranches s'ajustent automatiquement selon le régime sélectionné.</small>
           </div>
 
-          <!-- SÉLECTION DE LA CLASSE D'AFFECTATION -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%; margin-bottom: 20px;">
-            
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                <span id="label_classe_select">Classe d'affectation (Nouvelle Classe)</span> <span style="color: #EF4444;">*</span>
-              </label>
-              <select class="form-control select2" id="sel_classe_inscription" style="width: 100%; box-sizing: border-box;" name="classe_code" required>
-                <option value="">-- Choisir la classe --</option>
-                <?php foreach($classes as $cl): ?>
-                  <option value="<?= $cl['code_classe'] ?>" <?= (($item['classe_code'] ?? '') == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
+          <!-- SÉLECTION DE LA CLASSE D'AFFECTATION (PLEINE LARGEUR) -->
+          <div class="form-group" style="width: 100%; box-sizing: border-box; margin-bottom: 20px;">
+            <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+              <span id="label_classe_select">Classe d'affectation (Nouvelle Classe)</span> <span style="color: #EF4444;">*</span>
+            </label>
+            <select class="form-control select2" id="sel_classe_inscription" style="width: 100%; box-sizing: border-box;" name="classe_code" required>
+              <option value="">-- Choisir la classe --</option>
+              <?php foreach($classes as $cl): ?>
+                <option value="<?= $cl['code_classe'] ?>" <?= (($item['classe_code'] ?? '') == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
 
+          <!-- SCOLARITÉ DUE ET DATE D'INSCRIPTION (2 COLONNES) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; margin-bottom: 20px;">
+            
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
                 Scolarité Totale Due (FCFA) <span style="color: #64748B; font-size: 12px; font-weight: 600;">(Fixée par barème)</span>
               </label>
               <input type="number" id="inp_montant_scolarite" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" name="montant_scolarite_inscription" value="<?= htmlspecialchars($item['montant_scolarite_inscription'] ?? '') ?>" placeholder="0" readonly required>
-            </div>
-
-          </div>
-
-          <!-- REMISE & DATE D'INSCRIPTION -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
-            
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
-              <input type="number" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="remise_accordee" value="<?= htmlspecialchars($item['remise_accordee'] ?? '') ?>" placeholder="Ex: 50000">
             </div>
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
@@ -302,6 +293,12 @@ $enseignants = (new ModelEnseignant())->getAll();
               <input type="date" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #334155; font-weight: 600; pointer-events: none; cursor: not-allowed;" name="date_inscription" value="<?= htmlspecialchars($item['date_inscription'] ?? date('Y-m-d')) ?>" readonly required>
             </div>
 
+          </div>
+
+          <!-- REMISE / BOURSE ACCORDÉE (PLEINE LARGEUR) -->
+          <div class="form-group" style="width: 100%; box-sizing: border-box; margin-bottom: 20px;">
+            <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
+            <input type="number" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="remise_accordee" value="<?= htmlspecialchars($item['remise_accordee'] ?? '') ?>" placeholder="Ex: 50000">
           </div>
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">

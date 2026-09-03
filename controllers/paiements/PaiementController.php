@@ -116,16 +116,27 @@ class PaiementController extends BaseController
             SELECT * FROM scolarites 
             WHERE filiere_code = ? 
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
-              AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+              AND (annee_code = ? OR annee_code = ? OR annee_code = '' OR annee_code IS NULL)
               AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
               AND statut_scolarite = 'actif'
-            ORDER BY (CASE WHEN annee_code = ? THEN 1 ELSE 2 END),
+            ORDER BY (CASE WHEN annee_code = ? THEN 1 WHEN annee_code = ? THEN 2 ELSE 3 END),
                      (CASE WHEN affectation_etat = ? THEN 1 ELSE 2 END),
                      id_scolarite DESC
             LIMIT 1
         ");
-        $stmtSco->execute([$filiereCode, $niveauCode, $anneeCode, $affEtat, $anneeCode, $affEtat]);
+        $stmtSco->execute([$filiereCode, $niveauCode, $activeYear, $anneeCode, $affEtat, $activeYear, $anneeCode, $affEtat]);
         $scoGrid = $stmtSco->fetch(PDO::FETCH_ASSOC);
+
+        if (!$scoGrid && !empty($filiereCode)) {
+            $stmtScoFallback = $db->prepare("
+                SELECT * FROM scolarites 
+                WHERE filiere_code = ? AND statut_scolarite = 'actif'
+                ORDER BY (CASE WHEN (annee_code = ? OR annee_code = ?) THEN 1 ELSE 2 END), id_scolarite DESC
+                LIMIT 1
+            ");
+            $stmtScoFallback->execute([$filiereCode, $activeYear, $anneeCode]);
+            $scoGrid = $stmtScoFallback->fetch(PDO::FETCH_ASSOC);
+        }
 
         $codeScolarite = $scoGrid['code_scolarite'] ?? '';
         if ($scoGrid && (float)$scoGrid['montant_scolarite'] > 0) {

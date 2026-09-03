@@ -76,21 +76,75 @@
             <div style="font-size: 22px; font-weight: 800; color: #7E22CE; line-height: 1.2;"><?= (int)($summary['cycles_configures'] ?? 0) ?></div>
           </div>
         </div>
-
       </div>
+      
+      <style>
+        .dataTables_wrapper {
+          width: 100% !important;
+          position: relative !important;
+          clear: both !important;
+          box-sizing: border-box !important;
+        }
+        .dataTables_wrapper .dataTables_length {
+          float: left !important;
+          margin-bottom: 16px !important;
+        }
+        .dataTables_wrapper .dataTables_filter {
+          float: right !important;
+          margin-bottom: 16px !important;
+          text-align: right !important;
+        }
+        .dataTables_wrapper::after {
+          content: "" !important;
+          display: block !important;
+          clear: both !important;
+        }
+        .dataTables_wrapper .dataTables_scroll,
+        .dataTables_wrapper table.dataTable {
+          clear: both !important;
+          width: 100% !important;
+          margin-top: 14px !important;
+          border-collapse: collapse !important;
+        }
+        table.dataTable thead th {
+          background-color: #F8FAFC !important;
+          color: #475569 !important;
+          font-size: 13px !important;
+          font-weight: 700 !important;
+          padding: 12px 14px !important;
+          border-bottom: 2px solid #E2E8F0 !important;
+          white-space: nowrap !important;
+          vertical-align: middle !important;
+        }
+        table.dataTable tbody td {
+          padding: 12px 14px !important;
+          font-size: 13px !important;
+          vertical-align: middle !important;
+          white-space: nowrap !important;
+          border-bottom: 1px solid #F1F5F9 !important;
+        }
+        table.dataTable .cycle-badge,
+        table.dataTable .caractere-badge,
+        table.dataTable .badge {
+          position: static !important;
+          top: auto !important;
+          right: auto !important;
+          display: inline-block !important;
+        }
+      </style>
 
       <!-- Main Table Card -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-pieces-cycle" class="table display nowrap" style="width: 100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
                 <th style="padding: 12px 14px;">Code</th>
                 <th style="padding: 12px 14px;">Cycle Académique</th>
-                <th style="padding: 12px 14px;">Document / Pièce Exigée</th>
+                <th style="padding: 12px 14px;">Document / Pièce Administrative</th>
                 <th style="padding: 12px 14px; text-align: center;">Exemplaires</th>
-                <th style="padding: 12px 14px;">Nature du Document</th>
-                <th style="padding: 12px 14px; text-align: center;">Caractère</th>
+                <th style="padding: 12px 14px;">Nature Requise</th>
+                <th style="padding: 12px 14px; text-align: center;">Caractère Exigé</th>
                 <th style="padding: 12px 14px; text-align: center;">Statut</th>
                 <th style="padding: 12px 14px; text-align: right;">Actions</th>
               </tr>
@@ -116,7 +170,7 @@ $(document).ready(function() {
         return '<code style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</code>';
       } },
       { data: 'libelle_cycle', render: function(d) {
-        return '<span class="badge" style="background:#FAF5FF; color:#7E22CE; font-weight:800; font-size:12px; padding:5px 10px; border-radius:6px; border:1px solid #E9D5FF;">' + (d || 'Tous cycles') + '</span>';
+        return '<span class="cycle-badge" style="background:#FAF5FF; color:#7E22CE; font-weight:800; font-size:12px; padding:5px 10px; border-radius:6px; border:1px solid #E9D5FF; display:inline-block; position:static;">' + (d || 'Tous cycles') + '</span>';
       } },
       { data: 'libelle_piece', render: function(d, type, row) {
         var desc = row.description_piece ? '<div style="font-size:11.5px; color:#64748B; margin-top:2px;">' + row.description_piece + '</div>' : '';
@@ -136,11 +190,11 @@ $(document).ready(function() {
       } },
       { data: 'est_obligatoire', className: 'text-center', render: function(d) {
         if (d === 'obligatoire') {
-          return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:800; padding:4px 10px; border-radius:6px;">Obligatoire</span>';
+          return '<span class="caractere-badge" style="background:#DCFCE7; color:#15803D; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-block; position:static;">Obligatoire</span>';
         } else if (d === 'complementaire') {
-          return '<span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:800; padding:4px 10px; border-radius:6px;">Complémentaire</span>';
+          return '<span class="caractere-badge" style="background:#FEF3C7; color:#B45309; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-block; position:static;">Complémentaire</span>';
         }
-        return '<span class="badge" style="background:#F1F5F9; color:#475569; font-weight:700; padding:4px 10px; border-radius:6px;">Facultatif</span>';
+        return '<span class="caractere-badge" style="background:#F1F5F9; color:#475569; font-weight:700; padding:4px 10px; border-radius:6px; display:inline-block; position:static;">Facultatif</span>';
       } },
       { data: 'statut_piece_cycle', className: 'text-center', render: function(d, type, row) {
         var val = d || 'actif';
