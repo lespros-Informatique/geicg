@@ -22,15 +22,15 @@
 
       <?php if (!empty($item['id_piece_cycle'])): ?>
         <!-- FORMULAIRE MODIFICATION UNITAIRE -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); max-width: 800px; margin: 0 auto;">
-          <form action="<?= RACINE ?>piece_fournir_cycle/edit" method="POST">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+          <form action="<?= RACINE ?>piece_fournir_cycle/edit" method="POST" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
             <input type="hidden" name="id_piece_cycle" value="<?= $item['id_piece_cycle'] ?>">
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px; width: 100%;">
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle académique *</label>
-                <select name="cycle_code" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700;">
+                <select name="cycle_code" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <?php foreach ($cycles as $cy): ?>
                     <option value="<?= $cy['code_cycle'] ?>" <?= ($item['cycle_code'] ?? '') === $cy['code_cycle'] ? 'selected' : '' ?>>
                       <?= htmlspecialchars($cy['libelle_cycle']) ?>
@@ -41,7 +41,7 @@
 
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Document / Pièce administrative *</label>
-                <select name="piece_code" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700;">
+                <select name="piece_code" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <?php foreach ($pieces as $p): ?>
                     <option value="<?= $p['code_piece_fournir'] ?>" <?= ($item['piece_code'] ?? '') === $p['code_piece_fournir'] ? 'selected' : '' ?>>
                       <?= htmlspecialchars($p['libelle_piece']) ?>
@@ -52,12 +52,12 @@
 
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nombre d'exemplaires demandés *</label>
-                <input type="number" min="1" step="1" name="nombre_exemplaires" value="<?= (int)($item['nombre_exemplaires'] ?? 1) ?>" required class="form-control" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700;">
+                <input type="number" min="1" step="1" name="nombre_exemplaires" value="<?= (int)($item['nombre_exemplaires'] ?? 1) ?>" required class="form-control" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
               </div>
 
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nature du document *</label>
-                <select name="nature_document" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600;">
+                <select name="nature_document" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600; width: 100%;">
                   <option value="photocopie_simple" <?= ($item['nature_document'] ?? '') === 'photocopie_simple' ? 'selected' : '' ?>>Photocopie Simple</option>
                   <option value="photocopie_legalisee" <?= ($item['nature_document'] ?? '') === 'photocopie_legalisee' ? 'selected' : '' ?>>Photocopie Légalisée / Certifiée conforme</option>
                   <option value="original" <?= ($item['nature_document'] ?? '') === 'original' ? 'selected' : '' ?>>Original Requis</option>
@@ -67,7 +67,7 @@
 
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Caractère de l'exigence *</label>
-                <select name="est_obligatoire" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600;">
+                <select name="est_obligatoire" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600; width: 100%;">
                   <option value="obligatoire" <?= ($item['est_obligatoire'] ?? '') === 'obligatoire' ? 'selected' : '' ?>>Obligatoire (Bloquant)</option>
                   <option value="complementaire" <?= ($item['est_obligatoire'] ?? '') === 'complementaire' ? 'selected' : '' ?>>Complémentaire (Sous réserve)</option>
                   <option value="facultatif" <?= ($item['est_obligatoire'] ?? '') === 'facultatif' ? 'selected' : '' ?>>Facultatif</option>
@@ -76,7 +76,7 @@
 
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
-                <select name="statut_piece_cycle" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700;">
+                <select name="statut_piece_cycle" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <option value="actif" <?= ($item['statut_piece_cycle'] ?? '') === 'actif' ? 'selected' : '' ?>>Actif</option>
                   <option value="inactif" <?= ($item['statut_piece_cycle'] ?? '') === 'inactif' ? 'selected' : '' ?>>Inactif</option>
                 </select>
@@ -92,19 +92,19 @@
 
       <?php else: ?>
         <!-- FORMULAIRE AJOUT RAPIDE / PANIER DE PIÈCES À FOURNIR PAR CYCLE -->
-        <form action="<?= RACINE ?>piece_fournir_cycle/add" method="POST" id="form-bulk-piece-cycle">
+        <form action="<?= RACINE ?>piece_fournir_cycle/add" method="POST" id="form-bulk-piece-cycle" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
           <!-- Choix du Cycle & Année -->
-          <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 24px; border: 1px solid #CBD5E1; box-shadow: 0 2px 8px rgba(15,23,42,0.05); margin-bottom: 24px;">
+          <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 24px; border: 1px solid #CBD5E1; box-shadow: 0 2px 8px rgba(15,23,42,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
             <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="layers" style="width: 18px; height: 18px;"></i> Cycle Académique de Destination
             </h3>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%;">
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle ciblé *</label>
-                <select name="cycle_code" id="select_target_cycle" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700;">
+                <select name="cycle_code" id="select_target_cycle" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <option value="">-- Sélectionner un cycle --</option>
                   <?php foreach ($cycles as $cy): ?>
                     <option value="<?= $cy['code_cycle'] ?>">
@@ -117,7 +117,7 @@
 
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Année Académique</label>
-                <select name="annee_code" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600;">
+                <select name="annee_code" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600; width: 100%;">
                   <?php foreach ($annees as $an): ?>
                     <option value="<?= $an['code_annee'] ?? $an['id_annee'] ?>">
                       <?= htmlspecialchars($an['libelle_annee'] ?? $an['nom_annee']) ?>
@@ -129,7 +129,7 @@
           </div>
 
           <!-- Panier / Tableau Dynamique des Pièces de Cycle -->
-          <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 24px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(15,23,42,0.05); margin-bottom: 24px;">
+          <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 24px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(15,23,42,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1.5px solid #EFF6FF;">
               <div>
                 <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -275,15 +275,15 @@ $(document).ready(function() {
 
     var html = '<tr class="bulk-row-cycle" data-idx="' + rowIndex + '" style="border-bottom: 1px solid #F1F5F9;">' +
       '<td style="padding: 10px 12px;">' +
-        '<select name="items[' + rowIndex + '][piece_code]" required class="form-select sel-piece" style="border-radius:6px; font-weight:700; font-size:13px; padding:8px 12px;">' +
+        '<select name="items[' + rowIndex + '][piece_code]" required class="form-select sel-piece" style="border-radius:6px; font-weight:700; font-size:13px; padding:8px 12px; width:100%; box-sizing:border-box;">' +
           optHtml +
         '</select>' +
       '</td>' +
       '<td style="padding: 10px 12px; text-align:center;">' +
-        '<input type="number" min="1" step="1" name="items[' + rowIndex + '][nombre_exemplaires]" value="' + nbEx + '" required class="form-control" style="border-radius:6px; font-weight:700; text-align:center; font-size:13px; padding:8px;">' +
+        '<input type="number" min="1" step="1" name="items[' + rowIndex + '][nombre_exemplaires]" value="' + nbEx + '" required class="form-control" style="border-radius:6px; font-weight:700; text-align:center; font-size:13px; padding:8px; width:100%; box-sizing:border-box;">' +
       '</td>' +
       '<td style="padding: 10px 12px;">' +
-        '<select name="items[' + rowIndex + '][nature_document]" class="form-select" style="border-radius:6px; font-weight:600; font-size:12.5px; padding:8px 10px;">' +
+        '<select name="items[' + rowIndex + '][nature_document]" class="form-select" style="border-radius:6px; font-weight:600; font-size:12.5px; padding:8px 10px; width:100%; box-sizing:border-box;">' +
           '<option value="photocopie_simple" ' + (nature === 'photocopie_simple' ? 'selected' : '') + '>Photocopie Simple</option>' +
           '<option value="photocopie_legalisee" ' + (nature === 'photocopie_legalisee' ? 'selected' : '') + '>Photocopie Légalisée</option>' +
           '<option value="original" ' + (nature === 'original' ? 'selected' : '') + '>Original Requis</option>' +
@@ -291,7 +291,7 @@ $(document).ready(function() {
         '</select>' +
       '</td>' +
       '<td style="padding: 10px 12px; text-align:center;">' +
-        '<select name="items[' + rowIndex + '][est_obligatoire]" class="form-select" style="border-radius:6px; font-weight:700; font-size:12px; padding:6px 10px;">' +
+        '<select name="items[' + rowIndex + '][est_obligatoire]" class="form-select" style="border-radius:6px; font-weight:700; font-size:12px; padding:6px 10px; width:100%; box-sizing:border-box;">' +
           '<option value="obligatoire" ' + (exigence === 'obligatoire' ? 'selected' : '') + '>Obligatoire</option>' +
           '<option value="complementaire" ' + (exigence === 'complementaire' ? 'selected' : '') + '>Complémentaire</option>' +
           '<option value="facultatif" ' + (exigence === 'facultatif' ? 'selected' : '') + '>Facultatif</option>' +

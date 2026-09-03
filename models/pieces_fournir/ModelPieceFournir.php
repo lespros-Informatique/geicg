@@ -77,5 +77,34 @@ class ModelPieceFournir extends BaseModel
         } catch (Exception $e) {
             return ['total' => 0, 'actifs' => 0, 'inactifs' => 0, 'utilises' => 0];
         }
+    public function getByLibelle(string $libelle, ?int $excludeId = null): array
+    {
+        $sql = "
+            SELECT pf.*
+            FROM pieces_fournir pf
+            WHERE LOWER(TRIM(pf.libelle_piece)) = LOWER(TRIM(?))
+        ";
+        $params = [trim($libelle)];
+        if ($excludeId !== null && $excludeId > 0) {
+            $sql .= " AND pf.id_piece_fournir != ?";
+            $params[] = $excludeId;
+        }
+        $sql .= " LIMIT 1";
+
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("Get by libelle pieces_fournir: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function existsByLibelle(string $libelle, ?int $excludeId = null): bool
+    {
+        $item = $this->getByLibelle($libelle, $excludeId);
+        return !empty($item);
     }
 }
+
