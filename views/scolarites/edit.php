@@ -37,7 +37,7 @@ $niveaux = (new ModelNiveau())->getAll();
               <select class="form-control select2" id="sel_annee_scolarite" name="annee_code" style="width: 100%;" required>
                 <option value="">-- Choisir une année --</option>
                 <?php foreach($annees as $a): ?>
-                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '')) == $a['code_annee']) ? 'selected' : '' ?>>
+                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" data-debut="<?= htmlspecialchars($a['date_debut_annee'] ?? '') ?>" data-fin="<?= htmlspecialchars($a['date_fin_annee'] ?? '') ?>" <?= (($item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '')) == $a['code_annee']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === 'actif') ? '(En cours)' : '' ?>
                   </option>
                 <?php endforeach; ?>
@@ -171,6 +171,78 @@ $(document).ready(function() {
     return Number(val || 0).toLocaleString('fr-FR') + ' FCFA';
   }
 
+  function formatDateFr(isoDateStr) {
+    if (!isoDateStr) return '';
+    var parts = isoDateStr.split('-');
+    if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
+    return isoDateStr;
+  }
+
+  function displayFormError(msg, $form) {
+    if (window.toastr) {
+      toastr.error(msg);
+    } else if (typeof showToast === 'function') {
+      showToast(msg, 'error');
+    }
+    
+    $form.find('.js-date-error-banner').remove();
+    var alertHtml = '<div class="alert alert-danger js-date-error-banner" style="background:#FEE2E2; border:1px solid #FCA5A5; color:#991B1B; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:10px;">' +
+                    '<i data-lucide="alert-triangle" style="width:18px; height:18px; flex-shrink:0;"></i>' +
+                    '<span>' + msg + '</span>' +
+                    '</div>';
+    $form.prepend(alertHtml);
+    if (window.lucide) lucide.createIcons();
+    $('html, body').animate({ scrollTop: $form.offset().top - 80 }, 200);
+  }
+
+  function getNextDayStr(dateIsoStr) {
+    if (!dateIsoStr) return '';
+    var d = new Date(dateIsoStr);
+    if (isNaN(d.getTime())) return '';
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  function updateTrancheDateConstraints() {
+    var $optAnnee = $('#sel_annee_scolarite option:selected');
+    var anneeDebut = $optAnnee.data('debut') || '';
+    var anneeFin = $optAnnee.data('fin') || '';
+
+    var currentMin = anneeDebut;
+
+    $('#tbody-tranches tr').each(function() {
+      var $dateInput = $(this).find('.input-tranche-date');
+
+      if (currentMin) {
+        $dateInput.attr('min', currentMin);
+      } else {
+        $dateInput.removeAttr('min');
+      }
+
+      if (anneeFin) {
+        $dateInput.attr('max', anneeFin);
+      } else {
+        $dateInput.removeAttr('max');
+      }
+
+      var val = $dateInput.val();
+      if (val) {
+        var minAttr = $dateInput.attr('min');
+        if (minAttr && val < minAttr) {
+          $dateInput.val('');
+          val = '';
+        }
+      }
+
+      if (val) {
+        var nextDay = getNextDayStr(val);
+        if (nextDay) {
+          currentMin = nextDay;
+        }
+      }
+    });
+  }
+
   function updateTranchesSummary() {
     var montantScolarite = parseFloat($('input[name="montant_scolarite"]').val()) || 0;
     var totalTranches = 0;
@@ -189,6 +261,22 @@ $(document).ready(function() {
     var diff = montantScolarite - totalTranches;
     var $lblReste = $('#lbl-reste-scolarite');
     var $badge = $('#badge-repartition-status');
+    var $btnAdd = $('#btn-add-tranche');
+
+    // Désactivation du bouton "Ajouter une tranche" si la scolarité est déjà intégralement atteinte
+    if (montantScolarite > 0 && totalTranches >= montantScolarite) {
+      $btnAdd.prop('disabled', true).css({
+        'opacity': '0.5',
+        'cursor': 'not-allowed',
+        'pointer-events': 'none'
+      }).attr('title', 'La totalité de la scolarité est déjà couverte par les tranches.');
+    } else {
+      $btnAdd.prop('disabled', false).css({
+        'opacity': '1',
+        'cursor': 'pointer',
+        'pointer-events': 'auto'
+      }).attr('title', 'Ajouter une tranche');
+    }
 
     if (rowCount === 0) {
       $('#tranches-empty-state').show();
@@ -198,7 +286,7 @@ $(document).ready(function() {
       $('#tranches-empty-state').hide();
       if (montantScolarite > 0) {
         if (Math.abs(diff) < 0.01) {
-          $lblReste.text('0 FCFA (Équilibré)').css('color', '#15803D');
+          $lblReste.text('0 FCFA (100% Couvert)').css('color', '#15803D');
           $badge.text(rowCount + ' tranche(s) - 100% planifié').css({ 'background': '#DCFCE7', 'color': '#15803D' });
         } else if (diff > 0) {
           $lblReste.text(formatFcfa(diff) + ' restant').css('color', '#B45309');
@@ -212,6 +300,8 @@ $(document).ready(function() {
         $badge.text(rowCount + ' tranche(s)').css({ 'background': '#EFF6FF', 'color': '#1E3A5F' });
       }
     }
+
+    updateTrancheDateConstraints();
   }
 
   function addTrancheRow(data) {
@@ -255,7 +345,19 @@ $(document).ready(function() {
     updateTranchesSummary();
   }
 
-  $('#btn-add-tranche').on('click', function() {
+  $('#btn-add-tranche').on('click', function(e) {
+    var montantScolarite = parseFloat($('input[name="montant_scolarite"]').val()) || 0;
+    var totalTranches = 0;
+    $('#tbody-tranches .input-tranche-montant').each(function() {
+      totalTranches += parseFloat($(this).val()) || 0;
+    });
+
+    if (montantScolarite > 0 && totalTranches >= montantScolarite) {
+      e.preventDefault();
+      displayFormError("Le montant total de la scolarité (" + formatFcfa(montantScolarite) + ") est déjà entièrement couvert par les tranches actuelles. Impossible d'ajouter une tranche supplémentaire.", $('form'));
+      return false;
+    }
+
     addTrancheRow();
   });
 
@@ -269,8 +371,75 @@ $(document).ready(function() {
     updateTranchesSummary();
   });
 
-  $(document).on('input', 'input[name="montant_scolarite"], .input-tranche-montant', function() {
+  $(document).on('input change', 'input[name="montant_scolarite"], .input-tranche-montant, .input-tranche-date, #sel_annee_scolarite', function() {
     updateTranchesSummary();
+  });
+
+  // Contrôle global sur la soumission du formulaire
+  $('form').on('submit', function(e) {
+    var montantScolarite = parseFloat($('input[name="montant_scolarite"]').val()) || 0;
+    var totalTranches = 0;
+    var prevDate = null;
+    var prevLibelle = '';
+    var dateErrorFound = false;
+
+    // Dates de l'année académique sélectionnée
+    var $optAnnee = $('#sel_annee_scolarite option:selected');
+    var anneeDebut = $optAnnee.data('debut') || '';
+    var anneeFin = $optAnnee.data('fin') || '';
+
+    $('#tbody-tranches tr').each(function(idx) {
+      if (dateErrorFound) return;
+
+      var $row = $(this);
+      var libelle = $row.find('.input-tranche-libelle').val().trim() || ('Tranche ' + (idx + 1));
+      var montant = parseFloat($row.find('.input-tranche-montant').val()) || 0;
+      var dateLimite = $row.find('.input-tranche-date').val();
+
+      totalTranches += montant;
+
+      if (!dateLimite) {
+        e.preventDefault();
+        displayFormError("Erreur sur la " + libelle + " : La date limite de paiement est obligatoire.", $('form'));
+        dateErrorFound = true;
+        return false;
+      }
+
+      // Contrôle de l'ordre chronologique des tranches
+      if (prevDate && dateLimite <= prevDate) {
+        e.preventDefault();
+        displayFormError("Incohérence des dates sur l'échéancier : La date de la '" + libelle + "' (" + formatDateFr(dateLimite) + ") doit être strictement postérieure à celle de la '" + prevLibelle + "' (" + formatDateFr(prevDate) + ").", $('form'));
+        dateErrorFound = true;
+        return false;
+      }
+
+      // Contrôle par rapport à l'Année Académique
+      if (anneeDebut && dateLimite < anneeDebut) {
+        e.preventDefault();
+        displayFormError("Incohérence sur la '" + libelle + "' (" + formatDateFr(dateLimite) + ") : La date limite ne peut pas être antérieure au début de l'année académique (" + formatDateFr(anneeDebut) + ").", $('form'));
+        dateErrorFound = true;
+        return false;
+      }
+      if (anneeFin && dateLimite > anneeFin) {
+        e.preventDefault();
+        displayFormError("Incohérence sur la '" + libelle + "' (" + formatDateFr(dateLimite) + ") : La date limite ne peut pas dépasser la fin de l'année académique (" + formatDateFr(anneeFin) + ").", $('form'));
+        dateErrorFound = true;
+        return false;
+      }
+
+      prevDate = dateLimite;
+      prevLibelle = libelle;
+    });
+
+    if (dateErrorFound) return false;
+
+    // Contrôle du dépassement de scolarité
+    if (montantScolarite > 0 && totalTranches > montantScolarite) {
+      e.preventDefault();
+      var depassement = totalTranches - montantScolarite;
+      displayFormError("Erreur sur le montant : Le cumul des tranches (" + formatFcfa(totalTranches) + ") dépasse le montant annuel de la scolarité (" + formatFcfa(montantScolarite) + ") de " + formatFcfa(depassement) + ". Veuillez ajuster les montants des tranches.", $('form'));
+      return false;
+    }
   });
 
   // Pre-fill existing tranches on load

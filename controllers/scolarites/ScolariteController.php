@@ -40,6 +40,86 @@ class ScolariteController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    private function validateTranchesScolarite(float $montantScolarite, array $tranches, string $anneeCode = ''): ?string
+    {
+        if (empty($tranches)) {
+            return null;
+        }
+
+        $totalTranches = 0;
+        $previousDate = null;
+        $previousTrancheName = '';
+
+        $anneeStart = null;
+        $anneeEnd = null;
+        $anneeLibelle = '';
+        if (!empty($anneeCode)) {
+            $stmtAnnee = $this->model->getCon()->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtAnnee->execute([$anneeCode]);
+            $annee = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
+            if ($annee) {
+                $anneeLibelle = $annee['libelle_annee'] ?? '';
+                if (!empty($annee['date_debut_annee'])) $anneeStart = strtotime($annee['date_debut_annee']);
+                if (!empty($annee['date_fin_annee'])) $anneeEnd = strtotime($annee['date_fin_annee']);
+            }
+        }
+
+        $trancheIndex = 0;
+        foreach ($tranches as $tData) {
+            $libelle = trim($tData['libelle_tranche'] ?? '');
+            $montant = (float)($tData['montant_tranche'] ?? 0);
+            $dateLimite = trim($tData['date_limite'] ?? '');
+
+            if (empty($libelle) && $montant <= 0 && empty($dateLimite)) {
+                continue;
+            }
+
+            $trancheIndex++;
+            $trancheName = !empty($libelle) ? $libelle : "Tranche $trancheIndex";
+
+            if ($montant <= 0) {
+                return "Erreur sur \"$trancheName\" : Le montant de la tranche doit être strictement supérieur à 0 FCFA.";
+            }
+
+            $totalTranches += $montant;
+
+            if (empty($dateLimite)) {
+                return "Erreur sur \"$trancheName\" : La date limite de règlement est obligatoire.";
+            }
+
+            $timeLimite = strtotime($dateLimite);
+            if (!$timeLimite) {
+                return "Erreur sur \"$trancheName\" : La date limite saisie n'est pas valide.";
+            }
+
+            if ($previousDate !== null && $timeLimite <= $previousDate) {
+                $dateCurrentFr = date('d/m/Y', $timeLimite);
+                $datePrevFr = date('d/m/Y', $previousDate);
+                return "Incohérence des dates d'échéancier : La date de \"$trancheName\" ($dateCurrentFr) doit être strictement postérieure à la date de \"$previousTrancheName\" ($datePrevFr).";
+            }
+
+            if ($anneeStart && $timeLimite < $anneeStart) {
+                return "Erreur sur \"$trancheName\" : La date limite (" . date('d/m/Y', $timeLimite) . ") ne peut pas être antérieure au début de l'année académique $anneeLibelle (" . date('d/m/Y', $anneeStart) . ").";
+            }
+            if ($anneeEnd && $timeLimite > $anneeEnd) {
+                return "Erreur sur \"$trancheName\" : La date limite (" . date('d/m/Y', $timeLimite) . ") ne peut pas dépasser la fin de l'année académique $anneeLibelle (" . date('d/m/Y', $anneeEnd) . ").";
+            }
+
+            $previousDate = $timeLimite;
+            $previousTrancheName = $trancheName;
+        }
+
+        if ($montantScolarite > 0 && $totalTranches > $montantScolarite) {
+            $depassement = $totalTranches - $montantScolarite;
+            $totFormatted = number_format($totalTranches, 0, ',', ' ') . ' FCFA';
+            $scoFormatted = number_format($montantScolarite, 0, ',', ' ') . ' FCFA';
+            $depFormatted = number_format($depassement, 0, ',', ' ') . ' FCFA';
+            return "Incohérence sur le montant : Le cumul des tranches ($totFormatted) dépasse le montant annuel de la scolarité ($scoFormatted) de $depFormatted.";
+        }
+
+        return null;
+    }
+
     public function add()
     {
         $this->requirePost(false);
@@ -48,7 +128,29 @@ class ScolariteController extends BaseController
         $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($this->getActiveAnneeCode());
         $filiereCode = !empty($_POST['filiere_code']) ? trim($_POST['filiere_code']) : '';
         $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : '';
+        $affectationEtat = trim($_POST['affectation_etat'] ?? 'affecte');
+        $montantScolarite = (float)($_POST['montant_scolarite'] ?? 0);
         $etabCode = '5454544456';
+
+        // Contrôle d'unicité de la grille tarifaire (Année, Filière, Niveau, Régime)
+        $stmtCheck = $this->model->getCon()->prepare("
+            SELECT id_scolarite FROM scolarites 
+            WHERE annee_code = ? AND filiere_code = ? AND niveau_code = ? AND affectation_etat = ?
+        ");
+        $stmtCheck->execute([$anneeCode, $filiereCode, $niveauCode, $affectationEtat]);
+        if ($stmtCheck->fetch()) {
+            $regimeName = ($affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
+            $this->error("Un tarif de scolarité pour le régime $regimeName existe déjà pour cette année, filière et niveau.");
+            return;
+        }
+
+        // Validation des tranches
+        $trancheErr = $this->validateTranchesScolarite($montantScolarite, $_POST['tranches'] ?? [], $anneeCode);
+        if ($trancheErr) {
+            $this->error($trancheErr);
+            return;
+        }
+
         $data = $_POST;
         unset($data['csrf_token']);
         unset($data['tranches']);
@@ -125,8 +227,29 @@ class ScolariteController extends BaseController
         $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($item['annee_code'] ?? '');
         $filiereCode = !empty($_POST['filiere_code']) ? trim($_POST['filiere_code']) : ($item['filiere_code'] ?? '');
         $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : ($item['niveau_code'] ?? '');
+        $affectationEtat = trim($_POST['affectation_etat'] ?? ($item['affectation_etat'] ?? 'affecte'));
+        $montantScolarite = (float)($_POST['montant_scolarite'] ?? ($item['montant_scolarite'] ?? 0));
         $codeScolarite = $item['code_scolarite'];
         $etabCode = '5454544456';
+
+        // Contrôle d'unicité de la grille tarifaire (Année, Filière, Niveau, Régime)
+        $stmtCheck = $this->model->getCon()->prepare("
+            SELECT id_scolarite FROM scolarites 
+            WHERE annee_code = ? AND filiere_code = ? AND niveau_code = ? AND affectation_etat = ? AND id_scolarite != ?
+        ");
+        $stmtCheck->execute([$anneeCode, $filiereCode, $niveauCode, $affectationEtat, $id]);
+        if ($stmtCheck->fetch()) {
+            $regimeName = ($affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
+            $this->error("Un tarif de scolarité pour le régime $regimeName existe déjà pour cette année, filière et niveau.");
+            return;
+        }
+
+        // Validation des tranches
+        $trancheErr = $this->validateTranchesScolarite($montantScolarite, $_POST['tranches'] ?? [], $anneeCode);
+        if ($trancheErr) {
+            $this->error($trancheErr);
+            return;
+        }
 
         $data = $_POST;
         unset($data['csrf_token']);
