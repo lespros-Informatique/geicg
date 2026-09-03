@@ -437,8 +437,14 @@ class UserController extends BaseController
                         if ($anneeActive) {
                             $_SESSION['annee_active_code'] = $anneeActive['code_annee'];
                             $_SESSION['annee_active_libelle'] = $anneeActive['libelle_annee'];
+                        } else {
+                            $_SESSION['annee_active_code'] = '';
+                            $_SESSION['annee_active_libelle'] = 'Aucune année';
                         }
-                    } catch (Exception $e) {}
+                    } catch (Exception $e) {
+                        $_SESSION['annee_active_code'] = '';
+                        $_SESSION['annee_active_libelle'] = 'Aucune année';
+                    }
 
                     $welcomeMsg = !empty($enseignantProfile) 
                         ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user'] . ' ' . ($user['prenom_user'] ?? '')) . ' !'

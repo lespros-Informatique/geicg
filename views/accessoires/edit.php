@@ -35,14 +35,14 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php if (!empty($item['id_accessoire'])): ?>
             <input type="hidden" name="id_accessoire" value="<?= $item['id_accessoire'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 750px;">
+          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; box-sizing: border-box;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Désignation du kit / accessoire <span style="color: #EF4444;">*</span></label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_accessoire" value="<?= htmlspecialchars($item['libelle_accessoire'] ?? '') ?>" placeholder="Ex: Kit Uniforme & Badge Étudiant" required>
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Prix Unitaire (FCFA) <span style="color: #EF4444;">*</span></label>
-              <input type="number"  class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="prix_accessoire" value="<?= htmlspecialchars($item['prix_accessoire'] ?? '') ?>" placeholder="Ex: 25000" required>
+              <input type="number" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="prix_accessoire" value="<?= htmlspecialchars($item['prix_accessoire'] ?? '') ?>" placeholder="Ex: 25000" required>
             </div>
           </div>
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">

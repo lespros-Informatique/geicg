@@ -105,15 +105,15 @@ $enseignants = (new ModelEnseignant())->getAll();
             </div>
           </div>
 
-          <!-- Étape / Bloc 4 : Accessoires & Kits d'Inscription -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px;">
+          <!-- Étape / Bloc 4 : Accessoires & Kits d'Inscription (PLEINE LARGEUR) -->
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px 18px; grid-column: 1 / -1; width: 100%; box-sizing: border-box;">
             <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="package" style="width: 14px; height: 14px;"></i> Étape 4 : Accessoires & Kits d'Inscription
+              <i data-lucide="package" style="width: 15px; height: 15px;"></i> Étape 4 : Accessoires & Kits d'Inscription
             </div>
             <div id="prev_accessories_content" style="font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 6px;">
-              <div style="font-size: 11.5px; color: #64748B;">Kits & accessoires associés :</div>
-              <div id="prev_acc_list" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px;">
-                <span class="badge" style="background: #E2E8F0; color: #475569; padding: 4px 8px; border-radius: 6px; font-weight: 700;">Aucun accessoire</span>
+              <div style="font-size: 11.5px; color: #64748B;">Kits & accessoires associés / souscrits :</div>
+              <div id="prev_acc_list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+                <span class="badge" style="background: #E2E8F0; color: #475569; padding: 4px 10px; border-radius: 6px; font-weight: 700;">Aucun accessoire souscrit</span>
               </div>
             </div>
           </div>

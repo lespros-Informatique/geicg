@@ -18,10 +18,26 @@ abstract class BaseController
      */
     protected function getActiveAnneeCode(): string
     {
+        $db = (new Database())->getCon();
+        $code = $_SESSION['annee_active_code'] ?? '';
+
+        // Vérifier si l'année en session existe toujours réellement en base
+        if (!empty($code)) {
+            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtCheck->execute([$code]);
+            $exists = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+            if (!$exists) {
+                unset($_SESSION['annee_active_code']);
+                unset($_SESSION['annee_active_libelle']);
+                $code = '';
+            } else {
+                $_SESSION['annee_active_libelle'] = $exists['libelle_annee'];
+            }
+        }
+
         if (empty($_SESSION['annee_active_code'])) {
             try {
-                $db = (new Database())->getCon();
-                $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' LIMIT 1");
+                $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
                 $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
                 if (!$row) {
                     $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
@@ -31,15 +47,15 @@ abstract class BaseController
                     $_SESSION['annee_active_code'] = $row['code_annee'];
                     $_SESSION['annee_active_libelle'] = $row['libelle_annee'];
                 } else {
-                    $_SESSION['annee_active_code'] = 'ANN-2025-2026';
-                    $_SESSION['annee_active_libelle'] = '2025-2026';
+                    $_SESSION['annee_active_code'] = '';
+                    $_SESSION['annee_active_libelle'] = 'Aucune année';
                 }
             } catch (Exception $e) {
-                $_SESSION['annee_active_code'] = 'ANN-2025-2026';
-                $_SESSION['annee_active_libelle'] = '2025-2026';
+                $_SESSION['annee_active_code'] = '';
+                $_SESSION['annee_active_libelle'] = 'Aucune année';
             }
         }
-        return $_SESSION['annee_active_code'];
+        return $_SESSION['annee_active_code'] ?? '';
     }
 
     /**
@@ -48,7 +64,7 @@ abstract class BaseController
     protected function getActiveAnneeLibelle(): string
     {
         $this->getActiveAnneeCode();
-        return $_SESSION['annee_active_libelle'] ?? '2025-2026';
+        return $_SESSION['annee_active_libelle'] ?? 'Aucune année';
     }
 
     /**

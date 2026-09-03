@@ -395,6 +395,9 @@
                 <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Pièces & Dossiers à Fournir">
                     <i data-lucide="file-check-2"></i> <span>Pièces & Dossiers à Fournir</span>
                 </a>
+                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= strpos($currentUri, '/accessoire') !== false ? 'active' : '' ?>" data-title="Kits & Accessoires">
+                    <i data-lucide="package"></i> <span>Kits & Accessoires</span>
+                </a>
                 <?php endif; ?>
             </div>
         </div>

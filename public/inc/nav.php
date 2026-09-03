@@ -1,11 +1,44 @@
 <?php
-  // Récupération de l'année académique active et de toutes les années pour le sélecteur
-  $activeAnneeCode = $_SESSION['annee_active_code'] ?? 'ANN-2025-2026';
-  $activeAnneeLibelle = $_SESSION['annee_active_libelle'] ?? '2025-2026';
+  // Récupération dynamique de l'année académique active
+  $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
+  $activeAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Aucune année';
 
   try {
       $dbNav = (new Database())->getCon();
       $allAnneesNav = $dbNav ? $dbNav->query("SELECT * FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) : [];
+      if (!empty($allAnneesNav)) {
+          $foundNav = false;
+          foreach ($allAnneesNav as $anNav) {
+              if ($anNav['code_annee'] === $activeAnneeCode) {
+                  $foundNav = true;
+                  $activeAnneeLibelle = $anNav['libelle_annee'];
+                  break;
+              }
+          }
+          if (!$foundNav) {
+              foreach ($allAnneesNav as $anNav) {
+                  if (($anNav['statut_annee'] ?? '') === 'actif') {
+                      $activeAnneeCode = $anNav['code_annee'];
+                      $activeAnneeLibelle = $anNav['libelle_annee'];
+                      $_SESSION['annee_active_code'] = $activeAnneeCode;
+                      $_SESSION['annee_active_libelle'] = $activeAnneeLibelle;
+                      $foundNav = true;
+                      break;
+                  }
+              }
+              if (!$foundNav && !empty($allAnneesNav[0])) {
+                  $activeAnneeCode = $allAnneesNav[0]['code_annee'];
+                  $activeAnneeLibelle = $allAnneesNav[0]['libelle_annee'];
+                  $_SESSION['annee_active_code'] = $activeAnneeCode;
+                  $_SESSION['annee_active_libelle'] = $activeAnneeLibelle;
+              }
+          }
+      } else {
+          $activeAnneeCode = '';
+          $activeAnneeLibelle = 'Aucune année';
+          $_SESSION['annee_active_code'] = '';
+          $_SESSION['annee_active_libelle'] = 'Aucune année';
+      }
   } catch(Exception $e) {
       $allAnneesNav = [];
   }

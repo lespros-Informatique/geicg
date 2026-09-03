@@ -276,16 +276,16 @@ class InscriptionController extends BaseController
                 'already_registered_classe' => $alreadyThisYear['libelle_classe'] ?? '',
                 'already_registered_code' => $alreadyThisYear['code_inscription'] ?? '',
                 'already_registered_annee' => $alreadyThisYear['libelle_annee'] ?? '',
-                'accessoires_etudiant' => (function() use ($db, $etudiantCode) {
+                'accessoires_etudiant' => (function() use ($db, $etudiantCode, $anneeCode) {
                     $stmt = $db->prepare("
                         SELECT a.code_accessoire, a.libelle_accessoire, COALESCE(ai.statut_accessoire_inscription, 'actif') as statut
                         FROM accessoire_inscription ai
                         JOIN inscriptions i ON i.code_inscription = ai.inscription_code
                         JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
                         WHERE i.etudiant_code = ?
-                        ORDER BY ai.id_accessoire_inscription DESC
+                        ORDER BY (CASE WHEN ai.annee_code = ? THEN 1 ELSE 2 END), ai.id_accessoire_inscription DESC
                     ");
-                    $stmt->execute([$etudiantCode]);
+                    $stmt->execute([$etudiantCode, $anneeCode]);
                     $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     if (empty($res)) {
                         // Récupérer les kits/accessoires actifs configurés dans l'établissement
