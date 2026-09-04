@@ -83,11 +83,22 @@ foreach ($filiereCyclesMap as $fc) {
               </select>
             </div>
 
-            <!-- Filière (Select2) -->
+            <?php $isAddMode = empty($item['id_scolarite']); ?>
+
+            <!-- Filière (Select2 Multi-Select en création, Simple en édition) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Filière rattachée <span style="color: #EF4444;">*</span></label>
-              <select class="form-control select2" id="sel_filiere_scolarite" name="filiere_code" style="width: 100%;" required>
-                <option value="">-- Choisir une filière --</option>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-weight: 700; font-size: 13px; color: #334155;">
+                  <?= $isAddMode ? 'Filière(s) rattachée(s)' : 'Filière rattachée' ?> <span style="color: #EF4444;">*</span>
+                </label>
+                <?php if ($isAddMode): ?>
+                  <button type="button" id="btn-toggle-all-filieres" class="btn btn-sm btn-link" style="font-size: 11px; padding: 0; text-decoration: underline; color: #1E3A5F; font-weight: 700; cursor: pointer; border: none; background: transparent;">Tout sélectionner</button>
+                <?php endif; ?>
+              </div>
+              <select class="form-control select2" id="sel_filiere_scolarite" name="<?= $isAddMode ? 'filiere_codes[]' : 'filiere_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : '' ?> style="width: 100%;" required>
+                <?php if (!$isAddMode): ?>
+                  <option value="">-- Choisir une filière --</option>
+                <?php endif; ?>
                 <?php foreach($filieres as $f): 
                   $fCycles = $filiereToCycles[$f['code_filiere']] ?? [];
                   $cyclesAttr = htmlspecialchars(implode(',', $fCycles));
@@ -97,19 +108,34 @@ foreach ($filiereCyclesMap as $fc) {
                   </option>
                 <?php endforeach; ?>
               </select>
+              <?php if ($isAddMode): ?>
+                <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Vous pouvez sélectionner plusieurs filières qui partageront le même tarif et échéancier.</small>
+              <?php endif; ?>
             </div>
 
-            <!-- Niveau d'études (Select2) -->
+            <!-- Niveau d'études (Select2 Multi-Select en création, Simple en édition) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Niveau d'études <span style="color: #EF4444;">*</span></label>
-              <select class="form-control select2" id="sel_niveau_scolarite" name="niveau_code" style="width: 100%;" required>
-                <option value="">-- Choisir un niveau --</option>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-weight: 700; font-size: 13px; color: #334155;">
+                  <?= $isAddMode ? 'Niveau(x) d\'études' : 'Niveau d\'études' ?> <span style="color: #EF4444;">*</span>
+                </label>
+                <?php if ($isAddMode): ?>
+                  <button type="button" id="btn-toggle-all-niveaux" class="btn btn-sm btn-link" style="font-size: 11px; padding: 0; text-decoration: underline; color: #1E3A5F; font-weight: 700; cursor: pointer; border: none; background: transparent;">Tout sélectionner</button>
+                <?php endif; ?>
+              </div>
+              <select class="form-control select2" id="sel_niveau_scolarite" name="<?= $isAddMode ? 'niveau_codes[]' : 'niveau_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : '' ?> style="width: 100%;" required>
+                <?php if (!$isAddMode): ?>
+                  <option value="">-- Choisir un niveau --</option>
+                <?php endif; ?>
                 <?php foreach($niveaux as $n): ?>
                   <option value="<?= htmlspecialchars($n['code_niveau']) ?>" <?= (($item['niveau_code'] ?? '') == $n['code_niveau']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($n['libelle_niveau']) ?>
                   </option>
                 <?php endforeach; ?>
               </select>
+              <?php if ($isAddMode): ?>
+                <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Vous pouvez sélectionner plusieurs niveaux d'études.</small>
+              <?php endif; ?>
             </div>
 
             <!-- Régime / Statut d'affectation (Select statique) -->
@@ -198,17 +224,56 @@ foreach ($filiereCyclesMap as $fc) {
 <script>
 $(document).ready(function() { 
   if (window.lucide) lucide.createIcons();
+  var isAddMode = <?= $isAddMode ? 'true' : 'false' ?>;
+
   if ($.fn.select2) {
     $('#sel_annee_scolarite').select2({ placeholder: "-- Choisir une année --", allowClear: true, width: '100%' });
     $('#sel_cycle_scolarite').select2({ placeholder: "-- Tous les cycles --", allowClear: true, width: '100%' });
-    $('#sel_filiere_scolarite').select2({ placeholder: "-- Choisir une filière --", allowClear: true, width: '100%' });
-    $('#sel_niveau_scolarite').select2({ placeholder: "-- Choisir un niveau --", allowClear: true, width: '100%' });
+    $('#sel_filiere_scolarite').select2({
+      placeholder: isAddMode ? "Sélectionnez une ou plusieurs filières..." : "-- Choisir une filière --",
+      allowClear: !isAddMode,
+      width: '100%'
+    });
+    $('#sel_niveau_scolarite').select2({
+      placeholder: isAddMode ? "Sélectionnez un ou plusieurs niveaux..." : "-- Choisir un niveau --",
+      allowClear: !isAddMode,
+      width: '100%'
+    });
     $('#sel_affectation_scolarite').select2({ minimumResultsForSearch: Infinity, width: '100%' });
 
     $('#sel_annee_scolarite').on('change select2:select', function() {
       updateTranchesSummary();
     });
   }
+
+  // Tout sélectionner / Tout désélectionner
+  $('#btn-toggle-all-filieres').on('click', function(e) {
+    e.preventDefault();
+    var $sel = $('#sel_filiere_scolarite');
+    var allVals = $sel.find('option').map(function() { return $(this).val(); }).get().filter(Boolean);
+    var currentVals = $sel.val() || [];
+    if (Array.isArray(currentVals) && currentVals.length >= allVals.length) {
+      $sel.val(null).trigger('change');
+      $(this).text('Tout sélectionner');
+    } else {
+      $sel.val(allVals).trigger('change');
+      $(this).text('Tout désélectionner');
+    }
+  });
+
+  $('#btn-toggle-all-niveaux').on('click', function(e) {
+    e.preventDefault();
+    var $sel = $('#sel_niveau_scolarite');
+    var allVals = $sel.find('option').map(function() { return $(this).val(); }).get().filter(Boolean);
+    var currentVals = $sel.val() || [];
+    if (Array.isArray(currentVals) && currentVals.length >= allVals.length) {
+      $sel.val(null).trigger('change');
+      $(this).text('Tout sélectionner');
+    } else {
+      $sel.val(allVals).trigger('change');
+      $(this).text('Tout désélectionner');
+    }
+  });
 
   var allFilieres = <?= json_encode(array_map(function($f) use ($filiereToCycles) {
       return [
@@ -222,40 +287,41 @@ $(document).ready(function() {
   function filterFilieresByCycle() {
     var selectedCycle = $('#sel_cycle_scolarite').val();
     var $filiereSelect = $('#sel_filiere_scolarite');
-    var currentFiliereVal = $filiereSelect.val() || preselectedFiliereCode;
+    var currentVal = $filiereSelect.val();
 
     $filiereSelect.empty();
 
     if (!selectedCycle) {
-      $filiereSelect.append('<option value="">-- Choisir d\'abord un cycle --</option>');
-      $filiereSelect.val('').trigger('change.select2');
+      if (!isAddMode) {
+        $filiereSelect.append('<option value="">-- Choisir d\'abord un cycle --</option>');
+      } else {
+        $filiereSelect.append('<option value="" disabled selected>-- Choisir d\'abord un cycle académique --</option>');
+      }
+      $filiereSelect.val(null).trigger('change.select2');
       return;
     }
 
-    $filiereSelect.append('<option value="">-- Choisir une filière --</option>');
-    var count = 0;
-    var filiereToSelect = '';
+    if (!isAddMode) {
+      $filiereSelect.append('<option value="">-- Choisir une filière --</option>');
+    }
 
+    var count = 0;
     allFilieres.forEach(function(f) {
       if (f.cycles && f.cycles.indexOf(selectedCycle) !== -1) {
         count++;
-        var isSelected = (f.code_filiere === currentFiliereVal);
-        if (isSelected) {
-          filiereToSelect = f.code_filiere;
+        var isSel = false;
+        if (Array.isArray(currentVal)) {
+          isSel = currentVal.indexOf(f.code_filiere) !== -1;
+        } else {
+          isSel = (f.code_filiere === currentVal || f.code_filiere === preselectedFiliereCode);
         }
-        var optHtml = '<option value="' + $('<div>').text(f.code_filiere).html() + '"' + (isSelected ? ' selected' : '') + '>' + $('<div>').text(f.libelle_filiere).html() + '</option>';
+        var optHtml = '<option value="' + $('<div>').text(f.code_filiere).html() + '"' + (isSel ? ' selected' : '') + '>' + $('<div>').text(f.libelle_filiere).html() + '</option>';
         $filiereSelect.append(optHtml);
       }
     });
 
     if (count === 0) {
-      $filiereSelect.append('<option value="" disabled>(Aucune filière dans ce cycle)</option>');
-    }
-
-    if (filiereToSelect) {
-      $filiereSelect.val(filiereToSelect);
-    } else {
-      $filiereSelect.val('');
+      $filiereSelect.append('<option value="" disabled>(Aucune filière rattachée à ce cycle)</option>');
     }
 
     $filiereSelect.trigger('change.select2');
@@ -264,9 +330,83 @@ $(document).ready(function() {
   $('#sel_cycle_scolarite').on('change select2:select select2:clear', function() {
     preselectedFiliereCode = '';
     filterFilieresByCycle();
+    if (typeof checkDuplicateScolarites === 'function') {
+      checkDuplicateScolarites();
+    }
   });
 
   filterFilieresByCycle();
+
+  var isAllDuplicate = false;
+
+  function displayDuplicateNotice(msg, isError, $form) {
+    $form.find('.js-duplicate-notice-banner').remove();
+    if (!msg) return;
+
+    var bgColor = isError ? '#FEE2E2' : '#FEF3C7';
+    var borderColor = isError ? '#FCA5A5' : '#FCD34D';
+    var textColor = isError ? '#991B1B' : '#B45309';
+    var iconName = isError ? 'alert-triangle' : 'info';
+
+    var alertHtml = '<div class="alert js-duplicate-notice-banner" style="background:' + bgColor + '; border:1px solid ' + borderColor + '; color:' + textColor + '; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:10px;">' +
+                    '<i data-lucide="' + iconName + '" style="width:18px; height:18px; flex-shrink:0;"></i>' +
+                    '<span>' + msg + '</span>' +
+                    '</div>';
+    $form.prepend(alertHtml);
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function checkDuplicateScolarites() {
+    var filieres = $('#sel_filiere_scolarite').val();
+    var niveaux = $('#sel_niveau_scolarite').val();
+    var affectation = $('#sel_affectation_scolarite').val();
+    var anneeCode = $('input[name="annee_code"]').val() || '';
+    var idScolarite = $('input[name="id_scolarite"]').val() || 0;
+    var $form = $('form');
+
+    if (filieres && niveaux && (Array.isArray(filieres) ? filieres.length > 0 : filieres !== '') && (Array.isArray(niveaux) ? niveaux.length > 0 : niveaux !== '')) {
+      var racine = (typeof RACINE !== 'undefined') ? RACINE : '/geicg/';
+      $.ajax({
+        url: racine + 'scolarite/checkExists',
+        type: 'GET',
+        data: {
+          annee_code: anneeCode,
+          filiere_codes: filieres,
+          filiere_code: filieres,
+          niveau_codes: niveaux,
+          niveau_code: niveaux,
+          affectation_etat: affectation,
+          id_scolarite: idScolarite
+        },
+        dataType: 'json',
+        success: function(resp) {
+          if (resp) {
+            if (resp.all_exist) {
+              isAllDuplicate = true;
+              displayDuplicateNotice(resp.message, true, $form);
+              $form.find('button[type="submit"]').prop('disabled', true).css('opacity', '0.6');
+            } else if (resp.existing_count > 0) {
+              isAllDuplicate = false;
+              displayDuplicateNotice(resp.message, false, $form);
+              $form.find('button[type="submit"]').prop('disabled', false).css('opacity', '1');
+            } else {
+              isAllDuplicate = false;
+              $form.find('.js-duplicate-notice-banner').remove();
+              $form.find('button[type="submit"]').prop('disabled', false).css('opacity', '1');
+            }
+          }
+        }
+      });
+    } else {
+      isAllDuplicate = false;
+      $form.find('.js-duplicate-notice-banner').remove();
+      $form.find('button[type="submit"]').prop('disabled', false).css('opacity', '1');
+    }
+  }
+
+  $('#sel_filiere_scolarite, #sel_niveau_scolarite, #sel_affectation_scolarite').on('change select2:select select2:unselect select2:clear', function() {
+    checkDuplicateScolarites();
+  });
 
   var existingTranches = <?= json_encode($tranches ?? []) ?>;
   var trancheCounter = 0;
@@ -464,6 +604,11 @@ $(document).ready(function() {
     e.preventDefault();
     var $form = $(this);
     var $btnSubmit = $form.find('button[type="submit"]');
+
+    if (isAllDuplicate) {
+      displayFormError("Impossible d'enregistrer : Toutes les combinaisons sélectionnées existent déjà en base.", $form);
+      return false;
+    }
 
     $form.find('.js-date-error-banner, .js-date-success-banner').remove();
 

@@ -143,7 +143,7 @@
                   <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                     <th style="padding: 12px; width: 50px;">#</th>
                     <th style="padding: 12px;">Code</th>
-                    <th style="padding: 12px;">Année</th>
+                    <th style="padding: 12px;">Statut d'Affectation</th>
                     <th style="padding: 12px;">Filière</th>
                     <th style="padding: 12px;">Niveau</th>
                     <th style="padding: 12px;">Montant (FCFA)</th>
@@ -195,8 +195,12 @@ $(document).ready(function() {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
       { data: 'code_scolarite', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
-      { data: 'libelle_annee', render: function(d, t, r) { 
-        return '<span class="annee-badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:700; font-size:12px; padding:4px 10px; border-radius:6px; display:inline-block; position:static;">' + (d || r.annee_code || 'Toutes') + '</span>'; 
+      { data: 'affectation_etat', render: function(d) { 
+        var isAffecte = (d === 'affecte');
+        var bg = isAffecte ? '#DCFCE7' : '#F1F5F9';
+        var fg = isAffecte ? '#15803D' : '#475569';
+        var label = isAffecte ? 'Affecté (État)' : 'Non Affecté (Privé)';
+        return '<span class="badge" style="background:' + bg + '; color:' + fg + '; font-weight:700; font-size:12px; padding:4px 10px; border-radius:6px; display:inline-block;">' + label + '</span>'; 
       } },
       { data: 'libelle_filiere', render: function(d, t, r) { return '<span style="font-weight:700; color:#0F172A;">' + (d || r.filiere_code || 'Non définie') + '</span>'; } },
       { data: 'libelle_niveau', render: function(d, t, r) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || r.niveau_code || 'Non défini') + '</span>'; } },

@@ -126,21 +126,27 @@ class ScolariteController extends BaseController
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($this->getActiveAnneeCode());
-        $filiereCode = !empty($_POST['filiere_code']) ? trim($_POST['filiere_code']) : '';
-        $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : '';
+        
+        $filiereCodes = $_POST['filiere_codes'] ?? ($_POST['filiere_code'] ?? []);
+        if (!is_array($filiereCodes)) {
+            $filiereCodes = array_filter([trim($filiereCodes)]);
+        }
+        
+        $niveauCodes = $_POST['niveau_codes'] ?? ($_POST['niveau_code'] ?? []);
+        if (!is_array($niveauCodes)) {
+            $niveauCodes = array_filter([trim($niveauCodes)]);
+        }
+
         $affectationEtat = trim($_POST['affectation_etat'] ?? 'affecte');
         $montantScolarite = (float)($_POST['montant_scolarite'] ?? 0);
         $etabCode = $this->getActiveEtablissementCode();
 
-        // Contrôle d'unicité de la grille tarifaire (Année, Filière, Niveau, Régime)
-        $stmtCheck = $this->model->getCon()->prepare("
-            SELECT id_scolarite FROM scolarites 
-            WHERE annee_code = ? AND filiere_code = ? AND niveau_code = ? AND affectation_etat = ?
-        ");
-        $stmtCheck->execute([$anneeCode, $filiereCode, $niveauCode, $affectationEtat]);
-        if ($stmtCheck->fetch()) {
-            $regimeName = ($affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
-            $this->error("Un tarif de scolarité pour le régime $regimeName existe déjà pour cette année, filière et niveau.");
+        if (empty($filiereCodes)) {
+            $this->error("Veuillez sélectionner au moins une filière rattachée.");
+            return;
+        }
+        if (empty($niveauCodes)) {
+            $this->error("Veuillez sélectionner au moins un niveau d'études.");
             return;
         }
 
@@ -151,66 +157,112 @@ class ScolariteController extends BaseController
             return;
         }
 
-        $data = $_POST;
-        unset($data['csrf_token']);
-        unset($data['tranches']);
-        unset($data['deleted_tranches_ids']);
+        $db = $this->model->getCon();
+        $stmtCheck = $db->prepare("
+            SELECT id_scolarite FROM scolarites 
+            WHERE annee_code = ? AND filiere_code = ? AND niveau_code = ? AND affectation_etat = ?
+        ");
 
-        if (empty($data['code_scolarite'])) {
-            $data['code_scolarite'] = $this->validator->generateCode('scolarites', 'code_scolarite', 'SCO-', 8);
-        }
-        $codeScolarite = $data['code_scolarite'];
-        $data['statut_scolarite'] = $data['statut_scolarite'] ?? 'actif';
-        $data['created_at_scolarite'] = date('Y-m-d H:i:s');
-        $data['annee_code'] = $anneeCode;
-        $cols = $this->model->getCon()->query("DESCRIBE scolarites")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $cols = $db->query("DESCRIBE scolarites")->fetchAll(PDO::FETCH_COLUMN);
+        $trancheModel = new ModelTranche();
+        $trancheCols = $db->query("DESCRIBE tranches_scolarite")->fetchAll(PDO::FETCH_COLUMN);
 
-        if ($this->model->create($filteredData)) {
-            // Enregistrer les tranches créées dynamiquement dans le formulaire
-            if (!empty($_POST['tranches']) && is_array($_POST['tranches'])) {
-                $db = $this->model->getCon();
-                $trancheModel = new ModelTranche();
-                $trancheCols = $db->query("DESCRIBE tranches_scolarite")->fetchAll(PDO::FETCH_COLUMN);
+        $createdCount = 0;
+        $skippedCount = 0;
 
-                foreach ($_POST['tranches'] as $tData) {
-                    $libelle = trim($tData['libelle_tranche'] ?? '');
-                    $montant = (float)($tData['montant_tranche'] ?? 0);
-                    if (empty($libelle) && $montant <= 0) {
-                        continue;
+        foreach ($filiereCodes as $fCode) {
+            $fCode = trim($fCode);
+            if (empty($fCode)) continue;
+
+            foreach ($niveauCodes as $nCode) {
+                $nCode = trim($nCode);
+                if (empty($nCode)) continue;
+
+                // Contrôle d'unicité pour chaque combinaison
+                $stmtCheck->execute([$anneeCode, $fCode, $nCode, $affectationEtat]);
+                if ($stmtCheck->fetch()) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                $codeScolarite = $this->validator->generateCode('scolarites', 'code_scolarite', 'SCO-', 8);
+
+                $data = $_POST;
+                unset($data['csrf_token']);
+                unset($data['tranches']);
+                unset($data['deleted_tranches_ids']);
+                unset($data['filiere_codes']);
+                unset($data['niveau_codes']);
+
+                $data['code_scolarite'] = $codeScolarite;
+                $data['annee_code'] = $anneeCode;
+                $data['filiere_code'] = $fCode;
+                $data['niveau_code'] = $nCode;
+                $data['affectation_etat'] = $affectationEtat;
+                $data['montant_scolarite'] = $montantScolarite;
+                $data['statut_scolarite'] = $data['statut_scolarite'] ?? 'actif';
+                $data['created_at_scolarite'] = date('Y-m-d H:i:s');
+
+                if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
+                if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
+
+                $filteredData = array_intersect_key($data, array_flip($cols));
+
+                if ($this->model->create($filteredData)) {
+                    $createdCount++;
+
+                    // Duplication de l'échéancier des tranches pour chaque grille de scolarité
+                    if (!empty($_POST['tranches']) && is_array($_POST['tranches'])) {
+                        foreach ($_POST['tranches'] as $tData) {
+                            $libelle = trim($tData['libelle_tranche'] ?? '');
+                            $montant = (float)($tData['montant_tranche'] ?? 0);
+                            if (empty($libelle) && $montant <= 0) {
+                                continue;
+                            }
+                            if (empty($libelle)) {
+                                $libelle = 'Tranche';
+                            }
+                            $dateLimite = !empty($tData['date_limite']) ? $tData['date_limite'] : date('Y-m-d');
+                            $codeTranche = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
+
+                            $newTranche = [
+                                'code_tranche' => $codeTranche,
+                                'libelle_tranche' => $libelle,
+                                'montant_tranche' => $montant,
+                                'date_limite' => $dateLimite,
+                                'scolarite_code' => $codeScolarite,
+                                'filiere_code' => $fCode,
+                                'niveau_code' => $nCode,
+                                'annee_code' => $anneeCode,
+                                'etablissement_code' => $etabCode,
+                                'statut_tranche' => $tData['statut_tranche'] ?? 'actif',
+                                'created_at_tranche' => date('Y-m-d H:i:s')
+                            ];
+                            if (in_array('user_code', $trancheCols)) {
+                                $newTranche['user_code'] = $userCode;
+                            }
+                            $filteredTranche = array_intersect_key($newTranche, array_flip($trancheCols));
+                            $trancheModel->create($filteredTranche);
+                        }
                     }
-                    if (empty($libelle)) {
-                        $libelle = 'Tranche';
-                    }
-                    $dateLimite = !empty($tData['date_limite']) ? $tData['date_limite'] : date('Y-m-d');
-                    $codeTranche = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
-
-                    $newTranche = [
-                        'code_tranche' => $codeTranche,
-                        'libelle_tranche' => $libelle,
-                        'montant_tranche' => $montant,
-                        'date_limite' => $dateLimite,
-                        'scolarite_code' => $codeScolarite,
-                        'filiere_code' => $filiereCode,
-                        'niveau_code' => $niveauCode,
-                        'annee_code' => $anneeCode,
-                        'etablissement_code' => $etabCode,
-                        'statut_tranche' => $tData['statut_tranche'] ?? 'actif',
-                        'created_at_tranche' => date('Y-m-d H:i:s')
-                    ];
-                    if (in_array('user_code', $trancheCols)) {
-                        $newTranche['user_code'] = $userCode;
-                    }
-                    $filteredTranche = array_intersect_key($newTranche, array_flip($trancheCols));
-                    $trancheModel->create($filteredTranche);
                 }
             }
-            $this->success('Tarif de scolarité et tranches enregistrés avec succès !');
-        } else {
-            $this->error('Erreur lors de la création de la scolarité.');
         }
+
+        if ($createdCount === 0) {
+            if ($skippedCount > 0) {
+                $this->error("Toutes les combinaisons (Filière x Niveau) sélectionnées existent déjà pour ce régime d'affectation.");
+            } else {
+                $this->error("Erreur lors de la création du tarif de scolarité.");
+            }
+            return;
+        }
+
+        $msg = "$createdCount grille(s) de tarif de scolarité créée(s) avec succès avec leurs échéanciers !";
+        if ($skippedCount > 0) {
+            $msg .= " ($skippedCount grille(s) déjà existante(s) ignorée(s)).";
+        }
+        $this->success($msg);
     }
 
     public function edit()
@@ -432,6 +484,89 @@ class ScolariteController extends BaseController
         $this->loadView('../views/scolarites/edit.php', [
             'item' => [], 
             'tranches' => []
+        ]);
+    }
+
+    /**
+     * Vérifie l'existence des combinaisons (Filière x Niveau) sélectionnées pour validation dynamique AJAX
+     */
+    public function checkExists()
+    {
+        $this->requireAuth();
+        $anneeCode = !empty($_REQUEST['annee_code']) ? trim($_REQUEST['annee_code']) : ($this->getActiveAnneeCode());
+        $affectationEtat = trim($_REQUEST['affectation_etat'] ?? 'affecte');
+        $idExclude = (int)($_REQUEST['id_scolarite'] ?? 0);
+
+        $filiereCodes = $_REQUEST['filiere_codes'] ?? ($_REQUEST['filiere_code'] ?? []);
+        if (!is_array($filiereCodes)) {
+            $filiereCodes = array_filter([trim($filiereCodes)]);
+        }
+
+        $niveauCodes = $_REQUEST['niveau_codes'] ?? ($_REQUEST['niveau_code'] ?? []);
+        if (!is_array($niveauCodes)) {
+            $niveauCodes = array_filter([trim($niveauCodes)]);
+        }
+
+        if (empty($anneeCode) || empty($filiereCodes) || empty($niveauCodes)) {
+            $this->json(['existing' => [], 'total_combos' => 0, 'existing_count' => 0, 'all_exist' => false, 'message' => '']);
+            return;
+        }
+
+        $db = $this->model->getCon();
+        $existing = [];
+        $totalCombos = count($filiereCodes) * count($niveauCodes);
+
+        $sql = "SELECT s.id_scolarite, f.libelle_filiere, n.libelle_niveau 
+                FROM scolarites s
+                LEFT JOIN filieres f ON f.code_filiere = s.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = s.niveau_code
+                WHERE s.annee_code = ? AND s.filiere_code = ? AND s.niveau_code = ? AND s.affectation_etat = ?";
+        if ($idExclude > 0) {
+            $sql .= " AND s.id_scolarite != ?";
+        }
+
+        $stmt = $db->prepare($sql);
+
+        foreach ($filiereCodes as $fCode) {
+            $fCode = trim($fCode);
+            if (empty($fCode)) continue;
+
+            foreach ($niveauCodes as $nCode) {
+                $nCode = trim($nCode);
+                if (empty($nCode)) continue;
+
+                $queryParams = [$anneeCode, $fCode, $nCode, $affectationEtat];
+                if ($idExclude > 0) {
+                    $queryParams[] = $idExclude;
+                }
+
+                $stmt->execute($queryParams);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) {
+                    $fName = !empty($row['libelle_filiere']) ? $row['libelle_filiere'] : $fCode;
+                    $nName = !empty($row['libelle_niveau']) ? $row['libelle_niveau'] : $nCode;
+                    $existing[] = "$fName - $nName";
+                }
+            }
+        }
+
+        $existingCount = count($existing);
+        $allExist = ($existingCount > 0 && $existingCount === $totalCombos);
+        $regimeName = ($affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
+
+        $msg = '';
+        if ($allExist) {
+            $msg = "Doublon détecté : Toutes les combinaisons sélectionnées (" . implode(', ', $existing) . ") existent déjà en base pour le régime $regimeName.";
+        } elseif ($existingCount > 0) {
+            $msg = "Info : $existingCount grille(s) sur $totalCombos sélectionnée(s) existe(nt) déjà en base (" . implode(', ', $existing) . "). Seules les nouvelles grilles seront créées.";
+        }
+
+        $this->json([
+            'existing' => $existing,
+            'existing_count' => $existingCount,
+            'total_combos' => $totalCombos,
+            'all_exist' => $allExist,
+            'message' => $msg
         ]);
     }
 }
