@@ -1,10 +1,10 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $db = (new Database())->getCon();
-$activeYear = $_SESSION['annee_active_code'] ?? 'ANN-2025-2026';
+$activeYear = $_SESSION['annee_active_code'] ?? '';
 if (empty($activeYear)) {
-    $actRow = $db->query("SELECT code_annee FROM annees WHERE statut_annee = 'actif' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-    $activeYear = $actRow['code_annee'] ?? 'ANN-2025-2026';
+    $actRow = $db->query("SELECT code_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    $activeYear = $actRow['code_annee'] ?? '';
 }
 
 $stmtIns = $db->prepare("

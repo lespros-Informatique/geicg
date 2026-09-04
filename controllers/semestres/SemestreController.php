@@ -106,7 +106,7 @@ class SemestreController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : ($this->getActiveAnneeCode());
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
 
         if (empty($anneeCode)) {
             $this->error('Veuillez sélectionner une année académique.');

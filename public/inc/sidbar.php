@@ -263,11 +263,11 @@
         <div class="full-badge">
             <div class="text-uppercase text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">Année Académique</div>
             <div class="fw-bold text-primary" style="font-size: 13px;">
-                <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '2025-2026') ?>
+                <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>
             </div>
         </div>
-        <div class="mini-badge" title="Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '2025-2026') ?>">
-            <?= htmlspecialchars(substr($_SESSION['annee_active_libelle'] ?? '25-26', -5)) ?>
+        <div class="mini-badge" title="Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>">
+            <?= htmlspecialchars(substr($_SESSION['annee_active_libelle'] ?? 'Aucune', -5)) ?>
         </div>
     </div>
 

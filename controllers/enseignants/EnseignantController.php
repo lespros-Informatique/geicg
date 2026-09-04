@@ -34,7 +34,7 @@ class EnseignantController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $currentUserCode = $_SESSION[USERS_AUTH]['code_user'] ?? '5wBEh2OfI00frxk8ITPf';
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
 

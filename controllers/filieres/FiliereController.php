@@ -41,7 +41,7 @@ class FiliereController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_filiere'])) {
             $data['code_filiere'] = $this->validator->generateCode('filieres', 'code_filiere', 'FIL-', 8);
         }

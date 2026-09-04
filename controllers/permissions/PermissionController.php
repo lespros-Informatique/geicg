@@ -44,7 +44,7 @@ class PermissionController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_permission'])) {
             $data['code_permission'] = $this->validator->generateCode('permissions', 'code_permission', 'PER-', 8);
         }

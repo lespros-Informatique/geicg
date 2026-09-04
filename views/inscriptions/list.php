@@ -11,7 +11,7 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Réinscriptions</h1>
             <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 8px;">
-              Session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '2025-2026') ?>
+              Session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>
             </span>
           </div>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Liste des étudiants à réinscrire pour l'année académique active</p>

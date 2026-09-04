@@ -130,7 +130,7 @@ class ScolariteController extends BaseController
         $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : '';
         $affectationEtat = trim($_POST['affectation_etat'] ?? 'affecte');
         $montantScolarite = (float)($_POST['montant_scolarite'] ?? 0);
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
 
         // Contrôle d'unicité de la grille tarifaire (Année, Filière, Niveau, Régime)
         $stmtCheck = $this->model->getCon()->prepare("
@@ -230,7 +230,7 @@ class ScolariteController extends BaseController
         $affectationEtat = trim($_POST['affectation_etat'] ?? ($item['affectation_etat'] ?? 'affecte'));
         $montantScolarite = (float)($_POST['montant_scolarite'] ?? ($item['montant_scolarite'] ?? 0));
         $codeScolarite = $item['code_scolarite'];
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
 
         // Contrôle d'unicité de la grille tarifaire (Année, Filière, Niveau, Régime)
         $stmtCheck = $this->model->getCon()->prepare("

@@ -41,7 +41,7 @@ class CycleController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_cycle'])) {
             $data['code_cycle'] = $this->validator->generateCode('cycles', 'code_cycle', 'CYC-', 8);
         }

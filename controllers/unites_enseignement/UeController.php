@@ -44,7 +44,7 @@ class UeController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_ue'])) {
             $data['code_ue'] = $this->validator->generateCode('unites_enseignement', 'code_ue', 'UE-', 8);
         }

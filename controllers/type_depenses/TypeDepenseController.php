@@ -41,7 +41,7 @@ class TypeDepenseController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_type_depense'])) {
             $data['code_type_depense'] = $this->validator->generateCode('type_depenses', 'code_type_depense', 'TYP-', 8);
         }

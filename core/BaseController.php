@@ -68,6 +68,30 @@ abstract class BaseController
     }
 
     /**
+     * Récupère dynamiquement le code de l'établissement actif en base
+     */
+    protected function getActiveEtablissementCode(): string
+    {
+        if (!empty($_SESSION['etablissement_active_code'])) {
+            return $_SESSION['etablissement_active_code'];
+        }
+        try {
+            $db = (new Database())->getCon();
+            $stmt = $db->query("SELECT code_etablissement FROM etablissements WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
+            $code = $stmt ? $stmt->fetchColumn() : null;
+            if (!$code) {
+                $stmtFb = $db->query("SELECT code_etablissement FROM etablissements ORDER BY id_etablissement DESC LIMIT 1");
+                $code = $stmtFb ? $stmtFb->fetchColumn() : null;
+            }
+            if ($code) {
+                $_SESSION['etablissement_active_code'] = (string)$code;
+                return (string)$code;
+            }
+        } catch (Exception $e) {}
+        return '';
+    }
+
+    /**
      * Récupère la ligne complète de l'année active
      */
     protected function getActiveAnnee(): array

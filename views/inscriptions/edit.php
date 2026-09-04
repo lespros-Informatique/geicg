@@ -23,7 +23,7 @@ $enseignants = (new ModelEnseignant())->getAll();
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Formulaire de Réinscription Étudiant' ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Réinscription annuelle et affectation de la nouvelle classe pour la session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '2025-2026') ?></p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Réinscription annuelle et affectation de la nouvelle classe pour la session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'en cours') ?></p>
         </div>
         <a href="<?= RACINE ?>inscription/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux Réinscriptions
@@ -446,7 +446,7 @@ $(document).ready(function() {
           var isEditMode = <?= !empty($item['id_inscription']) ? 'true' : 'false' ?>;
           if (d.is_already_registered_this_year && !isEditMode) {
             $('#already_registered_warning_text').html(
-              'L\'étudiant <strong>' + (d.nom_complet || '') + '</strong> est déjà réinscrit pour la session active (<strong>' + (d.already_registered_annee || '2025-2026') + '</strong>) dans la classe <strong>' + (d.already_registered_classe || '-') + '</strong> (Réf Inscription : <code>' + (d.already_registered_code || '-') + '</code>).<br>Une nouvelle réinscription pour cette même année n\'est pas autorisée.'
+              'L\'étudiant <strong>' + (d.nom_complet || '') + '</strong> est déjà réinscrit pour la session active (<strong>' + (d.already_registered_annee || 'active') + '</strong>) dans la classe <strong>' + (d.already_registered_classe || '-') + '</strong> (Réf Inscription : <code>' + (d.already_registered_code || '-') + '</code>).<br>Une nouvelle réinscription pour cette même année n\'est pas autorisée.'
             );
             $('#already_registered_warning').stop(true, true).slideDown(250);
             $('#form_inscription_main button[type="submit"]').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});

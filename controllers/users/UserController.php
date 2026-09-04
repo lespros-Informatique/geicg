@@ -101,7 +101,7 @@ class UserController extends BaseController
 
         $code_user = $this->validator->generateCode('users', 'code_user', 'USR-', 8);
         $password = password_hash($rawPassword, PASSWORD_DEFAULT);
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
 
         $data = [
             'code_user' => $code_user,

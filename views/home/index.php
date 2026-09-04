@@ -51,7 +51,7 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
             </span>
           </h1>
           <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0; font-size: 13px;">
-            Année Académique Active : <strong><?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '2025-2026') ?></strong> &bull; Bienvenue, <strong><?= htmlspecialchars($auth['nom_user'] ?? 'Utilisateur') ?></strong>
+            Année Académique Active : <strong><?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?></strong> &bull; Bienvenue, <strong><?= htmlspecialchars($auth['nom_user'] ?? 'Utilisateur') ?></strong>
           </p>
         </div>
 

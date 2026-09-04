@@ -41,7 +41,7 @@ class AccessoireController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_accessoire'])) {
             $data['code_accessoire'] = $this->validator->generateCode('accessoires', 'code_accessoire', 'ACC-', 8);
         }
@@ -216,7 +216,7 @@ class AccessoireController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
 
         // Trouver la dernière inscription de l'étudiant
         $stmtIns = $db->prepare("SELECT code_inscription FROM inscriptions WHERE etudiant_code = ? ORDER BY id_inscription DESC LIMIT 1");

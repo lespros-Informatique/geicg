@@ -44,7 +44,7 @@ class ParentController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_parent'])) {
             $data['code_parent'] = $this->validator->generateCode('parents', 'code_parent', 'PAR-', 8);
         }

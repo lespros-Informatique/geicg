@@ -83,7 +83,7 @@ class TrancheController extends BaseController
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
 

@@ -36,7 +36,7 @@ class InscriptionController extends BaseController
             $_SESSION['annee_active_code'] = $code;
             return $code;
         }
-        return 'ANN-2025-2026';
+        return '';
     }
 
     public function apiList()
@@ -441,7 +441,7 @@ class InscriptionController extends BaseController
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = '5454544456';
+        $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
 
