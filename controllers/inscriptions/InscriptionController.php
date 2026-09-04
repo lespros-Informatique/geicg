@@ -207,7 +207,8 @@ class InscriptionController extends BaseController
             return;
         }
 
-        $anneeActive = $this->getActiveAnneeCode();
+        $anneeCodeParam = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
+        $anneeActive = !empty($anneeCodeParam) ? $anneeCodeParam : $this->getActiveAnneeCode();
         // Vérifier si l'étudiant est déjà inscrit pour cette année active
         $stmtThisYear = $db->prepare("
             SELECT i.*, c.libelle_classe, a.libelle_annee 
@@ -312,7 +313,7 @@ class InscriptionController extends BaseController
                 'already_registered_classe' => $alreadyThisYear['libelle_classe'] ?? '',
                 'already_registered_code' => $alreadyThisYear['code_inscription'] ?? '',
                 'already_registered_annee' => $alreadyThisYear['libelle_annee'] ?? '',
-                'accessoires_etudiant' => (function() use ($db, $etudiantCode, $anneeCode) {
+                'accessoires_etudiant' => (function() use ($db, $etudiantCode, $anneeActive) {
                     $stmt = $db->prepare("
                         SELECT a.code_accessoire, a.libelle_accessoire, COALESCE(ai.statut_accessoire_inscription, 'actif') as statut
                         FROM accessoire_inscription ai
@@ -321,7 +322,7 @@ class InscriptionController extends BaseController
                         WHERE i.etudiant_code = ?
                         ORDER BY (CASE WHEN ai.annee_code = ? THEN 1 ELSE 2 END), ai.id_accessoire_inscription DESC
                     ");
-                    $stmt->execute([$etudiantCode, $anneeCode]);
+                    $stmt->execute([$etudiantCode, $anneeActive]);
                     $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     if (empty($res)) {
                         // Récupérer les kits/accessoires actifs configurés dans l'établissement
@@ -338,6 +339,7 @@ class InscriptionController extends BaseController
     {
         $this->requireAuth();
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $anneeCodeReq = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
         $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? 'non_affecte'));
         if ($affectationEtat === 'oui') $affectationEtat = 'affecte';
         if ($affectationEtat === 'non') $affectationEtat = 'non_affecte';
@@ -371,7 +373,7 @@ class InscriptionController extends BaseController
         $filiereCode = $classe['filiere_code'] ?? '';
         $niveauCode = $classe['niveau_code'] ?? '';
         $classAnneeCode = $classe['annee_code'] ?? '';
-        $activeAnneeCode = $this->getActiveAnneeCode();
+        $activeAnneeCode = !empty($anneeCodeReq) ? $anneeCodeReq : ($classAnneeCode ?: $this->getActiveAnneeCode());
 
         // 1. Trouver le tarif de scolarité actif pour cette classe, l'année active et ce statut d'affectation
         $stmtSco = $db->prepare("
@@ -456,7 +458,7 @@ class InscriptionController extends BaseController
                 'libelle_filiere' => $classe['libelle_filiere'] ?? '',
                 'niveau_code' => $niveauCode,
                 'libelle_niveau' => $classe['libelle_niveau'] ?? '',
-                'annee_code' => $anneeCode,
+                'annee_code' => $activeAnneeCode,
                 'libelle_annee' => $classe['libelle_annee'] ?? '',
                 'affectation_etat' => $affectationEtatFinal,
                 'montant_scolarite' => $montantScolarite,
@@ -476,10 +478,10 @@ class InscriptionController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+        $anneeCode = !empty($data['annee_code']) ? trim($data['annee_code']) : $this->getActiveAnneeCode();
 
         $db = $this->model->getCon();
         $modeInscription = $data['mode_inscription'] ?? 'existant';

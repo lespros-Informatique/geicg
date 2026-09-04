@@ -309,12 +309,12 @@ class EtudiantController extends BaseController
 
         $db = $this->model->getCon();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = $this->getActiveEtablissementCode();
-
         $data = $_POST;
         unset($data['csrf_token']);
         $this->cleanPhoneFields($data);
+
+        $anneeCode = !empty($data['annee_code']) ? trim($data['annee_code']) : $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
 
         $nomEtudiant = trim($data['nom_etudiant'] ?? '');
         $prenomEtudiant = trim($data['prenom_etudiant'] ?? '');

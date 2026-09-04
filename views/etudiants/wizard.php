@@ -3,6 +3,8 @@
 $classes = (new ModelClasse())->getAll();
 $accessoires = (new ModelAccessoire())->getAll();
 $pieces = (new ModelPieceFournir())->getAll();
+$annees = (new ModelAnnee())->getAll();
+$activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
 ?>
 <style>
   .wizard-stepper {
@@ -267,12 +269,27 @@ $pieces = (new ModelPieceFournir())->getAll();
                 <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi.</small>
               </div>
 
+              <!-- ANNÉE ACADÉMIQUE -->
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Année Académique d'Inscription <span style="color: #EF4444;">*</span>
+                </label>
+                <select class="form-control select2" id="wiz_annee" name="annee_code" style="width: 100%;" required>
+                  <?php foreach($annees as $a): ?>
+                    <option value="<?= $a['code_annee'] ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif')) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' (Active)' : '' ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <!-- CLASSE D'AFFECTATION -->
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe d'affectation <span style="color: #EF4444;">*</span></label>
                 <select class="form-control select2" id="wiz_classe" name="classe_code" style="width: 100%;" required>
                   <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
                   <?php foreach($classes as $cl): ?>
-                    <option value="<?= $cl['code_classe'] ?>"><?= htmlspecialchars($cl['libelle_classe']) ?></option>
+                    <option value="<?= $cl['code_classe'] ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? '') ?>"><?= htmlspecialchars($cl['libelle_classe']) ?></option>
                   <?php endforeach; ?>
                 </select>
               </div>
@@ -282,7 +299,7 @@ $pieces = (new ModelPieceFournir())->getAll();
 
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
-                <input type="number" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="Ex: 50000" value="0" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="number" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="0" readonly style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #64748B; font-weight: 600; pointer-events: none; cursor: not-allowed;">
               </div>
             </div>
 
@@ -932,6 +949,38 @@ $(document).ready(function() {
     saveFormData();
   });
 
+  function filterWizardClassesByAnnee() {
+    var selectedAnnee = $('#wiz_annee').val();
+    var $classeSelect = $('#wiz_classe');
+    var currentVal = $classeSelect.val();
+    var currentStillValid = false;
+
+    $classeSelect.find('option').each(function() {
+      var optAnnee = $(this).data('annee');
+      if (!$(this).val()) return;
+
+      if (!selectedAnnee || !optAnnee || optAnnee === selectedAnnee) {
+        $(this).prop('disabled', false).show();
+        if ($(this).val() === currentVal) {
+          currentStillValid = true;
+        }
+      } else {
+        $(this).prop('disabled', true).hide();
+      }
+    });
+
+    if (!currentStillValid && currentVal) {
+      $classeSelect.val('').trigger('change');
+    } else {
+      $classeSelect.trigger('change.select2');
+    }
+  }
+
+  $('#wiz_annee').on('change select2:select', function() {
+    filterWizardClassesByAnnee();
+    refreshClassTuition();
+  });
+
   // Auto-récupération et affichage complet de la scolarité et de TOUTES les tranches selon la classe et le statut d'affectation
   function refreshClassTuition() {
     var classeCode = $('#wiz_classe').val();
@@ -949,7 +998,8 @@ $(document).ready(function() {
       type: 'GET',
       data: { 
         classe_code: classeCode,
-        affectation_etat: affectationEtat
+        affectation_etat: affectationEtat,
+        annee_code: $('#wiz_annee').val()
       },
       dataType: 'json',
       success: function(res) {
@@ -1123,6 +1173,7 @@ $(document).ready(function() {
       width: '100%'
     });
   }
+  filterWizardClassesByAnnee();
   updateWizardUI();
 
   // Déclencher le chargement des tarifs si une classe est déjà pré-sélectionnée

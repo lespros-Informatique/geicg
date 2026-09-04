@@ -14,6 +14,7 @@ $inscriptions = (new ModelInscription())->getAll();
 $typeDepenses = (new ModelTypeDepense())->getAll();
 $users = (new ModelUser())->getAll();
 $enseignants = (new ModelEnseignant())->getAll();
+$annees = (new ModelAnnee())->getAll();
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -263,6 +264,23 @@ $enseignants = (new ModelEnseignant())->getAll();
             <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le montant et l'échéancier des tranches s'ajustent automatiquement selon le régime sélectionné.</small>
           </div>
 
+          <!-- ANNÉE ACADÉMIQUE D'INSCRIPTION -->
+          <div class="form-group" style="width: 100%; box-sizing: border-box; margin-bottom: 20px;">
+            <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+              Année Académique d'Inscription <span style="color: #EF4444;">*</span>
+            </label>
+            <select class="form-control select2" id="sel_annee_inscription" style="width: 100%; box-sizing: border-box;" name="annee_code" required>
+              <?php 
+                $selectedAnneeIns = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
+                foreach($annees as $a): 
+              ?>
+                <option value="<?= $a['code_annee'] ?>" <?= ($selectedAnneeIns == $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
           <!-- SÉLECTION DE LA CLASSE D'AFFECTATION (PLEINE LARGEUR) -->
           <div class="form-group" style="width: 100%; box-sizing: border-box; margin-bottom: 20px;">
             <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
@@ -271,7 +289,7 @@ $enseignants = (new ModelEnseignant())->getAll();
             <select class="form-control select2" id="sel_classe_inscription" style="width: 100%; box-sizing: border-box;" name="classe_code" required>
               <option value="">-- Choisir la classe --</option>
               <?php foreach($classes as $cl): ?>
-                <option value="<?= $cl['code_classe'] ?>" <?= (($item['classe_code'] ?? '') == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
+                <option value="<?= $cl['code_classe'] ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? '') ?>" <?= (($item['classe_code'] ?? '') == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -298,7 +316,7 @@ $enseignants = (new ModelEnseignant())->getAll();
           <!-- REMISE / BOURSE ACCORDÉE (PLEINE LARGEUR) -->
           <div class="form-group" style="width: 100%; box-sizing: border-box; margin-bottom: 20px;">
             <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
-            <input type="number" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="remise_accordee" value="<?= htmlspecialchars($item['remise_accordee'] ?? '') ?>" placeholder="Ex: 50000">
+            <input type="number" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #64748B; font-weight: 600; pointer-events: none; cursor: not-allowed;" name="remise_accordee" value="<?= htmlspecialchars($item['remise_accordee'] ?? '0') ?>" placeholder="0" readonly>
           </div>
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
@@ -356,7 +374,10 @@ $(document).ready(function() {
     $.ajax({
       url: '<?= RACINE ?>inscription/getStudentProfileSummary',
       type: 'GET',
-      data: { etudiant_code: etudiantCode },
+      data: { 
+        etudiant_code: etudiantCode,
+        annee_code: $('#sel_annee_inscription').val()
+      },
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 && res.data) {
@@ -511,7 +532,8 @@ $(document).ready(function() {
       type: 'GET',
       data: { 
         classe_code: classeCode,
-        affectation_etat: affectationEtat
+        affectation_etat: affectationEtat,
+        annee_code: $('#sel_annee_inscription').val()
       },
       dataType: 'json',
       success: function(res) {
@@ -590,6 +612,45 @@ $(document).ready(function() {
     });
   }
 
+  function filterInscriptionClassesByAnnee() {
+    var selectedAnnee = $('#sel_annee_inscription').val();
+    var $classeSelect = $('#sel_classe_inscription');
+    var currentVal = $classeSelect.val();
+    var currentStillValid = false;
+
+    $classeSelect.find('option').each(function() {
+      var optAnnee = $(this).data('annee');
+      if (!$(this).val()) return;
+
+      if (!selectedAnnee || !optAnnee || optAnnee === selectedAnnee) {
+        $(this).prop('disabled', false).show();
+        if ($(this).val() === currentVal) {
+          currentStillValid = true;
+        }
+      } else {
+        $(this).prop('disabled', true).hide();
+      }
+    });
+
+    if (!currentStillValid && currentVal) {
+      $classeSelect.val('').trigger('change');
+    } else {
+      $classeSelect.trigger('change.select2');
+    }
+  }
+
+  $('#sel_annee_inscription').on('change select2:select', function() {
+    filterInscriptionClassesByAnnee();
+    var stu = $('#sel_etudiant_inscription').val();
+    if (stu) {
+      fetchStudentProfile(stu);
+    }
+    var currentClass = $('#sel_classe_inscription').val();
+    if (currentClass) {
+      fetchTuitionForClass(currentClass);
+    }
+  });
+
   // Événements de sélection
   $('#sel_etudiant_inscription').on('change select2:select', function() {
     var val = $(this).val();
@@ -615,6 +676,8 @@ $(document).ready(function() {
       fetchTuitionForClass(currentClass);
     }
   });
+
+  filterInscriptionClassesByAnnee();
 
   // Chargement initial automatique via paramètre URL ou valeur pré-sélectionnée
   var urlParams = new URLSearchParams(window.location.search);
