@@ -357,6 +357,100 @@ class PaiementController extends BaseController
         ]);
     }
 
+    public function getNextUnpaidTranche(string $inscriptionCode): ?array
+    {
+        $db = $this->model->getCon();
+        $stmtIns = $db->prepare("
+            SELECT i.*, c.filiere_code, c.niveau_code
+            FROM inscriptions i
+            LEFT JOIN classes c ON i.classe_code = c.code_classe
+            WHERE i.code_inscription = ? OR i.id_inscription = ?
+            LIMIT 1
+        ");
+        $stmtIns->execute([$inscriptionCode, is_numeric($inscriptionCode) ? (int)$inscriptionCode : 0]);
+        $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
+        if (!$ins) return null;
+
+        $filiereCode = $ins['filiere_code'] ?? '';
+        $niveauCode = $ins['niveau_code'] ?? '';
+        $anneeCode = !empty($ins['annee_code']) ? $ins['annee_code'] : $this->getActiveAnneeCode();
+
+        $rawAff = strtolower(trim($ins['affectation_etat'] ?? ''));
+        $isAffecte = ($rawAff === 'oui' || $rawAff === 'affecte' || $rawAff === '1');
+        $affEtat = $isAffecte ? 'affecte' : 'non_affecte';
+
+        $stmtSco = $db->prepare("
+            SELECT code_scolarite FROM scolarites 
+            WHERE filiere_code = ? 
+              AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
+              AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+              AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
+              AND statut_scolarite = 'actif'
+            ORDER BY id_scolarite DESC LIMIT 1
+        ");
+        $stmtSco->execute([$filiereCode, $niveauCode, $anneeCode, $affEtat]);
+        $scoGrid = $stmtSco->fetch(PDO::FETCH_ASSOC);
+        $codeScolarite = $scoGrid['code_scolarite'] ?? '';
+
+        $stmtTr = $db->prepare("
+            SELECT t.*
+            FROM tranches_scolarite t
+            LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
+            WHERE t.statut_tranche = 'actif'
+              AND (
+                (t.scolarite_code != '' AND t.scolarite_code = ?)
+                OR (t.scolarite_code = '' AND t.filiere_code = ? AND t.niveau_code = ?)
+                OR (s.filiere_code = ? AND s.niveau_code = ?)
+              )
+            ORDER BY t.date_limite ASC, t.id_tranche ASC
+        ");
+        $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $filiereCode, $niveauCode]);
+        $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($dbTranches)) return null;
+
+        $stmtPay = $db->prepare("SELECT * FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+        $stmtPay->execute([$inscriptionCode]);
+        $allPayments = $stmtPay->fetchAll(PDO::FETCH_ASSOC);
+
+        $paymentsByTranche = [];
+        $unassignedPayments = 0;
+        foreach ($allPayments as $p) {
+            $tCode = $p['tranche_code'] ?? '';
+            if (!empty($tCode)) {
+                $paymentsByTranche[$tCode] = ($paymentsByTranche[$tCode] ?? 0) + (float)$p['montant_paiement'];
+            } else {
+                $unassignedPayments += (float)$p['montant_paiement'];
+            }
+        }
+
+        foreach ($dbTranches as $tr) {
+            $tCode = $tr['code_tranche'];
+            $montantTranche = (float)$tr['montant_tranche'];
+            $dejaPaye = $paymentsByTranche[$tCode] ?? 0;
+
+            if ($unassignedPayments > 0 && $dejaPaye < $montantTranche) {
+                $needed = $montantTranche - $dejaPaye;
+                $allocated = min($unassignedPayments, $needed);
+                $dejaPaye += $allocated;
+                $unassignedPayments -= $allocated;
+            }
+
+            $resteAPayer = max(0, $montantTranche - $dejaPaye);
+            if ($resteAPayer > 0) {
+                return [
+                    'code_tranche' => $tCode,
+                    'libelle_tranche' => $tr['libelle_tranche'],
+                    'montant_tranche' => $montantTranche,
+                    'deja_paye' => $dejaPaye,
+                    'reste_a_payer' => $resteAPayer
+                ];
+            }
+        }
+
+        return null;
+    }
+
     public function add()
     {
         $this->requirePost(false);
@@ -405,8 +499,14 @@ class PaiementController extends BaseController
             return;
         }
 
-        // Vérification stricte du montant par rapport à la tranche sélectionnée
+        // Contrôle backend strict de l'ordre chronologique des tranches (Prochaine tranche impayée obligatoire)
         if ($trancheCode !== 'SCOLARITE_GLOBALE') {
+            $nextUnpaid = $this->getNextUnpaidTranche($inscriptionCode);
+            if ($nextUnpaid && $nextUnpaid['code_tranche'] !== $trancheCode) {
+                $this->error("Encaissement refusé : Vous devez obligatoirement solder la tranche impayée en cours « {$nextUnpaid['libelle_tranche']} » avant de pouvoir enregistrer un versement pour une tranche ultérieure.");
+                return;
+            }
+
             $stmtTr = $db->prepare("SELECT * FROM tranches_scolarite WHERE code_tranche = ? LIMIT 1");
             $stmtTr->execute([$trancheCode]);
             $tranche = $stmtTr->fetch(PDO::FETCH_ASSOC);
