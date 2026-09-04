@@ -1,38 +1,49 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php
+$stats = $stats ?? (new ModelDepense())->getStats();
+$annees = $annees ?? [];
+$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
+      
+      <!-- En-tête de la page -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Dépenses & Charges de Fonctionnement</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Dépenses & Charges de Fonctionnement</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Dépenses & Charges de Fonctionnement</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et suivi des décaissements, engagements budgétaires et frais généraux</p>
         </div>
-        <a href="<?= RACINE ?>depense/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Dépense / Engagement
-        </a>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="<?= RACINE ?>type_depense/list" class="btn btn-secondary" style="background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="tags" style="width: 18px; height: 18px;"></i> Catégories de Dépenses
+          </a>
+          <a href="<?= RACINE ?>depense/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Décaissement / Dépense
+          </a>
+        </div>
       </div>
 
-      <!-- Navigation Tabs (Dépenses & Engagements vs Types de Dépenses) -->
-      <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
-        <a href="<?= RACINE ?>depense/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
-          <i data-lucide="file-minus" style="width: 17px; height: 17px;"></i> Dépenses & Engagements
-        </a>
-        <a href="<?= RACINE ?>type_depense/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
-          <i data-lucide="tags" style="width: 17px; height: 17px;"></i> Types / Catégories de Dépenses
-        </a>
-      <!-- BANDE DE FILTRES DYNAMIQUES -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 12px; width: 100%; max-width: 400px;">
-            <label style="font-weight: 700; font-size: 13px; color: #1E3A5F; white-space: nowrap; margin: 0; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="calendar" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Année Académique :
-            </label>
+      <!-- Barre de Filtrage Année Académique (Select2) -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: #0F172A; display: block;">Année Académique</span>
+              <span style="font-size: 11.5px; color: #64748B;">Filtrer le registre des dépenses par année</span>
+            </div>
+          </div>
+          <div style="min-width: 260px; flex-grow: 0;">
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
-              <?php foreach (($annees ?? []) as $a): ?>
-                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+              <option value="">-- Toutes les années --</option>
+              <?php foreach ($annees as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['statut_annee']) && $a['statut_annee'] === 'actif') ? ' (Active)' : '' ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -40,16 +51,80 @@
         </div>
       </div>
 
+      <!-- ========================================================================= -->
+      <!-- CARTES KPI DE STATISTIQUES FINANCIÈRES DES DÉPENSES -->
+      <!-- ========================================================================= -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        
+        <!-- Total Montant Engagé -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="trending-down" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total Dépenses Engagées</div>
+            <div style="font-size: 20px; font-weight: 900; color: #991B1B; margin-top: 2px;" id="kpi-total-montant"><?= number_format($stats['total_montant'], 0, ',', ' ') ?> FCFA</div>
+          </div>
+        </div>
+
+        <!-- Nombre de Dépenses -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="receipt" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Dépenses Enregistrées</div>
+            <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-count"><?= $stats['total_count'] ?></div>
+          </div>
+        </div>
+
+        <!-- Dépense Moyenne -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FFF7ED; color: #C2410C; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="calculator" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Dépense Moyenne</div>
+            <div style="font-size: 20px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-moyenne"><?= number_format($stats['moyenne'], 0, ',', ' ') ?> FCFA</div>
+          </div>
+        </div>
+
+        <!-- Catégories de Dépenses -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="tags" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Catégories Actives</div>
+            <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-types"><?= $stats['total_types'] ?></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- TABLEAU DES DÉPENSES DE FONCTIONNEMENT -->
+      <!-- ========================================================================= -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">Registre des Dépenses & Décaissements</h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;">Liste détaillée de tous les engagements financiers enregistrés</p>
+          </div>
+        </div>
+
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-depenses" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code Dépense</th>
-                <th style="padding: 12px;">Montant Engagé (FCFA)</th>
+                <th style="padding: 12px;">Catégorie</th>
+                <th style="padding: 12px;">Motif / Description</th>
+                <th style="padding: 12px; text-align: right;">Montant Engagé (FCFA)</th>
                 <th style="padding: 12px;">Date Engagement</th>
-                <th style="padding: 12px;">Statut</th>
+                <th style="padding: 12px;">Enregistré Par</th>
+                <th style="padding: 12px; text-align: center;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -57,18 +132,34 @@
           </table>
         </div>
       </div>
+
     </div>
   </main>
 </div>
+
 <script>
 $(document).ready(function() {
+  if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
     $('#filter-annee').select2({ width: '100%' });
+  }
+
+  function reloadStats() {
+    var anneeCode = $('#filter-annee').val();
+    $.getJSON('<?= RACINE ?>depense/apiStats?annee_code=' + encodeURIComponent(anneeCode), function(res) {
+      if (res.status === 1 && res.stats) {
+        $('#kpi-total-montant').text(Number(res.stats.total_montant).toLocaleString('fr-FR') + ' FCFA');
+        $('#kpi-total-count').text(res.stats.total_count);
+        $('#kpi-moyenne').text(Number(res.stats.moyenne).toLocaleString('fr-FR') + ' FCFA');
+        $('#kpi-total-types').text(res.stats.total_types);
+      }
+    });
   }
 
   var table = $('#table-depenses').DataTable({
     ajax: {
       url: '<?= RACINE ?>depense/apiList',
+      type: 'GET',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
       }
@@ -79,12 +170,36 @@ $(document).ready(function() {
       { data: null, width: '50px', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
-      { data: 'code_depense', defaultContent: '-' },
-      { data: 'montant_depense', render: function(d) {
-        return d ? '<strong style="color:#0F172A;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
+      { data: 'code_depense', render: function(d) {
+        if (!d) return '-';
+        return '<code style="font-weight:800; color:#1E3A5F; background:#F1F5F9; padding:4px 8px; border-radius:6px;">' + d + '</code>';
       }},
-      { data: 'periode_depense', defaultContent: '-' },
-      { data: 'statut_depense', width: '90px', className: 'text-center', render: function(d, type, row) {
+      { data: 'libelle_type_depense', render: function(d) {
+        return '<span class="badge" style="background:#F3E8FF; color:#7E22CE; font-weight:700; padding:5px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="tag" style="width:12px;height:12px;"></i> ' + (d || 'Général') + '</span>';
+      }},
+      { data: 'description_depense', render: function(d) {
+        if (!d) return '<span style="color:#94A3B8; font-style:italic;">Aucun motif spécifié</span>';
+        var shortText = (d.length > 55) ? d.substring(0, 55) + '...' : d;
+        return '<span style="color:#334155; font-weight:600; font-size:13px;" title="' + String(d).replace(/"/g, '&quot;') + '">' + shortText + '</span>';
+      }},
+      { data: 'montant_depense', className: 'text-end', render: function(d) {
+        var num = parseFloat(d) || 0;
+        return '<strong style="color:#991B1B; font-size:14px;">' + num.toLocaleString('fr-FR') + ' FCFA</strong>';
+      }},
+      { data: 'periode_depense', render: function(d) {
+        if (!d) return '-';
+        var parts = d.split(' ');
+        var dateParts = parts[0].split('-');
+        if (dateParts.length === 3) {
+          return '<span style="color:#475569; font-weight:600; font-size:12.5px;"><i data-lucide="calendar" style="width:13px;height:13px;display:inline;margin-right:4px;"></i>' + dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0] + '</span>';
+        }
+        return d;
+      }},
+      { data: 'auteur_nom_complet', render: function(d) {
+        if (!d || d.trim() === '') return '<span style="color:#94A3B8;">-</span>';
+        return '<span style="color:#0F172A; font-weight:700; font-size:12.5px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="user" style="width:13px;height:13px;color:#64748B;"></i> ' + d + '</span>';
+      }},
+      { data: 'statut_depense', width: '80px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');
         var checkedAttr = isActif ? 'checked' : '';
         return '<div style="display:flex; justify-content:center; align-items:center;">' +
@@ -95,7 +210,7 @@ $(document).ready(function() {
                '</span>' +
                '</label>' +
                '</div>';
-      } },
+      }},
       { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'depense/edition/' + (d.editId || d.id_depense) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                '<a href="' + window.RACINE + 'depense/details/' + (d.editId || d.id_depense) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
@@ -123,6 +238,7 @@ $(document).ready(function() {
         if (res.status === 1 || res.success) {
           if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
           table.ajax.reload(null, false);
+          reloadStats();
         } else {
           if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
           $input.prop('checked', !isChecked);

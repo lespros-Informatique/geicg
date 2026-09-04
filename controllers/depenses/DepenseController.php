@@ -25,11 +25,21 @@ class DepenseController extends BaseController
 
         $activeYear = $this->getActiveAnneeCode();
         $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stats = $this->model->getStats($activeYear);
 
         $this->loadView('../views/depenses/list.php', [
             'annees' => $annees,
-            'selectedAnneeCode' => $activeYear
+            'selectedAnneeCode' => $activeYear,
+            'stats' => $stats
         ]);
+    }
+
+    public function apiStats()
+    {
+        $this->requireAuth();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $stats = $this->model->getStats($anneeCode);
+        $this->json(['status' => 1, 'stats' => $stats]);
     }
 
     public function apiList()
