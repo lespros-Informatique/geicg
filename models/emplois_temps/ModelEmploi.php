@@ -7,25 +7,39 @@ class ModelEmploi extends BaseModel
     protected ?string $statusField = 'statut_emploi';
     protected ?string $createdAtField = 'created_at_emploi';
 
-    public function getAll(?string $anneeCode = null): array
+    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
         $sql = "
             SELECT edt.*, 
                    cl.libelle_classe, 
+                   n.libelle_niveau,
                    m.libelle_matiere, 
                    s.libelle_salle, 
                    CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
             FROM emplois_temps edt
             LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
             LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
             LEFT JOIN salles s ON s.code_salle = edt.salle_code
             LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
             LEFT JOIN users u ON u.code_user = edt.enseignant_code
         ";
+        $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $sql .= " WHERE (edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '') ";
+            $conditions[] = "(edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '')";
             $params[] = $anneeCode;
+        }
+        if (!empty($niveauCode)) {
+            $conditions[] = "cl.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if (!empty($classeCode)) {
+            $conditions[] = "edt.classe_code = ?";
+            $params[] = $classeCode;
+        }
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
         }
         $sql .= " ORDER BY edt.jour ASC, edt.heure_debut ASC ";
         try {

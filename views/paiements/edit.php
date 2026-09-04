@@ -7,8 +7,11 @@ if (empty($activeYear)) {
     $activeYear = $actRow['code_annee'] ?? '';
 }
 
+$niveauxList = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+$classesList = $db->query("SELECT code_classe, libelle_classe, niveau_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
 $stmtIns = $db->prepare("
-  SELECT i.code_inscription, i.montant_scolarite_inscription, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, c.libelle_classe 
+  SELECT i.code_inscription, i.montant_scolarite_inscription, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, c.libelle_classe, c.code_classe, c.niveau_code
   FROM inscriptions i 
   LEFT JOIN etudiants e ON i.etudiant_code = e.code_etudiant 
   LEFT JOIN classes c ON i.classe_code = c.code_classe 
@@ -174,6 +177,31 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%;">
             
+            <!-- Filtre Rapide par Niveau & Classe -->
+            <div style="grid-column: 1 / -1; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px 18px; margin-bottom: 4px;">
+              <div style="font-weight: 700; font-size: 13px; color: #1E3A5F; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="filter" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Filtrage rapide par groupe / classe (Optionnel) :
+              </div>
+              <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                  <select id="filter_niveau_select" class="form-control select2" style="width: 100%;">
+                    <option value="">-- Tous les Niveaux --</option>
+                    <?php foreach ($niveauxList as $n): ?>
+                      <option value="<?= htmlspecialchars($n['code_niveau']) ?>"><?= htmlspecialchars($n['libelle_niveau']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div style="flex: 1; min-width: 220px;">
+                  <select id="filter_classe_select" class="form-control select2" style="width: 100%;">
+                    <option value="">-- Toutes les Classes --</option>
+                    <?php foreach ($classesList as $c): ?>
+                      <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <!-- Recherche Sélection Élève -->
             <div class="form-group" style="width: 100%; grid-column: 1 / -1;">
               <label style="display: block; font-weight: 700; font-size: 13.5px; color: #1E3A5F; margin-bottom: 6px;">
@@ -188,7 +216,7 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
                     $classe = $ins['libelle_classe'] ?? 'Non affecté';
                     $labelOpt = "$mat - $nom ($classe)";
                   ?>
-                  <option value="<?= $ins['code_inscription'] ?>" <?= (($item['inscription_code'] ?? '') == $ins['code_inscription']) ? 'selected' : '' ?>>
+                  <option value="<?= $ins['code_inscription'] ?>" data-classe="<?= htmlspecialchars($ins['code_classe'] ?? '') ?>" data-niveau="<?= htmlspecialchars($ins['niveau_code'] ?? '') ?>" <?= (($item['inscription_code'] ?? '') == $ins['code_inscription']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($labelOpt) ?>
                   </option>
                 <?php endforeach; ?>
@@ -259,11 +287,71 @@ $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
 
   if ($.fn.select2) {
-    $('#select_inscription_code').select2({
-      placeholder: "-- Rechercher l'étudiant par Matricule, Nom ou Prénom --",
-      allowClear: true,
+    $('#select_inscription_code, #filter_niveau_select, #filter_classe_select').select2({
       width: '100%'
     });
+  }
+
+  var $studentSelect = $('#select_inscription_code');
+  var originalStudentOptions = $studentSelect.find('option').clone();
+
+  $('#filter_niveau_select').on('change', function() {
+    var selNiveau = $(this).val();
+    $('#filter_classe_select option').each(function() {
+      var nCode = $(this).attr('data-niveau');
+      if (!selNiveau || !nCode || nCode === selNiveau || $(this).val() === '') {
+        $(this).prop('disabled', false);
+      } else {
+        $(this).prop('disabled', true);
+      }
+    });
+    if ($.fn.select2) {
+      $('#filter_classe_select').select2({ width: '100%' });
+    }
+    applyStudentFilter();
+  });
+
+  $('#filter_classe_select').on('change', function() {
+    applyStudentFilter();
+  });
+
+  function applyStudentFilter() {
+    var selectedNiveau = $('#filter_niveau_select').val();
+    var selectedClasse = $('#filter_classe_select').val();
+    var currentVal = $studentSelect.val();
+
+    $studentSelect.empty().append(originalStudentOptions.clone());
+
+    if (selectedClasse || selectedNiveau) {
+      $studentSelect.find('option').each(function() {
+        var val = $(this).val();
+        if (!val) return; // Ne pas toucher l'option par défaut
+
+        var cCode = $(this).attr('data-classe');
+        var nCode = $(this).attr('data-niveau');
+
+        var matchClasse = !selectedClasse || (cCode === selectedClasse);
+        var matchNiveau = !selectedNiveau || (nCode === selectedNiveau);
+
+        if (!matchClasse || !matchNiveau) {
+          $(this).remove();
+        }
+      });
+    }
+
+    if ($.fn.select2) {
+      $studentSelect.select2({
+        placeholder: "-- Rechercher l'étudiant par Matricule, Nom ou Prénom --",
+        allowClear: true,
+        width: '100%'
+      });
+    }
+
+    if (currentVal && $studentSelect.find('option[value="' + currentVal + '"]').length > 0) {
+      $studentSelect.val(currentVal).trigger('change');
+    } else {
+      $studentSelect.val('').trigger('change');
+    }
   }
 
   var currentTranchesData = [];

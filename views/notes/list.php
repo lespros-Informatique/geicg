@@ -1,6 +1,8 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $annees = $annees ?? [];
+$niveaux = $niveaux ?? [];
+$classes = $classes ?? [];
 $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
 ?>
 <div class="app-layout">
@@ -18,25 +20,35 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
         </a>
       </div>
 
-      <!-- Filtre Année Académique (Select2) -->
+      <!-- Filtres Multi-Critères (Année, Niveau & Classe Select2) -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
-            </div>
-            <div>
-              <span style="font-size: 13px; font-weight: 700; color: #0F172A; display: block;">Année Académique</span>
-              <span style="font-size: 11.5px; color: #64748B;">Filtrer les notes et évaluations par année</span>
-            </div>
-          </div>
-          <div style="min-width: 260px; flex-grow: 0;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: center;">
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Année Académique</label>
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
               <option value="">-- Toutes les années --</option>
               <?php foreach ($annees as $a): ?>
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
                   <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
                 </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau d'Études</label>
+            <select id="filter-niveau" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les niveaux --</option>
+              <?php foreach ($niveaux as $n): ?>
+                <option value="<?= htmlspecialchars($n['code_niveau']) ?>"><?= htmlspecialchars($n['libelle_niveau']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Classe</label>
+            <select id="filter-classe" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les classes --</option>
+              <?php foreach ($classes as $c): ?>
+                <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -68,8 +80,31 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-annee').select2({ width: '100%' });
+    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
   }
+
+  // Filtrage en cascade Niveau -> Classe
+  $('#filter-niveau').on('change', function() {
+    var niveauCode = $(this).val();
+    $('#filter-classe option').each(function() {
+      var optNiveau = $(this).data('niveau');
+      if (!niveauCode || !optNiveau || optNiveau === niveauCode || $(this).val() === '') {
+        $(this).prop('disabled', false);
+      } else {
+        $(this).prop('disabled', true);
+      }
+    });
+    if ($('#filter-classe option:selected').prop('disabled')) {
+      $('#filter-classe').val('').trigger('change.select2');
+    } else {
+      $('#filter-classe').select2({ width: '100%' });
+    }
+    table.ajax.reload();
+  });
+
+  $('#filter-classe, #filter-annee').on('change', function() {
+    table.ajax.reload();
+  });
 
   var table = $('#table-notes').DataTable({
     ajax: {
@@ -77,6 +112,8 @@ $(document).ready(function() {
       type: 'GET',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
+        d.niveau_code = $('#filter-niveau').val();
+        d.classe_code = $('#filter-classe').val();
       }
     },
     processing: true,
@@ -116,10 +153,6 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  $('#filter-annee').on('change', function() {
-    var val = $(this).val();
-    window.location.href = window.RACINE + 'note/list?annee_code=' + encodeURIComponent(val);
-  });
 
   $(document).on('change', '.toggle-statut-note', function() {
     var id = $(this).data('id');

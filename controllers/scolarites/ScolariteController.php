@@ -42,12 +42,17 @@ class ScolariteController extends BaseController
         $stmtTr->execute([$activeYear, $activeYear]);
         $totalTranches = (int)$stmtTr->fetchColumn();
 
+        $niveaux = (new ModelNiveau())->getAll();
+        $classes = (new ModelClasse())->getAll();
+
         $this->loadView('../views/scolarites/list.php', [
             'totalScolarites' => $totalScolarites,
             'totalAffectes' => $totalAffectes,
             'totalNonAffectes' => $totalNonAffectes,
             'totalTranches' => $totalTranches,
             'annees' => $annees,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
             'selectedAnneeCode' => $activeYear
         ]);
     }
@@ -68,7 +73,9 @@ class ScolariteController extends BaseController
         }
 
         $anneeCode = $this->getActiveAnneeCode();
-        $items = $this->model->getAll($anneeCode);
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_scolarite'];

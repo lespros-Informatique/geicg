@@ -7,20 +7,29 @@ class ModelPaiement extends BaseModel
     protected ?string $statusField = 'statut_paiement';
     protected ?string $createdAtField = 'date_paiement';
 
-    public function getAll(?string $anneeCode = null): array
+    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $where = "";
+        $where = "WHERE 1=1";
         $params = [];
         if (!empty($anneeCode)) {
-            $where = "WHERE (p.annee_code = ? OR ins.annee_code = ?)";
-            $params = [$anneeCode, $anneeCode];
+            $where .= " AND (p.annee_code = ? OR ins.annee_code = ?)";
+            $params[] = $anneeCode;
+            $params[] = $anneeCode;
+        }
+        if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+            $where .= " AND cl.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if (!empty($classeCode) && $classeCode !== 'ALL') {
+            $where .= " AND ins.classe_code = ?";
+            $params[] = $classeCode;
         }
 
         $sql = "
             SELECT p.*, 
                    e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant,
                    TRIM(CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, ''))) as etudiant_nom,
-                   cl.libelle_classe,
+                   cl.libelle_classe, cl.niveau_code,
                    t.libelle_tranche, t.montant_tranche
             FROM paiements p
             LEFT JOIN inscriptions ins ON ins.code_inscription = p.inscription_code

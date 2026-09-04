@@ -90,9 +90,14 @@ class PaiementController extends BaseController
             'taux_recouvrement' => $tauxRecouvrement
         ]);
 
+        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $classes = $db->query("SELECT code_classe, libelle_classe, niveau_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
         $this->loadView('../views/paiements/list.php', [
             'stats' => $stats,
             'annees' => $annees,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
             'selectedAnneeCode' => $activeYear
         ]);
     }
@@ -112,8 +117,10 @@ class PaiementController extends BaseController
             }
         }
         $anneeCode = $this->getActiveAnneeCode();
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
 
-        $items = $this->model->getAll($anneeCode);
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_paiement'];

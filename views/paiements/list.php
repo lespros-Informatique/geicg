@@ -47,10 +47,12 @@
 
       <!-- BANDE DE FILTRES DYNAMIQUES -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 12px; width: 100%; max-width: 400px;">
-            <label style="font-weight: 700; font-size: 13px; color: #1E3A5F; white-space: nowrap; margin: 0; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="calendar" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Année Académique :
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: flex-end;">
+          
+          <!-- Filtre Année Académique -->
+          <div class="form-group" style="margin: 0;">
+            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="calendar" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Année Académique :
             </label>
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
               <?php foreach (($annees ?? []) as $a): ?>
@@ -60,6 +62,33 @@
               <?php endforeach; ?>
             </select>
           </div>
+
+          <!-- Filtre Niveau -->
+          <div class="form-group" style="margin: 0;">
+            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="layer" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Niveau d'Études :
+            </label>
+            <select id="filter-niveau" class="form-control select2" style="width: 100%;">
+              <option value="ALL">-- Tous les niveaux --</option>
+              <?php foreach (($niveaux ?? []) as $n): ?>
+                <option value="<?= htmlspecialchars($n['code_niveau']) ?>"><?= htmlspecialchars($n['libelle_niveau']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <!-- Filtre Classe -->
+          <div class="form-group" style="margin: 0;">
+            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="users" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Classe / Groupe :
+            </label>
+            <select id="filter-classe" class="form-control select2" style="width: 100%;">
+              <option value="ALL">-- Toutes les classes --</option>
+              <?php foreach (($classes ?? []) as $c): ?>
+                <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
         </div>
       </div>
 

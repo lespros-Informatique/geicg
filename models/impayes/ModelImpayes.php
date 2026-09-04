@@ -6,18 +6,33 @@ class ModelImpayes extends BaseModel
     protected string $primaryKey = 'id_relance';
     protected ?string $createdAtField = 'created_at_relance';
 
-    public function getAll(?string $anneeCode = null): array
+    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
         try {
-            $sql = "SELECT r.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant 
+            $sql = "SELECT r.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, cl.libelle_classe, n.libelle_niveau 
                     FROM relances_impayes r
-                    LEFT JOIN etudiants e ON r.etudiant_code = e.code_etudiant";
+                    LEFT JOIN etudiants e ON r.etudiant_code = e.code_etudiant
+                    LEFT JOIN inscriptions ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription = 'actif'))
+                    LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                    LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code";
+            $conditions = [];
             $params = [];
             if (!empty($anneeCode)) {
-                $sql .= " WHERE (r.annee_code = ? OR r.annee_code IS NULL OR r.annee_code = '') ";
+                $conditions[] = "(r.annee_code = ? OR r.annee_code IS NULL OR r.annee_code = '')";
                 $params[] = $anneeCode;
             }
-            $sql .= " ORDER BY r.id_relance DESC";
+            if (!empty($niveauCode)) {
+                $conditions[] = "cl.niveau_code = ?";
+                $params[] = $niveauCode;
+            }
+            if (!empty($classeCode)) {
+                $conditions[] = "ins.classe_code = ?";
+                $params[] = $classeCode;
+            }
+            if (!empty($conditions)) {
+                $sql .= " WHERE " . implode(" AND ", $conditions);
+            }
+            $sql .= " GROUP BY r.id_relance ORDER BY r.id_relance DESC";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

@@ -12,6 +12,8 @@ class EmploiController extends BaseController
         $this->requireAuth();
         $anneeModel = new ModelAnnee();
         $annees = $anneeModel->getAll();
+        $niveaux = (new ModelNiveau())->getAll();
+        $classes = (new ModelClasse())->getAll();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
@@ -28,6 +30,8 @@ class EmploiController extends BaseController
 
         $this->loadView('../views/emplois_temps/list.php', [
             'annees' => $annees,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
             'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
@@ -36,7 +40,9 @@ class EmploiController extends BaseController
     {
         $this->requireAuth();
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
-        $items = $this->model->getAll($anneeCode);
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_emploi'];
