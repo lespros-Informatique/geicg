@@ -25,10 +25,14 @@
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
             
-            <!-- Date de Session -->
+            <!-- Date de Session (Readonly / Verrouillée sur la date du jour) -->
+            <?php $sessionDate = $item['date_session'] ?? date('Y-m-d'); ?>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Date de la session <span style="color: #EF4444;">*</span></label>
-              <input type="date" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700;" name="date_session" value="<?= htmlspecialchars($item['date_session'] ?? date('Y-m-d')) ?>" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                Date de la session <span style="font-size: 11px; font-weight: 500; color: #64748B; margin-left: 6px;">(Aujourd'hui)</span>
+              </label>
+              <input type="hidden" name="date_session" value="<?= htmlspecialchars($sessionDate) ?>">
+              <input type="date" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" value="<?= htmlspecialchars($sessionDate) ?>" tabindex="-1" readonly>
             </div>
 
             <!-- Fond initial de caisse -->

@@ -15,57 +15,81 @@
       </div>
 
       <!-- STATISTIQUES & INDICATEURS CLÉS CAISSE -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
         
         <!-- Total Encaissé -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé</div>
-            <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 4px;">
-              <?= number_format((float)($stats['total_encaisse'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px; font-weight: 700; color: #166534;">FCFA</span>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé</div>
+            <div style="font-size: 19px; font-weight: 900; color: #15803D; margin-top: 4px;">
+              <?= number_format((float)($stats['total_encaisse'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #166534;">FCFA</span>
+            </div>
+            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              Recouvrement : <strong style="color: #15803D;"><?= number_format((float)($stats['taux_recouvrement'] ?? 0), 1, ',', ' ') ?>%</strong>
             </div>
           </div>
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="wallet" style="width: 22px; height: 22px;"></i>
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="wallet" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Montant en Attente (Reste à Recouvrer) -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Montant en Attente</div>
+            <div style="font-size: 19px; font-weight: 900; color: #B91C1C; margin-top: 4px;">
+              <?= number_format((float)($stats['montant_en_attente'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #991B1B;">FCFA</span>
+            </div>
+            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              Scolarité attendue : <?= number_format((float)($stats['total_scolarite_attendue'] ?? 0), 0, ',', ' ') ?> F
+            </div>
+          </div>
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- Encaissements Aujourd'hui -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Aujourd'hui</div>
-            <div style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">
-              <?= number_format((float)($stats['encaisse_aujourdhui'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px; font-weight: 700; color: #1E3A5F;">FCFA</span>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Aujourd'hui</div>
+            <div style="font-size: 19px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">
+              <?= number_format((float)($stats['encaisse_aujourdhui'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #1E3A5F;">FCFA</span>
             </div>
+            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">Session du jour</div>
           </div>
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="calendar-check" style="width: 22px; height: 22px;"></i>
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- Encaissements du Mois -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Mois en Cours</div>
-            <div style="font-size: 20px; font-weight: 900; color: #0F172A; margin-top: 4px;">
-              <?= number_format((float)($stats['encaisse_mois'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px; font-weight: 700; color: #475569;">FCFA</span>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Mois en Cours</div>
+            <div style="font-size: 19px; font-weight: 900; color: #0F172A; margin-top: 4px;">
+              <?= number_format((float)($stats['encaisse_mois'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #475569;">FCFA</span>
             </div>
+            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">Mois en cours</div>
           </div>
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: #F8FAFC; color: #475569; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #E2E8F0;">
-            <i data-lucide="trending-up" style="width: 22px; height: 22px;"></i>
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: #F8FAFC; color: #475569; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #E2E8F0;">
+            <i data-lucide="trending-up" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
-        <!-- Nombre d'Opérations & Étudiants -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <!-- Reçus Délivrés & Étudiants Inscrits -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Reçus Délivrés</div>
-            <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 4px;">
-              <?= number_format((int)($stats['total_operations'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px; font-weight: 600; color: #64748B;">(<?= number_format((int)($stats['total_eleves_payeurs'] ?? 0), 0, ',', ' ') ?> étudiants)</span>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Reçus & Inscrits</div>
+            <div style="font-size: 19px; font-weight: 900; color: #B45309; margin-top: 4px;">
+              <?= number_format((int)($stats['total_operations'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #B45309;">reçus</span>
+            </div>
+            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              <strong><?= number_format((int)($stats['total_eleves_payeurs'] ?? 0), 0, ',', ' ') ?></strong> payeur(s) / <strong><?= number_format((int)($stats['total_inscrits'] ?? 0), 0, ',', ' ') ?></strong> inscrit(s)
             </div>
           </div>
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="receipt" style="width: 22px; height: 22px;"></i>
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 

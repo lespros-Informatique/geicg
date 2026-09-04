@@ -11,7 +11,40 @@ class PaiementController extends BaseController
     {
         $this->requireAuth();
         $db = $this->model->getCon();
-        $stats = $db->query("
+        $activeYear = $this->getActiveAnneeCode();
+
+        // 1. Statistiques des Inscriptions et de la Scolarité Globale Attendue
+        $stmtIns = $db->prepare("
+            SELECT 
+                COUNT(DISTINCT i.id_inscription) as total_inscrits,
+                COUNT(DISTINCT i.etudiant_code) as total_etudiants_inscrits,
+                COALESCE(SUM(
+                    CASE 
+                        WHEN i.montant_scolarite_inscription IS NOT NULL AND i.montant_scolarite_inscription > 0 THEN i.montant_scolarite_inscription
+                        WHEN s.montant_scolarite IS NOT NULL AND s.montant_scolarite > 0 THEN s.montant_scolarite
+                        ELSE 0
+                    END
+                ), 0) as total_scolarite_attendue
+            FROM inscriptions i
+            LEFT JOIN classes c ON i.classe_code = c.code_classe
+            LEFT JOIN scolarites s ON (
+                s.filiere_code = c.filiere_code 
+                AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
+                AND (s.annee_code = i.annee_code OR s.annee_code IS NULL OR s.annee_code = '')
+                AND (s.affectation_etat = i.affectation_etat OR s.affectation_etat IS NULL OR s.affectation_etat = '')
+                AND s.statut_scolarite = 'actif'
+            )
+            WHERE (i.annee_code = ? OR ? = '') AND i.statut_inscription != 'annule'
+        ");
+        $stmtIns->execute([$activeYear, $activeYear]);
+        $insStats = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [
+            'total_inscrits' => 0,
+            'total_etudiants_inscrits' => 0,
+            'total_scolarite_attendue' => 0
+        ];
+
+        // 2. Statistiques des Paiements et Encaissements
+        $stmtPay = $db->prepare("
             SELECT 
                 COUNT(*) as total_operations,
                 COALESCE(SUM(montant_paiement), 0) as total_encaisse,
@@ -20,13 +53,27 @@ class PaiementController extends BaseController
                 COUNT(DISTINCT p.inscription_code) as total_eleves_payeurs
             FROM paiements p
             WHERE p.statut_paiement != 'annule'
-        ")->fetch(PDO::FETCH_ASSOC) ?: [
+        ");
+        $stmtPay->execute();
+        $payStats = $stmtPay->fetch(PDO::FETCH_ASSOC) ?: [
             'total_operations' => 0,
             'total_encaisse' => 0,
             'encaisse_aujourdhui' => 0,
             'encaisse_mois' => 0,
             'total_eleves_payeurs' => 0
         ];
+
+        $totalScolarite = (float)$insStats['total_scolarite_attendue'];
+        $totalEncaisse = (float)$payStats['total_encaisse'];
+        $montantEnAttente = max(0, $totalScolarite - $totalEncaisse);
+        $tauxRecouvrement = ($totalScolarite > 0) ? round(($totalEncaisse / $totalScolarite) * 100, 1) : 0;
+
+        $stats = array_merge($payStats, [
+            'total_inscrits' => (int)$insStats['total_inscrits'],
+            'total_scolarite_attendue' => $totalScolarite,
+            'montant_en_attente' => $montantEnAttente,
+            'taux_recouvrement' => $tauxRecouvrement
+        ]);
 
         $this->loadView('../views/paiements/list.php', [
             'stats' => $stats
