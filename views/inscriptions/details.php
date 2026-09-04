@@ -7,23 +7,35 @@ $totalPaye = $totalPaye ?? 0;
 $solde = $solde ?? 0;
 $tauxPaiement = ($scolarite > 0) ? min(100, round(($totalPaye / $scolarite) * 100)) : 100;
 ?>
+<style>
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .sidebar, .nav-header, .page-header-actions, .no-print { display: none !important; }
+  .app-layout { display: block !important; }
+  .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+  .content-wrapper { padding: 0 !important; }
+}
+</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; box-sizing: border-box;">
       
-      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+      <div class="page-header no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Inscription : <?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Classe : <strong><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></strong> &bull; Année Académique : <strong><?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></strong></p>
         </div>
-        <div style="display: flex; gap: 12px;">
+        <div class="page-header-actions" style="display: flex; gap: 12px;">
           <a href="<?= RACINE ?>inscription/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux inscriptions
           </a>
-          <a href="<?= RACINE ?>inscription/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l'inscription
+          <button onclick="window.print()" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer la Fiche
+          </button>
+          <a href="<?= RACINE ?>inscription/edition/<?= $encryptedId ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
           </a>
         </div>
       </div>
@@ -154,5 +166,12 @@ $tauxPaiement = ($scolarite > 0) ? min(100, round(($totalPaye / $scolarite) * 10
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
+<script>
+$(document).ready(function() { 
+  if (window.lucide) lucide.createIcons(); 
+  <?php if (isset($_GET['print'])): ?>
+    setTimeout(function() { window.print(); }, 400);
+  <?php endif; ?>
+});
+</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

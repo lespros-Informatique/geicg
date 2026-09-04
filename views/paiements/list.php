@@ -1,4 +1,30 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<style>
+@media print {
+  .sidebar, .main-nav, nav, .no-print, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate, button, a.btn {
+    display: none !important;
+  }
+  .main-content, .content-wrapper, .app-layout {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #CBD5E1 !important;
+  }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    border: 1px solid #94A3B8 !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+}
+</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -9,9 +35,14 @@
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Caisse & Encaissements Scolarité</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Caisse & Encaissements Scolarité</p>
         </div>
-        <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Règlement Caisse
-        </a>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
+          <button onclick="window.print()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre des encaissements">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
+          </button>
+          <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Règlement Caisse
+          </a>
+        </div>
       </div>
 
       <!-- STATISTIQUES & INDICATEURS CLÉS CAISSE -->
@@ -151,10 +182,12 @@ $(document).ready(function() {
       { data: 'montant_paiement', width: '170px', className: 'text-end', render: function(d) {
         return d ? '<strong style="color:#15803D; font-size:14px;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
       } },
-      { data: null, width: '170px', orderable: false, className: 'text-end', render: function(d) {
+      { data: null, width: '230px', orderable: false, className: 'text-end', render: function(d) {
+        var idCrypte = d.editId || d.id_paiement;
         return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
-               '  <a href="' + window.RACINE + 'paiement/details/' + (d.editId || d.id_paiement) + '" class="btn btn-sm btn-info" style="font-weight:700; border-radius:6px; padding:5px 10px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:13px;height:13px;"></i> Détails</a>' +
-               '  <a href="' + window.RACINE + 'paiement/edition/' + (d.editId || d.id_paiement) + '" class="btn btn-sm btn-secondary" style="font-weight:600; border-radius:6px; padding:5px 10px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:13px;height:13px;"></i> Éditer</a>' +
+               '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer le reçu"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
+               '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="eye" style="width:13px;height:13px;"></i> Détails</a>' +
+               '  <a href="' + window.RACINE + 'paiement/edition/' + idCrypte + '" class="btn btn-sm btn-secondary" style="font-weight:600; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="edit" style="width:13px;height:13px;"></i> Éditer</a>' +
                '</div>';
       } }
     ],

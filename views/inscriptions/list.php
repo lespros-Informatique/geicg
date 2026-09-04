@@ -1,4 +1,30 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<style>
+@media print {
+  .sidebar, .main-nav, nav, .no-print, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate, button, a.btn {
+    display: none !important;
+  }
+  .main-content, .content-wrapper, .app-layout {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #CBD5E1 !important;
+  }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    border: 1px solid #94A3B8 !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+}
+</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -16,7 +42,10 @@
           </div>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Liste des étudiants à réinscrire pour l'année académique active</p>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
+          <button onclick="window.print()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste des inscrits">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
+          </button>
           <a href="<?= RACINE ?>etudiant/list" class="btn btn-outline-primary" style="border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Consultation du registre et enregistrement des nouveaux dossiers étudiants">
             <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Nouveaux Étudiants
           </a>
@@ -145,10 +174,15 @@ $(document).ready(function() {
         var annee = row.annee_precedente ? ' <span style="font-size:11px; color:#64748B;">(' + row.annee_precedente + ')</span>' : '';
         return '<div style="font-weight:700; color:#334155; font-size:13px;">' + d + annee + '</div>';
       } },
-      { data: null, orderable: false, width: '130px', className: 'text-end', render: function(d, type, row) {
-        return '<a href="<?= RACINE ?>inscription/formulaire?etudiant_code=' + encodeURIComponent(row.code_etudiant) + '" class="btn btn-sm btn-primary" style="background:#1E3A5F; border-color:#1E3A5F; font-weight:700; border-radius:6px; padding:6px 14px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 1px 3px rgba(30,58,95,0.2);">' +
-               '  <i data-lucide="user-check" style="width:14px;height:14px;"></i> Réinscrire' +
-               '</a>';
+      { data: null, orderable: false, width: '220px', className: 'text-end', render: function(d, type, row) {
+        var idInscription = row.editId || row.id_inscription;
+        var printUrl = idInscription ? ('<?= RACINE ?>inscription/details/' + idInscription + '?print=1') : ('<?= RACINE ?>etudiant/details/' + encodeURIComponent(row.code_etudiant || row.id_etudiant) + '?print=1');
+        return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
+               '  <a href="' + printUrl + '" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer la fiche"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
+               '  <a href="<?= RACINE ?>inscription/formulaire?etudiant_code=' + encodeURIComponent(row.code_etudiant) + '" class="btn btn-sm btn-primary" style="background:#1E3A5F; border-color:#1E3A5F; font-weight:700; border-radius:6px; padding:5px 10px; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(30,58,95,0.2);">' +
+               '    <i data-lucide="user-check" style="width:13px;height:13px;"></i> Réinscrire' +
+               '  </a>' +
+               '</div>';
       } }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },

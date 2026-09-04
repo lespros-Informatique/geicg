@@ -488,6 +488,9 @@ function imprimerCarteScolaire() {
 
 $(document).ready(function() { 
   if (window.lucide) lucide.createIcons(); 
+  <?php if (isset($_GET['print'])): ?>
+    setTimeout(function() { window.print(); }, 400);
+  <?php endif; ?>
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
