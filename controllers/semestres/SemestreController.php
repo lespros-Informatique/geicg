@@ -144,7 +144,7 @@ class SemestreController extends BaseController
         if (empty($data['code_semestre'])) {
             $data['code_semestre'] = $this->validator->generateCode('semestres', 'code_semestre', 'SEM-', 8);
         }
-        $data['statut_semestre'] = $data['statut_semestre'] ?? 'actif';
+        $data['statut_semestre'] = !empty($data['statut_semestre']) ? $data['statut_semestre'] : 'inactif';
         $data['created_at_semestre'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE semestres")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
