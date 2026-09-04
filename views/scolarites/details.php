@@ -3,9 +3,13 @@ require_once __DIR__ . '/../../public/inc/header.php';
 $item = isset($item) ? $item : [];
 $tranches = isset($tranches) ? $tranches : [];
 $montantScolarite = (float)($item['montant_scolarite'] ?? ($item['montant'] ?? 0));
-$fraisInscription = (float)($item['frais_inscription'] ?? 0);
-$fraisAnnexes = (float)($item['frais_annexes'] ?? 0);
-$totalGeneral = $montantScolarite + $fraisInscription + $fraisAnnexes;
+
+$totalTranches = 0;
+foreach ($tranches as $t) {
+    $totalTranches += (float)($t['montant_tranche'] ?? 0);
+}
+$diffTranches = $montantScolarite - $totalTranches;
+$nbTranches = count($tranches);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -36,33 +40,59 @@ $totalGeneral = $montantScolarite + $fraisInscription + $fraisAnnexes;
       <!-- CARD 1 (COL-12) : SYNTHÈSE TARIFAIRE -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
         <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 10px;">
-          <i data-lucide="coins" style="width: 18px; height: 18px;"></i> Tarifs Applicables pour l'Année Académique
+          <i data-lucide="coins" style="width: 18px; height: 18px;"></i> Synthèse du Tarif de Scolarité & Échéancier
         </h3>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+          
+          <!-- 1. Montant Scolarité -->
           <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Montant Scolarité</span>
             <div style="font-size: 24px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= number_format($montantScolarite, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Frais d'études annuels</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Tarif annuel d'études</div>
           </div>
 
+          <!-- 2. Nombre de Tranches -->
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Frais d'Inscription</span>
-            <div style="font-size: 20px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= number_format($fraisInscription, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Frais de dossier</div>
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Échéancier</span>
+            <div style="font-size: 24px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= $nbTranches ?> tranche<?= $nbTranches > 1 ? 's' : '' ?></div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Versements configurés</div>
           </div>
 
+          <!-- 3. Total Tranches Planifiées -->
           <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Frais Annexes / Dotation</span>
-            <div style="font-size: 20px; font-weight: 800; color: #7E22CE; margin-top: 4px;"><?= number_format($fraisAnnexes, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Assurance & Tenue</div>
+            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Cumul des Tranches</span>
+            <div style="font-size: 24px; font-weight: 800; color: #7E22CE; margin-top: 4px;"><?= number_format($totalTranches, 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Total planifié</div>
           </div>
 
-          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Coût Total Annuel</span>
-            <div style="font-size: 24px; font-weight: 800; color: #15803D; margin-top: 4px;"><?= number_format($totalGeneral, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Package complet</div>
-          </div>
+          <!-- 4. Statut de Répartition -->
+          <?php if ($montantScolarite > 0 && abs($diffTranches) < 0.01): ?>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Répartition</span>
+              <div style="font-size: 20px; font-weight: 800; color: #15803D; margin-top: 4px;">✓ 100% Planifié</div>
+              <div style="font-size: 12px; color: #15803D; margin-top: 2px;">Scolarité couverte</div>
+            </div>
+          <?php elseif ($diffTranches > 0): ?>
+            <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Répartition</span>
+              <div style="font-size: 18px; font-weight: 800; color: #B45309; margin-top: 4px;">Incomplet (-<?= number_format($diffTranches, 0, ',', ' ') ?> FCFA)</div>
+              <div style="font-size: 12px; color: #B45309; margin-top: 2px;">Reste à planifier</div>
+            </div>
+          <?php elseif ($diffTranches < 0): ?>
+            <div style="background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 10px; padding: 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #B91C1C; text-transform: uppercase;">Répartition</span>
+              <div style="font-size: 18px; font-weight: 800; color: #B91C1C; margin-top: 4px;">Dépassement (+<?= number_format(abs($diffTranches), 0, ',', ' ') ?> FCFA)</div>
+              <div style="font-size: 12px; color: #B91C1C; margin-top: 2px;">Tranches supérieures au total</div>
+            </div>
+          <?php else: ?>
+            <div style="background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 10px; padding: 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Répartition</span>
+              <div style="font-size: 20px; font-weight: 800; color: #64748B; margin-top: 4px;">Non configuré</div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Aucune tranche rattachée</div>
+            </div>
+          <?php endif; ?>
+
         </div>
       </div>
 
