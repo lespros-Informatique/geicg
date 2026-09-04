@@ -10,38 +10,44 @@ class PieceFournirCycleController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $summary = $this->model->getSummaryCounts();
         $cycles = (new ModelCycle())->getAll();
         
         $anneeModel = new ModelAnnee();
         $annees = $anneeModel->getAll();
         
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+        if (isset($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
-                    break;
+            if (!empty($selectedAnneeCode)) {
+                foreach ($annees as $a) {
+                    if ($a['code_annee'] === $selectedAnneeCode) {
+                        $_SESSION['annee_active_code'] = $a['code_annee'];
+                        $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                        break;
+                    }
                 }
             }
         } else {
             $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
         }
 
+        $selectedCycleCode = $_GET['cycle_code'] ?? null;
+        $summary = $this->model->getSummaryCounts($selectedAnneeCode, $selectedCycleCode);
+
         $this->loadView('../views/piece_fournir_cycle/list.php', [
             'summary' => $summary,
             'cycles' => $cycles,
             'annees' => $annees,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'selectedCycleCode' => $selectedCycleCode
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
-        $items = $this->model->getAll($anneeCode);
+        $anneeCode = isset($_GET['annee_code']) ? trim($_GET['annee_code']) : ($_SESSION['annee_active_code'] ?? null);
+        $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
+        $items = $this->model->getAll($anneeCode, $cycleCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_piece_cycle'];
@@ -52,6 +58,15 @@ class PieceFournirCycleController extends BaseController
             ]);
         }
         $this->json(['data' => $data]);
+    }
+
+    public function apiStats()
+    {
+        $this->requireAuth();
+        $anneeCode = isset($_GET['annee_code']) ? trim($_GET['annee_code']) : ($_SESSION['annee_active_code'] ?? null);
+        $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
+        $summary = $this->model->getSummaryCounts($anneeCode, $cycleCode);
+        $this->json(['status' => 1, 'data' => $summary]);
     }
 
     public function formulaire()

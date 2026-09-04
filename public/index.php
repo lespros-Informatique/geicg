@@ -276,6 +276,7 @@ $route->addRoute('/piece_fournir/formulaire', [$pieceFournirController, 'formula
 // Module: piece_fournir_cycle (PieceFournirCycleController)
 $route->addRoute('/piece_fournir_cycle/list', [$pieceFournirCycleController, 'list']);
 $route->addRoute('/piece_fournir_cycle/apiList', [$pieceFournirCycleController, 'apiList']);
+$route->addRoute('/piece_fournir_cycle/apiStats', [$pieceFournirCycleController, 'apiStats']);
 $route->addRoute('/piece_fournir_cycle/getByCycleApi', [$pieceFournirCycleController, 'getByCycleApi']);
 $route->addRoute('/piece_fournir_cycle/add', [$pieceFournirCycleController, 'add']);
 $route->addRoute('/piece_fournir_cycle/edit', [$pieceFournirCycleController, 'edit']);
