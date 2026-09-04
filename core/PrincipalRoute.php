@@ -70,7 +70,6 @@ require_once __DIR__ . '/../controllers/cycles/CycleController.php';
 require_once __DIR__ . '/../controllers/filieres/FiliereController.php';
 require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.php';
 require_once __DIR__ . '/../controllers/niveaux/NiveauController.php';
-require_once __DIR__ . '/../controllers/filiere_niveaux/FiliereNiveauController.php';
 require_once __DIR__ . '/../controllers/classes/ClasseController.php';
 require_once __DIR__ . '/../controllers/semestres/SemestreController.php';
 require_once __DIR__ . '/../controllers/unites_enseignement/UeController.php';
@@ -119,9 +118,6 @@ require_once __DIR__ . '/../controllers/bulletin/BulletinController.php';
 
 require_once __DIR__ . '/../models/ModelFiliereCycle.php';
 require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.php';
-
-require_once __DIR__ . '/../models/ModelFiliereNiveau.php';
-require_once __DIR__ . '/../controllers/filiere_niveaux/FiliereNiveauController.php';
 
 // Auto-initialisation de l'année académique active en session
 if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['annee_active_code'])) {

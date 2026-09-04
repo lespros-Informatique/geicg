@@ -304,7 +304,7 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showNiveaux): ?>
-                <a href="<?= RACINE ?>niveau/list" class="nav-item sub <?= strpos($currentUri, '/niveau/') !== false || strpos($currentUri, '/filiere_niveau/') !== false ? 'active' : '' ?>" data-title="Niveaux d'Études">
+                <a href="<?= RACINE ?>niveau/list" class="nav-item sub <?= strpos($currentUri, '/niveau/') !== false ? 'active' : '' ?>" data-title="Niveaux d'Études">
                     <i data-lucide="trending-up"></i> <span>Niveaux d'Études</span>
                 </a>
                 <?php endif; ?>

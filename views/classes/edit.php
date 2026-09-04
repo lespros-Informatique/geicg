@@ -2,6 +2,9 @@
 <?php
 $filieres = (new ModelFiliere())->getAll();
 $niveaux = (new ModelNiveau())->getAll();
+$annees = (new ModelAnnee())->getAll();
+$currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
+$currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -25,6 +28,24 @@ $niveaux = (new ModelNiveau())->getAll();
           <?php endif; ?>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%;">
             
+            <!-- Année Académique (Sélection Readonly / Verrouillée sur l'année active) -->
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                Année Académique <span style="font-size: 11px; font-weight: 500; color: #64748B; margin-left: 6px;">(Session Active)</span>
+              </label>
+              <input type="hidden" name="annee_code" value="<?= htmlspecialchars($currentAnneeCode) ?>">
+              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" tabindex="-1" readonly>
+                <?php foreach($annees as $an): ?>
+                  <option value="<?= htmlspecialchars($an['code_annee']) ?>" <?= ($currentAnneeCode == $an['code_annee']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($an['libelle_annee']) ?> <?= ($an['statut_annee'] === 'actif') ? '(Session Active)' : '' ?>
+                  </option>
+                <?php endforeach; ?>
+                <?php if (empty($annees)): ?>
+                  <option value="<?= htmlspecialchars($currentAnneeCode) ?>" selected><?= htmlspecialchars($currentAnneeLibelle) ?></option>
+                <?php endif; ?>
+              </select>
+            </div>
+
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Filière rattachée <span style="color: #EF4444;">*</span></label>
               <select class="form-control select2" id="sel_filiere_classe" name="filiere_code" style="width: 100%;" required>

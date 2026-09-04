@@ -10,7 +10,6 @@ $cycleController = new CycleController();
 $filiereController = new FiliereController();
 $filiereCycleController = new FiliereCycleController();
 $niveauController = new NiveauController();
-$filiereNiveauController = new FiliereNiveauController();
 $salleController = new SalleController();
 $anneeController = new AnneeController();
 $classeController = new ClasseController();
@@ -125,15 +124,6 @@ $route->addRoute('/niveau/details/{param}', [$niveauController, 'details']);
 $route->addRoute('/niveau/edition/{param}', [$niveauController, 'edition']);
 $route->addRoute('/niveau/formulaire', [$niveauController, 'formulaire']);
 
-// Module: filiere_niveau (FiliereNiveauController)
-$route->addRoute('/filiere_niveau/list', [$filiereNiveauController, 'list']);
-$route->addRoute('/filiere_niveau/apiList', [$filiereNiveauController, 'apiList']);
-$route->addRoute('/filiere_niveau/add', [$filiereNiveauController, 'add']);
-$route->addRoute('/filiere_niveau/edit', [$filiereNiveauController, 'edit']);
-$route->addRoute('/filiere_niveau/changer', [$filiereNiveauController, 'changer']);
-$route->addRoute('/filiere_niveau/details/{param}', [$filiereNiveauController, 'details']);
-$route->addRoute('/filiere_niveau/edition/{param}', [$filiereNiveauController, 'edition']);
-$route->addRoute('/filiere_niveau/formulaire', [$filiereNiveauController, 'formulaire']);
 
 // Module: salle (SalleController)
 $route->addRoute('/salle/list', [$salleController, 'list']);
