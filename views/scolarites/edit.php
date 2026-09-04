@@ -1,8 +1,21 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
+$dbScol = (new Database())->getCon();
 $annees = (new ModelAnnee())->getAll();
+$cycles = (new ModelCycle())->getAll();
 $filieres = (new ModelFiliere())->getAll();
 $niveaux = (new ModelNiveau())->getAll();
+
+$filiereCyclesMap = $dbScol->query("
+    SELECT filiere_code, cycle_code 
+    FROM filiere_cycles 
+    WHERE (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)
+")->fetchAll(PDO::FETCH_ASSOC);
+
+$filiereToCycles = [];
+foreach ($filiereCyclesMap as $fc) {
+    $filiereToCycles[$fc['filiere_code']][] = $fc['cycle_code'];
+}
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -53,13 +66,33 @@ $niveaux = (new ModelNiveau())->getAll();
               </select>
             </div>
 
+            <!-- Cycle Académique (Select2 pour filtrer les filières) -->
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle Académique</label>
+              <select class="form-control select2" id="sel_cycle_scolarite" style="width: 100%;">
+                <option value="">-- Tous les cycles --</option>
+                <?php 
+                  $selectedFiliereCycles = !empty($item['filiere_code']) ? ($filiereToCycles[$item['filiere_code']] ?? []) : [];
+                  foreach($cycles as $c): 
+                    $isCycleSelected = in_array($c['code_cycle'], $selectedFiliereCycles);
+                ?>
+                  <option value="<?= htmlspecialchars($c['code_cycle']) ?>" <?= $isCycleSelected ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($c['libelle_cycle']) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
             <!-- Filière (Select2) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Filière rattachée <span style="color: #EF4444;">*</span></label>
               <select class="form-control select2" id="sel_filiere_scolarite" name="filiere_code" style="width: 100%;" required>
                 <option value="">-- Choisir une filière --</option>
-                <?php foreach($filieres as $f): ?>
-                  <option value="<?= htmlspecialchars($f['code_filiere']) ?>" <?= (($item['filiere_code'] ?? '') == $f['code_filiere']) ? 'selected' : '' ?>>
+                <?php foreach($filieres as $f): 
+                  $fCycles = $filiereToCycles[$f['code_filiere']] ?? [];
+                  $cyclesAttr = htmlspecialchars(implode(',', $fCycles));
+                ?>
+                  <option value="<?= htmlspecialchars($f['code_filiere']) ?>" data-cycles="<?= $cyclesAttr ?>" <?= (($item['filiere_code'] ?? '') == $f['code_filiere']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($f['libelle_filiere']) ?>
                   </option>
                 <?php endforeach; ?>
@@ -167,6 +200,7 @@ $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
     $('#sel_annee_scolarite').select2({ placeholder: "-- Choisir une année --", allowClear: true, width: '100%' });
+    $('#sel_cycle_scolarite').select2({ placeholder: "-- Tous les cycles --", allowClear: true, width: '100%' });
     $('#sel_filiere_scolarite').select2({ placeholder: "-- Choisir une filière --", allowClear: true, width: '100%' });
     $('#sel_niveau_scolarite').select2({ placeholder: "-- Choisir un niveau --", allowClear: true, width: '100%' });
     $('#sel_affectation_scolarite').select2({ minimumResultsForSearch: Infinity, width: '100%' });
@@ -175,6 +209,64 @@ $(document).ready(function() {
       updateTranchesSummary();
     });
   }
+
+  var allFilieres = <?= json_encode(array_map(function($f) use ($filiereToCycles) {
+      return [
+          'code_filiere' => $f['code_filiere'],
+          'libelle_filiere' => $f['libelle_filiere'],
+          'cycles' => $filiereToCycles[$f['code_filiere']] ?? []
+      ];
+  }, $filieres)) ?>;
+  var preselectedFiliereCode = <?= json_encode($item['filiere_code'] ?? '') ?>;
+
+  function filterFilieresByCycle() {
+    var selectedCycle = $('#sel_cycle_scolarite').val();
+    var $filiereSelect = $('#sel_filiere_scolarite');
+    var currentFiliereVal = $filiereSelect.val() || preselectedFiliereCode;
+
+    $filiereSelect.empty();
+
+    if (!selectedCycle) {
+      $filiereSelect.append('<option value="">-- Choisir d\'abord un cycle --</option>');
+      $filiereSelect.val('').trigger('change.select2');
+      return;
+    }
+
+    $filiereSelect.append('<option value="">-- Choisir une filière --</option>');
+    var count = 0;
+    var filiereToSelect = '';
+
+    allFilieres.forEach(function(f) {
+      if (f.cycles && f.cycles.indexOf(selectedCycle) !== -1) {
+        count++;
+        var isSelected = (f.code_filiere === currentFiliereVal);
+        if (isSelected) {
+          filiereToSelect = f.code_filiere;
+        }
+        var optHtml = '<option value="' + $('<div>').text(f.code_filiere).html() + '"' + (isSelected ? ' selected' : '') + '>' + $('<div>').text(f.libelle_filiere).html() + '</option>';
+        $filiereSelect.append(optHtml);
+      }
+    });
+
+    if (count === 0) {
+      $filiereSelect.append('<option value="" disabled>(Aucune filière dans ce cycle)</option>');
+    }
+
+    if (filiereToSelect) {
+      $filiereSelect.val(filiereToSelect);
+    } else {
+      $filiereSelect.val('');
+    }
+
+    $filiereSelect.trigger('change.select2');
+  }
+
+  $('#sel_cycle_scolarite').on('change select2:select select2:clear', function() {
+    preselectedFiliereCode = '';
+    filterFilieresByCycle();
+  });
+
+  filterFilieresByCycle();
 
   var existingTranches = <?= json_encode($tranches ?? []) ?>;
   var trancheCounter = 0;
