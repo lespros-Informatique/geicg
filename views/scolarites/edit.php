@@ -31,16 +31,25 @@ $niveaux = (new ModelNiveau())->getAll();
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%;">
             
-            <!-- Année Académique (Select2) -->
+            <!-- Année Académique (Sélection Readonly / Verrouillée sur l'année active) -->
+            <?php 
+              $currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
+              $currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
+            ?>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Année Académique <span style="color: #EF4444;">*</span></label>
-              <select class="form-control select2" id="sel_annee_scolarite" name="annee_code" style="width: 100%;" required>
-                <option value="">-- Choisir une année --</option>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                Année Académique <span style="font-size: 11px; font-weight: 500; color: #64748B; margin-left: 6px;">(Session Active)</span>
+              </label>
+              <input type="hidden" name="annee_code" value="<?= htmlspecialchars($currentAnneeCode) ?>">
+              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" tabindex="-1" readonly>
                 <?php foreach($annees as $a): ?>
-                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" data-debut="<?= htmlspecialchars($a['date_debut_annee'] ?? '') ?>" data-fin="<?= htmlspecialchars($a['date_fin_annee'] ?? '') ?>" <?= (($item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '')) == $a['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === 'actif') ? '(En cours)' : '' ?>
+                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" data-debut="<?= htmlspecialchars($a['date_debut_annee'] ?? '') ?>" data-fin="<?= htmlspecialchars($a['date_fin_annee'] ?? '') ?>" <?= ($currentAnneeCode == $a['code_annee']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === 'actif') ? '(Session Active)' : '' ?>
                   </option>
                 <?php endforeach; ?>
+                <?php if (empty($annees)): ?>
+                  <option value="<?= htmlspecialchars($currentAnneeCode) ?>" selected><?= htmlspecialchars($currentAnneeLibelle) ?></option>
+                <?php endif; ?>
               </select>
             </div>
 
