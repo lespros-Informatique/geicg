@@ -124,7 +124,7 @@ foreach ($filiereCyclesMap as $fc) {
             <!-- Montant annuel -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Montant annuel (FCFA) <span style="color: #EF4444;">*</span></label>
-              <input type="number" step="1000" min="0" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="montant_scolarite" value="<?= htmlspecialchars($item['montant_scolarite'] ?? '') ?>" placeholder="Ex: 650000" required>
+              <input type="number" step="1000" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="montant_scolarite" value="<?= htmlspecialchars($item['montant_scolarite'] ?? '') ?>" placeholder="Ex: 650000" required>
             </div>
 
           </div>
@@ -383,7 +383,7 @@ $(document).ready(function() {
         '<input type="text" name="tranches[' + idx + '][libelle_tranche]" class="form-control form-control-sm input-tranche-libelle" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-weight:600; font-size:13px;" value="' + escapedLibelle + '" placeholder="Ex: 1ère Tranche (Inscription)" required>' +
       '</td>' +
       '<td style="padding:8px 12px;">' +
-        '<input type="number" step="1000" min="0" name="tranches[' + idx + '][montant_tranche]" class="form-control form-control-sm input-tranche-montant" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-weight:700; color:#0F172A; font-size:13px;" value="' + montant + '" placeholder="Ex: 250000" required>' +
+        '<input type="number" step="1000" name="tranches[' + idx + '][montant_tranche]" class="form-control form-control-sm input-tranche-montant" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-weight:700; color:#0F172A; font-size:13px;" value="' + montant + '" placeholder="Ex: 250000" required>' +
       '</td>' +
       '<td style="padding:8px 12px;">' +
         '<input type="date" name="tranches[' + idx + '][date_limite]" class="form-control form-control-sm input-tranche-date" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-size:13px;" value="' + dateLimite + '" required>' +
@@ -442,8 +442,31 @@ $(document).ready(function() {
     updateTranchesSummary();
   });
 
-  // Contrôle global sur la soumission du formulaire
+  function displayFormSuccess(msg, $form) {
+    if (window.toastr) {
+      toastr.success(msg);
+    } else if (typeof showToast === 'function') {
+      showToast(msg, 'success');
+    }
+    
+    $form.find('.js-date-error-banner, .js-date-success-banner').remove();
+    var alertHtml = '<div class="alert alert-success js-date-success-banner" style="background:#DCFCE7; border:1px solid #86EFAC; color:#166534; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:10px;">' +
+                    '<i data-lucide="check-circle" style="width:18px; height:18px; flex-shrink:0;"></i>' +
+                    '<span>' + msg + '</span>' +
+                    '</div>';
+    $form.prepend(alertHtml);
+    if (window.lucide) lucide.createIcons();
+    $('html, body').animate({ scrollTop: $form.offset().top - 80 }, 200);
+  }
+
+  // Soumission du formulaire via AJAX sans rechargement de page
   $('form').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $btnSubmit = $form.find('button[type="submit"]');
+
+    $form.find('.js-date-error-banner, .js-date-success-banner').remove();
+
     var montantScolarite = parseFloat($('input[name="montant_scolarite"]').val()) || 0;
     var totalTranches = 0;
 
@@ -454,11 +477,67 @@ $(document).ready(function() {
 
     // Contrôle du dépassement de scolarité
     if (montantScolarite > 0 && totalTranches > montantScolarite) {
-      e.preventDefault();
       var depassement = totalTranches - montantScolarite;
-      displayFormError("Erreur sur le montant : Le cumul des tranches (" + formatFcfa(totalTranches) + ") dépasse le montant annuel de la scolarité (" + formatFcfa(montantScolarite) + ") de " + formatFcfa(depassement) + ". Veuillez ajuster les montants des tranches.", $('form'));
+      displayFormError("Erreur sur le montant : Le cumul des tranches (" + formatFcfa(totalTranches) + ") dépasse le montant annuel de la scolarité (" + formatFcfa(montantScolarite) + ") de " + formatFcfa(depassement) + ". Veuillez ajuster les montants des tranches.", $form);
       return false;
     }
+
+    $btnSubmit.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width:14px;height:14px;margin-right:6px;"></span> Enregistrement...');
+
+    $.ajax({
+      url: $form.attr('action'),
+      type: 'POST',
+      data: $form.serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(response) {
+        $btnSubmit.prop('disabled', false).html('Enregistrer');
+        if (response && (response.status === 1 || response.status === 'success' || response.success)) {
+          var msg = response.message || 'Tarif de scolarité enregistré avec succès !';
+          if (window.Swal) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Succès !',
+              text: msg,
+              timer: 1500,
+              showConfirmButton: false
+            }).then(function() {
+              window.location.href = '<?= RACINE ?>scolarite/list';
+            });
+          } else {
+            displayFormSuccess(msg, $form);
+            setTimeout(function() {
+              window.location.href = '<?= RACINE ?>scolarite/list';
+            }, 1200);
+          }
+        } else {
+          var errorMsg = (response && response.message) ? response.message : 'Une erreur est survenue lors de l\'enregistrement.';
+          if (window.Swal) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Erreur',
+              text: errorMsg
+            });
+          }
+          displayFormError(errorMsg, $form);
+        }
+      },
+      error: function(xhr) {
+        $btnSubmit.prop('disabled', false).html('Enregistrer');
+        var errText = 'Erreur serveur lors de l\'enregistrement.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          errText = xhr.responseJSON.message;
+        }
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: errText
+          });
+        }
+        displayFormError(errText, $form);
+      }
+    });
   });
 
   // Pre-fill existing tranches on load
