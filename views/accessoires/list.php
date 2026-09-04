@@ -144,10 +144,8 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
                 <th style="padding: 12px;">Nom & Prénoms Étudiant</th>
                 <th style="padding: 12px;">Téléphone</th>
                 <th style="padding: 12px;">Classe</th>
-                <th style="padding: 12px;">Kit / Accessoire</th>
-                <th style="padding: 12px; text-align: center;">État du Retrait</th>
-                <th style="padding: 12px;">Date Retrait</th>
-                <th style="padding: 12px; text-align: right;">Action Rapide</th>
+                <th style="padding: 12px; text-align: center;">Statut Global</th>
+                <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -266,6 +264,52 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
   </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL DE DÉTAILS ET SUIVI DES KITS D'UN ÉTUDIANT -->
+<!-- ========================================================================= -->
+<div id="modal-details-kits" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 620px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.25s ease;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="package-search" style="width: 20px; height: 20px;"></i> Détails & Retraits des Kits
+      </h3>
+      <button type="button" class="btn-close-modal-details" style="background: transparent; border: none; color: #FFFFFF; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <div style="padding: 24px;">
+      <!-- En-tête Étudiant -->
+      <div style="background: #F8FAFC; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h4 id="detail_student_name" style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">-</h4>
+          <p id="detail_student_sub" style="font-size: 12.5px; color: #64748B; margin: 3px 0 0 0;">-</p>
+        </div>
+        <div id="detail_student_global_badge"></div>
+      </div>
+
+      <!-- Tableau des Kits -->
+      <div style="width: 100%; overflow-x: auto; margin-bottom: 20px;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #F1F5F9; color: #475569; font-size: 12px; text-align: left;">
+              <th style="padding: 10px 12px;">Kit / Accessoire</th>
+              <th style="padding: 10px 12px; text-align: center;">État du Retrait</th>
+              <th style="padding: 10px 12px; text-align: right;">Action Instantanée</th>
+            </tr>
+          </thead>
+          <tbody id="detail_kits_tbody">
+            <!-- Injecté dynamiquement par JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid #E2E8F0; padding-top: 16px;">
+        <div id="detail_bulk_action_container"></div>
+        <button type="button" class="btn btn-secondary btn-close-modal-details" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
@@ -277,11 +321,21 @@ $(document).ready(function() {
   var tableDist = null;
   var tableAcc = null;
 
+  var studentRowsMap = {};
+  var activeStudentCode = null;
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   // 1. Initialiser le DataTable des Distributions
   function initDistTable(filter) {
     if ($.fn.DataTable.isDataTable('#table-distributions')) {
       tableDist.destroy();
     }
+
+    studentRowsMap = {};
 
     tableDist = $('#table-distributions').DataTable({
       ajax: {
@@ -296,47 +350,49 @@ $(document).ready(function() {
       autoWidth: false,
       columns: [
         { data: 'matricule_etudiant', render: function(d) {
-          return '<code style="font-weight:800; color:#1E3A5F; background:#F1F5F9; padding:2px 6px; border-radius:4px;">' + (d || '-') + '</code>';
+          return '<code style="font-weight:800; color:#1E3A5F; background:#F1F5F9; padding:4px 8px; border-radius:6px;">' + (d || '-') + '</code>';
         }},
         { data: 'nom_complet', render: function(d) {
           return '<strong style="color:#0F172A; font-size:13.5px;">' + (d || '-') + '</strong>';
         }},
-        { data: 'telephone_etudiant', defaultContent: '-' },
+        { data: 'telephone_etudiant', defaultContent: '-', render: function(d) {
+          return '<span style="color:#475569; font-weight:600; font-size:12.5px;">' + (d || '-') + '</span>';
+        }},
         { data: 'libelle_classe', render: function(d) {
           return '<span class="badge" style="background:#F1F5F9; color:#475569; font-weight:700; padding:4px 8px; border-radius:6px;">' + (d || 'Non assignée') + '</span>';
         }},
-        { data: 'libelle_accessoire', render: function(d) {
-          return '<strong style="color:#1E3A5F; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="package" style="width:14px;height:14px;color:#1E3A5F;"></i> ' + (d || '-') + '</strong>';
+        { data: null, className: 'text-center', render: function(d, type, row) {
+          var totKits = parseInt(row.total_kits) || 0;
+          var totRetires = parseInt(row.total_retires) || 0;
+          if (totKits > 0 && totRetires === totKits) {
+            return '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:6px 12px; border-radius:20px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Tout retiré (' + totRetires + '/' + totKits + ')</span>';
+          } else if (totRetires > 0) {
+            return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:6px 12px; border-radius:20px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="pie-chart" style="width:14px;height:14px;"></i> Partiel (' + totRetires + '/' + totKits + ')</span>';
+          } else {
+            return '<span class="badge" style="background:#FFEDD5; color:#C2410C; padding:6px 12px; border-radius:20px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:14px;height:14px;"></i> En attente (0/' + totKits + ')</span>';
+          }
         }},
-        { data: 'etat_retrait', className: 'text-center', render: function(d, type, row) {
-          var isRetire = (d === 'retire');
-          var badgeHtml = isRetire 
-            ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:12px;height:12px;"></i> Retiré / Livré</span>'
-            : '<span class="badge" style="background:#FFEDD5; color:#C2410C; padding:4px 10px; border-radius:12px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> En Attente</span>';
-
-          var toggleChecked = isRetire ? 'checked' : '';
-          var switchHtml = '<div style="margin-top:4px; display:flex; justify-content:center; align-items:center; gap:6px;">' +
-                           '<label class="switch" style="position:relative; display:inline-block; width:38px; height:20px; margin:0;">' +
-                           '<input type="checkbox" class="toggle-retrait-checkbox" data-id="' + row.id_accessoire_inscription + '" ' + toggleChecked + ' style="opacity:0; width:0; height:0;">' +
-                           '<span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isRetire ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;"></span>' +
-                           '</label>' +
-                           '</div>';
-          return badgeHtml + switchHtml;
-        }},
-        { data: 'date_retrait', render: function(d) {
-          return d ? '<span style="font-size:12px; color:#475569; font-weight:600;">' + d + '</span>' : '<span style="color:#94A3B8; font-size:12px;">-</span>';
-        }},
-        { data: null, orderable: false, className: 'text-end', render: function(d) {
-          var isRetire = (d.etat_retrait === 'retire');
-          var btnColor = isRetire ? '#EA580C' : '#15803D';
-          var btnText = isRetire ? 'Remettre en attente' : 'Marquer comme retiré';
-          var btnIcon = isRetire ? 'rotate-ccw' : 'check';
-          return '<button type="button" class="btn btn-sm btn-quick-toggle" data-id="' + d.id_accessoire_inscription + '" style="background:#FFFFFF; color:' + btnColor + '; border:1px solid ' + btnColor + '; border-radius:6px; font-weight:700; padding:4px 10px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">' +
-                 '<i data-lucide="' + btnIcon + '" style="width:13px;height:13px;"></i> ' + btnText + '</button>';
+        { data: null, orderable: false, className: 'text-end', render: function(d, type, row) {
+          return '<button type="button" class="btn btn-sm btn-open-student-kits-modal" data-ins="' + row.code_inscription + '" style="background:#1E3A5F; color:#FFFFFF; border:none; border-radius:6px; font-weight:700; padding:6px 14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">' +
+                 '<i data-lucide="sliders" style="width:14px;height:14px;"></i> Détails & Retraits</button>';
         }}
       ],
       language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
-      drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+      drawCallback: function() {
+        var api = this.api();
+        studentRowsMap = {};
+        api.rows().data().each(function(row) {
+          if (row.code_inscription) {
+            studentRowsMap[row.code_inscription] = row;
+          }
+        });
+
+        if (activeStudentCode && studentRowsMap[activeStudentCode] && $('#modal-details-kits').is(':visible')) {
+          renderStudentKitsModal(studentRowsMap[activeStudentCode]);
+        }
+
+        if (window.lucide) lucide.createIcons();
+      }
     });
   }
 
@@ -474,7 +530,87 @@ $(document).ready(function() {
     }
   });
 
-  // 5. Bascule dynamique (Switch Toggle Ajax 1-clic)
+  // 5. Modal de Détails des Kits Étudiant
+  $(document).on('click', '.btn-open-student-kits-modal', function() {
+    var insCode = $(this).attr('data-ins');
+    var row = studentRowsMap[insCode];
+    if (!row) return;
+    activeStudentCode = insCode;
+    renderStudentKitsModal(row);
+    $('#modal-details-kits').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+  });
+
+  $('.btn-close-modal-details').on('click', function() {
+    $('#modal-details-kits').css('display', 'none');
+    activeStudentCode = null;
+  });
+
+  function renderStudentKitsModal(row) {
+    $('#detail_student_name').html(escapeHtml(row.nom_complet) + ' <code style="font-weight:800; color:#1E3A5F; background:#EFF6FF; padding:3px 8px; border-radius:6px; font-size:12px;">' + escapeHtml(row.matricule_etudiant) + '</code>');
+    $('#detail_student_sub').text('Classe : ' + (row.libelle_classe || 'Non assignée') + ' | Tél : ' + (row.telephone_etudiant || '-'));
+
+    var totKits = parseInt(row.total_kits) || 0;
+    var totRetires = parseInt(row.total_retires) || 0;
+    var totEnAttente = parseInt(row.total_en_attente) || 0;
+
+    var globalBadge = '';
+    if (totKits > 0 && totRetires === totKits) {
+      globalBadge = '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:6px 12px; border-radius:20px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Tout retiré (' + totRetires + '/' + totKits + ')</span>';
+    } else if (totRetires > 0) {
+      globalBadge = '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:6px 12px; border-radius:20px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="pie-chart" style="width:14px;height:14px;"></i> Partiel (' + totRetires + '/' + totKits + ')</span>';
+    } else {
+      globalBadge = '<span class="badge" style="background:#FFEDD5; color:#C2410C; padding:6px 12px; border-radius:20px; font-weight:800; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:14px;height:14px;"></i> En attente (0/' + totKits + ')</span>';
+    }
+    $('#detail_student_global_badge').html(globalBadge);
+
+    var tbodyHtml = '';
+    if (row.kits_details) {
+      var items = row.kits_details.split('|||');
+      items.forEach(function(item) {
+        var parts = item.split(':::');
+        var kitId = parts[0];
+        var kitName = parts[1] || 'Kit';
+        var kitEtat = parts[2] || 'en_attente';
+        var kitDate = parts[3] || '';
+        var isRetire = (kitEtat === 'retire');
+
+        var etatBadge = isRetire
+          ? '<span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:12px;height:12px;"></i> Retiré ' + (kitDate ? 'le ' + kitDate : '') + '</span>'
+          : '<span class="badge" style="background:#FFEDD5; color:#C2410C; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11.5px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> En attente</span>';
+
+        var checked = isRetire ? 'checked' : '';
+        var switchHtml = '<label class="switch" style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="Basculer le retrait">' +
+                         '<input type="checkbox" class="toggle-retrait-checkbox" data-id="' + kitId + '" ' + checked + ' style="opacity:0; width:0; height:0;">' +
+                         '<span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isRetire ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+                         '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isRetire ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+                         '</span>' +
+                         '</label>';
+
+        tbodyHtml += '<tr style="border-bottom: 1px solid #F1F5F9;">' +
+                     '<td style="padding:12px;"><strong style="color:#1E3A5F; font-size:13px; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="package" style="width:14px;height:14px;"></i> ' + escapeHtml(kitName) + '</strong></td>' +
+                     '<td style="padding:12px; text-align:center;">' + etatBadge + '</td>' +
+                     '<td style="padding:12px; text-align:right;">' + switchHtml + '</td>' +
+                     '</tr>';
+      });
+    } else {
+      tbodyHtml = '<tr><td colspan="3" style="padding:16px; text-align:center; color:#94A3B8;">Aucun kit attribué</td></tr>';
+    }
+    $('#detail_kits_tbody').html(tbodyHtml);
+
+    var bulkBtn = '';
+    if (totEnAttente > 0) {
+      bulkBtn = '<button type="button" class="btn btn-sm btn-toggle-all-kits" data-ins="' + row.code_inscription + '" data-target="retire" style="background:#15803D; color:#FFFFFF; border:none; border-radius:8px; font-weight:700; padding:8px 16px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">' +
+                '<i data-lucide="check-check" style="width:15px;height:15px;"></i> Tout marquer comme retiré</button>';
+    } else {
+      bulkBtn = '<button type="button" class="btn btn-sm btn-toggle-all-kits" data-ins="' + row.code_inscription + '" data-target="en_attente" style="background:#FFFFFF; color:#EA580C; border:1px solid #EA580C; border-radius:8px; font-weight:700; padding:8px 16px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">' +
+                '<i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i> Remettre tout en attente</button>';
+    }
+    $('#detail_bulk_action_container').html(bulkBtn);
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // 6. Bascule dynamique (Switch Toggle Ajax 1-clic)
   $(document).on('click', '.btn-quick-toggle', function() {
     var id = $(this).attr('data-id');
     toggleKitStatus(id);
@@ -483,6 +619,33 @@ $(document).ready(function() {
   $(document).on('change', '.toggle-retrait-checkbox', function() {
     var id = $(this).attr('data-id');
     toggleKitStatus(id);
+  });
+
+  $(document).on('click', '.btn-toggle-all-kits', function() {
+    var insCode = $(this).attr('data-ins');
+    var targetState = $(this).attr('data-target');
+    $.ajax({
+      url: '<?= RACINE ?>accessoire/toggleStudentAllKits',
+      type: 'POST',
+      data: {
+        inscription_code: insCode,
+        target_etat: targetState,
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 'success' || res.status === 1) {
+          showToast(res.message || 'Statut des kits de l\'étudiant mis à jour !', 'success', 'Distribution Kits');
+          if (tableDist) tableDist.ajax.reload(null, false);
+          reloadStats();
+        } else {
+          showToast(res.message || 'Erreur lors de la mise à jour', 'danger', 'Erreur');
+        }
+      },
+      error: function() {
+        showToast('Une erreur réseau est survenue', 'danger', 'Erreur');
+      }
+    });
   });
 
   function toggleKitStatus(id) {

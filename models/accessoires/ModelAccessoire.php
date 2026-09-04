@@ -37,30 +37,44 @@ class ModelAccessoire extends BaseModel
             $params[] = $anneeCode;
         }
 
-        if ($filter === 'en_attente') {
-            $where .= " AND ai.etat_retrait = 'en_attente'";
-        } elseif ($filter === 'retire') {
-            $where .= " AND ai.etat_retrait = 'retire'";
-        }
-
         $sql = "
-            SELECT ai.*, 
-                   a.libelle_accessoire,
+            SELECT 
+                   i.code_inscription,
+                   e.code_etudiant,
                    COALESCE(e.matricule_etudiant, '-') as matricule_etudiant,
                    COALESCE(e.nom_etudiant, '') as nom_etudiant,
                    COALESCE(e.prenom_etudiant, '') as prenom_etudiant,
                    COALESCE(e.telephone_etudiant, '-') as telephone_etudiant,
                    CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) as nom_complet,
-                   COALESCE(c.libelle_classe, 'Non assignée') as libelle_classe
+                   COALESCE(c.libelle_classe, 'Non assignée') as libelle_classe,
+                   COUNT(ai.id_accessoire_inscription) as total_kits,
+                   SUM(CASE WHEN ai.etat_retrait = 'retire' THEN 1 ELSE 0 END) as total_retires,
+                   SUM(CASE WHEN ai.etat_retrait = 'en_attente' THEN 1 ELSE 0 END) as total_en_attente,
+                   GROUP_CONCAT(
+                       CONCAT(
+                           ai.id_accessoire_inscription, ':::',
+                           COALESCE(a.libelle_accessoire, 'Kit'), ':::',
+                           ai.etat_retrait, ':::',
+                           COALESCE(DATE_FORMAT(ai.date_retrait, '%d/%m/%Y %H:%i'), '')
+                       ) ORDER BY ai.id_accessoire_inscription ASC SEPARATOR '|||'
+                   ) as kits_details
             FROM accessoire_inscription ai
             LEFT JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
             LEFT JOIN inscriptions i ON i.code_inscription = ai.inscription_code
             LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
             LEFT JOIN classes c ON c.code_classe = i.classe_code
             {$where}
-            GROUP BY ai.id_accessoire_inscription
-            ORDER BY ai.id_accessoire_inscription DESC
+            GROUP BY i.code_inscription, e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, c.libelle_classe
         ";
+
+        if ($filter === 'en_attente') {
+            $sql .= " HAVING SUM(CASE WHEN ai.etat_retrait = 'en_attente' THEN 1 ELSE 0 END) > 0";
+        } elseif ($filter === 'retire') {
+            $sql .= " HAVING SUM(CASE WHEN ai.etat_retrait = 'en_attente' THEN 1 ELSE 0 END) = 0";
+        }
+
+        $sql .= " ORDER BY i.id_inscription DESC";
+
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

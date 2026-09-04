@@ -253,6 +253,7 @@ $route->addRoute('/accessoire/apiList', [$accessoireController, 'apiList']);
 $route->addRoute('/accessoire/apiDistributions', [$accessoireController, 'apiDistributions']);
 $route->addRoute('/accessoire/apiStats', [$accessoireController, 'apiStats']);
 $route->addRoute('/accessoire/toggleRetrait', [$accessoireController, 'toggleRetrait']);
+$route->addRoute('/accessoire/toggleStudentAllKits', [$accessoireController, 'toggleStudentAllKits']);
 $route->addRoute('/accessoire/attribuerKit', [$accessoireController, 'attribuerKit']);
 $route->addRoute('/accessoire/getStudentKits', [$accessoireController, 'getStudentKits']);
 $route->addRoute('/accessoire/add', [$accessoireController, 'add']);

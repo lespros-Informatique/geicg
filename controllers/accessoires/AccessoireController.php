@@ -177,6 +177,40 @@ class AccessoireController extends BaseController
         }
     }
 
+    public function toggleStudentAllKits()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+
+        $inscriptionCode = trim($this->post('inscription_code') ?? '');
+        $targetEtat = trim($this->post('target_etat') ?? 'retire'); // 'retire' or 'en_attente'
+
+        if (empty($inscriptionCode)) {
+            $this->error('Inscription introuvable.');
+            return;
+        }
+
+        $db = $this->model->getCon();
+        $dateRetrait = ($targetEtat === 'retire') ? date('Y-m-d H:i:s') : null;
+
+        $stmt = $db->prepare("
+            UPDATE accessoire_inscription 
+            SET etat_retrait = ?, date_retrait = ? 
+            WHERE inscription_code = ?
+              AND (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)
+        ");
+        $success = $stmt->execute([$targetEtat, $dateRetrait, $inscriptionCode]);
+
+        if ($success) {
+            $msg = ($targetEtat === 'retire') 
+                ? 'Tous les kits de cet étudiant ont été marqués comme RETIRÉS !' 
+                : 'Tous les kits de cet étudiant ont été remis EN ATTENTE.';
+            $this->success($msg);
+        } else {
+            $this->error('Erreur lors de la mise à jour des kits de l\'étudiant.');
+        }
+    }
+
     public function getStudentKits()
     {
         $this->requireAuth();
