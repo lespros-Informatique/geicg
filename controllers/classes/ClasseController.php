@@ -97,12 +97,16 @@ class ClasseController extends BaseController
             }
         }
 
-        if (!empty($data['libelle_classe'])) {
-            if (!$this->checkUnique('classes', 'libelle_classe', $data['libelle_classe'], 'Nom de la classe')) return;
-        }
-
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : $this->getActiveAnneeCode();
+
+        if (!empty($data['libelle_classe'])) {
+            if (!$this->checkUniquePair('classes', [
+                'libelle_classe' => $data['libelle_classe'],
+                'annee_code' => $anneeCode
+            ], 'nom de classe', 'id_classe', null)) return;
+        }
+
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_classe'])) {
             $data['code_classe'] = $this->validator->generateCode('classes', 'code_classe', 'CLA-', 8);
@@ -145,8 +149,17 @@ class ClasseController extends BaseController
             }
         }
 
+        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : null;
+        if (!$anneeCode) {
+            $existing = $this->model->getById($id);
+            $anneeCode = $existing['annee_code'] ?? $this->getActiveAnneeCode();
+        }
+
         if (!empty($data['libelle_classe'])) {
-            if (!$this->checkUnique('classes', 'libelle_classe', $data['libelle_classe'], 'Nom de la classe', 'id_classe', $id)) return;
+            if (!$this->checkUniquePair('classes', [
+                'libelle_classe' => $data['libelle_classe'],
+                'annee_code' => $anneeCode
+            ], 'nom de classe', 'id_classe', $id)) return;
         }
 
         $cols = $this->model->getCon()->query("DESCRIBE classes")->fetchAll(PDO::FETCH_COLUMN);
