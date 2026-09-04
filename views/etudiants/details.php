@@ -69,14 +69,13 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
         <div id="section-carte-scolaire" style="display: flex; justify-content: center; align-items: center; gap: 28px; flex-wrap: wrap; padding: 10px 0;">
           
           <!-- ===== 1. RECTO DU BADGE (FACE AVANT) ===== -->
-          <div class="badge-card-container badge-recto" style="width: 390px; height: 245px; border-radius: 14px; background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, #1E40AF 100%); color: #FFFFFF; position: relative; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35); overflow: hidden; padding: 14px 18px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.15); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+          <div class="badge-card-container badge-recto" style="width: 390px; height: 245px; border-radius: 14px; background: #1E3A5F; color: #FFFFFF; position: relative; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35); overflow: hidden; padding: 14px 18px; box-sizing: border-box; border: 1px solid #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
             
-            <!-- Décoration holographique de fond -->
-            <div style="position: absolute; right: -40px; bottom: -40px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle, rgba(217,119,6,0.2) 0%, rgba(255,255,255,0) 70%); pointer-events: none;"></div>
-            <div style="position: absolute; left: 0; top: 0; right: 0; height: 5px; background: linear-gradient(90deg, #D97706, #F59E0B, #3B82F6, #D97706);"></div>
+            <!-- Bande d'accentuation supérieure unie -->
+            <div style="position: absolute; left: 0; top: 0; right: 0; height: 5px; background: #D97706;"></div>
 
             <!-- En-tête Badge -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.18); padding-bottom: 8px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 28px; height: 28px; border-radius: 6px; background: #D97706; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: #FFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                   G
@@ -89,7 +88,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
                 </div>
               </div>
               <div style="text-align: right;">
-                <span style="background: rgba(217,119,6,0.3); border: 1px solid #F59E0B; color: #FEF3C7; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+                <span style="background: #D97706; border: 1px solid #F59E0B; color: #FFFFFF; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
                   <?= htmlspecialchars($anneeLibelle) ?>
                 </span>
               </div>
@@ -107,7 +106,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
                     <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
                   </span>
                 <?php endif; ?>
-                <span style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(217,119,6,0.9); font-size: 7px; font-weight: 800; text-align: center; color: #FFF; padding: 1px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                <span style="position: absolute; bottom: 0; left: 0; right: 0; background: #D97706; font-size: 7px; font-weight: 800; text-align: center; color: #FFF; padding: 1px 0; text-transform: uppercase; letter-spacing: 0.5px;">
                   ÉTUDIANT
                 </span>
               </div>

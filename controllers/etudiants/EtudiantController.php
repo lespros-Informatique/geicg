@@ -150,45 +150,67 @@ class EtudiantController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'etudiant/list'); exit(); }
+            if (!$item) { 
+                $this->renderNotFound("Le dossier étudiant demandé est introuvable.");
+                return;
+            }
 
             $etudiantCode = $item['code_etudiant'];
+            $db = $this->model->getCon();
 
             // 1. Parent info
-            $stmtPar = $this->model->getCon()->prepare("
-                SELECT * FROM parents WHERE etudiant_code = ? LIMIT 1
-            ");
-            $stmtPar->execute([$etudiantCode]);
-            $parent = $stmtPar->fetch(PDO::FETCH_ASSOC) ?: [];
+            $parent = [];
+            try {
+                $stmtPar = $db->prepare("SELECT * FROM parents WHERE etudiant_code = ? LIMIT 1");
+                $stmtPar->execute([$etudiantCode]);
+                $parent = $stmtPar->fetch(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $e) {
+                error_log("EtudiantController::details parent error: " . $e->getMessage());
+            }
 
             // 2. Inscription active & Classe
-            $stmtIns = $this->model->getCon()->prepare("
-                SELECT ins.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
-                FROM inscriptions ins
-                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN annees a ON a.code_annee = ins.annee_code
-                WHERE ins.etudiant_code = ? AND ins.statut_inscription != 'annule'
-                ORDER BY ins.id_inscription DESC LIMIT 1
-            ");
-            $stmtIns->execute([$etudiantCode]);
-            $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
+            $inscription = [];
+            try {
+                $stmtIns = $db->prepare("
+                    SELECT ins.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                    FROM inscriptions ins
+                    LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                    LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                    LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                    LEFT JOIN annees a ON a.code_annee = ins.annee_code
+                    WHERE ins.etudiant_code = ? AND ins.statut_inscription != 'annule'
+                    ORDER BY ins.id_inscription DESC LIMIT 1
+                ");
+                $stmtIns->execute([$etudiantCode]);
+                $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $e) {
+                error_log("EtudiantController::details inscription error: " . $e->getMessage());
+            }
 
             // 2.bis Établissement
-            $etablissement = $this->model->getCon()->query("SELECT * FROM etablissements LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
+            $etablissement = [];
+            try {
+                $etablissement = $db->query("SELECT * FROM etablissements LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $e) {
+                error_log("EtudiantController::details etablissement error: " . $e->getMessage());
+            }
 
             // 3. Paiements effectués
-            $stmtPaiements = $this->model->getCon()->prepare("
-                SELECT p.*, a.libelle_annee, ins.code_inscription
-                FROM paiements p
-                JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
-                LEFT JOIN annees a ON a.code_annee = p.annee_code
-                WHERE ins.etudiant_code = ?
-                ORDER BY p.date_paiement DESC
-            ");
-            $stmtPaiements->execute([$etudiantCode]);
-            $paiements = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC);
+            $paiements = [];
+            try {
+                $stmtPaiements = $db->prepare("
+                    SELECT p.*, a.libelle_annee, ins.code_inscription
+                    FROM paiements p
+                    JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
+                    LEFT JOIN annees a ON a.code_annee = p.annee_code
+                    WHERE ins.etudiant_code = ?
+                    ORDER BY p.date_paiement DESC
+                ");
+                $stmtPaiements->execute([$etudiantCode]);
+                $paiements = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $e) {
+                error_log("EtudiantController::details paiements error: " . $e->getMessage());
+            }
 
             // 4. Statistiques financières
             $scolariteTotale = (float)($inscription['montant_scolarite_inscription'] ?? 0);
@@ -201,46 +223,57 @@ class EtudiantController extends BaseController
             $soldeRestant = max(0, $scolariteTotale - $totalPaye);
 
             // 5. Absences
-            $stmtAbs = $this->model->getCon()->prepare("
-                SELECT abs.*, m.libelle_matiere
-                FROM absences abs
-                JOIN inscriptions ins ON ins.code_inscription = abs.inscription_code
-                LEFT JOIN matieres m ON m.code_matiere = abs.matiere_code
-                WHERE ins.etudiant_code = ?
-                ORDER BY abs.date_absence DESC
-            ");
-            $stmtAbs->execute([$etudiantCode]);
-            $absences = $stmtAbs->fetchAll(PDO::FETCH_ASSOC);
+            $absences = [];
+            try {
+                $stmtAbs = $db->prepare("
+                    SELECT abs.*, m.libelle_matiere
+                    FROM absences abs
+                    JOIN inscriptions ins ON ins.code_inscription = abs.inscription_code
+                    LEFT JOIN matieres m ON m.code_matiere = abs.matiere_code
+                    WHERE ins.etudiant_code = ?
+                    ORDER BY abs.date_absence DESC
+                ");
+                $stmtAbs->execute([$etudiantCode]);
+                $absences = $stmtAbs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $e) {
+                error_log("EtudiantController::details absences error: " . $e->getMessage());
+            }
 
-            // 6. Dossier / Pièces physiques fournies
-            $stmtDossier = $this->model->getCon()->prepare("
-                SELECT pf.libelle_piece, pf.description_piece, COALESCE(de.statut_depot, 'en_attente') AS statut_depot, de.date_depot, de.observations, de.id_dossier_etudiant
-                FROM pieces_fournir pf
-                LEFT JOIN dossier_etudiant de ON de.piece_code = pf.code_piece_fournir AND de.etudiant_code = ?
-                WHERE pf.statut_piece = 'actif'
-                ORDER BY pf.id_piece_fournir ASC
-            ");
-            $stmtDossier->execute([$etudiantCode]);
-            $dossierPieces = $stmtDossier->fetchAll(PDO::FETCH_ASSOC);
+            // 6. Dossier / Pièces physiques fournies (Robuste aux mélanges de collation MySQL)
+            $dossierPieces = [];
+            try {
+                $stmtDossier = $db->prepare("
+                    SELECT pf.libelle_piece, pf.description_piece, COALESCE(de.statut_depot, 'en_attente') AS statut_depot, de.date_depot, de.observations, de.id_dossier_etudiant
+                    FROM pieces_fournir pf
+                    LEFT JOIN dossier_etudiant de ON de.piece_code = pf.code_piece_fournir AND de.etudiant_code = ?
+                    WHERE pf.statut_piece = 'actif'
+                    ORDER BY pf.id_piece_fournir ASC
+                ");
+                $stmtDossier->execute([$etudiantCode]);
+                $dossierPieces = $stmtDossier->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $e) {
+                error_log("EtudiantController::details dossierPieces error: " . $e->getMessage());
+            }
 
             $encryptedId = $this->validator->crypter($id);
+
+            $this->loadView('../views/etudiants/details.php', [
+                'item' => $item, 
+                'parent' => $parent,
+                'inscription' => $inscription,
+                'etablissement' => $etablissement,
+                'dossierPieces' => $dossierPieces,
+                'paiements' => $paiements,
+                'totalPaye' => $totalPaye,
+                'soldeRestant' => $soldeRestant,
+                'scolariteTotale' => $scolariteTotale,
+                'absences' => $absences,
+                'encryptedId' => $encryptedId
+            ]);
         } catch (Exception $e) {
             error_log("EtudiantController::details error: " . $e->getMessage());
             $this->renderNotFound("Le dossier étudiant demandé est introuvable ou une erreur est survenue.");
         }
-        $this->loadView('../views/etudiants/details.php', [
-            'item' => $item, 
-            'parent' => $parent,
-            'inscription' => $inscription,
-            'etablissement' => $etablissement,
-            'dossierPieces' => $dossierPieces ?? [],
-            'paiements' => $paiements,
-            'totalPaye' => $totalPaye,
-            'soldeRestant' => $soldeRestant,
-            'scolariteTotale' => $scolariteTotale,
-            'absences' => $absences,
-            'encryptedId' => $encryptedId
-        ]);
     }
 
     public function edition($details)

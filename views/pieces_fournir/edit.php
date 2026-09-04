@@ -133,17 +133,41 @@ $(document).ready(function() {
     }
   });
 
+  $(document).on('change', '.inp-piece-libelle', function() {
+    var val = $.trim($(this).val()).toLowerCase();
+    if (!val) return;
+    var count = 0;
+    var thisInp = $(this);
+    $('.inp-piece-libelle').each(function() {
+      if ($.trim($(this).val()).toLowerCase() === val) count++;
+    });
+
+    if (count > 1) {
+      if (window.toastr) toastr.warning('<strong>Doublon détecté :</strong> Vous avez déjà saisi le document « <b>' + $('<div>').text(thisInp.val()).html() + '</b> » dans une autre ligne.');
+      thisInp.val('').css({
+        'border': '2px solid #EF4444',
+        'background-color': '#FEF2F2'
+      });
+      setTimeout(function() {
+        thisInp.css({ 'border': '', 'background-color': '' });
+      }, 2500);
+    }
+  });
+
   $('#form-add-pieces').on('submit', function(e) {
     var hasValid = false;
     var seenLibelles = [];
     var hasDuplicate = false;
+    var dupName = '';
 
     $('.inp-piece-libelle').each(function() {
-      var val = $.trim($(this).val()).toLowerCase();
+      var rawVal = $.trim($(this).val());
+      var val = rawVal.toLowerCase();
       if (val !== '') {
         hasValid = true;
         if (seenLibelles.indexOf(val) !== -1) {
           hasDuplicate = true;
+          dupName = rawVal;
         } else {
           seenLibelles.push(val);
         }
@@ -152,13 +176,15 @@ $(document).ready(function() {
 
     if (!hasValid) {
       e.preventDefault();
-      alert('Veuillez renseigner au moins un document à fournir.');
+      var msg = 'Veuillez renseigner au moins un document à fournir.';
+      if (window.toastr) toastr.error(msg); else alert(msg);
       return false;
     }
 
     if (hasDuplicate) {
       e.preventDefault();
-      alert('Vous avez saisi le même intitulé de document plusieurs fois dans ce formulaire.');
+      var msg = '<strong>Attention :</strong> Vous avez saisi le même intitulé de document (« <b>' + $('<div>').text(dupName).html() + '</b> ») plusieurs fois.';
+      if (window.toastr) toastr.error(msg); else alert(msg);
       return false;
     }
   });

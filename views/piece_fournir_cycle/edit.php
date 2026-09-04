@@ -173,6 +173,12 @@
               </button>
             </div>
 
+            <!-- Dynamic Duplicate Warning Banner -->
+            <div id="duplicate-warning-banner" style="display: none; background: #FEF2F2; border: 1.5px solid #FCA5A5; color: #991B1B; padding: 12px 16px; border-radius: 8px; font-weight: 700; font-size: 13px; margin-bottom: 16px; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08);">
+              <i data-lucide="alert-triangle" style="width: 20px; height: 20px; flex-shrink: 0; color: #DC2626;"></i>
+              <span id="duplicate-warning-text"></span>
+            </div>
+
             <!-- Table des lignes -->
             <div style="width: 100%; overflow-x: auto;">
               <table class="table" id="table-bulk-cycle-items" style="width: 100%; border-collapse: collapse; margin: 0;">
@@ -247,25 +253,64 @@ $(document).ready(function() {
     });
   }
 
-  function getCurrentlySelectedPieces() {
+  function showDuplicateWarning(msg) {
+    if (window.toastr) {
+      toastr.warning(msg);
+    }
+    $('#duplicate-warning-text').html(msg);
+    $('#duplicate-warning-banner').css('display', 'flex').hide().fadeIn(200);
+  }
+
+  function hideDuplicateWarning() {
     var selected = [];
+    var hasDup = false;
     $('.sel-piece').each(function() {
-      var val = $(this).val();
-      if (val) selected.push(val);
+      var v = $(this).val();
+      if (v) {
+        if (selected.indexOf(v) !== -1 || alreadyAssignedCodes.indexOf(v) !== -1) {
+          hasDup = true;
+        }
+        selected.push(v);
+      }
     });
-    return selected;
+    if (!hasDup) {
+      $('#duplicate-warning-banner').fadeOut(200);
+    }
+  }
+
+  function highlightDuplicateSelect(selectElem) {
+    selectElem.css({
+      'border': '2px solid #EF4444',
+      'background-color': '#FEF2F2',
+      'box-shadow': '0 0 0 3px rgba(239, 68, 68, 0.2)'
+    });
+    setTimeout(function() {
+      selectElem.css({
+        'border': '',
+        'background-color': '',
+        'box-shadow': ''
+      });
+    }, 2500);
   }
 
   function refreshAllDropdowns() {
     $('.bulk-row-cycle').each(function() {
-      var select = $(this).find('.sel-piece');
-      var currentVal = select.val();
+      var currentSelect = $(this).find('.sel-piece');
+      var currentVal = currentSelect.val();
 
-      select.find('option').each(function() {
+      var selectedInOtherRows = [];
+      $('.sel-piece').not(currentSelect).each(function() {
+        var v = $(this).val();
+        if (v) selectedInOtherRows.push(v);
+      });
+
+      currentSelect.find('option').each(function() {
         var optVal = $(this).val();
         if (!optVal) return;
 
         var isAlreadyInDb = alreadyAssignedCodes.indexOf(optVal) !== -1;
+        var isSelectedOther = selectedInOtherRows.indexOf(optVal) !== -1;
+
         var baseLibelle = '';
         for (var i = 0; i < pieceOptions.length; i++) {
           if (pieceOptions[i].code === optVal) {
@@ -277,6 +322,9 @@ $(document).ready(function() {
         if (isAlreadyInDb) {
           $(this).prop('disabled', true);
           $(this).text(baseLibelle + ' (Déjà configuré dans ce cycle)');
+        } else if (isSelectedOther) {
+          $(this).prop('disabled', true);
+          $(this).text(baseLibelle + ' (Déjà sélectionné ci-dessus)');
         } else {
           $(this).prop('disabled', false);
           $(this).text(baseLibelle);
@@ -284,7 +332,7 @@ $(document).ready(function() {
       });
 
       if (alreadyAssignedCodes.indexOf(currentVal) !== -1) {
-        select.val('');
+        currentSelect.val('');
       }
     });
   }
@@ -337,6 +385,7 @@ $(document).ready(function() {
 
     $('#bulk-rows-cycle-container').append(html);
     rowIndex++;
+    refreshAllDropdowns();
   }
 
   // Prepopulate initial empty lines
@@ -353,23 +402,39 @@ $(document).ready(function() {
   // Check on piece select change
   $(document).on('change', '.sel-piece', function() {
     var changedVal = $(this).val();
-    if (!changedVal) return;
-
-    if (alreadyAssignedCodes.indexOf(changedVal) !== -1) {
-      alert('Cette pièce est déjà configurée pour ce cycle académique.');
-      $(this).val('');
+    var thisSelect = $(this);
+    if (!changedVal) {
+      hideDuplicateWarning();
+      refreshAllDropdowns();
       return;
     }
 
+    var rawObj = pieceOptions.find(function(p) { return p.code === changedVal; });
+    var pieceLibelle = rawObj ? rawObj.libelle : 'Document';
+
+    // 1. Check if already assigned in DB
+    if (alreadyAssignedCodes.indexOf(changedVal) !== -1) {
+      thisSelect.val('');
+      showDuplicateWarning('<strong>Pièce déjà existante :</strong> La pièce « <b>' + $('<div>').text(pieceLibelle).html() + '</b> » est déjà enregistrée pour ce cycle académique.');
+      highlightDuplicateSelect(thisSelect);
+      refreshAllDropdowns();
+      return;
+    }
+
+    // 2. Check if selected in another row
     var count = 0;
-    var thisSelect = $(this);
     $('.sel-piece').each(function() {
       if ($(this).val() === changedVal) count++;
     });
 
     if (count > 1) {
-      alert('Vous avez déjà sélectionné cette pièce dans une autre ligne de ce formulaire.');
       thisSelect.val('');
+      showDuplicateWarning('<strong>Doublon détecté :</strong> Vous avez déjà sélectionné la pièce « <b>' + $('<div>').text(pieceLibelle).html() + '</b> » dans une autre ligne de ce dossier.');
+      highlightDuplicateSelect(thisSelect);
+      refreshAllDropdowns();
+    } else {
+      hideDuplicateWarning();
+      refreshAllDropdowns();
     }
   });
 
@@ -380,6 +445,8 @@ $(document).ready(function() {
   $(document).on('click', '.btn-delete-row-cycle', function() {
     if ($('#bulk-rows-cycle-container tr').length > 1) {
       $(this).closest('tr').remove();
+      hideDuplicateWarning();
+      refreshAllDropdowns();
     } else {
       if (window.toastr) toastr.info('Vous devez conserver au moins un document dans le dossier.');
     }
@@ -389,24 +456,28 @@ $(document).ready(function() {
     var cycle = $('#select_target_cycle').val();
     if (!cycle) {
       e.preventDefault();
-      alert('Veuillez sélectionner le cycle académique ciblé.');
+      var msg = 'Veuillez sélectionner le cycle académique ciblé.';
+      if (window.toastr) toastr.error(msg);
+      showDuplicateWarning(msg);
       $('#select_target_cycle').focus();
       return false;
     }
 
     var selectedPieces = [];
     var hasDuplicate = false;
+    var duplicateName = '';
     var hasValid = false;
 
     $('.sel-piece').each(function() {
       var val = $.trim($(this).val());
+      var rawObj = pieceOptions.find(function(p) { return p.code === val; });
+      var pieceLibelle = rawObj ? rawObj.libelle : 'Document';
+
       if (val !== '') {
         hasValid = true;
-        if (alreadyAssignedCodes.indexOf(val) !== -1) {
+        if (alreadyAssignedCodes.indexOf(val) !== -1 || selectedPieces.indexOf(val) !== -1) {
           hasDuplicate = true;
-        }
-        if (selectedPieces.indexOf(val) !== -1) {
-          hasDuplicate = true;
+          duplicateName = pieceLibelle;
         }
         selectedPieces.push(val);
       }
@@ -414,13 +485,17 @@ $(document).ready(function() {
 
     if (!hasValid) {
       e.preventDefault();
-      alert('Veuillez sélectionner au moins une pièce à fournir.');
+      var msg = 'Veuillez sélectionner au moins une pièce à fournir dans le dossier.';
+      if (window.toastr) toastr.error(msg);
+      showDuplicateWarning(msg);
       return false;
     }
 
     if (hasDuplicate) {
       e.preventDefault();
-      alert('Certaines pièces sélectionnées sont des doublons ou existent déjà pour ce cycle.');
+      var msg = '<strong>Attention :</strong> La pièce « <b>' + $('<div>').text(duplicateName).html() + '</b> » est en doublon ou existe déjà pour ce cycle.';
+      if (window.toastr) toastr.error(msg);
+      showDuplicateWarning(msg);
       return false;
     }
   });

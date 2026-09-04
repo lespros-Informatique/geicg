@@ -6,18 +6,16 @@
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       
       <!-- Page Header -->
-      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="layers" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Dossier de Pièces à Fournir par Cycle
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des documents et justificatifs exigés pour l'inscription dans chaque cycle académique</p>
         </div>
-        <div>
-          <a href="<?= RACINE ?>piece_fournir_cycle/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 6px rgba(30,58,95,0.25);">
-            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Configurer Pièces du Cycle
-          </a>
-        </div>
+        <a href="<?= RACINE ?>piece_fournir_cycle/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Configurer Pièces du Cycle
+        </a>
       </div>
 
       <!-- Navigation Tabs (Répertoire vs Dossiers par Cycle) -->
