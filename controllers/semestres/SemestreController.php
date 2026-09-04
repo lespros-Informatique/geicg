@@ -290,4 +290,37 @@ class SemestreController extends BaseController
         $this->requireAuth();
         $this->loadView('../views/semestres/edit.php', ['item' => []]);
     }
+
+    /**
+     * Vérifie si un semestre existe déjà pour l'année académique sélectionnée (pour validation dynamique AJAX)
+     */
+    public function checkExists()
+    {
+        $this->requireAuth();
+        $anneeCode = trim($_REQUEST['annee_code'] ?? '');
+        $libelleRaw = trim($_REQUEST['libelle_semestre'] ?? '');
+        $idExclude = (int)($_REQUEST['id_semestre'] ?? 0);
+
+        $libelle = $this->normalizeLibelle($libelleRaw);
+        if (empty($anneeCode) || empty($libelle)) {
+            $this->json(['exists' => false]);
+            return;
+        }
+
+        $sql = "SELECT id_semestre FROM semestres 
+                WHERE (libelle_semestre = ? OR UPPER(libelle_semestre) = ?) AND annee_code = ?";
+        $params = [$libelle, strtoupper($libelle), $anneeCode];
+        if ($idExclude > 0) {
+            $sql .= " AND id_semestre != ?";
+            $params[] = $idExclude;
+        }
+        $stmt = $this->model->getCon()->prepare($sql);
+        $stmt->execute($params);
+        $exists = (bool)$stmt->fetch();
+
+        $this->json([
+            'exists' => $exists,
+            'message' => $exists ? "Erreur : Le {$libelle} est déjà enregistré pour l'année académique sélectionnée." : ""
+        ]);
+    }
 }

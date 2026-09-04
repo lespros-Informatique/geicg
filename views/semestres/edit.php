@@ -100,6 +100,8 @@ $(document).ready(function() {
     });
   }
 
+  var isDuplicate = false;
+
   function displayFormError(msg, $form) {
     if (window.toastr) {
       toastr.error(msg);
@@ -116,13 +118,58 @@ $(document).ready(function() {
     if (window.lucide) lucide.createIcons();
   }
 
+  function checkDuplicateSemestre() {
+    var libelle = $('#sel_libelle_semestre').val();
+    var anneeCode = $('#sel_annee_semestre').val();
+    var idSemestre = $('input[name="id_semestre"]').val() || 0;
+    var $form = $('form');
+
+    if (libelle && anneeCode) {
+      var racine = (typeof RACINE !== 'undefined') ? RACINE : '/geicg/';
+      $.getJSON(racine + 'semestre/checkExists', {
+        libelle_semestre: libelle,
+        annee_code: anneeCode,
+        id_semestre: idSemestre
+      }, function(resp) {
+        if (resp && resp.exists) {
+          isDuplicate = true;
+          displayFormError(resp.message || "Erreur : Ce semestre est déjà enregistré pour l'année académique sélectionnée.", $form);
+          $form.find('button[type="submit"]').prop('disabled', true).css('opacity', '0.6');
+        } else {
+          isDuplicate = false;
+          $form.find('.js-date-error-banner').remove();
+          $form.find('button[type="submit"]').prop('disabled', false).css('opacity', '1');
+        }
+      });
+    } else {
+      isDuplicate = false;
+      $form.find('.js-date-error-banner').remove();
+      $form.find('button[type="submit"]').prop('disabled', false).css('opacity', '1');
+    }
+  }
+
+  $('#sel_libelle_semestre, #sel_annee_semestre').on('change', function() {
+    checkDuplicateSemestre();
+  });
+
+  // Exécuter un contrôle initial au chargement de la page si les valeurs sont pré-remplies
+  if ($('#sel_libelle_semestre').val() && $('#sel_annee_semestre').val()) {
+    checkDuplicateSemestre();
+  }
+
   $('form').on('submit', function(e) {
+    if (isDuplicate) {
+      e.preventDefault();
+      displayFormError("Impossible d'enregistrer : Ce semestre existe déjà pour l'année académique sélectionnée.", $(this));
+      return false;
+    }
+
     var dDebut = $('input[name="date_debut_semestre"]').val();
     var dFin = $('input[name="date_fin_semestre"]').val();
 
     if (dDebut && dFin && dFin <= dDebut) {
       e.preventDefault();
-      displayFormError("Erreur sur les dates : La date de fin du semestre doit être strictement supérieure à sa date de début.", $(this));
+      displayFormError("Erreur sur les dates : La date de fin du semestre doit être strictly supérieure à sa date de début.", $(this));
       return false;
     }
   });
