@@ -430,16 +430,12 @@ class UserController extends BaseController
                             LIMIT 1
                         ");
                         $anneeActive = $stmtAnnee ? $stmtAnnee->fetch(PDO::FETCH_ASSOC) : null;
-                        if (!$anneeActive) {
-                            $stmtFallback = $this->model->getCon()->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
-                            $anneeActive = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
-                        }
                         if ($anneeActive) {
                             $_SESSION['annee_active_code'] = $anneeActive['code_annee'];
                             $_SESSION['annee_active_libelle'] = $anneeActive['libelle_annee'];
                         } else {
                             $_SESSION['annee_active_code'] = '';
-                            $_SESSION['annee_active_libelle'] = 'Aucune année';
+                            $_SESSION['annee_active_libelle'] = 'Aucune';
                         }
                     } catch (Exception $e) {
                         $_SESSION['annee_active_code'] = '';

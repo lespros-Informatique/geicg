@@ -26,11 +26,11 @@
                       break;
                   }
               }
-              if (!$foundNav && !empty($allAnneesNav[0])) {
-                  $activeAnneeCode = $allAnneesNav[0]['code_annee'];
-                  $activeAnneeLibelle = $allAnneesNav[0]['libelle_annee'];
-                  $_SESSION['annee_active_code'] = $activeAnneeCode;
-                  $_SESSION['annee_active_libelle'] = $activeAnneeLibelle;
+              if (!$foundNav) {
+                  $activeAnneeCode = '';
+                  $activeAnneeLibelle = 'Aucune';
+                  $_SESSION['annee_active_code'] = '';
+                  $_SESSION['annee_active_libelle'] = 'Aucune';
               }
           }
       } else {
