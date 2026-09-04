@@ -21,9 +21,9 @@ abstract class BaseController
         $db = (new Database())->getCon();
         $code = $_SESSION['annee_active_code'] ?? '';
 
-        // Vérifier si l'année en session est toujours active en base
+        // Vérifier si l'année en session existe toujours en base
         if (!empty($code)) {
-            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? AND statut_annee = 'actif' LIMIT 1");
+            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
             $stmtCheck->execute([$code]);
             $exists = $stmtCheck->fetch(PDO::FETCH_ASSOC);
             if (!$exists) {
