@@ -10,13 +10,45 @@ class DepenseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/depenses/list.php');
+        $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $activeYear = $this->getActiveAnneeCode();
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->loadView('../views/depenses/list.php', [
+            'annees' => $annees,
+            'selectedAnneeCode' => $activeYear
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $db = $this->model->getCon();
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $anneeCode = $this->getActiveAnneeCode();
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_depense'];

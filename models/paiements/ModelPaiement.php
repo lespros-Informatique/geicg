@@ -7,8 +7,15 @@ class ModelPaiement extends BaseModel
     protected ?string $statusField = 'statut_paiement';
     protected ?string $createdAtField = 'date_paiement';
 
-    public function getAll(): array
+    public function getAll(?string $anneeCode = null): array
     {
+        $where = "";
+        $params = [];
+        if (!empty($anneeCode)) {
+            $where = "WHERE (p.annee_code = ? OR ins.annee_code = ?)";
+            $params = [$anneeCode, $anneeCode];
+        }
+
         $sql = "
             SELECT p.*, 
                    e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant,
@@ -20,9 +27,12 @@ class ModelPaiement extends BaseModel
             LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
             LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
             LEFT JOIN tranches_scolarite t ON t.code_tranche = p.tranche_code
+            {$where}
             ORDER BY p.id_paiement DESC
         ";
-        return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function getById($id): array

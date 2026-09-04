@@ -66,12 +66,26 @@
           </button>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; align-items: flex-end;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: flex-end;">
           
+          <!-- Filtre Année Académique (Select2) -->
+          <div class="form-group" style="margin: 0;">
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #1E3A5F; margin-bottom: 5px;">
+              <i data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: -2px;"></i> Année Académique
+            </label>
+            <select id="filter-annee" class="form-control select2" style="width: 100%;">
+              <?php foreach (($annees ?? []) as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
           <!-- Filtre Filière -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Filière</label>
-            <select id="filter-filiere" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+            <select id="filter-filiere" class="form-control select2" style="width: 100%;">
               <option value="ALL">-- Toutes les filières --</option>
               <?php foreach (($filieres ?? []) as $f): ?>
                 <option value="<?= htmlspecialchars($f['code_filiere']) ?>">
@@ -84,7 +98,7 @@
           <!-- Filtre Niveau -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Niveau d'Études</label>
-            <select id="filter-niveau" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+            <select id="filter-niveau" class="form-control select2" style="width: 100%;">
               <option value="ALL">-- Tous les niveaux --</option>
               <?php foreach (($niveaux ?? []) as $n): ?>
                 <option value="<?= htmlspecialchars($n['code_niveau']) ?>">
@@ -97,7 +111,7 @@
           <!-- Filtre Classe -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Classe Antérieure (N-1)</label>
-            <select id="filter-classe" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+            <select id="filter-classe" class="form-control select2" style="width: 100%;">
               <option value="ALL">-- Toutes les classes --</option>
               <?php foreach (($classes ?? []) as $c): ?>
                 <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-filiere="<?= htmlspecialchars($c['filiere_code'] ?? '') ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>">
@@ -134,11 +148,18 @@
 
 <script>
 $(document).ready(function() {
+  if ($.fn.select2) {
+    $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').select2({
+      width: '100%'
+    });
+  }
+
   var table = $('#table-inscriptions').DataTable({
     order: [],
     ajax: {
       url: '<?= RACINE ?>inscription/apiList',
       data: function(d) {
+        d.annee_code = $('#filter-annee').val();
         d.filiere_code = $('#filter-filiere').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
@@ -191,8 +212,8 @@ $(document).ready(function() {
     }
   });
 
-  // Rechargement sur changement des filtres
-  $('#filter-filiere, #filter-niveau, #filter-classe').on('change', function() {
+  // Rechargement sur changement des filtres (y compris Année Académique)
+  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').on('change', function() {
     var filSelected = $('#filter-filiere').val();
     var nivSelected = $('#filter-niveau').val();
 
@@ -218,9 +239,9 @@ $(document).ready(function() {
 
   // Bouton Réinitialiser
   $('#btn-reset-filters').on('click', function() {
-    $('#filter-filiere').val('ALL');
-    $('#filter-niveau').val('ALL');
-    $('#filter-classe').val('ALL');
+    $('#filter-filiere').val('ALL').trigger('change.select2');
+    $('#filter-niveau').val('ALL').trigger('change.select2');
+    $('#filter-classe').val('ALL').trigger('change.select2');
     $('#filter-classe option').show();
     table.ajax.reload();
   });

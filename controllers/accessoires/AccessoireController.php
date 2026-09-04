@@ -10,13 +10,36 @@ class AccessoireController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/accessoires/list.php');
+        $anneeModel = new ModelAnnee();
+        $annees = $anneeModel->getAll();
+        
+        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+            $selectedAnneeCode = trim($_GET['annee_code']);
+            foreach ($annees as $a) {
+                if ($a['code_annee'] === $selectedAnneeCode) {
+                    $_SESSION['annee_active_code'] = $a['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    break;
+                }
+            }
+        } else {
+            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+        }
+
+        $stats = $this->model->getStats($selectedAnneeCode);
+
+        $this->loadView('../views/accessoires/list.php', [
+            'stats' => $stats,
+            'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_accessoire'];
@@ -84,7 +107,8 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $filter = trim($_GET['filter'] ?? 'all');
-        $items = $this->model->getDistributions($filter);
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $items = $this->model->getDistributions($filter, $anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_accessoire_inscription'];
@@ -100,7 +124,8 @@ class AccessoireController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
-        $stats = $this->model->getStats();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $stats = $this->model->getStats($anneeCode);
         $this->json(['status' => 1, 'stats' => $stats]);
     }
 

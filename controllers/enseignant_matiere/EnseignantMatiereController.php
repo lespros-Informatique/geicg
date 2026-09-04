@@ -10,24 +10,33 @@ class EnseignantMatiereController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/enseignant_matiere/list.php');
+        $anneeModel = new ModelAnnee();
+        $annees = $anneeModel->getAll();
+        
+        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+            $selectedAnneeCode = trim($_GET['annee_code']);
+            foreach ($annees as $a) {
+                if ($a['code_annee'] === $selectedAnneeCode) {
+                    $_SESSION['annee_active_code'] = $a['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    break;
+                }
+            }
+        } else {
+            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+        }
+
+        $this->loadView('../views/enseignant_matiere/list.php', [
+            'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $sql = "SELECT em.*, 
-                       m.libelle_matiere,
-                       cl.libelle_classe,
-                       CONCAT(u.nom_user, ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom,
-                       e.code_enseignant
-                FROM enseignant_matiere em
-                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
-                LEFT JOIN classes cl ON cl.code_classe = em.classe_code
-                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN users u ON u.code_user = em.enseignant_code
-                ORDER BY em.id_enseignant_matiere DESC";
-        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_enseignant_matiere'];

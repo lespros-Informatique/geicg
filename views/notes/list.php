@@ -1,4 +1,8 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php
+$annees = $annees ?? [];
+$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -13,13 +17,39 @@
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Note / Évaluation
         </a>
       </div>
+
+      <!-- Filtre Année Académique (Select2) -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: #0F172A; display: block;">Année Académique</span>
+              <span style="font-size: 11.5px; color: #64748B;">Filtrer les notes et évaluations par année</span>
+            </div>
+          </div>
+          <div style="min-width: 260px; flex-grow: 0;">
+            <select id="filter-annee" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les années --</option>
+              <?php foreach ($annees as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-notes" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                 <th style="padding: 12px; width: 50px;">#</th>
-                <th style="padding: 12px;">Dossier Élève</th>
+                <th style="padding: 12px;">Élève / Inscription</th>
                 <th style="padding: 12px;">Matière Évaluée</th>
                 <th style="padding: 12px;">Type Évaluation</th>
                 <th style="padding: 12px;">Note /20</th>
@@ -36,18 +66,33 @@
 </div>
 <script>
 $(document).ready(function() {
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('#filter-annee').select2({ width: '100%' });
+  }
+
   var table = $('#table-notes').DataTable({
-    ajax: '<?= RACINE ?>note/apiList',
+    ajax: {
+      url: '<?= RACINE ?>note/apiList',
+      type: 'GET',
+      data: function(d) {
+        d.annee_code = $('#filter-annee').val();
+      }
+    },
     processing: true,
     autoWidth: false,
     columns: [
       { data: null, width: '50px', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
-      { data: 'inscription_code',    defaultContent: '-', width: '130px' },
-      { data: 'matiere_code',        defaultContent: '-', width: '130px' },
-      { data: 'type_evaluation_code',defaultContent: '-', width: '110px' },
-      { data: 'valeur_note',         defaultContent: '-', width: '80px', render: function(d) {
+      { data: 'nom_etudiant', defaultContent: '', render: function(d, t, r) {
+        var name = (d && d.trim()) ? d : (r.inscription_code || '-');
+        var mat = r.matricule_etudiant ? ' <small style="color:#64748B;">(' + r.matricule_etudiant + ')</small>' : '';
+        return '<strong>' + name + '</strong>' + mat;
+      }},
+      { data: 'libelle_matiere', defaultContent: '', render: function(d, t, r) { return d || r.matiere_code || '-'; } },
+      { data: 'type_evaluation_code', defaultContent: '-', width: '110px' },
+      { data: 'valeur_note', defaultContent: '-', width: '80px', render: function(d) {
         return '<strong style="color:#0F172A;">' + (d || '0') + '/20</strong>';
       } },
       { data: 'statut_note', width: '90px', className: 'text-center', render: function(d, type, row) {
@@ -69,6 +114,11 @@ $(document).ready(function() {
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $('#filter-annee').on('change', function() {
+    var val = $(this).val();
+    window.location.href = window.RACINE + 'note/list?annee_code=' + encodeURIComponent(val);
   });
 
   $(document).on('change', '.toggle-statut-note', function() {

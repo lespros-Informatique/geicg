@@ -22,6 +22,22 @@
         <a href="<?= RACINE ?>type_depense/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="tags" style="width: 17px; height: 17px;"></i> Types / Catégories de Dépenses
         </a>
+      <!-- BANDE DE FILTRES DYNAMIQUES -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px; width: 100%; max-width: 400px;">
+            <label style="font-weight: 700; font-size: 13px; color: #1E3A5F; white-space: nowrap; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="calendar" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Année Académique :
+            </label>
+            <select id="filter-annee" class="form-control select2" style="width: 100%;">
+              <?php foreach (($annees ?? []) as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
@@ -46,8 +62,17 @@
 </div>
 <script>
 $(document).ready(function() {
+  if ($.fn.select2) {
+    $('#filter-annee').select2({ width: '100%' });
+  }
+
   var table = $('#table-depenses').DataTable({
-    ajax: '<?= RACINE ?>depense/apiList',
+    ajax: {
+      url: '<?= RACINE ?>depense/apiList',
+      data: function(d) {
+        d.annee_code = $('#filter-annee').val();
+      }
+    },
     processing: true,
     autoWidth: false,
     columns: [
@@ -108,6 +133,11 @@ $(document).ready(function() {
         $input.prop('checked', !isChecked);
       }
     });
+  });
+
+  $('#filter-annee').on('change', function() {
+    var val = $(this).val();
+    window.location.href = '<?= RACINE ?>depense/list?annee_code=' + encodeURIComponent(val);
   });
 });
 </script>

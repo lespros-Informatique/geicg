@@ -7,8 +7,15 @@ class ModelTranche extends BaseModel
     protected ?string $statusField = 'statut_tranche';
     protected ?string $createdAtField = 'created_at_tranche';
 
-    public function getAll(): array
+    public function getAll(?string $anneeCode = null): array
     {
+        $where = "";
+        $params = [];
+        if (!empty($anneeCode)) {
+            $where = "WHERE (t.annee_code = ? OR s.annee_code = ? OR t.annee_code IS NULL OR t.annee_code = '')";
+            $params = [$anneeCode, $anneeCode];
+        }
+
         $sql = "
             SELECT t.*, 
                    s.montant_scolarite, 
@@ -21,9 +28,12 @@ class ModelTranche extends BaseModel
             LEFT JOIN filieres f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
             LEFT JOIN niveaux n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
             LEFT JOIN annees a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
+            {$where}
             ORDER BY t.id_tranche DESC
         ";
-        return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function getById($id): array

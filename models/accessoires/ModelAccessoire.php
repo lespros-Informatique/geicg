@@ -7,11 +7,35 @@ class ModelAccessoire extends BaseModel
     protected ?string $statusField = 'statut_accessoire';
     protected ?string $createdAtField = 'created_at_accessoire';
 
-    public function getDistributions(string $filter = 'all'): array
+    public function getAll(?string $anneeCode = null): array
+    {
+        $sql = "SELECT * FROM accessoires";
+        $params = [];
+        if (!empty($anneeCode)) {
+            $sql .= " WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+            $params[] = $anneeCode;
+        }
+        $sql .= " ORDER BY id_accessoire DESC";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("Get all accessoires: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getDistributions(string $filter = 'all', ?string $anneeCode = null): array
     {
         $db = $this->getCon();
         $where = "WHERE (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)";
         $params = [];
+
+        if (!empty($anneeCode)) {
+            $where .= " AND (ai.annee_code = ? OR ai.annee_code IS NULL OR ai.annee_code = '')";
+            $params[] = $anneeCode;
+        }
 
         if ($filter === 'en_attente') {
             $where .= " AND ai.etat_retrait = 'en_attente'";
@@ -39,15 +63,31 @@ class ModelAccessoire extends BaseModel
         ";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getStats(): array
+    public function getStats(?string $anneeCode = null): array
     {
         $db = $this->getCon();
-        $total = (int)$db->query("SELECT COUNT(*) FROM accessoire_inscription WHERE statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL")->fetchColumn();
-        $enAttente = (int)$db->query("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'en_attente'")->fetchColumn();
-        $retire = (int)$db->query("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'retire'")->fetchColumn();
+        $whereAnnee = "";
+        $params = [];
+        if (!empty($anneeCode)) {
+            $whereAnnee = " AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+            $params[] = $anneeCode;
+        }
+
+        $stmtTot = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)" . $whereAnnee);
+        $stmtTot->execute($params);
+        $total = (int)($stmtTot->fetchColumn() ?: 0);
+
+        $stmtAtt = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'en_attente'" . $whereAnnee);
+        $stmtAtt->execute($params);
+        $enAttente = (int)($stmtAtt->fetchColumn() ?: 0);
+
+        $stmtRet = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'retire'" . $whereAnnee);
+        $stmtRet->execute($params);
+        $retire = (int)($stmtRet->fetchColumn() ?: 0);
+
         $totalTypes = (int)$db->query("SELECT COUNT(*) FROM accessoires WHERE statut_accessoire = 'actif'")->fetchColumn();
         $taux = $total > 0 ? round(($retire / $total) * 100) : 0;
 

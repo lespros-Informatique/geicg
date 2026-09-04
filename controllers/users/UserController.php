@@ -421,15 +421,23 @@ class UserController extends BaseController
                     $_SESSION['permissions'] = $allPermissions;
                     $_SESSION['roles'] = $roleCodes;
 
-                    // Initialisation stricte de l'année académique active (statut_annee = 'actif')
+                    // Initialisation de l'année académique active (avec fallback si aucune marquée active)
                     try {
-                        $stmtAnnee = $this->model->getCon()->query("
+                        $db = $this->model->getCon();
+                        $stmtAnnee = $db->query("
                             SELECT code_annee, libelle_annee 
                             FROM annees 
                             WHERE statut_annee = 'actif' 
-                            LIMIT 1
+                            ORDER BY id_annee DESC LIMIT 1
                         ");
                         $anneeActive = $stmtAnnee ? $stmtAnnee->fetch(PDO::FETCH_ASSOC) : null;
+                        if (!$anneeActive) {
+                            $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+                            $anneeActive = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
+                            if ($anneeActive) {
+                                $db->exec("UPDATE annees SET statut_annee = 'actif' WHERE code_annee = " . $db->quote($anneeActive['code_annee']));
+                            }
+                        }
                         if ($anneeActive) {
                             $_SESSION['annee_active_code'] = $anneeActive['code_annee'];
                             $_SESSION['annee_active_libelle'] = $anneeActive['libelle_annee'];

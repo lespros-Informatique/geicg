@@ -12,7 +12,24 @@
         <a href="<?= RACINE ?>classe/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe
         </a>
+      <!-- BANDE DE FILTRES DYNAMIQUES -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px; width: 100%; max-width: 400px;">
+            <label style="font-weight: 700; font-size: 13px; color: #1E3A5F; white-space: nowrap; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="calendar" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Année Académique :
+            </label>
+            <select id="filter-annee" class="form-control select2" style="width: 100%;">
+              <?php foreach (($annees ?? []) as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
       </div>
+
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-classes" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
@@ -37,8 +54,17 @@
 </div>
 <script>
 $(document).ready(function() {
+  if ($.fn.select2) {
+    $('#filter-annee').select2({ width: '100%' });
+  }
+
   var table = $('#table-classes').DataTable({
-    ajax: '<?= RACINE ?>classe/apiList',
+    ajax: {
+      url: '<?= RACINE ?>classe/apiList',
+      data: function(d) {
+        d.annee_code = $('#filter-annee').val();
+      }
+    },
     processing: true,
     autoWidth: false,
     columns: [
@@ -115,6 +141,11 @@ $(document).ready(function() {
         $input.prop('checked', !isChecked);
       }
     });
+  });
+
+  $('#filter-annee').on('change', function() {
+    var val = $(this).val();
+    window.location.href = '<?= RACINE ?>classe/list?annee_code=' + encodeURIComponent(val);
   });
 });
 </script>

@@ -8,8 +8,9 @@ class ModelSessionCaisse extends BaseModel
     /**
      * Récupère toutes les sessions avec les informations du caissier
      */
-    public function getAll(): array
+    public function getAll(?string $anneeCode = null): array
     {
+        $params = [];
         $sql = "
             SELECT s.*, 
                    CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) as caissier_nom,
@@ -19,11 +20,15 @@ class ModelSessionCaisse extends BaseModel
             FROM sessions_caisse s
             LEFT JOIN users u ON u.code_user = s.user_code
             LEFT JOIN users uv ON uv.code_user = s.user_validation
-            ORDER BY s.date_session DESC, s.heure_ouverture DESC
         ";
+        if (!empty($anneeCode)) {
+            $sql .= " WHERE (s.annee_code = ? OR s.annee_code IS NULL OR s.annee_code = '') ";
+            $params[] = $anneeCode;
+        }
+        $sql .= " ORDER BY s.date_session DESC, s.heure_ouverture DESC ";
         try {
             $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute();
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("Get all sessions_caisse: " . $e->getMessage());

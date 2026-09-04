@@ -1,4 +1,8 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php
+$annees = $annees ?? [];
+$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -13,6 +17,32 @@
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Créneau Horaire
         </a>
       </div>
+
+      <!-- Filtre Année Académique (Select2) -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: #0F172A; display: block;">Année Académique</span>
+              <span style="font-size: 11.5px; color: #64748B;">Filtrer les créneaux horaires par année</span>
+            </div>
+          </div>
+          <div style="min-width: 260px; flex-grow: 0;">
+            <select id="filter-annee" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les années --</option>
+              <?php foreach ($annees as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-emplois_temps" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
@@ -39,21 +69,32 @@
 </div>
 <script>
 $(document).ready(function() {
-  $('#table-emplois_temps').DataTable({
-    ajax: '<?= RACINE ?>emploi/apiList',
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('#filter-annee').select2({ width: '100%' });
+  }
+
+  var table = $('#table-emplois_temps').DataTable({
+    ajax: {
+      url: '<?= RACINE ?>emploi/apiList',
+      type: 'GET',
+      data: function(d) {
+        d.annee_code = $('#filter-annee').val();
+      }
+    },
     processing: true,
     autoWidth: false,
     columns: [
       { data: null, width: '50px', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
-      { data: 'classe_code',     defaultContent: '-', width: '110px' },
-      { data: 'matiere_code',    defaultContent: '-', width: '120px' },
-      { data: 'enseignant_code', defaultContent: '-', width: '130px' },
-      { data: 'salle_code',      defaultContent: '-', width: '90px' },
-      { data: 'jour',            defaultContent: '-', width: '90px' },
-      { data: 'heure_debut',     defaultContent: '-', width: '70px' },
-      { data: 'heure_fin',       defaultContent: '-', width: '70px' },
+      { data: 'libelle_classe', defaultContent: '', render: function(d, t, r) { return '<strong>' + (d || r.classe_code || '-') + '</strong>'; } },
+      { data: 'libelle_matiere', defaultContent: '', render: function(d, t, r) { return d || r.matiere_code || '-'; } },
+      { data: 'nom_prof', defaultContent: '', render: function(d, t, r) { return (d && d.trim()) ? d : (r.enseignant_code || '-'); } },
+      { data: 'libelle_salle', defaultContent: '', render: function(d, t, r) { return d || r.salle_code || '-'; } },
+      { data: 'jour', defaultContent: '-', render: function(d) { return d ? d.charAt(0).toUpperCase() + d.slice(1) : '-'; } },
+      { data: 'heure_debut', defaultContent: '-', render: function(d) { return d ? d.substring(0,5) : '-'; } },
+      { data: 'heure_fin', defaultContent: '-', render: function(d) { return d ? d.substring(0,5) : '-'; } },
       { data: 'statut_emploi', width: '90px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');
         var checkedAttr = isActif ? 'checked' : '';
@@ -73,6 +114,11 @@ $(document).ready(function() {
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $('#filter-annee').on('change', function() {
+    var val = $(this).val();
+    window.location.href = window.RACINE + 'emploi/list?annee_code=' + encodeURIComponent(val);
   });
 
   $(document).on('change', '.toggle-statut-emploi', function() {

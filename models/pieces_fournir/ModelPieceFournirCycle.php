@@ -7,7 +7,7 @@ class ModelPieceFournirCycle extends BaseModel
     protected ?string $statusField = 'statut_piece_cycle';
     protected ?string $createdAtField = 'created_at_piece_cycle';
 
-    public function getAll(): array
+    public function getAll(?string $anneeCode = null): array
     {
         $sql = "
             SELECT pfc.*, 
@@ -19,10 +19,16 @@ class ModelPieceFournirCycle extends BaseModel
             LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
             LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
             LEFT JOIN annees a ON (a.code_annee = pfc.annee_code OR a.id_annee = pfc.annee_code)
-            ORDER BY pfc.id_piece_cycle DESC
         ";
+        $params = [];
+        if (!empty($anneeCode)) {
+            $sql .= " WHERE (pfc.annee_code = ? OR pfc.annee_code IS NULL OR pfc.annee_code = '') ";
+            $params[] = $anneeCode;
+        }
+        $sql .= " ORDER BY pfc.id_piece_cycle DESC ";
         try {
-            $stmt = $this->getCon()->query($sql);
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("Get all piece_fournir_cycle: " . $e->getMessage());

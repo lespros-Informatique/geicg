@@ -11,16 +11,31 @@ class InscriptionController extends BaseController
     {
         $this->requireAuth();
         $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $selectedAnneeCode = $this->getActiveAnneeCode();
+
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code, niveau_code, annee_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $annees = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         
         $this->loadView('../views/inscriptions/list.php', [
             'filieres' => $filieres,
             'niveaux' => $niveaux,
             'classes' => $classes,
-            'annees' => $annees
+            'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
 
@@ -30,11 +45,19 @@ class InscriptionController extends BaseController
             return $_SESSION['annee_active_code'];
         }
         $db = $this->model->getCon();
-        $stmt = $db->query("SELECT code_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
-        $code = $stmt->fetchColumn();
-        if ($code) {
-            $_SESSION['annee_active_code'] = $code;
-            return $code;
+        $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
+        $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+        if (!$row) {
+            $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+            $row = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
+            if ($row) {
+                $db->exec("UPDATE annees SET statut_annee = 'actif' WHERE code_annee = " . $db->quote($row['code_annee']));
+            }
+        }
+        if ($row) {
+            $_SESSION['annee_active_code'] = $row['code_annee'];
+            $_SESSION['annee_active_libelle'] = $row['libelle_annee'];
+            return $row['code_annee'];
         }
         return '';
     }
@@ -42,6 +65,19 @@ class InscriptionController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $db = $this->model->getCon();
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
         $anneeCode = $this->getActiveAnneeCode();
         $filterFiliere = trim($_GET['filiere_code'] ?? '');
         $filterNiveau = trim($_GET['niveau_code'] ?? '');

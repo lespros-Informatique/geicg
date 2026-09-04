@@ -12,16 +12,36 @@ class PieceFournirCycleController extends BaseController
         $this->requireAuth();
         $summary = $this->model->getSummaryCounts();
         $cycles = (new ModelCycle())->getAll();
+        
+        $anneeModel = new ModelAnnee();
+        $annees = $anneeModel->getAll();
+        
+        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+            $selectedAnneeCode = trim($_GET['annee_code']);
+            foreach ($annees as $a) {
+                if ($a['code_annee'] === $selectedAnneeCode) {
+                    $_SESSION['annee_active_code'] = $a['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    break;
+                }
+            }
+        } else {
+            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+        }
+
         $this->loadView('../views/piece_fournir_cycle/list.php', [
             'summary' => $summary,
-            'cycles' => $cycles
+            'cycles' => $cycles,
+            'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_piece_cycle'];

@@ -23,7 +23,14 @@ class ModelHome extends BaseModel
             }
             if (!$anneeCode) {
                 $stmtA = $db->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
-                $activeRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+                $activeRow = $stmtA ? $stmtA->fetch(PDO::FETCH_ASSOC) : null;
+                if (!$activeRow) {
+                    $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+                    $activeRow = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
+                    if ($activeRow) {
+                        $db->exec("UPDATE annees SET statut_annee = 'actif' WHERE code_annee = " . $db->quote($activeRow['code_annee']));
+                    }
+                }
                 if ($activeRow) {
                     $anneeCode = $activeRow['code_annee'];
                     $_SESSION['annee_active_code'] = $activeRow['code_annee'];
@@ -50,42 +57,60 @@ class ModelHome extends BaseModel
             $totalSalles = (int)$db->query("SELECT COUNT(*) FROM salles WHERE statut_salle = 'actif'")->fetchColumn();
             
             // Notes & Absences de l'année
-            $stmtNotes = $db->prepare("
-                SELECT COUNT(*) FROM notes n 
-                INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code 
-                WHERE i.annee_code = ? AND n.statut_note = 'actif'
-            ");
-            $stmtNotes->execute([$anneeCode ?: '']);
-            $totalNotes = (int)$stmtNotes->fetchColumn();
+            $totalNotes = 0;
+            try {
+                $stmtNotes = $db->prepare("
+                    SELECT COUNT(*) FROM notes n 
+                    INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code 
+                    WHERE i.annee_code = ? AND (n.statut_note = 'actif' OR n.statut_note IS NULL)
+                ");
+                $stmtNotes->execute([$anneeCode ?: '']);
+                $totalNotes = (int)$stmtNotes->fetchColumn();
+            } catch (Exception $e) {}
 
-            $stmtAbs = $db->prepare("
-                SELECT COUNT(*) FROM absences a 
-                INNER JOIN inscriptions i ON i.code_inscription = a.inscription_code 
-                WHERE i.annee_code = ? AND a.statut_absence = 'actif'
-            ");
-            $stmtAbs->execute([$anneeCode ?: '']);
-            $totalAbsences = (int)$stmtAbs->fetchColumn();
+            $totalAbsences = 0;
+            try {
+                $stmtAbs = $db->prepare("
+                    SELECT COUNT(*) FROM absences a 
+                    INNER JOIN inscriptions i ON i.code_inscription = a.inscription_code 
+                    WHERE i.annee_code = ?
+                ");
+                $stmtAbs->execute([$anneeCode ?: '']);
+                $totalAbsences = (int)$stmtAbs->fetchColumn();
+            } catch (Exception $e) {}
 
             // 3. Stats pour le Corps Enseignant (si profil Enseignant)
             $teacherCoursesCount = 0;
             $teacherClassesCount = 0;
             if ($roleCode === 'ROLE_ENSEIGNANT' && $userCode) {
-                // Chercher le code_enseignant relié
-                $stmtTeach = $db->prepare("SELECT code_enseignant FROM enseignants WHERE user_code = ? OR code_enseignant = ?");
-                $stmtTeach->execute([$userCode, $userCode]);
-                $teacherCode = $stmtTeach->fetchColumn() ?: $userCode;
+                try {
+                    $stmtTeach = $db->prepare("SELECT code_enseignant FROM enseignants WHERE user_code = ? OR code_enseignant = ?");
+                    $stmtTeach->execute([$userCode, $userCode]);
+                    $teacherCode = $stmtTeach->fetchColumn() ?: $userCode;
 
-                $stmtTC = $db->prepare("SELECT COUNT(*), COUNT(DISTINCT classe_code) FROM v_dash_pedagogie_affectations WHERE (enseignant_code = ? OR enseignant_code = ?)");
-                $stmtTC->execute([$teacherCode, $userCode]);
-                $resTC = $stmtTC->fetch(PDO::FETCH_NUM);
-                $teacherCoursesCount = (int)($resTC[0] ?? 0);
-                $teacherClassesCount = (int)($resTC[1] ?? 0);
+                    $stmtTC = $db->prepare("SELECT COUNT(*), COUNT(DISTINCT classe_code) FROM v_dash_pedagogie_affectations WHERE (enseignant_code = ? OR enseignant_code = ?)");
+                    $stmtTC->execute([$teacherCode, $userCode]);
+                    $resTC = $stmtTC->fetch(PDO::FETCH_NUM);
+                    $teacherCoursesCount = (int)($resTC[0] ?? 0);
+                    $teacherClassesCount = (int)($resTC[1] ?? 0);
+                } catch (Exception $e) {}
             }
 
             // 4. Stats Communication
-            $totalActualites = (int)$db->query("SELECT COUNT(*) FROM actualites WHERE statut_actualite = 'actif'")->fetchColumn();
-            $totalEvenements = (int)$db->query("SELECT COUNT(*) FROM evenements WHERE statut_evenement = 'actif'")->fetchColumn();
-            $totalDocuments = (int)$db->query("SELECT COUNT(*) FROM documents WHERE statut_document = 'actif'")->fetchColumn();
+            $totalActualites = 0;
+            try {
+                $totalActualites = (int)$db->query("SELECT COUNT(*) FROM actualites WHERE statut_actualite = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalEvenements = 0;
+            try {
+                $totalEvenements = (int)$db->query("SELECT COUNT(*) FROM evenements WHERE statut_evenement = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalDocuments = 0;
+            try {
+                $totalDocuments = (int)$db->query("SELECT COUNT(*) FROM documents WHERE statut_document = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
 
             return [
                 'annee_code' => $anneeCode,

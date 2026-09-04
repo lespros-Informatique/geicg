@@ -10,20 +10,59 @@ class ClasseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/classes/list.php');
+        $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $activeYear = $this->getActiveAnneeCode();
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->loadView('../views/classes/list.php', [
+            'annees' => $annees,
+            'selectedAnneeCode' => $activeYear
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $anneeCode = $this->getActiveAnneeCode();
+
         $sql = "SELECT c.*, 
                        f.libelle_filiere,
-                       n.libelle_niveau
+                       n.libelle_niveau,
+                       a.libelle_annee
                 FROM classes c
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN annees a ON a.code_annee = c.annee_code
+                WHERE (c.annee_code = ? OR c.annee_code IS NULL OR c.annee_code = '' OR ? = '')
                 ORDER BY c.id_classe DESC";
-        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$anneeCode, $anneeCode]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_classe'];

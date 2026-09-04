@@ -11,12 +11,44 @@ class SessionCaisseController extends BaseController
     {
         $this->requireAuth();
         $today = date('Y-m-d');
-        $anneeCode = $_SESSION['annee_active_code'] ?? null;
+        
+        $anneeModel = new ModelAnnee();
+        $annees = $anneeModel->getAll();
+        
+        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+            $selectedAnneeCode = trim($_GET['annee_code']);
+            foreach ($annees as $a) {
+                if ($a['code_annee'] === $selectedAnneeCode) {
+                    $_SESSION['annee_active_code'] = $a['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    break;
+                }
+            }
+        } else {
+            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+        }
 
         $db = $this->model->getCon();
-        $totalSessions = (int)($db->query("SELECT COUNT(*) FROM sessions_caisse")->fetchColumn() ?: 0);
-        $totalOuvertes = (int)($db->query("SELECT COUNT(*) FROM sessions_caisse WHERE statut_session = 'ouverte'")->fetchColumn() ?: 0);
-        $totalCloturees = (int)($db->query("SELECT COUNT(*) FROM sessions_caisse WHERE statut_session IN ('cloturee', 'valide')")->fetchColumn() ?: 0);
+        $whereAnnee = "";
+        $params = [];
+        if (!empty($selectedAnneeCode)) {
+            $whereAnnee = " WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '') ";
+            $params[] = $selectedAnneeCode;
+        }
+
+        $stmtTot = $db->prepare("SELECT COUNT(*) FROM sessions_caisse" . $whereAnnee);
+        $stmtTot->execute($params);
+        $totalSessions = (int)($stmtTot->fetchColumn() ?: 0);
+
+        $whereOuv = empty($whereAnnee) ? " WHERE statut_session = 'ouverte'" : $whereAnnee . " AND statut_session = 'ouverte'";
+        $stmtOuv = $db->prepare("SELECT COUNT(*) FROM sessions_caisse" . $whereOuv);
+        $stmtOuv->execute($params);
+        $totalOuvertes = (int)($stmtOuv->fetchColumn() ?: 0);
+
+        $whereClo = empty($whereAnnee) ? " WHERE statut_session IN ('cloturee', 'valide')" : $whereAnnee . " AND statut_session IN ('cloturee', 'valide')";
+        $stmtClo = $db->prepare("SELECT COUNT(*) FROM sessions_caisse" . $whereClo);
+        $stmtClo->execute($params);
+        $totalCloturees = (int)($stmtClo->fetchColumn() ?: 0);
 
         // Active session for today
         $activeSession = $this->model->getActiveSession($today);
@@ -29,14 +61,17 @@ class SessionCaisseController extends BaseController
             'totalOuvertes' => $totalOuvertes,
             'totalCloturees' => $totalCloturees,
             'activeSession' => $activeSession,
-            'dailyTotals' => $dailyTotals
+            'dailyTotals' => $dailyTotals,
+            'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_session'];

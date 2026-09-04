@@ -11,23 +11,64 @@ class ScolariteController extends BaseController
     {
         $this->requireAuth();
         $db = $this->model->getCon();
-        $totalScolarites = (int)$db->query("SELECT COUNT(*) FROM scolarites")->fetchColumn();
-        $totalAffectes = (int)$db->query("SELECT COUNT(*) FROM scolarites WHERE affectation_etat = 'affecte'")->fetchColumn();
-        $totalNonAffectes = (int)$db->query("SELECT COUNT(*) FROM scolarites WHERE affectation_etat = 'non_affecte' OR affectation_etat IS NULL OR affectation_etat = ''")->fetchColumn();
-        $totalTranches = (int)$db->query("SELECT COUNT(*) FROM tranches_scolarite")->fetchColumn();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $activeYear = $this->getActiveAnneeCode();
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $stmtTot = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '' OR ? = '')");
+        $stmtTot->execute([$activeYear, $activeYear]);
+        $totalScolarites = (int)$stmtTot->fetchColumn();
+
+        $stmtAff = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE affectation_etat = 'affecte' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '' OR ? = '')");
+        $stmtAff->execute([$activeYear, $activeYear]);
+        $totalAffectes = (int)$stmtAff->fetchColumn();
+
+        $stmtNonAff = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (affectation_etat = 'non_affecte' OR affectation_etat IS NULL OR affectation_etat = '') AND (annee_code = ? OR annee_code IS NULL OR annee_code = '' OR ? = '')");
+        $stmtNonAff->execute([$activeYear, $activeYear]);
+        $totalNonAffectes = (int)$stmtNonAff->fetchColumn();
+
+        $stmtTr = $db->prepare("SELECT COUNT(*) FROM tranches_scolarite WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '' OR ? = '')");
+        $stmtTr->execute([$activeYear, $activeYear]);
+        $totalTranches = (int)$stmtTr->fetchColumn();
 
         $this->loadView('../views/scolarites/list.php', [
             'totalScolarites' => $totalScolarites,
             'totalAffectes' => $totalAffectes,
             'totalNonAffectes' => $totalNonAffectes,
-            'totalTranches' => $totalTranches
+            'totalTranches' => $totalTranches,
+            'annees' => $annees,
+            'selectedAnneeCode' => $activeYear
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $db = $this->model->getCon();
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $anneeCode = $this->getActiveAnneeCode();
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_scolarite'];
@@ -431,7 +472,7 @@ class ScolariteController extends BaseController
             // Tranches / Échéancier de cette scolarité
             $stmtTranches = $this->model->getCon()->prepare("
                 SELECT * FROM tranches_scolarite 
-                WHERE (scolarite_code = ? OR (filiere_code = ? AND niveau_code = ?))
+                WHERE scolarite_code = ? OR ((scolarite_code IS NULL OR scolarite_code = '') AND filiere_code = ? AND niveau_code = ?)
                 ORDER BY date_limite ASC, id_tranche ASC
             ");
             $stmtTranches->execute([$item['code_scolarite'], $item['filiere_code'], $item['niveau_code']]);
@@ -461,7 +502,7 @@ class ScolariteController extends BaseController
             // Récupérer les tranches existantes associées à cette scolarité
             $stmtTranches = $this->model->getCon()->prepare("
                 SELECT * FROM tranches_scolarite 
-                WHERE (scolarite_code = ? OR (filiere_code = ? AND niveau_code = ? AND annee_code = ?))
+                WHERE scolarite_code = ? OR ((scolarite_code IS NULL OR scolarite_code = '') AND filiere_code = ? AND niveau_code = ? AND annee_code = ?)
                 ORDER BY date_limite ASC, id_tranche ASC
             ");
             $stmtTranches->execute([$item['code_scolarite'], $item['filiere_code'], $item['niveau_code'], $item['annee_code']]);

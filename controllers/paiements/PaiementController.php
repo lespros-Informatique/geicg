@@ -11,7 +11,20 @@ class PaiementController extends BaseController
     {
         $this->requireAuth();
         $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
         $activeYear = $this->getActiveAnneeCode();
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         // 1. Statistiques des Inscriptions et de la Scolarité Globale Attendue
         $stmtIns = $db->prepare("
@@ -47,14 +60,16 @@ class PaiementController extends BaseController
         $stmtPay = $db->prepare("
             SELECT 
                 COUNT(*) as total_operations,
-                COALESCE(SUM(montant_paiement), 0) as total_encaisse,
-                COALESCE(SUM(CASE WHEN DATE(date_paiement) = CURDATE() THEN montant_paiement ELSE 0 END), 0) as encaisse_aujourdhui,
-                COALESCE(SUM(CASE WHEN YEAR(date_paiement) = YEAR(CURDATE()) AND MONTH(date_paiement) = MONTH(CURDATE()) THEN montant_paiement ELSE 0 END), 0) as encaisse_mois,
+                COALESCE(SUM(p.montant_paiement), 0) as total_encaisse,
+                COALESCE(SUM(CASE WHEN DATE(p.date_paiement) = CURDATE() THEN p.montant_paiement ELSE 0 END), 0) as encaisse_aujourdhui,
+                COALESCE(SUM(CASE WHEN YEAR(p.date_paiement) = YEAR(CURDATE()) AND MONTH(p.date_paiement) = MONTH(CURDATE()) THEN p.montant_paiement ELSE 0 END), 0) as encaisse_mois,
                 COUNT(DISTINCT p.inscription_code) as total_eleves_payeurs
             FROM paiements p
+            LEFT JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
             WHERE p.statut_paiement != 'annule'
+              AND (p.annee_code = ? OR ins.annee_code = ? OR ? = '')
         ");
-        $stmtPay->execute();
+        $stmtPay->execute([$activeYear, $activeYear, $activeYear]);
         $payStats = $stmtPay->fetch(PDO::FETCH_ASSOC) ?: [
             'total_operations' => 0,
             'total_encaisse' => 0,
@@ -76,14 +91,29 @@ class PaiementController extends BaseController
         ]);
 
         $this->loadView('../views/paiements/list.php', [
-            'stats' => $stats
+            'stats' => $stats,
+            'annees' => $annees,
+            'selectedAnneeCode' => $activeYear
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $db = $this->model->getCon();
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+        $anneeCode = $this->getActiveAnneeCode();
+
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_paiement'];
@@ -214,21 +244,38 @@ class PaiementController extends BaseController
             $badgeClass = 'badge-warning';
         }
 
-        // 2. Récupération des tranches actives UNIQUEMENT pour l'année académique de l'inscription
-        $stmtTr = $db->prepare("
-            SELECT t.*, s.montant_scolarite as scolarite_globale
-            FROM tranches_scolarite t
-            LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
-            WHERE t.statut_tranche = 'actif'
-              AND (t.annee_code = ? OR s.annee_code = ?)
-              AND (
-                (t.scolarite_code != '' AND t.scolarite_code = ?)
-                OR (t.scolarite_code = '' AND t.filiere_code = ? AND t.niveau_code = ?)
-                OR (s.filiere_code = ? AND s.niveau_code = ?)
-              )
-            ORDER BY t.date_limite ASC, t.id_tranche ASC
-        ");
-        $stmtTr->execute([$anneeCode, $anneeCode, $codeScolarite, $filiereCode, $niveauCode, $filiereCode, $niveauCode]);
+        // 2. Récupération des tranches actives STRICTEMENT rattachées à la grille de scolarité de l'étudiant
+        if (!empty($codeScolarite)) {
+            $stmtTr = $db->prepare("
+                SELECT t.*, s.montant_scolarite as scolarite_globale
+                FROM tranches_scolarite t
+                LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
+                WHERE t.statut_tranche = 'actif'
+                  AND (
+                    t.scolarite_code = ?
+                    OR (
+                      (t.scolarite_code = '' OR t.scolarite_code IS NULL)
+                      AND t.filiere_code = ?
+                      AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
+                      AND (t.annee_code = ? OR t.annee_code = '' OR t.annee_code IS NULL)
+                    )
+                  )
+                ORDER BY t.date_limite ASC, t.id_tranche ASC
+            ");
+            $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $anneeCode]);
+        } else {
+            $stmtTr = $db->prepare("
+                SELECT t.*, s.montant_scolarite as scolarite_globale
+                FROM tranches_scolarite t
+                LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
+                WHERE t.statut_tranche = 'actif'
+                  AND t.filiere_code = ?
+                  AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
+                  AND (t.annee_code = ? OR t.annee_code = '' OR t.annee_code IS NULL)
+                ORDER BY t.date_limite ASC, t.id_tranche ASC
+            ");
+            $stmtTr->execute([$filiereCode, $niveauCode, $anneeCode]);
+        }
         $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
 
         // Calcul des paiements par tranche
@@ -392,19 +439,37 @@ class PaiementController extends BaseController
         $scoGrid = $stmtSco->fetch(PDO::FETCH_ASSOC);
         $codeScolarite = $scoGrid['code_scolarite'] ?? '';
 
-        $stmtTr = $db->prepare("
-            SELECT t.*
-            FROM tranches_scolarite t
-            LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
-            WHERE t.statut_tranche = 'actif'
-              AND (
-                (t.scolarite_code != '' AND t.scolarite_code = ?)
-                OR (t.scolarite_code = '' AND t.filiere_code = ? AND t.niveau_code = ?)
-                OR (s.filiere_code = ? AND s.niveau_code = ?)
-              )
-            ORDER BY t.date_limite ASC, t.id_tranche ASC
-        ");
-        $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $filiereCode, $niveauCode]);
+        if (!empty($codeScolarite)) {
+            $stmtTr = $db->prepare("
+                SELECT t.*
+                FROM tranches_scolarite t
+                LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
+                WHERE t.statut_tranche = 'actif'
+                  AND (
+                    t.scolarite_code = ?
+                    OR (
+                      (t.scolarite_code = '' OR t.scolarite_code IS NULL)
+                      AND t.filiere_code = ?
+                      AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
+                      AND (t.annee_code = ? OR t.annee_code = '' OR t.annee_code IS NULL)
+                    )
+                  )
+                ORDER BY t.date_limite ASC, t.id_tranche ASC
+            ");
+            $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $anneeCode]);
+        } else {
+            $stmtTr = $db->prepare("
+                SELECT t.*
+                FROM tranches_scolarite t
+                LEFT JOIN scolarites s ON s.code_scolarite = t.scolarite_code
+                WHERE t.statut_tranche = 'actif'
+                  AND t.filiere_code = ?
+                  AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
+                  AND (t.annee_code = ? OR t.annee_code = '' OR t.annee_code IS NULL)
+                ORDER BY t.date_limite ASC, t.id_tranche ASC
+            ");
+            $stmtTr->execute([$filiereCode, $niveauCode, $anneeCode]);
+        }
         $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($dbTranches)) return null;

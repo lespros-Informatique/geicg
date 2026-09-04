@@ -39,6 +39,13 @@ abstract class BaseController
             try {
                 $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
                 $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+                if (!$row) {
+                    $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+                    $row = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
+                    if ($row) {
+                        $db->exec("UPDATE annees SET statut_annee = 'actif' WHERE code_annee = " . $db->quote($row['code_annee']));
+                    }
+                }
                 if ($row) {
                     $_SESSION['annee_active_code'] = $row['code_annee'];
                     $_SESSION['annee_active_libelle'] = $row['libelle_annee'];

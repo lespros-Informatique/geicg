@@ -2,7 +2,9 @@
 <?php
 $etudiants = (new ModelEtudiant())->getAll();
 $accessoires = (new ModelAccessoire())->getAll();
-$stats = (new ModelAccessoire())->getStats();
+$stats = $stats ?? (new ModelAccessoire())->getStats();
+$annees = $annees ?? [];
+$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -23,6 +25,31 @@ $stats = (new ModelAccessoire())->getStats();
           <a href="<?= RACINE ?>accessoire/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Type de Kit
           </a>
+        </div>
+      </div>
+
+      <!-- Filtre Année Académique (Select2) -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: #0F172A; display: block;">Année Académique</span>
+              <span style="font-size: 11.5px; color: #64748B;">Filtrer les kits et distributions par année</span>
+            </div>
+          </div>
+          <div style="min-width: 260px; flex-grow: 0;">
+            <select id="filter-annee" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les années --</option>
+              <?php foreach ($annees as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -242,6 +269,9 @@ $stats = (new ModelAccessoire())->getStats();
 <script>
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('#filter-annee').select2({ width: '100%' });
+  }
 
   var currentFilter = 'all';
   var tableDist = null;
@@ -254,7 +284,14 @@ $(document).ready(function() {
     }
 
     tableDist = $('#table-distributions').DataTable({
-      ajax: '<?= RACINE ?>accessoire/apiDistributions?filter=' + filter,
+      ajax: {
+        url: '<?= RACINE ?>accessoire/apiDistributions',
+        type: 'GET',
+        data: function(d) {
+          d.filter = filter;
+          d.annee_code = $('#filter-annee').val();
+        }
+      },
       processing: true,
       autoWidth: false,
       columns: [
@@ -307,7 +344,13 @@ $(document).ready(function() {
   function initCatalogueTable() {
     if (!$.fn.DataTable.isDataTable('#table-accessoires')) {
       tableAcc = $('#table-accessoires').DataTable({
-        ajax: '<?= RACINE ?>accessoire/apiList',
+        ajax: {
+          url: '<?= RACINE ?>accessoire/apiList',
+          type: 'GET',
+          data: function(d) {
+            d.annee_code = $('#filter-annee').val();
+          }
+        },
         processing: true,
         autoWidth: false,
         columns: [
@@ -344,6 +387,11 @@ $(document).ready(function() {
     }
   }
 
+  $('#filter-annee').on('change', function() {
+    var val = $(this).val();
+    window.location.href = window.RACINE + 'accessoire/list?annee_code=' + encodeURIComponent(val);
+  });
+
   // Bascule de statut pour le catalogue d'accessoires via Ajax
   $(document).on('change', '.toggle-statut-acc', function() {
     var id = $(this).data('id');
@@ -377,7 +425,8 @@ $(document).ready(function() {
 
   // 3. Rafraîchir les statistiques KPI
   function reloadStats() {
-    $.getJSON('<?= RACINE ?>accessoire/apiStats', function(res) {
+    var anneeCode = $('#filter-annee').val();
+    $.getJSON('<?= RACINE ?>accessoire/apiStats?annee_code=' + encodeURIComponent(anneeCode), function(res) {
       if (res.status === 1 && res.stats) {
         $('#kpi-total-kits').text(res.stats.total);
         $('#kpi-en-attente').text(res.stats.en_attente);

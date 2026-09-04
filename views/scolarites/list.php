@@ -16,6 +16,24 @@
         </div>
       </div>
 
+      <!-- BANDE DE FILTRES DYNAMIQUES -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px; width: 100%; max-width: 400px;">
+            <label style="font-weight: 700; font-size: 13px; color: #1E3A5F; white-space: nowrap; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="calendar" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Année Académique :
+            </label>
+            <select id="filter-annee" class="form-control select2" style="width: 100%;">
+              <?php foreach (($annees ?? []) as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- Bandeau Résumé / Indicateurs Clés -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
         
@@ -186,8 +204,17 @@
 </div>
 <script>
 $(document).ready(function() {
+  if ($.fn.select2) {
+    $('#filter-annee').select2({ width: '100%' });
+  }
+
   var tableScolarites = $('#table-scolarites').DataTable({
-    ajax: '<?= RACINE ?>scolarite/apiList',
+    ajax: {
+      url: '<?= RACINE ?>scolarite/apiList',
+      data: function(d) {
+        d.annee_code = $('#filter-annee').val();
+      }
+    },
     processing: true,
     autoWidth: false,
     columns: [
@@ -229,7 +256,12 @@ $(document).ready(function() {
   });
 
   var tableTranches = $('#table-tranches_scolarite').DataTable({
-    ajax: '<?= RACINE ?>tranche/apiList',
+    ajax: {
+      url: '<?= RACINE ?>tranche/apiList',
+      data: function(d) {
+        d.annee_code = $('#filter-annee').val();
+      }
+    },
     processing: true,
     autoWidth: false,
     columns: [
@@ -333,6 +365,11 @@ $(document).ready(function() {
   } else {
     switchScolariteTab('#tab-scolarites');
   }
+
+  $('#filter-annee').on('change', function() {
+    var val = $(this).val();
+    window.location.href = '<?= RACINE ?>scolarite/list?annee_code=' + encodeURIComponent(val);
+  });
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
