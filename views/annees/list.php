@@ -83,10 +83,16 @@ $(document).ready(function() {
       { data: 'statut_annee', width: '80px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');
         var checkedAttr = isActif ? 'checked' : '';
+        var todayStr = new Date().toISOString().split('T')[0];
+        var isPassed = (!isActif && row.date_fin_annee && row.date_fin_annee < todayStr);
+        var disabledAttr = isPassed ? 'disabled' : '';
+        var cursorStyle = isPassed ? 'cursor:not-allowed; opacity:0.5;' : 'cursor:pointer;';
+        var titleText = isActif ? 'Actif - Cliquez pour désactiver' : (isPassed ? 'Date de fin passée - Activation impossible' : 'Inactif - Cliquez pour activer');
+
         return '<div style="display:flex; justify-content:center; align-items:center;">' +
-               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
-               '<input type="checkbox" class="toggle-statut-annee" data-id="' + row.id_annee + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; ' + cursorStyle + '" title="' + titleText + '">' +
+               '<input type="checkbox" class="toggle-statut-annee" data-id="' + row.id_annee + '" ' + checkedAttr + ' ' + disabledAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:' + (isPassed ? 'not-allowed' : 'pointer') + '; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
                '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
                '</span>' +
                '</label>' +

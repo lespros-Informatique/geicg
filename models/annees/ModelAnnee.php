@@ -67,6 +67,14 @@ class ModelAnnee extends BaseModel
             return false;
         }
 
+        $dateFin = $annee['date_fin_annee'] ?? '';
+        if (!empty($dateFin) && $dateFin < $today) {
+            $dateFinFr = date('d/m/Y', strtotime($dateFin));
+            $libelle = $annee['libelle_annee'] ?? '';
+            $errorMsg = "Impossible d'activer l'année académique {$libelle} : la date de fin ({$dateFinFr}) est déjà passée.";
+            return false;
+        }
+
         return true;
     }
 
