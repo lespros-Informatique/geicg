@@ -184,6 +184,11 @@ class SemestreController extends BaseController
         $current = $this->model->getById($id);
         if (!$current) { $this->error('Semestre introuvable'); return; }
 
+        if (($current['statut_semestre'] ?? '') === 'actif') {
+            $this->error('Impossible d\'éditer un semestre actif.');
+            return;
+        }
+
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -293,7 +298,10 @@ class SemestreController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'semestre/list'); exit(); }
+            if (!$item || ($item['statut_semestre'] ?? '') === 'actif') { 
+                header('Location: ' . RACINE . 'semestre/list'); 
+                exit(); 
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'semestre/list'); exit();

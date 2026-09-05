@@ -122,7 +122,12 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, width: '160px', orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'semestre/edition/' + (d.editId || d.id_semestre) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+        var isActif = (d.statut_semestre === 'actif');
+        var editBtn = isActif ?
+          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Impossible d\'éditer un semestre actif"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
+          '<a href="' + window.RACINE + 'semestre/edition/' + (d.editId || d.id_semestre) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>';
+
+        return editBtn +
                '<a href="' + window.RACINE + 'semestre/details/' + (d.editId || d.id_semestre) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],

@@ -102,8 +102,16 @@ class AnneeController extends BaseController
         $id = (int)$this->post('id_annee');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         
-        $currentItem = $this->model->getById($id);
-        if (!$currentItem) { $this->error('Année académique introuvable'); return; }
+        $currentItem = $id ? $this->model->getById($id) : null;
+        if (!$currentItem) {
+            $this->error('Année académique introuvable');
+            return;
+        }
+
+        if (($currentItem['statut_annee'] ?? '') === 'actif') {
+            $this->error('Impossible d\'éditer une année académique active.');
+            return;
+        }
 
         $data = $_POST;
         unset($data['csrf_token']);
@@ -267,7 +275,10 @@ class AnneeController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'annee/list'); exit(); }
+            if (!$item || ($item['statut_annee'] ?? '') === 'actif') { 
+                header('Location: ' . RACINE . 'annee/list'); 
+                exit(); 
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'annee/list'); exit();

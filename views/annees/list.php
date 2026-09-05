@@ -93,7 +93,12 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, width: '160px', orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'annee/edition/' + (d.editId || d.id_annee) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+        var isActif = (d.statut_annee === 'actif');
+        var editBtn = isActif ?
+          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Impossible d\'éditer une année académique active"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
+          '<a href="' + window.RACINE + 'annee/edition/' + (d.editId || d.id_annee) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>';
+
+        return editBtn +
                '<a href="' + window.RACINE + 'annee/details/' + (d.editId || d.id_annee) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
