@@ -477,8 +477,8 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showAffectations): ?>
-                <a href="<?= RACINE ?>enseignant_matiere/list" class="nav-item sub <?= strpos($currentUri, '/enseignant_matiere/') !== false ? 'active' : '' ?>" data-title="Affectations Cours">
-                    <i data-lucide="link"></i> <span>Affectations Cours</span>
+                <a href="<?= RACINE ?>enseignant_matiere/list" class="nav-item sub <?= strpos($currentUri, '/enseignant_matiere/') !== false ? 'active' : '' ?>" data-title="Affectations Compositions">
+                    <i data-lucide="link"></i> <span>Affectations Compositions</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showEmplois): ?>
@@ -487,17 +487,17 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showAbsences): ?>
-                <a href="<?= RACINE ?>absence/list" class="nav-item sub <?= strpos($currentUri, '/absence/') !== false ? 'active' : '' ?>" data-title="Gestion des Absences">
-                    <i data-lucide="user-x"></i> <span>Gestion des Absences</span>
+                <a href="<?= RACINE ?>absence/list" class="nav-item sub <?= strpos($currentUri, '/absence/') !== false ? 'active' : '' ?>" data-title="Absences par Classe">
+                    <i data-lucide="user-x"></i> <span>Absences & Appel par Classe</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showNotes): ?>
                 <a href="<?= RACINE ?>note/list" class="nav-item sub <?= strpos($currentUri, '/note/') !== false ? 'active' : '' ?>" data-title="Saisie des Notes">
-                    <i data-lucide="edit-3"></i> <span>Saisie des Notes</span>
+                    <i data-lucide="edit-3"></i> <span>Saisie des Notes par Classe</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showBulletins): ?>
-                <a href="<?= RACINE ?>bulletin/list" class="nav-item sub <?= strpos($currentUri, '/bulletin/') !== false ? 'active' : '' ?>" data-title="Bulletins & PV de Notes">
+                <a href="<?= RACINE ?>bulletin/list" class="nav-item sub <?= strpos($currentUri, '/bulletin/') !== false ? 'active' : '' ?>" data-title="Bulletins & PV par Classe">
                     <i data-lucide="file-text"></i> <span>Bulletins & PV de Notes</span>
                 </a>
                 <?php endif; ?>

@@ -383,6 +383,8 @@ $route->addRoute('/emploi/formulaire', [$emploiController, 'formulaire']);
 // Module: absence (AbsenceController)
 $route->addRoute('/absence/list', [$absenceController, 'list']);
 $route->addRoute('/absence/apiList', [$absenceController, 'apiList']);
+$route->addRoute('/absence/saisieClasse', [$absenceController, 'saisieClasse']);
+$route->addRoute('/absence/saveBatch', [$absenceController, 'saveBatch']);
 $route->addRoute('/absence/add', [$absenceController, 'add']);
 $route->addRoute('/absence/edit', [$absenceController, 'edit']);
 $route->addRoute('/absence/changer', [$absenceController, 'changer']);
@@ -393,6 +395,9 @@ $route->addRoute('/absence/formulaire', [$absenceController, 'formulaire']);
 // Module: note (NoteController)
 $route->addRoute('/note/list', [$noteController, 'list']);
 $route->addRoute('/note/apiList', [$noteController, 'apiList']);
+$route->addRoute('/note/saisieClasse', [$noteController, 'saisieClasse']);
+$route->addRoute('/note/saveBatch', [$noteController, 'saveBatch']);
+$route->addRoute('/note/getStudentsByClasse', [$noteController, 'getStudentsByClasse']);
 $route->addRoute('/note/add', [$noteController, 'add']);
 $route->addRoute('/note/edit', [$noteController, 'edit']);
 $route->addRoute('/note/changer', [$noteController, 'changer']);
@@ -403,6 +408,8 @@ $route->addRoute('/note/formulaire', [$noteController, 'formulaire']);
 // Module: bulletin (BulletinController)
 $route->addRoute('/bulletin/list', [$bulletinController, 'list']);
 $route->addRoute('/bulletin/apiList', [$bulletinController, 'apiList']);
+$route->addRoute('/bulletin/pvClasse', [$bulletinController, 'pvClasse']);
+$route->addRoute('/bulletin/pvClasse/{param}', [$bulletinController, 'pvClasse']);
 $route->addRoute('/bulletin/add', [$bulletinController, 'add']);
 $route->addRoute('/bulletin/edit', [$bulletinController, 'edit']);
 $route->addRoute('/bulletin/changer', [$bulletinController, 'changer']);

@@ -80,7 +80,7 @@ class EnseignantMatiereController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Affectation de cours créée avec succès!');
+            $this->success('Affectation de composition créée avec succès!');
         } else {
             $this->error('Erreur lors de la création');
         }
@@ -167,7 +167,7 @@ class EnseignantMatiereController extends BaseController
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("EnseignantMatiereController::details error: " . $e->getMessage());
-            $this->renderNotFound("L'affectation de cours demandée est introuvable.");
+            $this->renderNotFound("L'affectation de composition demandée est introuvable.");
         }
         $this->loadView('../views/enseignant_matiere/details.php', [
             'item' => $item, 

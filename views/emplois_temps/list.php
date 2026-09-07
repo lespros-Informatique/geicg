@@ -15,7 +15,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Emplois du Temps</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Emplois du Temps</p>
         </div>
-        <a href="<?= RACINE ?>emploi/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= RACINE ?>emploi/formulaire" id="btn-add-emploi" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Créneau Horaire
         </a>
       </div>
@@ -106,6 +106,12 @@ $(document).ready(function() {
   });
 
   $('#filter-classe, #filter-annee').on('change', function() {
+    var cls = $('#filter-classe').val();
+    if (cls) {
+      $('#btn-add-emploi').attr('href', '<?= RACINE ?>emploi/formulaire?classe_code=' + encodeURIComponent(cls));
+    } else {
+      $('#btn-add-emploi').attr('href', '<?= RACINE ?>emploi/formulaire');
+    }
     table.ajax.reload();
   });
 

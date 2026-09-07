@@ -10,12 +10,27 @@ class BulletinController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/bulletin/list.php');
+        $anneeModel = new ModelAnnee();
+        $annees = $anneeModel->getAll();
+        $niveaux = (new ModelNiveau())->getAll();
+        $classes = (new ModelClasse())->getAll();
+        $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+
+        $this->loadView('../views/bulletin/list.php', [
+            'annees' => $annees,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
+            'selectedAnneeCode' => $selectedAnneeCode
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+
         $sql = "SELECT i.*, 
                        CONCAT(e.nom_etudiant, ' ', e.prenom_etudiant) AS etudiant_nom,
                        e.matricule_etudiant,
@@ -25,9 +40,32 @@ class BulletinController extends BaseController
                 FROM inscriptions i
                 LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
                 LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-                LEFT JOIN annees a ON a.code_annee = i.annee_code
-                ORDER BY i.id_inscription DESC";
-        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+                LEFT JOIN annees a ON a.code_annee = i.annee_code";
+
+        $conditions = [];
+        $params = [];
+        if (!empty($anneeCode)) {
+            $conditions[] = "(i.annee_code = ? OR i.annee_code IS NULL OR i.annee_code = '')";
+            $params[] = $anneeCode;
+        }
+        if (!empty($niveauCode)) {
+            $conditions[] = "cl.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if (!empty($classeCode)) {
+            $conditions[] = "i.classe_code = ?";
+            $params[] = $classeCode;
+        }
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+
+        $sql .= " ORDER BY i.id_inscription DESC";
+
+        $stmt = $this->model->getCon()->prepare($sql);
+        $stmt->execute($params);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_inscription'];
@@ -266,5 +304,170 @@ class BulletinController extends BaseController
     {
         $this->requireAuth();
         $this->details($details);
+    }
+
+    public function pvClasse($param = null)
+    {
+        $this->requireAuth();
+        $db = $this->model->getCon();
+        $anneeCode = $this->getActiveAnneeCode();
+
+        $classes = (new ModelClasse())->getAll();
+        $semestres = $db->query("SELECT * FROM semestres WHERE statut_semestre = 'actif' ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $selectedClasseCode = $_GET['classe_code'] ?? '';
+        if (empty($selectedClasseCode) && !empty($param)) {
+            try {
+                $selectedClasseCode = $this->validator->decrypter($param);
+            } catch (Exception $e) {
+                $selectedClasseCode = $param;
+            }
+        }
+        if (empty($selectedClasseCode) && !empty($classes)) {
+            $selectedClasseCode = $classes[0]['code_classe'] ?? '';
+        }
+
+        $selectedSemestreCode = $_GET['semestre_code'] ?? ($semestres[0]['code_semestre'] ?? '');
+
+        $classeInfo = null;
+        $matieres = [];
+        $pvRows = [];
+        $statsClasse = [
+            'totalEleves' => 0,
+            'moyenneGeneraleClasse' => 0,
+            'moyenneMax' => 0,
+            'moyenneMin' => 0,
+            'tauxAdmis' => 0
+        ];
+
+        if (!empty($selectedClasseCode)) {
+            $stmtC = $db->prepare("
+                SELECT cl.*, f.libelle_filiere, n.libelle_niveau
+                FROM classes cl
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                WHERE cl.code_classe = ?
+            ");
+            $stmtC->execute([$selectedClasseCode]);
+            $classeInfo = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+            $stmtM = $db->prepare("
+                SELECT DISTINCT m.code_matiere, m.libelle_matiere, 
+                       COALESCE(em.coefficient_enseignant_matiere, em.coefficient, 1.00) AS coefficient
+                FROM matieres m
+                INNER JOIN enseignant_matiere em ON em.matiere_code = m.code_matiere
+                WHERE em.classe_code = ?
+                ORDER BY m.libelle_matiere ASC
+            ");
+            $stmtM->execute([$selectedClasseCode]);
+            $matieres = $stmtM->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($matieres)) {
+                $matieres = $db->query("SELECT code_matiere, libelle_matiere, 1.00 as coefficient FROM matieres ORDER BY libelle_matiere ASC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
+            }
+
+            $stmtE = $db->prepare("
+                SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant
+                FROM inscriptions i
+                INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '')
+                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            ");
+            $stmtE->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
+            $etudiants = $stmtE->fetchAll(PDO::FETCH_ASSOC);
+
+            $tempPvData = [];
+            $nbAdmis = 0;
+
+            foreach ($etudiants as $e) {
+                $inscCode = $e['code_inscription'];
+                $notesMatiere = [];
+                $totalPointsEtud = 0;
+                $totalCoefEtud = 0;
+
+                foreach ($matieres as $m) {
+                    $matCode = $m['code_matiere'];
+                    $coef = (float)$m['coefficient'];
+
+                    $stmtNote = $db->prepare("
+                        SELECT AVG(valeur_note) as moy_mat
+                        FROM notes
+                        WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND statut_note = 'actif'
+                    ");
+                    $stmtNote->execute([$inscCode, $matCode, $selectedSemestreCode]);
+                    $moyMatVal = $stmtNote->fetchColumn();
+
+                    if ($moyMatVal !== null && $moyMatVal !== false) {
+                        $moyMat = round((float)$moyMatVal, 2);
+                        $pts = round($moyMat * $coef, 2);
+                        $totalPointsEtud += $pts;
+                        $totalCoefEtud += $coef;
+                        $notesMatiere[$matCode] = $moyMat;
+                    } else {
+                        $notesMatiere[$matCode] = null;
+                    }
+                }
+
+                $moyenneGen = $totalCoefEtud > 0 ? round($totalPointsEtud / $totalCoefEtud, 2) : 0;
+                
+                $decision = 'Non éval.';
+                if ($totalCoefEtud > 0) {
+                    if ($moyenneGen >= 10) {
+                        $decision = 'Admis(e)';
+                        $nbAdmis++;
+                    } else {
+                        $decision = 'Ajourné(e)';
+                    }
+                }
+
+                $tempPvData[] = [
+                    'inscription_code' => $inscCode,
+                    'matricule' => $e['matricule_etudiant'],
+                    'nom_prenom' => $e['nom_etudiant'] . ' ' . $e['prenom_etudiant'],
+                    'sexe' => $e['sexe_etudiant'],
+                    'notes_matieres' => $notesMatiere,
+                    'total_points' => $totalPointsEtud,
+                    'total_coef' => $totalCoefEtud,
+                    'moyenne_generale' => $moyenneGen,
+                    'decision' => $decision,
+                    'rang' => 1
+                ];
+            }
+
+            usort($tempPvData, function($a, $b) {
+                return $b['moyenne_generale'] <=> $a['moyenne_generale'];
+            });
+
+            $rank = 1;
+            $allMoyennes = [];
+            foreach ($tempPvData as &$row) {
+                $row['rang'] = $rank++;
+                if ($row['total_coef'] > 0) {
+                    $allMoyennes[] = $row['moyenne_generale'];
+                }
+            }
+            unset($row);
+
+            $pvRows = $tempPvData;
+
+            if (!empty($allMoyennes)) {
+                $statsClasse['totalEleves'] = count($allMoyennes);
+                $statsClasse['moyenneMax'] = max($allMoyennes);
+                $statsClasse['moyenneMin'] = min($allMoyennes);
+                $statsClasse['moyenneGeneraleClasse'] = round(array_sum($allMoyennes) / count($allMoyennes), 2);
+                $statsClasse['tauxAdmis'] = round(($nbAdmis / count($allMoyennes)) * 100, 1);
+            }
+        }
+
+        $this->loadView('../views/bulletin/pv_classe.php', [
+            'classes' => $classes,
+            'semestres' => $semestres,
+            'selectedClasseCode' => $selectedClasseCode,
+            'selectedSemestreCode' => $selectedSemestreCode,
+            'classeInfo' => $classeInfo,
+            'matieres' => $matieres,
+            'pvRows' => $pvRows,
+            'statsClasse' => $statsClasse
+        ]);
     }
 }

@@ -268,8 +268,18 @@ class EmploiController extends BaseController
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
+        $submitAction = $_POST['submit_action'] ?? 'save';
+        if (!empty($data['classe_code'])) {
+            $_SESSION['last_emploi_classe_code'] = $data['classe_code'];
+        }
+
         if ($this->model->create($filteredData)) {
-            $this->success('Créneau horaire planifié avec succès!');
+            if ($submitAction === 'save_and_new') {
+                $redirectUrl = RACINE . 'emploi/formulaire?classe_code=' . urlencode($data['classe_code']);
+                $this->success('Créneau horaire planifié avec succès ! Saisissez le créneau suivant.', ['redirect' => $redirectUrl]);
+            } else {
+                $this->success('Créneau horaire planifié avec succès!', ['redirect' => RACINE . 'emploi/list']);
+            }
         } else {
             $this->error('Erreur lors de la création');
         }
@@ -380,6 +390,10 @@ class EmploiController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/emplois_temps/edit.php', ['item' => []]);
+        $selectedClasseCode = $_GET['classe_code'] ?? ($_SESSION['last_emploi_classe_code'] ?? '');
+        $this->loadView('../views/emplois_temps/edit.php', [
+            'item' => [],
+            'selectedClasseCode' => $selectedClasseCode
+        ]);
     }
 }

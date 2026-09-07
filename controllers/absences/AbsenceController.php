@@ -169,4 +169,125 @@ class AbsenceController extends BaseController
             $this->error('Absence introuvable');
         }
     }
+
+    public function saisieClasse()
+    {
+        $this->requireAuth();
+        $anneeCode = $this->getActiveAnneeCode();
+        $classes = (new ModelClasse())->getAll();
+        $matieres = (new ModelMatiere())->getAll();
+        
+        $selectedClasseCode = $_GET['classe_code'] ?? '';
+        $selectedDate = $_GET['date_absence'] ?? date('Y-m-d');
+        $selectedMatiereCode = $_GET['matiere_code'] ?? '';
+
+        $etudiants = [];
+        $existingAbsences = [];
+
+        if (!empty($selectedClasseCode)) {
+            $stmt = $this->model->getCon()->prepare("
+                SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
+                FROM inscriptions i
+                INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '')
+                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            ");
+            $stmt->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
+            $etudiants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($selectedDate)) {
+                $sqlAbs = "SELECT * FROM absences WHERE classe_code = ? AND date_absence = ?";
+                $paramsAbs = [$selectedClasseCode, $selectedDate];
+                if (!empty($selectedMatiereCode)) {
+                    $sqlAbs .= " AND matiere_code = ?";
+                    $paramsAbs[] = $selectedMatiereCode;
+                }
+                $stmtAbs = $this->model->getCon()->prepare($sqlAbs);
+                $stmtAbs->execute($paramsAbs);
+                $rows = $stmtAbs->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($rows as $r) {
+                    $existingAbsences[$r['etudiant_code']] = $r;
+                }
+            }
+        }
+
+        $this->loadView('../views/absences/saisie_classe.php', [
+            'classes' => $classes,
+            'matieres' => $matieres,
+            'selectedClasseCode' => $selectedClasseCode,
+            'selectedDate' => $selectedDate,
+            'selectedMatiereCode' => $selectedMatiereCode,
+            'etudiants' => $etudiants,
+            'existingAbsences' => $existingAbsences
+        ]);
+    }
+
+    public function saveBatch()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+
+        $classeCode = $this->post('classe_code');
+        $dateAbsence = $this->post('date_absence');
+        $matiereCode = $this->post('matiere_code');
+        $dureeHeures = (float)($this->post('duree_heures') ?? 2);
+        $absencesData = $_POST['absences'] ?? [];
+
+        if (empty($classeCode) || empty($dateAbsence)) {
+            $this->error('Classe et Date d\'absence sont obligatoires');
+            return;
+        }
+
+        $db = $this->model->getCon();
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
+
+        try {
+            $db->beginTransaction();
+
+            foreach ($absencesData as $etudiantCode => $info) {
+                $isAbsent = !empty($info['is_absent']);
+                $justifiee = !empty($info['justifiee']) ? $info['justifiee'] : 'non';
+                $motif = trim($info['motif'] ?? '');
+
+                $stmtCheck = $db->prepare("
+                    SELECT id_absence FROM absences 
+                    WHERE etudiant_code = ? AND classe_code = ? AND date_absence = ? AND (matiere_code = ? OR (matiere_code IS NULL AND ? = ''))
+                ");
+                $stmtCheck->execute([$etudiantCode, $classeCode, $dateAbsence, $matiereCode, $matiereCode]);
+                $existingId = $stmtCheck->fetchColumn();
+
+                if ($isAbsent) {
+                    if ($existingId) {
+                        $stmtUpd = $db->prepare("
+                            UPDATE absences 
+                            SET duree_heures = ?, justifiee = ?, motif_absence = ?
+                            WHERE id_absence = ?
+                        ");
+                        $stmtUpd->execute([$dureeHeures, $justifiee, $motif, $existingId]);
+                    } else {
+                        $codeAbs = $this->validator->generateCode('absences', 'code_absence', 'ABS-', 8);
+                        $stmtIns = $db->prepare("
+                            INSERT INTO absences (code_absence, etudiant_code, classe_code, matiere_code, date_absence, duree_heures, justifiee, motif_absence, user_code, etablissement_code, annee_code, created_at_absence)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ");
+                        $stmtIns->execute([$codeAbs, $etudiantCode, $classeCode, $matiereCode ?: null, $dateAbsence, $dureeHeures, $justifiee, $motif, $userCode, $etabCode, $anneeCode, date('Y-m-d H:i:s')]);
+                    }
+                } else {
+                    if ($existingId) {
+                        $stmtDel = $db->prepare("DELETE FROM absences WHERE id_absence = ?");
+                        $stmtDel->execute([$existingId]);
+                    }
+                }
+            }
+
+            $db->commit();
+            $this->success('Registre des absences de la classe mis à jour avec succès !', ['reload' => true]);
+        } catch (Exception $e) {
+            $db->rollBack();
+            error_log("AbsenceController::saveBatch error: " . $e->getMessage());
+            $this->error('Erreur lors de la sauvegarde : ' . $e->getMessage());
+        }
+    }
 }

@@ -168,4 +168,134 @@ class NoteController extends BaseController
         $this->requireAuth();
         $this->loadView('../views/notes/edit.php', ['item' => []]);
     }
+
+    public function saisieClasse()
+    {
+        $this->requireAuth();
+        $anneeCode = $this->getActiveAnneeCode();
+        $classes = (new ModelClasse())->getAll();
+        $matieres = (new ModelMatiere())->getAll();
+        
+        $db = $this->model->getCon();
+        $semestres = $db->query("SELECT * FROM semestres WHERE statut_semestre = 'actif' ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $selectedClasseCode = $_GET['classe_code'] ?? '';
+        $selectedMatiereCode = $_GET['matiere_code'] ?? '';
+        $selectedSemestreCode = $_GET['semestre_code'] ?? '';
+        $selectedTypeEval = $_GET['type_evaluation_code'] ?? 'EXAMEN';
+
+        $etudiants = [];
+        $existingNotes = [];
+
+        if (!empty($selectedClasseCode)) {
+            $stmt = $db->prepare("
+                SELECT i.id_inscription, i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
+                FROM inscriptions i
+                INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '')
+                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            ");
+            $stmt->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
+            $etudiants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($selectedMatiereCode) && !empty($selectedSemestreCode)) {
+                $sqlNotes = "
+                    SELECT n.*, n.inscription_code 
+                    FROM notes n
+                    INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
+                    WHERE i.classe_code = ? AND n.matiere_code = ? AND n.semestre_code = ? AND n.type_evaluation_code = ? AND n.statut_note = 'actif'
+                ";
+                $stmtNotes = $db->prepare($sqlNotes);
+                $stmtNotes->execute([$selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode, $selectedTypeEval]);
+                $rows = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($rows as $r) {
+                    $existingNotes[$r['inscription_code']] = $r;
+                }
+            }
+        }
+
+        $this->loadView('../views/notes/saisie_classe.php', [
+            'classes' => $classes,
+            'matieres' => $matieres,
+            'semestres' => $semestres,
+            'selectedClasseCode' => $selectedClasseCode,
+            'selectedMatiereCode' => $selectedMatiereCode,
+            'selectedSemestreCode' => $selectedSemestreCode,
+            'selectedTypeEval' => $selectedTypeEval,
+            'etudiants' => $etudiants,
+            'existingNotes' => $existingNotes
+        ]);
+    }
+
+    public function saveBatch()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+
+        $classeCode = $this->post('classe_code');
+        $matiereCode = $this->post('matiere_code');
+        $semestreCode = $this->post('semestre_code');
+        $typeEval = $this->post('type_evaluation_code') ?? 'EXAMEN';
+        $notesData = $_POST['notes'] ?? [];
+
+        if (empty($classeCode) || empty($matiereCode) || empty($semestreCode)) {
+            $this->error('Classe, Matière et Semestre sont obligatoires pour la saisie groupée');
+            return;
+        }
+
+        $db = $this->model->getCon();
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
+
+        try {
+            $db->beginTransaction();
+
+            $savedCount = 0;
+            foreach ($notesData as $inscCode => $info) {
+                $valNoteStr = trim($info['valeur_note'] ?? '');
+                if ($valNoteStr === '') {
+                    continue;
+                }
+
+                $valNote = (float)$valNoteStr;
+                if ($valNote < 0 || $valNote > 20) {
+                    throw new Exception("La note doit être comprise entre 0 et 20.");
+                }
+
+                $obs = trim($info['observations'] ?? '');
+
+                $stmtCheck = $db->prepare("
+                    SELECT id_note FROM notes 
+                    WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND type_evaluation_code = ?
+                ");
+                $stmtCheck->execute([$inscCode, $matiereCode, $semestreCode, $typeEval]);
+                $existingId = $stmtCheck->fetchColumn();
+
+                if ($existingId) {
+                    $stmtUpd = $db->prepare("
+                        UPDATE notes 
+                        SET valeur_note = ?, observations = ?, statut_note = 'actif'
+                        WHERE id_note = ?
+                    ");
+                    $stmtUpd->execute([$valNote, $obs, $existingId]);
+                } else {
+                    $codeNote = $this->validator->generateCode('notes', 'code_note', 'NOT-', 8);
+                    $stmtIns = $db->prepare("
+                        INSERT INTO notes (code_note, inscription_code, matiere_code, semestre_code, type_evaluation_code, valeur_note, observations, statut_note, user_code, etablissement_code, annee_code, created_at_note)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?, ?)
+                    ");
+                    $stmtIns->execute([$codeNote, $inscCode, $matiereCode, $semestreCode, $typeEval, $valNote, $obs, $userCode, $etabCode, $anneeCode, date('Y-m-d H:i:s')]);
+                }
+                $savedCount++;
+            }
+
+            $db->commit();
+            $this->success("$savedCount note(s) enregistrée(s) avec succès pour la classe !", ['reload' => true]);
+        } catch (Exception $e) {
+            $db->rollBack();
+            error_log("NoteController::saveBatch error: " . $e->getMessage());
+            $this->error('Erreur lors de l\'enregistrement des notes : ' . $e->getMessage());
+        }
+    }
 }

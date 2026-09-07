@@ -40,8 +40,11 @@ $enseignants = (new ModelEnseignant())->getAll();
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe concernée <span style="color: #EF4444;">*</span></label>
               <select class="form-control select2" id="sel_cls_et" style="width: 100%;" name="classe_code" required>
                 <option value="">-- Rechercher une classe --</option>
+                <?php 
+                  $currentClasse = $item['classe_code'] ?? ($selectedClasseCode ?? '');
+                ?>
                 <?php foreach($classes as $cl): ?>
-                  <option value="<?= $cl['code_classe'] ?>" <?= (($item['classe_code'] ?? '') == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
+                  <option value="<?= $cl['code_classe'] ?>" <?= ($currentClasse == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
                 <?php endforeach; ?>
               </select>
             </div>
@@ -112,8 +115,17 @@ $enseignants = (new ModelEnseignant())->getAll();
             </div>
           </div>
 
-          <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" id="btn-submit-emploi" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer</button>
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
+            <?php if (empty($item['id_emploi'])): ?>
+              <button type="submit" name="submit_action" value="save_and_new" id="btn-submit-emploi-new" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px;">
+                <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Enregistrer & Créer un autre créneau pour cette classe
+              </button>
+              <button type="submit" name="submit_action" value="save" id="btn-submit-emploi" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">
+                Enregistrer & Fermer
+              </button>
+            <?php else: ?>
+              <button type="submit" name="submit_action" value="save" id="btn-submit-emploi" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer</button>
+            <?php endif; ?>
             <a href="<?= RACINE ?>emploi/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
           </div>
         </form>
@@ -226,7 +238,7 @@ $(document).ready(function() {
                 list.append(itemHtml);
               });
 
-              $('#btn-submit-emploi').prop('disabled', true).css('opacity', '0.6').attr('title', 'Veuillez résoudre le conflit avant d\'enregistrer');
+              $('#btn-submit-emploi, #btn-submit-emploi-new').prop('disabled', true).css('opacity', '0.6').attr('title', 'Veuillez résoudre le conflit avant d\'enregistrer');
               banner.stop(true, true).slideDown(250);
             } else {
               banner.css({ 'background': '#F0FDF4', 'border': '1.5px solid #BBF7D0' });
@@ -234,7 +246,7 @@ $(document).ready(function() {
               icon.attr('data-lucide', 'check-circle-2');
               title.css('color', '#166534').text('Créneau Parfaitement Disponible');
               subtitle.css('color', '#15803D').text('La salle, l\'enseignant et la classe sont 100% libres sur cette plage horaire.');
-              $('#btn-submit-emploi').prop('disabled', false).css('opacity', '1').removeAttr('title');
+              $('#btn-submit-emploi, #btn-submit-emploi-new').prop('disabled', false).css('opacity', '1').removeAttr('title');
               banner.stop(true, true).slideDown(250);
             }
             if (window.lucide) lucide.createIcons();
@@ -254,7 +266,10 @@ $(document).ready(function() {
     checkScheduleConflicts();
   });
 
-  // Exécution initiale si des champs sont déjà renseignés (ex: mode édition)
+  // Exécution initiale si des champs sont déjà renseignés
+  if ($('#sel_cls_et').val()) {
+    checkAndAutoSelectTeacher();
+  }
   if ($('input[name="heure_debut"]').val() && $('input[name="heure_fin"]').val()) {
     checkScheduleConflicts();
   }

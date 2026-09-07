@@ -11,7 +11,7 @@ $nbNotes = $nbNotes ?? 0;
       
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Affectation de Cours</h1>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Affectation de Composition</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails du binôme enseignant-matière et classe bénéficiaire</p>
         </div>
         <div style="display: flex; gap: 12px;">
