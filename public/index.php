@@ -379,6 +379,7 @@ $route->addRoute('/emploi/changer', [$emploiController, 'changer']);
 $route->addRoute('/emploi/details/{param}', [$emploiController, 'details']);
 $route->addRoute('/emploi/edition/{param}', [$emploiController, 'edition']);
 $route->addRoute('/emploi/formulaire', [$emploiController, 'formulaire']);
+$route->addRoute('/emploi/setSessionClasse', [$emploiController, 'setSessionClasse']);
 
 // Module: absence (AbsenceController)
 $route->addRoute('/absence/list', [$absenceController, 'list']);

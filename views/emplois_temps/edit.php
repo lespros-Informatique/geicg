@@ -30,6 +30,36 @@ $enseignants = (new ModelEnseignant())->getAll();
         </a>
       </div>
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+        <?php
+          $currentClasse = $item['classe_code'] ?? ($selectedClasseCode ?? '');
+          $activeClasseLibelle = $activeClasseLibelle ?? '';
+          if (empty($activeClasseLibelle) && !empty($currentClasse)) {
+              foreach ($classes as $c) {
+                  if ($c['code_classe'] == $currentClasse) {
+                      $activeClasseLibelle = $c['libelle_classe'];
+                      break;
+                  }
+              }
+          }
+        ?>
+        <!-- BANDEAU INFORMATION CLASSE EN COURS -->
+        <div id="active-class-banner" style="background: #F0F9FF; border: 1.5px solid #BAE6FD; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: all 0.3s ease;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: #0284C7; color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800;">
+              <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #0284C7;">Classe en cours de planification</div>
+              <div id="active-class-title" style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 1px;">
+                <?= !empty($activeClasseLibelle) ? htmlspecialchars($activeClasseLibelle) : 'Aucune classe sélectionnée' ?>
+              </div>
+            </div>
+          </div>
+          <span id="active-class-badge" class="badge" style="background: #1E3A5F; color: #FFFFFF; font-size: 12px; padding: 6px 14px; border-radius: 6px; font-weight: 700; display: <?= !empty($activeClasseLibelle) ? 'inline-block' : 'none' ?>;">
+            📌 Session active
+          </span>
+        </div>
+
         <form action="<?= RACINE ?>emploi/<?= !empty($item['id_emploi']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_emploi'])): ?>
@@ -40,9 +70,6 @@ $enseignants = (new ModelEnseignant())->getAll();
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe concernée <span style="color: #EF4444;">*</span></label>
               <select class="form-control select2" id="sel_cls_et" style="width: 100%;" name="classe_code" required>
                 <option value="">-- Rechercher une classe --</option>
-                <?php 
-                  $currentClasse = $item['classe_code'] ?? ($selectedClasseCode ?? '');
-                ?>
                 <?php foreach($classes as $cl): ?>
                   <option value="<?= $cl['code_classe'] ?>" <?= ($currentClasse == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
                 <?php endforeach; ?>
@@ -256,8 +283,34 @@ $(document).ready(function() {
     }, 150);
   }
 
+  // 3. Mise à jour dynamique du bandeau de classe en cours & sync session
+  function updateActiveClassBanner() {
+    var selText = $('#sel_cls_et option:selected').text();
+    var val = $('#sel_cls_et').val();
+
+    if (val && selText && val !== '') {
+      $('#active-class-title').text(selText);
+      $('#active-class-badge').show();
+      
+      $.ajax({
+        url: '<?= RACINE ?>emploi/setSessionClasse',
+        type: 'GET',
+        data: { classe_code: val }
+      });
+    } else {
+      $('#active-class-title').text('Aucune classe sélectionnée');
+      $('#active-class-badge').hide();
+    }
+  }
+
   // Événements
-  $('#sel_cls_et, #sel_mat_et').on('change select2:select', function() {
+  $('#sel_cls_et').on('change select2:select', function() {
+    updateActiveClassBanner();
+    checkAndAutoSelectTeacher();
+    checkScheduleConflicts();
+  });
+
+  $('#sel_mat_et').on('change select2:select', function() {
     checkAndAutoSelectTeacher();
     checkScheduleConflicts();
   });

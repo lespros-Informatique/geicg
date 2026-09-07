@@ -271,6 +271,10 @@ class EmploiController extends BaseController
         $submitAction = $_POST['submit_action'] ?? 'save';
         if (!empty($data['classe_code'])) {
             $_SESSION['last_emploi_classe_code'] = $data['classe_code'];
+            $stmtCls = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmtCls->execute([$data['classe_code']]);
+            $libelleCls = $stmtCls->fetchColumn();
+            if ($libelleCls) $_SESSION['last_emploi_classe_libelle'] = $libelleCls;
         }
 
         if ($this->model->create($filteredData)) {
@@ -387,13 +391,43 @@ class EmploiController extends BaseController
         $this->loadView('../views/emplois_temps/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
 
+    public function setSessionClasse()
+    {
+        $this->requireAuth();
+        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        if (!empty($classeCode)) {
+            $_SESSION['last_emploi_classe_code'] = $classeCode;
+            $stmt = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmt->execute([$classeCode]);
+            $libelle = $stmt->fetchColumn() ?: $classeCode;
+            $_SESSION['last_emploi_classe_libelle'] = $libelle;
+            $this->json(['status' => 1, 'classe_code' => $classeCode, 'libelle_classe' => $libelle]);
+        } else {
+            unset($_SESSION['last_emploi_classe_code'], $_SESSION['last_emploi_classe_libelle']);
+            $this->json(['status' => 1, 'message' => 'Session classe réinitialisée']);
+        }
+    }
+
     public function formulaire()
     {
         $this->requireAuth();
         $selectedClasseCode = $_GET['classe_code'] ?? ($_SESSION['last_emploi_classe_code'] ?? '');
+        $activeClasseLibelle = '';
+
+        if (!empty($selectedClasseCode)) {
+            $_SESSION['last_emploi_classe_code'] = $selectedClasseCode;
+            $stmt = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmt->execute([$selectedClasseCode]);
+            $activeClasseLibelle = $stmt->fetchColumn() ?: '';
+            if ($activeClasseLibelle) {
+                $_SESSION['last_emploi_classe_libelle'] = $activeClasseLibelle;
+            }
+        }
+
         $this->loadView('../views/emplois_temps/edit.php', [
             'item' => [],
-            'selectedClasseCode' => $selectedClasseCode
+            'selectedClasseCode' => $selectedClasseCode,
+            'activeClasseLibelle' => $activeClasseLibelle
         ]);
     }
 }
