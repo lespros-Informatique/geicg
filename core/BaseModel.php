@@ -69,6 +69,31 @@ abstract class BaseModel
         }
     }
 
+    public function getByCode(string $code, ?string $codeField = null): array
+    {
+        try {
+            if ($codeField === null) {
+                $base = $this->table;
+                if (substr($base, -3) === 'ies') {
+                    $base = substr($base, 0, -3) . 'y';
+                } elseif (substr($base, -2) === 'es' && strlen($base) > 2) {
+                    $base = substr($base, 0, -1);
+                } elseif (substr($base, -1) === 's' && strlen($base) > 1) {
+                    $base = substr($base, 0, -1);
+                }
+                $codeField = "code_{$base}";
+            }
+            $sql = "SELECT * FROM {$this->table} WHERE `{$codeField}` = ?";
+            $stmt = $this->pdo->getCon()->prepare($sql);
+            $stmt->execute([$code]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("Get by code {$this->table}: " . $e->getMessage());
+            return [];
+        }
+    }
+
+
     public function create(array $data): bool
     {
         try {

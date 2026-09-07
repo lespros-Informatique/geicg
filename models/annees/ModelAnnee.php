@@ -118,4 +118,18 @@ class ModelAnnee extends BaseModel
             return null;
         }
     }
+
+    public function getByCode(string $code, ?string $codeField = null): array
+    {
+        try {
+            $field = $codeField ?? 'code_annee';
+            $stmt = $this->getCon()->prepare("SELECT * FROM annees WHERE `{$field}` = ?");
+            $stmt->execute([$code]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
 }
+
+

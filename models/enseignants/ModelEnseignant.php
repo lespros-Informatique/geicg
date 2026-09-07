@@ -101,7 +101,7 @@ class ModelEnseignant extends BaseModel
         }
     }
 
-    public function getByCode(string $code): array
+    public function getByCode(string $code, ?string $codeField = null): array
     {
         $sql = "
             SELECT e.*,

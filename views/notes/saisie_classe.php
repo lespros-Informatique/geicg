@@ -72,14 +72,36 @@ $typeEvals = [
             </div>
             <div>
               <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: block;">Type d'Évaluation</label>
-              <select name="type_evaluation_code" class="form-control select2" style="width: 100%;">
+              <select name="type_evaluation_code" id="sel_type_eval" class="form-control select2" style="width: 100%;">
                 <?php foreach ($typeEvals as $code => $lbl): ?>
                   <option value="<?= htmlspecialchars($code) ?>" <?= ($selectedTypeEval === $code) ? 'selected' : '' ?>><?= htmlspecialchars($lbl) ?></option>
                 <?php endforeach; ?>
               </select>
             </div>
+            
+            <?php if (!empty($compositionsProgrammees)): ?>
+              <div style="grid-column: span 2;">
+                <label style="font-size: 12px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="award" style="width: 14px; height: 14px; color: #0284C7;"></i> Épreuve / Composition Programmée
+                </label>
+                <select name="composition_code" class="form-control select2" style="width: 100%;">
+                  <option value="">-- Toutes les épreuves ou Saisie globale --</option>
+                  <?php foreach ($compositionsProgrammees as $comp): ?>
+                    <?php 
+                      $dComp = !empty($comp['date_composition']) ? date('d/m/Y', strtotime($comp['date_composition'])) : '';
+                      $coef = !empty($comp['coefficient']) ? ' (Coef ' . floatval($comp['coefficient']) . ')' : '';
+                      $isSel = ($selectedCompositionCode === $comp['code_composition']);
+                    ?>
+                    <option value="<?= htmlspecialchars($comp['code_composition']) ?>" <?= $isSel ? 'selected' : '' ?>>
+                      [<?= htmlspecialchars($comp['type_composition']) ?>] <?= htmlspecialchars($comp['libelle_composition']) ?> - <?= $dComp ?> <?= $coef ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            <?php endif; ?>
+
             <div>
-              <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; width: 100%; padding: 10px;">
+              <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; font-weight: 700; border-radius: 8px; width: 100%; padding: 10px; box-shadow: 0 4px 10px rgba(30,58,95,0.25);">
                 <i data-lucide="filter" style="width: 16px; height: 16px; vertical-align: middle;"></i> Afficher Grille
               </button>
             </div>
@@ -93,7 +115,9 @@ $typeEvals = [
           <input type="hidden" name="matiere_code" value="<?= htmlspecialchars($selectedMatiereCode) ?>">
           <input type="hidden" name="semestre_code" value="<?= htmlspecialchars($selectedSemestreCode) ?>">
           <input type="hidden" name="type_evaluation_code" value="<?= htmlspecialchars($selectedTypeEval) ?>">
+          <input type="hidden" name="composition_code" value="<?= htmlspecialchars($selectedCompositionCode) ?>">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+
 
           <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">

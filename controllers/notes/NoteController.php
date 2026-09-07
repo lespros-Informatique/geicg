@@ -187,10 +187,12 @@ class NoteController extends BaseController
         $selectedClasseCode = $_GET['classe_code'] ?? '';
         $selectedMatiereCode = $_GET['matiere_code'] ?? '';
         $selectedSemestreCode = $_GET['semestre_code'] ?? '';
-        $selectedTypeEval = $_GET['type_evaluation_code'] ?? 'EXAMEN';
+        $selectedTypeEval = $_GET['type_evaluation_code'] ?? 'COMPOSITION';
+        $selectedCompositionCode = $_GET['composition_code'] ?? '';
 
         $etudiants = [];
         $existingNotes = [];
+        $compositionsProgrammees = [];
 
         if (!empty($selectedClasseCode)) {
             $stmt = $db->prepare("
@@ -203,18 +205,33 @@ class NoteController extends BaseController
             $stmt->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
             $etudiants = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            if (!empty($selectedMatiereCode) && !empty($selectedSemestreCode)) {
-                $sqlNotes = "
-                    SELECT n.*, n.inscription_code 
-                    FROM notes n
-                    INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
-                    WHERE i.classe_code = ? AND n.matiere_code = ? AND n.semestre_code = ? AND n.type_evaluation_code = ? AND n.statut_note = 'actif'
-                ";
-                $stmtNotes = $db->prepare($sqlNotes);
-                $stmtNotes->execute([$selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode, $selectedTypeEval]);
-                $rows = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
-                foreach ($rows as $r) {
-                    $existingNotes[$r['inscription_code']] = $r;
+            if (!empty($selectedMatiereCode)) {
+                $compModel = new ModelComposition();
+                $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode);
+
+                if (!empty($selectedSemestreCode)) {
+                    $sqlNotes = "
+                        SELECT n.*, n.inscription_code 
+                        FROM notes n
+                        INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
+                        WHERE i.classe_code = ? AND n.matiere_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+                    ";
+                    $paramsNotes = [$selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode];
+
+                    if (!empty($selectedCompositionCode)) {
+                        $sqlNotes .= " AND n.composition_code = ?";
+                        $paramsNotes[] = $selectedCompositionCode;
+                    } else if (!empty($selectedTypeEval)) {
+                        $sqlNotes .= " AND n.type_evaluation_code = ?";
+                        $paramsNotes[] = $selectedTypeEval;
+                    }
+
+                    $stmtNotes = $db->prepare($sqlNotes);
+                    $stmtNotes->execute($paramsNotes);
+                    $rows = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($rows as $r) {
+                        $existingNotes[$r['inscription_code']] = $r;
+                    }
                 }
             }
         }
@@ -227,10 +244,13 @@ class NoteController extends BaseController
             'selectedMatiereCode' => $selectedMatiereCode,
             'selectedSemestreCode' => $selectedSemestreCode,
             'selectedTypeEval' => $selectedTypeEval,
+            'selectedCompositionCode' => $selectedCompositionCode,
+            'compositionsProgrammees' => $compositionsProgrammees,
             'etudiants' => $etudiants,
             'existingNotes' => $existingNotes
         ]);
     }
+
 
     public function saveBatch()
     {
@@ -240,7 +260,8 @@ class NoteController extends BaseController
         $classeCode = $this->post('classe_code');
         $matiereCode = $this->post('matiere_code');
         $semestreCode = $this->post('semestre_code');
-        $typeEval = $this->post('type_evaluation_code') ?? 'EXAMEN';
+        $typeEval = $this->post('type_evaluation_code') ?? 'COMPOSITION';
+        $compositionCode = $this->post('composition_code') ?? null;
         $notesData = $_POST['notes'] ?? [];
 
         if (empty($classeCode) || empty($matiereCode) || empty($semestreCode)) {
@@ -270,27 +291,36 @@ class NoteController extends BaseController
 
                 $obs = trim($info['observations'] ?? '');
 
-                $stmtCheck = $db->prepare("
-                    SELECT id_note FROM notes 
-                    WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND type_evaluation_code = ?
-                ");
-                $stmtCheck->execute([$inscCode, $matiereCode, $semestreCode, $typeEval]);
+                if (!empty($compositionCode)) {
+                    $stmtCheck = $db->prepare("
+                        SELECT id_note FROM notes 
+                        WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND composition_code = ?
+                    ");
+                    $stmtCheck->execute([$inscCode, $matiereCode, $semestreCode, $compositionCode]);
+                } else {
+                    $stmtCheck = $db->prepare("
+                        SELECT id_note FROM notes 
+                        WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND type_evaluation_code = ?
+                    ");
+                    $stmtCheck->execute([$inscCode, $matiereCode, $semestreCode, $typeEval]);
+                }
+
                 $existingId = $stmtCheck->fetchColumn();
 
                 if ($existingId) {
                     $stmtUpd = $db->prepare("
                         UPDATE notes 
-                        SET valeur_note = ?, observations = ?, statut_note = 'actif'
+                        SET valeur_note = ?, observations = ?, composition_code = ?, statut_note = 'actif'
                         WHERE id_note = ?
                     ");
-                    $stmtUpd->execute([$valNote, $obs, $existingId]);
+                    $stmtUpd->execute([$valNote, $obs, $compositionCode, $existingId]);
                 } else {
                     $codeNote = $this->validator->generateCode('notes', 'code_note', 'NOT-', 8);
                     $stmtIns = $db->prepare("
-                        INSERT INTO notes (code_note, inscription_code, matiere_code, semestre_code, type_evaluation_code, valeur_note, observations, statut_note, user_code, etablissement_code, annee_code, created_at_note)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?, ?)
+                        INSERT INTO notes (code_note, inscription_code, matiere_code, semestre_code, type_evaluation_code, composition_code, valeur_note, observations, statut_note, user_code, etablissement_code, annee_code, created_at_note)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?, ?)
                     ");
-                    $stmtIns->execute([$codeNote, $inscCode, $matiereCode, $semestreCode, $typeEval, $valNote, $obs, $userCode, $etabCode, $anneeCode, date('Y-m-d H:i:s')]);
+                    $stmtIns->execute([$codeNote, $inscCode, $matiereCode, $semestreCode, $typeEval, $compositionCode, $valNote, $obs, $userCode, $etabCode, $anneeCode, date('Y-m-d H:i:s')]);
                 }
                 $savedCount++;
             }
@@ -303,4 +333,5 @@ class NoteController extends BaseController
             $this->error('Erreur lors de l\'enregistrement des notes : ' . $e->getMessage());
         }
     }
+
 }

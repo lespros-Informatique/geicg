@@ -33,6 +33,7 @@ $enseignantMatiereController = new EnseignantMatiereController();
 $emploiController = new EmploiController();
 $absenceController = new AbsenceController();
 $noteController = new NoteController();
+$compositionController = new CompositionController();
 $bulletinController = new BulletinController();
 $evenementController = new EvenementController();
 $galerieController = new GalerieController();
@@ -412,6 +413,21 @@ $route->addRoute('/note/changer', [$noteController, 'changer']);
 $route->addRoute('/note/details/{param}', [$noteController, 'details']);
 $route->addRoute('/note/edition/{param}', [$noteController, 'edition']);
 $route->addRoute('/note/formulaire', [$noteController, 'formulaire']);
+
+// Module: composition (CompositionController)
+$route->addRoute('/composition/list', [$compositionController, 'list']);
+$route->addRoute('/composition/apiList', [$compositionController, 'apiList']);
+$route->addRoute('/composition/formulaire', [$compositionController, 'formulaire']);
+$route->addRoute('/composition/add', [$compositionController, 'add']);
+$route->addRoute('/composition/edit', [$compositionController, 'edit']);
+$route->addRoute('/composition/changer', [$compositionController, 'changer']);
+$route->addRoute('/composition/details/{param}', [$compositionController, 'details']);
+$route->addRoute('/composition/edition/{param}', [$compositionController, 'edition']);
+$route->addRoute('/composition/delete', [$compositionController, 'delete']);
+$route->addRoute('/composition/getByClasseMatiereApi', [$compositionController, 'getByClasseMatiereApi']);
+
+
+
 
 // Module: bulletin (BulletinController)
 $route->addRoute('/bulletin/list', [$bulletinController, 'list']);

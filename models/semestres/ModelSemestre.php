@@ -27,4 +27,18 @@ class ModelSemestre extends BaseModel
             return [];
         }
     }
+
+    public function getByCode(string $code, ?string $codeField = null): array
+    {
+        try {
+            $field = $codeField ?? 'code_semestre';
+            $stmt = $this->getCon()->prepare("SELECT * FROM semestres WHERE `{$field}` = ?");
+            $stmt->execute([$code]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
 }
+
+

@@ -445,9 +445,9 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
               <div><strong style="color: #1E293B; font-size: 13px; display: block;">Classes</strong><small style="color: #64748B;">Effectifs & promotions</small></div>
             </a>
 
-            <a href="<?= RACINE ?>enseignant_matiere/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="git-merge"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Affectation des Compositions</strong><small style="color: #64748B;">Matières & coefficients</small></div>
+            <a href="<?= RACINE ?>composition/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="award"></i></div>
+              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Planning Compositions & Examens</strong><small style="color: #64748B;">Compositions, devoirs & coefficients</small></div>
             </a>
 
             <a href="<?= RACINE ?>note/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">

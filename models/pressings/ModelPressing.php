@@ -7,16 +7,17 @@ class ModelPressing extends BaseModel
     protected ?string $statusField = 'statut_pressing';
     protected ?string $createdAtField = 'created_at_pressing';
 
-    public function getByCode(string $code): ?array
+    public function getByCode(string $code, ?string $codeField = null): array
     {
         try {
-            $stmt = $this->getCon()->prepare("SELECT * FROM {$this->table} WHERE code_pressing = ? LIMIT 1");
+            $field = $codeField ?? 'code_pressing';
+            $stmt = $this->getCon()->prepare("SELECT * FROM {$this->table} WHERE `{$field}` = ? LIMIT 1");
             $stmt->execute([$code]);
             $res = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $res ?: null;
+            return $res ?: [];
         } catch (Exception $e) {
             error_log('[ModelPressing::getByCode] ' . $e->getMessage());
-            return null;
+            return [];
         }
     }
 

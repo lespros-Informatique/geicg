@@ -36,7 +36,7 @@ class ModelTranche extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getById($id): array
+    public function getById(int $id): array
     {
         $stmt = $this->getCon()->prepare("
             SELECT t.*, 

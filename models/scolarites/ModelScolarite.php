@@ -41,7 +41,7 @@ class ModelScolarite extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getById($id): array
+    public function getById(int $id): array
     {
         $stmt = $this->getCon()->prepare("
             SELECT s.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee

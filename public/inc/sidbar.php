@@ -476,11 +476,7 @@
                     <i data-lucide="user-check"></i> <span>Corps Enseignant</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showAffectations): ?>
-                <a href="<?= RACINE ?>enseignant_matiere/list" class="nav-item sub <?= strpos($currentUri, '/enseignant_matiere/') !== false ? 'active' : '' ?>" data-title="Affectations Compositions">
-                    <i data-lucide="link"></i> <span>Affectations Compositions</span>
-                </a>
-                <?php endif; ?>
+
                 <?php if ($showEmplois): ?>
                 <a href="<?= RACINE ?>emploi/list" class="nav-item sub <?= strpos($currentUri, '/emploi/') !== false ? 'active' : '' ?>" data-title="Emplois du Temps">
                     <i data-lucide="calendar"></i> <span>Emplois du Temps</span>
@@ -492,6 +488,9 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showNotes): ?>
+                <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= strpos($currentUri, '/composition/') !== false ? 'active' : '' ?>" data-title="Planning Compositions & Examens">
+                    <i data-lucide="award"></i> <span>Planning Compositions & Examens</span>
+                </a>
                 <a href="<?= RACINE ?>note/list" class="nav-item sub <?= strpos($currentUri, '/note/') !== false ? 'active' : '' ?>" data-title="Saisie des Notes">
                     <i data-lucide="edit-3"></i> <span>Saisie des Notes par Classe</span>
                 </a>

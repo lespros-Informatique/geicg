@@ -11,8 +11,8 @@ $nbNotes = $nbNotes ?? 0;
       
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Affectation de Composition</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails du binôme enseignant-matière et classe bénéficiaire</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Affectation Enseignant-Matière</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails de la matière attribuée, de l'enseignant et de la classe bénéficiaire</p>
         </div>
         <div style="display: flex; gap: 12px;">
           <a href="<?= RACINE ?>enseignant_matiere/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
