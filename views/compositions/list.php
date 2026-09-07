@@ -212,9 +212,6 @@ $(document).ready(function() {
                    '<a href="' + editUrl + '" class="btn btn-sm" style="background:#F1F5F9; color:#334155; border:1px solid #CBD5E1; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Modifier">' +
                      '<i data-lucide="edit-3" style="width:14px; height:14px;"></i> Éditer' +
                    '</a>' +
-                   '<button type="button" class="btn btn-sm btn-delete-comp" data-id="' + d.id_composition + '" data-libelle="' + $('<div>').text(d.libelle_composition).html() + '" style="background:#FEF2F2; color:#DC2626; border:1px solid #FCA5A5; border-radius:6px; font-weight:700; padding:6px 10px; font-size:12px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;" title="Supprimer">' +
-                     '<i data-lucide="trash-2" style="width:14px; height:14px;"></i>' +
-                   '</button>' +
                  '</div>';
         } 
       }
@@ -255,46 +252,6 @@ $(document).ready(function() {
       }
     });
   });
-
-  // Action Supprimer Composition
-  $(document).on('click', '.btn-delete-comp', function() {
-    var id = $(this).data('id');
-    var lib = $(this).data('libelle');
-
-    if (window.Swal) {
-      Swal.fire({
-        title: 'Supprimer cette épreuve ?',
-        html: 'Voulez-vous vraiment retirer la composition <strong style="color:#DC2626;">"' + lib + '"</strong> du calendrier ?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#DC2626',
-        cancelButtonColor: '#64748B',
-        confirmButtonText: 'Oui, supprimer',
-        cancelButtonText: 'Annuler'
-      }).then(function(res) {
-        if (res.isConfirmed) executeDeleteComp(id);
-      });
-    } else if (confirm('Supprimer cette épreuve ?')) {
-      executeDeleteComp(id);
-    }
-  });
-
-  function executeDeleteComp(id) {
-    $.ajax({
-      url: '<?= RACINE ?>composition/delete',
-      type: 'POST',
-      data: { id: id },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Composition supprimée avec succès');
-          table.ajax.reload(null, false);
-        } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur de suppression');
-        }
-      }
-    });
-  }
 });
 </script>
 

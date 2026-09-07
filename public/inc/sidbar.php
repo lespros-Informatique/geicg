@@ -584,7 +584,7 @@
 
 <script>
 $(document).ready(function() {
-  // Accordéons du sidebar
+  // Accordéons du sidebar (Comportement accordéon unique : fermer les autres modules à l'ouverture)
   $(document).on('click', '.sidebar-accordion-toggle', function(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -600,6 +600,20 @@ $(document).ready(function() {
         });
         $toggle.attr('aria-expanded', 'false');
       } else {
+        // Fermer automatiquement tous les autres accordéons ouverts
+        $('.sidebar-accordion-toggle').not($toggle).each(function() {
+          var $otherToggle = $(this);
+          var otherTargetId = $otherToggle.attr('data-bs-target');
+          var $otherTarget = $(otherTargetId);
+          if ($otherTarget.length && $otherToggle.attr('aria-expanded') === 'true') {
+            $otherTarget.slideUp(200, function() {
+              $otherTarget.removeClass('show');
+            });
+            $otherToggle.attr('aria-expanded', 'false');
+          }
+        });
+
+        // Ouvrir la section sélectionnée
         $target.slideDown(200, function() {
           $target.addClass('show');
         });

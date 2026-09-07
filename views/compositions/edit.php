@@ -37,6 +37,10 @@ $selectedClasseCode = $item['classe_code'] ?? ($selectedClasseCode ?? '');
 $selectedMatiereCode = $item['matiere_code'] ?? ($selectedMatiereCode ?? '');
 $selectedType = $item['type_composition'] ?? ($selectedTypeEval ?? 'COMPOSITION');
 $isEditMode = !empty($item['id_composition']);
+$existingNiveaux = $existingNiveaux ?? [];
+if (empty($existingNiveaux)) {
+    $existingNiveaux = [['niveau_code' => '', 'filiere_codes' => []]];
+}
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -140,38 +144,25 @@ $isEditMode = !empty($item['id_composition']);
                 </h3>
                 <p style="color: #64748B; font-size: 12px; margin: 2px 0 0 0;">Sélectionnez un ou plusieurs niveaux et leurs filières d'études rattachées.</p>
               </div>
-              <?php if (!$isEditMode): ?>
               <button type="button" id="btn-add-niveau-row" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
                 <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter un Niveau Cible
               </button>
-              <?php endif; ?>
             </div>
 
-            <?php if ($isEditMode): ?>
-              <!-- Mode Édition : Sélection de la classe spécifique -->
-              <div class="form-group" style="max-width: 500px;">
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                  Classe Cible <span style="color: #EF4444;">*</span>
-                </label>
-                <select class="form-control select2" name="classe_code" required style="width: 100%;">
-                  <option value="">-- Choisir la classe --</option>
-                  <?php foreach($classes as $c): ?>
-                    <option value="<?= htmlspecialchars($c['code_classe']) ?>" <?= ($selectedClasseCode === $c['code_classe']) ? 'selected' : '' ?>>
-                      <?= htmlspecialchars($c['libelle_classe']) ?>
-                    </option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-            <?php else: ?>
-              <!-- Mode Création : Générateur Dynamique N-Niveaux x N-Filières -->
-              <div id="niveaux-container" style="display: flex; flex-direction: column; gap: 16px;">
-                <!-- Card Niveau Row 0 -->
+            <div id="niveaux-container" style="display: flex; flex-direction: column; gap: 16px;">
+              <?php foreach ($existingNiveaux as $idx => $rowNiv): ?>
+                <?php
+                  $rowNivCode = $rowNiv['niveau_code'] ?? '';
+                  $rowFilCodes = $rowNiv['filiere_codes'] ?? [];
+                  $isNewRow = empty($rowNivCode) && empty($rowFilCodes);
+                ?>
+                <!-- Card Niveau Row <?= $idx ?> -->
                 <div class="niveau-row-card" style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 20px; position: relative;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <span style="font-weight: 800; font-size: 13px; color: #0F172A; display: flex; align-items: center; gap: 6px;">
-                      <i data-lucide="bookmark" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Groupe Niveau #<span class="niveau-row-num">1</span>
+                      <i data-lucide="bookmark" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Groupe Niveau #<span class="niveau-row-num"><?= $idx + 1 ?></span>
                     </span>
-                    <button type="button" class="btn-remove-niveau-row" style="background: transparent; border: none; color: #EF4444; font-size: 12px; font-weight: 700; cursor: pointer; display: none; align-items: center; gap: 4px;">
+                    <button type="button" class="btn-remove-niveau-row" style="background: transparent; border: none; color: #EF4444; font-size: 12px; font-weight: 700; cursor: pointer; display: <?= count($existingNiveaux) > 1 ? 'inline-flex' : 'none' ?>; align-items: center; gap: 4px;">
                       <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Retirer ce niveau
                     </button>
                   </div>
@@ -182,10 +173,12 @@ $isEditMode = !empty($item['id_composition']);
                       <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 6px;">
                         Niveau d'Études <span style="color: #EF4444;">*</span>
                       </label>
-                      <select class="form-control sel-niveau-item" name="niveaux[0][niveau_code]" required style="width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700;">
+                      <select class="form-control sel-niveau-item" name="niveaux[<?= $idx ?>][niveau_code]" required style="width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700;">
                         <option value="">-- Choisir un niveau --</option>
                         <?php foreach($niveaux as $n): ?>
-                          <option value="<?= htmlspecialchars($n['code_niveau']) ?>"><?= htmlspecialchars($n['libelle_niveau']) ?></option>
+                          <option value="<?= htmlspecialchars($n['code_niveau']) ?>" <?= ($rowNivCode === $n['code_niveau']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($n['libelle_niveau']) ?>
+                          </option>
                         <?php endforeach; ?>
                       </select>
                     </div>
@@ -202,8 +195,11 @@ $isEditMode = !empty($item['id_composition']);
                       </div>
                       <div class="filieres-checkbox-group" style="display: flex; flex-wrap: wrap; gap: 8px; background: #FFFFFF; padding: 10px; border-radius: 8px; border: 1px solid #CBD5E1; max-height: 120px; overflow-y: auto;">
                         <?php foreach($filieres as $f): ?>
+                          <?php 
+                            $isChecked = $isNewRow || in_array($f['code_filiere'], $rowFilCodes, true);
+                          ?>
                           <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #334155; background: #F1F5F9; padding: 4px 10px; border-radius: 6px; cursor: pointer; user-select: none;">
-                            <input type="checkbox" name="niveaux[0][filiere_codes][]" value="<?= htmlspecialchars($f['code_filiere']) ?>" class="chk-filiere-item" checked style="accent-color: #1E3A5F;">
+                            <input type="checkbox" name="niveaux[<?= $idx ?>][filiere_codes][]" value="<?= htmlspecialchars($f['code_filiere']) ?>" class="chk-filiere-item" <?= $isChecked ? 'checked' : '' ?> style="accent-color: #1E3A5F;">
                             <?= htmlspecialchars($f['libelle_filiere']) ?>
                           </label>
                         <?php endforeach; ?>
@@ -217,8 +213,8 @@ $isEditMode = !empty($item['id_composition']);
                     <span class="preview-badges-list" style="font-style: italic; color: #94A3B8;">Sélectionnez un niveau pour voir les classes impactées.</span>
                   </div>
                 </div>
-              </div>
-            <?php endif; ?>
+              <?php endforeach; ?>
+            </div>
           </div>
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">

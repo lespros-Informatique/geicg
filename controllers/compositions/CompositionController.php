@@ -176,17 +176,42 @@ class CompositionController extends BaseController
         $filteredData = array_intersect_key($data, array_flip($cols));
         $filteredData['updated_at_composition'] = date('Y-m-d H:i:s');
 
+        // Resolve target items (niveau, filiere, classe)
+        $targetItems = [];
+        if (!empty($_POST['niveaux']) && is_array($_POST['niveaux'])) {
+            $allClasses = (new ModelClasse())->getAll();
+            foreach ($_POST['niveaux'] as $row) {
+                $nivCode = $row['niveau_code'] ?? '';
+                $filCodes = $row['filiere_codes'] ?? [];
+                if (is_string($filCodes)) $filCodes = array_filter(explode(',', $filCodes));
+                if (empty($nivCode) || empty($filCodes)) continue;
+
+                foreach ($allClasses as $c) {
+                    if (($c['niveau_code'] ?? '') === $nivCode) {
+                        if (in_array($c['filiere_code'] ?? '', $filCodes)) {
+                            $targetItems[] = [
+                                'niveau_code' => $c['niveau_code'],
+                                'filiere_code' => $c['filiere_code'],
+                                'classe_code' => $c['code_classe']
+                            ];
+                        }
+                    }
+                }
+            }
+        } elseif (!empty($data['classe_code'])) {
+            $cItem = (new ModelClasse())->getByCode($data['classe_code']);
+            $targetItems[] = [
+                'niveau_code' => $cItem['niveau_code'] ?? null,
+                'filiere_code' => $cItem['filiere_code'] ?? null,
+                'classe_code' => $data['classe_code']
+            ];
+        }
+
         if ($this->model->update($filteredData, $id)) {
-            if (!empty($data['classe_code'])) {
-                $cItem = (new ModelClasse())->getByCode($data['classe_code']);
-                $targetItems = [[
-                    'niveau_code' => $cItem['niveau_code'] ?? null,
-                    'filiere_code' => $cItem['filiere_code'] ?? null,
-                    'classe_code' => $data['classe_code']
-                ]];
+            if (!empty($targetItems)) {
                 $this->model->saveTargetClasses($item['code_composition'], $targetItems);
             }
-            $this->success('Programmation de la composition mise à jour avec succès !');
+            $this->success('Programmation de la composition mise à jour avec succès !', ['redirect' => RACINE . 'composition/list']);
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -222,6 +247,29 @@ class CompositionController extends BaseController
             ORDER BY u.nom_user ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
+        // Extraire les niveaux et filières existants ciblés par la composition
+        $targetClasses = $this->model->getTargetClasses($item['code_composition']);
+        $existingNiveaux = [];
+        $grouped = [];
+        foreach ($targetClasses as $tc) {
+            $nCode = $tc['niveau_code'] ?? '';
+            $fCode = $tc['filiere_code'] ?? '';
+            if ($nCode) {
+                if (!isset($grouped[$nCode])) {
+                    $grouped[$nCode] = [];
+                }
+                if ($fCode && !in_array($fCode, $grouped[$nCode])) {
+                    $grouped[$nCode][] = $fCode;
+                }
+            }
+        }
+        foreach ($grouped as $nCode => $fCodes) {
+            $existingNiveaux[] = [
+                'niveau_code' => $nCode,
+                'filiere_codes' => $fCodes
+            ];
+        }
+
         $this->loadView('../views/compositions/edit.php', [
             'item' => $item, 
             'encryptedId' => $encryptedId,
@@ -233,7 +281,8 @@ class CompositionController extends BaseController
             'semestres' => $semestres,
             'salles' => $salles,
             'teachersWithUsers' => $teachersWithUsers,
-            'activeAnneeCode' => $activeAnneeCode
+            'activeAnneeCode' => $activeAnneeCode,
+            'existingNiveaux' => $existingNiveaux
         ]);
     }
 
