@@ -383,6 +383,8 @@ $route->addRoute('/emploi/setSessionClasse', [$emploiController, 'setSessionClas
 $route->addRoute('/emploi/getTeacherSchedule', [$emploiController, 'getTeacherSchedule']);
 $route->addRoute('/emploi/delete', [$emploiController, 'delete']);
 $route->addRoute('/emploi/resetClasseSchedule', [$emploiController, 'resetClasseSchedule']);
+$route->addRoute('/emploi/getClassScheduleMatrix', [$emploiController, 'getClassScheduleMatrix']);
+
 
 // Module: absence (AbsenceController)
 $route->addRoute('/absence/list', [$absenceController, 'list']);

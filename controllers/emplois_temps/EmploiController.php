@@ -42,18 +42,76 @@ class EmploiController extends BaseController
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
-        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
-        $data = [];
-        foreach ($items as $i) {
-            $id = $i['id_emploi'];
-            $idCrypte = $this->validator->crypter($id);
-            $data[] = array_merge($i, [
-                'id' => $id,
-                'editId' => $idCrypte
-            ]);
+
+        $db = $this->model->getCon();
+        $sql = "
+            SELECT 
+                cl.code_classe,
+                cl.libelle_classe,
+                n.libelle_niveau,
+                COUNT(edt.id_emploi) AS nb_creneaux,
+                COUNT(DISTINCT edt.jour) AS nb_jours,
+                COUNT(DISTINCT edt.matiere_code) AS nb_matieres,
+                COUNT(DISTINCT edt.enseignant_code) AS nb_profs,
+                GROUP_CONCAT(DISTINCT m.libelle_matiere ORDER BY m.libelle_matiere SEPARATOR ', ') AS matieres_noms,
+                MAX(edt.created_at_emploi) AS last_update,
+                SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600 AS total_heures
+            FROM emplois_temps edt
+            INNER JOIN classes cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+        ";
+        $conditions = [];
+        $params = [];
+
+        if (!empty($anneeCode)) {
+            $conditions[] = "(edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '')";
+            $params[] = $anneeCode;
         }
+        if (!empty($niveauCode)) {
+            $conditions[] = "cl.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if (!empty($classeCode)) {
+            $conditions[] = "edt.classe_code = ?";
+            $params[] = $classeCode;
+        }
+
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+
+        $sql .= " GROUP BY cl.code_classe, cl.libelle_classe, n.libelle_niveau ORDER BY cl.libelle_classe ASC ";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $classesWithEmploi = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $data = [];
+        foreach ($classesWithEmploi as $i) {
+            $totalMinutes = round(((float)($i['total_heures'] ?? 0)) * 60);
+            $h = floor($totalMinutes / 60);
+            $m = $totalMinutes % 60;
+            $volHoraire = sprintf("%dh%02d", $h, $m);
+
+            $data[] = [
+                'code_classe' => $i['code_classe'],
+                'libelle_classe' => $i['libelle_classe'],
+                'libelle_niveau' => $i['libelle_niveau'] ?: 'Niveau non défini',
+                'nb_creneaux' => (int)$i['nb_creneaux'],
+                'nb_jours' => (int)$i['nb_jours'],
+                'nb_matieres' => (int)$i['nb_matieres'],
+                'nb_profs' => (int)$i['nb_profs'],
+                'matieres_noms' => $i['matieres_noms'] ?: '',
+                'total_heures_formatted' => $volHoraire,
+                'last_update' => $i['last_update'] ? date('d/m/Y H:i', strtotime($i['last_update'])) : '-',
+                'statut_planning' => ((int)$i['nb_jours'] >= 5) ? 'Complet' : 'Brouillon'
+            ];
+        }
+
         $this->json(['data' => $data]);
     }
+
 
     public function getAssignedTeacher()
     {
@@ -499,4 +557,48 @@ class EmploiController extends BaseController
             $this->error('Erreur lors de la réinitialisation de l\'emploi du temps');
         }
     }
+
+    public function getClassScheduleMatrix()
+    {
+        $this->requireAuth();
+        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        if (empty($classeCode)) {
+            $this->json(['status' => 0, 'message' => 'Classe non spécifiée']);
+            return;
+        }
+
+        $db = $this->model->getCon();
+
+        $stmtCls = $db->prepare("
+            SELECT cl.libelle_classe, n.libelle_niveau 
+            FROM classes cl 
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code 
+            WHERE cl.code_classe = ? LIMIT 1
+        ");
+        $stmtCls->execute([$classeCode]);
+        $classeInfo = $stmtCls->fetch(PDO::FETCH_ASSOC);
+
+        $stmt = $db->prepare("
+            SELECT edt.*, 
+                   m.libelle_matiere, 
+                   s.libelle_salle, 
+                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
+            FROM emplois_temps edt
+            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN salles s ON s.code_salle = edt.salle_code
+            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+            LEFT JOIN users u ON u.code_user = edt.enseignant_code
+            WHERE edt.classe_code = ?
+            ORDER BY edt.jour ASC, edt.heure_debut ASC
+        ");
+        $stmt->execute([$classeCode]);
+        $slots = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->json([
+            'status' => 1,
+            'classe' => $classeInfo,
+            'slots' => $slots
+        ]);
+    }
 }
+
