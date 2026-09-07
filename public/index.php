@@ -380,6 +380,9 @@ $route->addRoute('/emploi/details/{param}', [$emploiController, 'details']);
 $route->addRoute('/emploi/edition/{param}', [$emploiController, 'edition']);
 $route->addRoute('/emploi/formulaire', [$emploiController, 'formulaire']);
 $route->addRoute('/emploi/setSessionClasse', [$emploiController, 'setSessionClasse']);
+$route->addRoute('/emploi/getTeacherSchedule', [$emploiController, 'getTeacherSchedule']);
+$route->addRoute('/emploi/delete', [$emploiController, 'delete']);
+$route->addRoute('/emploi/resetClasseSchedule', [$emploiController, 'resetClasseSchedule']);
 
 // Module: absence (AbsenceController)
 $route->addRoute('/absence/list', [$absenceController, 'list']);

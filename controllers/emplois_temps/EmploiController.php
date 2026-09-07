@@ -408,6 +408,35 @@ class EmploiController extends BaseController
         }
     }
 
+    public function getTeacherSchedule()
+    {
+        $this->requireAuth();
+        $ensCode = trim($_GET['enseignant_code'] ?? ($_POST['enseignant_code'] ?? ''));
+        if (empty($ensCode)) {
+            $this->json(['status' => 1, 'data' => []]);
+            return;
+        }
+        $db = $this->model->getCon();
+        $stmt = $db->prepare("
+            SELECT edt.*, 
+                   cl.libelle_classe, 
+                   m.libelle_matiere, 
+                   s.libelle_salle,
+                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
+            FROM emplois_temps edt
+            LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN salles s ON s.code_salle = edt.salle_code
+            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+            LEFT JOIN users u ON u.code_user = edt.enseignant_code
+            WHERE edt.enseignant_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
+            ORDER BY edt.jour ASC, edt.heure_debut ASC
+        ");
+        $stmt->execute([$ensCode]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $this->json(['status' => 1, 'data' => $items]);
+    }
+
     public function formulaire()
     {
         $this->requireAuth();
@@ -429,5 +458,39 @@ class EmploiController extends BaseController
             'selectedClasseCode' => $selectedClasseCode,
             'activeClasseLibelle' => $activeClasseLibelle
         ]);
+    }
+
+    public function delete()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $id = (int)($this->post('id') ?? ($_GET['id'] ?? 0));
+        if ($id && $this->model->getById($id)) {
+            if ($this->model->delete($id)) {
+                $this->success('Créneau horaire supprimé avec succès!');
+            } else {
+                $this->error('Erreur lors de la suppression du créneau');
+            }
+        } else {
+            $this->error('Créneau introuvable');
+        }
+    }
+
+    public function resetClasseSchedule()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $classeCode = trim($this->post('classe_code') ?? ($_GET['classe_code'] ?? ''));
+        if (empty($classeCode)) {
+            $this->error('Classe non spécifiée');
+            return;
+        }
+        $db = $this->model->getCon();
+        $stmt = $db->prepare("DELETE FROM emplois_temps WHERE classe_code = ?");
+        if ($stmt->execute([$classeCode])) {
+            $this->success('L\'emploi du temps de la classe a été entièrement réinitialisé !');
+        } else {
+            $this->error('Erreur lors de la réinitialisation de l\'emploi du temps');
+        }
     }
 }
