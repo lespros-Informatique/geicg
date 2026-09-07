@@ -166,8 +166,13 @@ class NoteController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/notes/edit.php', ['item' => []]);
+        $selectedClasseCode = $_GET['classe_code'] ?? ($_SESSION['last_note_classe_code'] ?? '');
+        $this->loadView('../views/notes/edit.php', [
+            'item' => [],
+            'selectedClasseCode' => $selectedClasseCode
+        ]);
     }
+
 
     public function saisieClasse()
     {
