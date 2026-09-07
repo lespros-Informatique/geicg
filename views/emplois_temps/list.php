@@ -89,41 +89,48 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
   </main>
 </div>
 
-<!-- Modal Visualisation & Impression Emploi du Temps Classe -->
-<div class="modal fade" id="modalViewSchedule" tabindex="-1" aria-labelledby="modalViewScheduleLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 95%;">
-    <div class="modal-content" style="border-radius: 14px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-      <div class="modal-header" style="background: #1E3A5F; color: #FFFFFF; border-top-left-radius: 14px; border-top-right-radius: 14px; padding: 16px 24px;">
-        <div>
-          <h5 class="modal-title" id="modalViewScheduleLabel" style="font-weight: 800; font-size: 18px; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
-            Emploi du Temps : <span id="modal-classe-title" style="color: #38BDF8;">-</span>
-          </h5>
-          <small id="modal-niveau-subtitle" style="color: #94A3B8; font-size: 12px; font-weight: 500;">Niveau -</small>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button type="button" class="btn btn-sm btn-light" onclick="printSchedule()" style="font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-            <i data-lucide="printer" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Imprimer
-          </button>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-        </div>
+<!-- Modal Overlay Visualisation & Impression Emploi du Temps Classe -->
+<div id="modalViewSchedule" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 1150px; max-height: 90vh; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; display: flex; flex-direction: column; animation: slideDown 0.25s ease;">
+    <!-- Header -->
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+      <div>
+        <h3 style="font-size: 18px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+          Emploi du Temps : <span id="modal-classe-title" style="color: #38BDF8;">-</span>
+        </h3>
+        <small id="modal-niveau-subtitle" style="color: #94A3B8; font-size: 12px; font-weight: 500;">Niveau -</small>
       </div>
-      <div class="modal-body" id="printable-schedule-area" style="padding: 24px; background: #F8FAFC; max-height: 80vh; overflow-y: auto;">
-        <div id="schedule-matrix-loader" style="text-align: center; padding: 40px;">
-          <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement...</span></div>
-          <p style="margin-top: 10px; color: #64748B; font-weight: 600;">Chargement du planning...</p>
-        </div>
-        <div id="schedule-matrix-content" style="display: none;"></div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="button" class="btn btn-sm btn-light" onclick="printSchedule()" style="font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="printer" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Imprimer
+        </button>
+        <button type="button" class="btn-close-modal" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
       </div>
-      <div class="modal-footer" style="background: #FFFFFF; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; padding: 12px 24px; justify-content: space-between;">
-        <span style="font-size: 12px; color: #64748B;">Registre GEICG — Mode Grille Hebdomadaire</span>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-weight: 600; border-radius: 6px;">Fermer</button>
+    </div>
+
+    <!-- Body -->
+    <div id="printable-schedule-area" style="padding: 24px; background: #F8FAFC; flex: 1; overflow-y: auto;">
+      <div id="schedule-matrix-loader" style="text-align: center; padding: 40px;">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement...</span></div>
+        <p style="margin-top: 10px; color: #64748B; font-weight: 600;">Chargement du planning...</p>
       </div>
+      <div id="schedule-matrix-content" style="display: none;"></div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+      <span style="font-size: 12px; color: #64748B;">Registre GEICG — Mode Grille Hebdomadaire</span>
+      <button type="button" class="btn btn-secondary btn-close-modal" style="font-weight: 600; border-radius: 6px;">Fermer</button>
     </div>
   </div>
 </div>
 
 <style>
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @media print {
   body * { visibility: hidden; }
   #printable-schedule-area, #printable-schedule-area * { visibility: visible; }
@@ -264,6 +271,16 @@ $(document).ready(function() {
     }
   });
 
+  // Gestion de la fermeture de la modale Grille
+  $(document).on('click', '.btn-close-modal', function() {
+    $('#modalViewSchedule').hide();
+  });
+  $(document).on('click', '#modalViewSchedule', function(e) {
+    if (e.target === this) {
+      $('#modalViewSchedule').hide();
+    }
+  });
+
   // Action Visualiser Grille (Modal)
   $(document).on('click', '.btn-view-matrix', function() {
     var classeCode = $(this).data('code');
@@ -274,8 +291,9 @@ $(document).ready(function() {
     $('#schedule-matrix-loader').show();
     $('#schedule-matrix-content').hide().empty();
     
-    var bsModal = new bootstrap.Modal(document.getElementById('modalViewSchedule'));
-    bsModal.show();
+    // Affichage robuste sans dépendance forcée à Bootstrap JS
+    $('#modalViewSchedule').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
 
     $.ajax({
       url: '<?= RACINE ?>emploi/getClassScheduleMatrix',
