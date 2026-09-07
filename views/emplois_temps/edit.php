@@ -434,8 +434,8 @@ $(document).ready(function() {
             var cardHtml = '<div class="preview-slot-card" data-id="' + (item.id_emploi || item.id) + '" style="background:#F1F5F9; border-left:3px solid #1E3A5F; border-radius:6px; padding:6px 8px; font-size:10.5px; box-shadow:0 1px 2px rgba(0,0,0,0.03); margin-bottom:4px;">' +
               '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
                 '<div style="font-weight:800; color:#0F172A; line-height:1.2; padding-right:4px;">' + mat + '</div>' +
-                '<button type="button" class="btn-delete-slot" data-id="' + (item.id_emploi || item.id) + '" style="background:none; border:none; color:#EF4444; padding:0; cursor:pointer; opacity:0.8; transition:opacity 0.2s;" title="Supprimer ce créneau">' +
-                  '<i data-lucide="trash-2" style="width:12px; height:12px;"></i>' +
+                '<button type="button" class="btn-delete-slot" data-id="' + (item.id_emploi || item.id) + '" style="background:none; border:none; color:#EF4444; padding:2px; cursor:pointer; opacity:0.85; transition:opacity 0.2s;" title="Supprimer ce créneau">' +
+                  '<i data-lucide="trash-2" class="fa-solid fa-trash-can" style="width:12px; height:12px; font-size:11px;"></i>' +
                 '</button>' +
               '</div>' +
               '<div style="color:#2563EB; font-weight:700; font-size:10px; margin-top:2px;">' + hDeb + ' - ' + hFin + '</div>' +
@@ -447,6 +447,7 @@ $(document).ready(function() {
         });
 
         updateDraftSlotPreview();
+        if (window.lucide) lucide.createIcons();
       },
       error: function() {
         $('#preview-loading-spinner').hide();
