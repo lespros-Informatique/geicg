@@ -384,6 +384,8 @@ $route->addRoute('/emploi/getTeacherSchedule', [$emploiController, 'getTeacherSc
 $route->addRoute('/emploi/delete', [$emploiController, 'delete']);
 $route->addRoute('/emploi/resetClasseSchedule', [$emploiController, 'resetClasseSchedule']);
 $route->addRoute('/emploi/getClassScheduleMatrix', [$emploiController, 'getClassScheduleMatrix']);
+$route->addRoute('/emploi/apiSlots', [$emploiController, 'apiSlots']);
+
 
 
 // Module: absence (AbsenceController)

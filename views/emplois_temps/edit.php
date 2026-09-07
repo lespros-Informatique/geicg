@@ -394,7 +394,7 @@ $(document).ready(function() {
         $('#preview-loading-spinner').hide();
         return;
       }
-      url = '<?= RACINE ?>emploi/apiList';
+      url = '<?= RACINE ?>emploi/apiSlots';
       params = { classe_code: classeCode };
     } else {
       var ensCode = $('#sel_ens_et').val();
@@ -431,15 +431,15 @@ $(document).ready(function() {
             var sal = item.libelle_salle || item.salle_code || '';
             var extraInfo = (activePreviewMode === 'class') ? (item.nom_prof || '') : (item.libelle_classe || '');
 
-            var cardHtml = '<div class="preview-slot-card" data-id="' + (item.id_emploi || item.id) + '" style="background:#F1F5F9; border-left:3px solid #1E3A5F; border-radius:6px; padding:6px 8px; font-size:10.5px; box-shadow:0 1px 2px rgba(0,0,0,0.03); margin-bottom:4px;">' +
-              '<div style="display:flex; justify-content:space-between; align-items:flex-start;">' +
-                '<div style="font-weight:800; color:#0F172A; line-height:1.2; padding-right:4px;">' + mat + '</div>' +
-                '<button type="button" class="btn-delete-slot" data-id="' + (item.id_emploi || item.id) + '" style="background:none; border:none; color:#EF4444; padding:2px; cursor:pointer; opacity:0.85; transition:opacity 0.2s;" title="Supprimer ce créneau">' +
-                  '<i data-lucide="trash-2" class="fa-solid fa-trash-can" style="width:12px; height:12px; font-size:11px;"></i>' +
+            var cardHtml = '<div class="preview-slot-card" data-id="' + (item.id_emploi || item.id) + '" style="background:#F8FAFC; border-left:3.5px solid #1E3A5F; border:1px solid #E2E8F0; border-left-width:3.5px; border-left-color:#1E3A5F; border-radius:8px; padding:8px 10px; font-size:11px; box-shadow:0 1px 3px rgba(0,0,0,0.03); margin-bottom:6px;">' +
+              '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:4px;">' +
+                '<div style="font-weight:800; color:#0F172A; line-height:1.2;">' + mat + '</div>' +
+                '<button type="button" class="btn-delete-slot" data-id="' + (item.id_emploi || item.id) + '" style="background:#FEE2E2; color:#DC2626; border:none; border-radius:50%; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s ease; flex-shrink:0;" title="Supprimer ce créneau">' +
+                  '<i data-lucide="trash-2" style="width:12px; height:12px;"></i>' +
                 '</button>' +
               '</div>' +
-              '<div style="color:#2563EB; font-weight:700; font-size:10px; margin-top:2px;">' + hDeb + ' - ' + hFin + '</div>' +
-              '<div style="color:#64748B; font-size:9.5px; margin-top:1px;">' + sal + (extraInfo ? (' • ' + extraInfo) : '') + '</div>' +
+              '<div style="color:#2563EB; font-weight:800; font-size:10.5px; margin-top:3px;">' + hDeb + ' - ' + hFin + '</div>' +
+              '<div style="color:#64748B; font-size:10px; margin-top:2px; font-weight:500;">' + sal + (extraInfo ? (' • ' + extraInfo) : '') + '</div>' +
               '</div>';
 
             $container.append(cardHtml);

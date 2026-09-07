@@ -112,6 +112,26 @@ class EmploiController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    public function apiSlots()
+    {
+        $this->requireAuth();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
+        $data = [];
+        foreach ($items as $i) {
+            $id = $i['id_emploi'];
+            $idCrypte = $this->validator->crypter($id);
+            $data[] = array_merge($i, [
+                'id' => $id,
+                'editId' => $idCrypte
+            ]);
+        }
+        $this->json(['status' => 1, 'data' => $data]);
+    }
+
+
 
     public function getAssignedTeacher()
     {

@@ -20,7 +20,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Registre et suivi des plannings de cours de l'année académique active</p>
         </div>
-        <a href="<?= RACINE ?>emploi/formulaire" id="btn-add-emploi" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(30,58,95,0.25);">
+        <a href="<?= RACINE ?>emploi/formulaire" id="btn-add-emploi" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Programmer un Emploi du Temps
         </a>
       </div>
@@ -90,51 +90,87 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 </div>
 
 <!-- Modal Overlay Visualisation & Impression Emploi du Temps Classe -->
-<div id="modalViewSchedule" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
-  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 1150px; max-height: 90vh; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; display: flex; flex-direction: column; animation: slideDown 0.25s ease;">
+<div id="modalViewSchedule" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(3px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 1150px; max-height: 90vh; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; animation: slideDown 0.25s ease;">
     <!-- Header -->
-    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+    <div style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; padding: 18px 26px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
       <div>
-        <h3 style="font-size: 18px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+        <h3 style="font-size: 18px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 10px;">
+          <i data-lucide="calendar" style="width: 22px; height: 22px; color: #38BDF8;"></i>
           Emploi du Temps : <span id="modal-classe-title" style="color: #38BDF8;">-</span>
         </h3>
-        <small id="modal-niveau-subtitle" style="color: #94A3B8; font-size: 12px; font-weight: 500;">Niveau -</small>
+        <small id="modal-niveau-subtitle" style="color: #94A3B8; font-size: 12.5px; font-weight: 500; margin-top: 2px; display: block;">Niveau -</small>
       </div>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <button type="button" class="btn btn-sm btn-light" onclick="printSchedule()" style="font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-          <i data-lucide="printer" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Imprimer
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button type="button" class="btn-print-schedule" onclick="printSchedule()" style="background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%); color: #FFFFFF; border: none; font-weight: 700; border-radius: 8px; padding: 8px 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(2,132,199,0.35); transition: all 0.2s ease; cursor: pointer;">
+          <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer l'Emploi du Temps
         </button>
-        <button type="button" class="btn-close-modal" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
+        <button type="button" class="btn-close-modal" style="background: rgba(255,255,255,0.15); border: none; color: #FFFFFF; font-size: 20px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;" title="Fermer">&times;</button>
       </div>
     </div>
 
     <!-- Body -->
     <div id="printable-schedule-area" style="padding: 24px; background: #F8FAFC; flex: 1; overflow-y: auto;">
-      <div id="schedule-matrix-loader" style="text-align: center; padding: 40px;">
-        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement...</span></div>
-        <p style="margin-top: 10px; color: #64748B; font-weight: 600;">Chargement du planning...</p>
+      
+      <!-- En-tête officiel visible uniquement à l'impression -->
+      <div class="print-only-header" style="display: none; text-align: center; margin-bottom: 24px; border-bottom: 2px solid #1E3A5F; padding-bottom: 14px;">
+        <h2 style="font-size: 20px; font-weight: 800; color: #1E3A5F; margin: 0; text-transform: uppercase;">GROUPE ÉCOLE D'INGÉNIEURS GEICG</h2>
+        <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 6px 0 0 0;">EMPLOI DU TEMPS OFFICIEL : <span id="print-classe-name" style="color: #0284C7;">-</span></h3>
+        <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0;">Registre Général des Cours • Année Académique Active</p>
+      </div>
+
+      <div id="schedule-matrix-loader" style="text-align: center; padding: 50px;">
+        <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;"><span class="visually-hidden">Chargement...</span></div>
+        <p style="margin-top: 12px; color: #64748B; font-weight: 700; font-size: 14px;">Chargement de la grille horaire...</p>
       </div>
       <div id="schedule-matrix-content" style="display: none;"></div>
     </div>
 
     <!-- Footer -->
-    <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-      <span style="font-size: 12px; color: #64748B;">Registre GEICG — Mode Grille Hebdomadaire</span>
-      <button type="button" class="btn btn-secondary btn-close-modal" style="font-weight: 600; border-radius: 6px;">Fermer</button>
+    <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 14px 26px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+      <span style="font-size: 12px; color: #64748B; font-weight: 600;">Registre GEICG — Mode Grille Hebdomadaire</span>
+      <button type="button" class="btn btn-secondary btn-close-modal" style="font-weight: 700; border-radius: 8px; padding: 8px 18px; font-size: 13px;">Fermer</button>
     </div>
   </div>
 </div>
 
 <style>
+.btn-print-schedule:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(2,132,199,0.45) !important;
+  filter: brightness(1.05);
+}
+.btn-action-planning:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(30,58,95,0.3) !important;
+}
+.btn-action-grille:hover {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+.btn-action-reset:hover {
+  background: #DC2626 !important;
+  color: #FFFFFF !important;
+  border-color: #DC2626 !important;
+  box-shadow: 0 4px 10px rgba(220,38,38,0.3) !important;
+}
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-15px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @media print {
-  body * { visibility: hidden; }
-  #printable-schedule-area, #printable-schedule-area * { visibility: visible; }
-  #printable-schedule-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+  body * { visibility: hidden !important; }
+  #printable-schedule-area, #printable-schedule-area * { visibility: visible !important; }
+  #printable-schedule-area { 
+    position: absolute !important; 
+    left: 0 !important; 
+    top: 0 !important; 
+    width: 100% !important; 
+    padding: 20px !important; 
+    background: #FFFFFF !important;
+  }
+  .print-only-header { display: block !important; }
+  .modal-footer, .btn-close-modal, .btn-print-schedule { display: none !important; }
 }
 </style>
 
@@ -252,14 +288,14 @@ $(document).ready(function() {
           var codeEsc = encodeURIComponent(d.code_classe);
           var libEsc = $('<div>').text(d.libelle_classe).html();
           return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap;">' +
-                   '<a href="<?= RACINE ?>emploi/formulaire?classe_code=' + codeEsc + '" class="btn btn-sm btn-primary" style="background:#1E3A5F; border-color:#1E3A5F; border-radius:6px; font-weight:600; padding:6px 10px; font-size:12px; display:inline-flex; align-items:center; gap:4px;" title="Gérer le planning">' +
+                   '<a href="<?= RACINE ?>emploi/formulaire?classe_code=' + codeEsc + '" class="btn btn-sm btn-action-planning" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(30,58,95,0.2);" title="Gérer le planning">' +
                      '<i data-lucide="calendar-plus" style="width:14px; height:14px;"></i> Planning' +
                    '</a>' +
-                   '<button type="button" class="btn btn-sm btn-outline-secondary btn-view-matrix" data-code="' + d.code_classe + '" data-libelle="' + libEsc + '" style="border-radius:6px; font-weight:600; padding:6px 10px; font-size:12px; display:inline-flex; align-items:center; gap:4px;" title="Visualiser l\'emploi du temps">' +
+                   '<button type="button" class="btn btn-sm btn-action-grille btn-view-matrix" data-code="' + d.code_classe + '" data-libelle="' + libEsc + '" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;" title="Visualiser l\'emploi du temps">' +
                      '<i data-lucide="eye" style="width:14px; height:14px;"></i> Grille' +
                    '</button>' +
-                   '<button type="button" class="btn btn-sm btn-outline-danger btn-reset-classe" data-code="' + d.code_classe + '" data-libelle="' + libEsc + '" style="border-radius:6px; font-weight:600; padding:6px 10px; font-size:12px; display:inline-flex; align-items:center; gap:4px;" title="Vider le planning de cette classe">' +
-                     '<i data-lucide="trash-2" style="width:14px; height:14px;"></i>' +
+                   '<button type="button" class="btn btn-sm btn-action-reset btn-reset-classe" data-code="' + d.code_classe + '" data-libelle="' + libEsc + '" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(220,38,38,0.08);" title="Vider le planning de cette classe">' +
+                     '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Vider' +
                    '</button>' +
                  '</div>';
         } 
@@ -287,11 +323,11 @@ $(document).ready(function() {
     var classeLibelle = $(this).data('libelle');
     
     $('#modal-classe-title').text(classeLibelle);
+    $('#print-classe-name').text(classeLibelle);
     $('#modal-niveau-subtitle').text('Code Classe: ' + classeCode);
     $('#schedule-matrix-loader').show();
     $('#schedule-matrix-content').hide().empty();
     
-    // Affichage robuste sans dépendance forcée à Bootstrap JS
     $('#modalViewSchedule').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
 
@@ -394,7 +430,7 @@ $(document).ready(function() {
 
     days.forEach(function(d) {
       var list = grouped[d];
-      html += '<div style="background: #FFFFFF; border-radius: 10px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">';
+      html += '<div style="background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">';
       html +=   '<div style="background: #1E3A5F; color: #FFFFFF; padding: 10px 14px; font-weight: 800; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">';
       html +=     '<span>' + dayLabels[d] + '</span>';
       html +=     '<span class="badge" style="background: rgba(255,255,255,0.2); font-size: 11px;">' + list.length + ' cours</span>';
@@ -411,7 +447,7 @@ $(document).ready(function() {
           var prof = item.nom_prof ? item.nom_prof.trim() : (item.enseignant_code || 'Non spécifié');
           var salle = item.libelle_salle || item.salle_code || 'Salle n/a';
 
-          html += '<div style="background: #F1F5F9; border-left: 4px solid #0284C7; border-radius: 6px; padding: 10px 12px;">';
+          html += '<div style="background: #F8FAFC; border-left: 4px solid #0284C7; border: 1px solid #E2E8F0; border-left-width: 4px; border-left-color: #0284C7; border-radius: 8px; padding: 10px 12px;">';
           html +=   '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">';
           html +=     '<span style="font-weight: 800; font-size: 13px; color: #0284C7;">' + debut + ' - ' + fin + '</span>';
           html +=     '<span class="badge" style="background: #E0F2FE; color: #0369A1; font-size: 10px; font-weight: 700;">' + salle + '</span>';
