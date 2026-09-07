@@ -140,15 +140,6 @@
 
     $recentAdminNotifs = [];
     $unreadNotifsCount = 0;
-    try {
-        $notifModel = new ModelNotification();
-        $notifStats = $notifModel->getStats($currentPressingCode, $currentLivreurCode);
-        $unreadNotifsCount = $notifStats['non_lues'] ?? 0;
-        $recentAdminNotifs = $notifModel->getAllWithClient($currentPressingCode, $currentLivreurCode, 5);
-    } catch (Exception $e) {
-        $recentAdminNotifs = [];
-        $unreadNotifsCount = 0;
-    }
 
     ?>
 </head>

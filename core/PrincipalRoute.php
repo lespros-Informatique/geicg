@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../config/Database.php';
 
 require_once __DIR__ . '/../models/Validator.php';
-require_once __DIR__ . '/../core/PressingAware.php';
+
 require_once __DIR__ . '/../core/NotificationService.php';
 require_once __DIR__ . '/../core/BaseController.php';
 require_once __DIR__ . '/../core/BaseModel.php';
@@ -14,7 +14,7 @@ require_once __DIR__ . '/../models/home/ModelHome.php';
 require_once __DIR__ . '/../models/users/ModelUser.php';
 require_once __DIR__ . '/../models/roles/ModelRole.php';
 require_once __DIR__ . '/../models/permissions/ModelPermission.php';
-require_once __DIR__ . '/../models/notifications/ModelNotification.php';
+
 
 // School Structure & Academic Models
 require_once __DIR__ . '/../models/etablissements/ModelEtablissement.php';
@@ -25,7 +25,7 @@ require_once __DIR__ . '/../models/salles/ModelSalle.php';
 require_once __DIR__ . '/../models/annees/ModelAnnee.php';
 require_once __DIR__ . '/../models/classes/ModelClasse.php';
 require_once __DIR__ . '/../models/semestres/ModelSemestre.php';
-require_once __DIR__ . '/../models/unites_enseignement/ModelUe.php';
+
 require_once __DIR__ . '/../models/matieres/ModelMatiere.php';
 
 // Scolarité & Finances Models
@@ -63,7 +63,7 @@ require_once __DIR__ . '/../controllers/home/HomeController.php';
 require_once __DIR__ . '/../controllers/users/UserController.php';
 require_once __DIR__ . '/../controllers/roles/RoleController.php';
 require_once __DIR__ . '/../controllers/permissions/PermissionController.php';
-require_once __DIR__ . '/../controllers/notifications/NotificationController.php';
+
 
 // Académique & Structure Controllers
 require_once __DIR__ . '/../controllers/etablissements/EtablissementController.php';
@@ -74,7 +74,7 @@ require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.ph
 require_once __DIR__ . '/../controllers/niveaux/NiveauController.php';
 require_once __DIR__ . '/../controllers/classes/ClasseController.php';
 require_once __DIR__ . '/../controllers/semestres/SemestreController.php';
-require_once __DIR__ . '/../controllers/unites_enseignement/UeController.php';
+
 require_once __DIR__ . '/../controllers/matieres/MatiereController.php';
 require_once __DIR__ . '/../controllers/salles/SalleController.php';
 
@@ -106,8 +106,7 @@ require_once __DIR__ . '/../controllers/evenements/EvenementController.php';
 require_once __DIR__ . '/../controllers/galeries/GalerieController.php';
 require_once __DIR__ . '/../controllers/documents/DocumentController.php';
 
-// require_once __DIR__ . '/../models/services/ModelService.php';
-// require_once __DIR__ . '/../controllers/services/ServiceController.php';
+
 
 require_once __DIR__ . '/../models/fonctions/ModelFonction.php';
 require_once __DIR__ . '/../models/impayes/ModelImpayes.php';

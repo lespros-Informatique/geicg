@@ -40,8 +40,7 @@ $galerieController = new GalerieController();
 $documentController = new DocumentController();
 $roleController = new RoleController();
 $permissionController = new PermissionController();
-$notificationController = new NotificationController();
-$ueController = new UeController();
+
 
 // Route d'accueil & Authentification
 $route->addRoute('/', [$homeController, 'index']);
@@ -491,15 +490,7 @@ $route->addRoute('/permission/details/{param}', [$permissionController, 'details
 $route->addRoute('/permission/edition/{param}', [$permissionController, 'edition']);
 $route->addRoute('/permission/formulaire', [$permissionController, 'formulaire']);
 
-// Module: notification (NotificationController)
-$route->addRoute('/notification/list', [$notificationController, 'list']);
-$route->addRoute('/notification/apiList', [$notificationController, 'apiList']);
-$route->addRoute('/notification/add', [$notificationController, 'add']);
-$route->addRoute('/notification/edit', [$notificationController, 'edit']);
-$route->addRoute('/notification/changer', [$notificationController, 'changer']);
-$route->addRoute('/notification/details/{param}', [$notificationController, 'details']);
-$route->addRoute('/notification/edition/{param}', [$notificationController, 'edition']);
-$route->addRoute('/notification/formulaire', [$notificationController, 'formulaire']);
+
 
 // Extraction & Exécution de l'URL
 $url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
