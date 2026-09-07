@@ -505,8 +505,13 @@ $(document).ready(function() {
   // 5. Suppression Unitaire d'un Créneau depuis l'aperçu
   $(document).on('click', '.btn-delete-slot', function(e) {
     e.preventDefault();
-    var id = $(this).data('id');
+    var id = $(this).attr('data-id') || $(this).data('id');
     var $card = $(this).closest('.preview-slot-card');
+
+    if (!id) {
+      if (window.toastr) toastr.error('ID du créneau introuvable');
+      return;
+    }
 
     function performDelete() {
       $.ajax({
@@ -520,6 +525,7 @@ $(document).ready(function() {
             if (window.toastr) toastr.success(res.message || 'Créneau supprimé avec succès');
             $card.slideUp(200, function() { $(this).remove(); });
             checkScheduleConflicts();
+            loadSchedulePreview();
           } else {
             if (window.Swal) {
               Swal.fire({ icon: 'error', title: 'Erreur', text: res.message || 'Erreur lors de la suppression' });

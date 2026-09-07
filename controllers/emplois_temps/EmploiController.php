@@ -464,16 +464,22 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = (int)($this->post('id') ?? ($_GET['id'] ?? 0));
-        if ($id && $this->model->getById($id)) {
-            if ($this->model->delete($id)) {
-                $this->success('Créneau horaire supprimé avec succès!');
-            } else {
-                $this->error('Erreur lors de la suppression du créneau');
+        $rawId = $_POST['id'] ?? ($_GET['id'] ?? $this->post('id'));
+        $id = (int)$rawId;
+
+        if ($id > 0) {
+            $item = $this->model->getById($id);
+            if ($item) {
+                if ($this->model->delete($id)) {
+                    $this->success('Créneau horaire supprimé avec succès!');
+                    return;
+                } else {
+                    $this->error('Erreur lors de la suppression en base de données');
+                    return;
+                }
             }
-        } else {
-            $this->error('Créneau introuvable');
         }
+        $this->error('Créneau introuvable');
     }
 
     public function resetClasseSchedule()
