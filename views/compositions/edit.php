@@ -234,11 +234,138 @@ if (empty($existingNiveaux)) {
 window.ALL_CLASSES = <?= json_encode($classes) ?>;
 window.ALL_FILIERES = <?= json_encode($filieres) ?>;
 window.ALL_NIVEAUX = <?= json_encode($niveaux) ?>;
+window.EDT_ACTIVE_TARGETS = <?= json_encode($edtActiveTargets ?? []) ?>;
 
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
     $('.select2').select2({ width: '100%' });
+  }
+
+  // Active Niveaux & Filières mapping from emplois_temps
+  var edtActiveNiveaux = [];
+  var edtActiveFiliereMap = {}; // niveau_code -> array of filiere_codes
+
+  if (window.EDT_ACTIVE_TARGETS && window.EDT_ACTIVE_TARGETS.length > 0) {
+    window.EDT_ACTIVE_TARGETS.forEach(function(item) {
+      if (item.niveau_code) {
+        if (edtActiveNiveaux.indexOf(item.niveau_code) === -1) {
+          edtActiveNiveaux.push(item.niveau_code);
+        }
+        if (!edtActiveFiliereMap[item.niveau_code]) {
+          edtActiveFiliereMap[item.niveau_code] = [];
+        }
+        if (item.filiere_code && edtActiveFiliereMap[item.niveau_code].indexOf(item.filiere_code) === -1) {
+          edtActiveFiliereMap[item.niveau_code].push(item.filiere_code);
+        }
+      }
+    });
+  }
+
+  function filterFilieresForNiveauCard($card) {
+    var nivCode = $card.find('.sel-niveau-item').val();
+    var $checkboxGroup = $card.find('.filieres-checkbox-group');
+
+    if (!nivCode) {
+      $checkboxGroup.find('label').show();
+      $checkboxGroup.find('.chk-filiere-item').prop('disabled', false);
+      return;
+    }
+
+    if (edtActiveNiveaux.length > 0) {
+      var activeFiliereCodes = edtActiveFiliereMap[nivCode] || [];
+      $checkboxGroup.find('.chk-filiere-item').each(function() {
+        var fCode = $(this).val();
+        var $label = $(this).closest('label');
+        if (activeFiliereCodes.indexOf(fCode) !== -1) {
+          $label.show();
+          $(this).prop('disabled', false);
+        } else {
+          $label.hide();
+          $(this).prop('checked', false);
+          $(this).prop('disabled', true);
+        }
+      });
+    } else {
+      var validFiliereCodes = window.ALL_CLASSES.filter(function(c) {
+        return c.niveau_code === nivCode;
+      }).map(function(c) { return c.filiere_code; });
+
+      $checkboxGroup.find('.chk-filiere-item').each(function() {
+        var fCode = $(this).val();
+        var $label = $(this).closest('label');
+        if (validFiliereCodes.indexOf(fCode) !== -1 || validFiliereCodes.length === 0) {
+          $label.show();
+          $(this).prop('disabled', false);
+        } else {
+          $label.hide();
+          $(this).prop('checked', false);
+          $(this).prop('disabled', true);
+        }
+      });
+    }
+  }
+
+  function updateDisabledNiveauxOptions() {
+    var selectedNiveaux = [];
+    $('.sel-niveau-item').each(function() {
+      var val = $(this).val();
+      if (val) selectedNiveaux.push(val);
+    });
+
+    $('.sel-niveau-item').each(function() {
+      var $select = $(this);
+      var currentVal = $select.val();
+
+      $select.find('option').each(function() {
+        var optVal = $(this).attr('value');
+        if (!optVal) return;
+
+        var isNotInEdt = (edtActiveNiveaux.length > 0 && edtActiveNiveaux.indexOf(optVal) === -1);
+        var isAlreadySelected = (optVal !== currentVal && selectedNiveaux.indexOf(optVal) !== -1);
+
+        if (isNotInEdt || isAlreadySelected) {
+          $(this).prop('disabled', true);
+        } else {
+          $(this).prop('disabled', false);
+        }
+      });
+    });
+  }
+
+  function renderClassesPreview($card) {
+    filterFilieresForNiveauCard($card);
+
+    var nivCode = $card.find('.sel-niveau-item').val();
+    var checkedFilieres = [];
+    $card.find('.chk-filiere-item:checked:visible').each(function() {
+      checkedFilieres.push($(this).val());
+    });
+
+    var $previewContainer = $card.find('.preview-badges-list');
+    if (!nivCode) {
+      $previewContainer.html('<span style="font-style: italic; color: #94A3B8;">Sélectionnez un niveau pour voir les classes impactées.</span>');
+      return;
+    }
+
+    if (checkedFilieres.length === 0) {
+      $previewContainer.html('<span style="color: #DC2626; font-weight: 700;">Aucune filière configurée dans l\'emploi du temps pour ce niveau.</span>');
+      return;
+    }
+
+    var matchingClasses = window.ALL_CLASSES.filter(function(c) {
+      if (c.niveau_code !== nivCode) return false;
+      return checkedFilieres.indexOf(c.filiere_code) !== -1;
+    });
+
+    if (matchingClasses.length === 0) {
+      $previewContainer.html('<span style="color: #DC2626; font-weight: 600;">Aucune classe configurée dans l\'emploi du temps.</span>');
+    } else {
+      var html = matchingClasses.map(function(c) {
+        return '<span style="background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">' + c.libelle_classe + '</span>';
+      }).join(' ');
+      $previewContainer.html(html);
+    }
   }
 
   function updateNiveauRowIndices() {
@@ -257,63 +384,6 @@ $(document).ready(function() {
     });
   }
 
-  function updateDisabledNiveauxOptions() {
-    var selectedNiveaux = [];
-    $('.sel-niveau-item').each(function() {
-      var val = $(this).val();
-      if (val) selectedNiveaux.push(val);
-    });
-
-    $('.sel-niveau-item').each(function() {
-      var $select = $(this);
-      var currentVal = $select.val();
-
-      $select.find('option').each(function() {
-        var optVal = $(this).attr('value');
-        if (!optVal) return;
-
-        if (optVal !== currentVal && selectedNiveaux.indexOf(optVal) !== -1) {
-          $(this).prop('disabled', true);
-        } else {
-          $(this).prop('disabled', false);
-        }
-      });
-    });
-  }
-
-  function renderClassesPreview($card) {
-    var nivCode = $card.find('.sel-niveau-item').val();
-    var checkedFilieres = [];
-    $card.find('.chk-filiere-item:checked').each(function() {
-      checkedFilieres.push($(this).val());
-    });
-
-    var $previewContainer = $card.find('.preview-badges-list');
-    if (!nivCode) {
-      $previewContainer.html('<span style="font-style: italic; color: #94A3B8;">Sélectionnez un niveau pour voir les classes impactées.</span>');
-      return;
-    }
-
-    if (checkedFilieres.length === 0) {
-      $previewContainer.html('<span style="color: #DC2626; font-weight: 700;">Aucune filière cochée — 0 classe sélectionnée.</span>');
-      return;
-    }
-
-    var matchingClasses = window.ALL_CLASSES.filter(function(c) {
-      if (c.niveau_code !== nivCode) return false;
-      return checkedFilieres.indexOf(c.filiere_code) !== -1;
-    });
-
-    if (matchingClasses.length === 0) {
-      $previewContainer.html('<span style="color: #DC2626; font-weight: 600;">Aucune classe ne correspond aux filières cochées.</span>');
-    } else {
-      var html = matchingClasses.map(function(c) {
-        return '<span style="background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">' + c.libelle_classe + '</span>';
-      }).join(' ');
-      $previewContainer.html(html);
-    }
-  }
-
   // Event handlers for dynamic level row
   $(document).on('change', '.sel-niveau-item', function() {
     var $card = $(this).closest('.niveau-row-card');
@@ -329,7 +399,7 @@ $(document).ready(function() {
   $(document).on('click', '.btn-toggle-all-filieres', function(e) {
     e.preventDefault();
     var $card = $(this).closest('.niveau-row-card');
-    var $chks = $card.find('.chk-filiere-item');
+    var $chks = $card.find('.chk-filiere-item:visible');
     var allChecked = $chks.filter(':checked').length === $chks.length;
     $chks.prop('checked', !allChecked);
     $(this).text(allChecked ? 'Tout cocher' : 'Tout décocher');
@@ -375,7 +445,7 @@ $(document).ready(function() {
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <label style="font-weight: 700; font-size: 12px; color: #334155; margin: 0;">
-                Filières Concernées
+                Filières Concernées <span style="font-size: 11px; color: #15803D; font-weight: 600;">(Emploi du temps)</span>
               </label>
               <span style="font-size: 11px;">
                 <a href="#" class="btn-toggle-all-filieres" style="color: #1D4ED8; font-weight: 700; text-decoration: none;">Tout cocher</a>
@@ -398,6 +468,8 @@ $(document).ready(function() {
     if (window.lucide) lucide.createIcons();
     updateNiveauRowIndices();
     updateDisabledNiveauxOptions();
+    var $newCard = $('#niveaux-container .niveau-row-card').last();
+    renderClassesPreview($newCard);
   });
 
   $(document).on('click', '.btn-remove-niveau-row', function(e) {

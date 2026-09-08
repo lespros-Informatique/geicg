@@ -234,4 +234,29 @@ class ModelComposition extends BaseModel
             return false;
         }
     }
+
+    public function getEdtActiveTargets(?string $anneeCode = null): array
+    {
+        try {
+            $sql = "
+                SELECT DISTINCT cl.niveau_code, cl.filiere_code, n.libelle_niveau, f.libelle_filiere
+                FROM emplois_temps edt
+                INNER JOIN classes cl ON cl.code_classe = edt.classe_code
+                INNER JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                INNER JOIN filieres f ON f.code_filiere = cl.filiere_code
+            ";
+            $params = [];
+            if (!empty($anneeCode)) {
+                $sql .= " WHERE (edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '') ";
+                $params[] = $anneeCode;
+            }
+            $sql .= " ORDER BY n.libelle_niveau ASC, f.libelle_filiere ASC ";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("Get EDT active targets error: " . $e->getMessage());
+            return [];
+        }
+    }
 }

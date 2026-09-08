@@ -71,6 +71,8 @@ class CompositionController extends BaseController
             ORDER BY u.nom_user ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
+        $edtActiveTargets = $this->model->getEdtActiveTargets($activeAnneeCode);
+
         $this->loadView('../views/compositions/edit.php', [
             'item' => [],
             'annees' => $annees,
@@ -82,6 +84,7 @@ class CompositionController extends BaseController
             'salles' => $salles,
             'teachersWithUsers' => $teachersWithUsers,
             'activeAnneeCode' => $activeAnneeCode,
+            'edtActiveTargets' => $edtActiveTargets,
             'selectedClasseCode' => $selectedClasseCode,
             'selectedMatiereCode' => $selectedMatiereCode,
             'selectedTypeEval' => $typeEval
@@ -244,6 +247,8 @@ class CompositionController extends BaseController
             ];
         }
 
+        $edtActiveTargets = $this->model->getEdtActiveTargets($anneeCodeToUse);
+
         $this->loadView('../views/compositions/edit.php', [
             'item' => $item, 
             'encryptedId' => $encryptedId,
@@ -256,6 +261,7 @@ class CompositionController extends BaseController
             'salles' => $salles,
             'teachersWithUsers' => $teachersWithUsers,
             'activeAnneeCode' => $activeAnneeCode,
+            'edtActiveTargets' => $edtActiveTargets,
             'existingNiveaux' => $existingNiveaux
         ]);
     }
