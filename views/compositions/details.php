@@ -184,7 +184,7 @@ $encryptedId = $encryptedId ?? '';
                               data-classe-libelle="<?= htmlspecialchars($c['libelle_classe']) ?>"
                               data-cible-code="<?= htmlspecialchars($tc['code_composition_niveau_filiere'] ?? ($tc['code_composition_cible'] ?? '')) ?>"
                               style="background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(30,58,95,0.2);">
-                        <i data-lucide="check-square" style="width: 14px; height: 14px;"></i> Cocher les Matières & Saisir
+                        <i data-lucide="list-checks" style="width: 14px; height: 14px;"></i> Liste Matières
                       </button>
                       <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($c['code_classe']) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
                         <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Grille des notes
