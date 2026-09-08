@@ -137,7 +137,7 @@ $encryptedId = $encryptedId ?? '';
       <!-- TARGET CLASSES TABLE -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
         <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="layers" style="width: 18px; height: 18px;"></i> Classes & Filières Rattachées (<?= count($targetClasses) ?>)
+          <i data-lucide="layers" style="width: 18px; height: 18px;"></i> Niveaux & Filières Rattachés (<?= count($targetClasses) ?>)
         </h3>
 
         <?php if (empty($targetClasses)): ?>
@@ -149,7 +149,6 @@ $encryptedId = $encryptedId ?? '';
                 <th style="padding: 10px 14px;">#</th>
                 <th style="padding: 10px 14px;">Niveau d'Études</th>
                 <th style="padding: 10px 14px;">Filière</th>
-                <th style="padding: 10px 14px;">Classe Cible</th>
                 <th style="padding: 10px 14px; text-align: right;">Actions Saisie Notes</th>
               </tr>
             </thead>
@@ -157,46 +156,30 @@ $encryptedId = $encryptedId ?? '';
               <?php 
                 $rowNum = 1;
                 foreach ($targetClasses as $tc): 
-                  $classesList = $tc['classes'] ?? [];
-                  if (empty($classesList)):
+                  $classeCode = $tc['code_classe'] ?? '';
+                  $targetName = !empty($tc['libelle_classe']) ? $tc['libelle_classe'] : (($tc['libelle_niveau'] ?? '') . ' - ' . ($tc['libelle_filiere'] ?? ''));
               ?>
                 <tr style="border-bottom: 1px solid #F1F5F9;">
                   <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
                   <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
                   <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
-                  <td style="padding: 12px 14px; font-weight: 600; color: #94A3B8; font-style: italic;">Aucune classe créée</td>
-                  <td style="padding: 12px 14px; text-align: right; color: #94A3B8;">-</td>
-                </tr>
-              <?php 
-                  else:
-                    foreach ($classesList as $c):
-              ?>
-                <tr style="border-bottom: 1px solid #F1F5F9;">
-                  <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
-                  <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
-                  <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
-                  <td style="padding: 12px 14px; font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($c['libelle_classe']) ?></td>
                   <td style="padding: 12px 14px; text-align: right;">
                     <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
                       <button type="button" 
                               class="btn btn-sm btn-open-saisie-modal" 
-                              data-classe-code="<?= htmlspecialchars($c['code_classe']) ?>"
-                              data-classe-libelle="<?= htmlspecialchars($c['libelle_classe']) ?>"
-                              data-cible-code="<?= htmlspecialchars($tc['code_composition_niveau_filiere'] ?? ($tc['code_composition_cible'] ?? '')) ?>"
+                              data-classe-code="<?= htmlspecialchars($classeCode) ?>"
+                              data-classe-libelle="<?= htmlspecialchars($targetName) ?>"
+                              data-cible-code="<?= htmlspecialchars($tc['code_composition_niveau_filiere'] ?? '') ?>"
                               style="background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(30,58,95,0.2);">
                         <i data-lucide="list-checks" style="width: 14px; height: 14px;"></i> Liste Matières
                       </button>
-                      <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($c['code_classe']) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
+                      <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($classeCode) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
                         <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Grille des notes
                       </a>
                     </div>
                   </td>
                 </tr>
-              <?php 
-                    endforeach;
-                  endif;
-                endforeach; 
-              ?>
+              <?php endforeach; ?>
             </tbody>
           </table>
         <?php endif; ?>
@@ -238,7 +221,7 @@ $encryptedId = $encryptedId ?? '';
       <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; flex-shrink: 0;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 2px;">Épreuve & Classe Cible</div>
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 2px;">Épreuve & Niveau / Filière</div>
             <div style="font-size: 14px; font-weight: 800; color: #0F172A;" id="modal_display_comp_name">
               <?= htmlspecialchars($item['libelle_composition'] ?? 'Examen') ?>
             </div>

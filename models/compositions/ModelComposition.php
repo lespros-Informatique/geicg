@@ -86,31 +86,19 @@ class ModelComposition extends BaseModel
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT cnf.*, n.libelle_niveau, f.libelle_filiere
+                SELECT cnf.*, n.libelle_niveau, f.libelle_filiere, cl.code_classe, cl.libelle_classe
                 FROM composition_niveau_filiere cnf
                 LEFT JOIN niveaux n ON n.code_niveau = cnf.niveau_code
                 LEFT JOIN filieres f ON f.code_filiere = cnf.filiere_code
+                LEFT JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
                 WHERE cnf.composition_code = ?
+                GROUP BY cnf.code_composition_niveau_filiere
                 ORDER BY n.libelle_niveau ASC, f.libelle_filiere ASC
             ");
             $stmt->execute([$compositionCode]);
-            $targets = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-            $stmtClasses = $this->getCon()->prepare("
-                SELECT code_classe, libelle_classe 
-                FROM classes 
-                WHERE niveau_code = ? AND filiere_code = ?
-                ORDER BY libelle_classe ASC
-            ");
-
-            foreach ($targets as &$t) {
-                $stmtClasses->execute([$t['niveau_code'], $t['filiere_code']]);
-                $t['classes'] = $stmtClasses->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            }
-            unset($t);
-
-            return $targets;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
+            error_log("Get target classes error: " . $e->getMessage());
             return [];
         }
     }
