@@ -412,6 +412,7 @@ $route->addRoute('/composition/edition/{param}', [$compositionController, 'editi
 $route->addRoute('/composition/delete', [$compositionController, 'delete']);
 $route->addRoute('/composition/getByClasseMatiereApi', [$compositionController, 'getByClasseMatiereApi']);
 $route->addRoute('/composition/getMatieresClasseApi', [$compositionController, 'getMatieresClasseApi']);
+$route->addRoute('/composition/saveMatieresClasseApi', [$compositionController, 'saveMatieresClasseApi']);
 
 
 

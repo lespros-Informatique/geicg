@@ -114,35 +114,22 @@ class CompositionController extends BaseController
             $data['code_composition'] = $this->validator->generateCode('compositions', 'code_composition', 'CMP-', 8);
         }
 
-        // Resolve target items (niveau, filiere, classe)
+        // Resolve target items (niveau, filiere)
         $targetItems = [];
         if (!empty($_POST['niveaux']) && is_array($_POST['niveaux'])) {
-            $allClasses = (new ModelClasse())->getAll();
             foreach ($_POST['niveaux'] as $row) {
                 $nivCode = $row['niveau_code'] ?? '';
                 $filCodes = $row['filiere_codes'] ?? [];
                 if (is_string($filCodes)) $filCodes = array_filter(explode(',', $filCodes));
                 if (empty($nivCode) || empty($filCodes)) continue;
 
-                foreach ($allClasses as $c) {
-                    if (($c['niveau_code'] ?? '') === $nivCode) {
-                        if (in_array($c['filiere_code'] ?? '', $filCodes)) {
-                            $targetItems[] = [
-                                'niveau_code' => $c['niveau_code'],
-                                'filiere_code' => $c['filiere_code'],
-                                'classe_code' => $c['code_classe']
-                            ];
-                        }
-                    }
+                foreach ($filCodes as $fCode) {
+                    $targetItems[] = [
+                        'niveau_code' => $nivCode,
+                        'filiere_code' => $fCode
+                    ];
                 }
             }
-        } elseif (!empty($data['classe_code'])) {
-            $cItem = (new ModelClasse())->getByCode($data['classe_code']);
-            $targetItems[] = [
-                'niveau_code' => $cItem['niveau_code'] ?? null,
-                'filiere_code' => $cItem['filiere_code'] ?? null,
-                'classe_code' => $data['classe_code']
-            ];
         }
 
         if (empty($targetItems)) {
@@ -176,35 +163,22 @@ class CompositionController extends BaseController
         $filteredData = array_intersect_key($data, array_flip($cols));
         $filteredData['updated_at_composition'] = date('Y-m-d H:i:s');
 
-        // Resolve target items (niveau, filiere, classe)
+        // Resolve target items (niveau, filiere)
         $targetItems = [];
         if (!empty($_POST['niveaux']) && is_array($_POST['niveaux'])) {
-            $allClasses = (new ModelClasse())->getAll();
             foreach ($_POST['niveaux'] as $row) {
                 $nivCode = $row['niveau_code'] ?? '';
                 $filCodes = $row['filiere_codes'] ?? [];
                 if (is_string($filCodes)) $filCodes = array_filter(explode(',', $filCodes));
                 if (empty($nivCode) || empty($filCodes)) continue;
 
-                foreach ($allClasses as $c) {
-                    if (($c['niveau_code'] ?? '') === $nivCode) {
-                        if (in_array($c['filiere_code'] ?? '', $filCodes)) {
-                            $targetItems[] = [
-                                'niveau_code' => $c['niveau_code'],
-                                'filiere_code' => $c['filiere_code'],
-                                'classe_code' => $c['code_classe']
-                            ];
-                        }
-                    }
+                foreach ($filCodes as $fCode) {
+                    $targetItems[] = [
+                        'niveau_code' => $nivCode,
+                        'filiere_code' => $fCode
+                    ];
                 }
             }
-        } elseif (!empty($data['classe_code'])) {
-            $cItem = (new ModelClasse())->getByCode($data['classe_code']);
-            $targetItems[] = [
-                'niveau_code' => $cItem['niveau_code'] ?? null,
-                'filiere_code' => $cItem['filiere_code'] ?? null,
-                'classe_code' => $data['classe_code']
-            ];
         }
 
         if ($this->model->update($filteredData, $id)) {
@@ -326,14 +300,39 @@ class CompositionController extends BaseController
     {
         $this->requireAuth();
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $compositionCode = trim($_GET['composition_code'] ?? ($_POST['composition_code'] ?? ''));
+        $compositionNiveauFiliereCode = trim($_GET['composition_niveau_filiere_code'] ?? ($_POST['composition_niveau_filiere_code'] ?? ($_GET['composition_cible_code'] ?? ($_POST['composition_cible_code'] ?? ''))));
         $anneeCode = $this->getActiveAnneeCode();
 
+        if (empty($classeCode) && !empty($compositionNiveauFiliereCode)) {
+            $stmtCible = $this->model->getCon()->prepare("SELECT niveau_code, filiere_code FROM composition_niveau_filiere WHERE code_composition_niveau_filiere = ?");
+            $stmtCible->execute([$compositionNiveauFiliereCode]);
+            $targetRow = $stmtCible->fetch(PDO::FETCH_ASSOC);
+            if ($targetRow) {
+                $stmtCl = $this->model->getCon()->prepare("SELECT code_classe FROM classes WHERE niveau_code = ? AND filiere_code = ? LIMIT 1");
+                $stmtCl->execute([$targetRow['niveau_code'], $targetRow['filiere_code']]);
+                $cRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
+                if ($cRow) {
+                    $classeCode = $cRow['code_classe'];
+                }
+            }
+        }
+
         if (empty($classeCode)) {
-            $this->json(['status' => 1, 'data' => [], 'source' => 'none']);
+            $this->json(['status' => 1, 'data' => [], 'saved_codes' => [], 'source' => 'none']);
             return;
         }
 
         $db = $this->model->getCon();
+
+        // Chercher les matières déjà enregistrées pour cette cible dans composition_matieres
+        $savedCodes = [];
+        if (!empty($compositionCode) && !empty($compositionNiveauFiliereCode)) {
+            $saved = $this->model->getCompositionMatieres($compositionCode, $compositionNiveauFiliereCode);
+            foreach ($saved as $s) {
+                $savedCodes[] = $s['matiere_code'];
+            }
+        }
 
         // 1. Matières enseignées dans cette classe selon l'emploi du temps de l'année en session
         $stmtEdt = $db->prepare("
@@ -378,7 +377,30 @@ class CompositionController extends BaseController
             $source = 'all';
         }
 
-        $this->json(['status' => 1, 'data' => $items, 'source' => $source]);
+        $this->json(['status' => 1, 'data' => $items, 'saved_codes' => $savedCodes, 'source' => $source]);
+    }
+
+    public function saveMatieresClasseApi()
+    {
+        $this->requireAuth();
+        $compositionCode = trim($_POST['composition_code'] ?? ($_GET['composition_code'] ?? ''));
+        $compositionNiveauFiliereCode = trim($_POST['composition_niveau_filiere_code'] ?? ($_GET['composition_niveau_filiere_code'] ?? ($_POST['composition_cible_code'] ?? ($_GET['composition_cible_code'] ?? ''))));
+        $matiereCodes = $_POST['matiere_codes'] ?? ($_GET['matiere_codes'] ?? []);
+
+        if (is_string($matiereCodes)) {
+            $matiereCodes = array_filter(explode(',', $matiereCodes));
+        }
+
+        if (empty($compositionCode) || empty($compositionNiveauFiliereCode)) {
+            $this->json(['status' => 0, 'message' => 'Composition et cible sont obligatoires']);
+            return;
+        }
+
+        if ($this->model->saveCompositionMatieres($compositionCode, $compositionNiveauFiliereCode, $matiereCodes)) {
+            $this->json(['status' => 1, 'message' => 'Matières enregistrées avec succès dans composition_matieres !']);
+        } else {
+            $this->json(['status' => 0, 'message' => 'Erreur lors de l\'enregistrement']);
+        }
     }
 
     public function details($details)

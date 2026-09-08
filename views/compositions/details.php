@@ -27,6 +27,20 @@ $encryptedId = $encryptedId ?? '';
     background: #EFF6FF;
     box-shadow: 0 2px 4px rgba(2, 132, 199, 0.12);
   }
+  @keyframes btnSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .btn-circle-loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    border-top-color: #FFFFFF;
+    animation: btnSpin 0.65s linear infinite;
+    vertical-align: middle;
+  }
 </style>
 
 <div class="app-layout">
@@ -127,7 +141,7 @@ $encryptedId = $encryptedId ?? '';
         </h3>
 
         <?php if (empty($targetClasses)): ?>
-          <div style="padding: 20px; text-align: center; color: #94A3B8; font-size: 13px;">Aucune classe spécifique associée à cette composition.</div>
+          <div style="padding: 20px; text-align: center; color: #94A3B8; font-size: 13px;">Aucun niveau/filière spécifique associé à cette composition.</div>
         <?php else: ?>
           <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
             <thead>
@@ -140,28 +154,49 @@ $encryptedId = $encryptedId ?? '';
               </tr>
             </thead>
             <tbody>
-              <?php foreach ($targetClasses as $idx => $tc): ?>
+              <?php 
+                $rowNum = 1;
+                foreach ($targetClasses as $tc): 
+                  $classesList = $tc['classes'] ?? [];
+                  if (empty($classesList)):
+              ?>
                 <tr style="border-bottom: 1px solid #F1F5F9;">
-                  <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $idx + 1 ?></td>
-                  <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? $tc['niveau_code'] ?? '-') ?></td>
-                  <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? $tc['filiere_code'] ?? '-') ?></span></td>
-                  <td style="padding: 12px 14px; font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($tc['libelle_classe'] ?? $tc['classe_code']) ?></td>
+                  <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
+                  <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
+                  <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
+                  <td style="padding: 12px 14px; font-weight: 600; color: #94A3B8; font-style: italic;">Aucune classe créée</td>
+                  <td style="padding: 12px 14px; text-align: right; color: #94A3B8;">-</td>
+                </tr>
+              <?php 
+                  else:
+                    foreach ($classesList as $c):
+              ?>
+                <tr style="border-bottom: 1px solid #F1F5F9;">
+                  <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
+                  <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
+                  <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
+                  <td style="padding: 12px 14px; font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($c['libelle_classe']) ?></td>
                   <td style="padding: 12px 14px; text-align: right;">
                     <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
                       <button type="button" 
                               class="btn btn-sm btn-open-saisie-modal" 
-                              data-classe-code="<?= htmlspecialchars($tc['classe_code']) ?>" 
-                              data-classe-libelle="<?= htmlspecialchars($tc['libelle_classe'] ?? $tc['classe_code']) ?>"
+                              data-classe-code="<?= htmlspecialchars($c['code_classe']) ?>"
+                              data-classe-libelle="<?= htmlspecialchars($c['libelle_classe']) ?>"
+                              data-cible-code="<?= htmlspecialchars($tc['code_composition_niveau_filiere'] ?? ($tc['code_composition_cible'] ?? '')) ?>"
                               style="background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(30,58,95,0.2);">
                         <i data-lucide="check-square" style="width: 14px; height: 14px;"></i> Cocher les Matières & Saisir
                       </button>
-                      <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($tc['classe_code']) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
+                      <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($c['code_classe']) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
                         <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Grille des notes
                       </a>
                     </div>
                   </td>
                 </tr>
-              <?php endforeach; ?>
+              <?php 
+                    endforeach;
+                  endif;
+                endforeach; 
+              ?>
             </tbody>
           </table>
         <?php endif; ?>
@@ -194,6 +229,7 @@ $encryptedId = $encryptedId ?? '';
     <!-- Form Content -->
     <form action="<?= RACINE ?>note/saisieClasse" method="GET" id="form-modal-saisie-notes" style="padding: 24px; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
       <input type="hidden" name="classe_code" id="modal_input_classe_code" value="">
+      <input type="hidden" name="composition_cible_code" id="modal_input_cible_code" value="">
       <input type="hidden" name="semestre_code" value="<?= htmlspecialchars($item['semestre_code'] ?? '') ?>">
       <input type="hidden" name="composition_code" value="<?= htmlspecialchars($item['code_composition'] ?? '') ?>">
       <input type="hidden" name="type_evaluation_code" value="EXAMEN">
@@ -211,8 +247,8 @@ $encryptedId = $encryptedId ?? '';
             <i data-lucide="clock" style="width: 12px; height: 12px;"></i> Emploi du temps (Session)
           </span>
         </div>
-        <div style="display: flex; gap: 12px; margin-top: 8px; font-size: 12px; color: #334155; flex-wrap: wrap;">
-          <span>Classe : <strong id="modal_display_classe_name" style="color: #1E3A5F;">-</strong></span>
+        <div style="display: flex; gap: 12px; margin-top: 10px; font-size: 12px; color: #334155; align-items: center; flex-wrap: wrap;">
+          <span>Classe pour la grille : <strong id="modal_display_classe_name" style="color: #1E3A5F; font-size: 13px; background: #EFF6FF; padding: 3px 10px; border-radius: 6px; border: 1px solid #BFDBFE;">-</strong></span>
           <span>| Coef : <strong><?= htmlspecialchars($item['coefficient'] ?? '1') ?></strong></span>
           <span>| Semestre : <strong><?= htmlspecialchars($item['libelle_semestre'] ?? ($item['semestre_code'] ?? 'S1')) ?></strong></span>
         </div>
@@ -243,7 +279,7 @@ $encryptedId = $encryptedId ?? '';
           Annuler
         </button>
         <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; font-weight: 700; border-radius: 8px; padding: 10px 22px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(30,58,95,0.25);">
-          <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i> Valider & Saisir les Notes
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Valider les Matières
         </button>
       </div>
     </form>
@@ -260,24 +296,34 @@ $(document).ready(function() {
   $('.btn-open-saisie-modal').on('click', function() {
     var classeCode = $(this).data('classe-code');
     var classeLibelle = $(this).data('classe-libelle');
+    var cibleCode = $(this).data('cible-code');
 
     $('#modal_input_classe_code').val(classeCode);
+    $('#modal_input_cible_code').val(cibleCode);
     $('#modal_display_classe_name').text(classeLibelle);
+
     $('#modal-saisie-matiere').css('display', 'flex');
+    loadMatieresForSelectedClasse();
+  });
+
+  function loadMatieresForSelectedClasse() {
+    var classeCode = $('#modal_input_classe_code').val();
+    var cibleCode = $('#modal_input_cible_code').val();
+    var compositionCode = $('input[name="composition_code"]').val();
 
     var $container = $('#matieres-checkboxes-container');
     $container.html('<div style="padding: 30px; text-align: center; color: #64748B;"><i data-lucide="loader" class="spin" style="width: 24px; height: 24px;"></i><p style="margin: 8px 0 0 0; font-size: 13px;">Chargement des matières de l\'emploi du temps...</p></div>');
     if (window.lucide) lucide.createIcons();
 
-    // Fetch matières enseignées via API
     $.ajax({
       url: '<?= RACINE ?>composition/getMatieresClasseApi',
       type: 'GET',
-      data: { classe_code: classeCode },
+      data: { classe_code: classeCode, composition_code: compositionCode, composition_niveau_filiere_code: cibleCode },
       dataType: 'json',
       success: function(res) {
         if (res && res.data) {
           var items = res.data;
+          var savedCodes = res.saved_codes || [];
           var source = res.source;
 
           if (source === 'emploi_temps') {
@@ -297,11 +343,17 @@ $(document).ready(function() {
 
           var html = '';
           items.forEach(function(m, idx) {
-            var isFirst = (idx === 0) ? 'checked' : '';
+            var isChecked = false;
+            if (savedCodes.length > 0) {
+              isChecked = (savedCodes.indexOf(m.code_matiere) !== -1);
+            } else {
+              isChecked = (idx === 0);
+            }
+            var checkedAttr = isChecked ? 'checked' : '';
 
-            html += '<label class="matiere-card-item ' + (isFirst ? 'selected' : '') + '">';
+            html += '<label class="matiere-card-item ' + (isChecked ? 'selected' : '') + '">';
             html += '  <div style="display: flex; align-items: center; gap: 12px;">';
-            html += '    <input type="checkbox" name="matiere_codes[]" value="' + m.code_matiere + '" class="chk-matiere-item" ' + isFirst + ' style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">';
+            html += '    <input type="checkbox" name="matiere_codes[]" value="' + m.code_matiere + '" class="chk-matiere-item" ' + checkedAttr + ' style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">';
             html += '    <span style="font-weight: 800; font-size: 13.5px; color: #0F172A;">' + m.libelle_matiere + '</span>';
             html += '  </div>';
             html += '  <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; background: #F1F5F9; padding: 3px 8px; border-radius: 6px;">' + m.code_matiere + '</span>';
@@ -316,7 +368,7 @@ $(document).ready(function() {
         $container.html('<div style="padding: 20px; text-align: center; color: #DC2626; font-size: 13px;">Erreur lors du chargement des matières.</div>');
       }
     });
-  });
+  }
 
   // Highlight et sélection interactive des cartes
   $(document).on('change', '.chk-matiere-item', function() {
@@ -335,33 +387,64 @@ $(document).ready(function() {
     $(this).text(allCheckedState ? 'Tout décocher' : 'Tout cocher');
   });
 
-  // Form submit handler : redirection directe vers la grille de saisie par classe
+  // Form submit handler : enregistrement dans composition_matieres sans redirection
   $('#form-modal-saisie-notes').on('submit', function(e) {
     e.preventDefault();
+
     var checkedMatieres = $('.chk-matiere-item:checked');
     if (checkedMatieres.length === 0) {
       if (window.toastr) {
         toastr.warning('Veuillez cocher au moins une matière à évaluer pour continuer.', 'Sélection requise');
-      } else {
-        alert('Veuillez cocher au moins une matière à évaluer.');
       }
       return false;
     }
 
-    var selectedMatCode = checkedMatieres.first().val();
-    var classeCode = $('#modal_input_classe_code').val();
-    var semestreCode = $('input[name="semestre_code"]').val();
+    var selectedMatCodes = [];
+    checkedMatieres.each(function() {
+      selectedMatCodes.push($(this).val());
+    });
+
+    var cibleCode = $('#modal_input_cible_code').val();
     var compositionCode = $('input[name="composition_code"]').val();
-    var typeEval = 'EXAMEN';
 
-    var targetUrl = '<?= RACINE ?>note/saisieClasse?' + 
-      'classe_code=' + encodeURIComponent(classeCode) +
-      '&matiere_code=' + encodeURIComponent(selectedMatCode) +
-      '&semestre_code=' + encodeURIComponent(semestreCode) +
-      '&composition_code=' + encodeURIComponent(compositionCode) +
-      '&type_evaluation_code=' + encodeURIComponent(typeEval);
+    var $btnSubmit = $(this).find('button[type="submit"]');
+    var originalBtnHtml = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Valider les Matières';
+    
+    $btnSubmit.prop('disabled', true).html('<span class="btn-circle-loader" style="margin-right: 6px;"></span> Enregistrement...');
 
-    window.location.href = targetUrl;
+    // Enregistrer les matières cochées dans la table composition_matieres via composition_niveau_filiere_code
+    $.ajax({
+      url: '<?= RACINE ?>composition/saveMatieresClasseApi',
+      type: 'POST',
+      data: {
+        composition_code: compositionCode,
+        composition_niveau_filiere_code: cibleCode,
+        matiere_codes: selectedMatCodes
+      },
+      dataType: 'json',
+      success: function(res) {
+        $btnSubmit.prop('disabled', false).html(originalBtnHtml);
+        if (window.lucide) lucide.createIcons();
+
+        if (res.status === 1 || res.success) {
+          if (window.toastr) {
+            toastr.success(res.message || 'Matières de la composition enregistrées avec succès !', 'Succès');
+          }
+          $('#modal-saisie-matiere').hide();
+        } else {
+          if (window.toastr) {
+            toastr.error(res.message || 'Erreur lors de l\'enregistrement des matières.', 'Erreur');
+          }
+        }
+      },
+      error: function() {
+        $btnSubmit.prop('disabled', false).html(originalBtnHtml);
+        if (window.lucide) lucide.createIcons();
+        if (window.toastr) {
+          toastr.error('Erreur de connexion au serveur.', 'Erreur Réseau');
+        }
+      }
+    });
   });
 
   $('.btn-close-saisie-modal').on('click', function() {
