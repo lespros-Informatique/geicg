@@ -86,7 +86,11 @@ class ModelComposition extends BaseModel
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT cnf.*, n.libelle_niveau, f.libelle_filiere, cl.code_classe, cl.libelle_classe
+                SELECT cnf.*, n.libelle_niveau, f.libelle_filiere, cl.code_classe, cl.libelle_classe,
+                       (SELECT COUNT(*) 
+                        FROM composition_matieres cm 
+                        WHERE cm.composition_code = cnf.composition_code 
+                          AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere) AS nb_matieres
                 FROM composition_niveau_filiere cnf
                 LEFT JOIN niveaux n ON n.code_niveau = cnf.niveau_code
                 LEFT JOIN filieres f ON f.code_filiere = cnf.filiere_code

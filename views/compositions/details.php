@@ -183,6 +183,7 @@ $encryptedId = $encryptedId ?? '';
                 <th style="padding: 10px 14px;">#</th>
                 <th style="padding: 10px 14px;">Niveau d'Études</th>
                 <th style="padding: 10px 14px;">Filière</th>
+                <th style="padding: 10px 14px; text-align: center;">Nombre de Matières</th>
                 <th style="padding: 10px 14px; text-align: right;">Actions Saisie Notes</th>
               </tr>
             </thead>
@@ -192,11 +193,18 @@ $encryptedId = $encryptedId ?? '';
                 foreach ($targetClasses as $tc): 
                   $classeCode = $tc['code_classe'] ?? '';
                   $targetName = !empty($tc['libelle_classe']) ? $tc['libelle_classe'] : (($tc['libelle_niveau'] ?? '') . ' - ' . ($tc['libelle_filiere'] ?? ''));
+                  $nbMatieres = (int)($tc['nb_matieres'] ?? 0);
               ?>
                 <tr style="border-bottom: 1px solid #F1F5F9;">
                   <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
                   <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
                   <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
+                  <td style="padding: 12px 14px; text-align: center;">
+                    <span class="badge" style="background: <?= $nbMatieres > 0 ? '#EFF6FF' : '#F1F5F9' ?>; color: <?= $nbMatieres > 0 ? '#1E40AF' : '#64748B' ?>; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                      <i data-lucide="book-open" style="width: 13px; height: 13px;"></i>
+                      <?= $nbMatieres ?> matière<?= $nbMatieres > 1 ? 's' : '' ?>
+                    </span>
+                  </td>
                   <td style="padding: 12px 14px; text-align: right;">
                     <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
                       <button type="button" 
@@ -461,6 +469,9 @@ $(document).ready(function() {
             toastr.success(res.message || 'Matières de la composition enregistrées avec succès !', 'Succès');
           }
           $('#modal-saisie-matiere').hide();
+          setTimeout(function() {
+            location.reload();
+          }, 500);
         } else {
           if (window.toastr) {
             toastr.error(res.message || 'Erreur lors de l\'enregistrement des matières.', 'Erreur');
