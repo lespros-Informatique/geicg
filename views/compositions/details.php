@@ -6,6 +6,20 @@ $matieres = $matieres ?? [];
 $encryptedId = $encryptedId ?? '';
 ?>
 <style>
+  /* Card Hover Animations & Micro-Interactions */
+  .card {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease !important;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04) !important;
+  }
+  .card [data-lucide] {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  }
+  .card:hover [data-lucide] {
+    transform: scale(1.14) rotate(-3deg);
+  }
   .matiere-card-item {
     display: flex;
     align-items: center;
@@ -15,12 +29,13 @@ $encryptedId = $encryptedId ?? '';
     border-radius: 8px;
     margin-bottom: 6px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     background: #FFFFFF;
   }
   .matiere-card-item:hover {
     border-color: #0284C7;
     background: #F0F9FF;
+    transform: translateX(4px);
   }
   .matiere-card-item.selected {
     border-color: #0284C7;
@@ -71,64 +86,83 @@ $encryptedId = $encryptedId ?? '';
       </div>
 
       <!-- CARD DETAILS GENERALS -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
         
         <!-- Info Card 1 -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="file-text" style="width: 22px; height: 22px;"></i>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-              <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Intitulé de l'Épreuve</div>
-              <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 2px;"><?= htmlspecialchars($item['libelle_composition'] ?? '-') ?></div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Intitulé de l'Épreuve</div>
+              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;"><?= htmlspecialchars($item['libelle_composition'] ?? '-') ?></div>
             </div>
           </div>
-          <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; font-size: 13px; color: #475569; display: flex; justify-content: space-between;">
+          <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
             <span>Code Composition :</span>
-            <code style="font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($item['code_composition'] ?? '-') ?></code>
+            <code style="font-weight: 800; color: #1E3A5F; background: #F1F5F9; padding: 2px 6px; border-radius: 4px;"><?= htmlspecialchars($item['code_composition'] ?? '-') ?></code>
           </div>
         </div>
 
         <!-- Info Card 2 -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #F0FDF4; color: #15803D; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="bar-chart-2" style="width: 22px; height: 22px;"></i>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: #F0FDF4; color: #15803D; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="bar-chart-2" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-              <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Coefficient & Semestre</div>
-              <div style="font-size: 16px; font-weight: 800; color: #15803D; margin-top: 2px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Coefficient & Semestre</div>
+              <div style="font-size: 15px; font-weight: 800; color: #15803D; margin-top: 2px;">
                 Coef. <?= htmlspecialchars(number_format((float)($item['coefficient'] ?? 1), 2)) ?>
               </div>
             </div>
           </div>
-          <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; font-size: 13px; color: #475569; display: flex; justify-content: space-between;">
-            <span>Semestre Académique :</span>
+          <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
+            <span>Semestre :</span>
             <strong style="color: #0F172A;"><?= htmlspecialchars($item['libelle_semestre'] ?? ($item['semestre_code'] ?? 'S1')) ?></strong>
           </div>
         </div>
 
         <!-- Info Card 3 -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="calendar" style="width: 22px; height: 22px;"></i>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-              <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Date & Statut</div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Date & Statut</div>
               <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;">
                 <?= !empty($item['date_composition']) ? date('d/m/Y', strtotime($item['date_composition'])) : '-' ?>
               </div>
             </div>
           </div>
-          <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; font-size: 13px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
+          <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
             <span>Statut Actuel :</span>
             <?php if (($item['statut_composition'] ?? '') === 'termine'): ?>
-              <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:20px; font-weight:700; font-size:11px;">Terminé</span>
+              <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px; border-radius:20px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:12px;height:12px;"></i> Terminé</span>
             <?php else: ?>
-              <span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:20px; font-weight:700; font-size:11px;">Programmé</span>
+              <span class="badge" style="background:#FEF3C7; color:#B45309; padding:3px 10px; border-radius:20px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> Programmé</span>
             <?php endif; ?>
+          </div>
+        </div>
+
+        <!-- Info Card 4 -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Cibles Rattachées</div>
+              <div style="font-size: 15px; font-weight: 800; color: #7E22CE; margin-top: 2px;">
+                <?= count($targetClasses) ?> Niveaux / Filières
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
+            <span>État des cibles :</span>
+            <span class="badge" style="background:#F3E8FF; color:#7E22CE; padding:3px 10px; border-radius:20px; font-weight:700; font-size:11px;">Active(s)</span>
           </div>
         </div>
 
@@ -143,7 +177,7 @@ $encryptedId = $encryptedId ?? '';
         <?php if (empty($targetClasses)): ?>
           <div style="padding: 20px; text-align: center; color: #94A3B8; font-size: 13px;">Aucun niveau/filière spécifique associé à cette composition.</div>
         <?php else: ?>
-          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <table id="table-niveaux-filieres" class="table display nowrap" style="width: 100%; border-collapse: collapse; font-size: 13px;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase;">
                 <th style="padding: 10px 14px;">#</th>
@@ -273,6 +307,19 @@ $encryptedId = $encryptedId ?? '';
 <script>
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
+
+  if ($.fn.DataTable && $('#table-niveaux-filieres').length) {
+    $('#table-niveaux-filieres').DataTable({
+      pageLength: 10,
+      autoWidth: false,
+      language: {
+        url: '<?= RACINE ?>public/json/datatables-i18n-fr-FR.json'
+      },
+      drawCallback: function() {
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+  }
 
   var allCheckedState = false;
 
