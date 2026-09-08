@@ -169,19 +169,6 @@ $route->addRoute('/semestre/formulaire', [$semestreController, 'formulaire']);
 
 
 
-// Module: ue / unites_enseignement (UeController)
-$route->addRoute('/ue/list', [$ueController, 'list']);
-$route->addRoute('/ue/apiList', [$ueController, 'apiList']);
-$route->addRoute('/ue/add', [$ueController, 'add']);
-$route->addRoute('/ue/edit', [$ueController, 'edit']);
-$route->addRoute('/ue/changer', [$ueController, 'changer']);
-$route->addRoute('/ue/details/{param}', [$ueController, 'details']);
-$route->addRoute('/ue/edition/{param}', [$ueController, 'edition']);
-$route->addRoute('/ue/formulaire', [$ueController, 'formulaire']);
-$route->addRoute('/unites_enseignement/list', [$ueController, 'list']);
-$route->addRoute('/unites_enseignement/apiList', [$ueController, 'apiList']);
-$route->addRoute('/unites_enseignement/details/{param}', [$ueController, 'details']);
-$route->addRoute('/unites_enseignement/edition/{param}', [$ueController, 'edition']);
 
 // Module: matiere (MatiereController)
 $route->addRoute('/matiere/list', [$matiereController, 'list']);
@@ -424,6 +411,7 @@ $route->addRoute('/composition/details/{param}', [$compositionController, 'detai
 $route->addRoute('/composition/edition/{param}', [$compositionController, 'edition']);
 $route->addRoute('/composition/delete', [$compositionController, 'delete']);
 $route->addRoute('/composition/getByClasseMatiereApi', [$compositionController, 'getByClasseMatiereApi']);
+$route->addRoute('/composition/getMatieresClasseApi', [$compositionController, 'getMatieresClasseApi']);
 
 
 

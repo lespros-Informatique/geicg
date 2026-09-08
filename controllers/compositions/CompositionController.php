@@ -322,6 +322,65 @@ class CompositionController extends BaseController
         $this->json(['status' => 1, 'data' => $items]);
     }
 
+    public function getMatieresClasseApi()
+    {
+        $this->requireAuth();
+        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $anneeCode = $this->getActiveAnneeCode();
+
+        if (empty($classeCode)) {
+            $this->json(['status' => 1, 'data' => [], 'source' => 'none']);
+            return;
+        }
+
+        $db = $this->model->getCon();
+
+        // 1. Matières enseignées dans cette classe selon l'emploi du temps de l'année en session
+        $stmtEdt = $db->prepare("
+            SELECT DISTINCT m.code_matiere, m.libelle_matiere,
+                   GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ') AS prof_nom
+            FROM emplois_temps edt
+            INNER JOIN matieres m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN enseignant_matiere em ON (em.classe_code = edt.classe_code AND em.matiere_code = edt.matiere_code)
+            LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+            LEFT JOIN users u ON u.code_user = e.code_enseignant
+            WHERE edt.classe_code = ? AND (edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '')
+            GROUP BY m.code_matiere, m.libelle_matiere
+            ORDER BY m.libelle_matiere ASC
+        ");
+        $stmtEdt->execute([$classeCode, $anneeCode]);
+        $items = $stmtEdt->fetchAll(PDO::FETCH_ASSOC);
+
+        $source = 'emploi_temps';
+
+        // 2. Fallback sur enseignant_matiere si l'emploi du temps n'est pas encore configuré
+        if (empty($items)) {
+            $stmtEm = $db->prepare("
+                SELECT DISTINCT m.code_matiere, m.libelle_matiere,
+                       GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ') AS prof_nom
+                FROM enseignant_matiere em
+                INNER JOIN matieres m ON m.code_matiere = em.matiere_code
+                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+                LEFT JOIN users u ON u.code_user = e.code_enseignant
+                WHERE em.classe_code = ?
+                GROUP BY m.code_matiere, m.libelle_matiere
+                ORDER BY m.libelle_matiere ASC
+            ");
+            $stmtEm->execute([$classeCode]);
+            $items = $stmtEm->fetchAll(PDO::FETCH_ASSOC);
+            $source = 'enseignant_matiere';
+        }
+
+        // 3. Fallback sur toutes les matières
+        if (empty($items)) {
+            $stmtAll = $db->query("SELECT code_matiere, libelle_matiere FROM matieres ORDER BY libelle_matiere ASC");
+            $items = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+            $source = 'all';
+        }
+
+        $this->json(['status' => 1, 'data' => $items, 'source' => $source]);
+    }
+
     public function details($details)
     {
         $this->requireAuth();
@@ -337,13 +396,15 @@ class CompositionController extends BaseController
         $semestre = (new ModelSemestre())->getByCode($item['semestre_code'] ?? '');
         $annee = (new ModelAnnee())->getByCode($item['annee_code'] ?? '');
         $targetClasses = $this->model->getTargetClasses($item['code_composition']);
+        $matieres = (new ModelMatiere())->getAll();
 
         $this->loadView('../views/compositions/details.php', [
             'item' => $item,
             'encryptedId' => $encryptedId,
             'semestre' => $semestre,
             'annee' => $annee,
-            'targetClasses' => $targetClasses
+            'targetClasses' => $targetClasses,
+            'matieres' => $matieres
         ]);
     }
 
