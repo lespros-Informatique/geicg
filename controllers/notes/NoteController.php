@@ -152,6 +152,9 @@ class NoteController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $anneeCode = $this->getActiveAnneeCode();
+        $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+        $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -160,16 +163,26 @@ class NoteController extends BaseController
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'note/list'); exit();
         }
-        $this->loadView('../views/notes/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/notes/edit.php', [
+            'item' => $item, 
+            'encryptedId' => $encryptedId,
+            'anneeCode' => $anneeCode,
+            'anneeLibelle' => $anneeLibelle
+        ]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
+        $anneeCode = $this->getActiveAnneeCode();
+        $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+        $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
         $selectedClasseCode = $_GET['classe_code'] ?? ($_SESSION['last_note_classe_code'] ?? '');
         $this->loadView('../views/notes/edit.php', [
             'item' => [],
-            'selectedClasseCode' => $selectedClasseCode
+            'selectedClasseCode' => $selectedClasseCode,
+            'anneeCode' => $anneeCode,
+            'anneeLibelle' => $anneeLibelle
         ]);
     }
 
@@ -178,17 +191,25 @@ class NoteController extends BaseController
     {
         $this->requireAuth();
         $anneeCode = $this->getActiveAnneeCode();
+        $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+        $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
+
         $classes = (new ModelClasse())->getAll();
         $matieres = (new ModelMatiere())->getAll();
         
         $db = $this->model->getCon();
-        $semestres = $db->query("SELECT * FROM semestres WHERE statut_semestre = 'actif' ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $semestres = $db->query("SELECT * FROM semestres WHERE (annee_code = " . $db->quote($anneeCode) . " OR annee_code IS NULL OR annee_code = '') ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($semestres)) {
+            $semestres = (new ModelSemestre())->getAll();
+        }
         
         $selectedClasseCode = $_GET['classe_code'] ?? '';
         $selectedMatiereCode = $_GET['matiere_code'] ?? '';
         $selectedSemestreCode = $_GET['semestre_code'] ?? '';
-        $selectedTypeEval = $_GET['type_evaluation_code'] ?? 'COMPOSITION';
+        $selectedTypeEval = $_GET['type_evaluation_code'] ?? 'INTERROGATION';
         $selectedCompositionCode = $_GET['composition_code'] ?? '';
+        $selectedLibelleEval = $_GET['libelle_eval'] ?? '';
+        $selectedCoefEval = $_GET['coefficient'] ?? '';
 
         $etudiants = [];
         $existingNotes = [];
@@ -207,7 +228,7 @@ class NoteController extends BaseController
 
             if (!empty($selectedMatiereCode)) {
                 $compModel = new ModelComposition();
-                $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode);
+                $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode);
 
                 if (!empty($selectedSemestreCode)) {
                     $sqlNotes = "
@@ -237,6 +258,8 @@ class NoteController extends BaseController
         }
 
         $this->loadView('../views/notes/saisie_classe.php', [
+            'anneeCode' => $anneeCode,
+            'anneeLibelle' => $anneeLibelle,
             'classes' => $classes,
             'matieres' => $matieres,
             'semestres' => $semestres,
@@ -245,6 +268,8 @@ class NoteController extends BaseController
             'selectedSemestreCode' => $selectedSemestreCode,
             'selectedTypeEval' => $selectedTypeEval,
             'selectedCompositionCode' => $selectedCompositionCode,
+            'selectedLibelleEval' => $selectedLibelleEval,
+            'selectedCoefEval' => $selectedCoefEval,
             'compositionsProgrammees' => $compositionsProgrammees,
             'etudiants' => $etudiants,
             'existingNotes' => $existingNotes

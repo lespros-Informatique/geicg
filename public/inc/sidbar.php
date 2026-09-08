@@ -491,8 +491,11 @@
                 <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= strpos($currentUri, '/composition/') !== false ? 'active' : '' ?>" data-title="Planning Compositions & Examens">
                     <i data-lucide="award"></i> <span>Planning Compositions & Examens</span>
                 </a>
-                <a href="<?= RACINE ?>note/list" class="nav-item sub <?= strpos($currentUri, '/note/') !== false ? 'active' : '' ?>" data-title="Saisie des Notes">
+                <a href="<?= RACINE ?>note/saisieClasse" class="nav-item sub <?= strpos($currentUri, '/note/saisieClasse') !== false ? 'active' : '' ?>" data-title="Saisie des Notes par Classe">
                     <i data-lucide="edit-3"></i> <span>Saisie des Notes par Classe</span>
+                </a>
+                <a href="<?= RACINE ?>note/list" class="nav-item sub <?= (strpos($currentUri, '/note/list') !== false || (strpos($currentUri, '/note/') !== false && strpos($currentUri, 'saisieClasse') === false)) ? 'active' : '' ?>" data-title="Registre & Journal des Notes">
+                    <i data-lucide="list"></i> <span>Registre & Journal des Notes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showBulletins): ?>
