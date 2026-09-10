@@ -1,67 +1,85 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php
+require_once __DIR__ . '/../../public/inc/header.php';
+$item = isset($item) ? $item : [];
+$typeMedia = strtolower($item['type_media'] ?? ($item['type_fichier'] ?? 'image'));
+$urlMedia = $item['url_fichier'] ?? ($item['fichier'] ?? '');
+?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
-    <div class="content-wrapper" style="padding: 24px;">
+    <div class="content-wrapper" style="padding: 24px; width: 100%; box-sizing: border-box;">
+      
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Détaillée : <?= htmlspecialchars($item['titre_galerie'] ?? 'Galerie Médias') ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Consultation complète des données rattachées au module Galeries Photos & Vidéos</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Média / Galerie : <?= htmlspecialchars($item['titre_galerie'] ?? 'Média') ?></h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Photothèque et vidéothèque institutionnelle GEICG</p>
         </div>
         <div style="display: flex; gap: 12px;">
           <a href="<?= RACINE ?>galerie/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
+            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la galerie
           </a>
           <a href="<?= RACINE ?>galerie/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Éditer cet élément
+            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le média
           </a>
         </div>
       </div>
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #F1F5F9;">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
+
+      <!-- CARD 1 (COL-12) : DÉTAILS DU MÉDIA -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 10px;">
+          <i data-lucide="image" style="width: 18px; height: 18px;"></i> Caractéristiques du Fichier
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Titre de la publication</span>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['titre_galerie'] ?? '-') ?></div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Code : <code><?= htmlspecialchars($item['code_galerie'] ?? '-') ?></code></div>
           </div>
-          <div>
-            <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Informations d'Enregistrement</h3>
-            <span style="font-size: 12px; color: #64748B;">Réf ID #<?= htmlspecialchars($item['id_galerie'] ?? '-') ?></span>
+
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
+            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Nature du média</span>
+            <div style="font-size: 17px; font-weight: 800; color: #1E3A5F; margin-top: 4px; text-transform: uppercase;"><?= htmlspecialchars($typeMedia) ?></div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Date : <?= !empty($item['created_at_galerie']) ? date('d/m/Y', strtotime($item['created_at_galerie'])) : date('d/m/Y') ?></div>
           </div>
-          <div style="margin-left: auto;">
-            <?php if (($item['statut_galerie'] ?? '') === 'actif'): ?>
-              <span class="badge" style="background:#DCFCE7; color:#15803D; padding:6px 14px; border-radius:14px; font-weight:700; font-size:13px;">Statut : Actif</span>
-            <?php else: ?>
-              <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:6px 14px; border-radius:14px; font-weight:700; font-size:13px;">Statut : Inactif</span>
-            <?php endif; ?>
+
+          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
+            <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Statut de visibilité</span>
+            <div style="margin-top: 6px;">
+              <?php if (($item['statut_galerie'] ?? '') === 'actif'): ?>
+                <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">En ligne / Publié</span>
+              <?php else: ?>
+                <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Masqué / Archivé</span>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-          <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Titre de l\'album / Galerie</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['titre_galerie']) ? htmlspecialchars($item['titre_galerie']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
-            </div>
+
+        <?php if (!empty($item['description_galerie'])): ?>
+          <div style="padding-top: 16px; border-top: 1px solid #F1F5F9; margin-top: 16px; font-size: 13px; color: #334155;">
+            <strong style="color: #64748B;">Légende / Description :</strong> <?= htmlspecialchars($item['description_galerie']) ?>
           </div>
-          <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Type de média (Photo / Vidéo)</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['type_galerie']) ? htmlspecialchars($item['type_galerie']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
-            </div>
-          </div>
-          <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Lien / URL du Fichier ou Vidéo</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['url_fichier']) ? htmlspecialchars($item['url_fichier']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
-            </div>
-          </div>
-          <div style="background: #F8FAFC; border-radius: 8px; padding: 16px; border: 1px solid #F1F5F9;">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.5px; margin-bottom: 6px;">Description</div>
-            <div style="font-size: 15px; font-weight: 600; color: #0F172A; word-break: break-word;">
-              <?= !empty($item['description_galerie']) ? htmlspecialchars($item['description_galerie']) : '<span style="color:#94A3B8; font-style:italic;">Non renseigné</span>' ?>
-            </div>
-          </div>
+        <?php endif; ?>
+      </div>
+
+      <!-- CARD 2 (COL-12) : APERÇU DU CONTENU VISUEL -->
+      <?php if (!empty($urlMedia)): ?>
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 10px;">
+          <i data-lucide="eye" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Visualisation du Média
+        </h3>
+
+        <div style="text-align: center; background: #0F172A; border-radius: 8px; padding: 20px; max-height: 500px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+          <?php if ($typeMedia === 'video'): ?>
+            <video src="<?= htmlspecialchars($urlMedia) ?>" controls style="max-width: 100%; max-height: 460px; border-radius: 6px;"></video>
+          <?php else: ?>
+            <img src="<?= htmlspecialchars($urlMedia) ?>" alt="<?= htmlspecialchars($item['titre_galerie'] ?? 'Média') ?>" style="max-width: 100%; max-height: 460px; object-fit: contain; border-radius: 6px;">
+          <?php endif; ?>
         </div>
       </div>
+      <?php endif; ?>
+
     </div>
   </main>
 </div>

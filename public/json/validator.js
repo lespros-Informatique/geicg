@@ -1,9 +1,20 @@
 const FormValidator = {
     patterns: {
         email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        phone: /^[0-9+\s]{8,15}$/,
+        phone: /^[0-9]{10}$/,
         number: /^\d+$/,
         password: /^.{6,}$/
+    },
+
+    cleanPhone: function(val) {
+        if (!val) return '';
+        let cleaned = String(val).replace(/[^0-9]/g, '');
+        if (cleaned.startsWith('00225')) {
+            cleaned = cleaned.substring(5);
+        } else if (cleaned.startsWith('225') && cleaned.length > 10) {
+            cleaned = cleaned.substring(3);
+        }
+        return cleaned.substring(0, 10);
     },
 
     icons: {
@@ -201,3 +212,22 @@ const FormValidator = {
 };
 
 window.FormValidator = FormValidator;
+
+// Auto-nettoyage des numéros de téléphone (retrait immédiat de +225, 225 et espaces)
+document.addEventListener('input', function(e) {
+    const target = e.target;
+    if (target && (target.type === 'tel' || (target.name && (target.name.includes('telephone') || target.name.includes('contact'))))) {
+        if (target.value && (target.value.includes('+') || target.value.startsWith('225') || target.value.includes(' ') || target.value.includes('-') || target.value.includes('.'))) {
+            target.value = FormValidator.cleanPhone(target.value);
+        }
+    }
+});
+
+document.addEventListener('blur', function(e) {
+    const target = e.target;
+    if (target && (target.type === 'tel' || (target.name && (target.name.includes('telephone') || target.name.includes('contact'))))) {
+        if (target.value) {
+            target.value = FormValidator.cleanPhone(target.value);
+        }
+    }
+}, true);

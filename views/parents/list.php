@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -18,7 +18,7 @@
           <table id="table-parents" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px;">ID</th>
+                <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Élève Rattaché</th>
                 <th style="padding: 12px;">Nom Père</th>
                 <th style="padding: 12px;">Tél. Père</th>
@@ -39,21 +39,24 @@
 $(document).ready(function() {
   $('#table-parents').DataTable({
     ajax: '<?= RACINE ?>parent/apiList',
-    scrollX: true,
+    processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_parent', defaultContent: '-' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'etudiant_code', defaultContent: '-' },
       { data: 'nom_pere', defaultContent: '-' },
       { data: 'telephone_pere', defaultContent: '-' },
       { data: 'nom_mere', defaultContent: '-' },
       { data: 'telephone_mere', defaultContent: '-' },
       { data: 'nom_tuteur', defaultContent: '-' },
-      { data: null, render: function(d) {
+      { data: null, orderable: false, render: function(d) {
         return '<a href="' + window.RACINE + 'parent/edition/' + (d.editId || d.id_parent) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                '<a href="' + window.RACINE + 'parent/details/' + (d.editId || d.id_parent) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 });

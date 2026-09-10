@@ -10,13 +10,115 @@ class EmploiController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/emplois_temps/list.php');
+        $anneeModel = new ModelAnnee();
+        $annees = $anneeModel->getAll();
+        $niveaux = (new ModelNiveau())->getAll();
+        $classes = (new ModelClasse())->getAll();
+        
+        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+            $selectedAnneeCode = trim($_GET['annee_code']);
+            foreach ($annees as $a) {
+                if ($a['code_annee'] === $selectedAnneeCode) {
+                    $_SESSION['annee_active_code'] = $a['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    break;
+                }
+            }
+        } else {
+            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+        }
+
+        $this->loadView('../views/emplois_temps/list.php', [
+            'annees' => $annees,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
+            'selectedAnneeCode' => $selectedAnneeCode
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+
+        $db = $this->model->getCon();
+        $sql = "
+            SELECT 
+                cl.code_classe,
+                cl.libelle_classe,
+                n.libelle_niveau,
+                COUNT(edt.id_emploi) AS nb_creneaux,
+                COUNT(DISTINCT edt.jour) AS nb_jours,
+                COUNT(DISTINCT edt.matiere_code) AS nb_matieres,
+                COUNT(DISTINCT edt.enseignant_code) AS nb_profs,
+                GROUP_CONCAT(DISTINCT m.libelle_matiere ORDER BY m.libelle_matiere SEPARATOR ', ') AS matieres_noms,
+                MAX(edt.created_at_emploi) AS last_update,
+                SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600 AS total_heures
+            FROM emplois_temps edt
+            INNER JOIN classes cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+        ";
+        $conditions = [];
+        $params = [];
+
+        if (!empty($anneeCode)) {
+            $conditions[] = "(edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '')";
+            $params[] = $anneeCode;
+        }
+        if (!empty($niveauCode)) {
+            $conditions[] = "cl.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if (!empty($classeCode)) {
+            $conditions[] = "edt.classe_code = ?";
+            $params[] = $classeCode;
+        }
+
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
+        }
+
+        $sql .= " GROUP BY cl.code_classe, cl.libelle_classe, n.libelle_niveau ORDER BY cl.libelle_classe ASC ";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $classesWithEmploi = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $data = [];
+        foreach ($classesWithEmploi as $i) {
+            $totalMinutes = round(((float)($i['total_heures'] ?? 0)) * 60);
+            $h = floor($totalMinutes / 60);
+            $m = $totalMinutes % 60;
+            $volHoraire = sprintf("%dh%02d", $h, $m);
+
+            $data[] = [
+                'code_classe' => $i['code_classe'],
+                'libelle_classe' => $i['libelle_classe'],
+                'libelle_niveau' => $i['libelle_niveau'] ?: 'Niveau non défini',
+                'nb_creneaux' => (int)$i['nb_creneaux'],
+                'nb_jours' => (int)$i['nb_jours'],
+                'nb_matieres' => (int)$i['nb_matieres'],
+                'nb_profs' => (int)$i['nb_profs'],
+                'matieres_noms' => $i['matieres_noms'] ?: '',
+                'total_heures_formatted' => $volHoraire,
+                'last_update' => $i['last_update'] ? date('d/m/Y H:i', strtotime($i['last_update'])) : '-',
+                'statut_planning' => ((int)$i['nb_jours'] >= 5) ? 'Complet' : 'Brouillon'
+            ];
+        }
+
+        $this->json(['data' => $data]);
+    }
+
+    public function apiSlots()
+    {
+        $this->requireAuth();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_emploi'];
@@ -26,7 +128,185 @@ class EmploiController extends BaseController
                 'editId' => $idCrypte
             ]);
         }
-        $this->json(['data' => $data]);
+        $this->json(['status' => 1, 'data' => $data]);
+    }
+
+
+
+    public function getAssignedTeacher()
+    {
+        $this->requireAuth();
+        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $matiereCode = trim($_GET['matiere_code'] ?? ($_POST['matiere_code'] ?? ''));
+
+        if (empty($classeCode) || empty($matiereCode)) {
+            $this->json(['status' => 0, 'message' => 'Classe ou matière non spécifiée']);
+            return;
+        }
+
+        $db = $this->model->getCon();
+
+        // 1. Recherche précise par classe_code + matiere_code
+        $stmt = $db->prepare("
+            SELECT em.*, 
+                   u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
+                   m.libelle_matiere, cl.libelle_classe
+            FROM enseignant_matiere em
+            JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+            JOIN users u ON u.code_user = em.enseignant_code
+            LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
+            LEFT JOIN classes cl ON cl.code_classe = em.classe_code
+            WHERE em.classe_code = ? AND em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
+            LIMIT 1
+        ");
+        $stmt->execute([$classeCode, $matiereCode]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // 2. Recherche de secours par matière
+        if (!$row) {
+            $stmtGlobal = $db->prepare("
+                SELECT em.*, 
+                       u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
+                       m.libelle_matiere
+                FROM enseignant_matiere em
+                JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+                JOIN users u ON u.code_user = em.enseignant_code
+                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
+                WHERE em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
+                LIMIT 1
+            ");
+            $stmtGlobal->execute([$matiereCode]);
+            $row = $stmtGlobal->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if ($row) {
+            $nomComplet = trim(($row['nom_enseignant'] ?? '') . ' ' . ($row['prenom_enseignant'] ?? ''));
+            $this->json([
+                'status' => 1,
+                'data' => [
+                    'enseignant_code' => $row['code_enseignant'],
+                    'nom_complet' => $nomComplet,
+                    'grade' => $row['grade_enseignant'] ?? '',
+                    'matiere' => $row['libelle_matiere'] ?? ''
+                ]
+            ]);
+        } else {
+            $this->json(['status' => 0, 'message' => 'Aucun enseignant spécifiquement affecté']);
+        }
+    }
+
+    public function getScheduleConflicts(string $classeCode, string $salleCode, string $enseignantCode, string $jour, string $heureDebut, string $heureFin, $excludeId = null): array
+    {
+        $conflicts = [];
+        $jour = strtolower(trim($jour));
+        $heureDebut = trim($heureDebut);
+        $heureFin = trim($heureFin);
+
+        if (empty($jour) || empty($heureDebut) || empty($heureFin)) {
+            return $conflicts;
+        }
+
+        if (strtotime($heureFin) <= strtotime($heureDebut)) {
+            $conflicts[] = [
+                'type' => 'horaire',
+                'title' => 'Incohérence des horaires',
+                'message' => "L'heure de fin ($heureFin) doit être strictement postérieure à l'heure de début ($heureDebut)."
+            ];
+            return $conflicts;
+        }
+
+        $db = $this->model->getCon();
+
+        $baseSql = "
+            SELECT edt.*, 
+                   cl.libelle_classe, 
+                   m.libelle_matiere, 
+                   s.libelle_salle, 
+                   CONCAT(u.nom_user, ' ', COALESCE(u.prenom_user, '')) AS nom_prof
+            FROM emplois_temps edt
+            LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN salles s ON s.code_salle = edt.salle_code
+            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+            LEFT JOIN users u ON u.code_user = edt.enseignant_code
+            WHERE edt.statut_emploi = 'actif'
+              AND LOWER(edt.jour) = ?
+              AND (edt.heure_debut < ? AND edt.heure_fin > ?)
+        ";
+        $excludeSql = $excludeId ? " AND edt.id_emploi != " . (int)$excludeId : "";
+
+        // 1. Vérification Conflit Salle
+        if (!empty($salleCode)) {
+            $stmtS = $db->prepare($baseSql . " AND edt.salle_code = ?" . $excludeSql);
+            $stmtS->execute([$jour, $heureFin, $heureDebut, $salleCode]);
+            $rowS = $stmtS->fetch(PDO::FETCH_ASSOC);
+            if ($rowS) {
+                $salleNom = $rowS['libelle_salle'] ?: 'Cette salle';
+                $debutConf = substr($rowS['heure_debut'], 0, 5);
+                $finConf = substr($rowS['heure_fin'], 0, 5);
+                $conflicts[] = [
+                    'type' => 'salle',
+                    'title' => 'Salle déjà occupée',
+                    'message' => "La salle <strong>" . htmlspecialchars($salleNom) . "</strong> est déjà occupée de <strong>$debutConf à $finConf</strong> par la classe <em>" . htmlspecialchars($rowS['libelle_classe'] ?: 'Autre classe') . "</em> (" . htmlspecialchars($rowS['libelle_matiere'] ?: 'Cours') . ")."
+                ];
+            }
+        }
+
+        // 2. Vérification Conflit Enseignant
+        if (!empty($enseignantCode)) {
+            $stmtE = $db->prepare($baseSql . " AND edt.enseignant_code = ?" . $excludeSql);
+            $stmtE->execute([$jour, $heureFin, $heureDebut, $enseignantCode]);
+            $rowE = $stmtE->fetch(PDO::FETCH_ASSOC);
+            if ($rowE) {
+                $profNom = $rowE['nom_prof'] ?: 'Cet enseignant';
+                $debutConf = substr($rowE['heure_debut'], 0, 5);
+                $finConf = substr($rowE['heure_fin'], 0, 5);
+                $conflicts[] = [
+                    'type' => 'enseignant',
+                    'title' => 'Enseignant non disponible',
+                    'message' => "L'enseignant <strong>" . htmlspecialchars($profNom) . "</strong> donne déjà cours de <strong>$debutConf à $finConf</strong> avec la classe <em>" . htmlspecialchars($rowE['libelle_classe'] ?: 'Autre classe') . "</em> en salle " . htmlspecialchars($rowE['libelle_salle'] ?: 'N/A') . "."
+                ];
+            }
+        }
+
+        // 3. Vérification Conflit Classe
+        if (!empty($classeCode)) {
+            $stmtC = $db->prepare($baseSql . " AND edt.classe_code = ?" . $excludeSql);
+            $stmtC->execute([$jour, $heureFin, $heureDebut, $classeCode]);
+            $rowC = $stmtC->fetch(PDO::FETCH_ASSOC);
+            if ($rowC) {
+                $classeNom = $rowC['libelle_classe'] ?: 'Cette classe';
+                $debutConf = substr($rowC['heure_debut'], 0, 5);
+                $finConf = substr($rowC['heure_fin'], 0, 5);
+                $conflicts[] = [
+                    'type' => 'classe',
+                    'title' => 'Classe déjà en cours',
+                    'message' => "La classe <strong>" . htmlspecialchars($classeNom) . "</strong> a déjà un cours de <em>" . htmlspecialchars($rowC['libelle_matiere'] ?: 'Matière') . "</em> programmé de <strong>$debutConf à $finConf</strong>."
+                ];
+            }
+        }
+
+        return $conflicts;
+    }
+
+    public function checkScheduleConflicts()
+    {
+        $this->requireAuth();
+        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $salleCode = trim($_GET['salle_code'] ?? ($_POST['salle_code'] ?? ''));
+        $enseignantCode = trim($_GET['enseignant_code'] ?? ($_POST['enseignant_code'] ?? ''));
+        $jour = trim($_GET['jour'] ?? ($_POST['jour'] ?? ''));
+        $heureDebut = trim($_GET['heure_debut'] ?? ($_POST['heure_debut'] ?? ''));
+        $heureFin = trim($_GET['heure_fin'] ?? ($_POST['heure_fin'] ?? ''));
+        $excludeId = $_GET['id_emploi'] ?? ($_POST['id_emploi'] ?? null);
+
+        $conflicts = $this->getScheduleConflicts($classeCode, $salleCode, $enseignantCode, $jour, $heureDebut, $heureFin, $excludeId);
+
+        $this->json([
+            'status' => 1,
+            'has_conflict' => !empty($conflicts),
+            'conflicts' => $conflicts
+        ]);
     }
 
     public function add()
@@ -34,13 +314,31 @@ class EmploiController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        // Contrôle de conflits côté serveur
+        $conflicts = $this->getScheduleConflicts(
+            $data['classe_code'] ?? '',
+            $data['salle_code'] ?? '',
+            $data['enseignant_code'] ?? '',
+            $data['jour'] ?? '',
+            $data['heure_debut'] ?? '',
+            $data['heure_fin'] ?? ''
+        );
+
+        if (!empty($conflicts)) {
+            $msg = strip_tags($conflicts[0]['message']);
+            $this->error("Impossible d'enregistrer : $msg");
+            return;
+        }
+
         if (empty($data['code_emploi'])) {
             $data['code_emploi'] = $this->validator->generateCode('emplois_temps', 'code_emploi', 'EMP-', 8);
         }
+        $data['jour'] = strtolower($data['jour'] ?? 'lundi');
         $data['statut_emploi'] = $data['statut_emploi'] ?? 'actif';
         $data['created_at_emploi'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE emplois_temps")->fetchAll(PDO::FETCH_COLUMN);
@@ -48,8 +346,22 @@ class EmploiController extends BaseController
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
+        $submitAction = $_POST['submit_action'] ?? 'save';
+        if (!empty($data['classe_code'])) {
+            $_SESSION['last_emploi_classe_code'] = $data['classe_code'];
+            $stmtCls = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmtCls->execute([$data['classe_code']]);
+            $libelleCls = $stmtCls->fetchColumn();
+            if ($libelleCls) $_SESSION['last_emploi_classe_libelle'] = $libelleCls;
+        }
+
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            if ($submitAction === 'save_and_new') {
+                $redirectUrl = RACINE . 'emploi/formulaire?classe_code=' . urlencode($data['classe_code']);
+                $this->success('Créneau horaire planifié avec succès ! Saisissez le créneau suivant.', ['redirect' => $redirectUrl]);
+            } else {
+                $this->success('Créneau horaire planifié avec succès!', ['redirect' => RACINE . 'emploi/list']);
+            }
         } else {
             $this->error('Erreur lors de la création');
         }
@@ -63,10 +375,32 @@ class EmploiController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
+        // Contrôle de conflits côté serveur
+        $conflicts = $this->getScheduleConflicts(
+            $data['classe_code'] ?? '',
+            $data['salle_code'] ?? '',
+            $data['enseignant_code'] ?? '',
+            $data['jour'] ?? '',
+            $data['heure_debut'] ?? '',
+            $data['heure_fin'] ?? '',
+            $id
+        );
+
+        if (!empty($conflicts)) {
+            $msg = strip_tags($conflicts[0]['message']);
+            $this->error("Impossible de modifier : $msg");
+            return;
+        }
+
+        if (isset($data['jour'])) {
+            $data['jour'] = strtolower($data['jour']);
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE emplois_temps")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Créneau horaire mis à jour avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -93,7 +427,26 @@ class EmploiController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT edt.*, 
+                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       m.libelle_matiere,
+                       s.libelle_salle, s.capacite_salle,
+                        u.nom_user as nom_prof,
+                        u.prenom_user as prenom_prof,
+                        e.grade_enseignant
+                 FROM emplois_temps edt
+                 LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                 LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+                 LEFT JOIN salles s ON s.code_salle = edt.salle_code
+                 LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+                 LEFT JOIN users u ON u.code_user = edt.enseignant_code
+                 WHERE edt.id_emploi = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'emploi/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
@@ -116,9 +469,156 @@ class EmploiController extends BaseController
         $this->loadView('../views/emplois_temps/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
 
+    public function setSessionClasse()
+    {
+        $this->requireAuth();
+        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        if (!empty($classeCode)) {
+            $_SESSION['last_emploi_classe_code'] = $classeCode;
+            $stmt = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmt->execute([$classeCode]);
+            $libelle = $stmt->fetchColumn() ?: $classeCode;
+            $_SESSION['last_emploi_classe_libelle'] = $libelle;
+            $this->json(['status' => 1, 'classe_code' => $classeCode, 'libelle_classe' => $libelle]);
+        } else {
+            unset($_SESSION['last_emploi_classe_code'], $_SESSION['last_emploi_classe_libelle']);
+            $this->json(['status' => 1, 'message' => 'Session classe réinitialisée']);
+        }
+    }
+
+    public function getTeacherSchedule()
+    {
+        $this->requireAuth();
+        $ensCode = trim($_GET['enseignant_code'] ?? ($_POST['enseignant_code'] ?? ''));
+        if (empty($ensCode)) {
+            $this->json(['status' => 1, 'data' => []]);
+            return;
+        }
+        $db = $this->model->getCon();
+        $stmt = $db->prepare("
+            SELECT edt.*, 
+                   cl.libelle_classe, 
+                   m.libelle_matiere, 
+                   s.libelle_salle,
+                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
+            FROM emplois_temps edt
+            LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN salles s ON s.code_salle = edt.salle_code
+            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+            LEFT JOIN users u ON u.code_user = edt.enseignant_code
+            WHERE edt.enseignant_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
+            ORDER BY edt.jour ASC, edt.heure_debut ASC
+        ");
+        $stmt->execute([$ensCode]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $this->json(['status' => 1, 'data' => $items]);
+    }
+
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/emplois_temps/edit.php', ['item' => []]);
+        $selectedClasseCode = $_GET['classe_code'] ?? ($_SESSION['last_emploi_classe_code'] ?? '');
+        $activeClasseLibelle = '';
+
+        if (!empty($selectedClasseCode)) {
+            $_SESSION['last_emploi_classe_code'] = $selectedClasseCode;
+            $stmt = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmt->execute([$selectedClasseCode]);
+            $activeClasseLibelle = $stmt->fetchColumn() ?: '';
+            if ($activeClasseLibelle) {
+                $_SESSION['last_emploi_classe_libelle'] = $activeClasseLibelle;
+            }
+        }
+
+        $this->loadView('../views/emplois_temps/edit.php', [
+            'item' => [],
+            'selectedClasseCode' => $selectedClasseCode,
+            'activeClasseLibelle' => $activeClasseLibelle
+        ]);
+    }
+
+    public function delete()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $rawId = $_POST['id'] ?? ($_GET['id'] ?? $this->post('id'));
+        $id = (int)$rawId;
+
+        if ($id > 0) {
+            $item = $this->model->getById($id);
+            if ($item) {
+                if ($this->model->delete($id)) {
+                    $this->success('Créneau horaire supprimé avec succès!');
+                    return;
+                } else {
+                    $this->error('Erreur lors de la suppression en base de données');
+                    return;
+                }
+            }
+        }
+        $this->error('Créneau introuvable');
+    }
+
+    public function resetClasseSchedule()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $classeCode = trim($this->post('classe_code') ?? ($_GET['classe_code'] ?? ''));
+        if (empty($classeCode)) {
+            $this->error('Classe non spécifiée');
+            return;
+        }
+        $db = $this->model->getCon();
+        $stmt = $db->prepare("DELETE FROM emplois_temps WHERE classe_code = ?");
+        if ($stmt->execute([$classeCode])) {
+            $this->success('L\'emploi du temps de la classe a été entièrement réinitialisé !');
+        } else {
+            $this->error('Erreur lors de la réinitialisation de l\'emploi du temps');
+        }
+    }
+
+    public function getClassScheduleMatrix()
+    {
+        $this->requireAuth();
+        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        if (empty($classeCode)) {
+            $this->json(['status' => 0, 'message' => 'Classe non spécifiée']);
+            return;
+        }
+
+        $db = $this->model->getCon();
+
+        $stmtCls = $db->prepare("
+            SELECT cl.libelle_classe, n.libelle_niveau 
+            FROM classes cl 
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code 
+            WHERE cl.code_classe = ? LIMIT 1
+        ");
+        $stmtCls->execute([$classeCode]);
+        $classeInfo = $stmtCls->fetch(PDO::FETCH_ASSOC);
+
+        $stmt = $db->prepare("
+            SELECT edt.*, 
+                   m.libelle_matiere, 
+                   s.libelle_salle, 
+                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
+            FROM emplois_temps edt
+            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN salles s ON s.code_salle = edt.salle_code
+            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+            LEFT JOIN users u ON u.code_user = edt.enseignant_code
+            WHERE edt.classe_code = ?
+            ORDER BY edt.jour ASC, edt.heure_debut ASC
+        ");
+        $stmt->execute([$classeCode]);
+        $slots = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->json([
+            'status' => 1,
+            'classe' => $classeInfo,
+            'slots' => $slots
+        ]);
     }
 }
+

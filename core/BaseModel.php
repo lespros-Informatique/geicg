@@ -12,7 +12,17 @@ abstract class BaseModel
     {
         $this->pdo = new Database();
         if ($this->createdAtField === null) {
-            $this->createdAtField = $this->resolveCreatedAtField($this->table);
+            $resolved = $this->resolveCreatedAtField($this->table);
+            try {
+                $cols = $this->pdo->getCon()->query("DESCRIBE `{$this->table}`")->fetchAll(PDO::FETCH_COLUMN);
+                if (in_array($resolved, $cols)) {
+                    $this->createdAtField = $resolved;
+                } else {
+                    $this->createdAtField = '';
+                }
+            } catch (Exception $e) {
+                $this->createdAtField = '';
+            }
         }
     }
 
@@ -37,7 +47,7 @@ abstract class BaseModel
     public function getAll(): array
     {
         try {
-            $orderBy = $this->createdAtField ? " ORDER BY {$this->createdAtField} DESC" : '';
+            $orderBy = !empty($this->createdAtField) ? " ORDER BY {$this->createdAtField} DESC" : " ORDER BY {$this->primaryKey} DESC";
             $sql = "SELECT * FROM {$this->table}{$orderBy}";
             return $this->pdo->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
@@ -58,6 +68,31 @@ abstract class BaseModel
             return [];
         }
     }
+
+    public function getByCode(string $code, ?string $codeField = null): array
+    {
+        try {
+            if ($codeField === null) {
+                $base = $this->table;
+                if (substr($base, -3) === 'ies') {
+                    $base = substr($base, 0, -3) . 'y';
+                } elseif (substr($base, -2) === 'es' && strlen($base) > 2) {
+                    $base = substr($base, 0, -1);
+                } elseif (substr($base, -1) === 's' && strlen($base) > 1) {
+                    $base = substr($base, 0, -1);
+                }
+                $codeField = "code_{$base}";
+            }
+            $sql = "SELECT * FROM {$this->table} WHERE `{$codeField}` = ?";
+            $stmt = $this->pdo->getCon()->prepare($sql);
+            $stmt->execute([$code]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("Get by code {$this->table}: " . $e->getMessage());
+            return [];
+        }
+    }
+
 
     public function create(array $data): bool
     {
@@ -126,25 +161,27 @@ abstract class BaseModel
         }
     }
 
-    public function delete(int $id): bool
-    {
-        try {
-            $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = ?";
-            return $this->pdo->getCon()->prepare($sql)->execute([$id]);
-        } catch (Exception $e) {
-            error_log("Delete {$this->table}: " . $e->getMessage());
-            return false;
-        }
-    }
 
     public function toggleStatus(int $id): bool
     {
         try {
             $field = $this->statusField ?? "statut_{$this->table}";
-            $sql = "UPDATE {$this->table} SET {$field} = CASE WHEN {$field} = 'actif' THEN 'inactif' ELSE 'actif' END WHERE {$this->primaryKey} = ?";
+            $sql = "UPDATE `{$this->table}` SET `{$field}` = CASE WHEN `{$field}` = 'actif' THEN 'inactif' ELSE 'actif' END WHERE `{$this->primaryKey}` = ?";
             return $this->pdo->getCon()->prepare($sql)->execute([$id]);
         } catch (Exception $e) {
             error_log("Toggle status {$this->table}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateStatus(int $id, string $status, ?string $statusCol = null): bool
+    {
+        try {
+            $field = $statusCol ?? ($this->statusField ?? "statut_{$this->table}");
+            $sql = "UPDATE `{$this->table}` SET `{$field}` = ? WHERE `{$this->primaryKey}` = ?";
+            return $this->pdo->getCon()->prepare($sql)->execute([$status, $id]);
+        } catch (Exception $e) {
+            error_log("Update status {$this->table}: " . $e->getMessage());
             return false;
         }
     }
@@ -195,6 +232,18 @@ abstract class BaseModel
         } catch (Exception $e) {
             error_log("Get by status {$this->table}: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function delete(int $id): bool
+    {
+        try {
+            $sql = "DELETE FROM `{$this->table}` WHERE `{$this->primaryKey}` = ?";
+            $stmt = $this->pdo->getCon()->prepare($sql);
+            return $stmt->execute([$id]);
+        } catch (Exception $e) {
+            error_log("Delete {$this->table}: " . $e->getMessage());
+            return false;
         }
     }
 }

@@ -1,0 +1,717 @@
+{
+    "absences": {
+        "count": "0",
+        "columns": [
+            "id_absence (int) [PRI] NOT NULL",
+            "code_absence (varchar(50)) [UNI] NOT NULL",
+            "inscription_code (varchar(50)) NOT NULL",
+            "emploi_code (varchar(50)) NOT NULL",
+            "matiere_code (varchar(50)) NOT NULL",
+            "date_absence (date) NOT NULL",
+            "duree_heures (decimal(4,2)) NOT NULL DEFAULT '2.00'",
+            "justifiee (enum('oui','non')) NOT NULL DEFAULT 'non'",
+            "motif (text) NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_absence (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'"
+        ]
+    },
+    "accessoire_inscription": {
+        "count": "0",
+        "columns": [
+            "id_accessoire_inscription (int) [PRI] NOT NULL",
+            "code_accessoire_inscription (varchar(50)) [UNI] NOT NULL",
+            "inscription_code (varchar(50)) NOT NULL",
+            "accessoire_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "statut_accessoire_inscription (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "etat_retrait (enum('en_attente','retire')) NOT NULL DEFAULT 'en_attente'",
+            "date_retrait (datetime) NULL",
+            "created_at_accessoire_inscription (timestamp) NOT NULL",
+            "etablissement_code (varchar(50)) NULL",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "accessoires": {
+        "count": "0",
+        "columns": [
+            "id_accessoire (int) [PRI] NOT NULL",
+            "code_accessoire (varchar(50)) [UNI] NOT NULL",
+            "libelle_accessoire (varchar(255)) NOT NULL",
+            "statut_accessoire (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_accessoire (timestamp) NOT NULL",
+            "etablissement_code (varchar(50)) NULL",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "annees": {
+        "count": "0",
+        "columns": [
+            "id_annee (int) [PRI] NOT NULL",
+            "libelle_annee (varchar(50)) [MUL] NOT NULL",
+            "date_debut_annee (date) NOT NULL",
+            "date_fin_annee (date) NOT NULL",
+            "code_annee (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_annee (datetime) NOT NULL",
+            "updated_at_annee (datetime) NULL",
+            "statut_annee (enum('actif','inactif','')) NOT NULL",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "classes": {
+        "count": "0",
+        "columns": [
+            "id_classe (int) [PRI] NOT NULL",
+            "code_classe (varchar(50)) [UNI] NOT NULL",
+            "libelle_classe (varchar(150)) NOT NULL",
+            "capacite_max_classe (int) NULL",
+            "filiere_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "niveau_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "statut_classe (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_classe (datetime) NOT NULL",
+            "updated_at_classe (datetime) NULL",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "clotures_caisse": {
+        "count": "0",
+        "columns": [
+            "id_cloture (int) [PRI] NOT NULL",
+            "code_cloture (varchar(50)) [UNI] NOT NULL",
+            "user_code (varchar(50)) NOT NULL",
+            "date_cloture (date) NOT NULL",
+            "total_especes (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "total_mobile_money (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "total_cheque_virement (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "total_general (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "fond_initial (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "solde_attendu_caisse (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "ecart_caisse (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "observations (text) NULL",
+            "statut_cloture (enum('valide','attente','rejete')) NOT NULL DEFAULT 'attente'",
+            "user_validation (varchar(50)) NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_cloture (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'"
+        ]
+    },
+    "cycles": {
+        "count": "0",
+        "columns": [
+            "id_cycle (int) [PRI] NOT NULL",
+            "code_cycle (varchar(50)) [UNI] NOT NULL",
+            "libelle_cycle (varchar(100)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_cycle (datetime) NOT NULL",
+            "updated_at_cycle (datetime) NULL",
+            "statut_cycle (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "depenses": {
+        "count": "0",
+        "columns": [
+            "id_depense (int) [PRI] NOT NULL",
+            "type_depense_code (varchar(50)) [MUL] NOT NULL",
+            "code_depense (varchar(50)) NULL",
+            "user_code (varchar(50)) [MUL] NOT NULL",
+            "montant_depense (float) NOT NULL",
+            "description_depense (text) NOT NULL",
+            "periode_depense (datetime) NOT NULL",
+            "created_at_depense (datetime) NOT NULL",
+            "updated_at_depense (datetime) NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "statut_depense (enum('actif','inactif','')) NOT NULL",
+            "user_confirm (varchar(50)) NULL",
+            "created_at_confirm (datetime) NULL",
+            "etablissement_code (varchar(50)) NOT NULL"
+        ]
+    },
+    "documents": {
+        "count": "0",
+        "columns": [
+            "id_document (int) [PRI] NOT NULL",
+            "code_document (varchar(50)) NULL",
+            "libelle_document (varchar(100)) NOT NULL",
+            "type_document (varchar(50)) NULL",
+            "lien_document (varchar(255)) NOT NULL",
+            "filiere_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "niveaux_code (varchar(50)) NOT NULL",
+            "etablisement_code (varchar(100)) NOT NULL",
+            "statut_document (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_document (datetime) NULL DEFAULT 'CURRENT_TIMESTAMP'",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "dossier_etudiant": {
+        "count": "0",
+        "columns": [
+            "id_dossier_etudiant (int) [PRI] NOT NULL",
+            "code_dossier_etudiant (varchar(50)) [UNI] NOT NULL",
+            "etudiant_code (varchar(50)) NOT NULL",
+            "libelle_dossier (varchar(255)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "created_at_dossier_etudiant (datetime) NOT NULL",
+            "updated_at_dossier_etudiant (datetime) NULL",
+            "user_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL"
+        ]
+    },
+    "emplois_temps": {
+        "count": "0",
+        "columns": [
+            "id_emploi (int) [PRI] NOT NULL",
+            "code_emploi (varchar(50)) NOT NULL",
+            "classe_code (varchar(50)) NOT NULL",
+            "matiere_code (varchar(50)) NOT NULL",
+            "enseignant_code (varchar(50)) NOT NULL",
+            "salle_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "user_code (varchar(50)) NOT NULL",
+            "jour (enum('lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche')) NOT NULL",
+            "heure_debut (time) NOT NULL",
+            "heure_fin (time) NOT NULL",
+            "created_at_emploi (datetime) NULL",
+            "updated_at_emploi (datetime) NULL",
+            "statut_emploi (enum('actif','inactif')) NULL DEFAULT 'actif'"
+        ]
+    },
+    "enseignant_matiere": {
+        "count": "0",
+        "columns": [
+            "id_enseignant_matiere (int) [PRI] NOT NULL",
+            "enseignant_code (varchar(50)) NOT NULL",
+            "matiere_code (varchar(50)) [MUL] NOT NULL",
+            "classe_code (varchar(50)) NULL",
+            "coefficient (decimal(4,2)) NOT NULL DEFAULT '1.00'",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NULL",
+            "user_code (varchar(50)) NULL",
+            "created_at_enseignant_matiere (datetime) NOT NULL",
+            "updated_at_enseignant_matiere (datetime) NULL",
+            "statut_enseignant_matiere (enum('actif','inactif')) NOT NULL DEFAULT 'actif'"
+        ]
+    },
+    "enseignants": {
+        "count": "0",
+        "columns": [
+            "id_enseignant (int) [PRI] NOT NULL",
+            "code_enseignant (varchar(50)) [UNI] NOT NULL",
+            "nom_enseignant (varchar(100)) NULL",
+            "prenom_enseignant (varchar(150)) NULL",
+            "email_enseignant (varchar(150)) NULL",
+            "telephone_enseignant (varchar(30)) NULL",
+            "sexe_enseignant (enum('M','F')) NULL DEFAULT 'M'",
+            "password_enseignant (varchar(255)) NULL",
+            "statut_enseignant (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_enseignant (datetime) NOT NULL",
+            "updated_at_enseignant (datetime) NULL",
+            "user_code (varchar(50)) NULL",
+            "grade_enseignant (varchar(100)) NULL",
+            "type_contrat (enum('permanent','vacataire','prestataire')) NULL DEFAULT 'permanent'",
+            "numero_autorisation (varchar(100)) NULL",
+            "taux_horaire (decimal(10,2)) NULL DEFAULT '0.00'",
+            "etablissement_code (varchar(50)) NOT NULL"
+        ]
+    },
+    "etablissements": {
+        "count": "1",
+        "columns": [
+            "id_etablissement (int) [PRI] NOT NULL",
+            "code_etablissement (varchar(50)) [UNI] NOT NULL",
+            "libelle_etablissement (varchar(200)) NOT NULL",
+            "numero_autorisation_etablissement (varchar(100)) NULL",
+            "adresse_etablissement (text) NULL",
+            "telephone_etablissement (varchar(30)) NULL",
+            "telephone_etablissement2 (varchar(30)) NULL",
+            "email_etablissement (varchar(150)) NULL",
+            "logo_etablissement (varchar(500)) NULL",
+            "slogan_etablissement (varchar(200)) NULL",
+            "created_at_etablissement (datetime) NOT NULL",
+            "updated_at_etablissement (datetime) NULL",
+            "statut_etablissement (enum('actif','inactif')) NOT NULL DEFAULT 'actif'"
+        ]
+    },
+    "etudiants": {
+        "count": "0",
+        "columns": [
+            "id_etudiant (int) [PRI] NOT NULL",
+            "code_etudiant (varchar(50)) [UNI] NOT NULL",
+            "matricule_etudiant (varchar(50)) [UNI] NOT NULL",
+            "nom_etudiant (varchar(100)) NOT NULL",
+            "prenom_etudiant (varchar(255)) NOT NULL",
+            "date_naissance_etudiant (date) NULL",
+            "lieu_naissance_etudiant (varchar(255)) NULL",
+            "sexe_etudiant (varchar(25)) NULL",
+            "nationalite_etudiant (varchar(100)) NULL",
+            "lieu_residence_etudiant (text) NULL",
+            "telephone_etudiant (varchar(50)) NULL",
+            "email_etudiant (varchar(150)) NULL",
+            "photo_etudiant (varchar(255)) NULL",
+            "password_etudiant (varchar(255)) NULL",
+            "numero_cni (varchar(50)) NULL",
+            "statut_etudiant (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_etudiant (datetime) NOT NULL",
+            "updated_at_etudiant (datetime) NULL",
+            "user_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL"
+        ]
+    },
+    "evenements": {
+        "count": "0",
+        "columns": [
+            "id_evenement (int) [PRI] NOT NULL",
+            "titre_evenement (varchar(255)) NOT NULL",
+            "image_evenement (varchar(255)) NULL",
+            "description_evenement (text) NULL",
+            "is_principal_evenement (tinyint(1)) NULL DEFAULT '0'",
+            "date_creation_evenement (datetime) NULL",
+            "date_modification_evenement (datetime) NULL",
+            "statut_evenement (enum('actif','innactif')) NULL DEFAULT 'actif'"
+        ]
+    },
+    "filiere_cycles": {
+        "count": "0",
+        "columns": [
+            "id_filiere_cycle (int) [PRI] NOT NULL",
+            "code_filiere_cycle (varchar(50)) [UNI] NOT NULL",
+            "filiere_code (varchar(50)) [MUL] NOT NULL",
+            "cycle_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NULL DEFAULT '5454544456'",
+            "annee_code (varchar(50)) NULL",
+            "statut_filiere_cycle (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_filiere_cycle (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'",
+            "updated_at_filiere_cycle (datetime) NULL",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "filiere_niveaux": {
+        "count": "0",
+        "columns": [
+            "id_filiere_niveau (int) [PRI] NOT NULL",
+            "code_filiere_niveau (varchar(50)) [UNI] NOT NULL",
+            "filiere_code (varchar(50)) [MUL] NOT NULL",
+            "niveau_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NULL DEFAULT '5454544456'",
+            "statut_filiere_niveau (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_filiere_niveau (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'",
+            "updated_at_filiere_niveau (datetime) NULL",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "filieres": {
+        "count": "0",
+        "columns": [
+            "id_filiere (int) [PRI] NOT NULL",
+            "code_filiere (varchar(50)) [UNI] NOT NULL",
+            "libelle_filiere (varchar(150)) NOT NULL",
+            "description_filiere (text) NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_filiere (datetime) NOT NULL",
+            "updated_at_filiere (datetime) NULL",
+            "statut_filiere (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "fonctions": {
+        "count": "0",
+        "columns": [
+            "id_fonction (int) [PRI] NOT NULL",
+            "code_fonction (varchar(50)) [UNI] NOT NULL",
+            "libelle_fonction (varchar(150)) [UNI] NOT NULL",
+            "description_fonction (text) NULL",
+            "etablissement_code (varchar(50)) NULL DEFAULT '5454544456'",
+            "statut_fonction (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_fonction (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'",
+            "updated_at_fonction (datetime) NULL",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "galerie_medias": {
+        "count": "0",
+        "columns": [
+            "id_media (int) [PRI] NOT NULL",
+            "code_media (varchar(50)) [UNI] NOT NULL",
+            "galerie_code (varchar(50)) [MUL] NOT NULL",
+            "titre_media (varchar(255)) NULL",
+            "description_media (text) NULL",
+            "chemin_media (varchar(255)) NOT NULL",
+            "statut_media (enum('actif','brouillon','archive')) NOT NULL DEFAULT 'actif'",
+            "created_at_media (datetime) NOT NULL",
+            "updated_at_media (datetime) NULL",
+            "ordre_media (int) NULL DEFAULT '1'",
+            "miniature_media (varchar(255)) NULL"
+        ]
+    },
+    "galeries": {
+        "count": "0",
+        "columns": [
+            "id_galerie (int) [PRI] NOT NULL",
+            "code_galerie (varchar(50)) [UNI] NOT NULL",
+            "type_galerie (enum('photo','video')) NOT NULL",
+            "titre_galerie (varchar(255)) NOT NULL",
+            "url_fichier (varchar(255)) NULL",
+            "description_galerie (text) NULL",
+            "statut_galerie (enum('actif','brouillon','archive')) NOT NULL DEFAULT 'actif'",
+            "etablissement_code (varchar(50)) NOT NULL DEFAULT 'EICG001'",
+            "user_code (varchar(50)) NULL",
+            "created_at_galerie (datetime) NOT NULL",
+            "updated_at_galerie (datetime) NULL"
+        ]
+    },
+    "inscriptions": {
+        "count": "0",
+        "columns": [
+            "id_inscription (int) [PRI] NOT NULL",
+            "code_inscription (varchar(50)) NOT NULL",
+            "etudiant_code (varchar(50)) [MUL] NOT NULL",
+            "classe_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "user_code (varchar(50)) NOT NULL",
+            "created_at_inscription (datetime) NULL",
+            "updated_at_inscription (datetime) NULL",
+            "montant_scolarite_inscription (decimal(10,2)) NULL DEFAULT '0.00'",
+            "affectation_etat (enum('oui','non')) NOT NULL DEFAULT 'non'",
+            "statut_inscription (enum('valide','solde','annule')) NULL DEFAULT 'valide'"
+        ]
+    },
+    "matieres": {
+        "count": "0",
+        "columns": [
+            "id_matiere (int) [PRI] NOT NULL",
+            "code_matiere (varchar(30)) [UNI] NOT NULL",
+            "libelle_matiere (varchar(150)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "user_code (varchar(50)) NULL",
+            "created_at_matiere (datetime) NOT NULL",
+            "updated_at_matiere (datetime) NULL",
+            "statut_matiere (enum('actif','inactif')) NOT NULL DEFAULT 'actif'"
+        ]
+    },
+    "messages": {
+        "count": "0",
+        "columns": [
+            "id_message (int) [PRI] NOT NULL",
+            "objet_message (varchar(255)) NOT NULL",
+            "description_message (text) NOT NULL",
+            "statut_message (enum('en_attente','envoye','vue','archive')) NULL DEFAULT 'en_attente'",
+            "created_at_message (datetime) NULL",
+            "update_at_message (datetime) NULL"
+        ]
+    },
+    "niveaux": {
+        "count": "0",
+        "columns": [
+            "id_niveau (int) [PRI] NOT NULL",
+            "code_niveau (varchar(50)) [UNI] NOT NULL",
+            "libelle_niveau (varchar(100)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_niveau (datetime) NOT NULL",
+            "updated_at_niveau (datetime) NULL",
+            "statut_niveau (enum('actif','inactif')) NOT NULL DEFAULT 'actif'"
+        ]
+    },
+    "notes": {
+        "count": "0",
+        "columns": [
+            "id_note (int) [PRI] NOT NULL",
+            "code_note (varchar(50)) [UNI] NOT NULL",
+            "valeur_note (decimal(5,2)) NOT NULL",
+            "type_evaluation_code (varchar(50)) NOT NULL",
+            "observations (text) NULL",
+            "inscription_code (varchar(50)) NOT NULL",
+            "matiere_code (varchar(50)) NOT NULL",
+            "semestre_code (varchar(50)) NOT NULL",
+            "user_code (varchar(50)) NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_note (datetime) NOT NULL",
+            "updated_at_note (datetime) NULL",
+            "statut_note (enum('actif','inactif')) NOT NULL DEFAULT 'actif'"
+        ]
+    },
+    "ouvertures_caisse": {
+        "count": "0",
+        "columns": [
+            "id_ouverture (int) [PRI] NOT NULL",
+            "code_ouverture (varchar(50)) [UNI] NOT NULL",
+            "date_ouverture (date) NOT NULL",
+            "heure_ouverture (time) NOT NULL",
+            "fond_initial (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "statut_ouverture (enum('ouverte','cloturee')) NOT NULL DEFAULT 'ouverte'",
+            "observations (text) NULL",
+            "user_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_ouverture (datetime) NULL DEFAULT 'CURRENT_TIMESTAMP'"
+        ]
+    },
+    "paiements": {
+        "count": "0",
+        "columns": [
+            "id_paiement (int) [PRI] NOT NULL",
+            "code_paiement (varchar(50)) [UNI] NOT NULL",
+            "montant_paiement (decimal(12,2)) NOT NULL",
+            "date_paiement (timestamp) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'",
+            "statut_paiement (enum('en_attente','confirme','annule','rembourse','echoue')) NOT NULL DEFAULT 'confirme'",
+            "reference_paiement (varchar(100)) NULL",
+            "observations (text) NULL",
+            "type_paiement (varchar(100)) NOT NULL",
+            "mode_paiement (varchar(50)) NOT NULL",
+            "user_code (varchar(50)) NULL",
+            "annee_code (varchar(50)) NULL",
+            "etablissement_code (varchar(50)) NULL",
+            "inscription_code (varchar(50)) NOT NULL",
+            "tranche_code (varchar(50)) NULL"
+        ]
+    },
+    "parents": {
+        "count": "0",
+        "columns": [
+            "id_parent (int) [PRI] NOT NULL",
+            "code_parent (varchar(100)) NOT NULL",
+            "nom_pere (varchar(255)) NULL",
+            "telephone_pere (varchar(30)) NULL",
+            "profession_pere (varchar(100)) NULL",
+            "nom_mere (varchar(255)) NULL",
+            "telephone_mere (varchar(30)) NULL",
+            "profession_mere (varchar(100)) NULL",
+            "nom_tuteur (varchar(255)) NULL",
+            "telephone_tuteur (varchar(30)) NULL",
+            "created_at_parent (datetime) NOT NULL",
+            "updated_at_parent (datetime) NULL",
+            "etudiant_code (varchar(50)) NOT NULL",
+            "user_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL"
+        ]
+    },
+    "permissions": {
+        "count": "75",
+        "columns": [
+            "id_permission (int) [PRI] NOT NULL",
+            "code_permission (varchar(50)) [UNI] NOT NULL",
+            "libelle_permission (varchar(150)) NOT NULL",
+            "module_permission (varchar(50)) NOT NULL",
+            "statut_permission (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_permission (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'"
+        ]
+    },
+    "piece_fournir_cycle": {
+        "count": "0",
+        "columns": [
+            "id_piece_cycle (int) [PRI] NOT NULL",
+            "code_piece_cycle (varchar(50)) [UNI] NOT NULL",
+            "cycle_code (varchar(50)) [MUL] NOT NULL",
+            "piece_code (varchar(50)) [MUL] NOT NULL",
+            "nombre_exemplaires (int) NOT NULL DEFAULT '1'",
+            "nature_document (enum('photocopie_simple','photocopie_legalisee','original','numerique')) NOT NULL DEFAULT 'photocopie_simple'",
+            "est_obligatoire (enum('obligatoire','facultatif','complementaire')) NOT NULL DEFAULT 'obligatoire'",
+            "annee_code (varchar(50)) [MUL] NULL",
+            "etablissement_code (varchar(50)) NULL",
+            "user_code (varchar(50)) NULL",
+            "statut_piece_cycle (enum('actif','inactif')) [MUL] NOT NULL DEFAULT 'actif'",
+            "created_at_piece_cycle (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'",
+            "updated_at_piece_cycle (datetime) NULL"
+        ]
+    },
+    "pieces_fournir": {
+        "count": "0",
+        "columns": [
+            "id_piece_fournir (int) [PRI] NOT NULL",
+            "code_piece_fournir (varchar(50)) [UNI] NOT NULL",
+            "libelle_piece (varchar(255)) NOT NULL",
+            "description_piece (text) NULL",
+            "etablissement_code (varchar(50)) NULL",
+            "user_code (varchar(50)) NULL",
+            "statut_piece (enum('actif','inactif')) [MUL] NOT NULL DEFAULT 'actif'",
+            "created_at_piece (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'",
+            "updated_at_piece (datetime) NULL"
+        ]
+    },
+    "relances_impayes": {
+        "count": "0",
+        "columns": [
+            "id_relance (int) [PRI] NOT NULL",
+            "code_relance (varchar(50)) [UNI] NOT NULL",
+            "etudiant_code (varchar(50)) NOT NULL",
+            "inscription_code (varchar(50)) NULL",
+            "niveau_relance (enum('rappel_amiable','relance_ferme','mise_en_demeure')) NOT NULL DEFAULT 'rappel_amiable'",
+            "canal_relance (enum('sms','email','whatsapp','appel')) NOT NULL DEFAULT 'sms'",
+            "montant_impaye (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "telephone_destinataire (varchar(50)) NULL",
+            "message_relance (text) NULL",
+            "statut_relance (enum('envoye','en_attente','regle')) NOT NULL DEFAULT 'envoye'",
+            "user_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "created_at_relance (datetime) NULL DEFAULT 'CURRENT_TIMESTAMP'"
+        ]
+    },
+    "role_permissions": {
+        "count": "269",
+        "columns": [
+            "id (int) [PRI] NOT NULL",
+            "role_code (varchar(50)) [MUL] NOT NULL",
+            "permission_code (varchar(50)) NOT NULL"
+        ]
+    },
+    "roles": {
+        "count": "9",
+        "columns": [
+            "id (int) [PRI] NOT NULL",
+            "libelle_role (varchar(50)) NOT NULL",
+            "code_role (varchar(50)) [UNI] NOT NULL",
+            "module (varchar(50)) NOT NULL",
+            "groupe (varchar(50)) [MUL] NOT NULL",
+            "statut_role (enum('actif','inactif','null','')) NOT NULL DEFAULT 'actif'",
+            "description (text) NULL"
+        ]
+    },
+    "salles": {
+        "count": "0",
+        "columns": [
+            "id_salle (bigint unsigned) [PRI] NOT NULL",
+            "code_salle (varchar(20)) [UNI] NOT NULL",
+            "libelle_salle (varchar(100)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "user_code (varchar(50)) NOT NULL",
+            "statut_salle (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at (datetime) NOT NULL",
+            "updated_at (datetime) NULL"
+        ]
+    },
+    "scolarites": {
+        "count": "0",
+        "columns": [
+            "id_scolarite (int) [PRI] NOT NULL",
+            "code_scolarite (varchar(50)) [UNI] NOT NULL",
+            "montant_scolarite (decimal(12,2)) NOT NULL",
+            "affectation_etat (enum('affecte','non_affecte')) NOT NULL DEFAULT 'non_affecte'",
+            "niveau_code (varchar(50)) NULL",
+            "filiere_code (varchar(50)) NULL",
+            "annee_code (varchar(50)) NULL",
+            "user_code (varchar(50)) NULL",
+            "statut_scolarite (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_scolarite (timestamp) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'",
+            "updated_at_scolarite (timestamp) NULL"
+        ]
+    },
+    "semestres": {
+        "count": "0",
+        "columns": [
+            "id_semestre (int) [PRI] NOT NULL",
+            "code_semestre (varchar(50)) [MUL] NOT NULL",
+            "libelle_semestre (varchar(50)) NOT NULL",
+            "statut_semestre (enum('actif','inactif','')) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "date_debut_semestre (date) NULL",
+            "date_fin_semestre (date) NULL",
+            "created_at_semestre (datetime) NOT NULL",
+            "updated_at_semestre (datetime) NULL",
+            "user_code (varchar(50)) NULL"
+        ]
+    },
+    "sessions_caisse": {
+        "count": "0",
+        "columns": [
+            "id_session (int) [PRI] NOT NULL",
+            "code_session (varchar(50)) [UNI] NOT NULL",
+            "date_session (date) NOT NULL",
+            "heure_ouverture (time) NOT NULL",
+            "fond_initial (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "observations_ouverture (text) NULL",
+            "heure_cloture (time) NULL",
+            "total_especes (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "total_mobile_money (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "total_cheque_virement (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "total_general (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "solde_attendu (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "ecart_caisse (decimal(12,2)) NOT NULL DEFAULT '0.00'",
+            "observations_cloture (text) NULL",
+            "statut_session (enum('ouverte','cloturee','valide','rejete')) NOT NULL DEFAULT 'ouverte'",
+            "user_code (varchar(50)) NULL",
+            "user_validation (varchar(50)) NULL",
+            "annee_code (varchar(50)) NULL",
+            "etablissement_code (varchar(50)) NULL",
+            "created_at_session (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'"
+        ]
+    },
+    "tranches_scolarite": {
+        "count": "0",
+        "columns": [
+            "id_tranche (int) [PRI] NOT NULL",
+            "code_tranche (varchar(50)) [UNI] NOT NULL",
+            "libelle_tranche (varchar(100)) NOT NULL",
+            "montant_tranche (decimal(12,2)) NOT NULL",
+            "date_limite (date) NOT NULL",
+            "scolarite_code (varchar(50)) NULL",
+            "filiere_code (varchar(50)) NOT NULL",
+            "niveau_code (varchar(50)) NOT NULL",
+            "annee_code (varchar(50)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "statut_tranche (enum('actif','inactif')) NOT NULL DEFAULT 'actif'",
+            "created_at_tranche (datetime) NOT NULL DEFAULT 'CURRENT_TIMESTAMP'"
+        ]
+    },
+    "type_depenses": {
+        "count": "0",
+        "columns": [
+            "id_type_depense (int) [PRI] NOT NULL",
+            "code_type_depense (varchar(50)) NOT NULL",
+            "libelle_type_depense (varchar(255)) NOT NULL",
+            "etablissement_code (varchar(50)) NOT NULL",
+            "user_code (varchar(50)) NOT NULL"
+        ]
+    },
+    "user_permissions": {
+        "count": "0",
+        "columns": [
+            "id (int) [PRI] NOT NULL",
+            "user_code (varchar(50)) [MUL] NOT NULL",
+            "permission_code (varchar(50)) NOT NULL",
+            "accorded (tinyint(1)) NOT NULL DEFAULT '1'"
+        ]
+    },
+    "user_roles": {
+        "count": "9",
+        "columns": [
+            "id (int) [PRI] NOT NULL",
+            "user_code (varchar(50)) [MUL] NOT NULL",
+            "role_code (varchar(50)) NOT NULL",
+            "create_permission (int) NOT NULL DEFAULT '0'",
+            "edit_permission (int) NOT NULL DEFAULT '0'",
+            "show_permission (int) NOT NULL DEFAULT '0'",
+            "delete_permission (int) NOT NULL DEFAULT '0'"
+        ]
+    },
+    "users": {
+        "count": "9",
+        "columns": [
+            "id_user (int) [PRI] NOT NULL",
+            "code_user (varchar(50)) [UNI] NOT NULL",
+            "matricule_user (varchar(50)) NULL",
+            "nom_user (varchar(100)) NOT NULL",
+            "prenom_user (varchar(100)) NOT NULL",
+            "email_user (varchar(150)) [UNI] NOT NULL",
+            "sexe_user (varchar(20)) NULL",
+            "password_user (varchar(255)) NOT NULL",
+            "telephone_user (varchar(30)) NULL",
+            "photo_user (varchar(255)) NULL",
+            "last_connexion (datetime) NULL",
+            "token_user (varchar(255)) NULL",
+            "service_code (varchar(50)) NULL",
+            "fonction_code (varchar(100)) NULL",
+            "etablissement_code (varchar(50)) NULL",
+            "auth_uid (varchar(255)) NULL",
+            "created_at_user (datetime) NOT NULL",
+            "updated_at_user (datetime) NULL",
+            "statut_user (enum('actif','inactif')) NOT NULL DEFAULT 'actif'"
+        ]
+    }
+}

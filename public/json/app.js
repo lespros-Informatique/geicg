@@ -618,18 +618,40 @@ if (modalSave) {
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
-        const footer = document.getElementById('footer');
+        const footer = document.getElementById('footer') || document.querySelector('.footer');
         if (sidebar) {
             sidebar.classList.toggle('collapsed');
-            if (mainContent) mainContent.classList.toggle('expanded');
-            if (footer) footer.classList.toggle('expanded');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            if (mainContent) mainContent.classList.toggle('expanded', isCollapsed);
+            if (footer) footer.classList.toggle('expanded', isCollapsed);
+            try {
+                localStorage.setItem('geicg_sidebar_collapsed', isCollapsed ? '1' : '0');
+            } catch (e) {}
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         }
     }
 
+    try {
+        if (localStorage.getItem('geicg_sidebar_collapsed') === '1') {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const footer = document.getElementById('footer') || document.querySelector('.footer');
+            if (sidebar) sidebar.classList.add('collapsed');
+            if (mainContent) mainContent.classList.add('expanded');
+            if (footer) footer.classList.add('expanded');
+        }
+    } catch (e) {}
+
     const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebarToggleNav = document.getElementById('sidebarToggleNav');
-    if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
-    if (sidebarToggleNav) sidebarToggleNav.addEventListener('click', toggleSidebar);
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar();
+        });
+    }
 
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const sidebar = document.getElementById('sidebar');
@@ -685,7 +707,7 @@ if (modalSave) {
         });
     }
 
-    ['notification', 'profile', 'quickActions', 'theme'].forEach(function(name) {
+    ['notification', 'profile', 'quickActions', 'anneeSwitcher'].forEach(function(name) {
         const btn = document.getElementById(name + 'Btn');
         const panel = document.getElementById(name + 'Panel');
         if (btn && panel) {
@@ -699,14 +721,31 @@ if (modalSave) {
         }
     });
 
-    const themePanelClose = document.getElementById('themePanelClose');
-    if (themePanelClose) {
-        themePanelClose.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const panel = document.getElementById('themePanel');
-            if (panel) panel.classList.remove('active');
+    // Basculement instantané d'année académique active par Session
+    $(document).on('click', '.btn-select-annee-item', function(e) {
+        e.preventDefault();
+        const code = $(this).data('code');
+        const libelle = $(this).data('libelle');
+        if (!code) return;
+
+        const $btn = $(this);
+        $btn.css('opacity', '0.6').css('pointer-events', 'none');
+
+        $.post(LINK + 'annee/setSession', { code_annee: code, libelle_annee: libelle }, function(res) {
+            if (res && res.status === 1) {
+                showToast(res.message || 'Année académique changée avec succès !', 'success');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 300);
+            } else {
+                $btn.css('opacity', '1').css('pointer-events', 'auto');
+                showToast(res.message || 'Erreur lors du changement d\'année', 'error');
+            }
+        }, 'json').fail(function() {
+            $btn.css('opacity', '1').css('pointer-events', 'auto');
+            showToast('Erreur de communication avec le serveur', 'error');
         });
-    }
+    });
 
     ['bnProfil'].forEach(function(id) {
         const btn = document.getElementById(id);
@@ -723,7 +762,7 @@ if (modalSave) {
     });
 
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown-panel') && !e.target.closest('.btn-icon') && !e.target.closest('#profileBtn') && !e.target.closest('.bottom-nav-item')) {
+        if (!e.target.closest('.dropdown-panel') && !e.target.closest('.btn-icon') && !e.target.closest('#profileBtn') && !e.target.closest('#anneeSwitcherBtn') && !e.target.closest('.bottom-nav-item')) {
             document.querySelectorAll('.dropdown-panel').forEach(function(p) { p.classList.remove('active'); });
         }
     });
@@ -745,4 +784,15 @@ if (modalSave) {
     function escapeHtml(str) {
         return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
+
+    // Désactiver l'incrémentation / décrémentation automatique sur les champs input de type number
+    $(document).on('wheel', 'input[type="number"]', function(e) {
+        $(this).blur();
+    });
+
+    $(document).on('keydown', 'input[type="number"]', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+        }
+    });
 });

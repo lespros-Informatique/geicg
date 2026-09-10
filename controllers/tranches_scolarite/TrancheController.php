@@ -10,13 +10,27 @@ class TrancheController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/tranches_scolarite/list.php');
+        header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
+        exit();
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $db = $this->model->getCon();
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+        $anneeCode = $this->getActiveAnneeCode();
+
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_tranche'];
@@ -29,15 +43,72 @@ class TrancheController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    private function validateCumulTranches($scolariteCode, $montantSaisie, $excludeId = null): ?string
+    {
+        if (empty($scolariteCode)) {
+            return 'Veuillez sélectionner une grille de scolarité valide.';
+        }
+
+        $scolariteModel = new ModelScolarite();
+        $scolarite = $scolariteModel->getByElement('code_scolarite', $scolariteCode);
+
+        if (!$scolarite) {
+            return 'La scolarité sélectionnée est introuvable.';
+        }
+
+        $montantTotalScolarite = (float)($scolarite['montant_scolarite'] ?? 0);
+        $montantNouveau = (float)$montantSaisie;
+
+        if ($montantNouveau <= 0) {
+            return 'Le montant de la tranche doit être supérieur à 0 FCFA.';
+        }
+
+        $db = $this->model->getCon();
+        $sql = "SELECT SUM(montant_tranche) FROM tranches_scolarite WHERE scolarite_code = ? AND statut_tranche = 'actif'";
+        $params = [$scolariteCode];
+
+        if ($excludeId !== null) {
+            $sql .= " AND id_tranche != ?";
+            $params[] = (int)$excludeId;
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $sommeExistante = (float)($stmt->fetchColumn() ?: 0);
+
+        $cumulFutur = $sommeExistante + $montantNouveau;
+
+        if ($cumulFutur > $montantTotalScolarite) {
+            $resteAutorise = max(0, $montantTotalScolarite - $sommeExistante);
+            $totalFmt = number_format($montantTotalScolarite, 0, ',', ' ');
+            $cumulFmt = number_format($cumulFutur, 0, ',', ' ');
+            $resteFmt = number_format($resteAutorise, 0, ',', ' ');
+
+            return "Impossible d'enregistrer : Le montant total de la scolarité ($totalFmt FCFA) est inférieur au cumul des tranches ($cumulFmt FCFA). Montant maximum autorisé pour cette tranche : $resteFmt FCFA.";
+        }
+
+        return null;
+    }
+
     public function add()
     {
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $scolariteCode = $data['scolarite_code'] ?? '';
+        $montantTranche = $data['montant_tranche'] ?? 0;
+
+        $errorMsg = $this->validateCumulTranches($scolariteCode, $montantTranche);
+        if ($errorMsg !== null) {
+            $this->error($errorMsg);
+            return;
+        }
+
         if (empty($data['code_tranche'])) {
             $data['code_tranche'] = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
         }
@@ -49,9 +120,9 @@ class TrancheController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Tranche créée avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de la création de la tranche');
         }
     }
 
@@ -63,10 +134,20 @@ class TrancheController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $scolariteCode = $data['scolarite_code'] ?? '';
+        $montantTranche = $data['montant_tranche'] ?? 0;
+
+        $errorMsg = $this->validateCumulTranches($scolariteCode, $montantTranche, $id);
+        if ($errorMsg !== null) {
+            $this->error($errorMsg);
+            return;
+        }
+
         $cols = $this->model->getCon()->query("DESCRIBE tranches_scolarite")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Tranche modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -92,12 +173,20 @@ class TrancheController extends BaseController
     {
         $this->requireAuth();
         try {
-            $id = $this->validator->decrypter($details);
+            $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
+            if (!$id && is_numeric($details)) {
+                $id = (int)$details;
+            }
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'tranche/list'); exit(); }
+            if (!$item) {
+                $this->renderNotFound("La tranche de scolarité demandée est introuvable.");
+                return;
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'tranche/list'); exit();
+            error_log("TrancheController::details error: " . $e->getMessage());
+            $this->renderNotFound("La tranche de scolarité demandée est introuvable.");
+            return;
         }
         $this->loadView('../views/tranches_scolarite/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -106,12 +195,19 @@ class TrancheController extends BaseController
     {
         $this->requireAuth();
         try {
-            $id = $this->validator->decrypter($details);
+            $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
+            if (!$id && is_numeric($details)) {
+                $id = (int)$details;
+            }
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'tranche/list'); exit(); }
+            if (!$item) {
+                header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
+                exit();
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'tranche/list'); exit();
+            header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
+            exit();
         }
         $this->loadView('../views/tranches_scolarite/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

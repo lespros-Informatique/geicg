@@ -10,9 +10,18 @@ $(document).ready(function() {
             {
                 data: 'statut',
                 title: 'Statut',
-                render: function(data) {
-                    const cls = data === 'actif' ? 'delivered' : 'cancelled';
-                    return '<span class="badge-status ' + cls + '">' + data + '</span>';
+                className: 'text-center',
+                render: function(data, type, row) {
+                    var isActif = (data === 'actif');
+                    var checkedAttr = isActif ? 'checked' : '';
+                    return '<div style="display:flex; justify-content:center; align-items:center;">' +
+                           '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+                           '<input type="checkbox" class="changerStatus" data-id="' + row.id + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+                           '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+                           '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+                           '</span>' +
+                           '</label>' +
+                           '</div>';
                 }
             },
             {
@@ -20,16 +29,10 @@ $(document).ready(function() {
                 title: 'Actions',
                 className: 'text-center',
                 render: function(data, type, row) {
-                    const isActive = row.statut === 'actif';
                     return `
                         <div class="table-actions">
                             <a href="${LINK}livreur/details/${row.editId}" title="Voir" class="btn-action btn-action-secondary"><i class="fa fa-eye"></i></a>
                             <a href="${LINK}livreur/edition/${row.editId}" title="Modifier" class="btn-action btn-action-primary"><i class="fa fa-edit"></i></a>
-                            <button type="button" title="${isActive ? 'Désactiver' : 'Activer'}"
-                                data-id="${row.id}"
-                                class="${isActive ? 'btn-action btn-action-warning changerStatus' : 'btn-action btn-action-success changerStatus'}">
-                                <i class="fa ${isActive ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
-                            </button>
                         </div>
                     `;
                 }

@@ -10,16 +10,42 @@ class ImpayesController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/impayes/list.php');
+        $anneeModel = new ModelAnnee();
+        $annees = $anneeModel->getAll();
+        $niveaux = (new ModelNiveau())->getAll();
+        $classes = (new ModelClasse())->getAll();
+        
+        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+            $selectedAnneeCode = trim($_GET['annee_code']);
+            foreach ($annees as $a) {
+                if ($a['code_annee'] === $selectedAnneeCode) {
+                    $_SESSION['annee_active_code'] = $a['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    break;
+                }
+            }
+        } else {
+            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+        }
+
+        $this->loadView('../views/impayes/list.php', [
+            'annees' => $annees,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
+            'selectedAnneeCode' => $selectedAnneeCode
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
         $data = [];
         foreach ($items as $i) {
-            $id = $i['id_inscription'];
+            $id = $i['id_relance'];
             $idCrypte = $this->validator->crypter($id);
             $data[] = array_merge($i, [
                 'id' => $id,
@@ -34,19 +60,27 @@ class ImpayesController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
-        $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+
+        if (empty($data['code_relance'])) {
+            $data['code_relance'] = $this->validator->generateCode('relances_impayes', 'code_relance', 'REL-', 8);
+        }
+        $data['statut_relance'] = 'envoye';
+        $data['created_at_relance'] = date('Y-m-d H:i:s');
+        $data['user_code'] = $userCode;
+        $data['annee_code'] = $anneeCode;
+        $data['etablissement_code'] = $etabCode;
+
+        $cols = $this->model->getCon()->query("DESCRIBE relances_impayes")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
+
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Relance d\'impayé enregistrée et expédiée avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de l\'enregistrement de la relance');
         }
     }
 
@@ -72,7 +106,24 @@ class ImpayesController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT r.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
+                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       a.libelle_annee,
+                       u.nom_user, u.prenom_user
+                FROM relances_impayes r
+                LEFT JOIN etudiants e ON e.code_etudiant = r.etudiant_code
+                LEFT JOIN inscriptions ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription = 'actif'))
+                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN annees a ON a.code_annee = r.annee_code
+                LEFT JOIN users u ON u.code_user = r.user_code
+                WHERE r.id_relance = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'impayes/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
@@ -99,5 +150,28 @@ class ImpayesController extends BaseController
     {
         $this->requireAuth();
         $this->loadView('../views/impayes/edit.php', ['item' => []]);
+    }
+
+    public function changer()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $id = (int)$this->post('id');
+        $statut = $this->post('statut') ?: $this->post('status');
+        if ($id && $this->model->getById($id)) {
+            $allowed = ['en_attente', 'envoye', 'regle'];
+            if (!empty($statut) && in_array($statut, $allowed, true)) {
+                $success = $this->model->updateStatus($id, $statut, 'statut_relance');
+            } else {
+                $success = $this->model->toggleStatus($id);
+            }
+            if ($success) {
+                $this->success('Statut de la relance mis à jour avec succès!', ['reload' => true]);
+            } else {
+                $this->error('Erreur lors de la mise à jour du statut');
+            }
+        } else {
+            $this->error('Relance introuvable');
+        }
     }
 }

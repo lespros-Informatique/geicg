@@ -6,72 +6,120 @@ class ModelUser extends BaseModel
     protected string $primaryKey = 'id_user';
     protected ?string $statusField = 'statut_user';
 
-    public function getUserRole(string $userCode): ?array
+    /**
+     * Récupère tous les rôles et privilèges d'un utilisateur
+     */
+    public function getUserRoles(string $userCode): array
     {
         try {
-            $sql = "SELECT role_code, libelle_role FROM " . TABLES::ROLES . " r
-                    INNER JOIN " . TABLES::USERS . " u ON u.role_code = r.code_role
-                    WHERE u.code_user = ? LIMIT 1";
+            $sql = "SELECT ur.*, r.libelle_role, r.module, r.groupe, r.description 
+                    FROM user_roles ur
+                    INNER JOIN roles r ON r.code_role = ur.role_code
+                    WHERE ur.user_code = ?
+                    ORDER BY CASE 
+                        WHEN ur.role_code = 'ROLE_SUPERADMIN' THEN 1 
+                        WHEN ur.role_code = 'ROLE_DIR_GENERAL' THEN 2
+                        WHEN ur.role_code = 'ROLE_DIR_ETUDES' THEN 3
+                        WHEN ur.role_code = 'ROLE_CHEF_DEP' THEN 4
+                        WHEN ur.role_code = 'ROLE_COMPTABLE' THEN 5
+                        WHEN ur.role_code = 'ROLE_SCOLARITE' THEN 6
+                        WHEN ur.role_code = 'ROLE_CAISSIER' THEN 7
+                        WHEN ur.role_code = 'ROLE_ENSEIGNANT' THEN 8
+                        ELSE 9 END, ur.id ASC";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute([$userCode]);
-            $role = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($role) {
-                return $role;
-            }
-
-            $sql = "SELECT r.code_role, r.libelle_role, up.pressing_code
-                    FROM " . TABLES::USERS_PRESSINGS . " up
-                    INNER JOIN " . TABLES::ROLES . " r ON up.role_code = r.code_role
-                    WHERE up.user_code = ? AND up.statut_user_pressing = 'actif'
-                    LIMIT 1";
-            $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute([$userCode]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
-            error_log("ModelUser::getUserRole error: " . $e->getMessage());
-            return null;
+            error_log("ModelUser::getUserRoles error: " . $e->getMessage());
+            return [];
         }
     }
 
-    public function setUserRole(string $userCode, string $roleCode, string $pressingCode = ''): bool
+    /**
+     * Récupère la liste simple des codes de rôles d'un utilisateur
+     */
+    public function getUserRoleCodes(string $userCode): array
+    {
+        $roles = $this->getUserRoles($userCode);
+        return array_values(array_unique(array_filter(array_column($roles, 'role_code'))));
+    }
+
+    /**
+     * Récupère le rôle principal (le plus haut dans la hiérarchie) d'un utilisateur
+     */
+    public function getUserRole(string $userCode): ?array
+    {
+        $roles = $this->getUserRoles($userCode);
+        return !empty($roles) ? $roles[0] : null;
+    }
+
+    /**
+     * Synchronise une liste de rôles multiples avec permissions CRUD spécifiques par rôle
+     * @param string $userCode Code de l'utilisateur
+     * @param array $rolesData [ 'ROLE_CODE' => ['create' => 1, 'edit' => 1, ...], ... ] ou ['ROLE_1', 'ROLE_2']
+     * @param array $defaultCrud Permissions par défaut si non fournies
+     */
+    public function syncUserRoles(string $userCode, array $rolesData, array $defaultCrud = []): bool
     {
         try {
-            $this->getCon()->beginTransaction();
+            $pdo = $this->getCon();
+            $pdo->beginTransaction();
 
-            $sqlUpdate = "UPDATE " . TABLES::USERS . " SET role_code = ? WHERE code_user = ?";
-            $stmtUpdate = $this->getCon()->prepare($sqlUpdate);
-            $stmtUpdate->execute([$roleCode, $userCode]);
+            // Supprimer les rôles actuels
+            $stmtDel = $pdo->prepare("DELETE FROM user_roles WHERE user_code = ?");
+            $stmtDel->execute([$userCode]);
 
-            if ($pressingCode !== '') {
-                $sqlDelete = "DELETE FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ?";
-                $stmtDelete = $this->getCon()->prepare($sqlDelete);
-                $stmtDelete->execute([$userCode]);
-
-                $sqlInsert = "INSERT INTO " . TABLES::USERS_PRESSINGS . 
-                              " (code_user_pressing, user_code, pressing_code, role_code, statut_user_pressing) 
-                              VALUES (?, ?, ?, ?, 'actif')";
-                $codeUserPressing = 'UP-' . strtoupper(uniqid());
-                $stmtInsert = $this->getCon()->prepare($sqlInsert);
-                $result = $stmtInsert->execute([$codeUserPressing, $userCode, $pressingCode, $roleCode]);
-            } else {
-                $sqlDelete = "DELETE FROM " . TABLES::USERS_PRESSINGS . " WHERE user_code = ?";
-                $stmtDelete = $this->getCon()->prepare($sqlDelete);
-                $result = $stmtDelete->execute([$userCode]);
+            if (empty($rolesData)) {
+                $rolesData = ['ROLE_SCOLARITE' => ['create' => 1, 'edit' => 1, 'show' => 1, 'delete' => 0]];
             }
 
-            if ($result) {
-                $this->getCon()->commit();
-                return true;
+            $stmtIns = $pdo->prepare("
+                INSERT INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+
+            foreach ($rolesData as $key => $val) {
+                if (is_array($val)) {
+                    $roleCode = trim($key);
+                    $createP = !empty($val['create']) ? 1 : 0;
+                    $editP   = !empty($val['edit']) ? 1 : 0;
+                    $showP   = isset($val['show']) ? (!empty($val['show']) ? 1 : 0) : 1;
+                    $deleteP = !empty($val['delete']) ? 1 : 0;
+                } else {
+                    $roleCode = trim($val);
+                    $createP = isset($defaultCrud['create']) ? (int)$defaultCrud['create'] : 1;
+                    $editP   = isset($defaultCrud['edit']) ? (int)$defaultCrud['edit'] : 1;
+                    $showP   = isset($defaultCrud['show']) ? (int)$defaultCrud['show'] : 1;
+                    $deleteP = isset($defaultCrud['delete']) ? (int)$defaultCrud['delete'] : 0;
+                }
+
+                if (!empty($roleCode)) {
+                    $stmtIns->execute([$userCode, $roleCode, $createP, $editP, $showP, $deleteP]);
+                }
             }
 
-            $this->getCon()->rollBack();
-            return false;
+            $pdo->commit();
+            return true;
         } catch (Exception $e) {
-            error_log("ModelUser::setUserRole error: " . $e->getMessage());
-            $this->getCon()->rollBack();
+            if ($this->getCon()->inTransaction()) {
+                $this->getCon()->rollBack();
+            }
+            error_log("ModelUser::syncUserRoles error: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Attribue un rôle unique ou ajoute un rôle (rétrocompatibilité)
+     */
+    public function setUserRole(string $userCode, string $roleCode, int $create = 1, int $edit = 1, int $show = 1, int $delete = 0): bool
+    {
+        return $this->syncUserRoles($userCode, [$roleCode], [
+            'create' => $create,
+            'edit' => $edit,
+            'show' => $show,
+            'delete' => $delete
+        ]);
     }
 
     /**
@@ -80,7 +128,7 @@ class ModelUser extends BaseModel
     public function updatePassword(string $hashPassword, int $userId): bool
     {
         try {
-            $sql = "UPDATE " . TABLES::USERS . " SET password_user = ?, updated_at_user = ? WHERE id_user = ?";
+            $sql = "UPDATE users SET password_user = ?, updated_at_user = ? WHERE id_user = ?";
             $stmt = $this->getCon()->prepare($sql);
             return $stmt->execute([$hashPassword, date('Y-m-d H:i:s'), $userId]);
         } catch (Exception $e) {

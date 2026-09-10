@@ -36,18 +36,22 @@
             <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Nouvelle Assignation
           </a>
         </div>
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow-x: auto;">
-          <table id="table-assignations" class="table display responsive nowrap" style="width: 100%;">
-            <thead>
-              <tr>
-                <th>Cycle D'Études</th>
-                <th>Filière Associée</th>
-                <th>Statut</th>
-                <th style="text-align: right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
+          <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table id="table-assignations" class="table display nowrap" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
+                  <th style="padding: 12px;">ID</th>
+                  <th style="padding: 12px;">Code</th>
+                  <th style="padding: 12px;">Cycle D'Études</th>
+                  <th style="padding: 12px;">Filière Associée</th>
+                  <th style="padding: 12px;" class="text-center">Statut</th>
+                  <th style="padding: 12px; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -59,19 +63,22 @@
             <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter une Filière
           </a>
         </div>
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow-x: auto;">
-          <table id="table-filieres-catalogue" class="table display responsive nowrap" style="width: 100%;">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Nom de la Filière</th>
-                <th>Description</th>
-                <th>Statut</th>
-                <th style="text-align: right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
+          <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table id="table-filieres-catalogue" class="table display nowrap" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
+                  <th style="padding: 12px;">ID</th>
+                  <th style="padding: 12px;">Code</th>
+                  <th style="padding: 12px;">Nom de la Filière</th>
+                  <th style="padding: 12px;">Description</th>
+                  <th style="padding: 12px;" class="text-center">Statut</th>
+                  <th style="padding: 12px; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -83,19 +90,22 @@
             <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter un Cycle
           </a>
         </div>
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow-x: auto;">
-          <table id="table-cycles-list" class="table display responsive nowrap" style="width: 100%;">
-            <thead>
-              <tr>
-                <th>Code Cycle</th>
-                <th>Libellé du Cycle</th>
-                <th>Description</th>
-                <th>Statut</th>
-                <th style="text-align: right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
+          <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table id="table-cycles-list" class="table display nowrap" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
+                  <th style="padding: 12px;">ID</th>
+                  <th style="padding: 12px;">Code Cycle</th>
+                  <th style="padding: 12px;">Libellé du Cycle</th>
+                  <th style="padding: 12px;">Description</th>
+                  <th style="padding: 12px;" class="text-center">Statut</th>
+                  <th style="padding: 12px; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -117,82 +127,99 @@ $(document).ready(function() {
     $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
   });
 
-  // Renderer de Statut Pro & Cohérent avec le Template
-  function renderStatusBadge(statut) {
-    if (statut === 'actif') {
-      return '<span class="badge" style="background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">' +
-        '<i data-lucide="check-circle" style="width: 13px; height: 13px;"></i> Actif</span>';
-    } else {
-      return '<span class="badge" style="background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">' +
-        '<i data-lucide="x-circle" style="width: 13px; height: 13px;"></i> Inactif</span>';
-    }
-  }
-
-  // Renderer de Boutons d'Action Pro & Cohérent
-  function renderActionButtons(editUrl, detailsUrl) {
-    var html = '<div style="display: flex; justify-content: flex-end; gap: 8px;">';
-    if (editUrl) {
-      html += '<a href="' + editUrl + '" class="btn btn-sm btn-outline-primary" style="font-weight: 700; font-size: 12px; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #CBD5E1; color: #1E3A5F; background: #F8FAFC;" title="Modifier">' +
-        '<i data-lucide="edit-3" style="width: 14px; height: 14px; color: #1E3A5F;"></i> Éditer</a>';
-    }
-    if (detailsUrl) {
-      html += '<a href="' + detailsUrl + '" class="btn btn-sm btn-outline-secondary" style="font-weight: 700; font-size: 12px; border-radius: 6px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #CBD5E1; color: #475569; background: #F1F5F9;" title="Détails">' +
-        '<i data-lucide="eye" style="width: 14px; height: 14px; color: #475569;"></i> Détails</a>';
-    }
-    html += '</div>';
-    return html;
-  }
-
   // Table 1: Assignations
   var tableAssign = $('#table-assignations').DataTable({
     ajax: '<?= RACINE ?>filiere_cycle/apiList',
+    processing: true,
+    autoWidth: false,
     columns: [
-      { data: 'libelle_cycle', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Non défini') + '</span>'; } },
-      { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>'; } },
-      { data: 'statut_filiere_cycle', render: function(d) { return renderStatusBadge(d); } },
-      {
-        data: null, orderable: false, className: 'text-end',
-        render: function(data, type, row) {
-          return renderActionButtons('<?= RACINE ?>filiere_cycle/edition/' + row.editId, '<?= RACINE ?>filiere_cycle/details/' + row.editId);
-        }
-      }
+      { data: 'id_filiere_cycle', defaultContent: '-', width: '50px' },
+      { data: 'code_filiere_cycle', width: '120px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
+      }},
+      { data: 'libelle_cycle', width: '180px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Non défini') + '</span>';
+      }},
+      { data: 'libelle_filiere', width: '200px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>';
+      }},
+      { data: 'statut_filiere_cycle', width: '100px', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d === 'actif' ? '<span style="display:inline-block; background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Actif</span>' : '<span style="display:inline-block; background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Inactif</span>';
+      }},
+      { data: null, width: '160px', orderable: false, className: 'text-end', render: function(d) {
+        return '<a href="<?= RACINE ?>filiere_cycle/edition/' + (d.editId || d.id_filiere_cycle) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+               '<a href="<?= RACINE ?>filiere_cycle/details/' + (d.editId || d.id_filiere_cycle) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      }}
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
   // Table 2: Catalogue Filières
   var tableFilieres = $('#table-filieres-catalogue').DataTable({
     ajax: '<?= RACINE ?>filiere/apiList',
+    processing: true,
+    autoWidth: false,
     columns: [
-      { data: 'code_filiere', render: function(d) { return '<code style="font-weight:700; color:#475569; background:#F1F5F9; padding:3px 8px; border-radius:4px;">' + (d || '-') + '</code>'; } },
-      { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>'; } },
-      { data: 'description_filiere', render: function(d) { return d || '<span style="color:#94A3B8; font-style:italic;">Aucune description</span>'; } },
-      { data: 'statut_filiere', render: function(d) { return renderStatusBadge(d); } },
-      {
-        data: null, orderable: false, className: 'text-end',
-        render: function(data, type, row) {
-          return renderActionButtons('<?= RACINE ?>filiere/edition/' + row.editId, '<?= RACINE ?>filiere/details/' + row.editId);
-        }
-      }
+      { data: 'id_filiere', defaultContent: '-', width: '50px' },
+      { data: 'code_filiere', width: '120px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
+      }},
+      { data: 'libelle_filiere', width: '200px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>';
+      }},
+      { data: 'description_filiere', defaultContent: '-', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d || '-';
+      }},
+      { data: 'statut_filiere', width: '100px', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d === 'actif' ? '<span style="display:inline-block; background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Actif</span>' : '<span style="display:inline-block; background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Inactif</span>';
+      }},
+      { data: null, width: '160px', orderable: false, className: 'text-end', render: function(d) {
+        return '<a href="<?= RACINE ?>filiere/edition/' + (d.editId || d.id_filiere) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+               '<a href="<?= RACINE ?>filiere/details/' + (d.editId || d.id_filiere) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      }}
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
   // Table 3: Cycles d'Études
   var tableCycles = $('#table-cycles-list').DataTable({
     ajax: '<?= RACINE ?>cycle/apiList',
+    processing: true,
+    autoWidth: false,
     columns: [
-      { data: 'code_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569; background:#F1F5F9; padding:3px 8px; border-radius:4px;">' + (d || '-') + '</code>'; } },
-      { data: 'libelle_cycle', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>'; } },
-      { data: 'description_cycle', render: function(d) { return d || '<span style="color:#94A3B8; font-style:italic;">Aucune description</span>'; } },
-      { data: 'statut_cycle', render: function(d) { return renderStatusBadge(d); } },
-      {
-        data: null, orderable: false, className: 'text-end',
-        render: function(data, type, row) {
-          return renderActionButtons('<?= RACINE ?>cycle/edition/' + row.editId, '<?= RACINE ?>cycle/details/' + row.editId);
-        }
-      }
+      { data: 'id_cycle', defaultContent: '-', width: '50px' },
+      { data: 'code_cycle', width: '120px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
+      }},
+      { data: 'libelle_cycle', width: '200px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>';
+      }},
+      { data: 'description_cycle', defaultContent: '-', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d || '-';
+      }},
+      { data: 'statut_cycle', width: '100px', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return d === 'actif' ? '<span style="display:inline-block; background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Actif</span>' : '<span style="display:inline-block; background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">Inactif</span>';
+      }},
+      { data: null, width: '160px', orderable: false, className: 'text-end', render: function(d) {
+        return '<a href="<?= RACINE ?>cycle/edition/' + (d.editId || d.id_cycle) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+               '<a href="<?= RACINE ?>cycle/details/' + (d.editId || d.id_cycle) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      }}
     ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 });

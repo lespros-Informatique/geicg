@@ -40,8 +40,8 @@ class SalleController extends BaseController
         }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_salle'])) {
             $data['code_salle'] = $this->validator->generateCode('salles', 'code_salle', 'SAL-', 8);
         }
@@ -103,11 +103,35 @@ class SalleController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'salle/list'); exit(); }
+
+            $salleCode = $item['code_salle'];
+
+            // Planning / Emplois du temps dans cette salle
+            $stmtEdt = $this->model->getCon()->prepare("
+                SELECT edt.*, cl.libelle_classe, m.libelle_matiere,
+                        u.nom_user as nom_prof,
+                        u.prenom_user as prenom_prof
+                 FROM emplois_temps edt
+                 LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
+                 LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
+                 LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
+                 LEFT JOIN users u ON u.code_user = edt.enseignant_code
+                 WHERE edt.salle_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
+                ORDER BY edt.jour ASC, edt.heure_debut ASC
+            ");
+            $stmtEdt->execute([$salleCode]);
+            $planning = $stmtEdt->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'salle/list'); exit();
+            error_log("SalleController::details error: " . $e->getMessage());
+            $this->renderNotFound("La salle demandée est introuvable.");
         }
-        $this->loadView('../views/salles/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/salles/details.php', [
+            'item' => $item, 
+            'planning' => $planning,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

@@ -10,13 +10,55 @@ class DepenseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/depenses/list.php');
+        $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $activeYear = $this->getActiveAnneeCode();
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stats = $this->model->getStats($activeYear);
+
+        $this->loadView('../views/depenses/list.php', [
+            'annees' => $annees,
+            'selectedAnneeCode' => $activeYear,
+            'stats' => $stats
+        ]);
+    }
+
+    public function apiStats()
+    {
+        $this->requireAuth();
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $stats = $this->model->getStats($anneeCode);
+        $this->json(['status' => 1, 'stats' => $stats]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $db = $this->model->getCon();
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $anneeCode = $this->getActiveAnneeCode();
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_depense'];
@@ -34,8 +76,8 @@ class DepenseController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
         if (empty($data['code_depense'])) {
@@ -93,7 +135,19 @@ class DepenseController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT d.*, 
+                       td.libelle_type_depense, 
+                       a.libelle_annee, 
+                       u.nom_user, u.prenom_user
+                FROM depenses d
+                LEFT JOIN type_depenses td ON td.code_type_depense = d.type_depense_code
+                LEFT JOIN annees a ON a.code_annee = d.annee_code
+                LEFT JOIN users u ON u.code_user = d.user_code
+                WHERE d.id_depense = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'depense/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

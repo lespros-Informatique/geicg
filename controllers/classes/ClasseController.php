@@ -10,13 +10,59 @@ class ClasseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->loadView('../views/classes/list.php');
+        $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $activeYear = $this->getActiveAnneeCode();
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->loadView('../views/classes/list.php', [
+            'annees' => $annees,
+            'selectedAnneeCode' => $activeYear
+        ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $anneeCode = $this->getActiveAnneeCode();
+
+        $sql = "SELECT c.*, 
+                       f.libelle_filiere,
+                       n.libelle_niveau,
+                       a.libelle_annee
+                FROM classes c
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN annees a ON a.code_annee = c.annee_code
+                WHERE (c.annee_code = ? OR c.annee_code IS NULL OR c.annee_code = '' OR ? = '')
+                ORDER BY c.id_classe DESC";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$anneeCode, $anneeCode]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_classe'];
@@ -35,13 +81,33 @@ class ClasseController extends BaseController
         $this->requireAuth();
         $data = $_POST;
         unset($data['csrf_token']);
-        if (!empty($data['libelle_classe'])) {
-            if (!$this->checkUnique('classes', 'libelle_classe', $data['libelle_classe'], 'Nom de la classe')) return;
+
+        // Génération automatique intelligente de secours si le champ libelle_classe est vide
+        if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
+            $stmtF = $this->model->getCon()->prepare("SELECT libelle_filiere FROM filieres WHERE code_filiere = ?");
+            $stmtF->execute([$data['filiere_code']]);
+            $fName = $stmtF->fetchColumn();
+
+            $stmtN = $this->model->getCon()->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ?");
+            $stmtN->execute([$data['niveau_code']]);
+            $nName = $stmtN->fetchColumn();
+
+            if ($fName && $nName) {
+                $data['libelle_classe'] = trim($fName) . ' - ' . trim($nName);
+            }
         }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? '0GklBk07waYoLB6pHwY';
-        $etabCode = '5454544456';
+        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : $this->getActiveAnneeCode();
+
+        if (!empty($data['libelle_classe'])) {
+            if (!$this->checkUniquePair('classes', [
+                'libelle_classe' => $data['libelle_classe'],
+                'annee_code' => $anneeCode
+            ], 'nom de classe', 'id_classe', null)) return;
+        }
+
+        $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_classe'])) {
             $data['code_classe'] = $this->validator->generateCode('classes', 'code_classe', 'CLA-', 8);
         }
@@ -53,9 +119,9 @@ class ClasseController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Classe créée avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error('Erreur lors de la création de la classe.');
         }
     }
 
@@ -67,16 +133,41 @@ class ClasseController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
+        // Génération automatique intelligente de secours si le champ libelle_classe est vide
+        if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
+            $stmtF = $this->model->getCon()->prepare("SELECT libelle_filiere FROM filieres WHERE code_filiere = ?");
+            $stmtF->execute([$data['filiere_code']]);
+            $fName = $stmtF->fetchColumn();
+
+            $stmtN = $this->model->getCon()->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ?");
+            $stmtN->execute([$data['niveau_code']]);
+            $nName = $stmtN->fetchColumn();
+
+            if ($fName && $nName) {
+                $data['libelle_classe'] = trim($fName) . ' - ' . trim($nName);
+            }
+        }
+
+        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : null;
+        if (!$anneeCode) {
+            $existing = $this->model->getById($id);
+            $anneeCode = $existing['annee_code'] ?? $this->getActiveAnneeCode();
+        }
+
         if (!empty($data['libelle_classe'])) {
-            if (!$this->checkUnique('classes', 'libelle_classe', $data['libelle_classe'], 'Nom de la classe', 'id_classe', $id)) return;
+            if (!$this->checkUniquePair('classes', [
+                'libelle_classe' => $data['libelle_classe'],
+                'annee_code' => $anneeCode
+            ], 'nom de classe', 'id_classe', $id)) return;
         }
 
         $cols = $this->model->getCon()->query("DESCRIBE classes")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Classe modifiée avec succès!');
         } else {
-            $this->error('Erreur lors de la modification');
+            $this->error('Erreur lors de la modification de la classe.');
         }
     }
 
@@ -101,13 +192,65 @@ class ClasseController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'classe/list'); exit(); }
+            $stmt = $this->model->getCon()->prepare("
+                SELECT c.*, 
+                       f.libelle_filiere,
+                       n.libelle_niveau,
+                       a.libelle_annee
+                FROM classes c
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN annees a ON a.code_annee = c.annee_code
+                WHERE c.id_classe = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$item) { 
+                $this->renderNotFound("La classe demandée est introuvable.");
+                return;
+            }
+
+            $classeCode = $item['code_classe'];
+
+            // Liste des étudiants inscrits dans cette classe
+            $stmtEtu = $this->model->getCon()->prepare("
+                SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription
+                FROM etudiants e
+                INNER JOIN inscriptions ins ON ins.etudiant_code = e.code_etudiant
+                WHERE ins.classe_code = ? AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)
+                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            ");
+            $stmtEtu->execute([$classeCode]);
+            $etudiants = $stmtEtu->fetchAll(PDO::FETCH_ASSOC);
+
+            // Liste des matières & enseignants assignés
+            $stmtMat = $this->model->getCon()->prepare("
+                SELECT em.*, m.libelle_matiere, m.code_matiere,
+                       u.nom_user as nom_prof,
+                       u.prenom_user as prenom_prof,
+                       e.grade_enseignant
+                FROM enseignant_matiere em
+                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
+                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+                LEFT JOIN users u ON u.code_user = em.enseignant_code
+                WHERE em.classe_code = ?
+                ORDER BY m.libelle_matiere ASC
+            ");
+            $stmtMat->execute([$classeCode]);
+            $matieres = $stmtMat->fetchAll(PDO::FETCH_ASSOC);
+
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'classe/list'); exit();
+            error_log("ClasseController::details error: " . $e->getMessage());
+            $this->renderNotFound("La classe demandée est introuvable.");
+            return;
         }
-        $this->loadView('../views/classes/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/classes/details.php', [
+            'item' => $item, 
+            'etudiants' => $etudiants,
+            'matieres' => $matieres,
+            'encryptedId' => $encryptedId
+        ]);
     }
 
     public function edition($details)

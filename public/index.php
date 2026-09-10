@@ -5,7 +5,6 @@ $route = new Router();
 $homeController = new HomeController();
 $userController = new UserController();
 $etablissementController = new EtablissementController();
-$serviceController = new ServiceController();
 $fonctionController = new FonctionController();
 $cycleController = new CycleController();
 $filiereController = new FiliereController();
@@ -15,7 +14,6 @@ $salleController = new SalleController();
 $anneeController = new AnneeController();
 $classeController = new ClasseController();
 $semestreController = new SemestreController();
-$ueController = new UeController();
 $matiereController = new MatiereController();
 $scolariteController = new ScolariteController();
 $trancheController = new TrancheController();
@@ -23,8 +21,10 @@ $etudiantController = new EtudiantController();
 $parentController = new ParentController();
 $inscriptionController = new InscriptionController();
 $accessoireController = new AccessoireController();
+$pieceFournirController = new PieceFournirController();
+$pieceFournirCycleController = new PieceFournirCycleController();
 $paiementController = new PaiementController();
-$clotureCaisseController = new ClotureCaisseController();
+$sessionCaisseController = new SessionCaisseController();
 $impayesController = new ImpayesController();
 $typeDepenseController = new TypeDepenseController();
 $depenseController = new DepenseController();
@@ -33,13 +33,14 @@ $enseignantMatiereController = new EnseignantMatiereController();
 $emploiController = new EmploiController();
 $absenceController = new AbsenceController();
 $noteController = new NoteController();
+$compositionController = new CompositionController();
 $bulletinController = new BulletinController();
 $evenementController = new EvenementController();
 $galerieController = new GalerieController();
 $documentController = new DocumentController();
 $roleController = new RoleController();
 $permissionController = new PermissionController();
-$notificationController = new NotificationController();
+
 
 // Route d'accueil & Authentification
 $route->addRoute('/', [$homeController, 'index']);
@@ -71,15 +72,7 @@ $route->addRoute('/etablissement/details/{param}', [$etablissementController, 'd
 $route->addRoute('/etablissement/edition/{param}', [$etablissementController, 'edition']);
 $route->addRoute('/etablissement/formulaire', [$etablissementController, 'formulaire']);
 
-// Module: service (ServiceController)
-$route->addRoute('/service/list', [$serviceController, 'list']);
-$route->addRoute('/service/apiList', [$serviceController, 'apiList']);
-$route->addRoute('/service/add', [$serviceController, 'add']);
-$route->addRoute('/service/edit', [$serviceController, 'edit']);
-$route->addRoute('/service/changer', [$serviceController, 'changer']);
-$route->addRoute('/service/details/{param}', [$serviceController, 'details']);
-$route->addRoute('/service/edition/{param}', [$serviceController, 'edition']);
-$route->addRoute('/service/formulaire', [$serviceController, 'formulaire']);
+
 
 // Module: fonction (FonctionController)
 $route->addRoute('/fonction/list', [$fonctionController, 'list']);
@@ -131,6 +124,7 @@ $route->addRoute('/niveau/details/{param}', [$niveauController, 'details']);
 $route->addRoute('/niveau/edition/{param}', [$niveauController, 'edition']);
 $route->addRoute('/niveau/formulaire', [$niveauController, 'formulaire']);
 
+
 // Module: salle (SalleController)
 $route->addRoute('/salle/list', [$salleController, 'list']);
 $route->addRoute('/salle/apiList', [$salleController, 'apiList']);
@@ -150,6 +144,8 @@ $route->addRoute('/annee/changer', [$anneeController, 'changer']);
 $route->addRoute('/annee/details/{param}', [$anneeController, 'details']);
 $route->addRoute('/annee/edition/{param}', [$anneeController, 'edition']);
 $route->addRoute('/annee/formulaire', [$anneeController, 'formulaire']);
+$route->addRoute('/annee/setSession', [$anneeController, 'setSession']);
+$route->addRoute('/annee/setActiveSession', [$anneeController, 'setSession']);
 
 // Module: classe (ClasseController)
 $route->addRoute('/classe/list', [$classeController, 'list']);
@@ -171,15 +167,8 @@ $route->addRoute('/semestre/details/{param}', [$semestreController, 'details']);
 $route->addRoute('/semestre/edition/{param}', [$semestreController, 'edition']);
 $route->addRoute('/semestre/formulaire', [$semestreController, 'formulaire']);
 
-// Module: ue (UeController)
-$route->addRoute('/ue/list', [$ueController, 'list']);
-$route->addRoute('/ue/apiList', [$ueController, 'apiList']);
-$route->addRoute('/ue/add', [$ueController, 'add']);
-$route->addRoute('/ue/edit', [$ueController, 'edit']);
-$route->addRoute('/ue/changer', [$ueController, 'changer']);
-$route->addRoute('/ue/details/{param}', [$ueController, 'details']);
-$route->addRoute('/ue/edition/{param}', [$ueController, 'edition']);
-$route->addRoute('/ue/formulaire', [$ueController, 'formulaire']);
+
+
 
 // Module: matiere (MatiereController)
 $route->addRoute('/matiere/list', [$matiereController, 'list']);
@@ -215,11 +204,13 @@ $route->addRoute('/tranche/formulaire', [$trancheController, 'formulaire']);
 $route->addRoute('/etudiant/list', [$etudiantController, 'list']);
 $route->addRoute('/etudiant/apiList', [$etudiantController, 'apiList']);
 $route->addRoute('/etudiant/add', [$etudiantController, 'add']);
+$route->addRoute('/etudiant/addWizard', [$etudiantController, 'addWizard']);
 $route->addRoute('/etudiant/edit', [$etudiantController, 'edit']);
 $route->addRoute('/etudiant/changer', [$etudiantController, 'changer']);
 $route->addRoute('/etudiant/details/{param}', [$etudiantController, 'details']);
 $route->addRoute('/etudiant/edition/{param}', [$etudiantController, 'edition']);
 $route->addRoute('/etudiant/formulaire', [$etudiantController, 'formulaire']);
+$route->addRoute('/etudiant/wizard', [$etudiantController, 'wizard']);
 
 // Module: parent (ParentController)
 $route->addRoute('/parent/list', [$parentController, 'list']);
@@ -234,6 +225,8 @@ $route->addRoute('/parent/formulaire', [$parentController, 'formulaire']);
 // Module: inscription (InscriptionController)
 $route->addRoute('/inscription/list', [$inscriptionController, 'list']);
 $route->addRoute('/inscription/apiList', [$inscriptionController, 'apiList']);
+$route->addRoute('/inscription/getStudentProfileSummary', [$inscriptionController, 'getStudentProfileSummary']);
+$route->addRoute('/inscription/getTuitionByClass', [$inscriptionController, 'getTuitionByClass']);
 $route->addRoute('/inscription/add', [$inscriptionController, 'add']);
 $route->addRoute('/inscription/edit', [$inscriptionController, 'edit']);
 $route->addRoute('/inscription/changer', [$inscriptionController, 'changer']);
@@ -244,6 +237,12 @@ $route->addRoute('/inscription/formulaire', [$inscriptionController, 'formulaire
 // Module: accessoire (AccessoireController)
 $route->addRoute('/accessoire/list', [$accessoireController, 'list']);
 $route->addRoute('/accessoire/apiList', [$accessoireController, 'apiList']);
+$route->addRoute('/accessoire/apiDistributions', [$accessoireController, 'apiDistributions']);
+$route->addRoute('/accessoire/apiStats', [$accessoireController, 'apiStats']);
+$route->addRoute('/accessoire/toggleRetrait', [$accessoireController, 'toggleRetrait']);
+$route->addRoute('/accessoire/toggleStudentAllKits', [$accessoireController, 'toggleStudentAllKits']);
+$route->addRoute('/accessoire/attribuerKit', [$accessoireController, 'attribuerKit']);
+$route->addRoute('/accessoire/getStudentKits', [$accessoireController, 'getStudentKits']);
 $route->addRoute('/accessoire/add', [$accessoireController, 'add']);
 $route->addRoute('/accessoire/edit', [$accessoireController, 'edit']);
 $route->addRoute('/accessoire/changer', [$accessoireController, 'changer']);
@@ -251,9 +250,32 @@ $route->addRoute('/accessoire/details/{param}', [$accessoireController, 'details
 $route->addRoute('/accessoire/edition/{param}', [$accessoireController, 'edition']);
 $route->addRoute('/accessoire/formulaire', [$accessoireController, 'formulaire']);
 
+// Module: piece_fournir (PieceFournirController)
+$route->addRoute('/piece_fournir/list', [$pieceFournirController, 'list']);
+$route->addRoute('/piece_fournir/apiList', [$pieceFournirController, 'apiList']);
+$route->addRoute('/piece_fournir/add', [$pieceFournirController, 'add']);
+$route->addRoute('/piece_fournir/edit', [$pieceFournirController, 'edit']);
+$route->addRoute('/piece_fournir/changer', [$pieceFournirController, 'changer']);
+$route->addRoute('/piece_fournir/edition/{param}', [$pieceFournirController, 'edition']);
+$route->addRoute('/piece_fournir/supprimer/{param}', [$pieceFournirController, 'supprimer']);
+$route->addRoute('/piece_fournir/formulaire', [$pieceFournirController, 'formulaire']);
+
+// Module: piece_fournir_cycle (PieceFournirCycleController)
+$route->addRoute('/piece_fournir_cycle/list', [$pieceFournirCycleController, 'list']);
+$route->addRoute('/piece_fournir_cycle/apiList', [$pieceFournirCycleController, 'apiList']);
+$route->addRoute('/piece_fournir_cycle/apiStats', [$pieceFournirCycleController, 'apiStats']);
+$route->addRoute('/piece_fournir_cycle/getByCycleApi', [$pieceFournirCycleController, 'getByCycleApi']);
+$route->addRoute('/piece_fournir_cycle/add', [$pieceFournirCycleController, 'add']);
+$route->addRoute('/piece_fournir_cycle/edit', [$pieceFournirCycleController, 'edit']);
+$route->addRoute('/piece_fournir_cycle/changer', [$pieceFournirCycleController, 'changer']);
+$route->addRoute('/piece_fournir_cycle/edition/{param}', [$pieceFournirCycleController, 'edition']);
+$route->addRoute('/piece_fournir_cycle/supprimer/{param}', [$pieceFournirCycleController, 'supprimer']);
+$route->addRoute('/piece_fournir_cycle/formulaire', [$pieceFournirCycleController, 'formulaire']);
+
 // Module: paiement (PaiementController)
 $route->addRoute('/paiement/list', [$paiementController, 'list']);
 $route->addRoute('/paiement/apiList', [$paiementController, 'apiList']);
+$route->addRoute('/paiement/getStudentFinancialSummary', [$paiementController, 'getStudentFinancialSummary']);
 $route->addRoute('/paiement/add', [$paiementController, 'add']);
 $route->addRoute('/paiement/edit', [$paiementController, 'edit']);
 $route->addRoute('/paiement/changer', [$paiementController, 'changer']);
@@ -261,15 +283,26 @@ $route->addRoute('/paiement/details/{param}', [$paiementController, 'details']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);
 $route->addRoute('/paiement/formulaire', [$paiementController, 'formulaire']);
 
-// Module: cloture_caisse (ClotureCaisseController)
-$route->addRoute('/cloture_caisse/list', [$clotureCaisseController, 'list']);
-$route->addRoute('/cloture_caisse/apiList', [$clotureCaisseController, 'apiList']);
-$route->addRoute('/cloture_caisse/add', [$clotureCaisseController, 'add']);
-$route->addRoute('/cloture_caisse/edit', [$clotureCaisseController, 'edit']);
-$route->addRoute('/cloture_caisse/changer', [$clotureCaisseController, 'changer']);
-$route->addRoute('/cloture_caisse/details/{param}', [$clotureCaisseController, 'details']);
-$route->addRoute('/cloture_caisse/edition/{param}', [$clotureCaisseController, 'edition']);
-$route->addRoute('/cloture_caisse/formulaire', [$clotureCaisseController, 'formulaire']);
+// Module: session_caisse (SessionCaisseController)
+$route->addRoute('/session_caisse/list', [$sessionCaisseController, 'list']);
+$route->addRoute('/session_caisse/apiList', [$sessionCaisseController, 'apiList']);
+$route->addRoute('/session_caisse/add', [$sessionCaisseController, 'add']);
+$route->addRoute('/session_caisse/edit', [$sessionCaisseController, 'edit']);
+$route->addRoute('/session_caisse/changer', [$sessionCaisseController, 'changer']);
+$route->addRoute('/session_caisse/cloturer', [$sessionCaisseController, 'cloturer']);
+$route->addRoute('/session_caisse/cloturer/{param}', [$sessionCaisseController, 'cloturer']);
+$route->addRoute('/session_caisse/saveCloture', [$sessionCaisseController, 'saveCloture']);
+$route->addRoute('/session_caisse/details/{param}', [$sessionCaisseController, 'details']);
+$route->addRoute('/session_caisse/edition/{param}', [$sessionCaisseController, 'edition']);
+$route->addRoute('/session_caisse/formulaire', [$sessionCaisseController, 'formulaire']);
+$route->addRoute('/session_caisse/getDailyTotals', [$sessionCaisseController, 'getDailyTotals']);
+
+// Module: ouverture_caisse & cloture_caisse (Redirection vers SessionCaisseController)
+$route->addRoute('/ouverture_caisse/list', [$sessionCaisseController, 'list']);
+$route->addRoute('/ouverture_caisse/formulaire', [$sessionCaisseController, 'formulaire']);
+$route->addRoute('/cloture_caisse/list', [$sessionCaisseController, 'list']);
+$route->addRoute('/cloture_caisse/getDailyTotals', [$sessionCaisseController, 'getDailyTotals']);
+$route->addRoute('/cloture_caisse/formulaire', [$sessionCaisseController, 'cloturer']);
 
 // Module: impayes (ImpayesController)
 $route->addRoute('/impayes/list', [$impayesController, 'list']);
@@ -294,6 +327,7 @@ $route->addRoute('/type_depense/formulaire', [$typeDepenseController, 'formulair
 // Module: depense (DepenseController)
 $route->addRoute('/depense/list', [$depenseController, 'list']);
 $route->addRoute('/depense/apiList', [$depenseController, 'apiList']);
+$route->addRoute('/depense/apiStats', [$depenseController, 'apiStats']);
 $route->addRoute('/depense/add', [$depenseController, 'add']);
 $route->addRoute('/depense/edit', [$depenseController, 'edit']);
 $route->addRoute('/depense/changer', [$depenseController, 'changer']);
@@ -324,16 +358,28 @@ $route->addRoute('/enseignant_matiere/formulaire', [$enseignantMatiereController
 // Module: emploi (EmploiController)
 $route->addRoute('/emploi/list', [$emploiController, 'list']);
 $route->addRoute('/emploi/apiList', [$emploiController, 'apiList']);
+$route->addRoute('/emploi/getAssignedTeacher', [$emploiController, 'getAssignedTeacher']);
+$route->addRoute('/emploi/checkScheduleConflicts', [$emploiController, 'checkScheduleConflicts']);
 $route->addRoute('/emploi/add', [$emploiController, 'add']);
 $route->addRoute('/emploi/edit', [$emploiController, 'edit']);
 $route->addRoute('/emploi/changer', [$emploiController, 'changer']);
 $route->addRoute('/emploi/details/{param}', [$emploiController, 'details']);
 $route->addRoute('/emploi/edition/{param}', [$emploiController, 'edition']);
 $route->addRoute('/emploi/formulaire', [$emploiController, 'formulaire']);
+$route->addRoute('/emploi/setSessionClasse', [$emploiController, 'setSessionClasse']);
+$route->addRoute('/emploi/getTeacherSchedule', [$emploiController, 'getTeacherSchedule']);
+$route->addRoute('/emploi/delete', [$emploiController, 'delete']);
+$route->addRoute('/emploi/resetClasseSchedule', [$emploiController, 'resetClasseSchedule']);
+$route->addRoute('/emploi/getClassScheduleMatrix', [$emploiController, 'getClassScheduleMatrix']);
+$route->addRoute('/emploi/apiSlots', [$emploiController, 'apiSlots']);
+
+
 
 // Module: absence (AbsenceController)
 $route->addRoute('/absence/list', [$absenceController, 'list']);
 $route->addRoute('/absence/apiList', [$absenceController, 'apiList']);
+$route->addRoute('/absence/saisieClasse', [$absenceController, 'saisieClasse']);
+$route->addRoute('/absence/saveBatch', [$absenceController, 'saveBatch']);
 $route->addRoute('/absence/add', [$absenceController, 'add']);
 $route->addRoute('/absence/edit', [$absenceController, 'edit']);
 $route->addRoute('/absence/changer', [$absenceController, 'changer']);
@@ -344,6 +390,9 @@ $route->addRoute('/absence/formulaire', [$absenceController, 'formulaire']);
 // Module: note (NoteController)
 $route->addRoute('/note/list', [$noteController, 'list']);
 $route->addRoute('/note/apiList', [$noteController, 'apiList']);
+$route->addRoute('/note/saisieClasse', [$noteController, 'saisieClasse']);
+$route->addRoute('/note/saveBatch', [$noteController, 'saveBatch']);
+$route->addRoute('/note/getStudentsByClasse', [$noteController, 'getStudentsByClasse']);
 $route->addRoute('/note/add', [$noteController, 'add']);
 $route->addRoute('/note/edit', [$noteController, 'edit']);
 $route->addRoute('/note/changer', [$noteController, 'changer']);
@@ -351,9 +400,28 @@ $route->addRoute('/note/details/{param}', [$noteController, 'details']);
 $route->addRoute('/note/edition/{param}', [$noteController, 'edition']);
 $route->addRoute('/note/formulaire', [$noteController, 'formulaire']);
 
+// Module: composition (CompositionController)
+$route->addRoute('/composition/list', [$compositionController, 'list']);
+$route->addRoute('/composition/apiList', [$compositionController, 'apiList']);
+$route->addRoute('/composition/formulaire', [$compositionController, 'formulaire']);
+$route->addRoute('/composition/add', [$compositionController, 'add']);
+$route->addRoute('/composition/edit', [$compositionController, 'edit']);
+$route->addRoute('/composition/changer', [$compositionController, 'changer']);
+$route->addRoute('/composition/details/{param}', [$compositionController, 'details']);
+$route->addRoute('/composition/edition/{param}', [$compositionController, 'edition']);
+$route->addRoute('/composition/delete', [$compositionController, 'delete']);
+$route->addRoute('/composition/getByClasseMatiereApi', [$compositionController, 'getByClasseMatiereApi']);
+$route->addRoute('/composition/getMatieresClasseApi', [$compositionController, 'getMatieresClasseApi']);
+$route->addRoute('/composition/saveMatieresClasseApi', [$compositionController, 'saveMatieresClasseApi']);
+
+
+
+
 // Module: bulletin (BulletinController)
 $route->addRoute('/bulletin/list', [$bulletinController, 'list']);
 $route->addRoute('/bulletin/apiList', [$bulletinController, 'apiList']);
+$route->addRoute('/bulletin/pvClasse', [$bulletinController, 'pvClasse']);
+$route->addRoute('/bulletin/pvClasse/{param}', [$bulletinController, 'pvClasse']);
 $route->addRoute('/bulletin/add', [$bulletinController, 'add']);
 $route->addRoute('/bulletin/edit', [$bulletinController, 'edit']);
 $route->addRoute('/bulletin/changer', [$bulletinController, 'changer']);
@@ -411,15 +479,7 @@ $route->addRoute('/permission/details/{param}', [$permissionController, 'details
 $route->addRoute('/permission/edition/{param}', [$permissionController, 'edition']);
 $route->addRoute('/permission/formulaire', [$permissionController, 'formulaire']);
 
-// Module: notification (NotificationController)
-$route->addRoute('/notification/list', [$notificationController, 'list']);
-$route->addRoute('/notification/apiList', [$notificationController, 'apiList']);
-$route->addRoute('/notification/add', [$notificationController, 'add']);
-$route->addRoute('/notification/edit', [$notificationController, 'edit']);
-$route->addRoute('/notification/changer', [$notificationController, 'changer']);
-$route->addRoute('/notification/details/{param}', [$notificationController, 'details']);
-$route->addRoute('/notification/edition/{param}', [$notificationController, 'edition']);
-$route->addRoute('/notification/formulaire', [$notificationController, 'formulaire']);
+
 
 // Extraction & Exécution de l'URL
 $url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

@@ -9,16 +9,15 @@ class ModelPermission extends BaseModel
     public function getGrouped(): array
     {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE statut_permission = 'actif' ORDER BY code_permission ASC";
+            $sql = "SELECT * FROM permissions WHERE statut_permission = 'actif' ORDER BY module_permission ASC, id_permission ASC";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute();
             $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             $groups = [];
             foreach ($items as $item) {
-                $code = $item['code_permission'] ?? '';
-                $prefix = explode('_', $code)[0] ?? 'AUTRE';
-                $groups[$prefix][] = $item;
+                $group = !empty($item['module_permission']) ? $item['module_permission'] : 'GÉNÉRAL';
+                $groups[$group][] = $item;
             }
 
             return $groups;

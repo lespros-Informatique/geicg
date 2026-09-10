@@ -32,11 +32,18 @@ $(document).ready(function() {
             { 
                 data: 'statut', 
                 title: 'Statut',
-                render: function(data) {
-                    const isActif = (data === 'actif');
-                    const cls = isActif ? 'delivered' : 'cancelled';
-                    const label = isActif ? 'Actif' : 'Inactif';
-                    return '<span class="badge-status ' + cls + '">' + label + '</span>';
+                className: 'text-center',
+                render: function(data, type, row) {
+                    var isActif = (data === 'actif');
+                    var checkedAttr = isActif ? 'checked' : '';
+                    return '<div style="display:flex; justify-content:center; align-items:center;">' +
+                           '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+                           '<input type="checkbox" class="btnToggleQuartierStatut" data-id="' + row.id + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+                           '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+                           '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+                           '</span>' +
+                           '</label>' +
+                           '</div>';
                 }
             },
             {
@@ -44,16 +51,11 @@ $(document).ready(function() {
                 title: 'Actions',
                 className: 'text-center',
                 render: function(data, type, row) {
-                    const isActif = (row.statut === 'actif');
                     return `
                         <div class="table-actions">
                             <a href="${baseApi}quartier/edition/${row.editId}" class="btn-action btn-action-primary" title="Modifier le quartier">
                                 <i class="fa fa-edit"></i>
                             </a>
-                            <button type="button" class="btn-action ${isActif ? 'btn-action-warning' : 'btn-action-success'} btnToggleQuartierStatut"
-                                    data-id="${row.id}" title="${isActif ? 'Désactiver' : 'Activer'}">
-                                <i class="fa ${isActif ? 'fa-pause' : 'fa-play'}"></i>
-                            </button>
                         </div>
                     `;
                 }
@@ -63,8 +65,10 @@ $(document).ready(function() {
         const table = initDataTable('dataTable', 'quartier/apiList', columns);
 
         // Toggle Status Quartier
-        $(document).on('click', '.btnToggleQuartierStatut', function() {
+        $(document).on('change', '.btnToggleQuartierStatut', function() {
             const id = $(this).data('id');
+            const isChecked = $(this).is(':checked');
+            const $input = $(this);
             if (!id) return;
 
             $.post(baseApi + 'quartier/changer', { id: id }, function(rep) {
@@ -73,9 +77,11 @@ $(document).ready(function() {
                     table.ajax.reload(null, false);
                 } else {
                     if (typeof showToast === 'function') showToast(rep.message || 'Erreur', 'error');
+                    $input.prop('checked', !isChecked);
                 }
             }, 'json').fail(function() {
                 if (typeof showToast === 'function') showToast('Erreur serveur', 'error');
+                $input.prop('checked', !isChecked);
             });
         });
 
