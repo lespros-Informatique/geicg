@@ -331,10 +331,11 @@ $(document).ready(function() {
 
   var allCheckedState = false;
 
-  $('.btn-open-saisie-modal').on('click', function() {
-    var classeCode = $(this).data('classe-code');
-    var classeLibelle = $(this).data('classe-libelle');
-    var cibleCode = $(this).data('cible-code');
+  $(document).on('click', '.btn-open-saisie-modal', function() {
+    var $btn = $(this);
+    var classeCode = $btn.attr('data-classe-code') || $btn.data('classe-code') || '';
+    var classeLibelle = $btn.attr('data-classe-libelle') || $btn.data('classe-libelle') || '';
+    var cibleCode = $btn.attr('data-cible-code') || $btn.data('cible-code') || '';
 
     $('#modal_input_classe_code').val(classeCode);
     $('#modal_input_cible_code').val(cibleCode);
@@ -347,7 +348,7 @@ $(document).ready(function() {
   function loadMatieresForSelectedClasse() {
     var classeCode = $('#modal_input_classe_code').val();
     var cibleCode = $('#modal_input_cible_code').val();
-    var compositionCode = $('input[name="composition_code"]').val();
+    var compositionCode = $('input[name="composition_code"]').val() || '<?= htmlspecialchars($item['code_composition'] ?? '') ?>';
 
     var $container = $('#matieres-checkboxes-container');
     $container.html('<div style="padding: 30px; text-align: center; color: #64748B;"><i data-lucide="loader" class="spin" style="width: 24px; height: 24px;"></i><p style="margin: 8px 0 0 0; font-size: 13px;">Chargement des matières de l\'emploi du temps...</p></div>');
@@ -419,38 +420,38 @@ $(document).ready(function() {
   });
 
   // Bouton Tout cocher / Tout décocher
-  $('#btn-toggle-select-all').on('click', function() {
+  $(document).on('click', '#btn-toggle-select-all', function(e) {
+    e.preventDefault();
     allCheckedState = !allCheckedState;
     $('.chk-matiere-item:visible').prop('checked', allCheckedState).trigger('change');
     $(this).text(allCheckedState ? 'Tout décocher' : 'Tout cocher');
   });
 
   // Form submit handler : enregistrement dans composition_matieres sans redirection
-  $('#form-modal-saisie-notes').on('submit', function(e) {
+  $(document).on('submit', '#form-modal-saisie-notes', function(e) {
     e.preventDefault();
 
     var checkedMatieres = $('.chk-matiere-item:checked');
-    if (checkedMatieres.length === 0) {
-      if (window.toastr) {
-        toastr.warning('Veuillez cocher au moins une matière à évaluer pour continuer.', 'Sélection requise');
-      }
-      return false;
-    }
-
     var selectedMatCodes = [];
     checkedMatieres.each(function() {
       selectedMatCodes.push($(this).val());
     });
 
     var cibleCode = $('#modal_input_cible_code').val();
-    var compositionCode = $('input[name="composition_code"]').val();
+    var compositionCode = $('input[name="composition_code"]').val() || '<?= htmlspecialchars($item['code_composition'] ?? '') ?>';
+
+    if (!cibleCode || !compositionCode) {
+      if (window.toastr) {
+        toastr.error('Données de composition manquantes. Veuillez rouvrir le formulaire.', 'Erreur');
+      }
+      return false;
+    }
 
     var $btnSubmit = $(this).find('button[type="submit"]');
     var originalBtnHtml = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Valider les Matières';
     
     $btnSubmit.prop('disabled', true).html('<span class="btn-circle-loader" style="margin-right: 6px;"></span> Enregistrement...');
 
-    // Enregistrer les matières cochées dans la table composition_matieres via composition_niveau_filiere_code
     $.ajax({
       url: '<?= RACINE ?>composition/saveMatieresClasseApi',
       type: 'POST',
@@ -464,31 +465,32 @@ $(document).ready(function() {
         $btnSubmit.prop('disabled', false).html(originalBtnHtml);
         if (window.lucide) lucide.createIcons();
 
-        if (res.status === 1 || res.success) {
+        if (res && (res.status === 1 || res.status === '1' || res.success)) {
           if (window.toastr) {
-            toastr.success(res.message || 'Matières de la composition enregistrées avec succès !', 'Succès');
+            toastr.success(res.message || 'Matières enregistrées avec succès !', 'Succès');
           }
           $('#modal-saisie-matiere').hide();
           setTimeout(function() {
             location.reload();
-          }, 500);
+          }, 300);
         } else {
           if (window.toastr) {
-            toastr.error(res.message || 'Erreur lors de l\'enregistrement des matières.', 'Erreur');
+            toastr.error((res ? res.message : null) || 'Erreur lors de l\'enregistrement des matières.', 'Erreur');
           }
         }
       },
-      error: function() {
+      error: function(xhr, status, err) {
         $btnSubmit.prop('disabled', false).html(originalBtnHtml);
         if (window.lucide) lucide.createIcons();
         if (window.toastr) {
-          toastr.error('Erreur de connexion au serveur.', 'Erreur Réseau');
+          toastr.error('Erreur de connexion au serveur lors de l\'enregistrement.', 'Erreur Réseau');
         }
       }
     });
+    return false;
   });
 
-  $('.btn-close-saisie-modal').on('click', function() {
+  $(document).on('click', '.btn-close-saisie-modal', function() {
     $('#modal-saisie-matiere').hide();
   });
 
