@@ -20,8 +20,9 @@ function handleLogin() {
                 if (rep && (rep.status === 1 || rep.status === true)) {
                     showToast(rep.message || 'Bienvenue sur GEICG Admin !', 'success');
                     setTimeout(function() {
-                        window.location.href = LINK;
-                    }, 1000);
+                        const targetUrl = (rep && rep.redirect) ? rep.redirect : (typeof LINK !== 'undefined' && LINK ? LINK : '/');
+                        window.location.href = targetUrl;
+                    }, 800);
                 } else {
                     showToast((rep && rep.message) ? rep.message : 'Identifiants incorrects', 'error');
                 }

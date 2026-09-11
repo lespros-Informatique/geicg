@@ -454,7 +454,7 @@ class UserController extends BaseController
                         ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user'] . ' ' . ($user['prenom_user'] ?? '')) . ' !'
                         : 'Connexion réussie ! Bienvenue sur GEICG.';
 
-                    $this->success($welcomeMsg);
+                    $this->success($welcomeMsg, ['redirect' => RACINE]);
                     return;
                 } else {
                     $this->error('Ce compte utilisateur est inactif ou suspendu. Veuillez contacter l\'administrateur.');

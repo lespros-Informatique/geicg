@@ -1,8 +1,24 @@
 <?php
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Autoload Composer & Chargement automatique de .env
+$autoloadPath = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($autoloadPath)) {
+    require_once $autoloadPath;
+    if (class_exists('Dotenv\Dotenv') && file_exists(__DIR__ . '/../.env')) {
+        $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+        $dotenv->safeLoad();
+    }
+}
+
 define('ROOT', $_SERVER['DOCUMENT_ROOT'] ?? 'C:/wamp64/www');
 
 $httpHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $isLocalEnvironment = (strpos($httpHost, 'localhost') !== false || strpos($httpHost, '127.0.0.1') !== false);
+
 
 if (!defined('RACINE')) {
     define('RACINE', $isLocalEnvironment ? 'http://localhost/geicg/' : 'https://test.groupe-eicg.net/');
