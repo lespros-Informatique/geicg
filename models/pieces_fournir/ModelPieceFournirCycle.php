@@ -23,7 +23,7 @@ class ModelPieceFournirCycle extends BaseModel
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "(pfc.annee_code = ? OR pfc.annee_code IS NULL OR pfc.annee_code = '')";
+            $conditions[] = "pfc.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($cycleCode)) {
@@ -131,7 +131,7 @@ class ModelPieceFournirCycle extends BaseModel
             $conditions = [];
             $params = [];
             if (!empty($anneeCode)) {
-                $conditions[] = "(annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+                $conditions[] = "annee_code = ?";
                 $params[] = $anneeCode;
             }
             if (!empty($cycleCode)) {

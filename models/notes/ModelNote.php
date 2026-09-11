@@ -26,7 +26,7 @@ class ModelNote extends BaseModel
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "(n.annee_code = ? OR n.annee_code IS NULL OR n.annee_code = '')";
+            $conditions[] = "n.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {

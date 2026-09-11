@@ -26,19 +26,19 @@ class ScolariteController extends BaseController
         $activeYear = $this->getActiveAnneeCode();
         $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $stmtTot = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '' OR ? = '')");
+        $stmtTot = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (annee_code = ? OR ? = '')");
         $stmtTot->execute([$activeYear, $activeYear]);
         $totalScolarites = (int)$stmtTot->fetchColumn();
 
-        $stmtAff = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE affectation_etat = 'affecte' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '' OR ? = '')");
+        $stmtAff = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE affectation_etat = 'affecte' AND (annee_code = ? OR ? = '')");
         $stmtAff->execute([$activeYear, $activeYear]);
         $totalAffectes = (int)$stmtAff->fetchColumn();
 
-        $stmtNonAff = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (affectation_etat = 'non_affecte' OR affectation_etat IS NULL OR affectation_etat = '') AND (annee_code = ? OR annee_code IS NULL OR annee_code = '' OR ? = '')");
+        $stmtNonAff = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (affectation_etat = 'non_affecte' OR affectation_etat IS NULL OR affectation_etat = '') AND (annee_code = ? OR ? = '')");
         $stmtNonAff->execute([$activeYear, $activeYear]);
         $totalNonAffectes = (int)$stmtNonAff->fetchColumn();
 
-        $stmtTr = $db->prepare("SELECT COUNT(*) FROM tranches_scolarite WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '' OR ? = '')");
+        $stmtTr = $db->prepare("SELECT COUNT(*) FROM tranches_scolarite WHERE (annee_code = ? OR ? = '')");
         $stmtTr->execute([$activeYear, $activeYear]);
         $totalTranches = (int)$stmtTr->fetchColumn();
 

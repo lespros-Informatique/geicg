@@ -27,7 +27,7 @@ class ModelEmploi extends BaseModel
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "(edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '')";
+            $conditions[] = "edt.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {

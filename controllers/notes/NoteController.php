@@ -198,10 +198,7 @@ class NoteController extends BaseController
         $matieres = (new ModelMatiere())->getAll();
         
         $db = $this->model->getCon();
-        $semestres = $db->query("SELECT * FROM semestres WHERE (annee_code = " . $db->quote($anneeCode) . " OR annee_code IS NULL OR annee_code = '') ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
-        if (empty($semestres)) {
-            $semestres = (new ModelSemestre())->getAll();
-        }
+        $semestres = $db->query("SELECT * FROM semestres WHERE (annee_code = " . $db->quote($anneeCode) . " OR " . $db->quote($anneeCode) . " = '') ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         $selectedClasseCode = $_GET['classe_code'] ?? '';
         $selectedMatiereCode = $_GET['matiere_code'] ?? '';

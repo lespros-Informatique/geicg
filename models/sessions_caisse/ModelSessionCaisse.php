@@ -22,7 +22,7 @@ class ModelSessionCaisse extends BaseModel
             LEFT JOIN users uv ON uv.code_user = s.user_validation
         ";
         if (!empty($anneeCode)) {
-            $sql .= " WHERE (s.annee_code = ? OR s.annee_code IS NULL OR s.annee_code = '') ";
+            $sql .= " WHERE s.annee_code = ? ";
             $params[] = $anneeCode;
         }
         $sql .= " ORDER BY s.date_session DESC, s.heure_ouverture DESC ";

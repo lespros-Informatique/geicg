@@ -32,7 +32,7 @@ class SessionCaisseController extends BaseController
         $whereAnnee = "";
         $params = [];
         if (!empty($selectedAnneeCode)) {
-            $whereAnnee = " WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '') ";
+            $whereAnnee = " WHERE annee_code = ? ";
             $params[] = $selectedAnneeCode;
         }
 

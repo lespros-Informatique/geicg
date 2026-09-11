@@ -18,7 +18,7 @@ class ModelImpayes extends BaseModel
             $conditions = [];
             $params = [];
             if (!empty($anneeCode)) {
-                $conditions[] = "(r.annee_code = ? OR r.annee_code IS NULL OR r.annee_code = '')";
+                $conditions[] = "r.annee_code = ?";
                 $params[] = $anneeCode;
             }
             if (!empty($niveauCode)) {

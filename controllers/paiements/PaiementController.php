@@ -43,7 +43,7 @@ class PaiementController extends BaseController
             LEFT JOIN scolarites s ON (
                 s.filiere_code = c.filiere_code 
                 AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
-                AND (s.annee_code = i.annee_code OR s.annee_code IS NULL OR s.annee_code = '')
+                AND (s.annee_code = i.annee_code OR s.annee_code = '')
                 AND (s.affectation_etat = i.affectation_etat OR s.affectation_etat IS NULL OR s.affectation_etat = '')
                 AND s.statut_scolarite = 'actif'
             )
@@ -165,7 +165,7 @@ class PaiementController extends BaseController
                        c.libelle_classe, c.filiere_code, c.niveau_code,
                        f.libelle_filiere, n.libelle_niveau, a.libelle_annee
                 FROM etudiants e
-                LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant AND (i.annee_code = ? OR i.annee_code IS NULL) AND (i.statut_inscription != 'annule')
+                LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant AND (i.annee_code = ? OR ? = '') AND (i.statut_inscription != 'annule')
                 LEFT JOIN classes c ON i.classe_code = c.code_classe
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
@@ -200,7 +200,7 @@ class PaiementController extends BaseController
             SELECT * FROM scolarites 
             WHERE filiere_code = ? 
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
-              AND (annee_code = ? OR annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+              AND (annee_code = ? OR annee_code = ? OR ? = '')
               AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
               AND statut_scolarite = 'actif'
             ORDER BY (CASE WHEN annee_code = ? THEN 1 WHEN annee_code = ? THEN 2 ELSE 3 END),
@@ -208,19 +208,8 @@ class PaiementController extends BaseController
                      id_scolarite DESC
             LIMIT 1
         ");
-        $stmtSco->execute([$filiereCode, $niveauCode, $activeYear, $anneeCode, $affEtat, $activeYear, $anneeCode, $affEtat]);
+        $stmtSco->execute([$filiereCode, $niveauCode, $activeYear, $anneeCode, $activeYear, $affEtat, $activeYear, $anneeCode, $affEtat]);
         $scoGrid = $stmtSco->fetch(PDO::FETCH_ASSOC);
-
-        if (!$scoGrid && !empty($filiereCode)) {
-            $stmtScoFallback = $db->prepare("
-                SELECT * FROM scolarites 
-                WHERE filiere_code = ? AND statut_scolarite = 'actif'
-                ORDER BY (CASE WHEN (annee_code = ? OR annee_code = ?) THEN 1 ELSE 2 END), id_scolarite DESC
-                LIMIT 1
-            ");
-            $stmtScoFallback->execute([$filiereCode, $activeYear, $anneeCode]);
-            $scoGrid = $stmtScoFallback->fetch(PDO::FETCH_ASSOC);
-        }
 
         $codeScolarite = $scoGrid['code_scolarite'] ?? '';
         if ($scoGrid && (float)$scoGrid['montant_scolarite'] > 0) {
@@ -264,12 +253,12 @@ class PaiementController extends BaseController
                       (t.scolarite_code = '' OR t.scolarite_code IS NULL)
                       AND t.filiere_code = ?
                       AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
-                      AND (t.annee_code = ? OR t.annee_code = '' OR t.annee_code IS NULL)
+                      AND (t.annee_code = ? OR ? = '')
                     )
                   )
                 ORDER BY t.date_limite ASC, t.id_tranche ASC
             ");
-            $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $anneeCode]);
+            $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $anneeCode, $anneeCode]);
         } else {
             $stmtTr = $db->prepare("
                 SELECT t.*, s.montant_scolarite as scolarite_globale
@@ -278,10 +267,10 @@ class PaiementController extends BaseController
                 WHERE t.statut_tranche = 'actif'
                   AND t.filiere_code = ?
                   AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
-                  AND (t.annee_code = ? OR t.annee_code = '' OR t.annee_code IS NULL)
+                  AND (t.annee_code = ? OR ? = '')
                 ORDER BY t.date_limite ASC, t.id_tranche ASC
             ");
-            $stmtTr->execute([$filiereCode, $niveauCode, $anneeCode]);
+            $stmtTr->execute([$filiereCode, $niveauCode, $anneeCode, $anneeCode]);
         }
         $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
 
@@ -437,12 +426,12 @@ class PaiementController extends BaseController
             SELECT code_scolarite FROM scolarites 
             WHERE filiere_code = ? 
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
-              AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+              AND (annee_code = ? OR ? = '')
               AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
               AND statut_scolarite = 'actif'
             ORDER BY id_scolarite DESC LIMIT 1
         ");
-        $stmtSco->execute([$filiereCode, $niveauCode, $anneeCode, $affEtat]);
+        $stmtSco->execute([$filiereCode, $niveauCode, $anneeCode, $anneeCode, $affEtat]);
         $scoGrid = $stmtSco->fetch(PDO::FETCH_ASSOC);
         $codeScolarite = $scoGrid['code_scolarite'] ?? '';
 
@@ -458,12 +447,12 @@ class PaiementController extends BaseController
                       (t.scolarite_code = '' OR t.scolarite_code IS NULL)
                       AND t.filiere_code = ?
                       AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
-                      AND (t.annee_code = ? OR t.annee_code = '' OR t.annee_code IS NULL)
+                      AND (t.annee_code = ? OR ? = '')
                     )
                   )
                 ORDER BY t.date_limite ASC, t.id_tranche ASC
             ");
-            $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $anneeCode]);
+            $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $anneeCode, $anneeCode]);
         } else {
             $stmtTr = $db->prepare("
                 SELECT t.*
@@ -472,10 +461,10 @@ class PaiementController extends BaseController
                 WHERE t.statut_tranche = 'actif'
                   AND t.filiere_code = ?
                   AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
-                  AND (t.annee_code = ? OR t.annee_code = '' OR t.annee_code IS NULL)
+                  AND (t.annee_code = ? OR ? = '')
                 ORDER BY t.date_limite ASC, t.id_tranche ASC
             ");
-            $stmtTr->execute([$filiereCode, $niveauCode, $anneeCode]);
+            $stmtTr->execute([$filiereCode, $niveauCode, $anneeCode, $anneeCode]);
         }
         $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC);
 

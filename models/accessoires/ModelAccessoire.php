@@ -12,7 +12,7 @@ class ModelAccessoire extends BaseModel
         $sql = "SELECT * FROM accessoires";
         $params = [];
         if (!empty($anneeCode)) {
-            $sql .= " WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+            $sql .= " WHERE annee_code = ?";
             $params[] = $anneeCode;
         }
         $sql .= " ORDER BY id_accessoire DESC";
@@ -33,7 +33,7 @@ class ModelAccessoire extends BaseModel
         $params = [];
 
         if (!empty($anneeCode)) {
-            $where .= " AND (ai.annee_code = ? OR ai.annee_code IS NULL OR ai.annee_code = '')";
+            $where .= " AND ai.annee_code = ?";
             $params[] = $anneeCode;
         }
 
@@ -86,7 +86,7 @@ class ModelAccessoire extends BaseModel
         $whereAnnee = "";
         $params = [];
         if (!empty($anneeCode)) {
-            $whereAnnee = " AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+            $whereAnnee = " AND annee_code = ?";
             $params[] = $anneeCode;
         }
 

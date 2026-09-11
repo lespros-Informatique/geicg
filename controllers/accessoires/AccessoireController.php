@@ -231,11 +231,11 @@ class AccessoireController extends BaseController
             JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
             JOIN inscriptions i ON i.code_inscription = ai.inscription_code
             WHERE i.etudiant_code = ?
-              AND (ai.annee_code = ? OR ai.annee_code IS NULL OR ai.annee_code = '')
+              AND (ai.annee_code = ? OR ? = '')
               AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
             ORDER BY ai.id_accessoire_inscription DESC
         ");
-        $stmt->execute([$etudiantCode, $anneeCode]);
+        $stmt->execute([$etudiantCode, $anneeCode, $anneeCode]);
         $existingKits = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $existingCodes = array_values(array_unique(array_column($existingKits, 'accessoire_code')));
@@ -296,7 +296,7 @@ class AccessoireController extends BaseController
             JOIN inscriptions i ON i.code_inscription = ai.inscription_code
             WHERE (i.etudiant_code = ? OR ai.inscription_code = ?)
               AND ai.accessoire_code = ? 
-              AND (ai.annee_code = ? OR ai.annee_code IS NULL OR ai.annee_code = '')
+              AND (ai.annee_code = ? OR ? = '')
               AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
             LIMIT 1
         ");

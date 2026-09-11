@@ -58,7 +58,7 @@ class ClasseController extends BaseController
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
                 LEFT JOIN annees a ON a.code_annee = c.annee_code
-                WHERE (c.annee_code = ? OR c.annee_code IS NULL OR c.annee_code = '' OR ? = '')
+                WHERE (c.annee_code = ? OR ? = '')
                 ORDER BY c.id_classe DESC";
         $stmt = $db->prepare($sql);
         $stmt->execute([$anneeCode, $anneeCode]);

@@ -24,7 +24,7 @@ class ModelComposition extends BaseModel
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "(comp.annee_code = ? OR comp.annee_code IS NULL OR comp.annee_code = '')";
+            $conditions[] = "comp.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {
@@ -251,7 +251,7 @@ class ModelComposition extends BaseModel
             ";
             $params = [];
             if (!empty($anneeCode)) {
-                $sql .= " WHERE (edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '') ";
+                $sql .= " WHERE edt.annee_code = ? ";
                 $params[] = $anneeCode;
             }
             $sql .= " ORDER BY n.libelle_niveau ASC, f.libelle_filiere ASC ";

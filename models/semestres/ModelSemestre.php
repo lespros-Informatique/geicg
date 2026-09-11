@@ -14,7 +14,7 @@ class ModelSemestre extends BaseModel
                 LEFT JOIN annees a ON a.code_annee = s.annee_code";
         $params = [];
         if (!empty($anneeCode)) {
-            $sql .= " WHERE (s.annee_code = ? OR s.annee_code IS NULL OR s.annee_code = '') ";
+            $sql .= " WHERE s.annee_code = ? ";
             $params[] = $anneeCode;
         }
         $sql .= " ORDER BY s.id_semestre DESC";

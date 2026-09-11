@@ -19,7 +19,7 @@ class ModelScolarite extends BaseModel
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "(s.annee_code = ? OR s.annee_code IS NULL OR s.annee_code = '')";
+            $conditions[] = "s.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {

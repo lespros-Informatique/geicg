@@ -22,7 +22,7 @@ class ModelEnseignantMatiere extends BaseModel
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "(em.annee_code = ? OR em.annee_code IS NULL OR em.annee_code = '')";
+            $conditions[] = "em.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {

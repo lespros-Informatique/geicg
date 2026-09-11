@@ -185,12 +185,12 @@ class ModelHome extends BaseModel
         try {
             $db = $this->pdo->getCon();
             $sql = "SELECT * FROM v_dash_paiements_details
-                    WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '')
+                    WHERE (annee_code = ? OR ? = '')
                       AND (statut_paiement = 'confirme' OR statut_paiement != 'annule')
                     ORDER BY id_paiement DESC
                     LIMIT $limit";
             $stmt = $db->prepare($sql);
-            $stmt->execute([$anneeCode ?: '']);
+            $stmt->execute([$anneeCode ?? '', $anneeCode ?? '']);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelHome::getRecentPaiements error: " . $e->getMessage());
@@ -206,11 +206,11 @@ class ModelHome extends BaseModel
         try {
             $db = $this->pdo->getCon();
             $sql = "SELECT * FROM v_dash_depenses_details
-                    WHERE annee_code = ? AND (statut_depense != 'annule' OR statut_depense IS NULL)
+                    WHERE (annee_code = ? OR ? = '') AND (statut_depense != 'annule' OR statut_depense IS NULL)
                     ORDER BY id_depense DESC
                     LIMIT $limit";
             $stmt = $db->prepare($sql);
-            $stmt->execute([$anneeCode ?: '']);
+            $stmt->execute([$anneeCode ?? '', $anneeCode ?? '']);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelHome::getRecentDepenses error: " . $e->getMessage());

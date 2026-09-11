@@ -349,11 +349,11 @@ class CompositionController extends BaseController
             LEFT JOIN enseignant_matiere em ON (em.classe_code = edt.classe_code AND em.matiere_code = edt.matiere_code)
             LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
             LEFT JOIN users u ON u.code_user = e.code_enseignant
-            WHERE edt.classe_code = ? AND (edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '')
+            WHERE edt.classe_code = ? AND (edt.annee_code = ? OR ? = '')
             GROUP BY m.code_matiere, m.libelle_matiere
             ORDER BY m.libelle_matiere ASC
         ");
-        $stmtEdt->execute([$classeCode, $anneeCode]);
+        $stmtEdt->execute([$classeCode, $anneeCode, $anneeCode]);
         $items = $stmtEdt->fetchAll(PDO::FETCH_ASSOC);
 
         $source = 'emploi_temps';

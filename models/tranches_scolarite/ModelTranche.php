@@ -12,7 +12,7 @@ class ModelTranche extends BaseModel
         $where = "";
         $params = [];
         if (!empty($anneeCode)) {
-            $where = "WHERE (t.annee_code = ? OR s.annee_code = ? OR t.annee_code IS NULL OR t.annee_code = '')";
+            $where = "WHERE (t.annee_code = ? OR s.annee_code = ?)";
             $params = [$anneeCode, $anneeCode];
         }
 

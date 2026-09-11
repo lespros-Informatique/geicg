@@ -12,7 +12,7 @@ class ModelDepense extends BaseModel
         $where = "";
         $params = [];
         if (!empty($anneeCode)) {
-            $where = "WHERE (d.annee_code = ? OR d.annee_code IS NULL OR d.annee_code = '')";
+            $where = "WHERE d.annee_code = ?";
             $params = [$anneeCode];
         }
 
@@ -36,7 +36,7 @@ class ModelDepense extends BaseModel
         $where = "";
         $params = [];
         if (!empty($anneeCode)) {
-            $where = "WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+            $where = "WHERE annee_code = ?";
             $params = [$anneeCode];
         }
 

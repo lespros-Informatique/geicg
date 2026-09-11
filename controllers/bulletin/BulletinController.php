@@ -45,7 +45,7 @@ class BulletinController extends BaseController
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "(i.annee_code = ? OR i.annee_code IS NULL OR i.annee_code = '')";
+            $conditions[] = "i.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {

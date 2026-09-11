@@ -25,7 +25,7 @@ class ModelAbsence extends BaseModel
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "(abs.annee_code = ? OR abs.annee_code IS NULL OR abs.annee_code = '')";
+            $conditions[] = "abs.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {
