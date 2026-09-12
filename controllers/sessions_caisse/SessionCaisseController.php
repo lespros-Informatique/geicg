@@ -103,6 +103,13 @@ class SessionCaisseController extends BaseController
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
+
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode
+        ]);
+
         $data = $_POST;
         unset($data['csrf_token']);
 

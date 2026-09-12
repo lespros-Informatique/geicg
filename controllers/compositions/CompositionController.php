@@ -99,6 +99,12 @@ class CompositionController extends BaseController
         $anneeCode = !empty($_POST['annee_code']) ? $_POST['annee_code'] : $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode
+        ]);
+
         $data = $_POST;
         unset($data['csrf_token']);
 

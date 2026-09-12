@@ -70,7 +70,9 @@ class ModelUser extends BaseModel
             $stmtDel->execute([$userCode]);
 
             if (empty($rolesData)) {
-                $rolesData = ['ROLE_SCOLARITE' => ['create' => 1, 'edit' => 1, 'show' => 1, 'delete' => 0]];
+                $stmtDef = $pdo->query("SELECT code_role FROM roles WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
+                $defRole = ($stmtDef && $stmtDef->fetchColumn()) ?: 'ROLE_USER';
+                $rolesData = [$defRole => ['create' => 1, 'edit' => 1, 'show' => 1, 'delete' => 0]];
             }
 
             $stmtIns = $pdo->prepare("

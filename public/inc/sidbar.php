@@ -4,7 +4,8 @@
           $db = (new Database())->getCon();
           $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
           $etabRow = $stmt->fetch(PDO::FETCH_ASSOC);
-          $globalEtablissementLogo = $etabRow['logo_etablissement'] ?? '';
+          $rawLogo = $etabRow['logo_etablissement'] ?? '';
+          $globalEtablissementLogo = (!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : '';
           $globalEtablissementNom = $etabRow['libelle_etablissement'] ?? 'GEICG';
       } catch (Exception $e) {
           $globalEtablissementLogo = '';
@@ -13,7 +14,7 @@
   }
   $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
 
-  // --- SYSTÈME D'AUTORISATIONS & RBAC DU SIDEBAR (MULTI-RÔLES) ---
+  // --- SYSTÈME D'AUTORISATIONS & RBAC DU SIDEBAR (100% PERMISSIONS) ---
   $userRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];
   if (empty($userRoles)) {
       $singleRole = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? 'ROLE_USER');
@@ -22,12 +23,10 @@
   if (is_string($userRoles)) {
       $userRoles = [$userRoles];
   }
-  $userRoleCode = $userRoles[0] ?? 'ROLE_USER';
-  $isSuperAdmin = !empty(array_intersect($userRoles, ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']));
 
   // Récupérer les permissions cumulées de tous les rôles de l'utilisateur
   $userPermissions = $_SESSION['permissions'] ?? [];
-  if (!$isSuperAdmin && empty($userPermissions)) {
+  if (empty($userPermissions)) {
       try {
           $dbConn = (new Database())->getCon();
           $inClause = implode(',', array_fill(0, count($userRoles), '?'));
@@ -47,11 +46,9 @@
 
   /**
    * Helper d'autorisation granulaire pour les éléments du menu
-   * Débloque le module si l'utilisateur possède AU MOINS UN des rôles autorisés
+   * Débloque le module uniquement si l'utilisateur possède au moins UNE des permissions spécifiées
    */
-  $canAccess = function(array $requiredPerms = [], array $allowedRoles = []) use ($isSuperAdmin, $userRoles, $userPermissions) {
-      if ($isSuperAdmin) return true;
-      if (!empty($allowedRoles) && !empty(array_intersect($userRoles, $allowedRoles))) return true;
+  $canAccess = function(array $requiredPerms = []) use ($userPermissions) {
       if (in_array('*', $userPermissions, true)) return true;
       foreach ($requiredPerms as $perm) {
           if (in_array($perm, $userPermissions, true)) return true;
@@ -197,19 +194,8 @@
   .sidebar.collapsed .nav-item span {
     display: none !important;
   }
-  .sidebar.collapsed .nav-item i,
-  .sidebar.collapsed .nav-item [data-lucide] {
-    width: 20px !important;
-    height: 20px !important;
-    margin: 0 !important;
-  }
-  .sidebar.collapsed .nav-item.active {
-    background: var(--primary-color) !important;
-    color: #FFFFFF !important;
-  }
-  .sidebar.collapsed .nav-item.active i,
-  .sidebar.collapsed .nav-item.active [data-lucide] {
-    color: #FFFFFF !important;
+  .sidebar.collapsed .nav-item i {
+    margin-right: 0 !important;
   }
 
   /* Tooltip flottant au survol en mode réduit */
@@ -241,12 +227,17 @@
   }
 </style>
 
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="logo" style="display: flex; align-items: center; justify-content: center; max-height: 48px;">
+<aside class="sidebar bg-white border-end shadow-sm" id="sidebar">
+    <!-- Sidebar Header / Logo & Collapser -->
+    <div class="sidebar-header d-flex align-items-center justify-content-between p-3 border-bottom">
+        <div class="logo d-flex align-items-center gap-2">
             <?php if (!empty($globalEtablissementLogo)): ?>
-                <?php $logoUrl = (strpos($globalEtablissementLogo, 'http') === 0) ? $globalEtablissementLogo : RACINE . ltrim($globalEtablissementLogo, '/'); ?>
-                <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo GEICG" style="max-height: 42px; max-width: 140px; object-fit: contain;">
+                <img src="<?= htmlspecialchars($globalEtablissementLogo) ?>" 
+                     alt="Logo Établissement" class="img-fluid rounded" style="max-height: 40px; width: auto; object-fit: contain;"
+                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                <span class="logo-fallback-text" style="display: none; letter-spacing: 1px; color: #1E3A5F; font-size: 18px; font-weight: 800;">
+                    <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
+                </span>
             <?php else: ?>
                 <span style="letter-spacing: 1px; color: #1E3A5F; font-size: 20px; font-weight: 800;">
                     <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
@@ -276,19 +267,19 @@
             <i data-lucide="layout-dashboard"></i> <span>Tableau de bord</span>
         </a>
 
-        <!-- === MODULE 1 : STRUCTURE & RÉFÉRENTIELS GLOBAUX === -->
+        <!-- === MODULE 1 : STRUCTURE & ÉTABLISSEMENT === -->
         <?php
-          $showEtab = $canAccess(['MANAGE_ETABLISSEMENT', 'CONFIG_SYSTEM'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
-          $showFilCycles = $canAccess(['MANAGE_FILIERES', 'VIEW_FILIERES', 'MANAGE_CYCLES', 'VIEW_CYCLES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE']);
-          $showNiveaux = $canAccess(['MANAGE_NIVEAUX', 'VIEW_NIVEAUX', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE']);
-          $showSalles = $canAccess(['MANAGE_SALLES', 'VIEW_SALLES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE', 'ROLE_ENSEIGNANT']);
+          $showEtab = $canAccess(['MANAGE_ETABLISSEMENT', 'MANAGE_SCHOOL', 'CONFIG_SYSTEM']);
+          $showFilCycles = $canAccess(['MANAGE_FILIERES', 'VIEW_FILIERES', 'MANAGE_CYCLES', 'VIEW_CYCLES', 'CONFIG_ACADEMIQUE']);
+          $showNiveaux = $canAccess(['MANAGE_NIVEAUX', 'VIEW_NIVEAUX', 'CONFIG_ACADEMIQUE']);
+          $showSalles = $canAccess(['MANAGE_SALLES', 'VIEW_SALLES', 'CONFIG_ACADEMIQUE']);
           $hasSecStructure = $showEtab || $showFilCycles || $showNiveaux || $showSalles;
         ?>
         <?php if ($hasSecStructure): ?>
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-structure" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="building" style="width: 16px; height: 16px;"></i> <span>Structure Globale</span>
+                    <i data-lucide="building" style="width: 16px; height: 16px;"></i> <span>Structure & Établissement</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
@@ -317,20 +308,20 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 2 : CADRE ACADÉMIQUE === -->
+        <!-- === MODULE 2 : PLANIFICATION ACADÉMIQUE === -->
         <?php
-          $showAnnees = $canAccess(['MANAGE_ANNEES', 'VIEW_ANNEES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE']);
-          $showClasses = $canAccess(['MANAGE_CLASSES', 'VIEW_CLASSES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE']);
-          $showSemestres = $canAccess(['MANAGE_SEMESTRES', 'VIEW_SEMESTRES', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP']);
-          $showUe = $canAccess(['MANAGE_UE', 'VIEW_UE', 'CONFIG_ACADEMIQUE'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP']);
-          $showMatieres = $canAccess(['MANAGE_MATIERES', 'VIEW_MATIERES', 'CONFIG_ACADEMIQUE', 'MANAGE_COEFFICIENTS'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_ENSEIGNANT']);
+          $showAnnees = $canAccess(['MANAGE_ANNEES', 'VIEW_ANNEES', 'MANAGE_YEARS', 'CONFIG_ACADEMIQUE']);
+          $showClasses = $canAccess(['MANAGE_CLASSES', 'VIEW_CLASSES', 'CONFIG_ACADEMIQUE']);
+          $showSemestres = $canAccess(['MANAGE_SEMESTRES', 'VIEW_SEMESTRES', 'CONFIG_ACADEMIQUE']);
+          $showUe = $canAccess(['MANAGE_UE', 'VIEW_UE', 'CONFIG_ACADEMIQUE']);
+          $showMatieres = $canAccess(['MANAGE_MATIERES', 'VIEW_MATIERES', 'CONFIG_ACADEMIQUE']);
           $hasSecAcademique = $showAnnees || $showClasses || $showSemestres || $showUe || $showMatieres;
         ?>
         <?php if ($hasSecAcademique): ?>
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-academique" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> <span>Cadre Académique</span>
+                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> <span>Planification Académique</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
@@ -359,36 +350,36 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 3 : SCOLARITÉ & ADMISSIONS === -->
+        <!-- === MODULE 3 : ADMISSIONS & SCOLARITÉ === -->
         <?php
-          $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS', 'MANAGE_STUDENTS'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER', 'ROLE_ENSEIGNANT']);
-          $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_STUDENTS'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE']);
-          $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ENROLLMENTS'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ACCESSOIRES'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER']);
+          $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS', 'MANAGE_STUDENTS']);
+          $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_STUDENTS']);
+          $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ENROLLMENTS']);
+          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ACCESSOIRES']);
           $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showPiecesFournir;
         ?>
         <?php if ($hasSecEleves): ?>
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-eleves" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="users" style="width: 16px; height: 16px;"></i> <span>Scolarité & Etudiant</span>
+                    <i data-lucide="users" style="width: 16px; height: 16px;"></i> <span>Admissions & Scolarité</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
             <div class="nav-section-items" id="sec-eleves">
                 <?php if ($showEtudiants): ?>
-                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= strpos($currentUri, '/etudiant/') !== false ? 'active' : '' ?>" data-title="Nouvel étudiant">
-                    <i data-lucide="user-plus"></i> <span>Nouvel étudiant</span>
+                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= strpos($currentUri, '/etudiant/') !== false ? 'active' : '' ?>" data-title="Registre des Étudiants">
+                    <i data-lucide="users"></i> <span>Registre des Étudiants</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showInscriptions): ?>
+                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Inscriptions & Réinscriptions">
+                    <i data-lucide="clipboard-check"></i> <span>Inscriptions & Réinscriptions</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showParents): ?>
                 <a href="<?= RACINE ?>parent/list" class="nav-item sub <?= strpos($currentUri, '/parent/') !== false ? 'active' : '' ?>" data-title="Parents & Tuteurs">
                     <i data-lucide="contact"></i> <span>Parents & Tuteurs</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showInscriptions): ?>
-                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Réinscription">
-                    <i data-lucide="user-check"></i> <span>Réinscription</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showPiecesFournir): ?>
@@ -405,13 +396,13 @@
 
         <!-- === MODULE 4 : FINANCE, CAISSE & DÉPENSES === -->
         <?php
-          $showScolariteGrille = $canAccess(['MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE', 'MANAGE_TRANCHES', 'VIEW_TRANCHES'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-          $showPaiements = $canAccess(['MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS'], ['ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-          $showOuvCaisse = $canAccess(['MANAGE_CAISSE', 'OUVERTURE_CAISSE', 'MANAGE_PAYMENTS'], ['ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-          $showClotCaisse = $canAccess(['CLOTURE_CAISSE', 'VIEW_RAPPORTS_FINANCIERS', 'MANAGE_PAYMENTS'], ['ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-          $showImpayes = $canAccess(['MANAGE_IMPAYES', 'VIEW_IMPAYES', 'SEND_RELANCES', 'MANAGE_MORATOIRES'], ['ROLE_DIR_ETUDES', 'ROLE_SCOLARITE', 'ROLE_COMPTABLE']);
-          $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_EXPENSES'], ['ROLE_COMPTABLE']);
-          $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'VALIDATE_DEPENSES', 'VALIDATE_EXPENSES'], ['ROLE_COMPTABLE']);
+          $showScolariteGrille = $canAccess(['MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
+          $showPaiements = $canAccess(['MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+          $showOuvCaisse = $canAccess(['MANAGE_CAISSE', 'OUVERTURE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+          $showClotCaisse = $canAccess(['CLOTURE_CAISSE', 'VIEW_RAPPORTS_FINANCIERS', 'MANAGE_PAYMENTS']);
+          $showImpayes = $canAccess(['MANAGE_IMPAYES', 'VIEW_IMPAYES', 'SEND_RELANCES', 'MANAGE_MORATOIRES']);
+          $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_EXPENSES']);
+          $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'MANAGE_EXPENSES', 'VALIDATE_DEPENSES']);
           $hasSecFinance = $showScolariteGrille || $showPaiements || $showOuvCaisse || $showClotCaisse || $showImpayes || $showTypeDep || $showDepenses;
         ?>
         <?php if ($hasSecFinance): ?>
@@ -454,12 +445,12 @@
 
         <!-- === MODULE 5 : PÉDAGOGIE & ÉVALUATIONS === -->
         <?php
-          $showEnseignants = $canAccess(['MANAGE_ENSEIGNANTS', 'VIEW_ENSEIGNANTS', 'MANAGE_TEACHERS'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP']);
-          $showAffectations = $canAccess(['MANAGE_AFFECTATIONS', 'VIEW_AFFECTATIONS', 'MANAGE_TEACHERS'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_ENSEIGNANT']);
-          $showEmplois = $canAccess(['MANAGE_EMPLOI_TEMPS', 'VIEW_EMPLOI_TEMPS', 'MANAGE_SCHEDULES'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE', 'ROLE_ENSEIGNANT']);
-          $showAbsences = $canAccess(['MANAGE_ABSENCES', 'VIEW_ABSENCES'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE', 'ROLE_ENSEIGNANT']);
-          $showNotes = $canAccess(['ENTER_NOTES', 'VIEW_NOTES', 'MANAGE_GRADES', 'LOCK_NOTES', 'LOCK_GRADES'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_ENSEIGNANT']);
-          $showBulletins = $canAccess(['GENERATE_BULLETINS', 'VIEW_BULLETINS', 'VIEW_REPORTS'], ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP', 'ROLE_SCOLARITE', 'ROLE_ENSEIGNANT']);
+          $showEnseignants = $canAccess(['MANAGE_ENSEIGNANTS', 'VIEW_ENSEIGNANTS', 'MANAGE_TEACHERS']);
+          $showAffectations = $canAccess(['MANAGE_AFFECTATIONS', 'VIEW_AFFECTATIONS', 'MANAGE_TEACHERS']);
+          $showEmplois = $canAccess(['MANAGE_EMPLOI_TEMPS', 'VIEW_EMPLOI_TEMPS', 'MANAGE_SCHEDULES']);
+          $showAbsences = $canAccess(['MANAGE_ABSENCES', 'VIEW_ABSENCES']);
+          $showNotes = $canAccess(['ENTER_NOTES', 'VIEW_NOTES', 'MANAGE_GRADES', 'LOCK_NOTES']);
+          $showBulletins = $canAccess(['GENERATE_BULLETINS', 'VIEW_BULLETINS', 'VIEW_REPORTS']);
           $hasSecPedagogie = $showEnseignants || $showAffectations || $showEmplois || $showAbsences || $showNotes || $showBulletins;
         ?>
         <?php if ($hasSecPedagogie): ?>
@@ -507,18 +498,18 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 6 : COMMUNICATION & MÉDIAS === -->
+        <!-- === MODULE 6 : PORTAIL & COMMUNICATION === -->
         <?php
-          $showEvents = $canAccess(['MANAGE_EVENTS', 'VIEW_EVENTS', 'MANAGE_COMMUNICATION'], ['ROLE_DIR_ETUDES', 'ROLE_COMMUNICATION', 'ROLE_SCOLARITE', 'ROLE_ENSEIGNANT']);
-          $showGaleries = $canAccess(['MANAGE_GALLERY', 'VIEW_GALLERY', 'MANAGE_COMMUNICATION'], ['ROLE_DIR_ETUDES', 'ROLE_COMMUNICATION', 'ROLE_ENSEIGNANT']);
-          $showDocs = $canAccess(['MANAGE_DOCUMENTS', 'VIEW_DOCUMENTS', 'MANAGE_COMMUNICATION'], ['ROLE_DIR_ETUDES', 'ROLE_COMMUNICATION', 'ROLE_SCOLARITE', 'ROLE_ENSEIGNANT']);
+          $showEvents = $canAccess(['MANAGE_EVENEMENTS', 'VIEW_EVENEMENTS', 'MANAGE_EVENTS']);
+          $showGaleries = $canAccess(['MANAGE_GALLERY', 'VIEW_GALLERY', 'MANAGE_COMMUNICATION']);
+          $showDocs = $canAccess(['MANAGE_DOCUMENTS', 'VIEW_DOCUMENTS']);
           $hasSecMedias = $showEvents || $showGaleries || $showDocs;
         ?>
         <?php if ($hasSecMedias): ?>
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-medias" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="globe" style="width: 16px; height: 16px;"></i> <span>Portail & Médias</span>
+                    <i data-lucide="globe" style="width: 16px; height: 16px;"></i> <span>Portail & Communication</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
@@ -542,19 +533,19 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 7 : COMPTES & SÉCURITÉ (RBAC) === -->
+        <!-- === MODULE 7 : ADMINISTRATION & SÉCURITÉ === -->
         <?php
-          $showUsers = $canAccess(['MANAGE_USERS', 'VIEW_USERS', 'MANAGE_ACCOUNTS'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
-          $showFonctions = $canAccess(['MANAGE_FONCTIONS', 'VIEW_FONCTIONS', 'MANAGE_USERS', 'CONFIG_SECURITY'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
-          $showRoles = $canAccess(['MANAGE_ROLES', 'VIEW_ROLES', 'CONFIG_SECURITY'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
-          $showPerms = $canAccess(['MANAGE_PERMISSIONS', 'VIEW_PERMISSIONS', 'CONFIG_SECURITY'], ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
+          $showUsers = $canAccess(['MANAGE_USERS', 'VIEW_USERS', 'MANAGE_ACCOUNTS']);
+          $showFonctions = $canAccess(['MANAGE_FONCTIONS', 'VIEW_FONCTIONS']);
+          $showRoles = $canAccess(['MANAGE_ROLES', 'VIEW_ROLES']);
+          $showPerms = $canAccess(['MANAGE_PERMISSIONS', 'VIEW_PERMISSIONS']);
           $hasSecSecurite = $showUsers || $showFonctions || $showRoles || $showPerms;
         ?>
         <?php if ($hasSecSecurite): ?>
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-securite" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> <span>Sécurité & Accès</span>
+                    <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> <span>Administration & Sécurité</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
@@ -587,6 +578,29 @@
 
 <script>
 $(document).ready(function() {
+  // Toggle réduction/déploiement du sidebar
+  $(document).on('click', '#sidebarToggle', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof toggleSidebar === 'function') {
+      toggleSidebar();
+    } else {
+      var $sidebar = $('#sidebar, #mainSidebar, .sidebar');
+      var $mainContent = $('.main-content');
+      var $footer = $('#footer, .footer');
+      $sidebar.toggleClass('collapsed');
+      var isCollapsed = $sidebar.hasClass('collapsed');
+      $mainContent.toggleClass('expanded', isCollapsed);
+      $footer.toggleClass('expanded', isCollapsed);
+      try {
+        localStorage.setItem('geicg_sidebar_collapsed', isCollapsed ? '1' : '0');
+      } catch(ex) {}
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+  });
+
   // Accordéons du sidebar (Comportement accordéon unique : fermer les autres modules à l'ouverture)
   $(document).on('click', '.sidebar-accordion-toggle', function(e) {
     e.preventDefault();

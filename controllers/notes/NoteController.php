@@ -10,6 +10,7 @@ class NoteController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_NOTES');
         $anneeModel = new ModelAnnee();
         $annees = $anneeModel->getAll();
         $niveaux = (new ModelNiveau())->getAll();
@@ -39,6 +40,7 @@ class NoteController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_NOTES');
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -59,11 +61,22 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('ENTER_NOTES');
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'etudiant_code' => $data['etudiant_code'] ?? '',
+            'matiere_code' => $data['matiere_code'] ?? '',
+            'classe_code' => $data['classe_code'] ?? ''
+        ]);
+
         if (empty($data['code_note'])) {
             $data['code_note'] = $this->validator->generateCode('notes', 'code_note', 'NOT-', 8);
         }
@@ -75,9 +88,9 @@ class NoteController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Note enregistrée avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de l\'enregistrement de la note');
         }
     }
 
@@ -85,6 +98,7 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('ENTER_NOTES');
         $id = (int)$this->post('id_note');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -117,6 +131,7 @@ class NoteController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_NOTES');
         try {
             $id = $this->validator->decrypter($details);
             $stmt = $this->model->getCon()->prepare("
@@ -152,6 +167,7 @@ class NoteController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('ENTER_NOTES');
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
@@ -174,6 +190,7 @@ class NoteController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('ENTER_NOTES');
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
@@ -190,6 +207,7 @@ class NoteController extends BaseController
     public function saisieClasse()
     {
         $this->requireAuth();
+        $this->requirePermission('ENTER_NOTES');
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
@@ -278,6 +296,7 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('ENTER_NOTES');
 
         $classeCode = $this->post('classe_code');
         $matiereCode = $this->post('matiere_code');
@@ -286,15 +305,18 @@ class NoteController extends BaseController
         $compositionCode = $this->post('composition_code') ?? null;
         $notesData = $_POST['notes'] ?? [];
 
-        if (empty($classeCode) || empty($matiereCode) || empty($semestreCode)) {
-            $this->error('Classe, Matière et Semestre sont obligatoires pour la saisie groupée');
-            return;
-        }
-
         $db = $this->model->getCon();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
+
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'classe_code' => $classeCode,
+            'matiere_code' => $matiereCode
+        ]);
 
         try {
             $db->beginTransaction();

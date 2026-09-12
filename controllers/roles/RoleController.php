@@ -10,12 +10,14 @@ class RoleController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_ROLES');
         $this->loadView('../views/roles/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_ROLES');
         $sql = "SELECT r.*,
                        COUNT(DISTINCT ur.user_code) as nb_users,
                        COUNT(DISTINCT rp.permission_code) as nb_permissions
@@ -42,6 +44,7 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ROLES');
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -86,6 +89,7 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ROLES');
         $id = (int)$this->post('id');
         if (!$id) { $this->error('Identifiant invalide'); return; }
 
@@ -126,6 +130,7 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ROLES');
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -141,6 +146,7 @@ class RoleController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_ROLES');
         try {
             $id = $this->validator->decrypter($details);
             $role = $this->model->getById($id);
@@ -170,6 +176,7 @@ class RoleController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ROLES');
         try {
             $id = $this->validator->decrypter($details);
             $role = $this->model->getById($id);
@@ -194,6 +201,7 @@ class RoleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ROLES');
         $allPermissions = (new ModelPermission())->getGrouped();
         $this->loadView('../views/roles/edit.php', [
             'role' => [],

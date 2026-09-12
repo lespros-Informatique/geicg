@@ -9,14 +9,25 @@ $recentPaiements = $recentPaiements ?? [];
 $recentDepenses = $recentDepenses ?? [];
 $teacherCourses = $teacherCourses ?? [];
 
-$isAdminOrDG = in_array($roleCode, ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
-$isPedagogie = in_array($roleCode, ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP']);
-$isScolarite = ($roleCode === 'ROLE_SCOLARITE');
-$isFinance = in_array($roleCode, ['ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-$isEnseignant = ($roleCode === 'ROLE_ENSEIGNANT');
-$isCommunication = ($roleCode === 'ROLE_COMMUNICATION');
+// Récupération dynamique des permissions utilisateur
+$userPermissions = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+if (empty($userPermissions) && isset($this) && method_exists($this, 'getUserPermissions')) {
+    $userPermissions = $this->getUserPermissions();
+}
 
-// Rôle par défaut si non reconnu = Administrateur / Global
+$hasPerm = function(string $code) use ($userPermissions): bool {
+    return in_array('*', $userPermissions, true) || in_array($code, $userPermissions, true);
+};
+
+$isAdminOrDG = $hasPerm('VIEW_DASHBOARD_EXECUTIVE');
+$isPedagogie = $hasPerm('VIEW_DASHBOARD_PEDAGOGIE');
+$isScolarite = $hasPerm('VIEW_DASHBOARD_SCOLARITE');
+$isFinance = $hasPerm('VIEW_DASHBOARD_FINANCE');
+$isEnseignant = $hasPerm('VIEW_DASHBOARD_ENSEIGNANT');
+$isCommunication = $hasPerm('VIEW_DASHBOARD_COMMUNICATION');
+$canViewActions = $hasPerm('VIEW_DASHBOARD_ACTIONS');
+
+// Si aucune permission spécifique n'est définie mais que l'utilisateur a accès aux raccourcis
 if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseignant && !$isCommunication) {
     $isAdminOrDG = true;
 }
@@ -47,6 +58,8 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                 Tableau de Bord &bull; Espace Enseignant / Formateur
               <?php elseif ($isCommunication): ?>
                 Tableau de Bord &bull; Communication & Événements
+              <?php else: ?>
+                Tableau de Bord &bull; Vue Générale
               <?php endif; ?>
             </span>
           </h1>
@@ -56,32 +69,39 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
         </div>
 
         <!-- ACTIONS RAPIDES D'EN-TÊTE -->
+        <?php if ($canViewActions): ?>
         <div class="page-header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <?php if ($isAdminOrDG || $isScolarite): ?>
+          <?php if ($hasPerm('MANAGE_INSCRIPTIONS') || $hasPerm('MANAGE_STUDENTS')): ?>
             <a href="<?= RACINE ?>inscription/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
               <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> Nouvelle Inscription
             </a>
           <?php endif; ?>
 
-          <?php if ($isAdminOrDG || $isFinance): ?>
+          <?php if ($hasPerm('RECORD_PAIEMENTS') || $hasPerm('MANAGE_PAYMENTS')): ?>
             <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #059669; border-color: #059669; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
               <i data-lucide="credit-card" style="width: 16px; height: 16px;"></i> Encaisser Paiement
             </a>
+          <?php endif; ?>
+
+          <?php if ($hasPerm('RECORD_DEPENSES') || $hasPerm('MANAGE_EXPENSES')): ?>
             <a href="<?= RACINE ?>depense/formulaire" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #FFFFFF; border: 1px solid #DC2626; color: #DC2626; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
               <i data-lucide="arrow-up-right" style="width: 16px; height: 16px;"></i> Saisir Dépense
             </a>
           <?php endif; ?>
 
-          <?php if ($isPedagogie || $isEnseignant): ?>
+          <?php if ($hasPerm('ENTER_NOTES') || $hasPerm('MANAGE_GRADES')): ?>
             <a href="<?= RACINE ?>note/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
               <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Saisie des Notes
             </a>
+          <?php endif; ?>
+
+          <?php if ($hasPerm('MANAGE_ABSENCES') || $hasPerm('RECORD_ABSENCES')): ?>
             <a href="<?= RACINE ?>absence/formulaire" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #D97706; border-color: #D97706; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
               <i data-lucide="clock" style="width: 16px; height: 16px;"></i> Pointer Absences
             </a>
           <?php endif; ?>
 
-          <?php if ($isCommunication): ?>
+          <?php if ($hasPerm('MANAGE_EVENEMENTS')): ?>
             <a href="<?= RACINE ?>actualite/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
               <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Nouvelle Actualité
             </a>
@@ -90,6 +110,7 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
             </a>
           <?php endif; ?>
         </div>
+        <?php endif; ?>
       </div>
 
       <!-- ========================================================================= -->
@@ -378,7 +399,7 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
         </h3>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
-          <?php if ($isAdminOrDG): ?>
+          <?php if ($hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
             <a href="<?= RACINE ?>inscription/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
               <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                 <i data-lucide="user-check"></i>
@@ -388,7 +409,16 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                 <small style="color: #64748B;">Registre annuel</small>
               </div>
             </a>
+          <?php endif; ?>
 
+          <?php if ($hasPerm('VIEW_ETUDIANTS') || $hasPerm('MANAGE_ETUDIANTS')): ?>
+            <a href="<?= RACINE ?>etudiant/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="users"></i></div>
+              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Fiches Étudiants</strong><small style="color: #64748B;">Dossiers & matricules</small></div>
+            </a>
+          <?php endif; ?>
+
+          <?php if ($hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS')): ?>
             <a href="<?= RACINE ?>paiement/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
               <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                 <i data-lucide="wallet"></i>
@@ -398,7 +428,9 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                 <small style="color: #64748B;">Suivi des reçus</small>
               </div>
             </a>
+          <?php endif; ?>
 
+          <?php if ($hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES')): ?>
             <a href="<?= RACINE ?>depense/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
               <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                 <i data-lucide="arrow-up-right"></i>
@@ -408,7 +440,9 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                 <small style="color: #64748B;">Engagements & charges</small>
               </div>
             </a>
+          <?php endif; ?>
 
+          <?php if ($hasPerm('VIEW_CLASSES') || $hasPerm('MANAGE_CLASSES')): ?>
             <a href="<?= RACINE ?>classe/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
               <div style="width: 42px; height: 42px; border-radius: 10px; background: #F8FAFC; color: #1E3A5F; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                 <i data-lucide="layout-grid"></i>
@@ -418,7 +452,30 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                 <small style="color: #64748B;">Structure pédagogique</small>
               </div>
             </a>
+          <?php endif; ?>
 
+          <?php if ($hasPerm('VIEW_NOTES') || $hasPerm('ENTER_NOTES')): ?>
+            <a href="<?= RACINE ?>note/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="edit-3"></i></div>
+              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Notes & Évaluations</strong><small style="color: #64748B;">Contrôles & examens</small></div>
+            </a>
+          <?php endif; ?>
+
+          <?php if ($hasPerm('VIEW_BULLETINS') || $hasPerm('GENERATE_BULLETINS')): ?>
+            <a href="<?= RACINE ?>bulletin/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="award"></i></div>
+              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Bulletins & Moyennes</strong><small style="color: #64748B;">Délibérations</small></div>
+            </a>
+          <?php endif; ?>
+
+          <?php if ($hasPerm('VIEW_EMPLOI_TEMPS') || $hasPerm('MANAGE_EMPLOI_TEMPS')): ?>
+            <a href="<?= RACINE ?>emploi_temps/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: #F8FAFC; color: #1E3A5F; display: flex; align-items: center; justify-content: center;"><i data-lucide="calendar"></i></div>
+              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Emploi du Temps</strong><small style="color: #64748B;">Plannings & créneaux</small></div>
+            </a>
+          <?php endif; ?>
+
+          <?php if ($hasPerm('VIEW_USERS') || $hasPerm('MANAGE_USERS') || $hasPerm('MANAGE_ROLES')): ?>
             <a href="<?= RACINE ?>user/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
               <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                 <i data-lucide="users"></i>
@@ -428,7 +485,9 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                 <small style="color: #64748B;">Comptes & habilitations</small>
               </div>
             </a>
+          <?php endif; ?>
 
+          <?php if ($hasPerm('VIEW_ANNEES') || $hasPerm('MANAGE_ANNEES')): ?>
             <a href="<?= RACINE ?>annee/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
               <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 18px;">
                 <i data-lucide="calendar"></i>
@@ -438,110 +497,12 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                 <small style="color: #64748B;">Sessions & semestres</small>
               </div>
             </a>
+          <?php endif; ?>
 
-          <?php elseif ($isPedagogie): ?>
-            <a href="<?= RACINE ?>classe/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="layout-grid"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Classes</strong><small style="color: #64748B;">Effectifs & promotions</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>composition/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="award"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Planning Compositions & Examens</strong><small style="color: #64748B;">Compositions, devoirs & coefficients</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>note/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="edit-3"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Notes & Évaluations</strong><small style="color: #64748B;">Contrôles & examens</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>bulletin/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="award"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Bulletins & Moyennes</strong><small style="color: #64748B;">Délibérations</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>emploi_temps/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #F8FAFC; color: #1E3A5F; display: flex; align-items: center; justify-content: center;"><i data-lucide="calendar"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Emploi du Temps</strong><small style="color: #64748B;">Plannings & créneaux</small></div>
-            </a>
-
-          <?php elseif ($isFinance): ?>
-            <a href="<?= RACINE ?>paiement/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="credit-card"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Journal Caisse</strong><small style="color: #64748B;">Encaissements</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>scolarite/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="layers"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Grille Scolarité</strong><small style="color: #64748B;">Montants par filière</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>depense/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center;"><i data-lucide="arrow-up-right"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Dépenses</strong><small style="color: #64748B;">Décaissements</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>cloture_caisse/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="lock"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Clôtures de Caisse</strong><small style="color: #64748B;">Arrêtés journaliers</small></div>
-            </a>
-
-          <?php elseif ($isScolarite): ?>
-            <a href="<?= RACINE ?>inscription/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="user-plus"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Inscriptions</strong><small style="color: #64748B;">Registre & admissions</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>etudiant/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="users"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Fiches Étudiants</strong><small style="color: #64748B;">Dossiers & matricules</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>badge_etudiant/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="credit-card"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Cartes / Badges</strong><small style="color: #64748B;">Impression des cartes</small></div>
-            </a>
-
+          <?php if ($hasPerm('VIEW_ABSENCES') || $hasPerm('MANAGE_ABSENCES')): ?>
             <a href="<?= RACINE ?>absence/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
               <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="clock"></i></div>
               <div><strong style="color: #1E293B; font-size: 13px; display: block;">Suivi des Absences</strong><small style="color: #64748B;">Pointage d'assiduité</small></div>
-            </a>
-
-          <?php elseif ($isEnseignant): ?>
-            <a href="<?= RACINE ?>note/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="edit-3"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Mes Notes Saisies</strong><small style="color: #64748B;">Contrôles continus & TPs</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>absence/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="user-x"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Appel & Absences</strong><small style="color: #64748B;">Pointage par cours</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>emploi_temps/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="calendar"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Mon Emploi du Temps</strong><small style="color: #64748B;">Créneaux de la semaine</small></div>
-            </a>
-
-          <?php elseif ($isCommunication): ?>
-            <a href="<?= RACINE ?>actualite/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="newspaper"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Actualités</strong><small style="color: #64748B;">Articles du portail</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>evenement/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="calendar"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Événements</strong><small style="color: #64748B;">Agenda académique</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>document/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="file-text"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Documents</strong><small style="color: #64748B;">Téléchargements publics</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>galerie/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="image"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Galerie Photos</strong><small style="color: #64748B;">Albums & médias</small></div>
             </a>
           <?php endif; ?>
         </div>
@@ -553,8 +514,8 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
       
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 20px;">
         
-        <!-- TABLEAU 1 : Inscriptions Récentes (Visible par Admin, DG, Scolarité, Pédagogie) -->
-        <?php if ($isAdminOrDG || $isScolarite || $isPedagogie): ?>
+        <!-- TABLEAU 1 : Inscriptions Récentes -->
+        <?php if ($hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
           <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
               <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -598,8 +559,8 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
           </div>
         <?php endif; ?>
 
-        <!-- TABLEAU 2 : Règlements Récents de Caisse (Visible par Admin, DG, Finance) -->
-        <?php if ($isAdminOrDG || $isFinance): ?>
+        <!-- TABLEAU 2 : Règlements Récents de Caisse -->
+        <?php if ($hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS')): ?>
           <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
               <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -643,8 +604,8 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
           </div>
         <?php endif; ?>
 
-        <!-- TABLEAU 3 : Dépenses Récentes (Visible par Admin, DG, Finance) -->
-        <?php if ($isAdminOrDG || $isFinance): ?>
+        <!-- TABLEAU 3 : Dépenses Récentes -->
+        <?php if ($hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES')): ?>
           <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
               <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -688,8 +649,8 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
           </div>
         <?php endif; ?>
 
-        <!-- TABLEAU 4 : Cours Affectés (Visible par Enseignant) -->
-        <?php if ($isEnseignant): ?>
+        <!-- TABLEAU 4 : Cours Affectés -->
+        <?php if ($hasPerm('VIEW_AFFECTATIONS') || $hasPerm('ENTER_NOTES')): ?>
           <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
               <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">

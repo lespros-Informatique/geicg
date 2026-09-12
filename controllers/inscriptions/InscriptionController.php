@@ -10,6 +10,7 @@ class InscriptionController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_INSCRIPTIONS');
         $db = $this->model->getCon();
 
         if (!empty($_GET['annee_code'])) {
@@ -65,6 +66,7 @@ class InscriptionController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_INSCRIPTIONS');
         
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
@@ -179,6 +181,7 @@ class InscriptionController extends BaseController
     public function getStudentProfileSummary()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_INSCRIPTIONS');
         $etudiantCode = trim($_GET['etudiant_code'] ?? ($_POST['etudiant_code'] ?? ''));
 
         if (empty($etudiantCode)) {
@@ -338,6 +341,7 @@ class InscriptionController extends BaseController
     public function getTuitionByClass()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_INSCRIPTIONS');
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         $anneeCodeReq = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
         $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? 'non_affecte'));
@@ -467,11 +471,20 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_INSCRIPTIONS');
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
         $anneeCode = !empty($data['annee_code']) ? trim($data['annee_code']) : $this->getActiveAnneeCode();
+
+        // Contrôle préalable des clés étrangères globales de la requête d'inscription
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'classe_code' => $data['classe_code'] ?? ''
+        ]);
 
         $db = $this->model->getCon();
         $modeInscription = $data['mode_inscription'] ?? 'existant';
@@ -670,6 +683,7 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_INSCRIPTIONS');
         $id = (int)$this->post('id_inscription');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -730,6 +744,7 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_INSCRIPTIONS');
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -752,6 +767,7 @@ class InscriptionController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_INSCRIPTIONS');
         try {
             $id = $this->validator->decrypter($details);
             $stmt = $this->model->getCon()->prepare("
@@ -811,6 +827,7 @@ class InscriptionController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_INSCRIPTIONS');
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -825,6 +842,7 @@ class InscriptionController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_INSCRIPTIONS');
         $this->loadView('../views/inscriptions/edit.php', ['item' => []]);
     }
 }

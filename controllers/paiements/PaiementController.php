@@ -10,6 +10,7 @@ class PaiementController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_PAIEMENTS');
         $db = $this->model->getCon();
 
         if (!empty($_GET['annee_code'])) {
@@ -105,6 +106,7 @@ class PaiementController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_PAIEMENTS');
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
             $db = $this->model->getCon();
@@ -136,6 +138,7 @@ class PaiementController extends BaseController
     public function getStudentFinancialSummary()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_PAIEMENTS');
         $inscriptionCode = $_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? '');
         $etudiantCode = $_GET['etudiant_code'] ?? ($_POST['etudiant_code'] ?? '');
 
@@ -516,11 +519,26 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('RECORD_PAIEMENTS');
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        // Contrôle préalable des clés étrangères globales du versement
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'inscription_code' => $data['inscription_code'] ?? ''
+        ]);
+
+        if (!empty($data['tranche_code']) && $data['tranche_code'] !== 'SCOLARITE_GLOBALE') {
+            $this->validateForeignKeys([
+                'tranche_code' => $data['tranche_code']
+            ]);
+        }
 
         $db = $this->model->getCon();
         $today = date('Y-m-d');
@@ -652,6 +670,7 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('RECORD_PAIEMENTS');
         $id = (int)$this->post('id_paiement');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -669,6 +688,7 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('CANCEL_PAIEMENTS');
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -691,6 +711,7 @@ class PaiementController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_PAIEMENTS');
         try {
             $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
             if (!$id && is_numeric($details)) {
@@ -732,6 +753,7 @@ class PaiementController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('RECORD_PAIEMENTS');
         try {
             $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
             if (!$id && is_numeric($details)) {
@@ -749,6 +771,7 @@ class PaiementController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('RECORD_PAIEMENTS');
         $this->loadView('../views/paiements/edit.php', ['item' => []]);
     }
 }

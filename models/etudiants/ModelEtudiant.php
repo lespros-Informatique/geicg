@@ -27,8 +27,12 @@ class ModelEtudiant extends BaseModel
         $lastId = (int)$pdo->query("SELECT MAX(id_etudiant) FROM etudiants")->fetchColumn() ?: 0;
         $nextOrder = $lastId + 1;
 
-        // 3. Sigle Établissement
-        $sigleEtab = 'GEB';
+        // 3. Sigle Établissement (dynamique depuis la base)
+        $stmtEtabSigle = $pdo->query("SELECT sigle_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
+        $rowEtabSigle = $stmtEtabSigle ? $stmtEtabSigle->fetch(PDO::FETCH_ASSOC) : null;
+        $sigleEtab = !empty($rowEtabSigle['sigle_etablissement']) 
+            ? strtoupper(trim($rowEtabSigle['sigle_etablissement'])) 
+            : (!empty($rowEtabSigle['libelle_etablissement']) ? strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $rowEtabSigle['libelle_etablissement']), 0, 3)) : 'GEB');
 
         // 4. Deux premières lettres de la Filière en Majuscule
         $filiereCodeLetters = 'GE';

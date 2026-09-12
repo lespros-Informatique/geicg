@@ -424,10 +424,6 @@ abstract class BaseController
      */
     protected function getUserPermissions(): array
     {
-        if ($this->isSuperAdmin()) {
-            return ['*'];
-        }
-
         $roles = $this->getCurrentUserRoles();
         if (empty($roles)) {
             return [];
@@ -445,7 +441,13 @@ abstract class BaseController
             ";
             $stmt = $pdo->prepare($sql);
             $stmt->execute($roles);
-            return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            $perms = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            
+            // Si le rôle possède le passe-partout '*'
+            if (in_array('*', $perms, true)) {
+                return ['*'];
+            }
+            return $perms;
         } catch (Exception $e) {
             error_log("Error fetching user permissions: " . $e->getMessage());
             return [];
@@ -453,14 +455,10 @@ abstract class BaseController
     }
 
     /**
-     * Vérifie si l'utilisateur possède une permission métier donnée
+     * Vérifie si l'utilisateur possède une permission métier donnée (100% basé sur les permissions)
      */
     protected function hasPermission(string $permissionCode): bool
     {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-
         $perms = $this->getUserPermissions();
         return in_array('*', $perms, true) || in_array($permissionCode, $perms, true);
     }
@@ -470,11 +468,11 @@ abstract class BaseController
      */
     protected function hasActionPermission(string $action): bool
     {
-        if ($this->isSuperAdmin()) {
+        $perms = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+        if (!empty($perms[$action])) {
             return true;
         }
-        $perms = $_SESSION[USERS_AUTH]['permissions'] ?? [];
-        return !empty($perms[$action]);
+        return false;
     }
 
     /**
@@ -508,5 +506,36 @@ abstract class BaseController
             $msg = !empty($customMessage) ? $customMessage : "Votre compte ne vous autorise pas {$lbl}.";
             $this->renderForbidden($msg, strtoupper($action) . '_PRIVILEGE');
         }
+    }
+
+    /**
+     * Valide les clés étrangères d'un tableau de données pour une table et déclenche $this->error() si absente ou invalide.
+     */
+    protected function validateForeignKeys(array $data, ?string $table = null, array $requiredKeys = []): bool
+    {
+        $db = ($this->model && method_exists($this->model, 'getCon')) ? $this->model->getCon() : (new Database())->getCon();
+
+        // 1. Vérifier les clés supplémentaires explicitement requises
+        foreach ($requiredKeys as $key => $label) {
+            $colName = is_numeric($key) ? $label : $key;
+            $lbl = is_numeric($key) ? $label : $label;
+            $val = $data[$colName] ?? '';
+            $err = ForeignKeyValidator::validateSingleKey($db, $colName, $val, is_numeric($key) ? null : $lbl);
+            if ($err !== null) {
+                $this->error($err);
+                return false;
+            }
+        }
+
+        // 2. Si une table cible est définie, lancer la validation globale
+        if (!empty($table)) {
+            $err = ForeignKeyValidator::validate($db, $table, $data);
+            if ($err !== null) {
+                $this->error($err);
+                return false;
+            }
+        }
+
+        return true;
     }
 }

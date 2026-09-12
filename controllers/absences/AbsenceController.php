@@ -10,6 +10,7 @@ class AbsenceController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_ABSENCES');
         $anneeModel = new ModelAnnee();
         $annees = $anneeModel->getAll();
         $niveaux = (new ModelNiveau())->getAll();
@@ -39,6 +40,7 @@ class AbsenceController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_ABSENCES');
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -59,11 +61,21 @@ class AbsenceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ABSENCES');
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'etudiant_code' => $data['etudiant_code'] ?? '',
+            'classe_code' => $data['classe_code'] ?? ''
+        ]);
+
         if (empty($data['code_absence'])) {
             $data['code_absence'] = $this->validator->generateCode('absences', 'code_absence', 'ABS-', 8);
         }
@@ -74,9 +86,9 @@ class AbsenceController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Absence enregistrée avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de l\'enregistrement de l\'absence');
         }
     }
 
@@ -84,6 +96,7 @@ class AbsenceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ABSENCES');
         $id = (int)$this->post('id_absence');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -100,6 +113,7 @@ class AbsenceController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_ABSENCES');
         try {
             $id = $this->validator->decrypter($details);
             $stmt = $this->model->getCon()->prepare("
@@ -128,6 +142,7 @@ class AbsenceController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ABSENCES');
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -142,6 +157,7 @@ class AbsenceController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ABSENCES');
         $this->loadView('../views/absences/edit.php', ['item' => []]);
     }
 
@@ -149,6 +165,7 @@ class AbsenceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ABSENCES');
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -173,6 +190,7 @@ class AbsenceController extends BaseController
     public function saisieClasse()
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ABSENCES');
         $anneeCode = $this->getActiveAnneeCode();
         $classes = (new ModelClasse())->getAll();
         $matieres = (new ModelMatiere())->getAll();
@@ -226,6 +244,7 @@ class AbsenceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_ABSENCES');
 
         $classeCode = $this->post('classe_code');
         $dateAbsence = $this->post('date_absence');
@@ -233,15 +252,17 @@ class AbsenceController extends BaseController
         $dureeHeures = (float)($this->post('duree_heures') ?? 2);
         $absencesData = $_POST['absences'] ?? [];
 
-        if (empty($classeCode) || empty($dateAbsence)) {
-            $this->error('Classe et Date d\'absence sont obligatoires');
-            return;
-        }
-
         $db = $this->model->getCon();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
+
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'classe_code' => $classeCode
+        ]);
 
         try {
             $db->beginTransaction();
