@@ -532,382 +532,482 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
       </div>
 
       <!-- ========================================================================= -->
-      <!-- SECTION 3 : PANORAMA & CARDS DES MODULES APPLICATIFS (4 COLONNES)          -->
+      <!-- SECTION 3 : PANORAMA & CARDS DES MODULES APPLICATIFS PAR GROUPES          -->
       <!-- ========================================================================= -->
       <?php if ($canViewActions): ?>
-        <div style="margin-bottom: 32px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <?php
+          $canGroup1 = $hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS') || $hasPerm('MANAGE_DEPOT_DOSSIERS') || $hasPerm('VIEW_DEPOT_DOSSIERS') || $hasPerm('MANAGE_REMISE_KITS') || $hasPerm('VIEW_REMISE_KITS') || $hasPerm('MANAGE_ACCESSOIRES') || $hasPerm('VIEW_ETUDIANTS') || $hasPerm('MANAGE_ETUDIANTS');
+          $canGroup2 = $hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS') || $hasPerm('OUVERTURE_CAISSE') || $hasPerm('CLOTURE_CAISSE') || $hasPerm('MANAGE_CAISSE') || $hasPerm('MANAGE_IMPAYES') || $hasPerm('VIEW_IMPAYES') || $hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES');
+          $canGroup3 = $hasPerm('VIEW_NOTES') || $hasPerm('ENTER_NOTES') || $hasPerm('VIEW_BULLETINS') || $hasPerm('GENERATE_BULLETINS') || $hasPerm('VIEW_ABSENCES') || $hasPerm('MANAGE_ABSENCES') || $hasPerm('VIEW_ENSEIGNANTS') || $hasPerm('MANAGE_ENSEIGNANTS');
+          $canGroup4 = $hasPerm('VIEW_CLASSES') || $hasPerm('MANAGE_CLASSES') || $hasPerm('VIEW_FILIERES') || $hasPerm('MANAGE_FILIERES') || $hasPerm('VIEW_MATIERES') || $hasPerm('MANAGE_MATIERES');
+          $canGroup5 = $hasPerm('VIEW_USERS') || $hasPerm('MANAGE_USERS') || $hasPerm('MANAGE_ROLES');
+        ?>
+
+        <div style="margin-bottom: 36px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
             <div>
-              <h3 style="font-size: 18px; font-weight: 900; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
-                <i data-lucide="layout-grid" style="color: #1E3A5F; width: 24px; height: 24px;"></i> Modules & Services Applicatifs GEICG
+              <h3 style="font-size: 19px; font-weight: 900; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="layout-grid" style="color: #1E3A5F; width: 26px; height: 26px;"></i> Modules & Services Applicatifs GEICG
               </h3>
-              <span style="font-size: 13px; color: #64748B;">Indicateurs clés et accès direct aux registres selon votre profil d'habilitation RBAC</span>
+              <span style="font-size: 13px; color: #64748B;">Indicateurs clés et accès direct aux registres groupés par domaines fonctionnels</span>
             </div>
           </div>
 
-          <div class="dash-module-grid">
-            
-            <!-- MODULE 1 : Admissions & Scolarité -->
-            <?php if ($hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
-              <a href="<?= RACINE ?>inscription/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #EFF6FF; color: #1D4ED8;">
-                      <i data-lucide="clipboard-check" style="width: 24px; height: 24px;"></i>
-                    </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #DBEAFE; color: #1E40AF; padding: 4px 10px; border-radius: 20px;">Inscriptions</span>
+          <!-- GROUPE 1 : Admissions & Scolarité -->
+          <?php if ($canGroup1): ?>
+            <div style="margin-bottom: 30px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #1E3A5F; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="clipboard-check" style="width: 18px; height: 18px;"></i>
                   </div>
-                  <div class="dash-module-num" style="color: #0F172A;">
-                    <?= number_format((int)($stats['total_etudiants'] ?? 0), 0, ',', ' ') ?>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Admissions, Inscriptions & Guichet Étudiants</h4>
+                    <span style="font-size: 12px; color: #64748B;">Inscriptions des apprenants, suivi des dossiers et remise des fournitures</span>
                   </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Étudiants inscrits actifs</div>
                 </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Inscriptions & Admissions</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
+                <span style="font-size: 11px; font-weight: 800; background: #DBEAFE; color: #1E40AF; padding: 4px 12px; border-radius: 20px;">Domaine Scolarité</span>
+              </div>
 
-            <?php if ($hasPerm('MANAGE_DEPOT_DOSSIERS') || $hasPerm('VIEW_DEPOT_DOSSIERS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
-              <a href="<?= RACINE ?>dossier_etudiant/list" class="dash-module-card" style="border-left: 4px solid #EA580C;">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #FFF7ED; color: #EA580C;">
-                      <i data-lucide="folder-check" style="width: 24px; height: 24px;"></i>
+              <div class="dash-module-grid">
+                <?php if ($hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
+                  <a href="<?= RACINE ?>inscription/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #EFF6FF; color: #1D4ED8;">
+                          <i data-lucide="clipboard-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #DBEAFE; color: #1E40AF; padding: 4px 10px; border-radius: 20px;">Inscriptions</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #0F172A;">
+                        <?= number_format((int)($stats['total_etudiants'] ?? 0), 0, ',', ' ') ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Étudiants inscrits actifs</div>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #FFEDD5; color: #C2410C; padding: 4px 10px; border-radius: 20px;">Dossiers</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #EA580C;">
-                    <?= (int)($guichetAlerts['dossiers_incomplets'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #9A3412; margin-top: 2px;">Dossier(s) incomplet(s) à compléter</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Dépôt des Dossiers</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
-
-            <?php if ($hasPerm('MANAGE_REMISE_KITS') || $hasPerm('VIEW_REMISE_KITS') || $hasPerm('MANAGE_ACCESSOIRES')): ?>
-              <a href="<?= RACINE ?>accessoire_inscription/registre" class="dash-module-card" style="border-left: 4px solid #15803D;">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #F0FDF4; color: #15803D;">
-                      <i data-lucide="package-check" style="width: 24px; height: 24px;"></i>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Inscriptions & Admissions</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #DCFCE7; color: #15803D; padding: 4px 10px; border-radius: 20px;">Kits</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #15803D;">
-                    <?= (int)($guichetAlerts['kits_en_attente'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #166534; margin-top: 2px;">Kit(s) en attente de retrait</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Registre & Remise Kits</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
+                  </a>
+                <?php endif; ?>
 
-            <?php if ($hasPerm('VIEW_ETUDIANTS') || $hasPerm('MANAGE_ETUDIANTS')): ?>
-              <a href="<?= RACINE ?>etudiant/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #EEF2FF; color: #4F46E5;">
-                      <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+                <?php if ($hasPerm('MANAGE_DEPOT_DOSSIERS') || $hasPerm('VIEW_DEPOT_DOSSIERS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
+                  <a href="<?= RACINE ?>dossier_etudiant/list" class="dash-module-card" style="border-left: 4px solid #EA580C;">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FFF7ED; color: #EA580C;">
+                          <i data-lucide="folder-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FFEDD5; color: #C2410C; padding: 4px 10px; border-radius: 20px;">Dossiers</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #EA580C;">
+                        <?= (int)($guichetAlerts['dossiers_incomplets'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #9A3412; margin-top: 2px;">Dossier(s) incomplet(s) à compléter</div>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #E0E7FF; color: #3730A3; padding: 4px 10px; border-radius: 20px;">Effectif</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #3730A3;">
-                    <?= number_format((int)($stats['total_etudiants'] ?? 0), 0, ',', ' ') ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Apprenants au registre</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Registre des Étudiants</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
-
-            <!-- MODULE 2 : Finance & Caisse -->
-            <?php if ($hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS')): ?>
-              <a href="<?= RACINE ?>paiement/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #ECFDF5; color: #047857;">
-                      <i data-lucide="credit-card" style="width: 24px; height: 24px;"></i>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Dépôt des Dossiers</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #D1FAE5; color: #065F46; padding: 4px 10px; border-radius: 20px;">Encaissements</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #047857; font-size: 22px;">
-                    <?= number_format((float)($stats['ca_encaisse'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Total recettes encaissées</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Caisse & Règlement</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
+                  </a>
+                <?php endif; ?>
 
-            <?php if ($hasPerm('OUVERTURE_CAISSE') || $hasPerm('CLOTURE_CAISSE') || $hasPerm('MANAGE_CAISSE')): ?>
-              <a href="<?= RACINE ?>session_caisse/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #FEF3C7; color: #D97706;">
-                      <i data-lucide="vault" style="width: 24px; height: 24px;"></i>
+                <?php if ($hasPerm('MANAGE_REMISE_KITS') || $hasPerm('VIEW_REMISE_KITS') || $hasPerm('MANAGE_ACCESSOIRES')): ?>
+                  <a href="<?= RACINE ?>accessoire_inscription/registre" class="dash-module-card" style="border-left: 4px solid #15803D;">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F0FDF4; color: #15803D;">
+                          <i data-lucide="package-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #DCFCE7; color: #15803D; padding: 4px 10px; border-radius: 20px;">Kits</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #15803D;">
+                        <?= (int)($guichetAlerts['kits_en_attente'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #166534; margin-top: 2px;">Kit(s) en attente de retrait</div>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #FDE68A; color: #92400E; padding: 4px 10px; border-radius: 20px;">Sessions</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #D97706;">
-                    <?= (int)($stats['total_sessions_caisse'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Session(s) caisse ouverte(s)</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Sessions de Caisse</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
-
-            <?php if ($hasPerm('MANAGE_IMPAYES') || $hasPerm('VIEW_IMPAYES')): ?>
-              <a href="<?= RACINE ?>impayes/list" class="dash-module-card" style="border-left: 4px solid #DC2626;">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #FEF2F2; color: #DC2626;">
-                      <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Registre & Remise Kits</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #FEE2E2; color: #991B1B; padding: 4px 10px; border-radius: 20px;">Relances</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #DC2626; font-size: 22px;">
-                    <?= number_format((float)($stats['reliquat_impayes'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #991B1B; margin-top: 2px;">Reliquat scolarité impayé</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Relances & Impayés</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
+                  </a>
+                <?php endif; ?>
 
-            <?php if ($hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES')): ?>
-              <a href="<?= RACINE ?>depense/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #FFF1F2; color: #E11D48;">
-                      <i data-lucide="file-minus" style="width: 24px; height: 24px;"></i>
+                <?php if ($hasPerm('VIEW_ETUDIANTS') || $hasPerm('MANAGE_ETUDIANTS')): ?>
+                  <a href="<?= RACINE ?>etudiant/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #EEF2FF; color: #4F46E5;">
+                          <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #E0E7FF; color: #3730A3; padding: 4px 10px; border-radius: 20px;">Effectif</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #3730A3;">
+                        <?= number_format((int)($stats['total_etudiants'] ?? 0), 0, ',', ' ') ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Apprenants au registre</div>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #FFE4E6; color: #9F1239; padding: 4px 10px; border-radius: 20px;">Dépenses</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #E11D48; font-size: 22px;">
-                    <?= number_format((float)($stats['total_depenses'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Décaissements validés</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Dépenses & Engagements</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
-
-            <!-- MODULE 3 : Pédagogie, Examens & Notes -->
-            <?php if ($hasPerm('VIEW_NOTES') || $hasPerm('ENTER_NOTES')): ?>
-              <a href="<?= RACINE ?>composition/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #FAF5FF; color: #7E22CE;">
-                      <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Registre des Étudiants</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #F3E8FF; color: #6B21A8; padding: 4px 10px; border-radius: 20px;">Examens</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #7E22CE;">
-                    <?= (int)($stats['total_notes'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Évaluations enregistrées</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Planning Examens</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
 
-              <a href="<?= RACINE ?>note/saisieClasse" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #F3E8FF; color: #6B21A8;">
-                      <i data-lucide="edit-3" style="width: 24px; height: 24px;"></i>
+          <!-- GROUPE 2 : Finance & Caisse -->
+          <?php if ($canGroup2): ?>
+            <div style="margin-bottom: 30px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #047857; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="credit-card" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Gestion Financière, Caisse & Trésorerie</h4>
+                    <span style="font-size: 12px; color: #64748B;">Encaissements de scolarité, ouvertures de caisse, relances impayés et dépenses</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 20px;">Domaine Finance</span>
+              </div>
+
+              <div class="dash-module-grid">
+                <?php if ($hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS')): ?>
+                  <a href="<?= RACINE ?>paiement/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #ECFDF5; color: #047857;">
+                          <i data-lucide="credit-card" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #D1FAE5; color: #065F46; padding: 4px 10px; border-radius: 20px;">Encaissements</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #047857; font-size: 22px;">
+                        <?= number_format((float)($stats['ca_encaisse'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Total recettes encaissées</div>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #E9D5FF; color: #581C87; padding: 4px 10px; border-radius: 20px;">Notes</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #6B21A8;">
-                    <?= (int)($stats['total_matieres'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Matières prêtes pour saisie</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Saisie des Notes</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
-
-            <?php if ($hasPerm('VIEW_BULLETINS') || $hasPerm('GENERATE_BULLETINS')): ?>
-              <a href="<?= RACINE ?>bulletin/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #FFFBEB; color: #B45309;">
-                      <i data-lucide="award" style="width: 24px; height: 24px;"></i>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Caisse & Règlement</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 20px;">Bulletins</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #B45309;">
-                    <?= (int)($stats['total_classes'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Classes prêtes pour PV</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Bulletins & PV</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
+                  </a>
+                <?php endif; ?>
 
-            <?php if ($hasPerm('VIEW_ABSENCES') || $hasPerm('MANAGE_ABSENCES')): ?>
-              <a href="<?= RACINE ?>absence/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #FEF3C7; color: #B45309;">
-                      <i data-lucide="user-x" style="width: 24px; height: 24px;"></i>
+                <?php if ($hasPerm('OUVERTURE_CAISSE') || $hasPerm('CLOTURE_CAISSE') || $hasPerm('MANAGE_CAISSE')): ?>
+                  <a href="<?= RACINE ?>session_caisse/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FEF3C7; color: #D97706;">
+                          <i data-lucide="vault" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FDE68A; color: #92400E; padding: 4px 10px; border-radius: 20px;">Sessions</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #D97706;">
+                        <?= (int)($stats['total_sessions_caisse'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Session(s) caisse ouverte(s)</div>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #FDE68A; color: #92400E; padding: 4px 10px; border-radius: 20px;">Absences</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #B45309;">
-                    <?= (int)($stats['total_absences'] ?? 0) ?> <span style="font-size: 14px;">h</span>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Heures d'absences saisies</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Absences & Appel</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
-
-            <?php if ($hasPerm('VIEW_ENSEIGNANTS') || $hasPerm('MANAGE_ENSEIGNANTS')): ?>
-              <a href="<?= RACINE ?>enseignant/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #F5F3FF; color: #5B21B6;">
-                      <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Sessions de Caisse</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #DDD6FE; color: #5B21B6; padding: 4px 10px; border-radius: 20px;">Enseignants</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #5B21B6;">
-                    <?= (int)($stats['total_enseignants'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Formateurs actifs au registre</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Corps Enseignant</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
+                  </a>
+                <?php endif; ?>
 
-            <!-- MODULE 4 : Structure & Académique -->
-            <?php if ($hasPerm('VIEW_CLASSES') || $hasPerm('MANAGE_CLASSES')): ?>
-              <a href="<?= RACINE ?>classe/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #F0FDF4; color: #047857;">
-                      <i data-lucide="graduation-cap" style="width: 24px; height: 24px;"></i>
+                <?php if ($hasPerm('MANAGE_IMPAYES') || $hasPerm('VIEW_IMPAYES')): ?>
+                  <a href="<?= RACINE ?>impayes/list" class="dash-module-card" style="border-left: 4px solid #DC2626;">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FEF2F2; color: #DC2626;">
+                          <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FEE2E2; color: #991B1B; padding: 4px 10px; border-radius: 20px;">Relances</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #DC2626; font-size: 22px;">
+                        <?= number_format((float)($stats['reliquat_impayes'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #991B1B; margin-top: 2px;">Reliquat scolarité impayé</div>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #A7F3D0; color: #065F46; padding: 4px 10px; border-radius: 20px;">Classes</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #047857;">
-                    <?= (int)($stats['total_classes'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Promotions & groupes ouverts</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Classes & Promotions</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
-
-            <?php if ($hasPerm('VIEW_FILIERES') || $hasPerm('MANAGE_FILIERES')): ?>
-              <a href="<?= RACINE ?>filiere_cycle/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #EFF6FF; color: #1D4ED8;">
-                      <i data-lucide="layers" style="width: 24px; height: 24px;"></i>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Relances & Impayés</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #BFDBFE; color: #1E40AF; padding: 4px 10px; border-radius: 20px;">Filières</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #1D4ED8;">
-                    <?= (int)($stats['total_filieres'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Filières & spécialités</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Filières & Cycles</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
+                  </a>
+                <?php endif; ?>
 
-            <?php if ($hasPerm('VIEW_MATIERES') || $hasPerm('MANAGE_MATIERES')): ?>
-              <a href="<?= RACINE ?>matiere/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #F8FAFC; color: #334155;">
-                      <i data-lucide="book-open" style="width: 24px; height: 24px;"></i>
+                <?php if ($hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES')): ?>
+                  <a href="<?= RACINE ?>depense/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FFF1F2; color: #E11D48;">
+                          <i data-lucide="file-minus" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FFE4E6; color: #9F1239; padding: 4px 10px; border-radius: 20px;">Dépenses</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #E11D48; font-size: 22px;">
+                        <?= number_format((float)($stats['total_depenses'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Décaissements validés</div>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #334155; padding: 4px 10px; border-radius: 20px;">Matières</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #334155;">
-                    <?= (int)($stats['total_matieres'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Matières & Unités au catalogue</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Matières & Unités</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
-
-            <!-- MODULE 5 : Administration & Sécurité -->
-            <?php if ($hasPerm('VIEW_USERS') || $hasPerm('MANAGE_USERS') || $hasPerm('MANAGE_ROLES')): ?>
-              <a href="<?= RACINE ?>user/list" class="dash-module-card">
-                <div>
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div class="dash-module-icon" style="background: #F8FAFC; color: #1E3A5F;">
-                      <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Dépenses & Engagements</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
-                    <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #1E3A5F; padding: 4px 10px; border-radius: 20px;">Sécurité</span>
-                  </div>
-                  <div class="dash-module-num" style="color: #1E3A5F;">
-                    <?= (int)($stats['total_users'] ?? 0) ?>
-                  </div>
-                  <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Comptes utilisateurs actifs</div>
-                </div>
-                <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                  <strong style="color: #1E3A5F; font-size: 13px;">Utilisateurs & RBAC</strong>
-                  <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                </div>
-              </a>
-            <?php endif; ?>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
 
-          </div>
+          <!-- GROUPE 3 : Pédagogie, Examens & Notes -->
+          <?php if ($canGroup3): ?>
+            <div style="margin-bottom: 30px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #7E22CE; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="award" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Pédagogie, Évaluations, Notes & Absences</h4>
+                    <span style="font-size: 12px; color: #64748B;">Planification des examens, saisie des devoirs, délibérations et corps enseignant</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #F3E8FF; color: #6B21A8; padding: 4px 12px; border-radius: 20px;">Domaine Pédagogie</span>
+              </div>
+
+              <div class="dash-module-grid">
+                <?php if ($hasPerm('VIEW_NOTES') || $hasPerm('ENTER_NOTES')): ?>
+                  <a href="<?= RACINE ?>composition/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FAF5FF; color: #7E22CE;">
+                          <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #F3E8FF; color: #6B21A8; padding: 4px 10px; border-radius: 20px;">Examens</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #7E22CE;">
+                        <?= (int)($stats['total_notes'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Évaluations enregistrées</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Planning Examens</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+
+                  <a href="<?= RACINE ?>note/saisieClasse" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F3E8FF; color: #6B21A8;">
+                          <i data-lucide="edit-3" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #E9D5FF; color: #581C87; padding: 4px 10px; border-radius: 20px;">Notes</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #6B21A8;">
+                        <?= (int)($stats['total_matieres'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Matières prêtes pour saisie</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Saisie des Notes</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm('VIEW_BULLETINS') || $hasPerm('GENERATE_BULLETINS')): ?>
+                  <a href="<?= RACINE ?>bulletin/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FFFBEB; color: #B45309;">
+                          <i data-lucide="award" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 20px;">Bulletins</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #B45309;">
+                        <?= (int)($stats['total_classes'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Classes prêtes pour PV</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Bulletins & PV</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm('VIEW_ABSENCES') || $hasPerm('MANAGE_ABSENCES')): ?>
+                  <a href="<?= RACINE ?>absence/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FEF3C7; color: #B45309;">
+                          <i data-lucide="user-x" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FDE68A; color: #92400E; padding: 4px 10px; border-radius: 20px;">Absences</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #B45309;">
+                        <?= (int)($stats['total_absences'] ?? 0) ?> <span style="font-size: 14px;">h</span>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Heures d'absences saisies</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Absences & Appel</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm('VIEW_ENSEIGNANTS') || $hasPerm('MANAGE_ENSEIGNANTS')): ?>
+                  <a href="<?= RACINE ?>enseignant/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F5F3FF; color: #5B21B6;">
+                          <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #DDD6FE; color: #5B21B6; padding: 4px 10px; border-radius: 20px;">Enseignants</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #5B21B6;">
+                        <?= (int)($stats['total_enseignants'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Formateurs actifs au registre</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Corps Enseignant</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+
+          <!-- GROUPE 4 : Structure Académique & Formations -->
+          <?php if ($canGroup4): ?>
+            <div style="margin-bottom: 30px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #334155; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Structure Académique & Offre de Formation</h4>
+                    <span style="font-size: 12px; color: #64748B;">Gestion des classes, promotions, filières, cycles d'études et catalogue de matières</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #334155; padding: 4px 12px; border-radius: 20px;">Domaine Académique</span>
+              </div>
+
+              <div class="dash-module-grid">
+                <?php if ($hasPerm('VIEW_CLASSES') || $hasPerm('MANAGE_CLASSES')): ?>
+                  <a href="<?= RACINE ?>classe/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F0FDF4; color: #047857;">
+                          <i data-lucide="graduation-cap" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #A7F3D0; color: #065F46; padding: 4px 10px; border-radius: 20px;">Classes</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #047857;">
+                        <?= (int)($stats['total_classes'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Promotions & groupes ouverts</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Classes & Promotions</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm('VIEW_FILIERES') || $hasPerm('MANAGE_FILIERES')): ?>
+                  <a href="<?= RACINE ?>filiere_cycle/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #EFF6FF; color: #1D4ED8;">
+                          <i data-lucide="layers" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #BFDBFE; color: #1E40AF; padding: 4px 10px; border-radius: 20px;">Filières</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #1D4ED8;">
+                        <?= (int)($stats['total_filieres'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Filières & spécialités</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Filières & Cycles</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm('VIEW_MATIERES') || $hasPerm('MANAGE_MATIERES')): ?>
+                  <a href="<?= RACINE ?>matiere/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F8FAFC; color: #334155;">
+                          <i data-lucide="book-open" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #334155; padding: 4px 10px; border-radius: 20px;">Matières</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #334155;">
+                        <?= (int)($stats['total_matieres'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Matières & Unités au catalogue</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Matières & Unités</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+
+          <!-- GROUPE 5 : Administration & Sécurité -->
+          <?php if ($canGroup5): ?>
+            <div style="margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #0F172A; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Administration Système & Sécurité RBAC</h4>
+                    <span style="font-size: 12px; color: #64748B;">Comptes utilisateurs, attribution des rôles et contrôle d'accès aux privilèges</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #0F172A; color: white; padding: 4px 12px; border-radius: 20px;">Sécurité Système</span>
+              </div>
+
+              <div class="dash-module-grid">
+                <?php if ($hasPerm('VIEW_USERS') || $hasPerm('MANAGE_USERS') || $hasPerm('MANAGE_ROLES')): ?>
+                  <a href="<?= RACINE ?>user/list" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F8FAFC; color: #1E3A5F;">
+                          <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #1E3A5F; padding: 4px 10px; border-radius: 20px;">Sécurité</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #1E3A5F;">
+                        <?= (int)($stats['total_users'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Comptes utilisateurs actifs</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Utilisateurs & RBAC</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+
         </div>
       <?php endif; ?>
 
