@@ -3,40 +3,33 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
 $stats = $stats ?? [];
 $annees = $annees ?? [];
-$roleCode = $roleCode ?? ($_SESSION[USERS_AUTH]['role_code'] ?? 'ROLE_SUPERADMIN');
 $auth = $auth ?? ($_SESSION[USERS_AUTH] ?? []);
 $recentInscriptions = $recentInscriptions ?? [];
 $recentPaiements = $recentPaiements ?? [];
 $recentDepenses = $recentDepenses ?? [];
 $teacherCourses = $teacherCourses ?? [];
 
-// Récupération dynamique des permissions utilisateur (100% RBAC)
+// Récupération dynamique des permissions utilisateur (100% RBAC - Basé uniquement sur les permissions)
 $rawPerms = $_SESSION['permissions'] ?? [];
 if (empty($rawPerms) && isset($_SESSION[USERS_AUTH]['permissions']) && is_array($_SESSION[USERS_AUTH]['permissions']) && !isset($_SESSION[USERS_AUTH]['permissions']['create'])) {
     $rawPerms = $_SESSION[USERS_AUTH]['permissions'];
 }
 $userPermissions = is_array($rawPerms) ? $rawPerms : [];
 
-$userRoles = $_SESSION['roles'] ?? ($_SESSION[USERS_AUTH]['roles'] ?? [$roleCode]);
-$isSuperAdmin = ($roleCode === 'ROLE_SUPERADMIN') || in_array('ROLE_SUPERADMIN', (array)$userRoles, true) || in_array('*', $userPermissions, true);
-
-$hasPerm = function(string $code) use ($userPermissions, $isSuperAdmin): bool {
-    return $isSuperAdmin || in_array('*', $userPermissions, true) || in_array($code, $userPermissions, true);
-};
-
-$hasSpecificPerm = function(string $code) use ($userPermissions): bool {
+// Helper d'autorisation granulaire 100% basé sur les permissions
+$hasPerm = function(string $code) use ($userPermissions): bool {
     return in_array('*', $userPermissions, true) || in_array($code, $userPermissions, true);
 };
 
-$isAdminOrDG = $isSuperAdmin || $hasSpecificPerm('VIEW_DASHBOARD_EXECUTIVE');
-$isPedagogie = !$isAdminOrDG && $hasSpecificPerm('VIEW_DASHBOARD_PEDAGOGIE');
-$isFinance = !$isAdminOrDG && !$isPedagogie && $hasSpecificPerm('VIEW_DASHBOARD_FINANCE');
-$isScolarite = !$isAdminOrDG && !$isPedagogie && !$isFinance && $hasSpecificPerm('VIEW_DASHBOARD_SCOLARITE');
-$isEnseignant = !$isAdminOrDG && !$isPedagogie && !$isFinance && !$isScolarite && $hasSpecificPerm('VIEW_DASHBOARD_ENSEIGNANT');
-$isCommunication = !$isAdminOrDG && !$isPedagogie && !$isFinance && !$isScolarite && !$isEnseignant && $hasSpecificPerm('VIEW_DASHBOARD_COMMUNICATION');
-$canViewActions = $isSuperAdmin || $hasPerm('VIEW_DASHBOARD_ACTIONS');
+$isAdminOrDG = $hasPerm('VIEW_DASHBOARD_EXECUTIVE');
+$isPedagogie = !$isAdminOrDG && $hasPerm('VIEW_DASHBOARD_PEDAGOGIE');
+$isFinance = !$isAdminOrDG && !$isPedagogie && $hasPerm('VIEW_DASHBOARD_FINANCE');
+$isScolarite = !$isAdminOrDG && !$isPedagogie && !$isFinance && $hasPerm('VIEW_DASHBOARD_SCOLARITE');
+$isEnseignant = !$isAdminOrDG && !$isPedagogie && !$isFinance && !$isScolarite && $hasPerm('VIEW_DASHBOARD_ENSEIGNANT');
+$isCommunication = !$isAdminOrDG && !$isPedagogie && !$isFinance && !$isScolarite && !$isEnseignant && $hasPerm('VIEW_DASHBOARD_COMMUNICATION');
+$canViewActions = $hasPerm('VIEW_DASHBOARD_ACTIONS');
 
-// Si aucune permission spécifique n'est cochée mais que l'utilisateur a accès au dashboard
+// Si aucune vue dashboard explicite n'est cochée mais que l'utilisateur a accès au tableau de bord
 if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseignant && !$isCommunication) {
     $isAdminOrDG = true;
 }
@@ -284,6 +277,38 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
               <div style="height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden;">
                 <div style="height: 100%; width: <?= $tauxRecouvrement ?>%; background: #047857; border-radius: 3px;"></div>
               </div>
+            </div>
+          </div>
+
+          <!-- Notes Saisies -->
+          <div class="dash-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Notes Saisies</span>
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #F0FDF4; color: #16A34A; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="edit-3" style="width: 20px; height: 20px;"></i>
+              </div>
+            </div>
+            <div style="font-size: 26px; font-weight: 900; color: #16A34A; line-height: 1;">
+              <?= (int)($stats['total_notes'] ?? 0) ?>
+            </div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
+              Évaluations enregistrées
+            </div>
+          </div>
+
+          <!-- Corps Enseignant -->
+          <div class="dash-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Corps Enseignant</span>
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="award" style="width: 20px; height: 20px;"></i>
+              </div>
+            </div>
+            <div style="font-size: 26px; font-weight: 900; color: #7E22CE; line-height: 1;">
+              <?= (int)($stats['total_enseignants'] ?? 0) ?>
+            </div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
+              Formateurs actifs
             </div>
           </div>
 
