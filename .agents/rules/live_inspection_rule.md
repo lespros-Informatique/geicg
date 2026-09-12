@@ -38,3 +38,17 @@ Avant d'exécuter toute modification de la structure de la base de données (`CR
 
 3. **Mise à Jour Systématique du SQL de Référence** :
    - Une fois la modification validée et exécutée, mettre à jour immédiatement le fichier de référence `database/db_eicg.sql` pour conserver la synchronisation entre la BDD et la référence du projet.
+
+---
+
+## 3. RÈGLE APPLICATIVE RBAC & CRÉATION SYSTÉMATIQUE DE PERMISSIONS
+
+Lors de toute création ou modification d'élément d'interface (menu, sous-menu, lien de navigation, bouton d'action, page ou endpoint) :
+
+1. **Application Systématique du Contrôle d'Accès (RBAC)** :
+   - Appliquer immédiatement et systématiquement les vérifications de permissions RBAC au niveau de la vue (masquage/affichage conditionnel via `$canAccess()`) ET au niveau du contrôleur (`$this->requirePermission(...)`).
+
+2. **Création Automatique de Permission si Absente** :
+   - Si aucune permission appropriée n'existe encore dans la table `permissions` pour la nouvelle fonction, menu ou bouton, créer la permission requise.
+   - Insérer la nouvelle permission directement dans la base de données active MySQL et l'associer aux rôles autorisés (notamment `ROLE_SUPERADMIN`) dans la table `role_permissions`.
+   - Mettre à jour immédiatement le fichier de référence `database/db_eicg.sql` afin de conserver la synchronisation complète du schéma et des données.

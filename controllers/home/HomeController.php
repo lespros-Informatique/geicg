@@ -16,6 +16,9 @@ class HomeController extends BaseController
             $userCode = $auth['code_user'] ?? '';
             $anneeCode = $_SESSION['annee_active_code'] ?? null;
 
+            $anneeModel = new ModelAnnee();
+            $annees = $anneeModel->getAll();
+
             $stats = $model->getStats($anneeCode, $userCode, $roleCode);
             $recentInscriptions = $model->getRecentInscriptions(5, $stats['annee_code']);
             $recentPaiements = $model->getRecentPaiements(5, $stats['annee_code']);
@@ -24,6 +27,7 @@ class HomeController extends BaseController
 
             $this->loadView('../views/home/index.php', [
                 'stats' => $stats,
+                'annees' => $annees,
                 'roleCode' => $roleCode,
                 'userCode' => $userCode,
                 'auth' => $auth,

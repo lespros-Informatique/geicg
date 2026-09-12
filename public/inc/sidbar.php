@@ -250,14 +250,14 @@
     </div>
 
     <!-- Indicator Active Academic Year -->
-    <div class="sidebar-academic-badge p-2 mx-2 my-2 rounded bg-light border text-center">
-        <div class="full-badge">
-            <div class="text-uppercase text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">Année Académique</div>
-            <div class="fw-bold text-primary" style="font-size: 13px;">
+    <div class="sidebar-academic-badge p-2 mx-2 my-2 rounded bg-light border text-center d-flex flex-column align-items-center justify-content-center">
+        <div class="full-badge w-100 text-center d-flex flex-column align-items-center justify-content-center">
+            <div class="text-uppercase text-muted text-center" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-align: center; width: 100%;">Année Académique</div>
+            <div class="fw-bold text-primary text-center" style="font-size: 13px; text-align: center; width: 100%;">
                 <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>
             </div>
         </div>
-        <div class="mini-badge" title="Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>">
+        <div class="mini-badge text-center" title="Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>" style="text-align: center; width: 100%;">
             <?= htmlspecialchars(substr($_SESSION['annee_active_libelle'] ?? 'Aucune', -5)) ?>
         </div>
     </div>
@@ -273,7 +273,9 @@
           $showFilCycles = $canAccess(['MANAGE_FILIERES', 'VIEW_FILIERES', 'MANAGE_CYCLES', 'VIEW_CYCLES', 'CONFIG_ACADEMIQUE']);
           $showNiveaux = $canAccess(['MANAGE_NIVEAUX', 'VIEW_NIVEAUX', 'CONFIG_ACADEMIQUE']);
           $showSalles = $canAccess(['MANAGE_SALLES', 'VIEW_SALLES', 'CONFIG_ACADEMIQUE']);
-          $hasSecStructure = $showEtab || $showFilCycles || $showNiveaux || $showSalles;
+          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+          $showAccessoires = $canAccess(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+          $hasSecStructure = $showEtab || $showFilCycles || $showNiveaux || $showSalles || $showPiecesFournir || $showAccessoires;
         ?>
         <?php if ($hasSecStructure): ?>
         <div class="nav-section">
@@ -302,6 +304,16 @@
                 <?php if ($showSalles): ?>
                 <a href="<?= RACINE ?>salle/list" class="nav-item sub <?= strpos($currentUri, '/salle/') !== false ? 'active' : '' ?>" data-title="Salles de Cours">
                     <i data-lucide="door-open"></i> <span>Salles de Cours</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showPiecesFournir): ?>
+                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Pièces à Fournir">
+                    <i data-lucide="file-check-2"></i> <span>Pièces à Fournir</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showAccessoires): ?>
+                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= (strpos($currentUri, '/accessoire/list') !== false || $currentUri === RACINE . 'accessoire/list') ? 'active' : '' ?>" data-title="Kits & Accessoires">
+                    <i data-lucide="package"></i> <span>Kits & Accessoires</span>
                 </a>
                 <?php endif; ?>
             </div>
@@ -355,8 +367,11 @@
           $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS', 'MANAGE_STUDENTS']);
           $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_STUDENTS']);
           $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ENROLLMENTS']);
-          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ACCESSOIRES']);
-          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showPiecesFournir;
+          $showDepotDossiers = $canAccess(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS', 'MANAGE_PIECES', 'MANAGE_INSCRIPTIONS']);
+          $showRemiseKits = $canAccess(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS', 'MANAGE_ACCESSOIRES', 'MANAGE_INSCRIPTIONS']);
+          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE']);
+          $showAccessoires = $canAccess(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE']);
+          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showDepotDossiers || $showRemiseKits || $showPiecesFournir || $showAccessoires;
         ?>
         <?php if ($hasSecEleves): ?>
         <div class="nav-section">
@@ -377,17 +392,29 @@
                     <i data-lucide="clipboard-check"></i> <span>Inscriptions & Réinscriptions</span>
                 </a>
                 <?php endif; ?>
+                <?php if ($showDepotDossiers): ?>
+                <a href="<?= RACINE ?>dossier_etudiant/list" class="nav-item sub <?= strpos($currentUri, '/dossier_etudiant/') !== false ? 'active' : '' ?>" data-title="Dépôt des Dossiers Étudiants">
+                    <i data-lucide="folder-check"></i> <span>Dépôt des Dossiers Étudiants</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showRemiseKits): ?>
+                <a href="<?= RACINE ?>accessoire_inscription/registre" class="nav-item sub <?= (strpos($currentUri, '/accessoire_inscription/') !== false || strpos($currentUri, '/accessoire/registre') !== false) ? 'active' : '' ?>" data-title="Registre & Remise des Kits">
+                    <i data-lucide="package-check"></i> <span>Registre & Remise des Kits</span>
+                </a>
+                <?php endif; ?>
                 <?php if ($showParents): ?>
                 <a href="<?= RACINE ?>parent/list" class="nav-item sub <?= strpos($currentUri, '/parent/') !== false ? 'active' : '' ?>" data-title="Parents & Tuteurs">
                     <i data-lucide="contact"></i> <span>Parents & Tuteurs</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showPiecesFournir): ?>
-                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Pièces & Dossiers à Fournir">
-                    <i data-lucide="file-check-2"></i> <span>Pièces & Dossiers à Fournir</span>
+                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Catalogue des Pièces à Fournir">
+                    <i data-lucide="file-check-2"></i> <span>Catalogue Pièces à Fournir</span>
                 </a>
-                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= strpos($currentUri, '/accessoire') !== false ? 'active' : '' ?>" data-title="Kits & Accessoires">
-                    <i data-lucide="package"></i> <span>Kits & Accessoires</span>
+                <?php endif; ?>
+                <?php if ($showAccessoires): ?>
+                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= strpos($currentUri, '/accessoire/list') !== false ? 'active' : '' ?>" data-title="Catalogue des Kits & Accessoires">
+                    <i data-lucide="package"></i> <span>Catalogue Kits & Accessoires</span>
                 </a>
                 <?php endif; ?>
             </div>

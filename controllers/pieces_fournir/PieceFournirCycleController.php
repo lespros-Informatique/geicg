@@ -10,6 +10,7 @@ class PieceFournirCycleController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $cycles = (new ModelCycle())->getAll();
         
         $anneeModel = new ModelAnnee();
@@ -45,6 +46,7 @@ class PieceFournirCycleController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $anneeCode = isset($_GET['annee_code']) ? trim($_GET['annee_code']) : ($_SESSION['annee_active_code'] ?? null);
         $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
         $items = $this->model->getAll($anneeCode, $cycleCode);

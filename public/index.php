@@ -23,6 +23,7 @@ $inscriptionController = new InscriptionController();
 $accessoireController = new AccessoireController();
 $pieceFournirController = new PieceFournirController();
 $pieceFournirCycleController = new PieceFournirCycleController();
+$dossierEtudiantController = new DossierEtudiantController();
 $paiementController = new PaiementController();
 $sessionCaisseController = new SessionCaisseController();
 $impayesController = new ImpayesController();
@@ -236,6 +237,8 @@ $route->addRoute('/inscription/formulaire', [$inscriptionController, 'formulaire
 
 // Module: accessoire (AccessoireController)
 $route->addRoute('/accessoire/list', [$accessoireController, 'list']);
+$route->addRoute('/accessoire/registre', [$accessoireController, 'registre']);
+$route->addRoute('/accessoire_inscription/registre', [$accessoireController, 'registre']);
 $route->addRoute('/accessoire/apiList', [$accessoireController, 'apiList']);
 $route->addRoute('/accessoire/apiDistributions', [$accessoireController, 'apiDistributions']);
 $route->addRoute('/accessoire/apiStats', [$accessoireController, 'apiStats']);
@@ -249,6 +252,12 @@ $route->addRoute('/accessoire/changer', [$accessoireController, 'changer']);
 $route->addRoute('/accessoire/details/{param}', [$accessoireController, 'details']);
 $route->addRoute('/accessoire/edition/{param}', [$accessoireController, 'edition']);
 $route->addRoute('/accessoire/formulaire', [$accessoireController, 'formulaire']);
+
+// Module: dossier_etudiant (DossierEtudiantController)
+$route->addRoute('/dossier_etudiant/list', [$dossierEtudiantController, 'list']);
+$route->addRoute('/dossier_etudiant/apiList', [$dossierEtudiantController, 'apiList']);
+$route->addRoute('/dossier_etudiant/saveStatut', [$dossierEtudiantController, 'saveStatut']);
+$route->addRoute('/dossier_etudiant/saveAll', [$dossierEtudiantController, 'saveAll']);
 
 // Module: piece_fournir (PieceFournirController)
 $route->addRoute('/piece_fournir/list', [$pieceFournirController, 'list']);

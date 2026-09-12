@@ -94,6 +94,7 @@ require_once __DIR__ . '/../controllers/inscriptions/InscriptionController.php';
 require_once __DIR__ . '/../controllers/accessoires/AccessoireController.php';
 require_once __DIR__ . '/../controllers/pieces_fournir/PieceFournirController.php';
 require_once __DIR__ . '/../controllers/pieces_fournir/PieceFournirCycleController.php';
+require_once __DIR__ . '/../controllers/dossier_etudiant/DossierEtudiantController.php';
 
 // Pédagogie, Évaluations & Suivi Controllers
 require_once __DIR__ . '/../controllers/enseignants/EnseignantController.php';

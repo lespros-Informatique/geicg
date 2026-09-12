@@ -96,7 +96,7 @@ class ModelHome extends BaseModel
                 } catch (Exception $e) {}
             }
 
-            // 4. Stats Communication
+            // 4. Stats pour les Modules Complémentaires
             $totalActualites = 0;
             try {
                 $totalActualites = (int)$db->query("SELECT COUNT(*) FROM actualites WHERE statut_actualite = 'actif'")->fetchColumn();
@@ -111,6 +111,50 @@ class ModelHome extends BaseModel
             try {
                 $totalDocuments = (int)$db->query("SELECT COUNT(*) FROM documents WHERE statut_document = 'actif'")->fetchColumn();
             } catch (Exception $e) {}
+
+            $totalFilieres = 0;
+            try {
+                $totalFilieres = (int)$db->query("SELECT COUNT(*) FROM filieres WHERE statut_filiere = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalCycles = 0;
+            try {
+                $totalCycles = (int)$db->query("SELECT COUNT(*) FROM cycles WHERE statut_cycle = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalNiveaux = 0;
+            try {
+                $totalNiveaux = (int)$db->query("SELECT COUNT(*) FROM niveaux WHERE statut_niveau = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalParents = 0;
+            try {
+                $totalParents = (int)$db->query("SELECT COUNT(*) FROM parents")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalSessionsCaisse = 0;
+            try {
+                $totalSessionsCaisse = (int)$db->query("SELECT COUNT(*) FROM ouvertures_caisse WHERE statut_ouverture = 'ouverte'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalPieces = 0;
+            try {
+                $totalPieces = (int)$db->query("SELECT COUNT(*) FROM piece_fournir_cycle WHERE statut_piece_cycle = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalAccessoires = 0;
+            try {
+                $totalAccessoires = (int)$db->query("SELECT COUNT(*) FROM accessoires WHERE statut_accessoire = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $totalUsers = 0;
+            try {
+                $totalUsers = (int)$db->query("SELECT COUNT(*) FROM users WHERE statut_user = 'actif'")->fetchColumn();
+            } catch (Exception $e) {}
+
+            $monthlyFinancials = $this->getMonthlyFinancials($anneeCode);
+            $filieresDistribution = $this->getFilieresDistribution($anneeCode);
+            $guichetAlerts = $this->getGuichetAlerts($anneeCode);
 
             return [
                 'annee_code' => $anneeCode,
@@ -131,6 +175,17 @@ class ModelHome extends BaseModel
                 'total_actualites' => $totalActualites,
                 'total_evenements' => $totalEvenements,
                 'total_documents' => $totalDocuments,
+                'total_filieres' => $totalFilieres,
+                'total_cycles' => $totalCycles,
+                'total_niveaux' => $totalNiveaux,
+                'total_parents' => $totalParents,
+                'total_sessions_caisse' => $totalSessionsCaisse,
+                'total_pieces' => $totalPieces,
+                'total_accessoires' => $totalAccessoires,
+                'total_users' => $totalUsers,
+                'monthly_financials' => $monthlyFinancials,
+                'filieres_distribution' => $filieresDistribution,
+                'guichet_alerts' => $guichetAlerts,
             ];
         } catch (Exception $e) {
             error_log("ModelHome::getStats error: " . $e->getMessage());
@@ -153,7 +208,143 @@ class ModelHome extends BaseModel
                 'total_actualites' => 0,
                 'total_evenements' => 0,
                 'total_documents' => 0,
+                'monthly_financials' => ['labels' => [], 'encaissements' => [], 'depenses' => []],
+                'filieres_distribution' => ['labels' => [], 'series' => []],
+                'guichet_alerts' => ['dossiers_incomplets' => 0, 'kits_en_attente' => 0],
             ];
+        }
+    }
+
+    /**
+     * Flux de trésorerie mensuel (Encaissements vs Dépenses) pour les graphiques
+     */
+    public function getMonthlyFinancials(?string $anneeCode = null): array
+    {
+        try {
+            $db = $this->pdo->getCon();
+            $anneeCode = $anneeCode ?: ($_SESSION['annee_active_code'] ?? '');
+
+            $encaissements = array_fill(1, 12, 0);
+            $depenses = array_fill(1, 12, 0);
+
+            $stmtP = $db->prepare("
+                SELECT MONTH(date_paiement) as mois, SUM(montant_paiement) as total
+                FROM paiements p
+                JOIN inscriptions i ON i.code_inscription = p.inscription_code
+                WHERE (i.annee_code = ? OR ? = '') AND (p.statut_paiement = 'confirme' OR p.statut_paiement != 'annule')
+                GROUP BY MONTH(date_paiement)
+            ");
+            $stmtP->execute([$anneeCode, $anneeCode]);
+            while ($r = $stmtP->fetch(PDO::FETCH_ASSOC)) {
+                $m = (int)$r['mois'];
+                if ($m >= 1 && $m <= 12) {
+                    $encaissements[$m] = (float)$r['total'];
+                }
+            }
+
+            $stmtD = $db->prepare("
+                SELECT MONTH(date_depense) as mois, SUM(montant_depense) as total
+                FROM depenses
+                WHERE (annee_code = ? OR ? = '') AND (statut_depense != 'annule' OR statut_depense IS NULL)
+                GROUP BY MONTH(date_depense)
+            ");
+            $stmtD->execute([$anneeCode, $anneeCode]);
+            while ($r = $stmtD->fetch(PDO::FETCH_ASSOC)) {
+                $m = (int)$r['mois'];
+                if ($m >= 1 && $m <= 12) {
+                    $depenses[$m] = (float)$r['total'];
+                }
+            }
+
+            $labels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+            return [
+                'labels' => $labels,
+                'encaissements' => array_values($encaissements),
+                'depenses' => array_values($depenses)
+            ];
+        } catch (Exception $e) {
+            error_log("ModelHome::getMonthlyFinancials error: " . $e->getMessage());
+            return ['labels' => [], 'encaissements' => [], 'depenses' => []];
+        }
+    }
+
+    /**
+     * Répartition des effectifs d'étudiants par Filières pour les graphiques
+     */
+    public function getFilieresDistribution(?string $anneeCode = null): array
+    {
+        try {
+            $db = $this->pdo->getCon();
+            $anneeCode = $anneeCode ?: ($_SESSION['annee_active_code'] ?? '');
+
+            $stmt = $db->prepare("
+                SELECT f.libelle_filiere, COUNT(DISTINCT i.code_inscription) as total_inscrits
+                FROM inscriptions i
+                JOIN classes cl ON cl.code_classe = i.classe_code
+                JOIN filieres f ON f.code_filiere = cl.filiere_code
+                WHERE (i.annee_code = ? OR ? = '') AND (i.statut_inscription != 'annule' OR i.statut_inscription IS NULL)
+                GROUP BY f.code_filiere, f.libelle_filiere
+                ORDER BY total_inscrits DESC
+                LIMIT 8
+            ");
+            $stmt->execute([$anneeCode, $anneeCode]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $labels = [];
+            $series = [];
+            foreach ($rows as $r) {
+                $labels[] = $r['libelle_filiere'];
+                $series[] = (int)$r['total_inscrits'];
+            }
+
+            return [
+                'labels' => $labels,
+                'series' => $series
+            ];
+        } catch (Exception $e) {
+            error_log("ModelHome::getFilieresDistribution error: " . $e->getMessage());
+            return ['labels' => [], 'series' => []];
+        }
+    }
+
+    /**
+     * Compteurs d'alertes guichet (dossiers incomplets & kits en attente)
+     */
+    public function getGuichetAlerts(?string $anneeCode = null): array
+    {
+        try {
+            $db = $this->pdo->getCon();
+            $anneeCode = $anneeCode ?: ($_SESSION['annee_active_code'] ?? '');
+
+            $stmtDossiers = $db->prepare("
+                SELECT COUNT(DISTINCT i.code_inscription)
+                FROM inscriptions i
+                JOIN classes cl ON cl.code_classe = i.classe_code
+                LEFT JOIN filiere_cycles fc ON fc.filiere_code = cl.filiere_code
+                JOIN piece_fournir_cycle pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') AND pfc.statut_piece_cycle = 'actif'
+                LEFT JOIN dossier_etudiant de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
+                WHERE (i.annee_code = ? OR ? = '')
+                  AND (de.statut_depot IS NULL OR de.statut_depot = 'en_attente')
+            ");
+            $stmtDossiers->execute([$anneeCode, $anneeCode]);
+            $dossiersIncomplets = (int)$stmtDossiers->fetchColumn();
+
+            $stmtKits = $db->prepare("
+                SELECT COUNT(*)
+                FROM accessoire_inscription ai
+                JOIN inscriptions i ON i.code_inscription = ai.inscription_code
+                WHERE (i.annee_code = ? OR ? = '') AND ai.etat_retrait = 'en_attente'
+            ");
+            $stmtKits->execute([$anneeCode, $anneeCode]);
+            $kitsEnAttente = (int)$stmtKits->fetchColumn();
+
+            return [
+                'dossiers_incomplets' => $dossiersIncomplets,
+                'kits_en_attente' => $kitsEnAttente
+            ];
+        } catch (Exception $e) {
+            return ['dossiers_incomplets' => 0, 'kits_en_attente' => 0];
         }
     }
 

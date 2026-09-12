@@ -10,6 +10,7 @@ class AccessoireController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $anneeModel = new ModelAnnee();
         $annees = $anneeModel->getAll();
         
@@ -31,6 +32,40 @@ class AccessoireController extends BaseController
         $this->loadView('../views/accessoires/list.php', [
             'stats' => $stats,
             'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode
+        ]);
+    }
+
+    public function registre()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS', 'MANAGE_ACCESSOIRES', 'MANAGE_INSCRIPTIONS']);
+
+        $anneeModel = new ModelAnnee();
+        $annees = $anneeModel->getAll();
+        
+        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+            $selectedAnneeCode = trim($_GET['annee_code']);
+            foreach ($annees as $a) {
+                if ($a['code_annee'] === $selectedAnneeCode) {
+                    $_SESSION['annee_active_code'] = $a['code_annee'];
+                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    break;
+                }
+            }
+        } else {
+            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+        }
+
+        $classeModel = new ModelClasse();
+        $classes = $classeModel->getAll();
+
+        $stats = $this->model->getStats($selectedAnneeCode);
+
+        $this->loadView('../views/accessoires/registre.php', [
+            'stats' => $stats,
+            'annees' => $annees,
+            'classes' => $classes,
             'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
