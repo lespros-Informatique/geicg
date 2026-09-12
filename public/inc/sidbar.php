@@ -262,7 +262,7 @@
             <i data-lucide="layout-dashboard"></i> <span>Tableau de bord</span>
         </a>
 
-        <!-- === MODULE 1 : STRUCTURE & RÉFÉRENTIELS GLOBAUX === -->
+        <!-- === MODULE 1 : STRUCTURE & ÉTABLISSEMENT === -->
         <?php
           $showEtab = $canAccess(['MANAGE_ETABLISSEMENT', 'MANAGE_SCHOOL', 'CONFIG_SYSTEM']);
           $showFilCycles = $canAccess(['MANAGE_FILIERES', 'VIEW_FILIERES', 'MANAGE_CYCLES', 'VIEW_CYCLES', 'CONFIG_ACADEMIQUE']);
@@ -274,7 +274,7 @@
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-structure" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="building" style="width: 16px; height: 16px;"></i> <span>Structure Globale</span>
+                    <i data-lucide="building" style="width: 16px; height: 16px;"></i> <span>Structure & Établissement</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
@@ -303,7 +303,7 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 2 : CADRE ACADÉMIQUE === -->
+        <!-- === MODULE 2 : PLANIFICATION ACADÉMIQUE === -->
         <?php
           $showAnnees = $canAccess(['MANAGE_ANNEES', 'VIEW_ANNEES', 'MANAGE_YEARS', 'CONFIG_ACADEMIQUE']);
           $showClasses = $canAccess(['MANAGE_CLASSES', 'VIEW_CLASSES', 'CONFIG_ACADEMIQUE']);
@@ -316,7 +316,7 @@
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-academique" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> <span>Cadre Académique</span>
+                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> <span>Planification Académique</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
@@ -345,7 +345,7 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 3 : SCOLARITÉ & ADMISSIONS === -->
+        <!-- === MODULE 3 : ADMISSIONS & SCOLARITÉ === -->
         <?php
           $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS', 'MANAGE_STUDENTS']);
           $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_STUDENTS']);
@@ -357,24 +357,24 @@
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-eleves" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="users" style="width: 16px; height: 16px;"></i> <span>Scolarité & Etudiant</span>
+                    <i data-lucide="users" style="width: 16px; height: 16px;"></i> <span>Admissions & Scolarité</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
             <div class="nav-section-items" id="sec-eleves">
                 <?php if ($showEtudiants): ?>
-                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= strpos($currentUri, '/etudiant/') !== false ? 'active' : '' ?>" data-title="Nouvel étudiant">
-                    <i data-lucide="user-plus"></i> <span>Nouvel étudiant</span>
+                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= strpos($currentUri, '/etudiant/') !== false ? 'active' : '' ?>" data-title="Registre des Étudiants">
+                    <i data-lucide="users"></i> <span>Registre des Étudiants</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showInscriptions): ?>
+                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Inscriptions & Réinscriptions">
+                    <i data-lucide="clipboard-check"></i> <span>Inscriptions & Réinscriptions</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showParents): ?>
                 <a href="<?= RACINE ?>parent/list" class="nav-item sub <?= strpos($currentUri, '/parent/') !== false ? 'active' : '' ?>" data-title="Parents & Tuteurs">
                     <i data-lucide="contact"></i> <span>Parents & Tuteurs</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showInscriptions): ?>
-                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Réinscription">
-                    <i data-lucide="user-check"></i> <span>Réinscription</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showPiecesFournir): ?>
@@ -493,7 +493,7 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 6 : COMMUNICATION & MÉDIAS === -->
+        <!-- === MODULE 6 : PORTAIL & COMMUNICATION === -->
         <?php
           $showEvents = $canAccess(['MANAGE_EVENEMENTS', 'VIEW_EVENEMENTS', 'MANAGE_EVENTS']);
           $showGaleries = $canAccess(['MANAGE_GALLERY', 'VIEW_GALLERY', 'MANAGE_COMMUNICATION']);
@@ -504,7 +504,7 @@
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-medias" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="globe" style="width: 16px; height: 16px;"></i> <span>Portail & Médias</span>
+                    <i data-lucide="globe" style="width: 16px; height: 16px;"></i> <span>Portail & Communication</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
@@ -528,7 +528,7 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MODULE 7 : COMPTES & SÉCURITÉ (RBAC) === -->
+        <!-- === MODULE 7 : ADMINISTRATION & SÉCURITÉ === -->
         <?php
           $showUsers = $canAccess(['MANAGE_USERS', 'VIEW_USERS', 'MANAGE_ACCOUNTS']);
           $showFonctions = $canAccess(['MANAGE_FONCTIONS', 'VIEW_FONCTIONS']);
@@ -540,7 +540,7 @@
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-securite" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> <span>Sécurité & Accès</span>
+                    <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> <span>Administration & Sécurité</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
