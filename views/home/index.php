@@ -24,12 +24,16 @@ $hasPerm = function(string $code) use ($userPermissions, $isSuperAdmin): bool {
     return $isSuperAdmin || in_array('*', $userPermissions, true) || in_array($code, $userPermissions, true);
 };
 
-$isAdminOrDG = $isSuperAdmin || $hasPerm('VIEW_DASHBOARD_EXECUTIVE');
-$isPedagogie = $hasPerm('VIEW_DASHBOARD_PEDAGOGIE');
-$isScolarite = $hasPerm('VIEW_DASHBOARD_SCOLARITE');
-$isFinance = $hasPerm('VIEW_DASHBOARD_FINANCE');
-$isEnseignant = $hasPerm('VIEW_DASHBOARD_ENSEIGNANT');
-$isCommunication = $hasPerm('VIEW_DASHBOARD_COMMUNICATION');
+$hasSpecificPerm = function(string $code) use ($userPermissions): bool {
+    return in_array('*', $userPermissions, true) || in_array($code, $userPermissions, true);
+};
+
+$isAdminOrDG = $isSuperAdmin || $hasSpecificPerm('VIEW_DASHBOARD_EXECUTIVE');
+$isPedagogie = !$isAdminOrDG && $hasSpecificPerm('VIEW_DASHBOARD_PEDAGOGIE');
+$isFinance = !$isAdminOrDG && !$isPedagogie && $hasSpecificPerm('VIEW_DASHBOARD_FINANCE');
+$isScolarite = !$isAdminOrDG && !$isPedagogie && !$isFinance && $hasSpecificPerm('VIEW_DASHBOARD_SCOLARITE');
+$isEnseignant = !$isAdminOrDG && !$isPedagogie && !$isFinance && !$isScolarite && $hasSpecificPerm('VIEW_DASHBOARD_ENSEIGNANT');
+$isCommunication = !$isAdminOrDG && !$isPedagogie && !$isFinance && !$isScolarite && !$isEnseignant && $hasSpecificPerm('VIEW_DASHBOARD_COMMUNICATION');
 $canViewActions = $isSuperAdmin || $hasPerm('VIEW_DASHBOARD_ACTIONS');
 
 // Si aucune permission spécifique n'est cochée mais que l'utilisateur a accès au dashboard
