@@ -242,21 +242,6 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
       <?php if ($isAdminOrDG): ?>
         <!-- KPI GRID : DIRECTION GÉNÉRALE & SUPERADMIN -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <!-- Inscrits Actifs -->
-          <div class="dash-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Effectif Inscrits</span>
-              <div style="width: 38px; height: 38px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="users" style="width: 20px; height: 20px;"></i>
-              </div>
-            </div>
-            <div style="font-size: 26px; font-weight: 900; color: #0F172A; line-height: 1;">
-              <?= number_format($stats['total_etudiants'] ?? 0, 0, ',', ' ') ?>
-            </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
-              <?= (int)($stats['total_classes'] ?? 0) ?> Classes ou promotions ouvertes
-            </div>
-          </div>
 
           <!-- Recouvrement Caisse -->
           <div class="dash-card">
@@ -280,37 +265,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
             </div>
           </div>
 
-          <!-- Notes Saisies -->
-          <div class="dash-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Notes Saisies</span>
-              <div style="width: 38px; height: 38px; border-radius: 10px; background: #F0FDF4; color: #16A34A; display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="edit-3" style="width: 20px; height: 20px;"></i>
-              </div>
-            </div>
-            <div style="font-size: 26px; font-weight: 900; color: #16A34A; line-height: 1;">
-              <?= (int)($stats['total_notes'] ?? 0) ?>
-            </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
-              Évaluations enregistrées
-            </div>
-          </div>
 
-          <!-- Corps Enseignant -->
-          <div class="dash-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Corps Enseignant</span>
-              <div style="width: 38px; height: 38px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="award" style="width: 20px; height: 20px;"></i>
-              </div>
-            </div>
-            <div style="font-size: 26px; font-weight: 900; color: #7E22CE; line-height: 1;">
-              <?= (int)($stats['total_enseignants'] ?? 0) ?>
-            </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
-              Formateurs actifs
-            </div>
-          </div>
 
           <!-- Dépenses Engagées -->
           <div class="dash-card">
@@ -345,45 +300,6 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
           </div>
         </div>
 
-      <?php elseif ($isPedagogie): ?>
-        <!-- KPI GRID : DIRECTION PÉDAGOGIQUE -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="dash-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Classes Actives</span>
-              <div style="width: 38px; height: 38px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="graduation-cap"></i></div>
-            </div>
-            <div style="font-size: 26px; font-weight: 900; color: #0F172A;"><?= (int)($stats['total_classes'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">Promotions actives</div>
-          </div>
-
-          <div class="dash-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Effectif Apprenants</span>
-              <div style="width: 38px; height: 38px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="users"></i></div>
-            </div>
-            <div style="font-size: 26px; font-weight: 900; color: #047857;"><?= number_format($stats['total_etudiants'] ?? 0, 0, ',', ' ') ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">Étudiants inscrits</div>
-          </div>
-
-          <div class="dash-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Corps Enseignant</span>
-              <div style="width: 38px; height: 38px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="award"></i></div>
-            </div>
-            <div style="font-size: 26px; font-weight: 900; color: #7E22CE;"><?= (int)($stats['total_enseignants'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">Formateurs actifs</div>
-          </div>
-
-          <div class="dash-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Notes Saisies</span>
-              <div style="width: 38px; height: 38px; border-radius: 10px; background: #F0FDF4; color: #16A34A; display: flex; align-items: center; justify-content: center;"><i data-lucide="edit-3"></i></div>
-            </div>
-            <div style="font-size: 26px; font-weight: 900; color: #16A34A;"><?= (int)($stats['total_notes'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">Évaluations enregistrées</div>
-          </div>
-        </div>
 
       <?php elseif ($isFinance): ?>
         <!-- KPI GRID : COMPTABILITÉ & CAISSE -->
@@ -514,20 +430,6 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
           </div>
         <?php endif; ?>
 
-        <!-- Graphique 2 : Répartition des Effectifs par Filières -->
-        <?php if ($isAdminOrDG || $isPedagogie || $isScolarite): ?>
-          <div class="dash-card" style="padding: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-              <div>
-                <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-                  <i data-lucide="pie-chart" style="width: 20px; height: 20px; color: #1E3A5F;"></i> Inscrits par Filières
-                </h3>
-                <span style="font-size: 12px; color: #64748B;">Distribution des étudiants selon le domaine d'études</span>
-              </div>
-            </div>
-            <div id="chart-filieres-dist" style="min-height: 290px;"></div>
-          </div>
-        <?php endif; ?>
 
       </div>
 
