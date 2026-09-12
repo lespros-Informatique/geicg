@@ -234,14 +234,22 @@
             <?php if (!empty($globalEtablissementLogo)): ?>
                 <img src="<?= htmlspecialchars($globalEtablissementLogo) ?>" 
                      alt="Logo Établissement" class="img-fluid rounded" style="max-height: 40px; width: auto; object-fit: contain;"
-                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
-                <span class="logo-fallback-text" style="display: none; letter-spacing: 1px; color: #1E3A5F; font-size: 18px; font-weight: 800;">
-                    <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
-                </span>
+                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                <div class="logo-academic-info d-flex flex-column align-items-center justify-content-center text-center" style="line-height: 1.25;">
+                    <span style="font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; display: block; width: 100%;">Année Académique</span>
+                    <span style="font-size: 13px; font-weight: 800; color: #1E3A5F; text-align: center; display: block; width: 100%;">
+                        <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>
+                    </span>
+                </div>
             <?php else: ?>
-                <span style="letter-spacing: 1px; color: #1E3A5F; font-size: 20px; font-weight: 800;">
-                    <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
-                </span>
+                <div class="d-flex flex-column align-items-center justify-content-center text-center" style="line-height: 1.25;">
+                    <span style="letter-spacing: 1px; color: #1E3A5F; font-size: 18px; font-weight: 800; text-align: center; display: block; width: 100%;">
+                        <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
+                    </span>
+                    <span style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; display: block; width: 100%;">
+                        Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '') ?>
+                    </span>
+                </div>
             <?php endif; ?>
         </div>
         <button class="sidebar-toggle" id="sidebarToggle" title="Réduire / Déployer le menu">
@@ -250,14 +258,14 @@
     </div>
 
     <!-- Indicator Active Academic Year -->
-    <div class="sidebar-academic-badge p-2 mx-2 my-2 rounded bg-light border text-center">
-        <div class="full-badge">
-            <div class="text-uppercase text-muted" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">Année Académique</div>
-            <div class="fw-bold text-primary" style="font-size: 13px;">
+    <div class="sidebar-academic-badge p-2 mx-2 my-2 rounded bg-light border text-center d-flex flex-column align-items-center justify-content-center">
+        <div class="full-badge w-100 text-center d-flex flex-column align-items-center justify-content-center">
+            <div class="text-uppercase text-muted text-center" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-align: center; width: 100%;">Année Académique</div>
+            <div class="fw-bold text-primary text-center" style="font-size: 13px; text-align: center; width: 100%;">
                 <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>
             </div>
         </div>
-        <div class="mini-badge" title="Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>">
+        <div class="mini-badge text-center" title="Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>" style="text-align: center; width: 100%;">
             <?= htmlspecialchars(substr($_SESSION['annee_active_libelle'] ?? 'Aucune', -5)) ?>
         </div>
     </div>
