@@ -4,7 +4,8 @@
           $db = (new Database())->getCon();
           $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
           $etabRow = $stmt->fetch(PDO::FETCH_ASSOC);
-          $globalEtablissementLogo = $etabRow['logo_etablissement'] ?? '';
+          $rawLogo = $etabRow['logo_etablissement'] ?? '';
+          $globalEtablissementLogo = (!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : '';
           $globalEtablissementNom = $etabRow['libelle_etablissement'] ?? 'GEICG';
       } catch (Exception $e) {
           $globalEtablissementLogo = '';
@@ -226,13 +227,17 @@
   }
 </style>
 
-<aside class="sidebar bg-white border-end shadow-sm" id="mainSidebar">
+<aside class="sidebar bg-white border-end shadow-sm" id="sidebar">
     <!-- Sidebar Header / Logo & Collapser -->
     <div class="sidebar-header d-flex align-items-center justify-content-between p-3 border-bottom">
         <div class="logo d-flex align-items-center gap-2">
             <?php if (!empty($globalEtablissementLogo)): ?>
-                <img src="<?= htmlspecialchars(Validator::afficherImageBLOB($globalEtablissementLogo, 'public/images/logo.png')) ?>" 
-                     alt="Logo Établissement" class="img-fluid rounded" style="max-height: 40px; width: auto; object-fit: contain;">
+                <img src="<?= htmlspecialchars($globalEtablissementLogo) ?>" 
+                     alt="Logo Établissement" class="img-fluid rounded" style="max-height: 40px; width: auto; object-fit: contain;"
+                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                <span class="logo-fallback-text" style="display: none; letter-spacing: 1px; color: #1E3A5F; font-size: 18px; font-weight: 800;">
+                    <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
+                </span>
             <?php else: ?>
                 <span style="letter-spacing: 1px; color: #1E3A5F; font-size: 20px; font-weight: 800;">
                     <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
@@ -573,6 +578,29 @@
 
 <script>
 $(document).ready(function() {
+  // Toggle réduction/déploiement du sidebar
+  $(document).on('click', '#sidebarToggle', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof toggleSidebar === 'function') {
+      toggleSidebar();
+    } else {
+      var $sidebar = $('#sidebar, #mainSidebar, .sidebar');
+      var $mainContent = $('.main-content');
+      var $footer = $('#footer, .footer');
+      $sidebar.toggleClass('collapsed');
+      var isCollapsed = $sidebar.hasClass('collapsed');
+      $mainContent.toggleClass('expanded', isCollapsed);
+      $footer.toggleClass('expanded', isCollapsed);
+      try {
+        localStorage.setItem('geicg_sidebar_collapsed', isCollapsed ? '1' : '0');
+      } catch(ex) {}
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+  });
+
   // Accordéons du sidebar (Comportement accordéon unique : fermer les autres modules à l'ouverture)
   $(document).on('click', '.sidebar-accordion-toggle', function(e) {
     e.preventDefault();
