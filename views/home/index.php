@@ -157,28 +157,11 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
             Bonjour, <?= htmlspecialchars($auth['prenom_user'] ?? ($auth['nom_user'] ?? 'Utilisateur')) ?> 👋
           </h1>
           <p style="color: #CBD5E1; font-size: 13.5px; margin: 6px 0 0 0;">
-            Bienvenue sur le système de gestion intégrée GEICG. Suivi analytique et indicateurs clés en temps réel.
+            Bienvenue sur le système de gestion intégrée GEICG. 
           </p>
         </div>
 
-        <!-- Sélecteur d'Année Académique Active -->
-        <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 12px;">
-          <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: #FFFFFF;">
-            <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #94A3B8; letter-spacing: 0.5px;">Année Académique Active</div>
-            <form action="<?= RACINE ?>accessoire/list" method="GET" id="form-annee-dashboard" style="margin-top: 2px;">
-              <select name="annee_code" onchange="window.location.href='<?= RACINE ?>?annee_code=' + this.value;" style="background: transparent; border: none; color: #FFFFFF; font-weight: 800; font-size: 14px; cursor: pointer; padding: 0; margin: 0; focus: outline-none;">
-                <?php foreach ($annees as $a): ?>
-                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($stats['annee_code'] === $a['code_annee']) ? 'selected' : '' ?> style="color: #0F172A;">
-                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </form>
-          </div>
-        </div>
+
       </div>
 
       <!-- ========================================================================= -->
