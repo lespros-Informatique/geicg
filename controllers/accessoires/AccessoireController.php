@@ -10,6 +10,7 @@ class AccessoireController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $anneeModel = new ModelAnnee();
         $annees = $anneeModel->getAll();
         

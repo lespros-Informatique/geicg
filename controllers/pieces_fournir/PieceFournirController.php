@@ -10,6 +10,7 @@ class PieceFournirController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $summary = $this->model->getSummaryCounts();
         $this->loadView('../views/pieces_fournir/list.php', [
             'summary' => $summary
@@ -19,6 +20,7 @@ class PieceFournirController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,12 +37,14 @@ class PieceFournirController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
         $this->loadView('../views/pieces_fournir/edit.php', []);
     }
 
     public function edition($idParam)
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
         $id = $this->validator->decrypter($idParam);
         if (!$id || !is_numeric($id)) {
             $id = is_numeric($idParam) ? (int)$idParam : 0;
@@ -61,6 +65,7 @@ class PieceFournirController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
