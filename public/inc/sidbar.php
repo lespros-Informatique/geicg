@@ -234,22 +234,14 @@
             <?php if (!empty($globalEtablissementLogo)): ?>
                 <img src="<?= htmlspecialchars($globalEtablissementLogo) ?>" 
                      alt="Logo Établissement" class="img-fluid rounded" style="max-height: 40px; width: auto; object-fit: contain;"
-                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
-                <div class="logo-academic-info d-flex flex-column align-items-center justify-content-center text-center" style="line-height: 1.25;">
-                    <span style="font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; display: block; width: 100%;">Année Académique</span>
-                    <span style="font-size: 13px; font-weight: 800; color: #1E3A5F; text-align: center; display: block; width: 100%;">
-                        <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>
-                    </span>
-                </div>
+                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                <span class="logo-fallback-text" style="display: none; letter-spacing: 1px; color: #1E3A5F; font-size: 18px; font-weight: 800;">
+                    <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
+                </span>
             <?php else: ?>
-                <div class="d-flex flex-column align-items-center justify-content-center text-center" style="line-height: 1.25;">
-                    <span style="letter-spacing: 1px; color: #1E3A5F; font-size: 18px; font-weight: 800; text-align: center; display: block; width: 100%;">
-                        <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
-                    </span>
-                    <span style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; display: block; width: 100%;">
-                        Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '') ?>
-                    </span>
-                </div>
+                <span style="letter-spacing: 1px; color: #1E3A5F; font-size: 20px; font-weight: 800;">
+                    <?= htmlspecialchars($globalEtablissementNom ?? 'GEICG') ?>
+                </span>
             <?php endif; ?>
         </div>
         <button class="sidebar-toggle" id="sidebarToggle" title="Réduire / Déployer le menu">
@@ -363,8 +355,11 @@
           $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS', 'MANAGE_STUDENTS']);
           $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_STUDENTS']);
           $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ENROLLMENTS']);
-          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ACCESSOIRES']);
-          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showPiecesFournir;
+          $showDepotDossiers = $canAccess(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS', 'MANAGE_PIECES', 'MANAGE_INSCRIPTIONS']);
+          $showRemiseKits = $canAccess(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS', 'MANAGE_ACCESSOIRES', 'MANAGE_INSCRIPTIONS']);
+          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE']);
+          $showAccessoires = $canAccess(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE']);
+          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showDepotDossiers || $showRemiseKits || $showPiecesFournir || $showAccessoires;
         ?>
         <?php if ($hasSecEleves): ?>
         <div class="nav-section">
@@ -385,17 +380,29 @@
                     <i data-lucide="clipboard-check"></i> <span>Inscriptions & Réinscriptions</span>
                 </a>
                 <?php endif; ?>
+                <?php if ($showDepotDossiers): ?>
+                <a href="<?= RACINE ?>dossier_etudiant/list" class="nav-item sub <?= strpos($currentUri, '/dossier_etudiant/') !== false ? 'active' : '' ?>" data-title="Dépôt des Dossiers Étudiants">
+                    <i data-lucide="folder-check"></i> <span>Dépôt des Dossiers Étudiants</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showRemiseKits): ?>
+                <a href="<?= RACINE ?>accessoire_inscription/registre" class="nav-item sub <?= (strpos($currentUri, '/accessoire_inscription/') !== false || strpos($currentUri, '/accessoire/registre') !== false) ? 'active' : '' ?>" data-title="Registre & Remise des Kits">
+                    <i data-lucide="package-check"></i> <span>Registre & Remise des Kits</span>
+                </a>
+                <?php endif; ?>
                 <?php if ($showParents): ?>
                 <a href="<?= RACINE ?>parent/list" class="nav-item sub <?= strpos($currentUri, '/parent/') !== false ? 'active' : '' ?>" data-title="Parents & Tuteurs">
                     <i data-lucide="contact"></i> <span>Parents & Tuteurs</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showPiecesFournir): ?>
-                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Pièces & Dossiers à Fournir">
-                    <i data-lucide="file-check-2"></i> <span>Pièces & Dossiers à Fournir</span>
+                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Catalogue des Pièces à Fournir">
+                    <i data-lucide="file-check-2"></i> <span>Catalogue Pièces à Fournir</span>
                 </a>
-                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= strpos($currentUri, '/accessoire') !== false ? 'active' : '' ?>" data-title="Kits & Accessoires">
-                    <i data-lucide="package"></i> <span>Kits & Accessoires</span>
+                <?php endif; ?>
+                <?php if ($showAccessoires): ?>
+                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= strpos($currentUri, '/accessoire/list') !== false ? 'active' : '' ?>" data-title="Catalogue des Kits & Accessoires">
+                    <i data-lucide="package"></i> <span>Catalogue Kits & Accessoires</span>
                 </a>
                 <?php endif; ?>
             </div>
