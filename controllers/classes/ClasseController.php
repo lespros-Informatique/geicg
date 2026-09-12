@@ -10,6 +10,7 @@ class ClasseController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_CLASSES');
         $db = $this->model->getCon();
 
         if (!empty($_GET['annee_code'])) {
@@ -35,6 +36,7 @@ class ClasseController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_CLASSES');
         $db = $this->model->getCon();
 
         if (!empty($_GET['annee_code'])) {
@@ -79,6 +81,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_CLASSES');
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -129,6 +132,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_CLASSES');
         $id = (int)$this->post('id_classe');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -175,6 +179,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_CLASSES');
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -190,6 +195,7 @@ class ClasseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_CLASSES');
         try {
             $id = $this->validator->decrypter($details);
             $stmt = $this->model->getCon()->prepare("
@@ -256,6 +262,7 @@ class ClasseController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_CLASSES');
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -270,6 +277,7 @@ class ClasseController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_CLASSES');
         $this->loadView('../views/classes/edit.php', ['item' => []]);
     }
 }

@@ -319,6 +319,21 @@ class EmploiController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
 
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'classe_code' => $data['classe_code'] ?? '',
+            'matiere_code' => $data['matiere_code'] ?? '',
+            'enseignant_code' => $data['enseignant_code'] ?? ''
+        ]);
+
+        if (!empty($data['salle_code'])) {
+            $this->validateForeignKeys([
+                'salle_code' => $data['salle_code']
+            ]);
+        }
+
         // Contrôle de conflits côté serveur
         $conflicts = $this->getScheduleConflicts(
             $data['classe_code'] ?? '',

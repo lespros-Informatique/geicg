@@ -10,6 +10,7 @@ class DepenseController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_DEPENSES');
         $db = $this->model->getCon();
 
         if (!empty($_GET['annee_code'])) {
@@ -37,6 +38,7 @@ class DepenseController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_DEPENSES');
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
         $stats = $this->model->getStats($anneeCode);
         $this->json(['status' => 1, 'stats' => $stats]);
@@ -45,6 +47,7 @@ class DepenseController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_DEPENSES');
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
             $db = $this->model->getCon();
@@ -75,11 +78,20 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('RECORD_DEPENSES');
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'type_depense_code' => $data['type_depense_code'] ?? ''
+        ]);
+
         if (empty($data['code_depense'])) {
             $data['code_depense'] = $this->validator->generateCode('depenses', 'code_depense', 'DEP-', 8);
         }
@@ -91,9 +103,9 @@ class DepenseController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $this->success('Dépense enregistrée avec succès!');
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de la création de la dépense');
         }
     }
 
@@ -101,6 +113,7 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('RECORD_DEPENSES');
         $id = (int)$this->post('id_depense');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -118,6 +131,7 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('VALIDATE_DEPENSES');
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -133,6 +147,7 @@ class DepenseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_DEPENSES');
         try {
             $id = $this->validator->decrypter($details);
             $stmt = $this->model->getCon()->prepare("
@@ -159,6 +174,7 @@ class DepenseController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('RECORD_DEPENSES');
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -173,6 +189,7 @@ class DepenseController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('RECORD_DEPENSES');
         $this->loadView('../views/depenses/edit.php', ['item' => []]);
     }
 }

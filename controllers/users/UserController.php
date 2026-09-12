@@ -10,12 +10,14 @@ class UserController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_USERS');
         $this->loadView('../views/users/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_USERS');
         $sql = "SELECT u.*, 
                        GROUP_CONCAT(DISTINCT r.libelle_role ORDER BY r.id SEPARATOR '||') as roles_libelles,
                        GROUP_CONCAT(DISTINCT r.code_role ORDER BY r.id SEPARATOR ',') as roles_codes,
@@ -57,20 +59,24 @@ class UserController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_USERS');
 
         $nom = trim($_POST['nom'] ?? '');
         $prenom = trim($_POST['prenom'] ?? '');
         $telephone = Validator::cleanPhone($_POST['telephone'] ?? '');
         $email = trim($_POST['email'] ?? '');
         
-        // Multi-rôles : supporte tableau roles[] ou role_code simple
-        $postedRoles = $_POST['roles'] ?? ($_POST['role_code'] ?? ['ROLE_SCOLARITE']);
+        $postedRoles = $_POST['roles'] ?? ($_POST['role_code'] ?? []);
         if (!is_array($postedRoles)) {
             $postedRoles = [$postedRoles];
         }
         $postedRoles = array_values(array_unique(array_filter(array_map('trim', $postedRoles))));
         if (empty($postedRoles)) {
-            $postedRoles = ['ROLE_SCOLARITE'];
+            $stmtDefRole = $this->model->getCon()->query("SELECT code_role FROM roles WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
+            $defRoleCode = $stmtDefRole ? $stmtDefRole->fetchColumn() : '';
+            if ($defRoleCode) {
+                $postedRoles = [$defRoleCode];
+            }
         }
 
         $fonctionCode = $_POST['fonction_code'] ?? null;
@@ -143,6 +149,7 @@ class UserController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_USERS');
         $id = (int)$this->post('id_user');
         if (!$id) { $this->error('Identifiant invalide'); return; }
 
@@ -230,6 +237,7 @@ class UserController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_USERS');
         $id = $this->post('id');
         if (isset($id) && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -245,6 +253,7 @@ class UserController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_USERS');
         try {
             $userId = $this->validator->decrypter($details);
             $userProfile = $this->model->getById($userId);
@@ -271,6 +280,7 @@ class UserController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_USERS');
         $roles = (new ModelRole())->getAll();
         $fonctions = (new ModelFonction())->getAll();
         $this->loadView('../views/users/edit.php', [
@@ -286,6 +296,7 @@ class UserController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_USERS');
         try {
             $decryptedId = $this->validator->decrypter($details);
             $userProfile = $this->model->getById($decryptedId);

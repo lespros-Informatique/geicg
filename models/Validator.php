@@ -745,13 +745,19 @@ class Validator
     public function insert(string $table, array $data, array $keys): bool
     {
         try {
+            $fkError = ForeignKeyValidator::validate($this->pdo->getCon(), $table, $data);
+            if ($fkError !== null) {
+                error_log("Validator::insert {$table} FK Error: {$fkError}");
+                return false;
+            }
+
             $columns = implode(', ', $keys);
             $placeholders = implode(', ', array_map(fn($k) => ":$k", $keys));
             $sql = "INSERT INTO $table ($columns) VALUES ($placeholders)";
             $stmt = $this->pdo->getCon()->prepare($sql);
             return $stmt->execute($data);
         } catch (Exception $e) {
-            error_log("Insert error: " . $e->getMessage());
+            error_log("Insert error {$table}: " . $e->getMessage());
             return false;
         }
     }
@@ -759,13 +765,19 @@ class Validator
     public function update(string $table, array $data, array $keys, string $idField, int $id): bool
     {
         try {
+            $fkError = ForeignKeyValidator::validate($this->pdo->getCon(), $table, $data);
+            if ($fkError !== null) {
+                error_log("Validator::update {$table} FK Error: {$fkError}");
+                return false;
+            }
+
             $setClause = implode(', ', array_map(fn($k) => "$k = :$k", $keys));
             $sql = "UPDATE $table SET $setClause WHERE $idField = :id";
             $stmt = $this->pdo->getCon()->prepare($sql);
             $data['id'] = $id;
             return $stmt->execute($data);
         } catch (Exception $e) {
-            error_log("Update error: " . $e->getMessage());
+            error_log("Update error {$table}: " . $e->getMessage());
             return false;
         }
     }

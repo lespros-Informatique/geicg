@@ -10,12 +10,14 @@ class FiliereController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_FILIERES');
         $this->loadView('../views/filieres/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_FILIERES');
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -33,6 +35,7 @@ class FiliereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_FILIERES');
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_filiere'])) {
@@ -63,6 +66,7 @@ class FiliereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_FILIERES');
         $id = (int)$this->post('id_filiere');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -84,6 +88,7 @@ class FiliereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_FILIERES');
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -99,6 +104,7 @@ class FiliereController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_FILIERES');
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -154,6 +160,7 @@ class FiliereController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_FILIERES');
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -168,6 +175,7 @@ class FiliereController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission('MANAGE_FILIERES');
         $this->loadView('../views/filieres/edit.php', ['item' => []]);
     }
 }

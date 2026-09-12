@@ -547,6 +547,6 @@ abstract class BaseModel
 2. **Initialiser l'environnement** :
    Copier `.env.example` en `.env` et renseigner les accès MySQL (`DB_NAME`, `DB_USER`, `DB_PASSWORD`).
 3. **Créer le schéma SQL de référence** :
-   Placer le dump d'initialisation dans `database/c2833857c_eicg.sql`.
+   Placer le dump d'initialisation dans `database/db_eicg.sql`.
 4. **Configurer l'Agent IA** :
    Créer le fichier `.agents/rules/live_inspection_rule.md` contenant la **Partie 1** de ce document pour forcer l'agent à respecter l'ensemble des règles dès son premier prompt.
