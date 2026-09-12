@@ -273,7 +273,9 @@
           $showFilCycles = $canAccess(['MANAGE_FILIERES', 'VIEW_FILIERES', 'MANAGE_CYCLES', 'VIEW_CYCLES', 'CONFIG_ACADEMIQUE']);
           $showNiveaux = $canAccess(['MANAGE_NIVEAUX', 'VIEW_NIVEAUX', 'CONFIG_ACADEMIQUE']);
           $showSalles = $canAccess(['MANAGE_SALLES', 'VIEW_SALLES', 'CONFIG_ACADEMIQUE']);
-          $hasSecStructure = $showEtab || $showFilCycles || $showNiveaux || $showSalles;
+          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+          $showAccessoires = $canAccess(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+          $hasSecStructure = $showEtab || $showFilCycles || $showNiveaux || $showSalles || $showPiecesFournir || $showAccessoires;
         ?>
         <?php if ($hasSecStructure): ?>
         <div class="nav-section">
@@ -302,6 +304,16 @@
                 <?php if ($showSalles): ?>
                 <a href="<?= RACINE ?>salle/list" class="nav-item sub <?= strpos($currentUri, '/salle/') !== false ? 'active' : '' ?>" data-title="Salles de Cours">
                     <i data-lucide="door-open"></i> <span>Salles de Cours</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showPiecesFournir): ?>
+                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Pièces à Fournir">
+                    <i data-lucide="file-check-2"></i> <span>Pièces à Fournir</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showAccessoires): ?>
+                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= (strpos($currentUri, '/accessoire/list') !== false || $currentUri === RACINE . 'accessoire/list') ? 'active' : '' ?>" data-title="Kits & Accessoires">
+                    <i data-lucide="package"></i> <span>Kits & Accessoires</span>
                 </a>
                 <?php endif; ?>
             </div>
