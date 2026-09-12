@@ -45,7 +45,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
                 <option value="">-- Toutes les classes --</option>
                 <?php foreach ($classes as $c): ?>
                   <option value="<?= htmlspecialchars($c['code_classe']) ?>">
-                    <?= htmlspecialchars($c['nom_classe']) ?>
+                    <?= htmlspecialchars($c['libelle_classe'] ?? ($c['nom_classe'] ?? '')) ?>
                   </option>
                 <?php endforeach; ?>
               </select>

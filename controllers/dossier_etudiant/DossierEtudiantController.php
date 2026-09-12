@@ -60,7 +60,7 @@ class DossierEtudiantController extends BaseController
                 e.photo_etudiant,
                 e.telephone_etudiant,
                 cl.code_classe,
-                cl.nom_classe,
+                cl.libelle_classe,
                 cl.filiere_code,
                 fc.cycle_code
             FROM inscriptions i
@@ -80,7 +80,7 @@ class DossierEtudiantController extends BaseController
             $params[] = $classeCode;
         }
 
-        $sql .= " ORDER BY cl.nom_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC";
+        $sql .= " ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC";
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
@@ -115,7 +115,7 @@ class DossierEtudiantController extends BaseController
                 'nom_etudiant' => $r['nom_etudiant'],
                 'prenom_etudiant' => $r['prenom_etudiant'],
                 'photo' => $r['photo_etudiant'],
-                'classe' => $r['nom_classe'],
+                'classe' => $r['libelle_classe'],
                 'total_pieces' => $totalPieces,
                 'deposees_count' => $deposeesCount,
                 'en_attente_count' => $enAttenteCount,

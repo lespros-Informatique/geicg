@@ -19,10 +19,11 @@ class RoleController extends BaseController
         $this->requireAuth();
         $this->requirePermission('VIEW_ROLES');
         $sql = "SELECT r.*,
-                       COUNT(DISTINCT ur.user_code) as nb_users,
+                       COUNT(DISTINCT u.code_user) as nb_users,
                        COUNT(DISTINCT rp.permission_code) as nb_permissions
                 FROM roles r
                 LEFT JOIN user_roles ur ON ur.role_code = r.code_role
+                LEFT JOIN users u ON u.code_user = ur.user_code AND u.statut_user = 'actif'
                 LEFT JOIN role_permissions rp ON rp.role_code = r.code_role
                 GROUP BY r.id
                 ORDER BY r.id ASC";
@@ -156,7 +157,7 @@ class RoleController extends BaseController
             $stmtUsers = $this->model->getCon()->prepare("
                 SELECT u.* FROM users u
                 INNER JOIN user_roles ur ON ur.user_code = u.code_user
-                WHERE ur.role_code = ?
+                WHERE ur.role_code = ? AND u.statut_user = 'actif'
             ");
             $stmtUsers->execute([$role['code_role']]);
             $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);

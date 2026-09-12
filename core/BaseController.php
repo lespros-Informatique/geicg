@@ -455,12 +455,23 @@ abstract class BaseController
     }
 
     /**
-     * Vérifie si l'utilisateur possède une permission métier donnée (100% basé sur les permissions)
+     * Vérifie si l'utilisateur possède au moins une des permissions métier spécifiées (string ou array)
      */
-    protected function hasPermission(string $permissionCode): bool
+    protected function hasPermission(string|array $permissionCode): bool
     {
         $perms = $this->getUserPermissions();
-        return in_array('*', $perms, true) || in_array($permissionCode, $perms, true);
+        if (in_array('*', $perms, true)) {
+            return true;
+        }
+        if (is_array($permissionCode)) {
+            foreach ($permissionCode as $p) {
+                if (in_array($p, $perms, true)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return in_array($permissionCode, $perms, true);
     }
 
     /**
@@ -476,15 +487,16 @@ abstract class BaseController
     }
 
     /**
-     * Bloque la requête avec une page complète 403 si l'utilisateur ne possède pas la permission requise
+     * Bloque la requête avec une page complète 403 si l'utilisateur ne possède pas au moins l'une des permissions requises
      */
-    protected function requirePermission(string $permissionCode, string $customMessage = ''): void
+    protected function requirePermission(string|array $permissionCode, string $customMessage = ''): void
     {
         $this->requireAuth();
 
         if (!$this->hasPermission($permissionCode)) {
-            $msg = !empty($customMessage) ? $customMessage : "Accès refusé : vous ne possédez pas le privilège [{$permissionCode}] requis pour accéder à cette section.";
-            $this->renderForbidden($msg, $permissionCode);
+            $codeDisplay = is_array($permissionCode) ? implode(' / ', $permissionCode) : $permissionCode;
+            $msg = !empty($customMessage) ? $customMessage : "Accès refusé : vous ne possédez pas le privilège [{$codeDisplay}] requis pour accéder à cette section.";
+            $this->renderForbidden($msg, $codeDisplay);
         }
     }
 
