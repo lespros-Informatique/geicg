@@ -114,6 +114,68 @@
             </div>
           </div>
 
+          <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px; margin-top: 28px;">
+            <i data-lucide="tag" style="width: 16px; height: 16px;"></i> Configuration des Raccourcis / Slugs (Sigles)
+          </div>
+
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <p style="color: #64748B; font-size: 13px; margin: 0 0 16px 0;">
+              Activez ou désactivez l'affichage prioritaire des raccourcis (slugs / sigles) à la place des libellés complets dans le système.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+              
+              <!-- Toggle Filières -->
+              <div style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 700; font-size: 14px; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="book-open" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Slugs Filières
+                  </div>
+                  <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Utiliser le sigle court (ex: <strong>IDA</strong>, <strong>RHCOM</strong>)</div>
+                </div>
+                <div>
+                  <input type="hidden" name="use_slug_filiere" value="0">
+                  <label class="form-check form-switch" style="margin: 0; cursor: pointer; display: inline-flex; align-items: center;">
+                    <input class="form-check-input" type="checkbox" name="use_slug_filiere" value="1" id="use_slug_filiere" <?= !empty($item['use_slug_filiere']) ? 'checked' : '' ?> style="width: 44px; height: 22px; cursor: pointer;">
+                  </label>
+                </div>
+              </div>
+
+              <!-- Toggle Cycles -->
+              <div style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 700; font-size: 14px; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="layers" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Slugs Cycles
+                  </div>
+                  <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Utiliser le sigle court (ex: <strong>BTS</strong>, <strong>LICENCE</strong>)</div>
+                </div>
+                <div>
+                  <input type="hidden" name="use_slug_cycle" value="0">
+                  <label class="form-check form-switch" style="margin: 0; cursor: pointer; display: inline-flex; align-items: center;">
+                    <input class="form-check-input" type="checkbox" name="use_slug_cycle" value="1" id="use_slug_cycle" <?= !empty($item['use_slug_cycle']) ? 'checked' : '' ?> style="width: 44px; height: 22px; cursor: pointer;">
+                  </label>
+                </div>
+              </div>
+
+              <!-- Toggle Niveaux -->
+              <div style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 700; font-size: 14px; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Slugs Niveaux
+                  </div>
+                  <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Utiliser le sigle court (ex: <strong>1ÈRE ANNÉE</strong>, <strong>L2</strong>, <strong>M1</strong>)</div>
+                </div>
+                <div>
+                  <input type="hidden" name="use_slug_niveau" value="0">
+                  <label class="form-check form-switch" style="margin: 0; cursor: pointer; display: inline-flex; align-items: center;">
+                    <input class="form-check-input" type="checkbox" name="use_slug_niveau" value="1" id="use_slug_niveau" <?= !empty($item['use_slug_niveau']) ? 'checked' : '' ?> style="width: 44px; height: 22px; cursor: pointer;">
+                  </label>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
             <button type="submit" id="btn-submit-config" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 11px 28px; display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="save" style="width: 18px; height: 18px;"></i> Enregistrer la Configuration

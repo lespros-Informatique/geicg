@@ -19,13 +19,16 @@ class FiliereController extends BaseController
         $this->requireAuth();
         $this->requirePermission('VIEW_FILIERES');
         $items = $this->model->getAll();
+        $etabCfg = $this->getEtablissementConfig();
+        $useSlugFiliere = !empty($etabCfg['use_slug_filiere']);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_filiere'];
             $idCrypte = $this->validator->crypter($id);
             $data[] = array_merge($i, [
                 'id' => $id,
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'use_slug_filiere' => $useSlugFiliere
             ]);
         }
         $this->json(['data' => $data]);
@@ -87,12 +90,23 @@ class FiliereController extends BaseController
             $data['slug_filiere'] = trim($data['slug_filiere']) !== '' ? trim($data['slug_filiere']) : null;
         }
 
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
+
         $cols = $this->model->getCon()->query("DESCRIBE filieres")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('user_code', $cols) && empty($data['user_code'])) $data['user_code'] = $userCode;
+        if (in_array('etablissement_code', $cols) && empty($data['etablissement_code'])) {
+            $existingItem = $this->model->getById($id);
+            $data['etablissement_code'] = $existingItem['etablissement_code'] ?? $etabCode;
+        }
+        if (in_array('annee_code', $cols) && empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
+
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Filière modifiée avec succès!');
         } else {
-            $this->error('Erreur lors de la modification');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de la modification');
         }
     }
 

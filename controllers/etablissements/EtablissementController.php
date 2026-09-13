@@ -92,6 +92,10 @@ class EtablissementController extends BaseController
             }
         }
 
+        $data['use_slug_filiere'] = isset($data['use_slug_filiere']) ? (int)$data['use_slug_filiere'] : 0;
+        $data['use_slug_cycle'] = isset($data['use_slug_cycle']) ? (int)$data['use_slug_cycle'] : 0;
+        $data['use_slug_niveau'] = isset($data['use_slug_niveau']) ? (int)$data['use_slug_niveau'] : 0;
+
         $cols = $this->model->getCon()->query("DESCRIBE etablissements")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
 
@@ -99,6 +103,7 @@ class EtablissementController extends BaseController
 
         if ($id && $this->model->getById($id)) {
             if ($this->model->update($filteredData, $id)) {
+                unset($_SESSION['etablissement_config']);
                 if ($isAjax) {
                     $this->success('Configuration de l\'établissement mise à jour avec succès!');
                 } else {

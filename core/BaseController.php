@@ -308,8 +308,37 @@ abstract class BaseController
         return $this->validator->generateCode($table, $field, $prefix, $len);
     }
 
+    /**
+     * Récupère la configuration complète de l'établissement (avec mise en cache session)
+     */
+    protected function getEtablissementConfig(): array
+    {
+        if (isset($_SESSION['etablissement_config']) && is_array($_SESSION['etablissement_config'])) {
+            return $_SESSION['etablissement_config'];
+        }
+        try {
+            $db = (new Database())->getCon();
+            $stmt = $db->query("SELECT * FROM etablissements WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
+            $config = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
+            if (!$config) {
+                $stmtFb = $db->query("SELECT * FROM etablissements ORDER BY id_etablissement DESC LIMIT 1");
+                $config = $stmtFb ? $stmtFb->fetch(PDO::FETCH_ASSOC) : [];
+            }
+            $_SESSION['etablissement_config'] = $config ?: [];
+            return $_SESSION['etablissement_config'];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
     protected function loadView(string $path, array $data = []): void
     {
+        $etabCfg = $this->getEtablissementConfig();
+        $data['etablissementConfig'] = $etabCfg;
+        $data['useSlugFiliere'] = !empty($etabCfg['use_slug_filiere']);
+        $data['useSlugCycle'] = !empty($etabCfg['use_slug_cycle']);
+        $data['useSlugNiveau'] = !empty($etabCfg['use_slug_niveau']);
+
         $data['isSuperAdmin'] = $this->isSuperAdmin();
         $data['currentUserName'] = $data['currentUserName'] ?? ($_SESSION[USERS_AUTH]['nom'] ?? ($_SESSION[USERS_AUTH]['nom_user'] ?? 'Utilisateur'));
         $data['currentUserEmail'] = $data['currentUserEmail'] ?? ($_SESSION[USERS_AUTH]['email'] ?? ($_SESSION[USERS_AUTH]['email_user'] ?? ''));

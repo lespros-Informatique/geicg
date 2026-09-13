@@ -54,6 +54,11 @@ $(document).ready(function() {
       }},
       { data: 'code_niveau', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_niveau', render: function(d, type, row) { 
+        var useSlug = row.use_slug_niveau;
+        if (useSlug && row.slug_niveau) {
+          return '<span style="font-weight:700; color:#0F172A;">' + row.slug_niveau + '</span>' +
+                 ' <span style="font-size:12px; color:#64748B; margin-left:6px;">(' + (d || '-') + ')</span>';
+        }
         var html = '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>';
         if (row.slug_niveau) {
           html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:6px;">' + row.slug_niveau + '</span>';

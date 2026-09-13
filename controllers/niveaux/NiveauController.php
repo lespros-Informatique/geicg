@@ -17,13 +17,16 @@ class NiveauController extends BaseController
     {
         $this->requireAuth();
         $items = $this->model->getAll();
+        $etabCfg = $this->getEtablissementConfig();
+        $useSlugNiveau = !empty($etabCfg['use_slug_niveau']);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_niveau'];
             $idCrypte = $this->validator->crypter($id);
             $data[] = array_merge($i, [
                 'id' => $id,
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'use_slug_niveau' => $useSlugNiveau
             ]);
         }
         $this->json(['data' => $data]);
@@ -77,12 +80,23 @@ class NiveauController extends BaseController
             $data['slug_niveau'] = trim($data['slug_niveau']) !== '' ? trim($data['slug_niveau']) : null;
         }
 
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
+
         $cols = $this->model->getCon()->query("DESCRIBE niveaux")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('user_code', $cols) && empty($data['user_code'])) $data['user_code'] = $userCode;
+        if (in_array('etablissement_code', $cols) && empty($data['etablissement_code'])) {
+            $existingItem = $this->model->getById($id);
+            $data['etablissement_code'] = $existingItem['etablissement_code'] ?? $etabCode;
+        }
+        if (in_array('annee_code', $cols) && empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
+
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Niveau modifié avec succès!');
         } else {
-            $this->error('Erreur lors de la modification');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de la modification');
         }
     }
 

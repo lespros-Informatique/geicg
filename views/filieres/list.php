@@ -170,6 +170,11 @@ $(document).ready(function() {
       { data: 'id_filiere', defaultContent: '-' },
       { data: 'code_filiere', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_filiere', render: function(d, type, row) { 
+        var useSlug = row.use_slug_filiere;
+        if (useSlug && row.slug_filiere) {
+          return '<span style="font-weight:700; color:#0F172A;">' + row.slug_filiere + '</span>' +
+                 ' <span style="font-size:12px; color:#64748B; margin-left:6px;">(' + (d || '-') + ')</span>';
+        }
         var html = '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>';
         if (row.slug_filiere) {
           html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:6px;">' + row.slug_filiere + '</span>';
@@ -212,6 +217,11 @@ $(document).ready(function() {
       { data: 'id_cycle', defaultContent: '-' },
       { data: 'code_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_cycle', render: function(d, type, row) { 
+        var useSlug = row.use_slug_cycle;
+        if (useSlug && row.slug_cycle) {
+          return '<span style="font-weight:700; color:#1E3A5F;">' + row.slug_cycle + '</span>' +
+                 ' <span style="font-size:12px; color:#64748B; margin-left:6px;">(' + (d || '-') + ')</span>';
+        }
         var html = '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>';
         if (row.slug_cycle) {
           html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:6px;">' + row.slug_cycle + '</span>';
