@@ -71,7 +71,7 @@ foreach ($filiereCyclesMap as $fc) {
             <!-- Cycle Académique (Select2 pour filtrer les filières) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle Académique</label>
-              <select class="form-control select2" id="sel_cycle_scolarite" style="width: 100%;">
+              <select class="form-control select2" id="sel_cycle_scolarite" name="cycle_code" style="width: 100%;">
                 <option value="">-- Tous les cycles --</option>
                 <?php 
                   $selectedFiliereCycles = !empty($item['filiere_code']) ? ($filiereToCycles[$item['filiere_code']] ?? []) : [];
@@ -85,35 +85,25 @@ foreach ($filiereCyclesMap as $fc) {
               </select>
             </div>
 
-            <!-- Niveau d'études (Select2 Multi-Select en création, Simple en édition) -->
+            <!-- Niveau d'études (Select2 Simple) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label style="font-weight: 700; font-size: 13px; color: #334155;">
-                  <?= $isAddMode ? 'Niveau(x) d\'études' : 'Niveau d\'études' ?> <span style="color: #EF4444;">*</span>
-                </label>
-                <?php if ($isAddMode): ?>
-                  <button type="button" id="btn-toggle-all-niveaux" class="btn btn-sm btn-link" style="font-size: 11px; padding: 0; text-decoration: underline; color: #1E3A5F; font-weight: 700; cursor: pointer; border: none; background: transparent;">Tout sélectionner</button>
-                <?php endif; ?>
-              </div>
-              <select class="form-control select2" id="sel_niveau_scolarite" name="<?= $isAddMode ? 'niveau_codes[]' : 'niveau_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : '' ?> style="width: 100%;" required>
-                <?php if (!$isAddMode): ?>
-                  <option value="">-- Choisir un niveau --</option>
-                <?php endif; ?>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                Niveau d'études <span style="color: #EF4444;">*</span>
+              </label>
+              <select class="form-control select2" id="sel_niveau_scolarite" name="niveau_code" style="width: 100%;" required>
+                <option value="">-- Choisir un niveau --</option>
                 <?php foreach($niveaux as $n): ?>
                   <option value="<?= htmlspecialchars($n['code_niveau']) ?>" <?= (($item['niveau_code'] ?? '') == $n['code_niveau']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($n['libelle_niveau']) ?>
                   </option>
                 <?php endforeach; ?>
               </select>
-              <?php if ($isAddMode): ?>
-                <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Vous pouvez sélectionner plusieurs niveaux d'études.</small>
-              <?php endif; ?>
             </div>
 
             <!-- Type de Filière (Select2 pour filtrer les filières par type) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Type de Filière</label>
-              <select class="form-control select2" id="sel_type_filiere_scolarite" style="width: 100%;">
+              <select class="form-control select2" id="sel_type_filiere_scolarite" name="type_filiere" style="width: 100%;">
                 <option value="">-- Tous les types --</option>
                 <?php 
                   $typesFilieres = STATUTS::TYPES_FILIERES ?? ['INDUSTRIELLE' => 'Filière Industrielle', 'TERTIAIRE' => 'Filière Tertiaire'];
@@ -137,15 +127,10 @@ foreach ($filiereCyclesMap as $fc) {
 
             <!-- Filière (Select2 Multi-Select en création, Simple en édition) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label style="font-weight: 700; font-size: 13px; color: #334155;">
-                  <?= $isAddMode ? 'Filière(s) rattachée(s)' : 'Filière rattachée' ?> <span style="color: #EF4444;">*</span>
-                </label>
-                <?php if ($isAddMode): ?>
-                  <button type="button" id="btn-toggle-all-filieres" class="btn btn-sm btn-link" style="font-size: 11px; padding: 0; text-decoration: underline; color: #1E3A5F; font-weight: 700; cursor: pointer; border: none; background: transparent;">Tout sélectionner</button>
-                <?php endif; ?>
-              </div>
-              <select class="form-control select2" id="sel_filiere_scolarite" name="<?= $isAddMode ? 'filiere_codes[]' : 'filiere_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : '' ?> style="width: 100%;" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                <?= $isAddMode ? 'Filière(s) rattachée(s) <small style="color: #64748B; font-weight: 400;">(Optionnel — toutes si vide)</small>' : 'Filière rattachée <span style="color: #EF4444;">*</span>' ?>
+              </label>
+              <select class="form-control select2" id="sel_filiere_scolarite" name="<?= $isAddMode ? 'filiere_codes[]' : 'filiere_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : 'required' ?> style="width: 100%;">
                 <?php if (!$isAddMode): ?>
                   <option value="">-- Choisir une filière --</option>
                 <?php endif; ?>
@@ -158,9 +143,6 @@ foreach ($filiereCyclesMap as $fc) {
                   </option>
                 <?php endforeach; ?>
               </select>
-              <?php if ($isAddMode): ?>
-                <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Vous pouvez sélectionner plusieurs filières qui partageront le même tarif et échéancier.</small>
-              <?php endif; ?>
             </div>
 
             <!-- Régime / Statut d'affectation (Select statique) -->
@@ -260,11 +242,7 @@ $(document).ready(function() {
       allowClear: !isAddMode,
       width: '100%'
     });
-    $('#sel_niveau_scolarite').select2({
-      placeholder: isAddMode ? "Sélectionnez un ou plusieurs niveaux..." : "-- Choisir un niveau --",
-      allowClear: !isAddMode,
-      width: '100%'
-    });
+    $('#sel_niveau_scolarite').select2({ placeholder: "-- Choisir un niveau --", allowClear: true, width: '100%' });
     $('#sel_affectation_scolarite').select2({ minimumResultsForSearch: Infinity, width: '100%' });
 
     $('#sel_annee_scolarite').on('change select2:select', function() {
@@ -287,19 +265,7 @@ $(document).ready(function() {
     }
   });
 
-  $('#btn-toggle-all-niveaux').on('click', function(e) {
-    e.preventDefault();
-    var $sel = $('#sel_niveau_scolarite');
-    var allVals = $sel.find('option').map(function() { return $(this).val(); }).get().filter(Boolean);
-    var currentVals = $sel.val() || [];
-    if (Array.isArray(currentVals) && currentVals.length >= allVals.length) {
-      $sel.val(null).trigger('change');
-      $(this).text('Tout sélectionner');
-    } else {
-      $sel.val(allVals).trigger('change');
-      $(this).text('Tout désélectionner');
-    }
-  });
+
 
   var allFilieres = <?= json_encode(array_map(function($f) use ($filiereToCycles) {
       return [
@@ -319,23 +285,18 @@ $(document).ready(function() {
 
     $filiereSelect.empty();
 
-    if (!selectedCycle) {
-      if (!isAddMode) {
-        $filiereSelect.append('<option value="">-- Choisir d\'abord un cycle --</option>');
-      } else {
-        $filiereSelect.append('<option value="" disabled selected>-- Choisir d\'abord un cycle académique --</option>');
-      }
-      $filiereSelect.val(null).trigger('change.select2');
-      return;
-    }
-
     if (!isAddMode) {
+      if (!selectedCycle) {
+        $filiereSelect.append('<option value="">-- Choisir d\'abord un cycle --</option>');
+        $filiereSelect.val(null).trigger('change.select2');
+        return;
+      }
       $filiereSelect.append('<option value="">-- Choisir une filière --</option>');
     }
 
     var count = 0;
     allFilieres.forEach(function(f) {
-      var matchCycle = f.cycles && f.cycles.indexOf(selectedCycle) !== -1;
+      var matchCycle = !selectedCycle || (f.cycles && f.cycles.indexOf(selectedCycle) !== -1);
       var matchType = !selectedType || (f.type_filiere === selectedType);
 
       if (matchCycle && matchType) {
@@ -352,7 +313,7 @@ $(document).ready(function() {
     });
 
     if (count === 0) {
-      $filiereSelect.append('<option value="" disabled>(Aucune filière rattachée à ce cycle/type)</option>');
+      $filiereSelect.append('<option value="" disabled>(Aucune filière disponible)</option>');
     }
 
     $filiereSelect.trigger('change.select2');
@@ -390,18 +351,22 @@ $(document).ready(function() {
   function checkDuplicateScolarites() {
     var filieres = $('#sel_filiere_scolarite').val();
     var niveaux = $('#sel_niveau_scolarite').val();
+    var cycleCode = $('#sel_cycle_scolarite').val() || '';
+    var typeFiliere = $('#sel_type_filiere_scolarite').val() || '';
     var affectation = $('#sel_affectation_scolarite').val();
     var anneeCode = $('input[name="annee_code"]').val() || '';
     var idScolarite = $('input[name="id_scolarite"]').val() || 0;
     var $form = $('form');
 
-    if (filieres && niveaux && (Array.isArray(filieres) ? filieres.length > 0 : filieres !== '') && (Array.isArray(niveaux) ? niveaux.length > 0 : niveaux !== '')) {
+    if (niveaux && (Array.isArray(niveaux) ? niveaux.length > 0 : niveaux !== '')) {
       var racine = (typeof RACINE !== 'undefined') ? RACINE : '/geicg/';
       $.ajax({
         url: racine + 'scolarite/checkExists',
         type: 'GET',
         data: {
           annee_code: anneeCode,
+          cycle_code: cycleCode,
+          type_filiere: typeFiliere,
           filiere_codes: filieres,
           filiere_code: filieres,
           niveau_codes: niveaux,

@@ -175,24 +175,59 @@ class ScolariteController extends BaseController
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($this->getActiveAnneeCode());
         
-        $filiereCodes = $_POST['filiere_codes'] ?? ($_POST['filiere_code'] ?? []);
-        if (!is_array($filiereCodes)) {
-            $filiereCodes = array_filter([trim($filiereCodes)]);
+        $cycleCode = !empty($_POST['cycle_code']) ? trim($_POST['cycle_code']) : '';
+        $typeFiliere = !empty($_POST['type_filiere']) ? trim($_POST['type_filiere']) : '';
+
+        $rawFiliereCodes = $_POST['filiere_codes'] ?? ($_POST['filiere_code'] ?? []);
+        if (!is_array($rawFiliereCodes)) {
+            $rawFiliereCodes = array_filter([trim($rawFiliereCodes)]);
+        } else {
+            $rawFiliereCodes = array_filter(array_map('trim', $rawFiliereCodes));
         }
-        
+
         $niveauCodes = $_POST['niveau_codes'] ?? ($_POST['niveau_code'] ?? []);
         if (!is_array($niveauCodes)) {
             $niveauCodes = array_filter([trim($niveauCodes)]);
+        } else {
+            $niveauCodes = array_filter(array_map('trim', $niveauCodes));
         }
 
         $affectationEtat = trim($_POST['affectation_etat'] ?? 'affecte');
         $montantScolarite = (float)($_POST['montant_scolarite'] ?? 0);
         $etabCode = $this->getActiveEtablissementCode();
 
-        if (empty($filiereCodes)) {
-            $this->error("Veuillez sélectionner au moins une filière rattachée.");
-            return;
+        $db = $this->model->getCon();
+
+        // Logique de sélection des filières :
+        // 1. Si filières sélectionnées -> ces filières uniquement.
+        // 2. Si type de filière sélectionné et filières vides -> toutes les filières du type.
+        // 3. Si type de filière et filières vides -> toutes les filières.
+        if (!empty($rawFiliereCodes)) {
+            $filiereCodes = array_values(array_unique($rawFiliereCodes));
+        } else {
+            $sqlF = "SELECT f.code_filiere FROM filieres f WHERE 1=1";
+            $paramsF = [];
+
+            if (!empty($typeFiliere)) {
+                $sqlF .= " AND f.type_filiere = ?";
+                $paramsF[] = $typeFiliere;
+            }
+
+            if (!empty($cycleCode)) {
+                $sqlF .= " AND f.code_filiere IN (SELECT filiere_code FROM filiere_cycles WHERE cycle_code = ?)";
+                $paramsF[] = $cycleCode;
+            }
+
+            $stmtF = $db->prepare($sqlF);
+            $stmtF->execute($paramsF);
+            $filiereCodes = $stmtF->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($filiereCodes)) {
+                $this->error("Aucune filière ne correspond aux critères sélectionnés.");
+                return;
+            }
         }
+
         if (empty($niveauCodes)) {
             $this->error("Veuillez sélectionner au moins un niveau d'études.");
             return;
@@ -545,14 +580,39 @@ class ScolariteController extends BaseController
         $affectationEtat = trim($_REQUEST['affectation_etat'] ?? 'affecte');
         $idExclude = (int)($_REQUEST['id_scolarite'] ?? 0);
 
+        $cycleCode = !empty($_REQUEST['cycle_code']) ? trim($_REQUEST['cycle_code']) : '';
+        $typeFiliere = !empty($_REQUEST['type_filiere']) ? trim($_REQUEST['type_filiere']) : '';
+
         $filiereCodes = $_REQUEST['filiere_codes'] ?? ($_REQUEST['filiere_code'] ?? []);
         if (!is_array($filiereCodes)) {
             $filiereCodes = array_filter([trim($filiereCodes)]);
+        } else {
+            $filiereCodes = array_filter(array_map('trim', $filiereCodes));
         }
 
         $niveauCodes = $_REQUEST['niveau_codes'] ?? ($_REQUEST['niveau_code'] ?? []);
         if (!is_array($niveauCodes)) {
             $niveauCodes = array_filter([trim($niveauCodes)]);
+        } else {
+            $niveauCodes = array_filter(array_map('trim', $niveauCodes));
+        }
+
+        $db = $this->model->getCon();
+
+        if (empty($filiereCodes)) {
+            $sqlF = "SELECT f.code_filiere FROM filieres f WHERE 1=1";
+            $paramsF = [];
+            if (!empty($typeFiliere)) {
+                $sqlF .= " AND f.type_filiere = ?";
+                $paramsF[] = $typeFiliere;
+            }
+            if (!empty($cycleCode)) {
+                $sqlF .= " AND f.code_filiere IN (SELECT filiere_code FROM filiere_cycles WHERE cycle_code = ?)";
+                $paramsF[] = $cycleCode;
+            }
+            $stmtF = $db->prepare($sqlF);
+            $stmtF->execute($paramsF);
+            $filiereCodes = $stmtF->fetchAll(PDO::FETCH_COLUMN);
         }
 
         if (empty($anneeCode) || empty($filiereCodes) || empty($niveauCodes)) {
