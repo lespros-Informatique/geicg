@@ -35,8 +35,29 @@ $stats = isset($stats) ? $stats : [];
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Spécialité / Filière</span>
-            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></div>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">
+              <?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?>
+              <?php if (!empty($item['slug_filiere'])): ?>
+                <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 8px; border-radius:6px; font-weight:700; font-size:12px; margin-left:6px; vertical-align:middle;"><?= htmlspecialchars($item['slug_filiere']) ?></span>
+              <?php endif; ?>
+            </div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Code : <code><?= htmlspecialchars($item['code_filiere'] ?? '-') ?></code></div>
+          </div>
+
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Type de Filière</span>
+            <div style="margin-top: 6px;">
+              <?php 
+                $tf = $item['type_filiere'] ?? null;
+                if ($tf === 'INDUSTRIELLE'): ?>
+                  <span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Industrielle</span>
+                <?php elseif ($tf === 'TERTIAIRE'): ?>
+                  <span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Tertiaire</span>
+                <?php else: ?>
+                  <span style="color:#94A3B8; font-size:13px; font-style:italic;">Non spécifié (null)</span>
+                <?php endif; ?>
+            </div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Domaine de formation</div>
           </div>
 
           <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">

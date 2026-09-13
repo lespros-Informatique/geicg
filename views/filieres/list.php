@@ -71,6 +71,7 @@
                   <th style="width: 50px;">#</th>
                   <th>Code</th>
                   <th>Nom de la Filière</th>
+                  <th>Type</th>
                   <th>Description</th>
                   <th class="text-center">Statut</th>
                   <th class="text-end">Actions</th>
@@ -168,7 +169,18 @@ $(document).ready(function() {
     columns: [
       { data: 'id_filiere', defaultContent: '-' },
       { data: 'code_filiere', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
-      { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>'; } },
+      { data: 'libelle_filiere', render: function(d, type, row) { 
+        var html = '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>';
+        if (row.slug_filiere) {
+          html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:6px;">' + row.slug_filiere + '</span>';
+        }
+        return html;
+      } },
+      { data: 'type_filiere', render: function(d) {
+        if (d === 'INDUSTRIELLE') return '<span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Industrielle</span>';
+        if (d === 'TERTIAIRE') return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tertiaire</span>';
+        return '<span style="color:#94A3B8; font-size:12px; font-style:italic;">Non spécifié</span>';
+      } },
       { data: 'description_filiere', render: function(d) { return d || '-'; } },
       { data: 'statut_filiere', width: '80px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');

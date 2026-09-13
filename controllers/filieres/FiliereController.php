@@ -50,6 +50,12 @@ class FiliereController extends BaseController
         }
         $data['statut_filiere'] = $data['statut_filiere'] ?? 'actif';
         $data['created_at_filiere'] = date('Y-m-d H:i:s');
+        if (isset($data['type_filiere']) && trim($data['type_filiere']) === '') {
+            $data['type_filiere'] = null;
+        }
+        if (isset($data['slug_filiere'])) {
+            $data['slug_filiere'] = trim($data['slug_filiere']) !== '' ? trim($data['slug_filiere']) : null;
+        }
         $cols = $this->model->getCon()->query("DESCRIBE filieres")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
@@ -73,6 +79,12 @@ class FiliereController extends BaseController
         unset($data['csrf_token']);
         if (!empty($data['libelle_filiere'])) {
             if (!$this->checkUnique('filieres', 'libelle_filiere', $data['libelle_filiere'], 'Nom de la filière', 'id_filiere', $id)) return;
+        }
+        if (isset($data['type_filiere']) && trim($data['type_filiere']) === '') {
+            $data['type_filiere'] = null;
+        }
+        if (isset($data['slug_filiere'])) {
+            $data['slug_filiere'] = trim($data['slug_filiere']) !== '' ? trim($data['slug_filiere']) : null;
         }
 
         $cols = $this->model->getCon()->query("DESCRIBE filieres")->fetchAll(PDO::FETCH_COLUMN);

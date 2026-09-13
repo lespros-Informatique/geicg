@@ -35,14 +35,36 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php if (!empty($item['id_filiere'])): ?>
             <input type="hidden" name="id_filiere" value="<?= $item['id_filiere'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%;">
-            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%;">
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de la filière <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_filiere" value="<?= htmlspecialchars($item['libelle_filiere'] ?? '') ?>" placeholder="Ex: Génie Informatique & Réseaux" required>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_filiere" value="<?= htmlspecialchars($item['libelle_filiere'] ?? '') ?>" placeholder="Ex: INFORMATIQUE ET DÉVELOPPEUR D'APPLICATIONS" required>
             </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Libellé court / Sigle (Slug)</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="slug_filiere" value="<?= htmlspecialchars($item['slug_filiere'] ?? '') ?>" placeholder="Ex: IDA, RHCOM, RIT, FCGE...">
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Type de Filière</label>
+              <select class="form-select" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="type_filiere">
+                <option value="">-- Sélectionner le type (Optionnel) --</option>
+                <?php 
+                  $typesFilieres = STATUTS::TYPES_FILIERES ?? ['INDUSTRIELLE' => 'Filière Industrielle', 'TERTIAIRE' => 'Filière Tertiaire'];
+                  $valType = $item['type_filiere'] ?? '';
+                  foreach ($typesFilieres as $codeType => $libelleType):
+                ?>
+                  <option value="<?= htmlspecialchars($codeType) ?>" <?= ($valType === $codeType) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($libelleType) ?> (<?= htmlspecialchars($codeType) ?>)
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
             <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Description & Débouchés</label>
-              <textarea class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="description_filiere" placeholder="Ex: Formation axée sur le développement logiciel et l\'administration système..."  rows="3"><?= htmlspecialchars($item['description_filiere'] ?? '') ?></textarea>
+              <textarea class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="description_filiere" placeholder="Ex: Formation axée sur le développement logiciel et l'administration système..." rows="3"><?= htmlspecialchars($item['description_filiere'] ?? '') ?></textarea>
             </div>
           </div>
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">

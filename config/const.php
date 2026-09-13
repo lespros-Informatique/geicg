@@ -204,6 +204,12 @@ class STATUTS
     // NOTIFICATIONS
     public const NOTIFICATIONS = ['envoyee', 'echec'];
 
+    // TYPES DE FILIÈRES
+    public const TYPES_FILIERES = [
+        'INDUSTRIELLE' => 'Filière Industrielle',
+        'TERTIAIRE' => 'Filière Tertiaire'
+    ];
+
     // ZONES TERRITORIALES
     public const VILLES = ['actif', 'inactif'];
     public const QUARTIERS = ['actif', 'inactif'];
