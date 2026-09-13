@@ -35,7 +35,20 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php if (!empty($item['id_filiere'])): ?>
             <input type="hidden" name="id_filiere" value="<?= $item['id_filiere'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%;">
+          <style>
+            .form-grid-3cols {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 20px;
+              width: 100%;
+            }
+            @media (max-width: 992px) {
+              .form-grid-3cols {
+                grid-template-columns: 1fr;
+              }
+            }
+          </style>
+          <div class="form-grid-3cols">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de la filière <span style="color: #EF4444;">*</span></label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_filiere" value="<?= htmlspecialchars($item['libelle_filiere'] ?? '') ?>" placeholder="Ex: INFORMATIQUE ET DÉVELOPPEUR D'APPLICATIONS" required>
