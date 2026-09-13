@@ -35,10 +35,28 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php if (!empty($item['id_niveau'])): ?>
             <input type="hidden" name="id_niveau" value="<?= $item['id_niveau'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%;">
-            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Intitulé du niveau (ex: L1, L2) <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_niveau" value="<?= htmlspecialchars($item['libelle_niveau'] ?? '') ?>" placeholder="Ex: Licence 2 (L2)" required>
+          <style>
+            .niveau-form-grid {
+              display: grid;
+              grid-template-columns: 2fr 1fr;
+              gap: 20px;
+              width: 100%;
+            }
+            @media (max-width: 768px) {
+              .niveau-form-grid {
+                grid-template-columns: 1fr;
+              }
+            }
+          </style>
+          <div class="niveau-form-grid">
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Intitulé du niveau <span style="color: #EF4444;">*</span></label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_niveau" value="<?= htmlspecialchars($item['libelle_niveau'] ?? '') ?>" placeholder="Ex: Licence 2" required>
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Libellé court / Sigle (Slug)</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="slug_niveau" value="<?= htmlspecialchars($item['slug_niveau'] ?? '') ?>" placeholder="Ex: 1ÈRE ANNÉE, L2, M1...">
             </div>
           </div>
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">

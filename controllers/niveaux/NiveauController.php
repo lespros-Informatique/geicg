@@ -38,6 +38,9 @@ class NiveauController extends BaseController
         if (!empty($data['libelle_niveau'])) {
             if (!$this->checkUnique('niveaux', 'libelle_niveau', $data['libelle_niveau'], 'Libelle du niveau')) return;
         }
+        if (isset($data['slug_niveau'])) {
+            $data['slug_niveau'] = trim($data['slug_niveau']) !== '' ? trim($data['slug_niveau']) : null;
+        }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
@@ -69,6 +72,9 @@ class NiveauController extends BaseController
         unset($data['csrf_token']);
         if (!empty($data['libelle_niveau'])) {
             if (!$this->checkUnique('niveaux', 'libelle_niveau', $data['libelle_niveau'], 'Libelle du niveau', 'id_niveau', $id)) return;
+        }
+        if (isset($data['slug_niveau'])) {
+            $data['slug_niveau'] = trim($data['slug_niveau']) !== '' ? trim($data['slug_niveau']) : null;
         }
 
         $cols = $this->model->getCon()->query("DESCRIBE niveaux")->fetchAll(PDO::FETCH_COLUMN);
