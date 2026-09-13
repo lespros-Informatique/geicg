@@ -38,6 +38,9 @@ class CycleController extends BaseController
         if (!empty($data['libelle_cycle'])) {
             if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libelle du cycle')) return;
         }
+        if (isset($data['slug_cycle'])) {
+            $data['slug_cycle'] = trim($data['slug_cycle']) !== '' ? trim($data['slug_cycle']) : null;
+        }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
@@ -69,6 +72,9 @@ class CycleController extends BaseController
         unset($data['csrf_token']);
         if (!empty($data['libelle_cycle'])) {
             if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libelle du cycle', 'id_cycle', $id)) return;
+        }
+        if (isset($data['slug_cycle'])) {
+            $data['slug_cycle'] = trim($data['slug_cycle']) !== '' ? trim($data['slug_cycle']) : null;
         }
 
         $cols = $this->model->getCon()->query("DESCRIBE cycles")->fetchAll(PDO::FETCH_COLUMN);

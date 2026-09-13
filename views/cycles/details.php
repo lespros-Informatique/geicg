@@ -34,7 +34,12 @@ $filieres = isset($filieres) ? $filieres : [];
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Libellé du Diplôme</span>
-            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['libelle_cycle'] ?? '-') ?></div>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">
+              <?= htmlspecialchars($item['libelle_cycle'] ?? '-') ?>
+              <?php if (!empty($item['slug_cycle'])): ?>
+                <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 8px; border-radius:6px; font-weight:700; font-size:12px; margin-left:6px; vertical-align:middle;"><?= htmlspecialchars($item['slug_cycle']) ?></span>
+              <?php endif; ?>
+            </div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Code : <code><?= htmlspecialchars($item['code_cycle'] ?? '-') ?></code></div>
           </div>
 

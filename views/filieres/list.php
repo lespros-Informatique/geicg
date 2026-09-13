@@ -211,7 +211,13 @@ $(document).ready(function() {
     columns: [
       { data: 'id_cycle', defaultContent: '-' },
       { data: 'code_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
-      { data: 'libelle_cycle', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>'; } },
+      { data: 'libelle_cycle', render: function(d, type, row) { 
+        var html = '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>';
+        if (row.slug_cycle) {
+          html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:6px;">' + row.slug_cycle + '</span>';
+        }
+        return html;
+      } },
       { data: 'description_cycle', render: function(d) { return d || '-'; } },
       { data: 'statut_cycle', width: '80px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');

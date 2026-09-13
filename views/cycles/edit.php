@@ -35,10 +35,28 @@ $enseignants = (new ModelEnseignant())->getAll();
           <?php if (!empty($item['id_cycle'])): ?>
             <input type="hidden" name="id_cycle" value="<?= $item['id_cycle'] ?>">
           <?php endif; ?>
-          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%;">
-            <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
+          <style>
+            .cycle-form-grid {
+              display: grid;
+              grid-template-columns: 2fr 1fr;
+              gap: 20px;
+              width: 100%;
+            }
+            @media (max-width: 768px) {
+              .cycle-form-grid {
+                grid-template-columns: 1fr;
+              }
+            }
+          </style>
+          <div class="cycle-form-grid">
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Libellé du cycle <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_cycle" value="<?= htmlspecialchars($item['libelle_cycle'] ?? '') ?>" placeholder="Ex: Licence Professionnelle" required>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="libelle_cycle" value="<?= htmlspecialchars($item['libelle_cycle'] ?? '') ?>" placeholder="Ex: BREVET DE TECHNICIEN SUPÉRIEUR" required>
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Libellé court / Sigle (Slug)</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="slug_cycle" value="<?= htmlspecialchars($item['slug_cycle'] ?? '') ?>" placeholder="Ex: BTS, LICENCE, MASTER...">
             </div>
           </div>
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
