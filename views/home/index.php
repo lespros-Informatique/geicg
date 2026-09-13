@@ -22,17 +22,12 @@ $hasPerm = function(string $code) use ($userPermissions): bool {
 };
 
 $isAdminOrDG = $hasPerm('VIEW_DASHBOARD_EXECUTIVE');
-$isPedagogie = !$isAdminOrDG && $hasPerm('VIEW_DASHBOARD_PEDAGOGIE');
-$isFinance = !$isAdminOrDG && !$isPedagogie && $hasPerm('VIEW_DASHBOARD_FINANCE');
-$isScolarite = !$isAdminOrDG && !$isPedagogie && !$isFinance && $hasPerm('VIEW_DASHBOARD_SCOLARITE');
-$isEnseignant = !$isAdminOrDG && !$isPedagogie && !$isFinance && !$isScolarite && $hasPerm('VIEW_DASHBOARD_ENSEIGNANT');
-$isCommunication = !$isAdminOrDG && !$isPedagogie && !$isFinance && !$isScolarite && !$isEnseignant && $hasPerm('VIEW_DASHBOARD_COMMUNICATION');
+$isFinance = $hasPerm('VIEW_DASHBOARD_FINANCE');
+$isPedagogie = $hasPerm('VIEW_DASHBOARD_PEDAGOGIE');
+$isScolarite = $hasPerm('VIEW_DASHBOARD_SCOLARITE');
+$isEnseignant = $hasPerm('VIEW_DASHBOARD_ENSEIGNANT');
+$isCommunication = $hasPerm('VIEW_DASHBOARD_COMMUNICATION');
 $canViewActions = $hasPerm('VIEW_DASHBOARD_ACTIONS');
-
-// Si aucune vue dashboard explicite n'est cochée mais que l'utilisateur a accès au tableau de bord
-if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseignant && !$isCommunication) {
-    $isAdminOrDG = true;
-}
 
 $monthlyFinancials = $stats['monthly_financials'] ?? ['labels' => [], 'encaissements' => [], 'depenses' => []];
 $filieresDistribution = $stats['filieres_distribution'] ?? ['labels' => [], 'series' => []];
@@ -142,14 +137,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
         <div>
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
             <span style="background: rgba(255,255,255,0.15); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
-              <?php if ($isAdminOrDG): ?>Direction Générale & Synthèse
-              <?php elseif ($isPedagogie): ?>Direction Pédagogique & Études
-              <?php elseif ($isScolarite): ?>Service Scolarité & Admissions
-              <?php elseif ($isFinance): ?>Service Finance, Caisse & Recouvrement
-              <?php elseif ($isEnseignant): ?>Espace Enseignant / Formateur
-              <?php elseif ($isCommunication): ?>Communication & Événements
-              <?php else: ?>Vue Générale
-              <?php endif; ?>
+              GROUPE EICG
             </span>
             <span style="font-size: 12px; color: #94A3B8;">&bull; <?= date('d/m/Y') ?></span>
           </div>
