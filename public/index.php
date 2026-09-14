@@ -157,6 +157,8 @@ $route->addRoute('/classe/changer', [$classeController, 'changer']);
 $route->addRoute('/classe/details/{param}', [$classeController, 'details']);
 $route->addRoute('/classe/edition/{param}', [$classeController, 'edition']);
 $route->addRoute('/classe/formulaire', [$classeController, 'formulaire']);
+$route->addRoute('/classe/getClassesWithScolarite', [$classeController, 'getClassesWithScolarite']);
+$route->addRoute('/etudiant/getClassesWithScolarite', [$classeController, 'getClassesWithScolarite']);
 
 // Module: semestre (SemestreController)
 $route->addRoute('/semestre/list', [$semestreController, 'list']);

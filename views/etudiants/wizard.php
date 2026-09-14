@@ -1,10 +1,23 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$classes = (new ModelClasse())->getAll();
+$annees = (new ModelAnnee())->getAll();
+$modelAnnee = new ModelAnnee();
+$activeYearRow = $modelAnnee->getActiveYear();
+$activeAnneeCode = $_SESSION['annee_active_code'] ?? ($activeYearRow['code_annee'] ?? '');
+if (empty($activeAnneeCode)) {
+    foreach ($annees as $a) {
+        if (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') {
+            $activeAnneeCode = $a['code_annee'];
+            break;
+        }
+    }
+    if (empty($activeAnneeCode) && !empty($annees)) {
+        $activeAnneeCode = $annees[0]['code_annee'];
+    }
+}
+$classes = (new ModelClasse())->getClassesWithScolarite($activeAnneeCode);
 $accessoires = (new ModelAccessoire())->getAll();
 $pieces = (new ModelPieceFournir())->getAll();
-$annees = (new ModelAnnee())->getAll();
-$activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
 ?>
 <style>
   .wizard-stepper {
@@ -287,11 +300,19 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe d'affectation <span style="color: #EF4444;">*</span></label>
                 <select class="form-control select2" id="wiz_classe" name="classe_code" style="width: 100%;" required>
-                  <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
-                  <?php foreach($classes as $cl): ?>
-                    <option value="<?= $cl['code_classe'] ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? '') ?>"><?= htmlspecialchars($cl['libelle_classe']) ?></option>
-                  <?php endforeach; ?>
+                  <?php if (!empty($classes)): ?>
+                    <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
+                    <?php foreach($classes as $cl): ?>
+                      <option value="<?= $cl['code_classe'] ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"><?= htmlspecialchars($cl['libelle_classe']) ?></option>
+                    <?php endforeach; ?>
+                  <?php else: ?>
+                    <option value="">-- Aucune classe avec scolarité enregistrée pour cette année --</option>
+                  <?php endif; ?>
                 </select>
+                <div id="wiz_classe_empty_msg" style="<?= empty($classes) ? '' : 'display: none;' ?> margin-top: 8px; font-size: 12.5px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: 8px; line-height: 1.4;">
+                  <i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline-block; vertical-align: middle; margin-right: 6px; color: #D97706;"></i>
+                  <span>Aucune classe n'a de scolarité enregistrée pour l'année académique sélectionnée. Veuillez d'abord configurer la grille tarifaire dans le module Scolarité avant d'inscrire des étudiants.</span>
+                </div>
               </div>
 
               <!-- Montant auto-récupéré -->
@@ -949,36 +970,70 @@ $(document).ready(function() {
     saveFormData();
   });
 
-  function filterWizardClassesByAnnee() {
+  function filterWizardClassesByAnnee(callback) {
     var selectedAnnee = $('#wiz_annee').val();
+    var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
     var $classeSelect = $('#wiz_classe');
     var currentVal = $classeSelect.val();
-    var currentStillValid = false;
+    var $emptyMsg = $('#wiz_classe_empty_msg');
 
-    $classeSelect.find('option').each(function() {
-      var optAnnee = $(this).data('annee');
-      if (!$(this).val()) return;
+    if (!selectedAnnee) {
+      $classeSelect.html('<option value="">-- Sélectionnez d\'abord une année académique --</option>');
+      if ($classeSelect.data('select2')) $classeSelect.trigger('change.select2');
+      if ($emptyMsg.length) $emptyMsg.hide();
+      return;
+    }
 
-      if (!selectedAnnee || !optAnnee || optAnnee === selectedAnnee) {
-        $(this).prop('disabled', false).show();
-        if ($(this).val() === currentVal) {
-          currentStillValid = true;
+    var baseApi = (typeof LINK !== 'undefined' && LINK) ? LINK : ((typeof RACINE !== 'undefined' && RACINE) ? RACINE : '/');
+
+    $.ajax({
+      url: baseApi + 'classe/getClassesWithScolarite',
+      type: 'GET',
+      data: {
+        annee_code: selectedAnnee,
+        affectation_etat: affectationEtat
+      },
+      dataType: 'json',
+      success: function(res) {
+        var optionsHtml = '';
+        var classes = (res && res.data) ? res.data : [];
+        var valFound = false;
+
+        if (classes.length > 0) {
+          optionsHtml += '<option value="">-- Rechercher / Sélectionner la classe d\'affectation --</option>';
+          classes.forEach(function(cl) {
+            var isSel = (currentVal && cl.code_classe === currentVal);
+            if (isSel) valFound = true;
+            optionsHtml += '<option value="' + escapeHtml(cl.code_classe) + '" data-annee="' + escapeHtml(cl.annee_code || selectedAnnee) + '"' + (isSel ? ' selected' : '') + '>' + escapeHtml(cl.libelle_classe) + '</option>';
+          });
+          if ($emptyMsg.length) $emptyMsg.slideUp(150);
+        } else {
+          optionsHtml += '<option value="">-- Aucune classe avec scolarité enregistrée pour cette année --</option>';
+          if ($emptyMsg.length) {
+            $emptyMsg.slideDown(200);
+            if (window.lucide) lucide.createIcons();
+          }
         }
-      } else {
-        $(this).prop('disabled', true).hide();
+
+        $classeSelect.html(optionsHtml);
+        if (!valFound && currentVal) {
+          $classeSelect.val('').trigger('change');
+        } else {
+          $classeSelect.trigger('change.select2');
+        }
+
+        if (typeof callback === 'function') {
+          callback(classes);
+        }
+      },
+      error: function(xhr, status, err) {
+        console.error('Erreur chargement des classes avec scolarité:', err);
       }
     });
-
-    if (!currentStillValid && currentVal) {
-      $classeSelect.val('').trigger('change');
-    } else {
-      $classeSelect.trigger('change.select2');
-    }
   }
 
   $('#wiz_annee').on('change select2:select', function() {
-    filterWizardClassesByAnnee();
-    refreshClassTuition();
+    filterWizardClassesByAnnee(refreshClassTuition);
   });
 
   // Auto-récupération et affichage complet de la scolarité et de TOUTES les tranches selon la classe et le statut d'affectation
@@ -1088,7 +1143,7 @@ $(document).ready(function() {
         'color': isChecked ? '#1E3A5F' : '#334155'
       });
     });
-    refreshClassTuition();
+    filterWizardClassesByAnnee(refreshClassTuition);
   });
 
   // Calcul dynamique du net à payer après remise
@@ -1173,14 +1228,13 @@ $(document).ready(function() {
       width: '100%'
     });
   }
-  filterWizardClassesByAnnee();
+  filterWizardClassesByAnnee(function() {
+    var initClass = $('#wiz_classe').val();
+    if (initClass) {
+      $('#wiz_classe').trigger('change');
+    }
+  });
   updateWizardUI();
-
-  // Déclencher le chargement des tarifs si une classe est déjà pré-sélectionnée
-  var initClass = $('#wiz_classe').val();
-  if (initClass) {
-    $('#wiz_classe').trigger('change');
-  }
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

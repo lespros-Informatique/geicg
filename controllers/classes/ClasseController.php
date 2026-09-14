@@ -280,4 +280,28 @@ class ClasseController extends BaseController
         $this->requirePermission('MANAGE_CLASSES');
         $this->loadView('../views/classes/edit.php', ['item' => []]);
     }
+
+    public function getClassesWithScolarite()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_CLASSES', 'MANAGE_ETUDIANTS', 'VIEW_INSCRIPTIONS', 'MANAGE_INSCRIPTIONS']);
+
+        $anneeCode = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
+        $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? ''));
+        if ($affectationEtat === 'oui') $affectationEtat = 'affecte';
+        if ($affectationEtat === 'non') $affectationEtat = 'non_affecte';
+
+        if (empty($anneeCode)) {
+            $anneeCode = $this->getActiveAnneeCode();
+        }
+
+        $classes = $this->model->getClassesWithScolarite($anneeCode, $affectationEtat);
+
+        $this->json([
+            'status' => 1,
+            'data' => $classes,
+            'annee_code' => $anneeCode,
+            'total' => count($classes)
+        ]);
+    }
 }
