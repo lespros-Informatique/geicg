@@ -44,6 +44,15 @@ class ModelRole extends BaseModel
     public function assignPermission(string $roleCode, string $permissionCode): bool
     {
         try {
+            $fkErr = ForeignKeyValidator::validate($this->getCon(), 'role_permissions', [
+                'role_code' => $roleCode,
+                'permission_code' => $permissionCode
+            ]);
+            if ($fkErr !== null) {
+                error_log('[ModelRole::assignPermission] FK Error: ' . $fkErr);
+                return false;
+            }
+
             $sql = "INSERT INTO role_permissions (role_code, permission_code)
                     VALUES (?, ?)
                     ON DUPLICATE KEY UPDATE permission_code = VALUES(permission_code)";

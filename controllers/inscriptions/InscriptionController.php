@@ -516,6 +516,15 @@ class InscriptionController extends BaseController
                 $db->beginTransaction();
 
                 // A. Création Étudiant
+                $fkErrEtu = ForeignKeyValidator::validate($db, 'etudiants', [
+                    'etablissement_code' => $etabCode
+                ]);
+                if ($fkErrEtu !== null) {
+                    $db->rollBack();
+                    $this->error($fkErrEtu);
+                    return;
+                }
+
                 $stmtEtu = $db->prepare("
                     INSERT INTO etudiants 
                     (code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
@@ -540,6 +549,16 @@ class InscriptionController extends BaseController
                 // B. Création Parent / Tuteur (si renseigné)
                 if (!empty($data['nom_tuteur']) || !empty($data['nom_pere']) || !empty($data['nom_mere']) || !empty($data['telephone_tuteur']) || !empty($data['telephone_pere'])) {
                     $codeParent = $this->validator->generateCode('parents', 'code_parent', 'PAR-', 8);
+                    $fkErrPar = ForeignKeyValidator::validate($db, 'parents', [
+                        'etudiant_code' => $codeEtudiant,
+                        'etablissement_code' => $etabCode
+                    ]);
+                    if ($fkErrPar !== null) {
+                        $db->rollBack();
+                        $this->error($fkErrPar);
+                        return;
+                    }
+
                     $stmtPar = $db->prepare("
                         INSERT INTO parents 
                         (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, profession_mere, nom_tuteur, telephone_tuteur, user_code, etablissement_code, created_at_parent)
@@ -563,6 +582,18 @@ class InscriptionController extends BaseController
 
                 // C. Création Inscription
                 $codeInscription = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
+                $fkErrIns = ForeignKeyValidator::validate($db, 'inscriptions', [
+                    'etudiant_code' => $codeEtudiant,
+                    'classe_code' => $data['classe_code'],
+                    'annee_code' => $anneeCode,
+                    'etablissement_code' => $etabCode
+                ]);
+                if ($fkErrIns !== null) {
+                    $db->rollBack();
+                    $this->error($fkErrIns);
+                    return;
+                }
+
                 $stmtIns = $db->prepare("
                     INSERT INTO inscriptions 
                     (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, annee_code, user_code, etablissement_code, statut_inscription, affectation_etat, created_at_inscription)

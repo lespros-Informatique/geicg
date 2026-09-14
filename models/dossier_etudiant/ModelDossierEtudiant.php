@@ -59,6 +59,18 @@ class ModelDossierEtudiant extends BaseModel
             }
         }
 
+        $fkErr = ForeignKeyValidator::validate($this->getCon(), 'dossier_etudiant', [
+            'inscription_code' => $inscriptionCode,
+            'etudiant_code' => $etudiantCode,
+            'piece_code' => $pieceCode,
+            'etablissement_code' => $etabCode
+        ]);
+        if ($fkErr !== null) {
+            $this->lastError = $fkErr;
+            error_log('[ModelDossierEtudiant::saveStatutPiece] FK Error: ' . $fkErr);
+            return false;
+        }
+
         $sql = "
             INSERT INTO dossier_etudiant (
                 code_dossier_etudiant, inscription_code, etudiant_code, piece_code,

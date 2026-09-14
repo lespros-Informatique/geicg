@@ -365,6 +365,17 @@ class AccessoireController extends BaseController
 
         $count = 0;
         foreach ($toInsert as $accCode) {
+            $fkErr = ForeignKeyValidator::validate($db, 'accessoire_inscription', [
+                'inscription_code' => $insCode,
+                'accessoire_code' => $accCode,
+                'annee_code' => $anneeCode,
+                'etablissement_code' => $etabCode
+            ]);
+            if ($fkErr !== null) {
+                $this->error($fkErr);
+                return;
+            }
+
             $codeAccIns = $this->validator->generateCode('accessoire_inscription', 'code_accessoire_inscription', 'ACI-', 8);
             $ok = $stmt->execute([
                 $codeAccIns,

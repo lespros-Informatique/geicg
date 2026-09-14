@@ -130,6 +130,16 @@ class ForeignKeyValidator
             'table' => 'dossier_etudiant',
             'field' => 'code_dossier_etudiant',
             'label' => 'Dossier Étudiant'
+        ],
+        'etudiants_code' => [
+            'table' => 'etudiants',
+            'field' => 'code_etudiant',
+            'label' => 'Étudiant'
+        ],
+        'galerie_code' => [
+            'table' => 'galeries',
+            'field' => 'code_galerie',
+            'label' => 'Galerie Médias'
         ]
     ];
 
@@ -154,6 +164,7 @@ class ForeignKeyValidator
         'relances_impayes' => ['inscription_code', 'annee_code', 'etablissement_code'],
         'clotures_caisse' => ['annee_code', 'etablissement_code'],
         'ouvertures_caisse' => ['annee_code', 'etablissement_code'],
+        'sessions_caisse' => ['user_code', 'annee_code', 'etablissement_code'],
         'user_roles' => ['user_code', 'role_code'],
         'role_permissions' => ['role_code', 'permission_code'],
         'user_permissions' => ['user_code', 'permission_code'],
@@ -163,7 +174,20 @@ class ForeignKeyValidator
         'cycles' => ['etablissement_code'],
         'matieres' => ['filiere_code', 'niveau_code', 'etablissement_code'],
         'compositions' => ['annee_code', 'etablissement_code'],
-        'accessoires' => ['etablissement_code']
+        'composition_matieres' => ['composition_code', 'matiere_code'],
+        'composition_niveau_filiere' => ['composition_code', 'filiere_code', 'niveau_code'],
+        'accessoires' => ['etablissement_code'],
+        'dossier_etudiant' => ['inscription_code', 'etudiant_code', 'piece_code', 'etablissement_code'],
+        'parents' => ['etablissement_code'],
+        'piece_fournir_cycle' => ['piece_code', 'cycle_code', 'etablissement_code'],
+        'pieces_fournir' => ['etablissement_code'],
+        'semestres' => ['annee_code', 'etablissement_code'],
+        'documents' => ['etablissement_code'],
+        'fonctions' => ['etablissement_code'],
+        'galeries' => ['etablissement_code'],
+        'evenements' => ['etablissement_code'],
+        'salles' => ['etablissement_code'],
+        'type_depenses' => ['etablissement_code']
     ];
 
     /**

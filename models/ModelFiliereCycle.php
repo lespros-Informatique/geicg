@@ -42,6 +42,12 @@ class ModelFiliereCycle
 
     public function create(array $data)
     {
+        $fkErr = ForeignKeyValidator::validate($this->con, 'filiere_cycles', $data);
+        if ($fkErr !== null) {
+            error_log('[ModelFiliereCycle::create] FK Error: ' . $fkErr);
+            return false;
+        }
+
         $cols = array_keys($data);
         $sql = "INSERT INTO filiere_cycles (" . implode(', ', array_map(function($c){ return "`$c`"; }, $cols)) . ") 
                 VALUES (" . implode(', ', array_fill(0, count($cols), '?')) . ")";

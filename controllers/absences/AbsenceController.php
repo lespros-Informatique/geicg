@@ -288,6 +288,18 @@ class AbsenceController extends BaseController
                         ");
                         $stmtUpd->execute([$dureeHeures, $justifiee, $motif, $existingId]);
                     } else {
+                        $fkErr = ForeignKeyValidator::validate($db, 'absences', [
+                            'etudiant_code' => $etudiantCode,
+                            'classe_code' => $classeCode,
+                            'annee_code' => $anneeCode,
+                            'etablissement_code' => $etabCode
+                        ]);
+                        if ($fkErr !== null) {
+                            $db->rollBack();
+                            $this->error($fkErr);
+                            return;
+                        }
+
                         $codeAbs = $this->validator->generateCode('absences', 'code_absence', 'ABS-', 8);
                         $stmtIns = $db->prepare("
                             INSERT INTO absences (code_absence, etudiant_code, classe_code, matiere_code, date_absence, duree_heures, justifiee, motif_absence, user_code, etablissement_code, annee_code, created_at_absence)

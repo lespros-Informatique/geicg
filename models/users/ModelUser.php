@@ -96,6 +96,15 @@ class ModelUser extends BaseModel
                 }
 
                 if (!empty($roleCode)) {
+                    $fkErr = ForeignKeyValidator::validate($pdo, 'user_roles', [
+                        'user_code' => $userCode,
+                        'role_code' => $roleCode
+                    ]);
+                    if ($fkErr !== null) {
+                        error_log('[ModelUser::syncRoles] FK Error: ' . $fkErr);
+                        continue;
+                    }
+
                     $stmtIns->execute([$userCode, $roleCode, $createP, $editP, $showP, $deleteP]);
                 }
             }

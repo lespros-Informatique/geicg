@@ -349,6 +349,15 @@ class EtudiantController extends BaseController
             $db->beginTransaction();
 
             // 1. Insert Student into `etudiants`
+            $fkErrEtu = ForeignKeyValidator::validate($db, 'etudiants', [
+                'etablissement_code' => $etabCode
+            ]);
+            if ($fkErrEtu !== null) {
+                $db->rollBack();
+                $this->error($fkErrEtu);
+                return;
+            }
+
             $stmtEtu = $db->prepare("
                 INSERT INTO etudiants 
                 (code_etudiant, matricule_etudiant, matricule_menet, matricule_mesrs, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
@@ -375,6 +384,16 @@ class EtudiantController extends BaseController
             // 2. Insert Parent into `parents` if parent info provided
             if (!empty($data['nom_pere']) || !empty($data['nom_mere']) || !empty($data['nom_tuteur'])) {
                 $codeParent = $this->validator->generateCode('parents', 'code_parent', 'PAR-', 8);
+                $fkErrPar = ForeignKeyValidator::validate($db, 'parents', [
+                    'etudiant_code' => $codeEtudiant,
+                    'etablissement_code' => $etabCode
+                ]);
+                if ($fkErrPar !== null) {
+                    $db->rollBack();
+                    $this->error($fkErrPar);
+                    return;
+                }
+
                 $stmtPar = $db->prepare("
                     INSERT INTO parents 
                     (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, profession_mere, nom_tuteur, telephone_tuteur, profession_tuteur, user_code, etablissement_code, created_at_parent)
@@ -416,6 +435,19 @@ class EtudiantController extends BaseController
 
                 $affectationEtatVal = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'oui' : 'non';
                 $codeInscription = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
+                
+                $fkErrIns = ForeignKeyValidator::validate($db, 'inscriptions', [
+                    'etudiant_code' => $codeEtudiant,
+                    'classe_code' => $data['classe_code'],
+                    'annee_code' => $anneeCode,
+                    'etablissement_code' => $etabCode
+                ]);
+                if ($fkErrIns !== null) {
+                    $db->rollBack();
+                    $this->error($fkErrIns);
+                    return;
+                }
+
                 $stmtIns = $db->prepare("
                     INSERT INTO inscriptions
                     (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, user_code, annee_code, etablissement_code, statut_inscription, affectation_etat, created_at_inscription)
@@ -435,6 +467,11 @@ class EtudiantController extends BaseController
 
             // 4. Insert Accessoires / Kits into `accessoire_inscription`
             if (!empty($data['accessoires']) && is_array($data['accessoires'])) {
+                if (empty($codeInscription)) {
+                    $db->rollBack();
+                    $this->error("Opération interrompue : Une classe et une inscription sont obligatoires pour attribuer des accessoires.");
+                    return;
+                }
                 $stmtAcc = $db->prepare("
                     INSERT INTO accessoire_inscription
                     (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
@@ -442,10 +479,23 @@ class EtudiantController extends BaseController
                 ");
                 foreach ($data['accessoires'] as $accCode) {
                     if (empty($accCode)) continue;
+                    
+                    $fkErrAcc = ForeignKeyValidator::validate($db, 'accessoire_inscription', [
+                        'inscription_code' => $codeInscription,
+                        'accessoire_code' => $accCode,
+                        'annee_code' => $anneeCode,
+                        'etablissement_code' => $etabCode
+                    ]);
+                    if ($fkErrAcc !== null) {
+                        $db->rollBack();
+                        $this->error($fkErrAcc);
+                        return;
+                    }
+
                     $codeAccIns = $this->validator->generateCode('accessoire_inscription', 'code_accessoire_inscription', 'ACI-', 8);
                     $stmtAcc->execute([
                         $codeAccIns,
-                        !empty($codeInscription) ? $codeInscription : '',
+                        $codeInscription,
                         $accCode,
                         $anneeCode,
                         $userCode,
@@ -459,6 +509,11 @@ class EtudiantController extends BaseController
             $allPieces = $db->query("SELECT code_piece_fournir FROM pieces_fournir WHERE statut_piece = 'actif'")->fetchAll(PDO::FETCH_COLUMN) ?: [];
 
             if (!empty($allPieces)) {
+                if (empty($codeInscription)) {
+                    $db->rollBack();
+                    $this->error("Opération interrompue : Une inscription valide est nécessaire pour initialiser le dossier étudiant.");
+                    return;
+                }
                 $stmtDos = $db->prepare("
                     INSERT INTO dossier_etudiant
                     (code_dossier_etudiant, inscription_code, etudiant_code, piece_code, statut_depot, date_depot, observations, user_code, etablissement_code, created_at_dossier_etudiant)
@@ -467,10 +522,23 @@ class EtudiantController extends BaseController
 
                 foreach ($allPieces as $pCode) {
                     $isDepose = in_array($pCode, $piecesFournies);
+
+                    $fkErrDos = ForeignKeyValidator::validate($db, 'dossier_etudiant', [
+                        'inscription_code' => $codeInscription,
+                        'etudiant_code' => $codeEtudiant,
+                        'piece_code' => $pCode,
+                        'etablissement_code' => $etabCode
+                    ]);
+                    if ($fkErrDos !== null) {
+                        $db->rollBack();
+                        $this->error($fkErrDos);
+                        return;
+                    }
+
                     $codeDos = $this->validator->generateCode('dossier_etudiant', 'code_dossier_etudiant', 'DOS-', 8);
                     $stmtDos->execute([
                         $codeDos,
-                        !empty($codeInscription) ? $codeInscription : '',
+                        $codeInscription,
                         $codeEtudiant,
                         $pCode,
                         $isDepose ? 'depose' : 'en_attente',

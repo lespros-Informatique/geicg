@@ -123,6 +123,15 @@ class ModelComposition extends BaseModel
 
             foreach ($matiereCodes as $mCode) {
                 if (!empty($mCode)) {
+                    $fkErr = ForeignKeyValidator::validate($db, 'composition_matieres', [
+                        'composition_code' => $compositionCode,
+                        'matiere_code' => $mCode
+                    ]);
+                    if ($fkErr !== null) {
+                        error_log("Save composition matieres FK Error: " . $fkErr);
+                        continue;
+                    }
+
                     $stmtIns->execute([$compositionCode, $compositionNiveauFiliereCode, $mCode]);
                 }
             }

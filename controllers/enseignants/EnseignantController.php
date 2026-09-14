@@ -66,6 +66,15 @@ class EnseignantController extends BaseController
             }
 
             // Assigner le rôle ROLE_ENSEIGNANT dans user_roles s'il ne l'a pas déjà
+            $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
+                'user_code' => $codeUser,
+                'role_code' => 'ROLE_ENSEIGNANT'
+            ]);
+            if ($fkErrRole !== null) {
+                $this->error($fkErrRole);
+                return;
+            }
+
             $stmtRole = $db->prepare("
                 INSERT IGNORE INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
                 VALUES (?, 'ROLE_ENSEIGNANT', 1, 1, 1, 0)
@@ -73,6 +82,14 @@ class EnseignantController extends BaseController
             $stmtRole->execute([$codeUser]);
 
             // Créer la fiche dans enseignants
+            $fkErrEns = ForeignKeyValidator::validate($db, 'enseignants', [
+                'etablissement_code' => $etabCode
+            ]);
+            if ($fkErrEns !== null) {
+                $this->error($fkErrEns);
+                return;
+            }
+
             $stmtEns = $db->prepare("
                 INSERT INTO enseignants (
                     code_enseignant, grade_enseignant, type_contrat, numero_autorisation,
@@ -125,6 +142,15 @@ class EnseignantController extends BaseController
         $db->beginTransaction();
         try {
             // Créer le compte utilisateur dans `users`
+            $fkErrUser = ForeignKeyValidator::validate($db, 'users', [
+                'etablissement_code' => $etabCode
+            ]);
+            if ($fkErrUser !== null) {
+                $db->rollBack();
+                $this->error($fkErrUser);
+                return;
+            }
+
             $stmtUser = $db->prepare("
                 INSERT INTO users (
                     code_user, matricule_user, nom_user, prenom_user, email_user, telephone_user,
@@ -144,6 +170,16 @@ class EnseignantController extends BaseController
             ]);
 
             // Assigner le rôle ROLE_ENSEIGNANT
+            $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
+                'user_code' => $codeUser,
+                'role_code' => 'ROLE_ENSEIGNANT'
+            ]);
+            if ($fkErrRole !== null) {
+                $db->rollBack();
+                $this->error($fkErrRole);
+                return;
+            }
+
             $stmtRole = $db->prepare("
                 INSERT INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
                 VALUES (?, 'ROLE_ENSEIGNANT', 1, 1, 1, 0)
@@ -151,6 +187,15 @@ class EnseignantController extends BaseController
             $stmtRole->execute([$codeUser]);
 
             // Créer la fiche enseignant
+            $fkErrEns = ForeignKeyValidator::validate($db, 'enseignants', [
+                'etablissement_code' => $etabCode
+            ]);
+            if ($fkErrEns !== null) {
+                $db->rollBack();
+                $this->error($fkErrEns);
+                return;
+            }
+
             $stmtEns = $db->prepare("
                 INSERT INTO enseignants (
                     code_enseignant, grade_enseignant, type_contrat, numero_autorisation,

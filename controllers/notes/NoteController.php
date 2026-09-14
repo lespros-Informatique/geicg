@@ -359,6 +359,18 @@ class NoteController extends BaseController
                     ");
                     $stmtUpd->execute([$valNote, $obs, $compositionCode, $existingId]);
                 } else {
+                    $fkErr = ForeignKeyValidator::validate($db, 'notes', [
+                        'inscription_code' => $inscCode,
+                        'matiere_code' => $matiereCode,
+                        'annee_code' => $anneeCode,
+                        'etablissement_code' => $etabCode
+                    ]);
+                    if ($fkErr !== null) {
+                        $db->rollBack();
+                        $this->error($fkErr);
+                        return;
+                    }
+
                     $codeNote = $this->validator->generateCode('notes', 'code_note', 'NOT-', 8);
                     $stmtIns = $db->prepare("
                         INSERT INTO notes (code_note, inscription_code, matiere_code, semestre_code, type_evaluation_code, composition_code, valeur_note, observations, statut_note, user_code, etablissement_code, annee_code, created_at_note)
