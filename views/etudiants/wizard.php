@@ -400,10 +400,10 @@ $pieces = (new ModelPieceFournir())->getAll();
                   <?php foreach($accessoires as $acc): ?>
                     <label class="acc-checkbox-card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
                       <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire']) ?>" data-prix="<?= (float)$acc['prix_accessoire'] ?>" value="<?= htmlspecialchars($acc['code_accessoire']) ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
-                        <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 13px;"><?= htmlspecialchars($acc['libelle_accessoire']) ?></span>
+                        <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" data-prix="<?= (float)($acc['prix_accessoire'] ?? 0) ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
+                        <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 13px;"><?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?></span>
                       </div>
-                      <span class="acc-price" style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= number_format((float)$acc['prix_accessoire'], 0, ',', ' ') ?> FCFA</span>
+                      <span class="acc-price" style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= number_format((float)($acc['prix_accessoire'] ?? 0), 0, ',', ' ') ?> FCFA</span>
                     </label>
                   <?php endforeach; ?>
                 </div>
@@ -437,10 +437,10 @@ $pieces = (new ModelPieceFournir())->getAll();
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
                   <?php foreach($pieces as $p): ?>
                     <label class="piece-checkbox-card" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1.5px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
-                      <input type="checkbox" name="pieces_fournies[]" class="chk-piece" value="<?= htmlspecialchars($p['code_piece_fournir']) ?>" style="width: 18px; height: 18px; accent-color: #15803D; margin-top: 2px; flex-shrink: 0;">
+                      <input type="checkbox" name="pieces_fournies[]" class="chk-piece" value="<?= htmlspecialchars($p['code_piece_fournir'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #15803D; margin-top: 2px; flex-shrink: 0;">
                       <div style="flex: 1;">
                         <div style="font-weight: 700; color: #0F172A; font-size: 12.5px; line-height: 1.35;">
-                          <?= htmlspecialchars($p['libelle_piece']) ?>
+                          <?= htmlspecialchars($p['libelle_piece'] ?? '') ?>
                         </div>
                         <?php if (!empty($p['description_piece'])): ?>
                           <div style="font-size: 11px; color: #64748B; margin-top: 2px; line-height: 1.3;">
