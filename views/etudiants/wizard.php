@@ -672,6 +672,16 @@ $pieces = (new ModelPieceFournir())->getAll();
 
 <script>
 $(document).ready(function() {
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   var currentStep = 1;
   var totalSteps = 5;
 
@@ -702,6 +712,7 @@ $(document).ready(function() {
       try {
         var formData = JSON.parse(savedDataStr);
         $.each(formData, function(name, val) {
+          if (name === 'montant_scolarite_inscription') return;
           var $field = $('#form-wizard-etudiant').find('[name="' + name + '"]');
           if ($field.length) {
             if ($field.attr('type') === 'checkbox') {
@@ -714,6 +725,16 @@ $(document).ready(function() {
                   }
                 });
               }
+            } else if ($field.attr('type') === 'radio') {
+              $field.filter('[value="' + val + '"]').prop('checked', true);
+              $field.each(function() {
+                var isChecked = $(this).is(':checked');
+                $(this).closest('label').css({
+                  'border-color': isChecked ? '#1E3A5F' : '#CBD5E1',
+                  'background': isChecked ? '#EFF6FF' : '#FFFFFF',
+                  'color': isChecked ? '#1E3A5F' : '#334155'
+                });
+              });
             } else {
               $field.val(val);
             }
@@ -780,8 +801,16 @@ $(document).ready(function() {
     }
     if (step === 3) {
       var classe = $('#wiz_classe').val();
+      var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
+      var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
+      var montant = Number($('#wiz_montant_scolarite').val() || 0);
+
       if (!classe) {
         showToast('Veuillez sélectionner la classe d\'affectation.', 'warning', 'Champs requis');
+        return false;
+      }
+      if (montant <= 0) {
+        showToast('Attention : Aucun tarif de scolarité actif n\'est enregistré pour le régime "' + regimeName + '" sur cette classe. Veuillez configurer le tarif dans le module Scolarité.', 'warning', 'Tarif manquant');
         return false;
       }
     }
@@ -974,6 +1003,31 @@ $(document).ready(function() {
     saveFormData();
   });
 
+  function showRegimeWarningNotice(regimeName) {
+    var msg = "Aucun tarif de scolarité actif n'est enregistré pour le régime <strong>" + escapeHtml(regimeName) + "</strong> pour cette année académique. Veuillez configurer le tarif correspondant dans le module Scolarité.";
+    if (typeof showToast === 'function') {
+      showToast("Aucun tarif de scolarité actif pour le régime " + regimeName + ".", "warning", "Scolarité manquante");
+    }
+    
+    if ($('#wiz_regime_notice_banner').length === 0) {
+      var html = '<div id="wiz_regime_notice_banner" style="margin-top: 12px; font-size: 13px; color: #B45309; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 12px 16px; border-radius: 8px; line-height: 1.4; display: flex; align-items: center; gap: 10px;">' +
+        '<i data-lucide="alert-triangle" style="width: 18px; height: 18px; flex-shrink: 0; color: #D97706;"></i>' +
+        '<span class="wiz-regime-notice-text">' + msg + '</span>' +
+        '</div>';
+      $('input[name="affectation_etat"]').closest('.form-group').append(html);
+    } else {
+      $('#wiz_regime_notice_banner').find('.wiz-regime-notice-text').html(msg);
+      $('#wiz_regime_notice_banner').slideDown(150);
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function hideRegimeWarningNotice() {
+    if ($('#wiz_regime_notice_banner').length) {
+      $('#wiz_regime_notice_banner').slideUp(150);
+    }
+  }
+
   function filterWizardClassesByAnnee(callback) {
     var selectedAnnee = $('#wiz_annee').val();
     var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
@@ -1011,12 +1065,16 @@ $(document).ready(function() {
             optionsHtml += '<option value="' + escapeHtml(cl.code_classe) + '" data-annee="' + escapeHtml(cl.annee_code || selectedAnnee) + '"' + (isSel ? ' selected' : '') + '>' + escapeHtml(cl.libelle_classe) + '</option>';
           });
           if ($emptyMsg.length) $emptyMsg.slideUp(150);
+          hideRegimeWarningNotice();
         } else {
-          optionsHtml += '<option value="">-- Aucune classe avec scolarité enregistrée pour cette année --</option>';
+          var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
+          optionsHtml += '<option value="">-- Aucune classe avec scolarité pour le régime ' + escapeHtml(regimeName) + ' --</option>';
           if ($emptyMsg.length) {
+            $emptyMsg.find('span').html('Aucune classe n\'a de scolarité enregistrée pour le régime <strong>' + escapeHtml(regimeName) + '</strong> pour l\'année académique sélectionnée. Veuillez configurer le tarif dans le module Scolarité.');
             $emptyMsg.slideDown(200);
             if (window.lucide) lucide.createIcons();
           }
+          showRegimeWarningNotice(regimeName);
         }
 
         $classeSelect.html(optionsHtml);
@@ -1049,6 +1107,7 @@ $(document).ready(function() {
       $('#wiz-class-tuition-box').slideUp(200);
       $('#wiz_montant_scolarite').val(0);
       updateNetScolarite();
+      hideRegimeWarningNotice();
       return;
     }
 
@@ -1062,74 +1121,85 @@ $(document).ready(function() {
       },
       dataType: 'json',
       success: function(res) {
-        if (res.status === 1 && res.data) {
+        if (res && res.status === 1 && res.data) {
           var d = res.data;
           var totalScolarite = Number(d.montant_scolarite || 0);
 
-          $('#wiz_montant_scolarite').val(totalScolarite);
-          var regimeBadge = d.affectation_etat === 'affecte' ? ' <span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #BFDBFE; font-weight:700;">Affecté État</span>' : ' <span class="badge" style="background:#F8FAFC; color:#475569; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #CBD5E1; font-weight:700;">Non Affecté / Privé</span>';
-          $('#wiz_summary_classe_title').html(d.libelle_classe + regimeBadge);
-          $('#wiz_summary_filiere_niveau').text(
-            (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + 
-            (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau + ' • ' : '') + 
-            (d.libelle_annee ? 'Année : ' + d.libelle_annee : '')
-          );
-          $('#wiz_summary_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
+          if (totalScolarite > 0) {
+            $('#wiz_montant_scolarite').val(totalScolarite);
+            var regimeBadge = d.affectation_etat === 'affecte' ? ' <span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #BFDBFE; font-weight:700;">Affecté État</span>' : ' <span class="badge" style="background:#F8FAFC; color:#475569; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #CBD5E1; font-weight:700;">Non Affecté / Privé</span>';
+            $('#wiz_summary_classe_title').html(d.libelle_classe + regimeBadge);
+            $('#wiz_summary_filiere_niveau').text(
+              (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + 
+              (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau + ' • ' : '') + 
+              (d.libelle_annee ? 'Année : ' + d.libelle_annee : '')
+            );
+            $('#wiz_summary_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
 
-          // Rendu dynamique de TOUTES les tranches
-          var tranches = d.tranches || [];
-          var tbodyHtml = '';
-          var sumTranches = 0;
+            // Rendu dynamique de TOUTES les tranches
+            var tranches = d.tranches || [];
+            var tbodyHtml = '';
+            var sumTranches = 0;
 
-          if (tranches.length > 0) {
-            $('#wiz_tranches_count_badge').text(tranches.length + ' tranche(s) configurée(s)').show();
+            if (tranches.length > 0) {
+              $('#wiz_tranches_count_badge').text(tranches.length + ' tranche(s) configurée(s)').show();
 
-            tranches.forEach(function(tr, idx) {
-              var mt = Number(tr.montant_tranche || tr.montant_tranche_num || 0);
-              sumTranches += mt;
-              var isFirst = (idx === 0);
-              var pct = totalScolarite > 0 ? Math.round((mt / totalScolarite) * 100) : 0;
-              var dateLimite = tr.date_limite_formatee || (tr.date_limite ? tr.date_limite : 'Non définie');
+              tranches.forEach(function(tr, idx) {
+                var mt = Number(tr.montant_tranche || tr.montant_tranche_num || 0);
+                sumTranches += mt;
+                var isFirst = (idx === 0);
+                var pct = totalScolarite > 0 ? Math.round((mt / totalScolarite) * 100) : 0;
+                var dateLimite = tr.date_limite_formatee || (tr.date_limite ? tr.date_limite : 'Non définie');
 
-              tbodyHtml += '<tr style="border-bottom: 1px solid #F1F5F9; background: ' + (isFirst ? '#F8FAFC' : '#FFFFFF') + ';">';
-              tbodyHtml += '  <td style="padding: 12px 16px; font-weight: 800; color: #64748B;">' + (idx + 1) + '</td>';
-              tbodyHtml += '  <td style="padding: 12px 16px;">';
-              tbodyHtml += '    <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;">' + (tr.libelle_tranche || ('Tranche ' + (idx + 1))) + '</div>';
-              if (isFirst) {
-                tbodyHtml += '    <span style="background:#EFF6FF; color:#1D4ED8; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #BFDBFE;">Exigible à l\'inscription</span>';
-              }
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 12px 16px; text-align: center;">';
-              tbodyHtml += '    <span style="background:#F1F5F9; color:#334155; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px;">' + pct + '%</span>';
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 12px 16px; text-align: center; color: #475569; font-size: 12.5px; font-weight: 600;">';
-              tbodyHtml += '    <i data-lucide="calendar" style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px; color:#64748B;"></i>' + dateLimite;
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #1E3A5F; font-size: 14px;">';
-              tbodyHtml += '    ' + mt.toLocaleString('fr-FR') + ' FCFA';
+                tbodyHtml += '<tr style="border-bottom: 1px solid #F1F5F9; background: ' + (isFirst ? '#F8FAFC' : '#FFFFFF') + ';">';
+                tbodyHtml += '  <td style="padding: 12px 16px; font-weight: 800; color: #64748B;">' + (idx + 1) + '</td>';
+                tbodyHtml += '  <td style="padding: 12px 16px;">';
+                tbodyHtml += '    <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;">' + (tr.libelle_tranche || ('Tranche ' + (idx + 1))) + '</div>';
+                if (isFirst) {
+                  tbodyHtml += '    <span style="background:#EFF6FF; color:#1D4ED8; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #BFDBFE;">Exigible à l\'inscription</span>';
+                }
+                tbodyHtml += '  </td>';
+                tbodyHtml += '  <td style="padding: 12px 16px; text-align: center;">';
+                tbodyHtml += '    <span style="background:#F1F5F9; color:#334155; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px;">' + pct + '%</span>';
+                tbodyHtml += '  </td>';
+                tbodyHtml += '  <td style="padding: 12px 16px; text-align: center; color: #475569; font-size: 12.5px; font-weight: 600;">';
+                tbodyHtml += '    <i data-lucide="calendar" style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px; color:#64748B;"></i>' + dateLimite;
+                tbodyHtml += '  </td>';
+                tbodyHtml += '  <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #1E3A5F; font-size: 14px;">';
+                tbodyHtml += '    ' + mt.toLocaleString('fr-FR') + ' FCFA';
+                tbodyHtml += '  </td>';
+                tbodyHtml += '</tr>';
+              });
+            } else {
+              $('#wiz_tranches_count_badge').text('Paiement Unique');
+              sumTranches = totalScolarite;
+              tbodyHtml += '<tr>';
+              tbodyHtml += '  <td colspan="5" style="padding: 16px; text-align: center; color: #64748B; font-style: italic;">';
+              tbodyHtml += '    Aucune tranche intermédiaire configurée pour cette classe. Règlement unique de la scolarité totale : <strong>' + totalScolarite.toLocaleString('fr-FR') + ' FCFA</strong>';
               tbodyHtml += '  </td>';
               tbodyHtml += '</tr>';
-            });
+            }
+
+            $('#wiz_tranches_table_body').html(tbodyHtml);
+            $('#wiz_tranches_total_sum').text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
+
+            hideRegimeWarningNotice();
+            updateNetScolarite();
+            $('#wiz-class-tuition-box').stop(true, true).slideDown(250);
+            if (window.lucide) lucide.createIcons();
           } else {
-            $('#wiz_tranches_count_badge').text('Paiement Unique');
-            sumTranches = totalScolarite;
-            tbodyHtml += '<tr>';
-            tbodyHtml += '  <td colspan="5" style="padding: 16px; text-align: center; color: #64748B; font-style: italic;">';
-            tbodyHtml += '    Aucune tranche intermédiaire configurée pour cette classe. Règlement unique de la scolarité totale : <strong>' + totalScolarite.toLocaleString('fr-FR') + ' FCFA</strong>';
-            tbodyHtml += '  </td>';
-            tbodyHtml += '</tr>';
+            $('#wiz-class-tuition-box').slideUp(200);
+            $('#wiz_montant_scolarite').val(0);
+            updateNetScolarite();
+            var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
+            showRegimeWarningNotice(regimeName);
           }
-
-          $('#wiz_tranches_table_body').html(tbodyHtml);
-          $('#wiz_tranches_total_sum').text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
-
-          updateNetScolarite();
-          $('#wiz-class-tuition-box').stop(true, true).slideDown(250);
-          if (window.lucide) lucide.createIcons();
         } else {
           $('#wiz-class-tuition-box').slideUp(200);
           $('#wiz_montant_scolarite').val(0);
           updateNetScolarite();
+          var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
+          showRegimeWarningNotice(regimeName);
         }
       },
       error: function(err) {
@@ -1137,6 +1207,8 @@ $(document).ready(function() {
         $('#wiz-class-tuition-box').slideUp(200);
         $('#wiz_montant_scolarite').val(0);
         updateNetScolarite();
+        var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
+        showRegimeWarningNotice(regimeName);
       }
     });
   }

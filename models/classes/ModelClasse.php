@@ -34,7 +34,7 @@ class ModelClasse extends BaseModel
                                        AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
                                        AND s.statut_scolarite = 'actif'
                                        AND s.annee_code = ?
-                                       AND (s.affectation_etat = ? OR s.affectation_etat IS NULL OR s.affectation_etat = '')
+                                       AND s.affectation_etat = ?
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
                 WHERE c.statut_classe = 'actif' AND c.annee_code = ?
@@ -45,10 +45,7 @@ class ModelClasse extends BaseModel
             ";
             $stmtStrict = $db->prepare($sqlStrict);
             $stmtStrict->execute([$anneeCode, $affectationEtat, $anneeCode]);
-            $results = $stmtStrict->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            if (!empty($results)) {
-                return $results;
-            }
+            return $stmtStrict->fetchAll(PDO::FETCH_ASSOC) ?: [];
         }
 
         // 2. Recherche générale : toutes les classes actives ayant au moins une scolarité active pour l'année sélectionnée

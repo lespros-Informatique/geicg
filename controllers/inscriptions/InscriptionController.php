@@ -341,7 +341,7 @@ class InscriptionController extends BaseController
     public function getTuitionByClass()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_INSCRIPTIONS');
+        $this->requirePermission(['VIEW_INSCRIPTIONS', 'MANAGE_ETUDIANTS', 'VIEW_CLASSES', 'MANAGE_INSCRIPTIONS']);
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         $anneeCodeReq = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
         $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? 'non_affecte'));
@@ -385,12 +385,11 @@ class InscriptionController extends BaseController
             WHERE filiere_code = ? 
               AND (annee_code = ? OR ? = '')
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
-              AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
+              AND affectation_etat = ?
               AND statut_scolarite = 'actif'
             ORDER BY 
               (CASE WHEN annee_code = ? THEN 1 ELSE 2 END),
               (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END),
-              (CASE WHEN affectation_etat = ? THEN 1 ELSE 2 END),
               id_scolarite DESC
             LIMIT 1
         ");
@@ -400,14 +399,21 @@ class InscriptionController extends BaseController
             $niveauCode,
             $affectationEtat,
             $activeAnneeCode,
-            $niveauCode,
-            $affectationEtat
+            $niveauCode
         ]);
         $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
 
-        $montantScolarite = $sco ? (float)$sco['montant_scolarite'] : 0;
-        $affectationEtatFinal = $sco['affectation_etat'] ?? $affectationEtat;
-        $codeScolarite = $sco['code_scolarite'] ?? '';
+        if (!$sco) {
+            $this->json([
+                'status' => 0,
+                'message' => 'Aucun tarif de scolarité actif n\'a été trouvé pour le régime sélectionné (' . $affectationEtat . ') pour cette classe.'
+            ]);
+            return;
+        }
+
+        $montantScolarite = (float)$sco['montant_scolarite'];
+        $affectationEtatFinal = $sco['affectation_etat'];
+        $codeScolarite = $sco['code_scolarite'];
 
         // 2. Récupérer TOUTES les tranches de scolarité associées
         $tranches = [];
