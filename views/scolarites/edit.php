@@ -2,9 +2,70 @@
 <?php
 $dbScol = (new Database())->getCon();
 $annees = (new ModelAnnee())->getAll();
-$cycles = (new ModelCycle())->getAll();
-$filieres = (new ModelFiliere())->getAll();
-$niveaux = (new ModelNiveau())->getAll();
+
+$currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
+
+if (!empty($currentAnneeCode)) {
+    // Cycles des filières ayant au moins une classe enregistrée pour l'année académique active
+    $stmtCycles = $dbScol->prepare("
+        SELECT DISTINCT cy.* 
+        FROM cycles cy 
+        INNER JOIN filiere_cycles fc ON cy.code_cycle = fc.cycle_code 
+        INNER JOIN classes c ON fc.filiere_code = c.filiere_code 
+        WHERE c.annee_code = ? AND (c.statut_classe = 'actif' OR c.statut_classe IS NULL)
+        ORDER BY cy.libelle_cycle ASC
+    ");
+    $stmtCycles->execute([$currentAnneeCode]);
+    $cycles = $stmtCycles->fetchAll(PDO::FETCH_ASSOC);
+
+    // Filières ayant au moins une classe enregistrée pour l'année académique active
+    $stmtFilieres = $dbScol->prepare("
+        SELECT DISTINCT f.* 
+        FROM filieres f 
+        INNER JOIN classes c ON f.code_filiere = c.filiere_code 
+        WHERE c.annee_code = ? AND (c.statut_classe = 'actif' OR c.statut_classe IS NULL)
+        ORDER BY f.libelle_filiere ASC
+    ");
+    $stmtFilieres->execute([$currentAnneeCode]);
+    $filieres = $stmtFilieres->fetchAll(PDO::FETCH_ASSOC);
+
+    // Niveaux d'études ayant au moins une classe enregistrée pour l'année académique active
+    $stmtNiveaux = $dbScol->prepare("
+        SELECT DISTINCT n.* 
+        FROM niveaux n 
+        INNER JOIN classes c ON n.code_niveau = c.niveau_code 
+        WHERE c.annee_code = ? AND (c.statut_classe = 'actif' OR c.statut_classe IS NULL)
+        ORDER BY n.libelle_niveau ASC
+    ");
+    $stmtNiveaux->execute([$currentAnneeCode]);
+    $niveaux = $stmtNiveaux->fetchAll(PDO::FETCH_ASSOC);
+} else {
+    $cycles = (new ModelCycle())->getAll();
+    $filieres = (new ModelFiliere())->getAll();
+    $niveaux = (new ModelNiveau())->getAll();
+}
+
+// En mode édition, s'assurer que les choix de la fiche existante sont inclus
+if (!empty($item['filiere_code'])) {
+    $hasFil = false;
+    foreach ($filieres as $f) {
+        if ($f['code_filiere'] === $item['filiere_code']) { $hasFil = true; break; }
+    }
+    if (!$hasFil) {
+        $extraFil = (new ModelFiliere())->getByCode($item['filiere_code']);
+        if ($extraFil) $filieres[] = $extraFil;
+    }
+}
+if (!empty($item['niveau_code'])) {
+    $hasNiv = false;
+    foreach ($niveaux as $n) {
+        if ($n['code_niveau'] === $item['niveau_code']) { $hasNiv = true; break; }
+    }
+    if (!$hasNiv) {
+        $extraNiv = (new ModelNiveau())->getByCode($item['niveau_code']);
+        if ($extraNiv) $niveaux[] = $extraNiv;
+    }
+}
 
 $filiereCyclesMap = $dbScol->query("
     SELECT filiere_code, cycle_code 
@@ -70,8 +131,8 @@ foreach ($filiereCyclesMap as $fc) {
 
             <!-- Cycle Académique (Select2 pour filtrer les filières) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle Académique</label>
-              <select class="form-control select2" id="sel_cycle_scolarite" name="cycle_code" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle Académique <span style="color: #EF4444;">*</span> </label>
+              <select class="form-control select2" id="sel_cycle_scolarite" name="cycle_code" style="width: 100%;" required>
                 <option value="">-- Tous les cycles --</option>
                 <?php 
                   $selectedFiliereCycles = !empty($item['filiere_code']) ? ($filiereToCycles[$item['filiere_code']] ?? []) : [];
