@@ -37,14 +37,14 @@ class ModelClasse extends BaseModel
                                        AND (s.affectation_etat = ? OR s.affectation_etat IS NULL OR s.affectation_etat = '')
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-                WHERE c.statut_classe = 'actif'
+                WHERE c.statut_classe = 'actif' AND c.annee_code = ?
                 GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                          c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                          f.libelle_filiere, n.libelle_niveau
                 ORDER BY c.libelle_classe ASC
             ";
             $stmtStrict = $db->prepare($sqlStrict);
-            $stmtStrict->execute([$anneeCode, $affectationEtat]);
+            $stmtStrict->execute([$anneeCode, $affectationEtat, $anneeCode]);
             $results = $stmtStrict->fetchAll(PDO::FETCH_ASSOC) ?: [];
             if (!empty($results)) {
                 return $results;
@@ -64,7 +64,7 @@ class ModelClasse extends BaseModel
                                    AND s.annee_code = ?
             LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
             LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-            WHERE c.statut_classe = 'actif'
+            WHERE c.statut_classe = 'actif' AND c.annee_code = ?
             GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                      c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                      f.libelle_filiere, n.libelle_niveau
@@ -72,7 +72,7 @@ class ModelClasse extends BaseModel
         ";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute([$anneeCode]);
+        $stmt->execute([$anneeCode, $anneeCode]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }

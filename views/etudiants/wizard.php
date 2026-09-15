@@ -15,7 +15,7 @@ if (empty($activeAnneeCode)) {
         $activeAnneeCode = $annees[0]['code_annee'];
     }
 }
-$classes = (new ModelClasse())->getClassesWithScolarite($activeAnneeCode);
+$classes = (new ModelClasse())->getClassesWithScolarite($activeAnneeCode, 'non_affecte');
 $accessoires = (new ModelAccessoire())->getAll();
 $pieces = (new ModelPieceFournir())->getAll();
 ?>
@@ -760,6 +760,10 @@ $(document).ready(function() {
       $('#btn-wizard-submit').hide();
     }
 
+    if (currentStep >= 3) {
+      refreshClassTuition();
+    }
+
     saveFormData();
     if (window.lucide) lucide.createIcons();
   }
@@ -1124,11 +1128,15 @@ $(document).ready(function() {
           if (window.lucide) lucide.createIcons();
         } else {
           $('#wiz-class-tuition-box').slideUp(200);
+          $('#wiz_montant_scolarite').val(0);
+          updateNetScolarite();
         }
       },
       error: function(err) {
         console.error('Erreur chargement tarif classe:', err);
         $('#wiz-class-tuition-box').slideUp(200);
+        $('#wiz_montant_scolarite').val(0);
+        updateNetScolarite();
       }
     });
   }
