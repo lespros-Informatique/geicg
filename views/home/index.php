@@ -444,7 +444,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
 
               <div class="dash-module-grid">
                 <?php if ($hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
-                  <a href="<?= RACINE ?>inscription/list" class="dash-module-card">
+                  <a href="<?= RACINE ?>reinscription/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
                         <div class="dash-module-icon" style="background: #EFF6FF; color: #1D4ED8;">
@@ -896,7 +896,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
               <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="user-plus" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Inscriptions Récentes
               </h3>
-              <a href="<?= RACINE ?>inscription/list" style="font-size: 12px; font-weight: 700; color: #1E3A5F; text-decoration: none;">Voir tout &rarr;</a>
+              <a href="<?= RACINE ?>reinscription/list" style="font-size: 12px; font-weight: 700; color: #1E3A5F; text-decoration: none;">Voir tout &rarr;</a>
             </div>
 
             <div style="overflow-x: auto;">

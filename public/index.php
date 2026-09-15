@@ -227,6 +227,7 @@ $route->addRoute('/parent/formulaire', [$parentController, 'formulaire']);
 
 // Module: inscription (InscriptionController)
 $route->addRoute('/inscription/list', [$inscriptionController, 'list']);
+$route->addRoute('/reinscription/list', [$inscriptionController, 'list']);
 $route->addRoute('/inscription/apiList', [$inscriptionController, 'apiList']);
 $route->addRoute('/inscription/getStudentProfileSummary', [$inscriptionController, 'getStudentProfileSummary']);
 $route->addRoute('/inscription/getTuitionByClass', [$inscriptionController, 'getTuitionByClass']);
@@ -236,6 +237,7 @@ $route->addRoute('/inscription/changer', [$inscriptionController, 'changer']);
 $route->addRoute('/inscription/details/{param}', [$inscriptionController, 'details']);
 $route->addRoute('/inscription/edition/{param}', [$inscriptionController, 'edition']);
 $route->addRoute('/inscription/formulaire', [$inscriptionController, 'formulaire']);
+$route->addRoute('/reinscription/formulaire', [$inscriptionController, 'formulaire']);
 
 // Module: accessoire (AccessoireController)
 $route->addRoute('/accessoire/list', [$accessoireController, 'list']);

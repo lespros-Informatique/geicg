@@ -388,7 +388,7 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showInscriptions): ?>
-                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Réinscriptions">
+                <a href="<?= RACINE ?>reinscription/list" class="nav-item sub <?= (strpos($currentUri, '/inscription/') !== false || strpos($currentUri, '/reinscription/') !== false) ? 'active' : '' ?>" data-title="Réinscriptions">
                     <i data-lucide="clipboard-check"></i> <span>Réinscriptions</span>
                 </a>
                 <?php endif; ?>

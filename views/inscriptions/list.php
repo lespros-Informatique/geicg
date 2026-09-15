@@ -46,9 +46,6 @@
           <button onclick="window.print()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste des inscrits">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
-          <a href="<?= RACINE ?>etudiant/list" class="btn btn-warning" style="background: #F59E0B; border: 1.5px solid #D97706; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Consultation du registre et enregistrement des nouveaux dossiers étudiants">
-            <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> INSCRIPTION
-          </a>
           <a href="<?= RACINE ?>inscription/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 6px rgba(30,58,95,0.25);">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> REINSCRIPTION
           </a>
