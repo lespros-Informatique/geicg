@@ -336,7 +336,8 @@ class ScolariteController extends BaseController
             if ($skippedCount > 0) {
                 $this->error("Toutes les combinaisons (Filière x Niveau) sélectionnées existent déjà pour ce régime d'affectation.");
             } else {
-                $this->error("Erreur lors de la création du tarif de scolarité.");
+                $lastErr = $this->model->getLastError();
+                $this->error(!empty($lastErr) ? $lastErr : "Erreur lors de la création du tarif de scolarité.");
             }
             return;
         }
@@ -468,7 +469,8 @@ class ScolariteController extends BaseController
 
             $this->success('Tarif de scolarité et tranches mis à jour avec succès !');
         } else {
-            $this->error('Erreur lors de la modification de la scolarité.');
+            $lastErr = $this->model->getLastError();
+            $this->error(!empty($lastErr) ? $lastErr : 'Erreur lors de la modification de la scolarité.');
         }
     }
 
