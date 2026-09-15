@@ -13,24 +13,33 @@ class InscriptionController extends BaseController
         $this->requirePermission('VIEW_INSCRIPTIONS');
         $db = $this->model->getCon();
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
-            if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
-            }
+        $activeAnneeCode = $this->getActiveAnneeCode();
+
+        // 1. Récupérer l'ID de l'année active
+        $stmtActive = $db->prepare("SELECT id_annee FROM annees WHERE code_annee = ? LIMIT 1");
+        $stmtActive->execute([$activeAnneeCode]);
+        $activeAnneeId = (int)($stmtActive->fetchColumn() ?: 0);
+
+        // 2. Récupérer uniquement les années dont l'id_annee est strictement inférieur à l'année active
+        $annees = [];
+        if ($activeAnneeId > 0) {
+            $stmtA = $db->prepare("SELECT id_annee, code_annee, libelle_annee, statut_annee FROM annees WHERE id_annee < ? ORDER BY id_annee DESC");
+            $stmtA->execute([$activeAnneeId]);
+            $annees = $stmtA->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+        if (empty($annees)) {
+            $stmtFallback = $db->prepare("SELECT id_annee, code_annee, libelle_annee, statut_annee FROM annees WHERE code_annee != ? ORDER BY id_annee DESC");
+            $stmtFallback->execute([$activeAnneeCode]);
+            $annees = $stmtFallback->fetchAll(PDO::FETCH_ASSOC) ?: [];
         }
 
-        $selectedAnneeCode = $this->getActiveAnneeCode();
+        // Année sélectionnée par défaut (la plus récente des années inférieures)
+        $selectedAnneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : ($annees[0]['code_annee'] ?? '');
 
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code, niveau_code, annee_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
+
         $this->loadView('../views/inscriptions/list.php', [
             'filieres' => $filieres,
             'niveaux' => $niveaux,
@@ -67,25 +76,18 @@ class InscriptionController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission('VIEW_INSCRIPTIONS');
-        
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $db = $this->model->getCon();
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
-            if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
-            }
-        }
+        $db = $this->model->getCon();
 
-        $anneeCode = $this->getActiveAnneeCode();
+        $activeAnneeCode = $this->getActiveAnneeCode();
+        $filterAnnee = trim($_GET['annee_code'] ?? '');
         $filterFiliere = trim($_GET['filiere_code'] ?? '');
         $filterNiveau = trim($_GET['niveau_code'] ?? '');
         $filterClasse = trim($_GET['classe_code'] ?? '');
 
-        $db = $this->model->getCon();
+        if (empty($filterAnnee) || $filterAnnee === 'ALL') {
+            $this->json(['data' => []]);
+            return;
+        }
 
         // 1. Récupérer tous les étudiants
         $students = $db->query("
@@ -100,27 +102,43 @@ class InscriptionController extends BaseController
             FROM inscriptions
             WHERE annee_code = ? AND statut_inscription != 'annule'
         ");
-        $stmtCur->execute([$anneeCode]);
+        $stmtCur->execute([$activeAnneeCode]);
         $curCodes = $stmtCur->fetchAll(PDO::FETCH_COLUMN) ?: [];
         $curSet = [];
         foreach ($curCodes as $c) {
             $curSet[trim($c)] = true;
         }
 
-        // 3. Dernière inscription passée (N-1)
+        // 3. Récupération de la dernière inscription passée selon le filtre d'année sélectionné (id_annee < active)
         $priorMap = [];
-        $stmtPrior = $db->prepare("
-            SELECT i.*, c.libelle_classe as classe_prev, c.filiere_code as filiere_prev_code, c.niveau_code as niveau_prev_code,
-                   f.libelle_filiere as filiere_prev, n.libelle_niveau as niveau_prev, a.libelle_annee as annee_prev
-            FROM inscriptions i
-            LEFT JOIN classes c ON c.code_classe = i.classe_code
-            LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-            LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-            LEFT JOIN annees a ON a.code_annee = i.annee_code
-            WHERE i.annee_code != ? AND i.statut_inscription != 'annule'
-            ORDER BY i.id_inscription DESC
-        ");
-        $stmtPrior->execute([$anneeCode]);
+        if (!empty($filterAnnee) && $filterAnnee !== 'ALL') {
+            $stmtPrior = $db->prepare("
+                SELECT i.*, c.libelle_classe as classe_prev, c.filiere_code as filiere_prev_code, c.niveau_code as niveau_prev_code,
+                       f.libelle_filiere as filiere_prev, n.libelle_niveau as niveau_prev, a.libelle_annee as annee_prev
+                FROM inscriptions i
+                LEFT JOIN classes c ON c.code_classe = i.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
+                WHERE i.annee_code = ? AND i.statut_inscription != 'annule'
+                ORDER BY i.id_inscription DESC
+            ");
+            $stmtPrior->execute([$filterAnnee]);
+        } else {
+            $stmtPrior = $db->prepare("
+                SELECT i.*, c.libelle_classe as classe_prev, c.filiere_code as filiere_prev_code, c.niveau_code as niveau_prev_code,
+                       f.libelle_filiere as filiere_prev, n.libelle_niveau as niveau_prev, a.libelle_annee as annee_prev
+                FROM inscriptions i
+                LEFT JOIN classes c ON c.code_classe = i.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
+                WHERE i.annee_code != ? AND i.statut_inscription != 'annule'
+                ORDER BY i.id_inscription DESC
+            ");
+            $stmtPrior->execute([$activeAnneeCode]);
+        }
+
         while ($row = $stmtPrior->fetch(PDO::FETCH_ASSOC)) {
             $etuCode = $row['etudiant_code'];
             if (!isset($priorMap[$etuCode])) {
@@ -139,6 +157,9 @@ class InscriptionController extends BaseController
             }
 
             $prev = $priorMap[$code] ?? ($priorMap[$mat] ?? null);
+            if (!$prev) {
+                continue;
+            }
 
             // Détermination de la filière / niveau / classe N-1
             $refFiliere = $prev['filiere_prev_code'] ?? '';

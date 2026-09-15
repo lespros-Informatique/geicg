@@ -71,6 +71,7 @@
               <i data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: -2px;"></i> Année Académique
             </label>
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
+              <option value="">-- Choisir l'année académique --</option>
               <?php foreach (($annees ?? []) as $a): ?>
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
                   <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
@@ -82,7 +83,7 @@
           <!-- Filtre Filière -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Filière</label>
-            <select id="filter-filiere" class="form-control select2" style="width: 100%;">
+            <select id="filter-filiere" class="form-control select2" style="width: 100%;" <?= empty($selectedAnneeCode) ? 'disabled readonly' : '' ?>>
               <option value="ALL">-- Toutes les filières --</option>
               <?php foreach (($filieres ?? []) as $f): ?>
                 <option value="<?= htmlspecialchars($f['code_filiere']) ?>">
@@ -95,7 +96,7 @@
           <!-- Filtre Niveau -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Niveau d'Études</label>
-            <select id="filter-niveau" class="form-control select2" style="width: 100%;">
+            <select id="filter-niveau" class="form-control select2" style="width: 100%;" <?= empty($selectedAnneeCode) ? 'disabled readonly' : '' ?>>
               <option value="ALL">-- Tous les niveaux --</option>
               <?php foreach (($niveaux ?? []) as $n): ?>
                 <option value="<?= htmlspecialchars($n['code_niveau']) ?>">
@@ -108,7 +109,7 @@
           <!-- Filtre Classe -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Classe Antérieure (N-1)</label>
-            <select id="filter-classe" class="form-control select2" style="width: 100%;">
+            <select id="filter-classe" class="form-control select2" style="width: 100%;" <?= empty($selectedAnneeCode) ? 'disabled readonly' : '' ?>>
               <option value="ALL">-- Toutes les classes --</option>
               <?php foreach (($classes ?? []) as $c): ?>
                 <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-filiere="<?= htmlspecialchars($c['filiere_code'] ?? '') ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>">
@@ -209,6 +210,53 @@ $(document).ready(function() {
     }
   });
 
+  function toggleFieldsByAnnee() {
+    var val = $('#filter-annee').val();
+    var hasAnnee = !!(val && val !== '');
+    var $targets = $('#filter-filiere, #filter-niveau, #filter-classe');
+
+    $targets.prop('disabled', !hasAnnee);
+    if (!hasAnnee) {
+      $targets.attr('readonly', 'readonly');
+      $('#btn-reset-filters').prop('disabled', true).addClass('disabled').css('opacity', '0.5');
+    } else {
+      $targets.removeAttr('readonly');
+      $('#btn-reset-filters').prop('disabled', false).removeClass('disabled').css('opacity', '1');
+    }
+
+    if ($.fn.select2) {
+      $targets.trigger('change.select2');
+      $targets.each(function() {
+        var $container = $(this).next('.select2-container');
+        if (!hasAnnee) {
+          $container.find('.select2-selection').css({
+            'background-color': '#F8FAFC',
+            'cursor': 'not-allowed',
+            'opacity': '0.7'
+          });
+        } else {
+          $container.find('.select2-selection').css({
+            'background-color': '#FFFFFF',
+            'cursor': 'pointer',
+            'opacity': '1'
+          });
+        }
+      });
+    }
+    return hasAnnee;
+  }
+
+  toggleFieldsByAnnee();
+
+  $('#filter-annee').on('change', function() {
+    var hasAnnee = toggleFieldsByAnnee();
+    if (!hasAnnee) {
+      $('#filter-filiere').val('ALL').trigger('change.select2');
+      $('#filter-niveau').val('ALL').trigger('change.select2');
+      $('#filter-classe').val('ALL').trigger('change.select2');
+    }
+  });
+
   // Rechargement sur changement des filtres (y compris Année Académique)
   $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').on('change', function() {
     var filSelected = $('#filter-filiere').val();
@@ -236,6 +284,7 @@ $(document).ready(function() {
 
   // Bouton Réinitialiser
   $('#btn-reset-filters').on('click', function() {
+    if ($('#btn-reset-filters').is(':disabled')) return;
     $('#filter-filiere').val('ALL').trigger('change.select2');
     $('#filter-niveau').val('ALL').trigger('change.select2');
     $('#filter-classe').val('ALL').trigger('change.select2');
