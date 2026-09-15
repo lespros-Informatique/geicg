@@ -1,6 +1,21 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$filieres = (new ModelFiliere())->getAll();
+$filieres = (new ModelFiliere())->getFilieresAssocieesAuxCycles();
+if (!empty($item['filiere_code'])) {
+    $exists = false;
+    foreach ($filieres as $f) {
+        if (($f['code_filiere'] ?? '') === $item['filiere_code']) {
+            $exists = true;
+            break;
+        }
+    }
+    if (!$exists) {
+        $currentFil = (new ModelFiliere())->getByCode($item['filiere_code']);
+        if (!empty($currentFil)) {
+            $filieres[] = $currentFil;
+        }
+    }
+}
 $niveaux = (new ModelNiveau())->getAll();
 $annees = (new ModelAnnee())->getAll();
 $currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
