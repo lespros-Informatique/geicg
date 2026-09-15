@@ -388,18 +388,18 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showInscriptions): ?>
-                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Inscriptions & Réinscriptions">
-                    <i data-lucide="clipboard-check"></i> <span>Inscriptions & Réinscriptions</span>
+                <a href="<?= RACINE ?>inscription/list" class="nav-item sub <?= strpos($currentUri, '/inscription/') !== false ? 'active' : '' ?>" data-title="Réinscriptions">
+                    <i data-lucide="clipboard-check"></i> <span>Réinscriptions</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showDepotDossiers): ?>
                 <a href="<?= RACINE ?>dossier_etudiant/list" class="nav-item sub <?= strpos($currentUri, '/dossier_etudiant/') !== false ? 'active' : '' ?>" data-title="Dépôt des Dossiers Étudiants">
-                    <i data-lucide="folder-check"></i> <span>Dépôt des Dossiers Étudiants</span>
+                    <i data-lucide="folder-open"></i> <span>Dépôt des Dossiers </span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showRemiseKits): ?>
                 <a href="<?= RACINE ?>accessoire_inscription/registre" class="nav-item sub <?= (strpos($currentUri, '/accessoire_inscription/') !== false || strpos($currentUri, '/accessoire/registre') !== false) ? 'active' : '' ?>" data-title="Registre & Remise des Kits">
-                    <i data-lucide="package-check"></i> <span>Registre & Remise des Kits</span>
+                    <i data-lucide="package-check"></i> <span>Retrait des Kits</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showParents): ?>
