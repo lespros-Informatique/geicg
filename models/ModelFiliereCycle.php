@@ -3,6 +3,7 @@
 class ModelFiliereCycle
 {
     private $con;
+    private ?string $lastError = null;
 
     public function __construct()
     {
@@ -12,6 +13,11 @@ class ModelFiliereCycle
     public function getCon()
     {
         return $this->con;
+    }
+
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
     }
 
     public function getAll()
@@ -44,6 +50,7 @@ class ModelFiliereCycle
     {
         $fkErr = ForeignKeyValidator::validate($this->con, 'filiere_cycles', $data);
         if ($fkErr !== null) {
+            $this->lastError = $fkErr;
             error_log('[ModelFiliereCycle::create] FK Error: ' . $fkErr);
             return false;
         }
@@ -52,7 +59,13 @@ class ModelFiliereCycle
         $sql = "INSERT INTO filiere_cycles (" . implode(', ', array_map(function($c){ return "`$c`"; }, $cols)) . ") 
                 VALUES (" . implode(', ', array_fill(0, count($cols), '?')) . ")";
         $stmt = $this->con->prepare($sql);
-        return $stmt->execute(array_values($data));
+        try {
+            return $stmt->execute(array_values($data));
+        } catch (PDOException $e) {
+            $this->lastError = $e->getMessage();
+            error_log('[ModelFiliereCycle::create] PDO Error: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public function update(array $data, $id)

@@ -33,6 +33,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requireAnyPermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -43,18 +44,28 @@ class FiliereCycleController extends BaseController
             ], 'Assignation Filière - Cycle')) return;
         }
 
+        $userCode = $this->getCurrentUserCode();
+        $etabCode = $this->getActiveEtablissementCode();
+
         if (empty($data['code_filiere_cycle'])) {
             $data['code_filiere_cycle'] = $this->validator->generateCode('filiere_cycles', 'code_filiere_cycle', 'FCYC-', 8);
         }
         $data['statut_filiere_cycle'] = $data['statut_filiere_cycle'] ?? 'actif';
         $data['created_at_filiere_cycle'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE filiere_cycles")->fetchAll(PDO::FETCH_COLUMN);
+
+        if (in_array('user_code', $cols) && !empty($userCode)) $data['user_code'] = $userCode;
+        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
+
         $filteredData = array_intersect_key($data, array_flip($cols));
 
         if ($this->model->create($filteredData)) {
-            $this->success('Assignation Filière - Cycle créée avec succès!');
+            $this->success('Assignation Filière - Cycle créée avec succès!', RACINE . 'filiere_cycle/list');
         } else {
-            $this->error('Erreur lors de la création de l\'assignation');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la création de l\'assignation';
+            $this->error($msg);
         }
     }
 
@@ -62,6 +73,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requireAnyPermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
         $id = (int)$this->post('id_filiere_cycle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -74,10 +86,18 @@ class FiliereCycleController extends BaseController
             ], 'Assignation Filière - Cycle', 'id_filiere_cycle', $id)) return;
         }
 
+        $userCode = $this->getCurrentUserCode();
         $cols = $this->model->getCon()->query("DESCRIBE filiere_cycles")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('etablissement_code', $cols) && empty($data['etablissement_code'])) {
+            $existingItem = $this->model->getById($id);
+            $data['etablissement_code'] = $existingItem['etablissement_code'] ?? $this->getActiveEtablissementCode();
+        }
+        if (in_array('user_code', $cols) && !empty($userCode)) $data['user_code'] = $userCode;
+        $data['updated_at_filiere_cycle'] = date('Y-m-d H:i:s');
+
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Assignation Filière - Cycle modifiée avec succès!');
+            $this->success('Assignation Filière - Cycle modifiée avec succès!', RACINE . 'filiere_cycle/list');
         } else {
             $this->error('Erreur lors de la modification');
         }

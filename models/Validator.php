@@ -823,10 +823,67 @@ class Validator
     /**
      * Valide qu'un numéro de téléphone fait exactement 10 chiffres (standard ivoirien)
      */
-    public static function validPhone(?string $phone): bool
+    /**
+     * Convertit un montant numérique en lettres (en Francs CFA)
+     */
+    public static function numberToWordsFCFA($number): string
     {
-        $cleaned = self::cleanPhone($phone);
-        return (bool)preg_match('/^[0-9]{10}$/', $cleaned);
+        $number = (int)round((float)$number);
+        if ($number <= 0) return 'Zéro franc CFA';
+
+        $units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+        $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+
+        $convertGroup = function($n) use (&$convertGroup, $units, $tens) {
+            $str = '';
+            if ($n >= 100) {
+                $h = (int)floor($n / 100);
+                if ($h == 1) {
+                    $str .= 'cent ';
+                } else {
+                    $str .= $units[$h] . ' cent ';
+                }
+                $n %= 100;
+            }
+            if ($n >= 20) {
+                $t = (int)floor($n / 10);
+                $u = $n % 10;
+                if ($t == 7 || $t == 9) {
+                    $t--;
+                    $u += 10;
+                }
+                $str .= $tens[$t];
+                if ($u == 1 && $t != 8) {
+                    $str .= ' et un';
+                } elseif ($u > 0) {
+                    $str .= '-' . $units[$u];
+                }
+            } elseif ($n > 0) {
+                $str .= $units[$n];
+            }
+            return trim($str);
+        };
+
+        $out = '';
+        if ($number >= 1000000) {
+            $m = (int)floor($number / 1000000);
+            $out .= $convertGroup($m) . ' million' . ($m > 1 ? 's ' : ' ');
+            $number %= 1000000;
+        }
+        if ($number >= 1000) {
+            $k = (int)floor($number / 1000);
+            if ($k == 1) {
+                $out .= 'mille ';
+            } else {
+                $out .= $convertGroup($k) . ' mille ';
+            }
+            $number %= 1000;
+        }
+        if ($number > 0) {
+            $out .= $convertGroup($number) . ' ';
+        }
+
+        return ucfirst(trim($out)) . ' francs CFA';
     }
 }
 

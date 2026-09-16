@@ -209,14 +209,17 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
               </label>
               <select class="form-control select2" id="select_inscription_code" name="inscription_code" style="width: 100%;" required>
                 <option value="">-- Saisir le matricule ou le nom de l'élève --</option>
-                <?php foreach($inscriptionsList as $ins): ?>
+                <?php 
+                  $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
+                  foreach($inscriptionsList as $ins): 
+                ?>
                   <?php
                     $mat = $ins['matricule_etudiant'] ?? '-';
                     $nom = trim(($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? ''));
                     $classe = $ins['libelle_classe'] ?? 'Non affecté';
                     $labelOpt = "$mat - $nom ($classe)";
                   ?>
-                  <option value="<?= $ins['code_inscription'] ?>" data-classe="<?= htmlspecialchars($ins['code_classe'] ?? '') ?>" data-niveau="<?= htmlspecialchars($ins['niveau_code'] ?? '') ?>" <?= (($item['inscription_code'] ?? '') == $ins['code_inscription']) ? 'selected' : '' ?>>
+                  <option value="<?= $ins['code_inscription'] ?>" data-classe="<?= htmlspecialchars($ins['code_classe'] ?? '') ?>" data-niveau="<?= htmlspecialchars($ins['niveau_code'] ?? '') ?>" <?= ($targetInsCode == $ins['code_inscription']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($labelOpt) ?>
                   </option>
                 <?php endforeach; ?>
@@ -656,8 +659,13 @@ $(document).ready(function() {
     applySelectedTranche(tCode);
   });
 
-  // Auto trigger if initial selected
-  var initVal = $('#select_inscription_code').val();
+  // Auto trigger if initial selected or passed via URL (e.g. Fiche Navette de réinscription)
+  var urlParams = new URLSearchParams(window.location.search);
+  var paramIns = urlParams.get('inscription_code');
+  if (paramIns && !$('#select_inscription_code').val()) {
+    $('#select_inscription_code').val(paramIns).trigger('change');
+  }
+  var initVal = $('#select_inscription_code').val() || paramIns;
   if (initVal) {
     fetchStudentFinancialSummary(initVal);
   }

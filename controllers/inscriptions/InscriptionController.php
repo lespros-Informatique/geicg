@@ -268,6 +268,8 @@ class InscriptionController extends BaseController
         $prevPaye = 0;
         $prevSolde = 0;
         $hasHistory = false;
+        $suggestedNextClassCode = '';
+        $suggestedNextClassLibelle = '';
 
         if ($prevIns) {
             $hasHistory = true;
@@ -283,6 +285,33 @@ class InscriptionController extends BaseController
             $rowP = $stmtP->fetch(PDO::FETCH_ASSOC);
             $prevPaye = (float)($rowP['total_paye'] ?? 0);
             $prevSolde = max(0, $prevDue - $prevPaye);
+
+            // Détection automatique de la classe suivante N+1 (Smart Class Progression)
+            if (!empty($prevIns['filiere_code']) && !empty($prevIns['niveau_code'])) {
+                $stmtNiv = $db->prepare("SELECT id_niveau FROM niveaux WHERE code_niveau = ? LIMIT 1");
+                $stmtNiv->execute([$prevIns['niveau_code']]);
+                $currNiv = $stmtNiv->fetch(PDO::FETCH_ASSOC);
+                if ($currNiv) {
+                    $nextNivId = (int)$currNiv['id_niveau'] + 1;
+                    $stmtNextCl = $db->prepare("
+                        SELECT c.code_classe, c.libelle_classe 
+                        FROM classes c
+                        JOIN niveaux n ON n.code_niveau = c.niveau_code
+                        WHERE c.filiere_code = ? 
+                          AND n.id_niveau = ?
+                          AND (c.annee_code = ? OR ? = '')
+                          AND c.statut_classe = 'actif'
+                        ORDER BY c.id_classe ASC
+                        LIMIT 1
+                    ");
+                    $stmtNextCl->execute([$prevIns['filiere_code'], $nextNivId, $anneeActive, $anneeActive]);
+                    $nextCl = $stmtNextCl->fetch(PDO::FETCH_ASSOC);
+                    if ($nextCl) {
+                        $suggestedNextClassCode = $nextCl['code_classe'];
+                        $suggestedNextClassLibelle = $nextCl['libelle_classe'];
+                    }
+                }
+            }
         }
 
         $nomComplet = trim(($etudiant['nom_etudiant'] ?? '') . ' ' . ($etudiant['prenom_etudiant'] ?? ''));
@@ -327,11 +356,14 @@ class InscriptionController extends BaseController
                 'dernier_niveau_code' => $prevIns['niveau_code'] ?? '',
                 'derniere_filiere_code' => $prevIns['filiere_code'] ?? '',
                 'derniere_annee' => $prevIns['libelle_annee'] ?? '',
+                'suggested_next_class_code' => $suggestedNextClassCode,
+                'suggested_next_class_libelle' => $suggestedNextClassLibelle,
                 'prev_affectation_etat' => (($prevIns['affectation_etat'] ?? '') === 'affecte' || ($prevIns['affectation_etat'] ?? '') === 'oui') ? 'affecte' : 'non_affecte',
                 'prev_regime' => (($prevIns['affectation_etat'] ?? '') === 'affecte' || ($prevIns['affectation_etat'] ?? '') === 'oui') ? 'Affecté (État)' : 'Non Affecté (Privé)',
                 'prev_scolarite' => $prevDue,
                 'prev_paye' => $prevPaye,
                 'prev_solde' => $prevSolde,
+                'quitus_status' => ($prevSolde <= 0) ? 'ok' : 'impaye',
                 'statut_etudiant' => $etudiant['statut_etudiant'] ?? 'actif',
                 'is_already_registered_this_year' => !empty($alreadyThisYear),
                 'already_registered_classe' => $alreadyThisYear['libelle_classe'] ?? '',
@@ -676,11 +708,61 @@ class InscriptionController extends BaseController
             return;
         }
 
+        // Contrôle Quitus Financier N-1 (Séparation des services : contrôle préalable de scolarité)
+        $stmtPrev = $db->prepare("
+            SELECT i.code_inscription, i.montant_scolarite_inscription, a.libelle_annee
+            FROM inscriptions i
+            LEFT JOIN annees a ON (a.code_annee = i.annee_code OR a.id_annee = i.annee_code)
+            WHERE (i.etudiant_code = ? OR i.etudiant_code = (SELECT matricule_etudiant FROM etudiants WHERE code_etudiant = ? LIMIT 1))
+              AND i.annee_code != ?
+              AND i.statut_inscription != 'annule'
+            ORDER BY i.id_inscription DESC
+            LIMIT 1
+        ");
+        $stmtPrev->execute([$data['etudiant_code'], $data['etudiant_code'], $anneeCode]);
+        $prevIns = $stmtPrev->fetch(PDO::FETCH_ASSOC);
+        $prevSolde = 0;
+        if ($prevIns) {
+            $prevDue = (float)($prevIns['montant_scolarite_inscription'] ?? 0);
+            $stmtP = $db->prepare("SELECT SUM(montant_paiement) as total_paye FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+            $stmtP->execute([$prevIns['code_inscription']]);
+            $prevPaye = (float)($stmtP->fetch(PDO::FETCH_ASSOC)['total_paye'] ?? 0);
+            $prevSolde = max(0, $prevDue - $prevPaye);
+        }
+
+        $derogationAcceptee = !empty($data['derogation_arriere']) && in_array($data['derogation_arriere'], ['1', 'oui', 'true']);
+        if ($prevSolde > 0 && !$derogationAcceptee) {
+            $this->error("L'étudiant présente un reliquat impayé de " . number_format($prevSolde, 0, ',', ' ') . " FCFA sur la session précédente (" . ($prevIns['libelle_annee'] ?? 'N-1') . "). La réinscription requiert un quitus financier au Bureau des Versements ou une dérogation administrative formelle.");
+            return;
+        }
+
+        // Mise à jour rapide des coordonnées si modifiées lors du guichet de réinscription
+        $updateEtu = [];
+        $paramsEtu = [];
+        if (!empty($data['telephone_etudiant'])) {
+            $updateEtu[] = "telephone_etudiant = ?";
+            $paramsEtu[] = trim($data['telephone_etudiant']);
+        }
+        if (isset($data['email_etudiant']) && trim($data['email_etudiant']) !== '') {
+            $updateEtu[] = "email_etudiant = ?";
+            $paramsEtu[] = trim($data['email_etudiant']);
+        }
+        if (!empty($data['lieu_residence_etudiant'])) {
+            $updateEtu[] = "lieu_residence_etudiant = ?";
+            $paramsEtu[] = trim($data['lieu_residence_etudiant']);
+        }
+        if (!empty($updateEtu)) {
+            $paramsEtu[] = $data['etudiant_code'];
+            $paramsEtu[] = $data['etudiant_code'];
+            $sqlUpEtu = "UPDATE etudiants SET " . implode(', ', $updateEtu) . " WHERE code_etudiant = ? OR matricule_etudiant = ?";
+            $db->prepare($sqlUpEtu)->execute($paramsEtu);
+        }
+
         // Récupération sécurisée du barème officiel côté backend
         $affectationEtat = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'affecte' : 'non_affecte';
         $data['affectation_etat'] = ($affectationEtat === 'affecte') ? 'oui' : 'non';
 
-        $stmtCl = $db->prepare("SELECT filiere_code, niveau_code, annee_code FROM classes WHERE code_classe = ? LIMIT 1");
+        $stmtCl = $db->prepare("SELECT libelle_classe, filiere_code, niveau_code, annee_code FROM classes WHERE code_classe = ? LIMIT 1");
         $stmtCl->execute([$data['classe_code']]);
         $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
 
@@ -715,6 +797,27 @@ class InscriptionController extends BaseController
             }
         }
 
+        // Récupération de la première tranche (Droit de réinscription exigible à la caisse)
+        $tranche1Amount = $officialScolarite;
+        $tranche1Libelle = 'Scolarité / Droit de réinscription';
+        if ($cl) {
+            $stmtTr = $db->prepare("
+                SELECT libelle_tranche, montant_tranche, date_limite 
+                FROM tranches_scolarite 
+                WHERE filiere_code = ? 
+                  AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '')
+                  AND (affectation_etat = ? OR affectation_etat IS NULL OR affectation_etat = '')
+                  AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+                ORDER BY ordre_tranche ASC, id_tranche ASC
+            ");
+            $stmtTr->execute([$cl['filiere_code'], $cl['niveau_code'], $affectationEtat, $anneeCode]);
+            $tranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if (!empty($tranches)) {
+                $tranche1Amount = (float)$tranches[0]['montant_tranche'];
+                $tranche1Libelle = $tranches[0]['libelle_tranche'];
+            }
+        }
+
         // Forcer le montant officiel et la date d'inscription côté backend pour garantir l'intégrité
         $data['montant_scolarite_inscription'] = $officialScolarite;
         $data['date_inscription'] = date('Y-m-d');
@@ -722,6 +825,7 @@ class InscriptionController extends BaseController
         if (empty($data['code_inscription'])) {
             $data['code_inscription'] = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
         }
+        $codeInscription = $data['code_inscription'];
         $data['statut_inscription'] = $data['statut_inscription'] ?? 'valide';
         $data['created_at_inscription'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
@@ -731,7 +835,35 @@ class InscriptionController extends BaseController
         
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Réinscription enregistrée avec succès !');
+            // Récupérer les informations de l'étudiant pour la fiche navette
+            $stmtE = $db->prepare("SELECT nom_etudiant, prenom_etudiant, matricule_etudiant, telephone_etudiant FROM etudiants WHERE code_etudiant = ? OR matricule_etudiant = ? LIMIT 1");
+            $stmtE->execute([$data['etudiant_code'], $data['etudiant_code']]);
+            $etuRow = $stmtE->fetch(PDO::FETCH_ASSOC);
+
+            // Récupérer libellé année académique
+            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$anneeCode]);
+            $anneeLib = $stmtA->fetch(PDO::FETCH_ASSOC)['libelle_annee'] ?? ($_SESSION['annee_active_libelle'] ?? '');
+
+            $this->json([
+                'status' => 1,
+                'message' => 'Réinscription enregistrée avec succès au Bureau d\'Inscription !',
+                'voucher_data' => [
+                    'code_inscription' => $codeInscription,
+                    'matricule_etudiant' => $etuRow['matricule_etudiant'] ?? '-',
+                    'nom_complet' => trim(($etuRow['nom_etudiant'] ?? '') . ' ' . ($etuRow['prenom_etudiant'] ?? '')),
+                    'telephone_etudiant' => $etuRow['telephone_etudiant'] ?? '',
+                    'classe_libelle' => $cl['libelle_classe'] ?? '',
+                    'regime' => ($affectationEtat === 'affecte') ? 'Affecté (État)' : 'Non Affecté (Privé)',
+                    'annee_libelle' => $anneeLib,
+                    'scolarite_totale' => $officialScolarite,
+                    'tranche1_montant' => $tranche1Amount,
+                    'tranche1_libelle' => $tranche1Libelle,
+                    'arrieres_n1' => $prevSolde,
+                    'date_inscription' => date('d/m/Y H:i'),
+                    'agent_inscription' => trim(($_SESSION[USERS_AUTH]['prenom_user'] ?? '') . ' ' . ($_SESSION[USERS_AUTH]['nom_user'] ?? ''))
+                ]
+            ]);
         } else {
             $this->error("Erreur lors de l'enregistrement de la réinscription");
         }

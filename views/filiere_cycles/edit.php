@@ -32,7 +32,7 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
             <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Filière (Catalogue) <span style="color: #EF4444;">*</span></label>
-              <select name="filiere_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" required>
+              <select name="filiere_code" class="form-control select2" style="width: 100%;" required>
                 <option value="">-- Sélectionner la filière --</option>
                 <?php foreach ($filieresList as $f): ?>
                   <option value="<?= htmlspecialchars($f['code_filiere']) ?>" <?= (($item['filiere_code'] ?? '') === $f['code_filiere']) ? 'selected' : '' ?>>
@@ -44,7 +44,7 @@
 
             <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle d'Études Rattaché <span style="color: #EF4444;">*</span></label>
-              <select name="cycle_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" required>
+              <select name="cycle_code" class="form-control select2" style="width: 100%;" required>
                 <option value="">-- Sélectionner le cycle --</option>
                 <?php foreach ($cyclesList as $c): ?>
                   <option value="<?= htmlspecialchars($c['code_cycle']) ?>" <?= (($item['cycle_code'] ?? '') === $c['code_cycle']) ? 'selected' : '' ?>>
@@ -56,7 +56,7 @@
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 11px 28px; display: inline-flex; align-items: center; gap: 8px;">
+            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 11px 28px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
               <i data-lucide="save" style="width: 18px; height: 18px;"></i> Enregistrer l'Assignation
             </button>
           </div>
@@ -65,5 +65,12 @@
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
+<script>
+$(document).ready(function() { 
+  if (window.lucide) lucide.createIcons(); 
+  if ($.fn.select2) {
+    $('.select2').select2({ width: '100%' });
+  }
+});
+</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

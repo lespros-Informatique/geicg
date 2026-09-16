@@ -16,6 +16,52 @@ $users = (new ModelUser())->getAll();
 $enseignants = (new ModelEnseignant())->getAll();
 $annees = (new ModelAnnee())->getAll();
 ?>
+<style>
+@media print {
+  body {
+    background: #FFFFFF !important;
+  }
+  .app-layout, .sidebar, .main-nav, nav, .page-header, .card, #quitus-financial-status-box, #smart_class_suggestion_hint, form, .btn, .content-wrapper > div:not(#modal_fiche_navette) {
+    display: none !important;
+  }
+  #modal_fiche_navette {
+    display: block !important;
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    z-index: 1 !important;
+  }
+  #modal_fiche_navette > div {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #modal_fiche_navette .btn-close-fiche-navette,
+  #modal_fiche_navette .modal-custom-header,
+  #modal_fiche_navette .modal-custom-footer,
+  #modal_fiche_navette .no-print {
+    display: none !important;
+  }
+  #printable-voucher-zone {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    border: 2px solid #1E3A5F !important;
+    box-sizing: border-box !important;
+  }
+}
+.btn-is-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -23,8 +69,13 @@ $annees = (new ModelAnnee())->getAll();
     <div class="content-wrapper" style="padding: 24px;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Formulaire de Réinscription Étudiant' ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Réinscription annuelle et affectation de la nouvelle classe pour la session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'en cours') ?></p>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Bureau d\'Inscription : Guichet de Réinscription Étudiant' ?></h1>
+            <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 8px;">
+              Session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'en cours') ?>
+            </span>
+          </div>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Contrôle du quitus financier N-1, progression académique et émission de la Fiche Navette pour le Bureau des Versements</p>
         </div>
         <a href="<?= RACINE ?>reinscription/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux Réinscriptions
@@ -119,6 +170,36 @@ $annees = (new ModelAnnee())->getAll();
             </div>
           </div>
 
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- BANDEAU QUITUS FINANCIER N-1 (CONTRÔLE BUREAU SCOLARITÉ / CAISSE) -->
+        <!-- ========================================================================= -->
+        <div id="quitus-financial-status-box" style="display: none; margin-top: 18px; padding: 16px 20px; border-radius: 10px; border: 1.5px solid transparent; transition: all 0.3s ease;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+              <div id="quitus_icon_box" style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                <i id="quitus_icon" data-lucide="shield-check" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div>
+                <div id="quitus_title" style="font-weight: 800; font-size: 15px; margin-bottom: 2px;">Statut du Quitus Financier N-1</div>
+                <div id="quitus_desc" style="font-size: 13px; line-height: 1.45;"></div>
+              </div>
+            </div>
+            <div id="quitus_badge_box"></div>
+          </div>
+
+          <!-- ZONE DE DÉROGATION ADMINISTRATIVE SI ARRIÉRÉS DÉTECTÉS -->
+          <div id="quitus_derogation_zone" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #FECACA; background: #FFF5F5; padding: 14px 16px; border-radius: 8px; border: 1px solid #FEE2E2;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 13px; color: #991B1B; margin: 0;">
+              <input type="checkbox" name="derogation_arriere" value="1" id="chk_derogation_arriere" style="width: 18px; height: 18px; accent-color: #DC2626; cursor: pointer;">
+              <span>Dérogation Administrative : Autoriser la réinscription sous réserve d'apurement des arriérés au Bureau des Versements</span>
+            </label>
+            <div id="derogation_motif_container" style="display: none; margin-top: 10px;">
+              <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Motif de la dérogation / Référence du moratoire ou accord :</label>
+              <input type="text" name="derogation_motif" id="inp_derogation_motif" class="form-control" style="font-size: 12.5px; padding: 8px 12px; border-radius: 6px;" placeholder="Ex: Accord Direction Générale / Engagement écrit de paiement échelonné">
+            </div>
+          </div>
         </div>
 
         <!-- ========================================================================= -->
@@ -292,6 +373,10 @@ $annees = (new ModelAnnee())->getAll();
                 <option value="<?= $cl['code_classe'] ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? '') ?>" <?= (($item['classe_code'] ?? '') == $cl['code_classe']) ? 'selected' : '' ?>><?= htmlspecialchars($cl['libelle_classe']) ?></option>
               <?php endforeach; ?>
             </select>
+            <div id="smart_class_suggestion_hint" style="display: none; font-size: 12.5px; font-weight: 700; color: #15803D; background: #DCFCE7; border: 1px solid #86EFAC; padding: 8px 12px; border-radius: 6px; margin-top: 6px;">
+              <i data-lucide="sparkles" style="width: 15px; height: 15px; vertical-align: -2px; display: inline-block;"></i>
+              <span id="smart_class_suggestion_text"></span>
+            </div>
           </div>
 
           <!-- SCOLARITÉ DUE ET DATE D'INSCRIPTION (2 COLONNES) -->
@@ -319,11 +404,151 @@ $annees = (new ModelAnnee())->getAll();
             <input type="number" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #64748B; font-weight: 600; pointer-events: none; cursor: not-allowed;" name="remise_accordee" value="<?= htmlspecialchars($item['remise_accordee'] ?? '0') ?>" placeholder="0" readonly>
           </div>
 
-          <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer l'Inscription</button>
-            <a href="<?= RACINE ?>inscription/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
+          <!-- BLOC REPLIABLE : VÉRIFICATION & MISE À JOUR RAPIDE DES COORDONNÉES (SERVICE SCOLARITÉ) -->
+          <div style="margin-bottom: 24px; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #FFFFFF;">
+            <div id="toggle-contact-update" style="padding: 12px 18px; background: #F8FAFC; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+              <span style="font-weight: 700; font-size: 13px; color: #1E3A5F; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="phone-call" style="width: 15px; height: 15px;"></i> Mise à jour rapide des coordonnées étudiant (Optionnel)
+              </span>
+              <span style="font-size: 12px; font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 3px 8px; border-radius: 4px;" id="toggle-contact-icon">Afficher ▼</span>
+            </div>
+            <div id="contact-update-body" style="display: none; padding: 18px; background: #FFFFFF; border-top: 1px solid #E2E8F0;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">Téléphone Étudiant</label>
+                  <input type="text" name="telephone_etudiant" id="inp_edit_telephone" class="form-control" style="font-size: 13px; padding: 8px 12px; border-radius: 6px;" placeholder="+225 07 00 00 00">
+                </div>
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">Email Étudiant</label>
+                  <input type="email" name="email_etudiant" id="inp_edit_email" class="form-control" style="font-size: 13px; padding: 8px 12px; border-radius: 6px;" placeholder="etudiant@exemple.com">
+                </div>
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">Lieu de Résidence / Commune</label>
+                  <input type="text" name="lieu_residence_etudiant" id="inp_edit_residence" class="form-control" style="font-size: 13px; padding: 8px 12px; border-radius: 6px;" placeholder="Ex: Cocody Angré, Abidjan">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%; align-items: center; flex-wrap: wrap;">
+            <button type="submit" id="btn_submit_inscription" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 11px 26px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(30,58,95,0.25);">
+              <i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Valider la Réinscription & Émettre Fiche Navette
+            </button>
+            <a href="<?= RACINE ?>reinscription/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px;">Annuler</a>
+            <span id="submit_block_notice" style="display: none; font-size: 12.5px; font-weight: 700; color: #DC2626;"></span>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL DE SUCCÈS & FICHE NAVETTE / BON DE VERSEMENT POUR LA CAISSE -->
+    <!-- ========================================================================= -->
+    <div id="modal_fiche_navette" style="display: none; position: fixed; inset: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 99999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto;">
+      <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 820px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); overflow: hidden; border: 1px solid #CBD5E1; margin: auto; display: flex; flex-direction: column; max-height: 92vh; position: relative;">
+        
+        <div class="modal-custom-header" style="background: #1E3A5F; color: #FFFFFF; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="check-circle" style="width: 22px; height: 22px; color: #4ADE80;"></i>
+            </div>
+            <div>
+              <h5 style="font-size: 16.5px; font-weight: 800; margin: 0; color: #FFFFFF;">Réinscription Administrative Validée avec Succès</h5>
+              <span style="font-size: 12px; color: #CBD5E1;">Fiche Navette émise par le Bureau d'Inscription pour le Bureau des Versements</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close-fiche-navette" style="background: rgba(255,255,255,0.12); border: none; color: #FFFFFF; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'" title="Fermer la fenêtre">
+            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+          </button>
+        </div>
+
+        <div class="modal-custom-body" style="padding: 24px; overflow-y: auto; flex-grow: 1;">
+          
+          <!-- CADRE D'INSTRUCTION BUREAU DÉTACHÉ -->
+          <div class="no-print" style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px;">
+            <i data-lucide="info" style="width: 20px; height: 20px; color: #1D4ED8; flex-shrink: 0; margin-top: 2px;"></i>
+            <div style="font-size: 13px; color: #1E3A5F; line-height: 1.45;">
+              <strong>Procédure Services Détachés :</strong> Le dossier administratif est validé. L'étudiant doit maintenant se présenter au <strong>Bureau des Versements (Caisse)</strong> muni de cette <strong>Fiche Navette</strong> pour régler ses droits de réinscription et obtenir son reçu de paiement officiel.
+            </div>
+          </div>
+
+          <!-- FICHE NAVETTE IMPRIMABLE (Zone imprimée) -->
+          <div id="printable-voucher-zone" style="background: #FFFFFF; border: 2px dashed #94A3B8; border-radius: 12px; padding: 24px; position: relative;">
+            
+            <!-- En-tête officiel du Bon de versement -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1E3A5F; padding-bottom: 14px; margin-bottom: 18px;">
+              <div>
+                <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; letter-spacing: 0.5px;">GROUPE EICG - ADMINISTRATION</div>
+                <div style="font-size: 11.5px; color: #64748B; font-weight: 600;">SERVICE SCOLARITÉ • BUREAU DES ADMISSIONS</div>
+                <div style="font-size: 11px; color: #15803D; font-weight: 700; margin-top: 2px;">Session Académique : <span id="v_annee_libelle">-</span></div>
+              </div>
+              <div style="text-align: right;">
+                <span style="display: inline-block; background: #1E3A5F; color: #FFFFFF; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 6px; letter-spacing: 0.5px;">BON DE VERSEMENT N°</span>
+                <div id="v_code_inscription" style="font-size: 17px; font-weight: 900; color: #1E3A5F; margin-top: 4px; font-family: monospace;">INS-XXXXXXXX</div>
+                <div id="v_date_inscription" style="font-size: 11px; color: #64748B; margin-top: 2px;">-</div>
+              </div>
+            </div>
+
+            <!-- Détails Étudiant -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;">
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 13px;">
+                <div><strong>Matricule Permanent :</strong> <span id="v_matricule" style="font-weight: 800; color: #1E3A5F;">-</span></div>
+                <div><strong>Téléphone :</strong> <span id="v_telephone">-</span></div>
+                <div style="grid-column: 1 / -1;"><strong>Nom et Prénoms :</strong> <span id="v_nom_complet" style="font-weight: 800; font-size: 14px; color: #0F172A;">-</span></div>
+                <div style="grid-column: 1 / -1;"><strong>Classe d'affectation :</strong> <span id="v_classe" style="font-weight: 800; color: #1E3A5F;">-</span></div>
+                <div><strong>Régime :</strong> <span id="v_regime" style="font-weight: 700;">-</span></div>
+                <div><strong>Agent Scolarité :</strong> <span id="v_agent">-</span></div>
+              </div>
+            </div>
+
+            <!-- Montants à Régler à la Caisse -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 18px;">
+              <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 12px 16px;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Scolarité Annuelle Prévue</div>
+                <div id="v_scolarite_totale" style="font-size: 18px; font-weight: 900; color: #0F172A; margin-top: 4px;">0 FCFA</div>
+                <div id="v_arrieres_box" style="display: none; font-size: 11.5px; font-weight: 700; color: #DC2626; margin-top: 4px;">
+                  + Arriérés N-1 : <span id="v_arrieres_montant">0 FCFA</span>
+                </div>
+              </div>
+              <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 8px; padding: 12px 16px;">
+                <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase;">Montant Exigible à la Caisse</div>
+                <div id="v_tranche1_montant" style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 4px;">0 FCFA</div>
+                <div id="v_tranche1_libelle" style="font-size: 11px; font-weight: 700; color: #166534; margin-top: 4px;">Tranche 1 / Droit de réinscription</div>
+              </div>
+            </div>
+
+            <!-- Signatures / Visa -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; padding-top: 14px; border-top: 1px solid #CBD5E1; font-size: 12px;">
+              <div>
+                <div style="font-weight: 700; color: #475569; margin-bottom: 35px;">Visa & Cachet du Bureau d'Inscription :</div>
+                <div style="font-size: 11px; color: #64748B; font-style: italic;">Document généré électroniquement</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-weight: 700; color: #475569; margin-bottom: 35px;">Émargement / Quittance Caisse :</div>
+                <div style="font-size: 11px; color: #64748B; font-style: italic;">Réservé au Bureau des Versements</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Boutons d'Action Modal -->
+        <div class="modal-custom-footer" style="background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0;">
+          <a href="<?= RACINE ?>reinscription/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; background: #64748B; color: #FFFFFF; border: none; text-decoration: none;">
+            <i data-lucide="list" style="width: 16px; height: 16px;"></i> Retour au registre
+          </a>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" id="btn-print-voucher" class="btn btn-outline-primary" style="border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+              <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer la Fiche Navette
+            </button>
+            <a id="btn-goto-caisse" href="<?= RACINE ?>paiement/formulaire" class="btn btn-success" style="background: #15803D; border: 1px solid #15803D; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+              <i data-lucide="arrow-right-circle" style="width: 18px; height: 18px;"></i> Passer au Bureau des Versements (Caisse)
+            </a>
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
@@ -422,8 +647,35 @@ $(document).ready(function() {
             var solde = Number(d.prev_solde || 0);
             if (solde <= 0) {
               $('#prev_stu_solde').css('color', '#15803D').text('Compte Soldé (0 FCFA)');
+              // Quitus Financier N-1 Validé
+              $('#quitus-financial-status-box').css({
+                'background': '#F0FDF4',
+                'border-color': '#86EFAC'
+              }).show();
+              $('#quitus_icon_box').css('background', '#DCFCE7');
+              $('#quitus_icon').attr('data-lucide', 'shield-check').css('color', '#15803D');
+              $('#quitus_title').css('color', '#166534').text('✅ Quitus Financier N-1 Validé');
+              $('#quitus_desc').css('color', '#166534').text('L\'étudiant est entièrement à jour de ses règlements sur les sessions précédentes. Aucune dette antérieure enregistrée.');
+              $('#quitus_badge_box').html('<span class="badge" style="background:#15803D; color:#FFFFFF; padding:6px 12px; border-radius:6px; font-weight:800; font-size:12px;">Quitus Accordé</span>');
+              $('#quitus_derogation_zone').hide();
+              $('#submit_block_notice').hide();
+              $('#btn_submit_inscription').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
             } else {
               $('#prev_stu_solde').css('color', '#DC2626').text(solde.toLocaleString('fr-FR') + ' FCFA (Reliquat)');
+              // Arriérés détectés : Blocage par défaut avec dérogation
+              $('#quitus-financial-status-box').css({
+                'background': '#FEF2F2',
+                'border-color': '#FECACA'
+              }).show();
+              $('#quitus_icon_box').css('background', '#FEE2E2');
+              $('#quitus_icon').attr('data-lucide', 'alert-octagon').css('color', '#DC2626');
+              $('#quitus_title').css('color', '#991B1B').text('⚠️ Alerte Financière : Arriérés N-1 Détectés (' + solde.toLocaleString('fr-FR') + ' FCFA)');
+              $('#quitus_desc').css('color', '#991B1B').html('L\'étudiant présente un reliquat impayé de <strong>' + solde.toLocaleString('fr-FR') + ' FCFA</strong> sur la session précédente (' + (d.derniere_annee || 'N-1') + '). La réinscription normale requiert la régularisation préalable au <strong>Bureau des Versements</strong>.');
+              $('#quitus_badge_box').html('<span class="badge" style="background:#DC2626; color:#FFFFFF; padding:6px 12px; border-radius:6px; font-weight:800; font-size:12px;">Solde Débiteur</span>');
+              $('#quitus_derogation_zone').show();
+
+              // Si dérogation non cochée, bloquer le bouton de validation
+              updateSubmitButtonQuitusState();
             }
 
             // Présélection automatique du régime (Affecté / Non Affecté) selon l'historique
@@ -441,7 +693,12 @@ $(document).ready(function() {
               });
             });
 
-            // Gestion automatique de l'état Redoublant si applicable
+            // Pré-remplissage des champs de mise à jour rapide des coordonnées
+            $('#inp_edit_telephone').val(d.telephone !== 'Non renseigné' ? d.telephone : '');
+            $('#inp_edit_email').val(d.email !== 'Non renseigné' ? d.email : '');
+            $('#inp_edit_residence').val(d.residence !== 'Non renseigné' ? d.residence : '');
+
+            // Gestion automatique de l'état Redoublant / Passant avec suggestion intelligente
             handleRedoublantState();
           } else {
             $('#prev_stu_badge_redoublant').hide();
@@ -450,6 +707,10 @@ $(document).ready(function() {
             $('#prev_stu_classe').text('Nouvel Inscrit');
             $('#prev_stu_annee_detail').text('Première inscription dans l\'établissement');
             $('#prev_stu_solde').css('color', '#15803D').text('Aucun arriéré (0 FCFA)');
+            $('#quitus-financial-status-box').hide();
+            $('#smart_class_suggestion_hint').hide();
+            $('#submit_block_notice').hide();
+            $('#btn_submit_inscription').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
           }
 
           // Étape 4 : Accessoires & Kits d'Inscription
@@ -467,13 +728,13 @@ $(document).ready(function() {
           var isEditMode = <?= !empty($item['id_inscription']) ? 'true' : 'false' ?>;
           if (d.is_already_registered_this_year && !isEditMode) {
             $('#already_registered_warning_text').html(
-              'L\'étudiant <strong>' + (d.nom_complet || '') + '</strong> est déjà réinscrit pour la session active (<strong>' + (d.already_registered_annee || 'active') + '</strong>) dans la classe <strong>' + (d.already_registered_classe || '-') + '</strong> (Réf Inscription : <code>' + (d.already_registered_code || '-') + '</code>).<br>Une nouvelle réinscription pour cette même année n\'est pas autorisée.'
+              'L\'étudiant <strong>' + (d.nom_complet || '') + '</strong> est déjà réinscrit pour la session active (<strong>' + (d.already_registered_annee || 'active') + '</strong>) dans la classe <strong>' + (d.already_registered_classe || '-') + '</strong> (Réf Inscription : <code>' + (d.already_registered_code || '-') + '</code>).<br>Une double réinscription pour cette même année n\'est pas autorisée.'
             );
             $('#already_registered_warning').stop(true, true).slideDown(250);
-            $('#form_inscription_main button[type="submit"]').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
+            $('#btn_submit_inscription').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
           } else {
             $('#already_registered_warning').slideUp(200);
-            $('#form_inscription_main button[type="submit"]').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
+            updateSubmitButtonQuitusState();
           }
 
           $('#student-profile-preview-banner').stop(true, true).slideDown(250);
@@ -488,6 +749,7 @@ $(document).ready(function() {
         } else {
           $('#already_registered_warning').slideUp(200);
           $('#student-profile-preview-banner').slideUp(200);
+          $('#quitus-financial-status-box').slideUp(200);
         }
       },
       error: function(err) {
@@ -497,7 +759,50 @@ $(document).ready(function() {
     });
   }
 
-  // 2. Gestion de l'option Redoublant (Oui / Non)
+  // Contrôle de l'état du bouton selon le Quitus et la dérogation
+  function updateSubmitButtonQuitusState() {
+    if (!currentStudentData) return;
+    var isEditMode = <?= !empty($item['id_inscription']) ? 'true' : 'false' ?>;
+    if (currentStudentData.is_already_registered_this_year && !isEditMode) {
+      $('#btn_submit_inscription').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
+      return;
+    }
+
+    var solde = Number(currentStudentData.prev_solde || 0);
+    if (solde > 0) {
+      var isDerogationChecked = $('#chk_derogation_arriere').is(':checked');
+      if (isDerogationChecked) {
+        $('#btn_submit_inscription').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
+        $('#submit_block_notice').hide();
+      } else {
+        $('#btn_submit_inscription').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
+        $('#submit_block_notice').html('<i data-lucide="alert-circle" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;"></i> Régularisation caisse requise ou cochez la dérogation').show();
+        if (window.lucide) lucide.createIcons();
+      }
+    } else {
+      $('#btn_submit_inscription').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
+      $('#submit_block_notice').hide();
+    }
+  }
+
+  $('#chk_derogation_arriere').on('change', function() {
+    if ($(this).is(':checked')) {
+      $('#derogation_motif_container').slideDown(200);
+    } else {
+      $('#derogation_motif_container').slideUp(200);
+    }
+    updateSubmitButtonQuitusState();
+  });
+
+  // Toggle de la section Mise à jour rapide des coordonnées
+  $('#toggle-contact-update').on('click', function() {
+    $('#contact-update-body').slideToggle(200, function() {
+      var isVisible = $(this).is(':visible');
+      $('#toggle-contact-icon').text(isVisible ? 'Masquer ▲' : 'Afficher ▼');
+    });
+  });
+
+  // 2. Gestion de l'option Redoublant / Passant (Smart Class Progression)
   function handleRedoublantState() {
     var isRedoublant = $('input[name="is_redoublant"]:checked').val() === '1';
 
@@ -508,11 +813,26 @@ $(document).ready(function() {
       // Si l'étudiant a une classe précédente enregistrée, la pré-sélectionner
       if (currentStudentData && currentStudentData.derniere_classe_code) {
         $('#sel_classe_inscription').val(currentStudentData.derniere_classe_code).trigger('change');
+        $('#smart_class_suggestion_text').html('Classe redoublée sélectionnée : <strong>' + (currentStudentData.derniere_classe || '-') + '</strong>');
+        $('#smart_class_suggestion_hint').show();
       }
     } else {
       $('#prev_stu_badge_redoublant').hide();
       $('#label_classe_select').text("Classe d'affectation (Nouvelle Classe)");
+
+      // Si le système a détecté une classe N+1 suggérée, la pré-sélectionner en auto
+      if (currentStudentData && currentStudentData.suggested_next_class_code) {
+        $('#sel_classe_inscription').val(currentStudentData.suggested_next_class_code).trigger('change');
+        $('#smart_class_suggestion_text').html('Promotion automatique suggérée : <strong>' + (currentStudentData.suggested_next_class_libelle || '-') + '</strong> (Classe supérieure)');
+        $('#smart_class_suggestion_hint').show();
+      } else if (currentStudentData && currentStudentData.has_history) {
+        $('#smart_class_suggestion_text').html('Veuillez sélectionner la classe supérieure de la filière <strong>' + (currentStudentData.derniere_filiere || '-') + '</strong>.');
+        $('#smart_class_suggestion_hint').show();
+      } else {
+        $('#smart_class_suggestion_hint').hide();
+      }
     }
+    if (window.lucide) lucide.createIcons();
   }
 
   $('input[name="is_redoublant"]').on('change', function() {
@@ -697,16 +1017,17 @@ $(document).ready(function() {
   }
 
   // Soumission unique et sécurisée en AJAX (Évite toute double soumission)
+  // Soumission unique et sécurisée en AJAX avec émission de la Fiche Navette
   $('#form_inscription_main').on('submit', function(e) {
     e.preventDefault();
     var $form = $(this);
-    var $submitBtn = $form.find('button[type="submit"]');
+    var $submitBtn = $('#btn_submit_inscription');
 
     if ($submitBtn.prop('disabled') || $submitBtn.hasClass('btn-is-loading')) {
       return false;
     }
 
-    loading($submitBtn, true, 'Enregistrement en cours...');
+    loading($submitBtn, true, 'Validation en cours...');
 
     $.ajax({
       url: $form.attr('action'),
@@ -714,18 +1035,49 @@ $(document).ready(function() {
       data: $form.serialize(),
       dataType: 'json',
       success: function(res) {
+        loading($submitBtn, false, 'Valider la Réinscription & Émettre Fiche Navette');
         if (res.status === 1) {
           showToast(res.message || 'Réinscription enregistrée avec succès !', 'success');
-          setTimeout(function() {
-            window.location.href = '<?= RACINE ?>inscription/list';
-          }, 1200);
+
+          // Remplissage dynamique et affichage de la Fiche Navette pour le Bureau des Versements
+          if (res.voucher_data) {
+            var v = res.voucher_data;
+            $('#v_code_inscription').text(v.code_inscription || 'INS-XXXX');
+            $('#v_matricule').text(v.matricule_etudiant || '-');
+            $('#v_nom_complet').text(v.nom_complet || '-');
+            $('#v_telephone').text(v.telephone_etudiant || '-');
+            $('#v_classe').text(v.classe_libelle || '-');
+            $('#v_regime').text(v.regime || '-');
+            $('#v_annee_libelle').text(v.annee_libelle || 'Session active');
+            $('#v_scolarite_totale').text(Number(v.scolarite_totale || 0).toLocaleString('fr-FR') + ' FCFA');
+            $('#v_tranche1_montant').text(Number(v.tranche1_montant || 0).toLocaleString('fr-FR') + ' FCFA');
+            $('#v_tranche1_libelle').text(v.tranche1_libelle || 'Tranche 1 / Droit de réinscription');
+            $('#v_agent').text(v.agent_inscription || 'Agent Scolarité');
+            $('#v_date_inscription').text('Délivré le ' + (v.date_inscription || '-'));
+
+            if (Number(v.arrieres_n1 || 0) > 0) {
+              $('#v_arrieres_montant').text(Number(v.arrieres_n1).toLocaleString('fr-FR') + ' FCFA (Moratoire)');
+              $('#v_arrieres_box').show();
+            } else {
+              $('#v_arrieres_box').hide();
+            }
+
+            // Mettre à jour le bouton de passage direct au Bureau des Versements
+            $('#btn-goto-caisse').attr('href', '<?= RACINE ?>paiement/formulaire?inscription_code=' + encodeURIComponent(v.code_inscription));
+
+            // Ouvrir le modal officiel de la Fiche Navette
+            showFicheNavetteModal();
+          } else {
+            setTimeout(function() {
+              window.location.href = '<?= RACINE ?>reinscription/list';
+            }, 1200);
+          }
         } else {
-          loading($submitBtn, false, 'Enregistrer l\'Inscription');
           showToast(res.message || 'Une erreur est survenue lors de l\'enregistrement', 'error');
         }
       },
       error: function(xhr) {
-        loading($submitBtn, false, 'Enregistrer l\'Inscription');
+        loading($submitBtn, false, 'Valider la Réinscription & Émettre Fiche Navette');
         var msg = 'Erreur lors de la communication avec le serveur.';
         if (xhr.responseJSON && xhr.responseJSON.message) {
           msg = xhr.responseJSON.message;
@@ -733,6 +1085,45 @@ $(document).ready(function() {
         showToast(msg, 'error');
       }
     });
+  });
+
+  // Fonctions de contrôle du modal Fiche Navette
+  function showFicheNavetteModal() {
+    $('#modal_fiche_navette').css('display', 'flex').hide().fadeIn(200);
+    $('body').css('overflow', 'hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function hideFicheNavetteModal() {
+    $('#modal_fiche_navette').fadeOut(150, function() {
+      $(this).css('display', 'none');
+      $('body').css('overflow', '');
+    });
+  }
+
+  // Fermeture par le bouton de fermeture X
+  $(document).on('click', '.btn-close-fiche-navette', function(e) {
+    e.preventDefault();
+    hideFicheNavetteModal();
+  });
+
+  // Fermeture par clic sur l'arrière-plan semi-transparent
+  $('#modal_fiche_navette').on('click', function(e) {
+    if (e.target === this) {
+      hideFicheNavetteModal();
+    }
+  });
+
+  // Fermeture par la touche Échap
+  $(document).on('keydown', function(e) {
+    if (e.key === 'Escape' && $('#modal_fiche_navette').is(':visible')) {
+      hideFicheNavetteModal();
+    }
+  });
+
+  // Impression de la Fiche Navette
+  $('#btn-print-voucher').on('click', function() {
+    window.print();
   });
 });
 </script>
