@@ -9,9 +9,9 @@
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Années Académiques</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Années Académiques</p>
         </div>
-        <a href="<?= RACINE ?>annee/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <button type="button" class="btn btn-primary btn-add-annee" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Année Académique
-        </a>
+        </button>
       </div>
 
       <!-- Navigation Tabs (Années Académiques vs Semestres & Périodes) -->
@@ -102,7 +102,7 @@ $(document).ready(function() {
         var isActif = (d.statut_annee === 'actif');
         var editBtn = isActif ?
           '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Impossible d\'éditer une année académique active"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
-          '<a href="' + window.RACINE + 'annee/edition/' + (d.editId || d.id_annee) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>';
+          '<button type="button" class="btn btn-sm btn-secondary btn-edit-annee" data-id="' + d.id_annee + '" data-libelle="' + (d.libelle_annee ? $('<div>').text(d.libelle_annee).html() : '') + '" data-debut="' + (d.date_debut_annee || '') + '" data-fin="' + (d.date_fin_annee || '') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
 
         return editBtn +
                '<a href="' + window.RACINE + 'annee/details/' + (d.editId || d.id_annee) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
@@ -157,6 +157,143 @@ $(document).ready(function() {
       }
     });
   });
+
+  // GESTION MODALE AJOUT / ÉDITION ANNÉE ACADÉMIQUE
+  $(document).on('click', '.btn-add-annee', function(e) {
+    e.preventDefault();
+    $('#form-annee')[0].reset();
+    $('#annee_id').val('');
+    $('#modal-annee-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Année Académique');
+    $('#modal-annee').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#annee_libelle').focus(); }, 100);
+  });
+
+  $(document).on('click', '.btn-edit-annee', function(e) {
+    e.preventDefault();
+    $('#form-annee')[0].reset();
+    var id = $(this).data('id');
+    var libelle = $(this).data('libelle');
+    var debut = $(this).data('debut');
+    var fin = $(this).data('fin');
+
+    $('#annee_id').val(id);
+    $('#annee_libelle').val(libelle);
+    $('#annee_date_debut').val(debut);
+    $('#annee_date_fin').val(fin);
+
+    $('#modal-annee-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Année Académique');
+    $('#modal-annee').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#annee_libelle').focus(); }, 100);
+  });
+
+  $('.btn-close-modal-annee').on('click', function() {
+    $('#modal-annee').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-annee')) {
+      $('#modal-annee').hide();
+    }
+  });
+
+  $('#form-annee').on('submit', function(e) {
+    e.preventDefault();
+    var id = $('#annee_id').val();
+    var url = window.RACINE + (id ? 'annee/edit' : 'annee/add');
+    var $btn = $('#btn-submit-annee');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;" class="lucide-spin"></i> Enregistrement...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Année académique enregistrée avec succès');
+          $('#modal-annee').hide();
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          else alert(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur lors de l\'enregistrement';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json.message) msg = json.message;
+        } catch(e) {}
+        if (window.toastr) toastr.error(msg);
+        else alert(msg);
+      }
+    });
+  });
 });
 </script>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : AJOUTER / MODIFIER UNE ANNÉE ACADÉMIQUE             -->
+<!-- ========================================================================= -->
+<div id="modal-annee" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-annee-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Année Académique
+      </h3>
+      <button type="button" class="btn-close-modal-annee" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-annee" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_annee" id="annee_id" value="">
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Année Académique <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="text" name="libelle_annee" id="annee_libelle" required placeholder="Ex: 2026-2027" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 14px;">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px;">
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Date de Début <span style="color: #EF4444;">*</span>
+          </label>
+          <input type="date" name="date_debut_annee" id="annee_date_debut" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
+        </div>
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Date de Fin <span style="color: #EF4444;">*</span>
+          </label>
+          <input type="date" name="date_fin_annee" id="annee_date_fin" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-annee" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-annee" class="btn btn-primary" style="background: #1E3A5F; border: none; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 9px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

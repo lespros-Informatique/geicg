@@ -22,9 +22,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <button type="button" id="btn-open-attrib-modal" class="btn" style="background: #15803D; border: 1px solid #15803D; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
             <i data-lucide="package-check" style="width: 18px; height: 18px;"></i> Attribuer un Kit
           </button>
-          <a href="<?= RACINE ?>accessoire/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <button type="button" class="btn btn-primary btn-add-acc-type" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Type de Kit
-          </a>
+          </button>
         </div>
       </div>
 
@@ -162,9 +162,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
             <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">Catalogue des Types d'Accessoires & Kits</h3>
             <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;">Configuration des articles et kits souscriptibles par les étudiants</p>
           </div>
-          <a href="<?= RACINE ?>accessoire/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; font-weight: 700; border-radius: 6px; padding: 8px 14px;">
+          <button type="button" class="btn btn-sm btn-primary btn-add-acc-type" style="background: #1E3A5F; font-weight: 700; border-radius: 6px; padding: 8px 14px; cursor: pointer;">
             <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Ajouter un article
-          </a>
+          </button>
         </div>
 
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -258,6 +258,54 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
         <button type="button" class="btn btn-secondary btn-close-modal" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Annuler</button>
         <button type="submit" id="btn_submit_attribuer" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; border-radius: 8px; padding: 10px 24px; display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer l'Attribution
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : AJOUTER / MODIFIER TYPE D'ACCESSOIRE OU KIT -->
+<!-- ========================================================================= -->
+<div id="modal-accessoire-type" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-accessoire-type-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Type de Kit / Article
+      </h3>
+      <button type="button" class="btn-close-modal-acc-type" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-accessoire-type" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_accessoire" id="acc_type_id" value="">
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Désignation du kit / accessoire <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="text" name="libelle_accessoire" id="acc_type_libelle" required placeholder="Ex: Kit Uniforme, Badge Étudiant, Blouse Blanche..." class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Prix Unitaire (FCFA) <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="number" min="0" step="any" name="prix_accessoire" id="acc_type_prix" required placeholder="Ex: 25000" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
+        <select name="statut_accessoire" id="acc_type_statut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="actif">Actif</option>
+          <option value="inactif">Inactif</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #E2E8F0;">
+        <button type="button" class="btn btn-secondary btn-close-modal-acc-type" style="font-weight: 700; border-radius: 8px; padding: 9px 18px;">Annuler</button>
+        <button type="submit" id="btn-save-acc-type" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 22px; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
         </button>
       </div>
     </form>
@@ -433,7 +481,8 @@ $(document).ready(function() {
                    '</div>';
           }},
           { data: null, width: '160px', orderable: false, render: function(d) {
-            return '<a href="' + window.RACINE + 'accessoire/edition/' + (d.editId || d.id_accessoire) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+            var safeLibelle = $('<div>').text(d.libelle_accessoire || '').html();
+            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-prix="' + (d.prix_accessoire || '') + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                    '<a href="' + window.RACINE + 'accessoire/details/' + (d.editId || d.id_accessoire) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
           }, className: 'text-end' }
         ],
@@ -446,6 +495,86 @@ $(document).ready(function() {
   $('#filter-annee').on('change', function() {
     var val = $(this).val();
     window.location.href = window.RACINE + 'accessoire/list?annee_code=' + encodeURIComponent(val);
+  });
+
+  // Modal Type Accessoire : Ajouter
+  $(document).on('click', '.btn-add-acc-type', function() {
+    $('#form-accessoire-type')[0].reset();
+    $('#acc_type_id').val('');
+    $('#modal-accessoire-type-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Type de Kit / Article');
+    $('#modal-accessoire-type').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#acc_type_libelle').focus(); }, 100);
+  });
+
+  // Modal Type Accessoire : Modifier
+  $(document).on('click', '.btn-edit-acc-type', function() {
+    var id = $(this).data('id');
+    var libelle = $(this).data('libelle');
+    var prix = $(this).data('prix');
+    var statut = $(this).data('statut');
+
+    $('#acc_type_id').val(id);
+    $('#acc_type_libelle').val(libelle);
+    $('#acc_type_prix').val(prix);
+    $('#acc_type_statut').val(statut || 'actif');
+    $('#modal-accessoire-type-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le Type de Kit');
+    $('#modal-accessoire-type').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#acc_type_libelle').focus(); }, 100);
+  });
+
+  // Modal Type Accessoire : Fermer
+  $('.btn-close-modal-acc-type').on('click', function() {
+    $('#modal-accessoire-type').css('display', 'none');
+  });
+  $('#modal-accessoire-type').on('click', function(e) {
+    if ($(e.target).is('#modal-accessoire-type')) {
+      $(this).css('display', 'none');
+    }
+  });
+
+  // Soumission AJAX Type Accessoire
+  $('#form-accessoire-type').on('submit', function(e) {
+    e.preventDefault();
+    var isEdit = !!$('#acc_type_id').val();
+    var url = isEdit ? '<?= RACINE ?>accessoire/edit' : '<?= RACINE ?>accessoire/add';
+    var $btn = $('#btn-save-acc-type');
+
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Enregistrement...');
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: $(this).serialize(),
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Opération réussie');
+          $('#modal-accessoire-type').css('display', 'none');
+          if (catalogueTable) {
+            catalogueTable.ajax.reload(null, false);
+          }
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+
+        var msg = 'Erreur réseau ou serveur';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch(e) {}
+        if (window.toastr) toastr.error(msg);
+      }
+    });
   });
 
   // Bascule de statut pour le catalogue d'accessoires via Ajax

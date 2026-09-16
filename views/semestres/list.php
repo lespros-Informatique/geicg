@@ -13,9 +13,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Semestres & Périodes</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Semestres & Périodes</p>
         </div>
-        <a href="<?= RACINE ?>semestre/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <button type="button" class="btn btn-primary btn-add-semestre" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Semestre
-        </a>
+        </button>
       </div>
 
       <!-- Filtre Année Académique (Select2) -->
@@ -125,7 +125,7 @@ $(document).ready(function() {
         var isActif = (d.statut_semestre === 'actif');
         var editBtn = isActif ?
           '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Impossible d\'éditer un semestre actif"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
-          '<a href="' + window.RACINE + 'semestre/edition/' + (d.editId || d.id_semestre) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>';
+          '<button type="button" class="btn btn-sm btn-secondary btn-edit-semestre" data-id="' + d.id_semestre + '" data-libelle="' + (d.libelle_semestre || '') + '" data-annee="' + (d.annee_code || '') + '" data-debut="' + (d.date_debut_semestre || '') + '" data-fin="' + (d.date_fin_semestre || '') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
 
         return editBtn +
                '<a href="' + window.RACINE + 'semestre/details/' + (d.editId || d.id_semestre) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
@@ -170,6 +170,164 @@ $(document).ready(function() {
       }
     });
   });
+
+  // GESTION MODALE AJOUT / ÉDITION SEMESTRE
+  $(document).on('click', '.btn-add-semestre', function(e) {
+    e.preventDefault();
+    $('#form-semestre')[0].reset();
+    $('#semestre_id').val('');
+    $('#semestre_annee').val('<?= htmlspecialchars($selectedAnneeCode) ?>');
+    $('#modal-semestre-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Semestre');
+    $('#modal-semestre').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#semestre_libelle').focus(); }, 100);
+  });
+
+  $(document).on('click', '.btn-edit-semestre', function(e) {
+    e.preventDefault();
+    $('#form-semestre')[0].reset();
+    var id = $(this).data('id');
+    var libelle = $(this).data('libelle');
+    var annee = $(this).data('annee');
+    var debut = $(this).data('debut');
+    var fin = $(this).data('fin');
+
+    $('#semestre_id').val(id);
+    $('#semestre_libelle').val(libelle);
+    $('#semestre_annee').val(annee);
+    $('#semestre_date_debut').val(debut !== '-' ? debut : '');
+    $('#semestre_date_fin').val(fin !== '-' ? fin : '');
+
+    $('#modal-semestre-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Semestre');
+    $('#modal-semestre').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#semestre_libelle').focus(); }, 100);
+  });
+
+  $('.btn-close-modal-semestre').on('click', function() {
+    $('#modal-semestre').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-semestre')) {
+      $('#modal-semestre').hide();
+    }
+  });
+
+  $('#form-semestre').on('submit', function(e) {
+    e.preventDefault();
+    var id = $('#semestre_id').val();
+    var url = window.RACINE + (id ? 'semestre/edit' : 'semestre/add');
+    var $btn = $('#btn-submit-semestre');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;" class="lucide-spin"></i> Enregistrement...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Semestre enregistré avec succès');
+          $('#modal-semestre').hide();
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          else alert(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur lors de l\'enregistrement';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json.message) msg = json.message;
+        } catch(e) {}
+        if (window.toastr) toastr.error(msg);
+        else alert(msg);
+      }
+    });
+  });
 });
 </script>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : AJOUTER / MODIFIER UN SEMESTRE                       -->
+<!-- ========================================================================= -->
+<div id="modal-semestre" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-semestre-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Semestre
+      </h3>
+      <button type="button" class="btn-close-modal-semestre" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-semestre" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_semestre" id="semestre_id" value="">
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Désignation du Semestre <span style="color: #EF4444;">*</span>
+        </label>
+        <select name="libelle_semestre" id="semestre_libelle" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 14px;">
+          <option value="">-- Choisir un semestre --</option>
+          <option value="Semestre 1">Semestre 1 (S1)</option>
+          <option value="Semestre 2">Semestre 2 (S2)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Année Académique <span style="color: #EF4444;">*</span>
+        </label>
+        <select name="annee_code" id="semestre_annee" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 14px;">
+          <option value="">-- Sélectionner l'année académique --</option>
+          <?php foreach ($annees as $an): ?>
+            <option value="<?= htmlspecialchars($an['code_annee']) ?>" <?= ($selectedAnneeCode === $an['code_annee']) ? 'selected' : '' ?>>
+              <?= htmlspecialchars($an['libelle_annee']) ?> <?= (!empty($an['est_active'])) ? ' (Active)' : '' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px;">
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Date de Début
+          </label>
+          <input type="date" name="date_debut_semestre" id="semestre_date_debut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
+        </div>
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Date de Fin
+          </label>
+          <input type="date" name="date_fin_semestre" id="semestre_date_fin" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-semestre" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-semestre" class="btn btn-primary" style="background: #1E3A5F; border: none; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 9px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

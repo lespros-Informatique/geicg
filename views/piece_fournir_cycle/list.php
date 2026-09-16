@@ -1,8 +1,4 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<?php
-$annees = $annees ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
-?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -22,31 +18,18 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
         </a>
       </div>
 
-      <!-- Filtres Multi-Critères (Année & Cycle Select2) -->
+      <!-- Filtre par Cycle Académique -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: center;">
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Année Académique</label>
-            <select id="filter-annee" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les années --</option>
-              <?php foreach ($annees as $a): ?>
-                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Cycle Académique</label>
-            <select id="filter-cycle" class="form-control select2" style="width: 100%;">
-              <option value="">-- Tous les cycles --</option>
-              <?php foreach (($cycles ?? []) as $c): ?>
-                <option value="<?= htmlspecialchars($c['code_cycle']) ?>" <?= (($selectedCycleCode ?? '') === $c['code_cycle']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($c['libelle_cycle']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
+        <div style="max-width: 400px;">
+          <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Cycle Académique</label>
+          <select id="filter-cycle" class="form-control select2" style="width: 100%;">
+            <option value="">-- Tous les cycles --</option>
+            <?php foreach (($cycles ?? []) as $c): ?>
+              <option value="<?= htmlspecialchars($c['code_cycle']) ?>" <?= (($selectedCycleCode ?? '') === $c['code_cycle']) ? 'selected' : '' ?>>
+                <?= htmlspecialchars($c['libelle_cycle']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
         </div>
       </div>
 
@@ -60,7 +43,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
         </a>
       </div>
 
-      <!-- KPI Summary Cards (Filtrés par Année et Cycle) -->
+      <!-- KPI Summary Cards -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
         
         <!-- Total Pièces Assignées -->
@@ -170,7 +153,6 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
                 <th style="padding: 12px 14px;">Code</th>
-                <th style="padding: 12px 14px;">Année Académique</th>
                 <th style="padding: 12px 14px;">Cycle Académique</th>
                 <th style="padding: 12px 14px;">Document / Pièce Administrative</th>
                 <th style="padding: 12px 14px; text-align: center;">Exemplaires</th>
@@ -193,7 +175,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-annee, #filter-cycle').select2({ width: '100%' });
+    $('#filter-cycle').select2({ width: '100%' });
   }
 
   function reloadStats() {
@@ -201,7 +183,6 @@ $(document).ready(function() {
       url: '<?= RACINE ?>piece_fournir_cycle/apiStats',
       type: 'GET',
       data: {
-        annee_code: $('#filter-annee').val(),
         cycle_code: $('#filter-cycle').val()
       },
       dataType: 'json',
@@ -221,7 +202,6 @@ $(document).ready(function() {
       url: '<?= RACINE ?>piece_fournir_cycle/apiList',
       type: 'GET',
       data: function(d) {
-        d.annee_code = $('#filter-annee').val();
         d.cycle_code = $('#filter-cycle').val();
       }
     },
@@ -231,9 +211,6 @@ $(document).ready(function() {
     columns: [
       { data: 'code_piece_cycle', render: function(d) {
         return '<code style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</code>';
-      } },
-      { data: 'libelle_annee', render: function(d) {
-        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:700; font-size:12px; padding:4px 8px; border-radius:6px; border:1px solid #BFDBFE;">' + (d || 'Toutes années') + '</span>';
       } },
       { data: 'libelle_cycle', render: function(d) {
         return '<span class="cycle-badge" style="background:#FAF5FF; color:#7E22CE; font-weight:800; font-size:12px; padding:5px 10px; border-radius:6px; border:1px solid #E9D5FF; display:inline-block; position:static;">' + (d || 'Tous cycles') + '</span>';
@@ -285,7 +262,7 @@ $(document).ready(function() {
 
   reloadStats();
 
-  $('#filter-annee, #filter-cycle').on('change', function() {
+  $('#filter-cycle').on('change', function() {
     table.ajax.reload();
     reloadStats();
   });

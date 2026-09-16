@@ -101,7 +101,7 @@
               <i data-lucide="layers" style="width: 18px; height: 18px;"></i> Cycle Académique de Destination
             </h3>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%;">
+            <div style="max-width: 600px; width: 100%;">
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle ciblé *</label>
                 <select name="cycle_code" id="select_target_cycle" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
@@ -113,48 +113,6 @@
                   <?php endforeach; ?>
                 </select>
                 <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Ces pièces constitueront le dossier administratif exigé pour tous les étudiants inscrits dans ce cycle.</small>
-              </div>
-
-              <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                  Année Académique <span style="font-size: 11px; font-weight: 600; color: #64748B;">(En cours)</span>
-                </label>
-                <?php
-                  $selectedAnneeCode = $_SESSION['annee_active_code'] ?? '';
-                  if (empty($selectedAnneeCode) && !empty($annees)) {
-                      foreach ($annees as $an) {
-                          if (($an['statut_annee'] ?? '') === 'actif') {
-                              $selectedAnneeCode = $an['code_annee'] ?? $an['id_annee'] ?? '';
-                              break;
-                          }
-                      }
-                      if (empty($selectedAnneeCode)) {
-                          $selectedAnneeCode = $annees[0]['code_annee'] ?? $annees[0]['id_annee'] ?? '';
-                      }
-                  }
-
-                  // Placer l'année active en session en tout premier dans la liste (au-dessus)
-                  if (!empty($annees) && !empty($selectedAnneeCode)) {
-                      usort($annees, function($a, $b) use ($selectedAnneeCode) {
-                          $codeA = $a['code_annee'] ?? $a['id_annee'] ?? '';
-                          $codeB = $b['code_annee'] ?? $b['id_annee'] ?? '';
-                          if ($codeA === $selectedAnneeCode) return -1;
-                          if ($codeB === $selectedAnneeCode) return 1;
-                          return 0;
-                      });
-                  }
-                ?>
-                <input type="hidden" name="annee_code" value="<?= htmlspecialchars($selectedAnneeCode) ?>">
-                <select disabled class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; background: #F1F5F9; color: #475569; cursor: not-allowed; width: 100%;">
-                  <?php foreach ($annees as $an): 
-                    $code = $an['code_annee'] ?? $an['id_annee'];
-                    $isSel = ($code == $selectedAnneeCode);
-                  ?>
-                    <option value="<?= htmlspecialchars($code) ?>" <?= $isSel ? 'selected' : '' ?>>
-                      <?= htmlspecialchars($an['libelle_annee'] ?? $an['nom_annee']) ?> <?= ($isSel ? '(En cours / Session)' : '') ?>
-                    </option>
-                  <?php endforeach; ?>
-                </select>
               </div>
             </div>
           </div>

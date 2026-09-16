@@ -4,6 +4,8 @@ $annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
 $classes = $classes ?? [];
 $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$matieres = $matieres ?? (new ModelMatiere())->getAll();
+$enseignants = $enseignants ?? (new ModelEnseignant())->getActifs();
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -15,9 +17,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Affectations des Matières & Enseignants par Classe</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Affectation des cours, des enseignants et des coefficients généraux par classe</p>
         </div>
-        <a href="<?= RACINE ?>enseignant_matiere/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <button type="button" class="btn btn-primary btn-add-em" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Affectation
-        </a>
+        </button>
       </div>
 
       <!-- Filtres Multi-Critères (Année, Niveau & Classe Select2) -->
@@ -152,7 +154,7 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, width: '160px', orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'enseignant_matiere/edition/' + (d.editId || d.id_enseignant_matiere) + '" class="btn btn-sm btn-secondary" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>'
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-em" data-id="' + (d.id_enseignant_matiere) + '" data-enseignant="' + (d.enseignant_code || '') + '" data-matiere="' + (d.matiere_code || '') + '" data-classe="' + (d.classe_code || '') + '" data-coef="' + (d.coefficient || '1.0') + '" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>'
              + '<a href="' + window.RACINE + 'enseignant_matiere/details/' + (d.editId || d.id_enseignant_matiere) + '" class="btn btn-sm btn-info" style="font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
@@ -190,6 +192,174 @@ $(document).ready(function() {
       }
     });
   });
+
+  // GESTION MODALE AJOUT / ÉDITION AFFECTATION ENSEIGNANT-MATIÈRE
+  $(document).on('click', '.btn-add-em', function(e) {
+    e.preventDefault();
+    $('#form-em')[0].reset();
+    $('#em_id').val('');
+    $('#em_coef').val('1.0');
+    $('#modal-em-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Affectation Matière / Enseignant');
+    $('#modal-em').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#em_enseignant').focus(); }, 100);
+  });
+
+  $(document).on('click', '.btn-edit-em', function(e) {
+    e.preventDefault();
+    $('#form-em')[0].reset();
+    var id = $(this).data('id');
+    var ens = $(this).data('enseignant');
+    var mat = $(this).data('matiere');
+    var cls = $(this).data('classe');
+    var coef = $(this).data('coef');
+
+    $('#em_id').val(id);
+    $('#em_enseignant').val(ens);
+    $('#em_matiere').val(mat);
+    $('#em_classe').val(cls);
+    $('#em_coef').val(coef || '1.0');
+
+    $('#modal-em-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Affectation');
+    $('#modal-em').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+  });
+
+  $('.btn-close-modal-em').on('click', function() {
+    $('#modal-em').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-em')) {
+      $('#modal-em').hide();
+    }
+  });
+
+  $('#form-em').on('submit', function(e) {
+    e.preventDefault();
+    var id = $('#em_id').val();
+    var url = window.RACINE + (id ? 'enseignant_matiere/edit' : 'enseignant_matiere/add');
+    var $btn = $('#btn-submit-em');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;" class="lucide-spin"></i> Enregistrement...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Affectation enregistrée avec succès');
+          $('#modal-em').hide();
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          else alert(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur lors de l\'enregistrement';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json.message) msg = json.message;
+        } catch(e) {}
+        if (window.toastr) toastr.error(msg);
+        else alert(msg);
+      }
+    });
+  });
 });
 </script>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : AFFECTATION ENSEIGNANT ↔ MATIÈRE PAR CLASSE          -->
+<!-- ========================================================================= -->
+<div id="modal-em" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-em-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Affectation Matière / Enseignant
+      </h3>
+      <button type="button" class="btn-close-modal-em" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-em" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_enseignant_matiere" id="em_id" value="">
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Enseignant / Professeur <span style="color: #EF4444;">*</span>
+        </label>
+        <select name="enseignant_code" id="em_enseignant" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 14px;">
+          <option value="">-- Sélectionner un enseignant --</option>
+          <?php foreach ($enseignants as $ens): ?>
+            <?php $nomEns = !empty(trim($ens['nom_complet'] ?? '')) ? $ens['nom_complet'] : ($ens['nom'] ?? $ens['code_enseignant']); ?>
+            <option value="<?= htmlspecialchars($ens['code_enseignant']) ?>">
+              <?= htmlspecialchars($nomEns . ' (' . $ens['code_enseignant'] . ')') ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Matière Enseignée <span style="color: #EF4444;">*</span>
+        </label>
+        <select name="matiere_code" id="em_matiere" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 14px;">
+          <option value="">-- Sélectionner une matière --</option>
+          <?php foreach ($matieres as $m): ?>
+            <option value="<?= htmlspecialchars($m['code_matiere']) ?>">
+              <?= htmlspecialchars($m['libelle_matiere'] . ' (' . $m['code_matiere'] . ')') ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 22px;">
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Classe Attribuée <span style="color: #EF4444;">*</span>
+          </label>
+          <select name="classe_code" id="em_classe" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 14px;">
+            <option value="">-- Sélectionner la classe --</option>
+            <?php foreach ($classes as $c): ?>
+              <option value="<?= htmlspecialchars($c['code_classe']) ?>">
+                <?= htmlspecialchars($c['libelle_classe']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Coefficient <span style="color: #EF4444;">*</span>
+          </label>
+          <input type="number" step="0.25" min="0.1" name="coefficient" id="em_coef" required value="1.0" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 800; font-size: 14px; text-align: center;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-em" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-em" class="btn btn-primary" style="background: #1E3A5F; border: none; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 9px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

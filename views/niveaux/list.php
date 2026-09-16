@@ -12,9 +12,9 @@
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Catalogue général des niveaux académiques (ex: Licence 1, Licence 2, Master 1, Master 2...)</p>
         </div>
         <div>
-          <a href="<?= RACINE ?>niveau/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn btn-primary btn-add-niveau" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter un Niveau
-          </a>
+          </button>
         </div>
       </div>
 
@@ -38,6 +38,55 @@
 
     </div>
   </main>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : AJOUTER / MODIFIER UN NIVEAU D'ÉTUDES -->
+<!-- ========================================================================= -->
+<div id="modal-niveau" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-niveau-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter un Niveau
+      </h3>
+      <button type="button" class="btn-close-modal-niveau" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-niveau" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_niveau" id="niveau_id" value="">
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Intitulé complet du niveau <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="text" name="libelle_niveau" id="niveau_libelle" required placeholder="Ex: Licence 1, Master 2, BTS 1ère Année..." class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Abréviation / Sigle court
+        </label>
+        <input type="text" name="slug_niveau" id="niveau_slug" placeholder="Ex: L1, L2, M1, M2, BTS1..." class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Utilisé pour les affichages compacts dans les listes et emplois du temps.</small>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
+        <select name="statut_niveau" id="niveau_statut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="actif">Actif</option>
+          <option value="inactif">Inactif</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #E2E8F0;">
+        <button type="button" class="btn btn-secondary btn-close-modal-niveau" style="font-weight: 700; border-radius: 8px; padding: 9px 18px;">Annuler</button>
+        <button type="submit" id="btn-save-niveau" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 22px; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -78,7 +127,9 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, className: 'text-end', render: function(d) {
-        return '<a href="<?= RACINE ?>niveau/edition/' + (d.editId || d.id_niveau) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+        var safeLibelle = $('<div>').text(d.libelle_niveau || '').html();
+        var safeSlug = $('<div>').text(d.slug_niveau || '').html();
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-niveau" data-id="' + d.id_niveau + '" data-libelle="' + safeLibelle + '" data-slug="' + safeSlug + '" data-statut="' + (d.statut_niveau || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                '<a href="<?= RACINE ?>niveau/details/' + (d.editId || d.id_niveau) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       } }
     ],
@@ -86,34 +137,110 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  function bindAjaxToggle(selector, url, datatable) {
-    $(document).off('change', selector).on('change', selector, function() {
-      var $checkbox = $(this);
-      var id = $checkbox.data('id');
-      $checkbox.prop('disabled', true);
-      $.ajax({
-        url: url,
-        type: 'POST',
-        data: { id_niveau: id, csrf_token: '<?= Validator::generateCsrfToken() ?>' },
-        dataType: 'json',
-        success: function(res) {
-          if (res.status === 1 || res.success) {
-            if (typeof showToast === 'function') showToast(res.message || 'Statut mis à jour', 'success');
-            datatable.ajax.reload(null, false);
-          } else {
-            if (typeof showToast === 'function') showToast(res.message || 'Erreur', 'error');
-            $checkbox.prop('checked', !$checkbox.prop('checked')).prop('disabled', false);
-          }
-        },
-        error: function() {
-          if (typeof showToast === 'function') showToast('Erreur serveur', 'error');
+  // Modal : Ajouter
+  $('.btn-add-niveau').on('click', function() {
+    $('#form-niveau')[0].reset();
+    $('#niveau_id').val('');
+    $('#modal-niveau-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter un Niveau');
+    $('#modal-niveau').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#niveau_libelle').focus(); }, 100);
+  });
+
+  // Modal : Modifier
+  $(document).on('click', '.btn-edit-niveau', function() {
+    var id = $(this).data('id');
+    var libelle = $(this).data('libelle');
+    var slug = $(this).data('slug');
+    var statut = $(this).data('statut');
+
+    $('#niveau_id').val(id);
+    $('#niveau_libelle').val(libelle);
+    $('#niveau_slug').val(slug);
+    $('#niveau_statut').val(statut || 'actif');
+    $('#modal-niveau-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le Niveau');
+    $('#modal-niveau').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#niveau_libelle').focus(); }, 100);
+  });
+
+  // Modal : Fermer
+  $('.btn-close-modal-niveau').on('click', function() {
+    $('#modal-niveau').css('display', 'none');
+  });
+  $('#modal-niveau').on('click', function(e) {
+    if ($(e.target).is('#modal-niveau')) {
+      $(this).css('display', 'none');
+    }
+  });
+
+  // Soumission AJAX (Ajout & Modification)
+  $('#form-niveau').on('submit', function(e) {
+    e.preventDefault();
+    var isEdit = !!$('#niveau_id').val();
+    var url = isEdit ? '<?= RACINE ?>niveau/edit' : '<?= RACINE ?>niveau/add';
+    var $btn = $('#btn-save-niveau');
+
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Enregistrement...');
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: $(this).serialize(),
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Opération réussie');
+          $('#modal-niveau').css('display', 'none');
+          tableNiveauxCat.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+
+        var msg = 'Erreur réseau ou serveur';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch(e) {}
+        if (window.toastr) toastr.error(msg);
+      }
+    });
+  });
+
+  // Bascule statut AJAX
+  $(document).off('change', '.toggle-statut-niveau').on('change', '.toggle-statut-niveau', function() {
+    var $checkbox = $(this);
+    var id = $checkbox.data('id');
+    $checkbox.prop('disabled', true);
+    $.ajax({
+      url: '<?= RACINE ?>niveau/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: { id_niveau: id, csrf_token: '<?= Validator::generateCsrfToken() ?>' },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour');
+          tableNiveauxCat.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur');
           $checkbox.prop('checked', !$checkbox.prop('checked')).prop('disabled', false);
         }
-      });
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur serveur');
+        $checkbox.prop('checked', !$checkbox.prop('checked')).prop('disabled', false);
+      }
     });
-  }
-
-  bindAjaxToggle('.toggle-statut-niveau', '<?= RACINE ?>niveau/changer', tableNiveauxCat);
+  });
 });
 </script>
 

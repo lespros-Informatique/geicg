@@ -7,25 +7,19 @@ class ModelPieceFournirCycle extends BaseModel
     protected ?string $statusField = 'statut_piece_cycle';
     protected ?string $createdAtField = 'created_at_piece_cycle';
 
-    public function getAll(?string $anneeCode = null, ?string $cycleCode = null): array
+    public function getAll(?string $cycleCode = null): array
     {
         $sql = "
             SELECT pfc.*, 
                    c.libelle_cycle,
                    pf.libelle_piece,
-                   pf.description_piece,
-                   a.libelle_annee
+                   pf.description_piece
             FROM piece_fournir_cycle pfc
             LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
             LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
-            LEFT JOIN annees a ON (a.code_annee = pfc.annee_code OR a.id_annee = pfc.annee_code)
         ";
         $conditions = [];
         $params = [];
-        if (!empty($anneeCode)) {
-            $conditions[] = "pfc.annee_code = ?";
-            $params[] = $anneeCode;
-        }
         if (!empty($cycleCode)) {
             $conditions[] = "pfc.cycle_code = ?";
             $params[] = $cycleCode;
@@ -50,12 +44,10 @@ class ModelPieceFournirCycle extends BaseModel
             SELECT pfc.*, 
                    c.libelle_cycle,
                    pf.libelle_piece,
-                   pf.description_piece,
-                   a.libelle_annee
+                   pf.description_piece
             FROM piece_fournir_cycle pfc
             LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
             LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
-            LEFT JOIN annees a ON (a.code_annee = pfc.annee_code OR a.id_annee = pfc.annee_code)
             WHERE pfc.id_piece_cycle = ?
             LIMIT 1
         ";
@@ -124,16 +116,12 @@ class ModelPieceFournirCycle extends BaseModel
         }
     }
 
-    public function getSummaryCounts(?string $anneeCode = null, ?string $cycleCode = null): array
+    public function getSummaryCounts(?string $cycleCode = null): array
     {
         try {
             $db = $this->getCon();
             $conditions = [];
             $params = [];
-            if (!empty($anneeCode)) {
-                $conditions[] = "annee_code = ?";
-                $params[] = $anneeCode;
-            }
             if (!empty($cycleCode)) {
                 $conditions[] = "cycle_code = ?";
                 $params[] = $cycleCode;

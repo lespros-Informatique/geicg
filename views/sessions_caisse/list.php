@@ -31,9 +31,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
               <i data-lucide="lock" style="width: 18px; height: 18px;"></i> Clôturer la Caisse
             </a>
           <?php else: ?>
-            <a href="<?= RACINE ?>session_caisse/formulaire" class="btn btn-success" style="background: #15803D; border-color: #15803D; color: #FFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 22px; box-shadow: 0 2px 5px rgba(21,128,61,0.25);">
+            <button type="button" class="btn btn-success btn-open-session-caisse" style="background: #15803D; border-color: #15803D; color: #FFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 22px; box-shadow: 0 2px 5px rgba(21,128,61,0.25); cursor: pointer; border: none;">
               <i data-lucide="unlock" style="width: 18px; height: 18px;"></i> Ouvrir la Caisse du Jour
-            </a>
+            </button>
           <?php endif; ?>
         </div>
       </div>
@@ -165,6 +165,72 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
   </main>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : OUVERTURE DE LA SESSION DE CAISSE DU JOUR            -->
+<!-- ========================================================================= -->
+<div id="modal-open-session-caisse" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #15803D; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="unlock" style="width: 18px; height: 18px;"></i> Ouverture de Session de Caisse
+      </h3>
+      <button type="button" class="btn-close-modal-session" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-open-session-caisse" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+
+      <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="info" style="color: #15803D; width: 20px; height: 20px; flex-shrink: 0;"></i>
+        <div style="font-size: 12.5px; color: #166534; line-height: 1.4;">
+          L'ouverture initialise la journée financière. Tous les encaissements effectués seront rattachés à cette session.
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Date de la session <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="date" name="date_session" id="session_date" required value="<?= date('Y-m-d') ?>" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 14px;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Fond de caisse initial (FCFA) <span style="color: #EF4444;">*</span>
+        </label>
+        <div style="position: relative;">
+          <input type="number" min="0" step="any" name="fond_initial" id="session_fond_initial" required value="0" placeholder="Ex: 50000" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px 10px 42px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 800; font-size: 15px; color: #0F172A;">
+          <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748B; font-weight: 700; font-size: 13px;">F</span>
+        </div>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Montant en espèces disponible dans le tiroir au démarrage.</small>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 22px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Observations / Remarques d'ouverture
+        </label>
+        <textarea name="observations_ouverture" id="session_observations" rows="2" placeholder="Ex: Fond de caisse vérifié en présence du responsable..." class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-session" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-session" class="btn btn-success" style="background: #15803D; border: none; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 9px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(21,128,61,0.2);">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Confirmer l'Ouverture
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
 <script>
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
@@ -260,6 +326,67 @@ $(document).ready(function() {
   $('#filter-annee').on('change', function() {
     var val = $(this).val();
     window.location.href = window.RACINE + 'session_caisse/list?annee_code=' + encodeURIComponent(val);
+  });
+
+  // GESTION MODALE OUVERTURE DE CAISSE DU JOUR
+  $(document).on('click', '.btn-open-session-caisse', function(e) {
+    e.preventDefault();
+    $('#form-open-session-caisse')[0].reset();
+    $('#session_date').val(new Date().toISOString().split('T')[0]);
+    $('#session_fond_initial').val(0);
+    $('#modal-open-session-caisse').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#session_fond_initial').focus().select(); }, 100);
+  });
+
+  $('.btn-close-modal-session').on('click', function() {
+    $('#modal-open-session-caisse').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-open-session-caisse')) {
+      $('#modal-open-session-caisse').hide();
+    }
+  });
+
+  $('#form-open-session-caisse').on('submit', function(e) {
+    e.preventDefault();
+    var $btn = $('#btn-submit-session');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;" class="lucide-spin"></i> Ouverture...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: window.RACINE + 'session_caisse/add',
+      type: 'POST',
+      data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Confirmer l\'Ouverture');
+        if (window.lucide) lucide.createIcons();
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Session de caisse ouverte avec succès');
+          $('#modal-open-session-caisse').hide();
+          setTimeout(function() {
+            window.location.reload();
+          }, 600);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'ouverture de la session');
+          else alert(res.message || 'Erreur lors de l\'ouverture de la session');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Confirmer l\'Ouverture');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur lors de l\'enregistrement';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json.message) msg = json.message;
+        } catch(e) {}
+        if (window.toastr) toastr.error(msg);
+        else alert(msg);
+      }
+    });
   });
 });
 </script>
