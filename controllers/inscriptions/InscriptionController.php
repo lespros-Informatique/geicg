@@ -1165,12 +1165,56 @@ class InscriptionController extends BaseController
             return;
         }
 
-        $uploadDir = __DIR__ . '/../../public/uploads/photos_inscriptions/';
-        if (!is_dir($uploadDir)) {
-            @mkdir($uploadDir, 0755, true);
+        $db = $this->model->getCon();
+        $stmtInfo = $db->prepare("
+            SELECT 
+                i.id_inscription,
+                i.code_inscription,
+                i.annee_code,
+                i.photo_inscription,
+                e.matricule_etudiant,
+                e.code_etudiant,
+                a.libelle_annee
+            FROM inscriptions i
+            JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN annees a ON a.code_annee = i.annee_code
+            WHERE " . ($idInscription ? "i.id_inscription = ?" : "i.code_inscription = ?") . "
+            LIMIT 1
+        ");
+        $stmtInfo->execute([$idInscription ?: $codeInscription]);
+        $inscInfo = $stmtInfo->fetch(PDO::FETCH_ASSOC);
+
+        if (!$inscInfo) {
+            $this->error("Inscription introuvable.");
+            return;
         }
 
-        $safeCode = preg_replace('/[^a-zA-Z0-9_-]/', '', $codeInscription ?: 'INS_' . $idInscription);
+        // Dossier classé par année académique
+        $anneeLabel = !empty($inscInfo['libelle_annee']) ? $inscInfo['libelle_annee'] : ($inscInfo['annee_code'] ?: 'defaut');
+        $safeAnneeFolder = preg_replace('/[^a-zA-Z0-9_-]/', '_', $anneeLabel);
+        $uploadDir = __DIR__ . '/../../public/uploads/photos_inscriptions/' . $safeAnneeFolder . '/';
+
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0777, true);
+            @chmod($uploadDir, 0777);
+        }
+
+        // Nom du fichier = Matricule de l'étudiant
+        $matricule = !empty($inscInfo['matricule_etudiant']) ? trim($inscInfo['matricule_etudiant']) : '';
+        $safeFilename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $matricule);
+        if (empty($safeFilename)) {
+            $safeFilename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $inscInfo['code_inscription'] ?: ('INS_' . $inscInfo['id_inscription']));
+        }
+
+        // Supprimer l'ancienne photo si elle existe sur le disque
+        $oldPhotoPath = !empty($inscInfo['photo_inscription']) ? trim($inscInfo['photo_inscription']) : '';
+        if (!empty($oldPhotoPath)) {
+            $oldFullPath = __DIR__ . '/../../' . ltrim($oldPhotoPath, '/');
+            if (file_exists($oldFullPath) && is_file($oldFullPath)) {
+                @unlink($oldFullPath);
+            }
+        }
+
         $relativePath = null;
 
         if (!empty($webcamData)) {
@@ -1183,10 +1227,10 @@ class InscriptionController extends BaseController
                     $this->error("Données de photo webcam invalides.");
                     return;
                 }
-                $filename = 'PHOTO_' . $safeCode . '_' . uniqid() . '.' . $ext;
+                $filename = $safeFilename . '.' . $ext;
                 $targetPath = $uploadDir . $filename;
                 if (file_put_contents($targetPath, $data) !== false) {
-                    $relativePath = 'public/uploads/photos_inscriptions/' . $filename;
+                    $relativePath = 'public/uploads/photos_inscriptions/' . $safeAnneeFolder . '/' . $filename;
                 }
             } else {
                 $this->error("Format de capture webcam invalide.");
@@ -1205,10 +1249,10 @@ class InscriptionController extends BaseController
                 $this->error("Format d'image non autorisé. Formats acceptés : PNG, JPG, JPEG, WEBP.");
                 return;
             }
-            $filename = 'PHOTO_' . $safeCode . '_' . uniqid() . '.' . $ext;
+            $filename = $safeFilename . '.' . $ext;
             $targetPath = $uploadDir . $filename;
             if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                $relativePath = 'public/uploads/photos_inscriptions/' . $filename;
+                $relativePath = 'public/uploads/photos_inscriptions/' . $safeAnneeFolder . '/' . $filename;
             }
         } else {
             $this->error("Veuillez sélectionner un fichier image ou capturer une photo depuis la webcam.");
@@ -1216,14 +1260,8 @@ class InscriptionController extends BaseController
         }
 
         if ($relativePath) {
-            $db = $this->model->getCon();
-            if ($idInscription) {
-                $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE id_inscription = ?");
-                $ok = $stmt->execute([$relativePath, $idInscription]);
-            } else {
-                $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE code_inscription = ?");
-                $ok = $stmt->execute([$relativePath, $codeInscription]);
-            }
+            $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE id_inscription = ?");
+            $ok = $stmt->execute([$relativePath, $inscInfo['id_inscription']]);
 
             if ($ok) {
                 $this->success("La photo d'inscription a été enregistrée avec succès !", [
