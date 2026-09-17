@@ -140,6 +140,16 @@ $anneeActive = $anneeActive ?? '';
             </select>
           </div>
 
+          <!-- Filtre Régime -->
+          <div class="form-group" style="margin: 0;">
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Régime Étudiant</label>
+            <select id="filter-regime" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+              <option value="ALL">-- Tous les régimes --</option>
+              <option value="affecte">Affecté(e) État</option>
+              <option value="non_affecte">Non Affecté(e) / Privé</option>
+            </select>
+          </div>
+
 
 
         </div>
@@ -155,6 +165,7 @@ $anneeActive = $anneeActive ?? '';
                 <th style="padding: 12px;">Matricule</th>
                 <th style="padding: 12px;">Étudiant (Nom & Prénoms)</th>
                 <th style="padding: 12px;">Sexe</th>
+                <th style="padding: 12px;">Régime</th>
                 <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px;">Filière</th>
                 <th style="padding: 12px;">Niveau</th>
@@ -184,6 +195,7 @@ $(document).ready(function() {
         d.filiere_code = $('#filter-filiere').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
+        d.affectation_etat = $('#filter-regime').val();
       }
     },
     processing: true,
@@ -216,6 +228,15 @@ $(document).ready(function() {
         var col = isFem ? '#DB2777' : '#2563EB';
         var border = isFem ? '#FBCFE8' : '#BFDBFE';
         return '<span style="background:' + bg + '; color:' + col + '; border:1px solid ' + border + '; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;">' + d + '</span>';
+      }},
+
+      // 4. Régime (Affecté / Non Affecté)
+      { data: 'affectation_etat', width: '120px', render: function(d) {
+        var isAffecte = (d === 'affecte' || d === 'oui');
+        if (isAffecte) {
+          return '<span style="background:#DCFCE7; color:#15803D; border:1.5px solid #86EFAC; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:12px;height:12px;color:#16A34A;"></i> Affecté(e)</span>';
+        }
+        return '<span style="background:#DBEAFE; color:#1D4ED8; border:1.5px solid #BFDBFE; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="user-check" style="width:12px;height:12px;color:#2563EB;"></i> Non Affecté(e)</span>';
       }},
 
       // 4. Classe (Indépendante)
@@ -265,18 +286,18 @@ $(document).ready(function() {
     var selNiv = $('#filter-niveau').val();
     var selCls = $('#filter-classe').val();
 
-    // Colonne 4 : Classe -> masquée si une classe spécifique est sélectionnée
-    table.column(4).visible(selCls === 'ALL' || !selCls);
+    // Colonne 5 : Classe -> masquée si une classe spécifique est sélectionnée
+    table.column(5).visible(selCls === 'ALL' || !selCls);
 
-    // Colonne 5 : Filière -> masquée si une filière spécifique est sélectionnée
-    table.column(5).visible(selFil === 'ALL' || !selFil);
+    // Colonne 6 : Filière -> masquée si une filière spécifique est sélectionnée
+    table.column(6).visible(selFil === 'ALL' || !selFil);
 
-    // Colonne 6 : Niveau -> masquée si un niveau spécifique est sélectionné
-    table.column(6).visible(selNiv === 'ALL' || !selNiv);
+    // Colonne 7 : Niveau -> masquée si un niveau spécifique est sélectionné
+    table.column(7).visible(selNiv === 'ALL' || !selNiv);
   }
 
   // Déclenchement automatique du rechargement et des colonnes intelligentes
-  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').on('change', function() {
+  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe, #filter-regime').on('change', function() {
     filterClassDropdown();
     updateSmartColumns();
     table.ajax.reload();
@@ -317,6 +338,7 @@ $(document).ready(function() {
     $('#filter-filiere').val('ALL');
     $('#filter-niveau').val('ALL');
     $('#filter-classe').val('ALL');
+    $('#filter-regime').val('ALL');
     filterClassDropdown();
     updateSmartColumns();
     table.ajax.reload();

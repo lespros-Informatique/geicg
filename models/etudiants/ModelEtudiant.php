@@ -117,6 +117,15 @@ class ModelEtudiant extends BaseModel
             $params[] = $filters['statut_etudiant'];
         }
 
+        if (!empty($filters['affectation_etat']) && $filters['affectation_etat'] !== 'ALL') {
+            $val = $filters['affectation_etat'];
+            if ($val === 'affecte') {
+                $where[] = "(i.affectation_etat = 'affecte' OR i.affectation_etat = 'oui')";
+            } else {
+                $where[] = "(i.affectation_etat = 'non_affecte' OR i.affectation_etat = 'non' OR i.affectation_etat IS NULL)";
+            }
+        }
+
         $whereClause = implode(" AND ", $where);
 
         $sql = "
@@ -133,6 +142,7 @@ class ModelEtudiant extends BaseModel
                 e.email_etudiant,
                 e.photo_etudiant,
                 e.statut_etudiant,
+                i.affectation_etat,
                 i.id_inscription,
                 i.code_inscription,
                 i.statut_inscription,

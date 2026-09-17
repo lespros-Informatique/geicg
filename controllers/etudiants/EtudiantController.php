@@ -42,7 +42,8 @@ class EtudiantController extends BaseController
             'niveau_code' => $_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''),
             'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
             'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),
-            'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? '')
+            'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? ''),
+            'affectation_etat' => $_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? '')
         ];
 
         $etabCfg = $this->getEtablissementConfig();

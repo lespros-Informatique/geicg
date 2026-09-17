@@ -21,6 +21,11 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Suivi exclusif des retraits, émargement au guichet et impression des bons de décharge</p>
         </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" id="btn-open-attrib-modal" class="btn btn-success" style="background: #15803D; border: none; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(21,128,61,0.2);">
+            <i data-lucide="package-plus" style="width: 18px; height: 18px;"></i> Attribuer un Kit
+          </button>
+        </div>
       </div>
 
       <!-- Filtres (Année, Classe & Statut Retrait) -->
