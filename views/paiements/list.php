@@ -86,8 +86,8 @@
         <div style="margin-top: 10px; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #0F172A;">
           <span>Total Encaissé : <strong style="color: #15803D;" id="print-kpi-total">0 FCFA</strong></span>
           <span>Espèces : <strong id="print-kpi-especes">0 FCFA</strong></span>
-          <span>Mobile Money : <strong id="print-kpi-mobile">0 FCFA</strong></span>
-          <span>Chèques / Banque : <strong id="print-kpi-banque">0 FCFA</strong></span>
+          <span>Affectés (État) : <strong id="print-kpi-affectes">0 FCFA</strong></span>
+          <span>Non Affectés (Privés) : <strong id="print-kpi-prives">0 FCFA</strong></span>
         </div>
       </div>
 
@@ -208,31 +208,31 @@
           </div>
         </div>
 
-        <!-- Mobile Money -->
+        <!-- Encaissements Élèves Affectés (État) -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Mobile Money</div>
+            <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Affectés (État)</div>
             <div style="font-size: 18px; font-weight: 900; color: #0369A1; margin-top: 3px;">
-              <span id="kpi-encaisse-mobile"><?= number_format((float)($stats['encaisse_mobile'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+              <span id="kpi-encaisse-affectes"><?= number_format((float)($stats['encaisse_affectes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Wave, Orange, MTN, Moov</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Montant encaissé (État)</div>
           </div>
           <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="smartphone" style="width: 20px; height: 20px;"></i>
+            <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
-        <!-- Chèques & Banque -->
+        <!-- Encaissements Élèves Non Affectés (Privés) -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Chèques & Banque</div>
+            <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés (Privés)</div>
             <div style="font-size: 18px; font-weight: 900; color: #3730A3; margin-top: 3px;">
-              <span id="kpi-encaisse-banque"><?= number_format((float)($stats['encaisse_banque'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+              <span id="kpi-encaisse-prives"><?= number_format((float)($stats['encaisse_prives'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Virements & Chèques</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Montant encaissé (Privés)</div>
           </div>
           <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="building-2" style="width: 20px; height: 20px;"></i>
+            <i data-lucide="user" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
@@ -484,8 +484,8 @@ $(document).ready(function() {
 
     $('#print-kpi-total').text($('#kpi-total-encaisse').text() + ' FCFA');
     $('#print-kpi-especes').text($('#kpi-encaisse-especes').text() + ' FCFA');
-    $('#print-kpi-mobile').text($('#kpi-encaisse-mobile').text() + ' FCFA');
-    $('#print-kpi-banque').text($('#kpi-encaisse-banque').text() + ' FCFA');
+    $('#print-kpi-affectes').text($('#kpi-encaisse-affectes').text() + ' FCFA');
+    $('#print-kpi-prives').text($('#kpi-encaisse-prives').text() + ' FCFA');
 
     var currentLen = table.page.len();
     table.page.len(-1).draw();
@@ -517,8 +517,8 @@ $(document).ready(function() {
           $('#kpi-total-encaisse').text(Number(s.total_encaisse || 0).toLocaleString('fr-FR'));
           $('#kpi-taux-recouvrement').text(Number(s.taux_recouvrement || 0).toLocaleString('fr-FR', { minimumFractionDigits: 1 }));
           $('#kpi-encaisse-especes').text(Number(s.encaisse_especes || 0).toLocaleString('fr-FR'));
-          $('#kpi-encaisse-mobile').text(Number(s.encaisse_mobile || 0).toLocaleString('fr-FR'));
-          $('#kpi-encaisse-banque').text(Number(s.encaisse_banque || 0).toLocaleString('fr-FR'));
+          $('#kpi-encaisse-affectes').text(Number(s.encaisse_affectes || 0).toLocaleString('fr-FR'));
+          $('#kpi-encaisse-prives').text(Number(s.encaisse_prives || 0).toLocaleString('fr-FR'));
           $('#kpi-montant-en-attente').text(Number(s.montant_en_attente || 0).toLocaleString('fr-FR'));
           
           $('#kpi-attente-post-inscription').text(Number(s.attente_post_inscription || 0).toLocaleString('fr-FR'));
