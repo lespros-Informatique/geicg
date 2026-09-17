@@ -25,20 +25,72 @@ class PaiementController extends BaseController
         }
 
         $activeYear = $this->getActiveAnneeCode();
-        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $niveauCode = $_GET['niveau_code'] ?? 'ALL';
+        $classeCode = $_GET['classe_code'] ?? 'ALL';
 
-        // 1. Statistiques des Inscriptions et de la Scolarité Globale Attendue
-        $stmtIns = $db->prepare("
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $classes = $db->query("SELECT code_classe, libelle_classe, niveau_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $stats = $this->computeFinancialStats($activeYear, $niveauCode, $classeCode);
+
+        $this->loadView('../views/paiements/list.php', [
+            'stats' => $stats,
+            'annees' => $annees,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
+            'selectedAnneeCode' => $activeYear
+        ]);
+    }
+
+    public function apiStats()
+    {
+        $this->requireAuth();
+        $this->requirePermission('VIEW_PAIEMENTS');
+
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $niveauCode = $_GET['niveau_code'] ?? 'ALL';
+        $classeCode = $_GET['classe_code'] ?? 'ALL';
+
+        $stats = $this->computeFinancialStats($anneeCode, $niveauCode, $classeCode);
+        $this->json(['status' => 1, 'stats' => $stats]);
+    }
+
+    public function computeFinancialStats(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
+    {
+        $db = $this->model->getCon();
+        $anneeCode = !empty($anneeCode) ? $anneeCode : $this->getActiveAnneeCode();
+
+        $whereIns = ["i.statut_inscription != 'annule'"];
+        $paramsIns = [];
+
+        if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+            $whereIns[] = "i.annee_code = ?";
+            $paramsIns[] = $anneeCode;
+        }
+        if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+            $whereIns[] = "c.niveau_code = ?";
+            $paramsIns[] = $niveauCode;
+        }
+        if (!empty($classeCode) && $classeCode !== 'ALL') {
+            $whereIns[] = "i.classe_code = ?";
+            $paramsIns[] = $classeCode;
+        }
+
+        $strWhereIns = implode(" AND ", $whereIns);
+
+        $sqlIns = "
             SELECT 
-                COUNT(DISTINCT i.id_inscription) as total_inscrits,
-                COUNT(DISTINCT i.etudiant_code) as total_etudiants_inscrits,
-                COALESCE(SUM(
+                i.code_inscription,
+                i.etudiant_code,
+                i.affectation_etat,
+                COALESCE(
                     CASE 
                         WHEN i.montant_scolarite_inscription IS NOT NULL AND i.montant_scolarite_inscription > 0 THEN i.montant_scolarite_inscription
                         WHEN s.montant_scolarite IS NOT NULL AND s.montant_scolarite > 0 THEN s.montant_scolarite
                         ELSE 0
-                    END
-                ), 0) as total_scolarite_attendue
+                    END, 0
+                ) as montant_du
             FROM inscriptions i
             LEFT JOIN classes c ON i.classe_code = c.code_classe
             LEFT JOIN scolarites s ON (
@@ -48,59 +100,166 @@ class PaiementController extends BaseController
                 AND (s.affectation_etat = i.affectation_etat OR s.affectation_etat IS NULL OR s.affectation_etat = '')
                 AND s.statut_scolarite = 'actif'
             )
-            WHERE (i.annee_code = ? OR ? = '') AND i.statut_inscription != 'annule'
-        ");
-        $stmtIns->execute([$activeYear, $activeYear]);
-        $insStats = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [
-            'total_inscrits' => 0,
-            'total_etudiants_inscrits' => 0,
-            'total_scolarite_attendue' => 0
-        ];
+            WHERE {$strWhereIns}
+        ";
 
-        // 2. Statistiques des Paiements et Encaissements
-        $stmtPay = $db->prepare("
+        $stmtIns = $db->prepare($sqlIns);
+        $stmtIns->execute($paramsIns);
+        $inscriptions = $stmtIns->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $totalInscrits = count($inscriptions);
+        $totalScolariteAttendue = 0.0;
+
+        $inscrMap = [];
+        foreach ($inscriptions as $ins) {
+            $codeInscr = $ins['code_inscription'];
+            $du = (float)$ins['montant_du'];
+            $totalScolariteAttendue += $du;
+
+            $inscrMap[$codeInscr] = [
+                'code_inscription' => $codeInscr,
+                'du' => $du,
+                'affectation' => strtolower(trim($ins['affectation_etat'] ?? '')),
+                'paye' => 0.0
+            ];
+        }
+
+        $wherePay = ["p.statut_paiement != 'annule'"];
+        $paramsPay = [];
+
+        if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+            $wherePay[] = "(p.annee_code = ? OR ins.annee_code = ?)";
+            $paramsPay[] = $anneeCode;
+            $paramsPay[] = $anneeCode;
+        }
+        if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+            $wherePay[] = "c.niveau_code = ?";
+            $paramsPay[] = $niveauCode;
+        }
+        if (!empty($classeCode) && $classeCode !== 'ALL') {
+            $wherePay[] = "ins.classe_code = ?";
+            $paramsPay[] = $classeCode;
+        }
+
+        $strWherePay = implode(" AND ", $wherePay);
+
+        $sqlPay = "
             SELECT 
-                COUNT(*) as total_operations,
-                COALESCE(SUM(p.montant_paiement), 0) as total_encaisse,
-                COALESCE(SUM(CASE WHEN DATE(p.date_paiement) = CURDATE() THEN p.montant_paiement ELSE 0 END), 0) as encaisse_aujourdhui,
-                COALESCE(SUM(CASE WHEN YEAR(p.date_paiement) = YEAR(CURDATE()) AND MONTH(p.date_paiement) = MONTH(CURDATE()) THEN p.montant_paiement ELSE 0 END), 0) as encaisse_mois,
-                COUNT(DISTINCT p.inscription_code) as total_eleves_payeurs
+                p.id_paiement,
+                p.montant_paiement,
+                p.date_paiement,
+                p.mode_paiement,
+                p.inscription_code,
+                ins.affectation_etat
             FROM paiements p
             LEFT JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
-            WHERE p.statut_paiement != 'annule'
-              AND (p.annee_code = ? OR ins.annee_code = ? OR ? = '')
-        ");
-        $stmtPay->execute([$activeYear, $activeYear, $activeYear]);
-        $payStats = $stmtPay->fetch(PDO::FETCH_ASSOC) ?: [
-            'total_operations' => 0,
-            'total_encaisse' => 0,
-            'encaisse_aujourdhui' => 0,
-            'encaisse_mois' => 0,
-            'total_eleves_payeurs' => 0
-        ];
+            LEFT JOIN classes c ON ins.classe_code = c.code_classe
+            WHERE {$strWherePay}
+        ";
 
-        $totalScolarite = (float)$insStats['total_scolarite_attendue'];
-        $totalEncaisse = (float)$payStats['total_encaisse'];
-        $montantEnAttente = max(0, $totalScolarite - $totalEncaisse);
-        $tauxRecouvrement = ($totalScolarite > 0) ? round(($totalEncaisse / $totalScolarite) * 100, 1) : 0;
+        $stmtPay = $db->prepare($sqlPay);
+        $stmtPay->execute($paramsPay);
+        $paiements = $stmtPay->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $stats = array_merge($payStats, [
-            'total_inscrits' => (int)$insStats['total_inscrits'],
-            'total_scolarite_attendue' => $totalScolarite,
+        $totalEncaisse = 0.0;
+        $encaisseAujourdhui = 0.0;
+        $encaisseMois = 0.0;
+        $encaisseEspeces = 0.0;
+        $encaisseMobile = 0.0;
+        $encaisseBanque = 0.0;
+        $encaisseAffectes = 0.0;
+        $encaissePrives = 0.0;
+
+        $today = date('Y-m-d');
+        $thisMonth = date('Y-m');
+
+        foreach ($paiements as $p) {
+            $m = (float)$p['montant_paiement'];
+            $totalEncaisse += $m;
+
+            $dateP = !empty($p['date_paiement']) ? substr($p['date_paiement'], 0, 10) : '';
+            $monthP = !empty($p['date_paiement']) ? substr($p['date_paiement'], 0, 7) : '';
+
+            if ($dateP === $today) {
+                $encaisseAujourdhui += $m;
+            }
+            if ($monthP === $thisMonth) {
+                $encaisseMois += $m;
+            }
+
+            $mode = strtolower(trim($p['mode_paiement'] ?? 'especes'));
+            if (in_array($mode, ['especes', 'espece', 'liquide', 'caisse'])) {
+                $encaisseEspeces += $m;
+            } elseif (in_array($mode, ['wave', 'om', 'orange', 'orange_money', 'mtn', 'moov', 'mobile_money', 'mobile'])) {
+                $encaisseMobile += $m;
+            } else {
+                $encaisseBanque += $m;
+            }
+
+            $codeIns = $p['inscription_code'];
+            if (isset($inscrMap[$codeIns])) {
+                $inscrMap[$codeIns]['paye'] += $m;
+            }
+
+            $rawAff = strtolower(trim($p['affectation_etat'] ?? ''));
+            if ($rawAff === 'oui' || $rawAff === 'affecte') {
+                $encaisseAffectes += $m;
+            } else {
+                $encaissePrives += $m;
+            }
+        }
+
+        $elevesSoldes = 0;
+        $elevesAcomptes = 0;
+        $elevesNonPayeurs = 0;
+        $attentePostInscription = 0.0;
+
+        foreach ($inscrMap as $item) {
+            $du = $item['du'];
+            $paye = $item['paye'];
+            $reste = max(0, $du - $paye);
+
+            if ($paye >= $du && $du > 0) {
+                $elevesSoldes++;
+            } elseif ($paye > 0) {
+                $elevesAcomptes++;
+            } else {
+                $elevesNonPayeurs++;
+            }
+
+            $attentePostInscription += $reste;
+        }
+
+        $montantEnAttente = max(0, $totalScolariteAttendue - $totalEncaisse);
+        $tauxRecouvrement = ($totalScolariteAttendue > 0) ? round(($totalEncaisse / $totalScolariteAttendue) * 100, 1) : 0;
+
+        return [
+            'total_inscrits' => $totalInscrits,
+            'total_scolarite_attendue' => $totalScolariteAttendue,
+            'total_encaisse' => $totalEncaisse,
             'montant_en_attente' => $montantEnAttente,
-            'taux_recouvrement' => $tauxRecouvrement
-        ]);
+            'taux_recouvrement' => $tauxRecouvrement,
+            'encaisse_aujourdhui' => $encaisseAujourdhui,
+            'encaisse_mois' => $encaisseMois,
+            'total_operations' => count($paiements),
 
-        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $classes = $db->query("SELECT code_classe, libelle_classe, niveau_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            // Mode de paiement
+            'encaisse_especes' => $encaisseEspeces,
+            'encaisse_mobile' => $encaisseMobile,
+            'encaisse_banque' => $encaisseBanque,
 
-        $this->loadView('../views/paiements/list.php', [
-            'stats' => $stats,
-            'annees' => $annees,
-            'niveaux' => $niveaux,
-            'classes' => $classes,
-            'selectedAnneeCode' => $activeYear
-        ]);
+            // Statuts élèves
+            'eleves_soldes' => $elevesSoldes,
+            'eleves_acomptes' => $elevesAcomptes,
+            'eleves_non_payeurs' => $elevesNonPayeurs,
+
+            // Attente post-inscription immédiate
+            'attente_post_inscription' => $attentePostInscription,
+
+            // Régimes
+            'encaisse_affectes' => $encaisseAffectes,
+            'encaisse_prives' => $encaissePrives
+        ];
     }
 
     public function apiList()

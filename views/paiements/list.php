@@ -89,85 +89,175 @@
             </select>
           </div>
 
+          <!-- Bouton Réinitialiser -->
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="button" id="btn-reset-filters" class="btn btn-light" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: center;">
+              <i data-lucide="rotate-ccw" style="width: 15px; height: 15px;"></i> Réinitialiser
+            </button>
+          </div>
+
         </div>
       </div>
 
-      <!-- STATISTIQUES & INDICATEURS CLÉS CAISSE -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <!-- SECTION 1 : ENCAISSEMENTS & CAISSE GUICHET -->
+      <div style="margin-bottom: 8px;">
+        <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="landmark" style="width: 15px; height: 15px; color: #15803D;"></i> Arrêt de Caisse & Modes de Règlement
+        </h4>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
         
         <!-- Total Encaissé -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé</div>
-            <div style="font-size: 19px; font-weight: 900; color: #15803D; margin-top: 4px;">
-              <?= number_format((float)($stats['total_encaisse'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #166534;">FCFA</span>
+            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé</div>
+            <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
+              <span id="kpi-total-encaisse"><?= number_format((float)($stats['total_encaisse'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              Recouvrement : <strong style="color: #15803D;"><?= number_format((float)($stats['taux_recouvrement'] ?? 0), 1, ',', ' ') ?>%</strong>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              Taux : <strong style="color: #15803D;" id="kpi-taux-recouvrement"><?= number_format((float)($stats['taux_recouvrement'] ?? 0), 1, ',', ' ') ?>%</strong>
             </div>
           </div>
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="wallet" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
-        <!-- Montant en Attente (Reste à Recouvrer) -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <!-- Caisse Espèces -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Montant en Attente</div>
-            <div style="font-size: 19px; font-weight: 900; color: #B91C1C; margin-top: 4px;">
-              <?= number_format((float)($stats['montant_en_attente'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #991B1B;">FCFA</span>
+            <div style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">Espèces (Caisse)</div>
+            <div style="font-size: 18px; font-weight: 900; color: #065F46; margin-top: 3px;">
+              <span id="kpi-encaisse-especes"><?= number_format((float)($stats['encaisse_especes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              Scolarité attendue : <?= number_format((float)($stats['total_scolarite_attendue'] ?? 0), 0, ',', ' ') ?> F
-            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Liquide au guichet</div>
           </div>
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #D1FAE5; color: #047857; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="banknote" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Mobile Money -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Mobile Money</div>
+            <div style="font-size: 18px; font-weight: 900; color: #0369A1; margin-top: 3px;">
+              <span id="kpi-encaisse-mobile"><?= number_format((float)($stats['encaisse_mobile'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Wave, Orange, MTN, Moov</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="smartphone" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Chèques & Banque -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Chèques & Banque</div>
+            <div style="font-size: 18px; font-weight: 900; color: #3730A3; margin-top: 3px;">
+              <span id="kpi-encaisse-banque"><?= number_format((float)($stats['encaisse_banque'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Virements & Chèques</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="building-2" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Montant en Attente (Global) -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FCA5A5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Reste à Recouvrer</div>
+            <div style="font-size: 18px; font-weight: 900; color: #B91C1C; margin-top: 3px;">
+              <span id="kpi-montant-en-attente"><?= number_format((float)($stats['montant_en_attente'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Scolarités attendues</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION 2 : RECOUUVREMENT ÉLÈVES & SUIVI POST-INSCRIPTION -->
+      <div style="margin-bottom: 8px;">
+        <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="users" style="width: 15px; height: 15px; color: #EA580C;"></i> Suivi des Inscriptions & Santé Financière des Élèves
+        </h4>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+        
+        <!-- CARTE SPÉCIFIQUE : En Attente Post-Inscription Immédiate -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1.5px solid #FDBA74; box-shadow: 0 2px 4px rgba(234,88,12,0.06); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #C2410C; text-transform: uppercase; letter-spacing: 0.5px;">En Attente Post-Inscription</div>
+            <div style="font-size: 18px; font-weight: 900; color: #C2410C; margin-top: 3px;">
+              <span id="kpi-attente-post-inscription"><?= number_format((float)($stats['attente_post_inscription'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 700; color: #EA580C; margin-top: 2px;">Solde scolarité des inscrits</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #FFEDD5; color: #EA580C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Élèves Soldés -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Élèves Soldés (100%)</div>
+            <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
+              <span id="kpi-eleves-soldes"><?= number_format((int)($stats['eleves_soldes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">élève(s)</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Scolarité entièrement payée</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Élèves en Acompte -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase; letter-spacing: 0.5px;">Élèves en Acompte</div>
+            <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
+              <span id="kpi-eleves-acomptes"><?= number_format((int)($stats['eleves_acomptes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">élève(s)</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Versements partiels</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
-        <!-- Encaissements Aujourd'hui -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <!-- Élèves Non Payeurs -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Aujourd'hui</div>
-            <div style="font-size: 19px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">
-              <?= number_format((float)($stats['encaisse_aujourdhui'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #1E3A5F;">FCFA</span>
+            <div style="font-size: 11px; font-weight: 800; color: #E11D48; text-transform: uppercase; letter-spacing: 0.5px;">Élèves Non Payeurs</div>
+            <div style="font-size: 18px; font-weight: 900; color: #BE123C; margin-top: 3px;">
+              <span id="kpi-eleves-non-payeurs"><?= number_format((int)($stats['eleves_non_payeurs'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">élève(s)</span>
             </div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">Session du jour</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">0 FCFA versé</div>
           </div>
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="user-x" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Session du Jour -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Jour</div>
+            <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 3px;">
+              <span id="kpi-encaisse-aujourdhui"><?= number_format((float)($stats['encaisse_aujourdhui'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Aujourd'hui</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- Encaissements du Mois -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Mois en Cours</div>
-            <div style="font-size: 19px; font-weight: 900; color: #0F172A; margin-top: 4px;">
-              <?= number_format((float)($stats['encaisse_mois'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #475569;">FCFA</span>
-            </div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">Mois en cours</div>
-          </div>
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: #F8FAFC; color: #475569; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #E2E8F0;">
-            <i data-lucide="trending-up" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- Reçus Délivrés & Étudiants Inscrits -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Reçus & Inscrits</div>
-            <div style="font-size: 19px; font-weight: 900; color: #B45309; margin-top: 4px;">
-              <?= number_format((int)($stats['total_operations'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 11px; font-weight: 700; color: #B45309;">reçus</span>
-            </div>
-            <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              <strong><?= number_format((int)($stats['total_eleves_payeurs'] ?? 0), 0, ',', ' ') ?></strong> payeur(s) / <strong><?= number_format((int)($stats['total_inscrits'] ?? 0), 0, ',', ' ') ?></strong> inscrit(s)
-            </div>
-          </div>
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
@@ -198,8 +288,24 @@
 <script>
 $(document).ready(function() {
   if ($.fn.select2) {
-    $('#filter-annee').select2({ width: '100%' });
+    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
   }
+
+  // Cascading dropdown pour la sélection de classe selon le niveau choisi
+  $('#filter-niveau').on('change', function() {
+    var selNiv = $(this).val();
+    $('#filter-classe option').each(function() {
+      var optNiv = $(this).data('niveau');
+      if (selNiv === 'ALL' || !selNiv || !optNiv || optNiv === selNiv) {
+        $(this).show();
+      } else {
+        $(this).hide();
+        if ($('#filter-classe').val() === $(this).val()) {
+          $('#filter-classe').val('ALL').trigger('change.select2');
+        }
+      }
+    });
+  });
 
   var table = $('#table-paiements').DataTable({
     order: [],
@@ -207,6 +313,8 @@ $(document).ready(function() {
       url: '<?= RACINE ?>paiement/apiList',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
+        d.niveau_code = $('#filter-niveau').val();
+        d.classe_code = $('#filter-classe').val();
       }
     },
     processing: true,
@@ -251,9 +359,50 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  $('#filter-annee').on('change', function() {
-    var val = $(this).val();
-    window.location.href = '<?= RACINE ?>paiement/list?annee_code=' + encodeURIComponent(val);
+  // Fonction de rafraîchissement AJAX des statistiques KPI
+  function refreshKpis() {
+    $.ajax({
+      url: '<?= RACINE ?>paiement/apiStats',
+      type: 'GET',
+      data: {
+        annee_code: $('#filter-annee').val(),
+        niveau_code: $('#filter-niveau').val(),
+        classe_code: $('#filter-classe').val()
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 && res.stats) {
+          var s = res.stats;
+          $('#kpi-total-encaisse').text(Number(s.total_encaisse || 0).toLocaleString('fr-FR'));
+          $('#kpi-taux-recouvrement').text(Number(s.taux_recouvrement || 0).toLocaleString('fr-FR', { minimumFractionDigits: 1 }));
+          $('#kpi-encaisse-especes').text(Number(s.encaisse_especes || 0).toLocaleString('fr-FR'));
+          $('#kpi-encaisse-mobile').text(Number(s.encaisse_mobile || 0).toLocaleString('fr-FR'));
+          $('#kpi-encaisse-banque').text(Number(s.encaisse_banque || 0).toLocaleString('fr-FR'));
+          $('#kpi-montant-en-attente').text(Number(s.montant_en_attente || 0).toLocaleString('fr-FR'));
+          
+          $('#kpi-attente-post-inscription').text(Number(s.attente_post_inscription || 0).toLocaleString('fr-FR'));
+          $('#kpi-eleves-soldes').text(Number(s.eleves_soldes || 0).toLocaleString('fr-FR'));
+          $('#kpi-eleves-acomptes').text(Number(s.eleves_acomptes || 0).toLocaleString('fr-FR'));
+          $('#kpi-eleves-non-payeurs').text(Number(s.eleves_non_payeurs || 0).toLocaleString('fr-FR'));
+          $('#kpi-encaisse-aujourdhui').text(Number(s.encaisse_aujourdhui || 0).toLocaleString('fr-FR'));
+        }
+      }
+    });
+  }
+
+  // Événements de changement sur les filtres
+  $('#filter-annee, #filter-niveau, #filter-classe').on('change', function() {
+    table.ajax.reload();
+    refreshKpis();
+  });
+
+  // Réinitialisation des filtres
+  $('#btn-reset-filters').on('click', function() {
+    $('#filter-annee').val('<?= $selectedAnneeCode ?>').trigger('change.select2');
+    $('#filter-niveau').val('ALL').trigger('change.select2');
+    $('#filter-classe').val('ALL').trigger('change.select2');
+    table.ajax.reload();
+    refreshKpis();
   });
 });
 </script>

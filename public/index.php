@@ -289,6 +289,7 @@ $route->addRoute('/piece_fournir_cycle/formulaire', [$pieceFournirCycleControlle
 // Module: paiement (PaiementController)
 $route->addRoute('/paiement/list', [$paiementController, 'list']);
 $route->addRoute('/paiement/apiList', [$paiementController, 'apiList']);
+$route->addRoute('/paiement/apiStats', [$paiementController, 'apiStats']);
 $route->addRoute('/paiement/getStudentFinancialSummary', [$paiementController, 'getStudentFinancialSummary']);
 $route->addRoute('/paiement/add', [$paiementController, 'add']);
 $route->addRoute('/paiement/edit', [$paiementController, 'edit']);
