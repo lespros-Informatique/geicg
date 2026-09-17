@@ -133,12 +133,19 @@ document.getElementById('fichier_upload').addEventListener('change', function(){
 function handleFile(file) {
   var maxMo = 50;
   if (file.size > maxMo * 1024 * 1024) {
-    alert('Le fichier dépasse ' + maxMo + ' Mo. Veuillez choisir un fichier plus petit.');
+    var msgSize = 'Le fichier dépasse ' + maxMo + ' Mo. Veuillez choisir un fichier plus petit.';
+    if (typeof showToast === 'function') showToast(msgSize, 'error');
+    else if (window.toastr) toastr.error(msgSize);
     return;
   }
   var isImage = file.type.startsWith('image/');
   var isVideo = file.type.startsWith('video/');
-  if (!isImage && !isVideo) { alert('Format non supporté. Choisissez une image ou une vidéo.'); return; }
+  if (!isImage && !isVideo) {
+    var msgFmt = 'Format non supporté. Choisissez une image ou une vidéo.';
+    if (typeof showToast === 'function') showToast(msgFmt, 'error');
+    else if (window.toastr) toastr.error(msgFmt);
+    return;
+  }
 
   var reader = new FileReader();
   reader.onload = function(e) {

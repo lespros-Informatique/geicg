@@ -91,10 +91,11 @@ class AnneeController extends BaseController
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
+        $libelle = $data['libelle_annee'] ?? '';
         if ($this->model->create($filteredData)) {
-            $this->success('Année académique créée avec succès (statut initial : inactif).');
+            $this->success("L'année académique « {$libelle} » a été créée avec succès (statut initial : inactif).");
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de la création de l\'année académique');
         }
     }
 
@@ -154,6 +155,12 @@ class AnneeController extends BaseController
 
         $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
+        if (in_array('updated_at_annee', $cols)) {
+            $filteredData['updated_at_annee'] = date('Y-m-d H:i:s');
+        }
+
+        $libelle = $data['libelle_annee'] ?? ($currentItem['libelle_annee'] ?? '');
+
         if ($this->model->update($filteredData, $id)) {
             if ($newStatus === 'actif') {
                 $this->model->setActiveYear($id);
@@ -163,9 +170,9 @@ class AnneeController extends BaseController
                     $_SESSION['annee_active_libelle'] = $updatedRow['libelle_annee'];
                 }
             }
-            $this->success('Année académique modifiée avec succès!');
+            $this->success("L'année académique « {$libelle} » a été modifiée avec succès !");
         } else {
-            $this->error('Erreur lors de la modification');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de la modification de l\'année académique');
         }
     }
 

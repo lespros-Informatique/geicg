@@ -159,7 +159,7 @@ abstract class BaseModel
             }
 
             // Validation des clés étrangères modifiées
-            $fkError = ForeignKeyValidator::validate($this->pdo->getCon(), $this->table, $data);
+            $fkError = ForeignKeyValidator::validate($this->pdo->getCon(), $this->table, $data, true);
             if ($fkError !== null) {
                 $this->lastError = $fkError;
                 error_log("Update {$this->table} FK Error: {$fkError}");

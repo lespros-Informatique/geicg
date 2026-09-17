@@ -283,12 +283,13 @@ $(document).ready(function() {
         $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
         if (window.lucide) lucide.createIcons();
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Événement enregistré avec succès');
+          if (typeof showToast === 'function') showToast(res.message || 'Événement enregistré avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Événement enregistré avec succès');
           $('#modal-evenement').hide();
           table.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
-          else alert(res.message || 'Erreur lors de l\'enregistrement');
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
         }
       },
       error: function(xhr) {
@@ -299,8 +300,8 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json.message) msg = json.message;
         } catch(e) {}
-        if (window.toastr) toastr.error(msg);
-        else alert(msg);
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });

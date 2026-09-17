@@ -562,10 +562,13 @@ $(document).ready(function() {
     var classeName = $('#sel_cls_et option:selected').text();
 
     if (!classeCode) {
+      var msgCls = 'Veuillez d\'abord sélectionner une classe.';
       if (window.Swal) {
-        Swal.fire({ icon: 'info', title: 'Information', text: 'Veuillez d\'abord sélectionner une classe.' });
-      } else {
-        alert('Veuillez d\'abord sélectionner une classe.');
+        Swal.fire({ icon: 'info', title: 'Information', text: msgCls });
+      } else if (typeof showToast === 'function') {
+        showToast(msgCls, 'warning');
+      } else if (window.toastr) {
+        toastr.warning(msgCls);
       }
       return;
     }

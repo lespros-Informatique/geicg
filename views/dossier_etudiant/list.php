@@ -379,7 +379,9 @@ $(document).ready(function() {
       },
       error: function() {
         $btn.prop('disabled', false).text('Enregistrer');
-        alert('Erreur lors de la mise à jour.');
+        var msg = 'Erreur lors de la mise à jour.';
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });
@@ -397,14 +399,21 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
+          var msgSuccess = res.message || 'Toutes les pièces ont été validées avec succès.';
+          if (typeof showToast === 'function') showToast(msgSuccess, 'success');
+          else if (window.toastr) toastr.success(msgSuccess);
           table.ajax.reload(null, false);
           $('#modal-dossier').modal('hide');
         } else {
-          alert(res.message || 'Erreur lors de la validation.');
+          var msgErr = res.message || 'Erreur lors de la validation.';
+          if (typeof showToast === 'function') showToast(msgErr, 'error');
+          else if (window.toastr) toastr.error(msgErr);
         }
       },
       error: function() {
-        alert('Erreur de connexion au serveur.');
+        var msgErr2 = 'Erreur de connexion au serveur.';
+        if (typeof showToast === 'function') showToast(msgErr2, 'error');
+        else if (window.toastr) toastr.error(msgErr2);
       }
     });
   }

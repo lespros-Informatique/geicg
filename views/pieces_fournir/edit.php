@@ -177,14 +177,16 @@ $(document).ready(function() {
     if (!hasValid) {
       e.preventDefault();
       var msg = 'Veuillez renseigner au moins un document à fournir.';
-      if (window.toastr) toastr.error(msg); else alert(msg);
+      if (typeof showToast === 'function') showToast(msg, 'error');
+      else if (window.toastr) toastr.error(msg);
       return false;
     }
 
     if (hasDuplicate) {
       e.preventDefault();
-      var msg = '<strong>Attention :</strong> Vous avez saisi le même intitulé de document (« <b>' + $('<div>').text(dupName).html() + '</b> ») plusieurs fois.';
-      if (window.toastr) toastr.error(msg); else alert(msg);
+      var msg = 'Vous avez saisi le même intitulé de document (« ' + dupName + ' ») plusieurs fois.';
+      if (typeof showToast === 'function') showToast(msg, 'error');
+      else if (window.toastr) toastr.error(msg);
       return false;
     }
   });

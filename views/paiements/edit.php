@@ -574,12 +574,16 @@ $(document).ready(function() {
     var tCode = $('#hidden_tranche_code').val() || $('#select_tranche_code').val();
     if (!tCode) {
       e.preventDefault();
-      alert('Veuillez sélectionner un élève avec des tranches impayées.');
+      var msg1 = 'Veuillez sélectionner un élève avec des tranches impayées.';
+      if (typeof showToast === 'function') showToast(msg1, 'warning');
+      else if (window.toastr) toastr.warning(msg1);
       return false;
     }
     if (!validateMontant()) {
       e.preventDefault();
-      alert('Le montant du versement doit être valide et ne pas dépasser le reste dû de la tranche sélectionnée.');
+      var msg2 = 'Le montant du versement doit être valide et ne pas dépasser le reste dû de la tranche sélectionnée.';
+      if (typeof showToast === 'function') showToast(msg2, 'error');
+      else if (window.toastr) toastr.error(msg2);
       return false;
     }
   });

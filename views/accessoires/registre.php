@@ -326,7 +326,9 @@ $(document).ready(function() {
       },
       error: function() {
         $btn.prop('disabled', false);
-        alert('Erreur lors de la mise à jour du statut.');
+        var msg = 'Erreur lors de la mise à jour du statut.';
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });
@@ -347,15 +349,22 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
+          var msgSuccess = res.message || 'Attribution effectuée avec succès.';
+          if (typeof showToast === 'function') showToast(msgSuccess, 'success');
+          else if (window.toastr) toastr.success(msgSuccess);
           $('#modal-attribuer-kit').modal('hide');
           table.ajax.reload();
           refreshKpis();
         } else {
-          alert(res.message || 'Erreur lors de l\'attribution.');
+          var msgErr = res.message || 'Erreur lors de l\'attribution.';
+          if (typeof showToast === 'function') showToast(msgErr, 'error');
+          else if (window.toastr) toastr.error(msgErr);
         }
       },
       error: function() {
-        alert('Erreur lors de l\'enregistrement.');
+        var msgErr2 = 'Erreur lors de l\'enregistrement.';
+        if (typeof showToast === 'function') showToast(msgErr2, 'error');
+        else if (window.toastr) toastr.error(msgErr2);
       }
     });
   });

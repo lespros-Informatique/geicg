@@ -213,7 +213,9 @@ document.getElementById('fichier_upload').addEventListener('change', function() 
 function handleDocFile(file) {
   var maxMo = 50;
   if (file.size > maxMo * 1024 * 1024) {
-    alert('Le fichier sélectionné dépasse la taille maximale autorisée de ' + maxMo + ' Mo.');
+    var msgSize = 'Le fichier sélectionné dépasse la taille maximale autorisée de ' + maxMo + ' Mo.';
+    if (typeof showToast === 'function') showToast(msgSize, 'error');
+    else if (window.toastr) toastr.error(msgSize);
     return;
   }
 

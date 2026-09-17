@@ -194,13 +194,19 @@ class ForeignKeyValidator
      * Valide l'ensemble des clés étrangères d'un payload d'insertion pour une table donnée.
      * Retourne une chaîne d'erreur si la validation échoue, ou null si l'insertion peut procéder.
      */
-    public static function validate(PDO $pdo, string $table, array $data): ?string
+    public static function validate(PDO $pdo, string $table, array $data, bool $isUpdate = false): ?string
     {
         $tableKey = strtolower(trim($table));
         $requiredKeys = self::$requiredFksByTable[$tableKey] ?? [];
 
         // 1. Vérification des clés obligatoires pour cette table
         foreach ($requiredKeys as $reqKey) {
+            if ($isUpdate) {
+                // Pour une mise à jour partielle, ne valider l'obligation que si le champ est fourni dans le payload
+                if (!array_key_exists($reqKey, $data)) {
+                    continue;
+                }
+            }
             $val = isset($data[$reqKey]) ? trim((string)$data[$reqKey]) : '';
             if ($val === '') {
                 $info = self::$fkRegistry[$reqKey] ?? null;

@@ -365,14 +365,15 @@ $(document).ready(function() {
         $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Confirmer l\'Ouverture');
         if (window.lucide) lucide.createIcons();
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Session de caisse ouverte avec succès');
+          if (typeof showToast === 'function') showToast(res.message || 'Session de caisse ouverte avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Session de caisse ouverte avec succès');
           $('#modal-open-session-caisse').hide();
           setTimeout(function() {
             window.location.reload();
           }, 600);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'ouverture de la session');
-          else alert(res.message || 'Erreur lors de l\'ouverture de la session');
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'ouverture de la session', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'ouverture de la session');
         }
       },
       error: function(xhr) {
@@ -383,8 +384,8 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json.message) msg = json.message;
         } catch(e) {}
-        if (window.toastr) toastr.error(msg);
-        else alert(msg);
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });

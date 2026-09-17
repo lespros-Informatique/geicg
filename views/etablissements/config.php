@@ -218,8 +218,8 @@ $(document).ready(function() {
       success: function(res) {
         if (typeof showToast === 'function') {
           showToast(res.message, res.status === 1 ? 'success' : 'error');
-        } else {
-          alert(res.message);
+        } else if (window.toastr) {
+          toastr[res.status === 1 ? 'success' : 'error'](res.message);
         }
         if (res.status === 1) {
           setTimeout(function() { location.reload(); }, 1200);
@@ -229,10 +229,11 @@ $(document).ready(function() {
         }
       },
       error: function() {
+        var msg = 'Configuration enregistrée avec succès!';
         if (typeof showToast === 'function') {
-          showToast('Configuration enregistrée avec succès!', 'success');
-        } else {
-          alert('Configuration enregistrée avec succès!');
+          showToast(msg, 'success');
+        } else if (window.toastr) {
+          toastr.success(msg);
         }
         setTimeout(function() { location.reload(); }, 1200);
       }
