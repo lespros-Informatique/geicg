@@ -340,12 +340,14 @@
             <thead>
               <tr style="background: #F8FAFC; color: #475569; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
                 <th style="padding: 12px; width: 45px; text-align: center;">#</th>
-                <th style="padding: 12px; width: 130px;">Réf. Reçu</th>
-                <th style="padding: 12px; width: 130px;">Date</th>
+                <th style="padding: 12px; width: 120px;">Réf. Reçu</th>
+                <th style="padding: 12px; width: 120px;">Date</th>
+                <th style="padding: 12px; width: 110px;">Matricule</th>
                 <th style="padding: 12px;">Étudiant</th>
+                <th style="padding: 12px; width: 110px;">Classe</th>
                 <th style="padding: 12px;">Motif / Tranche</th>
-                <th style="padding: 12px; width: 170px; text-align: right;">Montant Versé</th>
-                <th style="padding: 12px; width: 170px; text-align: right;">Actions</th>
+                <th style="padding: 12px; width: 150px; text-align: right;">Montant Versé</th>
+                <th style="padding: 12px; width: 220px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -422,10 +424,10 @@ $(document).ready(function() {
       { data: null, width: '45px', className: 'text-center', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
-      { data: 'code_paiement', width: '130px', render: function(d) {
+      { data: 'code_paiement', width: '120px', render: function(d) {
         return '<code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + escapeHtml(d || '-') + '</code>';
       } },
-      { data: 'date_paiement', width: '130px', render: function(d) {
+      { data: 'date_paiement', width: '120px', render: function(d) {
         if (!d) return '-';
         var parts = d.split(' ');
         var dateParts = parts[0].split('-');
@@ -436,16 +438,22 @@ $(document).ready(function() {
         }
         return escapeHtml(d);
       } },
+      { data: 'matricule_etudiant', width: '110px', render: function(d) {
+        return '<code style="font-weight:700; color:#334155; background:#F1F5F9; border:1px solid #CBD5E1; padding:3px 7px; border-radius:6px; font-size:11.5px;">' + escapeHtml(d || '-') + '</code>';
+      } },
       { data: 'etudiant_nom', render: function(d, type, row) {
         return '<div style="font-weight:700; color:#0F172A; font-size:13.5px;">' + escapeHtml(d || 'Étudiant non identifié') + '</div>';
+      } },
+      { data: 'libelle_classe', width: '110px', render: function(d) {
+        return '<span style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + escapeHtml(d || '-') + '</span>';
       } },
       { data: 'libelle_tranche', render: function(d, type, row) {
         return '<span style="font-weight:600; color:#334155; font-size:13px;">' + escapeHtml(d || 'Frais de Scolarité') + '</span>';
       } },
-      { data: 'montant_paiement', width: '170px', className: 'text-end', render: function(d) {
+      { data: 'montant_paiement', width: '150px', className: 'text-end', render: function(d) {
         return d ? '<strong style="color:#15803D; font-size:14px;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
       } },
-      { data: null, width: '230px', orderable: false, className: 'text-end', render: function(d) {
+      { data: null, width: '220px', orderable: false, className: 'text-end', render: function(d) {
         var idCrypte = d.editId || d.id_paiement;
         return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
                '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer le reçu"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
