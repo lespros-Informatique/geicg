@@ -215,7 +215,17 @@ abstract class BaseController
 
     protected function isAjax(): bool
     {
-        return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            return true;
+        }
+        if (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) {
+            return true;
+        }
+        $uri = strtolower($_SERVER['REQUEST_URI'] ?? '');
+        if (strpos($uri, '/api') !== false || strpos($uri, 'apilist') !== false || strpos($uri, 'savestatut') !== false || strpos($uri, 'getrecepissedata') !== false) {
+            return true;
+        }
+        return false;
     }
 
     protected function success(string $message, $extra = []): void

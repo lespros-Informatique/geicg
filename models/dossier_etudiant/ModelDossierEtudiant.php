@@ -45,10 +45,17 @@ class ModelDossierEtudiant extends BaseModel
     }
 
     /**
-     * Met à jour ou insère le statut de dépôt d'une pièce
+     * Met à jour ou insère le statut de dépôt d'une pièce avec observations et fichier joint éventuel
      */
-    public function saveStatutPiece(string $inscriptionCode, string $etudiantCode, string $pieceCode, string $statut, ?string $observations = null, ?string $userCode = null): bool
-    {
+    public function saveStatutPiece(
+        string $inscriptionCode, 
+        string $etudiantCode, 
+        string $pieceCode, 
+        string $statut, 
+        ?string $observations = null, 
+        ?string $userCode = null,
+        ?string $fichierJoint = null
+    ): bool {
         $etabCode = $_SESSION['etablissement_active_code'] ?? '';
         if (empty($etabCode)) {
             try {
@@ -74,11 +81,12 @@ class ModelDossierEtudiant extends BaseModel
         $sql = "
             INSERT INTO dossier_etudiant (
                 code_dossier_etudiant, inscription_code, etudiant_code, piece_code,
-                statut_depot, date_depot, observations, user_code, etablissement_code, created_at_dossier_etudiant
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                statut_depot, date_depot, fichier_joint, observations, user_code, etablissement_code, created_at_dossier_etudiant
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ON DUPLICATE KEY UPDATE 
                 statut_depot = VALUES(statut_depot),
                 date_depot = CASE WHEN VALUES(statut_depot) = 'depose' THEN NOW() ELSE date_depot END,
+                fichier_joint = COALESCE(VALUES(fichier_joint), fichier_joint),
                 observations = VALUES(observations),
                 user_code = VALUES(user_code),
                 etablissement_code = VALUES(etablissement_code),
@@ -95,6 +103,7 @@ class ModelDossierEtudiant extends BaseModel
                 $pieceCode,
                 $statut,
                 $dateDepot,
+                $fichierJoint,
                 $observations,
                 $userCode,
                 $etabCode
