@@ -21,11 +21,6 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Suivi exclusif des retraits, émargement au guichet et impression des bons de décharge</p>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button type="button" id="btn-refresh-header" class="btn btn-light" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; cursor: pointer;">
-            <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> Actualiser la Liste
-          </button>
-        </div>
       </div>
 
       <!-- Filtres (Année, Classe & Statut Retrait) -->
@@ -322,63 +317,62 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL : ATTRIBUER UN KIT OU ACCESSORIE                                  -->
+<!-- MODAL SUR MESURE : ATTRIBUER UN KIT OU ACCESSOIRE                         -->
 <!-- ========================================================================= -->
-<div class="modal fade" id="modal-attribuer-kit" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-      <div class="modal-header" style="background: #15803D; color: #FFFFFF; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 18px 24px;">
-        <h5 class="modal-title fw-bold text-white mb-0" style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="package-plus" style="width: 22px; height: 22px;"></i> Attribuer un Kit / Accessoire
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+<div id="modal-attribuer-kit" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 550px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    
+    <div style="background: #15803D; color: #FFFFFF; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="package-plus" style="width: 22px; height: 22px;"></i> Attribuer un Kit / Accessoire
+      </h3>
+      <button type="button" class="btn-close-modal-attrib" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-attribuer-kit" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+      <div style="padding: 24px; overflow-y: auto; flex: 1;">
+        
+        <!-- Sélection Étudiant -->
+        <div style="margin-bottom: 18px;">
+          <label style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">Sélectionner l'Étudiant <span style="color: #EF4444;">*</span></label>
+          <select name="etudiant_code" id="modal-select-etudiant" class="form-select select2" style="width: 100%;" required>
+            <option value="">-- Rechercher un étudiant --</option>
+            <?php foreach ($etudiants as $e): ?>
+              <option value="<?= htmlspecialchars($e['code_etudiant']) ?>">
+                <?= htmlspecialchars($e['nom_etudiant'] . ' ' . $e['prenom_etudiant']) ?> (<?= htmlspecialchars($e['matricule_etudiant'] ?? 'Sans matricule') ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- Sélection Kit / Accessoire -->
+        <div style="margin-bottom: 18px;">
+          <label style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">Kit(s) / Accessoire(s) <span style="color: #EF4444;">*</span></label>
+          <select name="accessoires[]" id="modal-select-accessoires" class="form-select select2" multiple style="width: 100%;" required>
+            <?php foreach ($accessoires as $acc): ?>
+              <option value="<?= htmlspecialchars($acc['code_accessoire']) ?>">
+                <?= htmlspecialchars($acc['libelle_accessoire']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- Statut de Retrait Initial -->
+        <div style="margin-bottom: 18px;">
+          <label style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">Statut de Retrait Initial</label>
+          <select name="etat_retrait" class="form-select" style="border-radius: 8px; font-weight: 700;">
+            <option value="en_attente">⏳ En attente de retrait</option>
+            <option value="retire">✅ Remis / Retiré immédiatement</option>
+          </select>
+        </div>
+
       </div>
 
-      <form id="form-attribuer-kit">
-        <div class="modal-body" style="padding: 24px;">
-          
-          <!-- Sélection Étudiant -->
-          <div class="mb-3">
-            <label class="form-label font-weight-bold" style="font-size: 13px; font-weight: 700;">Sélectionner l'Étudiant <span class="text-danger">*</span></label>
-            <select name="etudiant_code" id="modal-select-etudiant" class="form-select select2" style="width: 100%;" required>
-              <option value="">-- Rechercher un étudiant --</option>
-              <?php foreach ($etudiants as $e): ?>
-                <option value="<?= htmlspecialchars($e['code_etudiant']) ?>">
-                  <?= htmlspecialchars($e['nom_etudiant'] . ' ' . $e['prenom_etudiant']) ?> (<?= htmlspecialchars($e['matricule_etudiant'] ?? 'Sans matricule') ?>)
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <!-- Sélection Kit / Accessoire -->
-          <div class="mb-3">
-            <label class="form-label font-weight-bold" style="font-size: 13px; font-weight: 700;">Kit(s) / Accessoire(s) <span class="text-danger">*</span></label>
-            <select name="accessoires[]" id="modal-select-accessoires" class="form-select select2" multiple style="width: 100%;" required>
-              <?php foreach ($accessoires as $acc): ?>
-                <option value="<?= htmlspecialchars($acc['code_accessoire']) ?>">
-                  <?= htmlspecialchars($acc['libelle_accessoire']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <!-- Statut de Retrait Initial -->
-          <div class="mb-3">
-            <label class="form-label font-weight-bold" style="font-size: 13px; font-weight: 700;">Statut de Retrait Initial</label>
-            <select name="etat_retrait" class="form-select" style="border-radius: 8px; font-weight: 700;">
-              <option value="en_attente">⏳ En attente de retrait</option>
-              <option value="retire">✅ Remis / Retiré immédiatement</option>
-            </select>
-          </div>
-
-        </div>
-
-        <div class="modal-footer" style="background: #F8FAFC; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; padding: 16px 24px;">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-weight: 700; border-radius: 8px;">Annuler</button>
-          <button type="submit" class="btn btn-success" style="font-weight: 700; border-radius: 8px; padding: 8px 18px; background: #15803D; border-color: #15803D;">Enregistrer l'Attribution</button>
-        </div>
-      </form>
-    </div>
+      <div style="background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-attrib" style="font-weight: 700; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">Annuler</button>
+        <button type="submit" class="btn btn-success" style="font-weight: 700; border-radius: 8px; padding: 9px 20px; background: #15803D; border: none; color: #FFFFFF; cursor: pointer;">Enregistrer l'Attribution</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -418,7 +412,11 @@ $(document).ready(function() {
   }
 
   if ($.fn.select2) {
-    $('#filter-annee, #filter-classe, #filter-statut, #modal-select-etudiant, #modal-select-accessoires').select2({ width: '100%' });
+    $('#filter-annee, #filter-classe, #filter-statut').select2({ width: '100%' });
+    $('#modal-select-etudiant, #modal-select-accessoires').select2({
+      dropdownParent: $('#modal-attribuer-kit'),
+      width: '100%'
+    });
   }
 
   function initTable() {
@@ -807,7 +805,18 @@ $(document).ready(function() {
 
   // Modal Attribution
   $('#btn-open-attrib-modal').on('click', function() {
-    $('#modal-attribuer-kit').modal('show');
+    $('#modal-attribuer-kit').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+  });
+
+  $('.btn-close-modal-attrib').on('click', function() {
+    $('#modal-attribuer-kit').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-emargement-student')) $('#modal-emargement-student').hide();
+    if ($(e.target).is('#modal-bon-remise')) $('#modal-bon-remise').hide();
+    if ($(e.target).is('#modal-attribuer-kit')) $('#modal-attribuer-kit').hide();
   });
 
   $('#form-attribuer-kit').on('submit', function(e) {
@@ -824,7 +833,7 @@ $(document).ready(function() {
           var msgSuccess = res.message || 'Attribution effectuée avec succès.';
           if (typeof showToast === 'function') showToast(msgSuccess, 'success');
           else if (window.toastr) toastr.success(msgSuccess);
-          $('#modal-attribuer-kit').modal('hide');
+          $('#modal-attribuer-kit').hide();
           table.ajax.reload();
           refreshKpis();
         } else {
