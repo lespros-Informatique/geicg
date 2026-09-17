@@ -38,6 +38,8 @@ class NiveauController extends BaseController
         $this->requireAuth();
         $data = $_POST;
         unset($data['csrf_token']);
+        unset($data['id_niveau']);
+        unset($data['id']);
         if (!empty($data['libelle_niveau'])) {
             if (!$this->checkUnique('niveaux', 'libelle_niveau', $data['libelle_niveau'], 'Libelle du niveau')) return;
         }

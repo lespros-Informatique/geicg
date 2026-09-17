@@ -194,11 +194,13 @@ $(document).ready(function() {
         if (window.lucide) lucide.createIcons();
 
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Opération réussie');
+          if (window.showToast) showToast(res.message || 'Opération réussie', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Opération réussie');
           $('#modal-niveau').css('display', 'none');
           tableNiveauxCat.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          if (window.showToast) showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
         }
       },
       error: function(xhr) {
@@ -210,7 +212,8 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json && json.message) msg = json.message;
         } catch(e) {}
-        if (window.toastr) toastr.error(msg);
+        if (window.showToast) showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });
@@ -228,15 +231,18 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour');
+          if (window.showToast) showToast(res.message || 'Statut mis à jour', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Statut mis à jour');
           tableNiveauxCat.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur');
+          if (window.showToast) showToast(res.message || 'Erreur', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur');
           $checkbox.prop('checked', !$checkbox.prop('checked')).prop('disabled', false);
         }
       },
       error: function() {
-        if (window.toastr) toastr.error('Erreur serveur');
+        if (window.showToast) showToast('Erreur serveur', 'error');
+        else if (window.toastr) toastr.error('Erreur serveur');
         $checkbox.prop('checked', !$checkbox.prop('checked')).prop('disabled', false);
       }
     });

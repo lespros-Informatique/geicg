@@ -1,7 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$cycles = (new ModelCycle())->getAll();
-$filieres = (new ModelFiliere())->getAll();
+$cycles = (new ModelCycle())->getByStatus('actif');
+$filieres = (new ModelFiliere())->getByStatus('actif');
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -459,7 +459,7 @@ $(document).ready(function() {
     var cVal = selectedCycle || $('#assign_cycle_code').val();
     var fVal = selectedFiliere || $('#assign_filiere_code').val();
 
-    $.getJSON('<?= RACINE ?>cycle/apiList', function(res) {
+    $.getJSON('<?= RACINE ?>cycle/apiList?statut=actif', function(res) {
       if (res && res.data) {
         var opts = '<option value="">-- Sélectionner un cycle --</option>';
         res.data.forEach(function(c) {
@@ -471,7 +471,7 @@ $(document).ready(function() {
       }
     });
 
-    $.getJSON('<?= RACINE ?>filiere/apiList', function(res) {
+    $.getJSON('<?= RACINE ?>filiere/apiList?statut=actif', function(res) {
       if (res && res.data) {
         var opts = '<option value="">-- Sélectionner une filière --</option>';
         res.data.forEach(function(f) {

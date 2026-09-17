@@ -16,7 +16,12 @@ class CycleController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $items = $this->model->getAll();
+        $status = $_GET['statut'] ?? ($_GET['status'] ?? null);
+        if ($status !== null && $status !== '') {
+            $items = $this->model->getByStatus($status);
+        } else {
+            $items = $this->model->getAll();
+        }
         $etabCfg = $this->getEtablissementConfig();
         $useSlugCycle = !empty($etabCfg['use_slug_cycle']);
         $data = [];

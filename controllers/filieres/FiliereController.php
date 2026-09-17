@@ -18,7 +18,12 @@ class FiliereController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission('VIEW_FILIERES');
-        $items = $this->model->getAll();
+        $status = $_GET['statut'] ?? ($_GET['status'] ?? null);
+        if ($status !== null && $status !== '') {
+            $items = $this->model->getByStatus($status);
+        } else {
+            $items = $this->model->getAll();
+        }
         $etabCfg = $this->getEtablissementConfig();
         $useSlugFiliere = !empty($etabCfg['use_slug_filiere']);
         $data = [];
