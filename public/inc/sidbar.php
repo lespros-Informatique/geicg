@@ -369,9 +369,7 @@
           $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ENROLLMENTS']);
           $showDepotDossiers = $canAccess(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS', 'MANAGE_PIECES', 'MANAGE_INSCRIPTIONS']);
           $showRemiseKits = $canAccess(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS', 'MANAGE_ACCESSOIRES', 'MANAGE_INSCRIPTIONS']);
-          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE']);
-          $showAccessoires = $canAccess(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE']);
-          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showDepotDossiers || $showRemiseKits || $showPiecesFournir || $showAccessoires;
+          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showDepotDossiers || $showRemiseKits;
         ?>
         <?php if ($hasSecEleves): ?>
         <div class="nav-section">
@@ -405,16 +403,6 @@
                 <?php if ($showParents): ?>
                 <a href="<?= RACINE ?>parent/list" class="nav-item sub <?= strpos($currentUri, '/parent/') !== false ? 'active' : '' ?>" data-title="Parents & Tuteurs">
                     <i data-lucide="contact"></i> <span>Parents & Tuteurs</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showPiecesFournir): ?>
-                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Catalogue des Pièces à Fournir">
-                    <i data-lucide="file-check-2"></i> <span>Catalogue Pièces à Fournir</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showAccessoires): ?>
-                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= strpos($currentUri, '/accessoire/list') !== false ? 'active' : '' ?>" data-title="Catalogue des Kits & Accessoires">
-                    <i data-lucide="package"></i> <span>Catalogue Kits & Accessoires</span>
                 </a>
                 <?php endif; ?>
             </div>
