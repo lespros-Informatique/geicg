@@ -38,6 +38,8 @@ class MatiereController extends BaseController
         $this->requirePermission('MANAGE_MATIERES');
         $data = $_POST;
         unset($data['csrf_token']);
+        unset($data['id_matiere']);
+        unset($data['id']);
         if (!empty($data['libelle_matiere'])) {
             if (!$this->checkUnique('matieres', 'libelle_matiere', $data['libelle_matiere'], 'Nom de la matiere')) return;
         }
@@ -99,7 +101,7 @@ class MatiereController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission('MANAGE_MATIERES');
-        $id = $this->post('id');
+        $id = $this->post('id') ?: $this->post('id_matiere');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);

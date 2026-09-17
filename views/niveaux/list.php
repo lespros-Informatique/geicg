@@ -227,7 +227,7 @@ $(document).ready(function() {
       url: '<?= RACINE ?>niveau/changer',
       type: 'POST',
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      data: { id_niveau: id, csrf_token: '<?= Validator::generateCsrfToken() ?>' },
+      data: { id: id, id_niveau: id, csrf_token: '<?= Validator::generateCsrfToken() ?>' },
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {

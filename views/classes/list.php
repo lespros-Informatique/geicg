@@ -1,7 +1,10 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$filieres = $filieres ?? (new ModelFiliere())->getFilieresAssocieesAuxCycles();
-$niveaux = $niveaux ?? (new ModelNiveau())->getAll();
+$rawFilieres = $filieres ?? (new ModelFiliere())->getFilieresAssocieesAuxCycles();
+$filieres = array_filter($rawFilieres, function($f) {
+    return (($f['statut_filiere'] ?? 'actif') === 'actif');
+});
+$niveaux = $niveaux ?? (new ModelNiveau())->getActifs();
 $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
 ?>
 <div class="app-layout">
@@ -63,7 +66,7 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
           Filière rattachée <span style="color: #EF4444;">*</span>
         </label>
-        <select name="filiere_code" id="classe_filiere" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 14px;">
+        <select name="filiere_code" id="classe_filiere" required class="form-control select2" style="width: 100%;">
           <option value="">-- Choisir une filière --</option>
           <?php foreach ($filieres as $f): ?>
             <option value="<?= htmlspecialchars($f['code_filiere']) ?>" data-nom="<?= htmlspecialchars($f['libelle_filiere']) ?>">
@@ -77,7 +80,7 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
           Niveau d'études <span style="color: #EF4444;">*</span>
         </label>
-        <select name="niveau_code" id="classe_niveau" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 14px;">
+        <select name="niveau_code" id="classe_niveau" required class="form-control select2" style="width: 100%;">
           <option value="">-- Choisir un niveau --</option>
           <?php foreach ($niveaux as $n): ?>
             <option value="<?= htmlspecialchars($n['code_niveau']) ?>" data-nom="<?= htmlspecialchars($n['libelle_niveau']) ?>">
@@ -235,6 +238,16 @@ $(document).ready(function() {
     updateStatutClasseUI($(this).is(':checked'));
   });
 
+  // INITIALISATION SELECT2 SUR LES DROPDOWNS DU MODAL
+  if ($.fn.select2) {
+    $('#classe_filiere, #classe_niveau').select2({
+      dropdownParent: $('#modal-classe'),
+      width: '100%',
+      placeholder: '-- Choisir --',
+      allowClear: true
+    });
+  }
+
   // GÉNÉRATION AUTOMATIQUE DU LIBELLÉ DE LA CLASSE
   function autoGenerateLibelleClasse() {
     var fNom = $('#classe_filiere option:selected').data('nom') || '';
@@ -248,7 +261,7 @@ $(document).ready(function() {
     }
   }
 
-  $('#classe_filiere, #classe_niveau').on('change', function() {
+  $('#classe_filiere, #classe_niveau').on('change select2:select', function() {
     // Ne régénérer que si on est en création ou si l'utilisateur change de filière/niveau
     var curVal = $('#classe_libelle').val().trim();
     if ($('#classe_id').val() === '' || curVal === '') {
@@ -264,6 +277,9 @@ $(document).ready(function() {
     $('#classe_capacite').val('35');
     $('#classe_statut').prop('checked', true);
     updateStatutClasseUI(true);
+    if ($.fn.select2) {
+      $('#classe_filiere, #classe_niveau').val('').trigger('change.select2');
+    }
     $('#modal-classe-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe / Promotion');
     $('#modal-classe').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
@@ -284,6 +300,10 @@ $(document).ready(function() {
     $('#classe_libelle').val(libelle);
     $('#classe_filiere').val(filiere);
     $('#classe_niveau').val(niveau);
+    if ($.fn.select2) {
+      $('#classe_filiere').trigger('change.select2');
+      $('#classe_niveau').trigger('change.select2');
+    }
     $('#classe_capacite').val(capacite || '35');
 
     var isActif = (statut === 'actif');

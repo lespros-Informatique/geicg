@@ -171,11 +171,13 @@ $(document).ready(function() {
         if (window.lucide) lucide.createIcons();
 
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Opération réussie');
+          if (typeof showToast === 'function') showToast(res.message || 'Opération réussie', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Opération réussie');
           $('#modal-matiere').css('display', 'none');
           table.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
         }
       },
       error: function(xhr) {
@@ -187,7 +189,8 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json && json.message) msg = json.message;
         } catch(e) {}
-        if (window.toastr) toastr.error(msg);
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });
@@ -204,20 +207,24 @@ $(document).ready(function() {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
       data: {
         id: id,
+        id_matiere: id,
         csrf_token: '<?= Validator::generateCsrfToken() ?>'
       },
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          if (typeof showToast === 'function') showToast(res.message || 'Statut mis à jour avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
           table.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors du changement de statut', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
           $input.prop('checked', !isChecked);
         }
       },
       error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
+        if (typeof showToast === 'function') showToast('Erreur réseau', 'error');
+        else if (window.toastr) toastr.error('Erreur réseau');
         $input.prop('checked', !isChecked);
       }
     });

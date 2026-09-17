@@ -113,7 +113,7 @@ class NiveauController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = $this->post('id');
+        $id = $this->post('id') ?: $this->post('id_niveau');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);

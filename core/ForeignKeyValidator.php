@@ -172,7 +172,7 @@ class ForeignKeyValidator
         'enseignants' => ['etablissement_code'],
         'filieres' => ['etablissement_code'],
         'cycles' => ['etablissement_code'],
-        'matieres' => ['filiere_code', 'niveau_code', 'etablissement_code'],
+        'matieres' => ['etablissement_code'],
         'compositions' => ['annee_code', 'etablissement_code'],
         'composition_matieres' => ['composition_code', 'matiere_code'],
         'composition_niveau_filiere' => ['composition_code', 'filiere_code', 'niveau_code'],
@@ -190,6 +190,21 @@ class ForeignKeyValidator
         'type_depenses' => ['etablissement_code']
     ];
 
+    private static array $tableColsCache = [];
+
+    private static function getTableColumns(PDO $pdo, string $table): array
+    {
+        if (!isset(self::$tableColsCache[$table])) {
+            try {
+                $stmt = $pdo->query("DESCRIBE `{$table}`");
+                self::$tableColsCache[$table] = $stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : [];
+            } catch (Exception $e) {
+                self::$tableColsCache[$table] = [];
+            }
+        }
+        return self::$tableColsCache[$table];
+    }
+
     /**
      * Valide l'ensemble des clés étrangères d'un payload d'insertion pour une table donnée.
      * Retourne une chaîne d'erreur si la validation échoue, ou null si l'insertion peut procéder.
@@ -198,9 +213,15 @@ class ForeignKeyValidator
     {
         $tableKey = strtolower(trim($table));
         $requiredKeys = self::$requiredFksByTable[$tableKey] ?? [];
+        $tableCols = self::getTableColumns($pdo, $tableKey);
 
         // 1. Vérification des clés obligatoires pour cette table
         foreach ($requiredKeys as $reqKey) {
+            // Ignorer si la colonne n'existe pas physiquement dans la table BDD
+            if (!empty($tableCols) && !in_array($reqKey, $tableCols, true)) {
+                continue;
+            }
+
             if ($isUpdate) {
                 // Pour une mise à jour partielle, ne valider l'obligation que si le champ est fourni dans le payload
                 if (!array_key_exists($reqKey, $data)) {
