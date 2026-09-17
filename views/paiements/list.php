@@ -100,8 +100,8 @@
           <button onclick="printRegistry()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre des encaissements">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
-          <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Règlement Caisse
+          <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(22,163,74,0.2);">
+            <i data-lucide="banknote" style="width: 18px; height: 18px;"></i> Encaisser scolarité
           </a>
         </div>
       </div>
@@ -208,7 +208,7 @@
           </div>
         </div>
 
-        <!-- Encaissements Élèves Affectés (État) -->
+        <!-- Encaissements Étudiants Affectés (État) -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Affectés (État)</div>
@@ -222,7 +222,7 @@
           </div>
         </div>
 
-        <!-- Encaissements Élèves Non Affectés (Privés) -->
+        <!-- Encaissements Étudiants Non Affectés (Privés) -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés (Privés)</div>
@@ -252,10 +252,10 @@
 
       </div>
 
-      <!-- SECTION 2 : RECOUUVREMENT ÉLÈVES & SUIVI POST-INSCRIPTION -->
+      <!-- SECTION 2 : RECOUVREMENT ÉTUDIANTS & SUIVI POST-INSCRIPTION -->
       <div class="kpi-section-title" style="margin-bottom: 8px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
-          <i data-lucide="users" style="width: 15px; height: 15px; color: #EA580C;"></i> Suivi des Inscriptions & Santé Financière des Élèves
+          <i data-lucide="users" style="width: 15px; height: 15px; color: #EA580C;"></i> Suivi des Inscriptions & Santé Financière des Étudiants
         </h4>
       </div>
 
@@ -275,12 +275,12 @@
           </div>
         </div>
 
-        <!-- Élèves Soldés -->
+        <!-- Étudiants Soldés -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Élèves Soldés (100%)</div>
+            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Soldés (100%)</div>
             <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
-              <span id="kpi-eleves-soldes"><?= number_format((int)($stats['eleves_soldes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">élève(s)</span>
+              <span id="kpi-eleves-soldes"><?= number_format((int)($stats['eleves_soldes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Scolarité entièrement payée</div>
           </div>
@@ -289,12 +289,12 @@
           </div>
         </div>
 
-        <!-- Élèves en Acompte -->
+        <!-- Étudiants en Acompte -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase; letter-spacing: 0.5px;">Élèves en Acompte</div>
+            <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants en Acompte</div>
             <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
-              <span id="kpi-eleves-acomptes"><?= number_format((int)($stats['eleves_acomptes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">élève(s)</span>
+              <span id="kpi-eleves-acomptes"><?= number_format((int)($stats['eleves_acomptes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Versements partiels</div>
           </div>
@@ -303,12 +303,12 @@
           </div>
         </div>
 
-        <!-- Élèves Non Payeurs -->
+        <!-- Étudiants Non Payeurs -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #E11D48; text-transform: uppercase; letter-spacing: 0.5px;">Élèves Non Payeurs</div>
+            <div style="font-size: 11px; font-weight: 800; color: #E11D48; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Non Payeurs</div>
             <div style="font-size: 18px; font-weight: 900; color: #BE123C; margin-top: 3px;">
-              <span id="kpi-eleves-non-payeurs"><?= number_format((int)($stats['eleves_non_payeurs'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">élève(s)</span>
+              <span id="kpi-eleves-non-payeurs"><?= number_format((int)($stats['eleves_non_payeurs'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">0 FCFA versé</div>
           </div>

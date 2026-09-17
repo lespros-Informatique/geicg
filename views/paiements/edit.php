@@ -94,10 +94,10 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
         </div>
       <?php endif; ?>
 
-      <!-- BLOC DE CRITÈRES ET DE RECHERCHE ÉLÈVE (PLEINE LARGEUR AU-DESSUS) -->
+      <!-- BLOC DE CRITÈRES ET DE RECHERCHE ÉTUDIANT (PLEINE LARGEUR AU-DESSUS) -->
       <div class="card" style="background: #FFFFFF; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; border: 1.5px solid #CBD5E1; box-shadow: 0 4px 14px rgba(15,23,42,0.06);">
         <div style="font-weight: 800; font-size: 15px; color: #1E3A5F; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #EFF6FF; padding-bottom: 10px;">
-          <i data-lucide="search-code" style="width: 22px; height: 22px; color: #1E3A5F;"></i> Critères de Recherche & Sélection de l'Élève
+          <i data-lucide="search-code" style="width: 22px; height: 22px; color: #1E3A5F;"></i> Critères de Recherche & Sélection de l'Étudiant
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 18px; width: 100%;">
@@ -133,7 +133,7 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
               <i data-lucide="user-check" style="width: 16px; height: 16px; vertical-align: -2px;"></i> Recherche de l'étudiant (par Matricule, Nom ou Prénom) <span style="color: #EF4444;">*</span>
             </label>
             <select class="form-control select2" id="select_inscription_code" style="width: 100%;" required>
-              <option value="">-- Saisir le matricule ou le nom de l'élève --</option>
+              <option value="">-- Saisir le matricule ou le nom de l'étudiant --</option>
               <?php foreach($inscriptionsList as $ins): ?>
                 <?php
                   $mat = $ins['matricule_etudiant'] ?? '-';
@@ -151,7 +151,7 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
         </div>
       </div>
 
-      <!-- Bande Preview Financière Dynamique (Fiche Synthèse Élève) -->
+      <!-- Bande Preview Financière Dynamique (Fiche Synthèse Étudiant) -->
       <div id="financial-preview-banner" class="card" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(15,23,42,0.06); transition: all 0.3s ease;">
         
         <!-- 1. En-tête : Informations Identité & Contact Étudiant -->
@@ -241,7 +241,7 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
               </div>
             </div>
             <div style="font-size: 17px; font-weight: 900; color: #DC2626;" id="prev_solde">0 FCFA</div>
-            <div style="font-size: 11px; color: #991B1B; margin-top: 2px;" id="sub_solde_hint">Reste dû par l'élève</div>
+            <div style="font-size: 11px; color: #991B1B; margin-top: 2px;" id="sub_solde_hint">Reste dû par l'étudiant</div>
           </div>
 
           <!-- Statut de Règlement -->
@@ -260,7 +260,7 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
 
       </div>
 
-      <!-- TABLEAU INTERACTIF DES TRANCHES DE L'ÉLÈVE -->
+      <!-- TABLEAU INTERACTIF DES TRANCHES DE L'ÉTUDIANT -->
       <div id="student-tranches-card" class="card" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(15,23,42,0.06);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1.5px solid #EFF6FF;">
           <div>
@@ -316,7 +316,7 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
               <input type="hidden" name="id_paiement" value="<?= $item['id_paiement'] ?>">
             <?php endif; ?>
 
-            <!-- Bannière Synthèse Élève & Tranche Sélectionnée dans la Modale -->
+            <!-- Bannière Synthèse Étudiant & Tranche Sélectionnée dans la Modale -->
             <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;">
               <div style="font-size: 13px; color: #334155; line-height: 1.5;" id="modal_student_summary_text">
                 Sélectionnez une tranche pour effectuer le règlement.
@@ -579,7 +579,7 @@ $(document).ready(function() {
   function openPaymentModal(tCode) {
     var studentInsCode = $('#select_inscription_code').val();
     if (!studentInsCode) {
-      var msg0 = 'Veuillez d\'abord sélectionner un élève dans la liste ci-dessus.';
+      var msg0 = 'Veuillez d\'abord sélectionner un étudiant dans la liste ci-dessus.';
       if (typeof showToast === 'function') showToast(msg0, 'warning');
       else if (window.toastr) toastr.warning(msg0);
       return;
@@ -595,14 +595,14 @@ $(document).ready(function() {
     }
 
     // Identité étudiant & tranche
-    var studentName = $('#prev_nom').text() || 'Élève';
+    var studentName = $('#prev_nom').text() || 'Étudiant';
     var studentMatricule = $('#prev_matricule').text() || '-';
     
     $('#modal_inscription_code').val(studentInsCode);
     $('#modal_tranche_code').val(tCode);
 
     $('#modal_student_summary_text').html(
-      'Élève : <strong>' + escapeHtml(studentName) + '</strong> (' + escapeHtml(studentMatricule) + ') &bull; Tranche : <strong style="color:#1E3A5F;">' + escapeHtml(selectedTr.libelle_tranche) + '</strong> &bull; Reste dû exigible : <strong style="color:#DC2626;">' + selectedTr.reste_a_payer_fmt + '</strong>'
+      'Étudiant : <strong>' + escapeHtml(studentName) + '</strong> (' + escapeHtml(studentMatricule) + ') &bull; Tranche : <strong style="color:#1E3A5F;">' + escapeHtml(selectedTr.libelle_tranche) + '</strong> &bull; Reste dû exigible : <strong style="color:#DC2626;">' + selectedTr.reste_a_payer_fmt + '</strong>'
     );
 
     // Montant à Payer (READONLY)
@@ -733,7 +733,7 @@ $(document).ready(function() {
     var insCode = $('#modal_inscription_code').val();
     if (!insCode) {
       e.preventDefault();
-      var msg0 = 'Veuillez sélectionner un élève.';
+      var msg0 = 'Veuillez sélectionner un étudiant.';
       if (typeof showToast === 'function') showToast(msg0, 'warning');
       else if (window.toastr) toastr.warning(msg0);
       return false;
@@ -854,7 +854,7 @@ $(document).ready(function() {
             $('#lbl_solde_restant').css('color', '#991B1B');
             $('#icon_solde_container').css({'background': '#FEE2E2', 'color': '#DC2626'});
             $('#prev_solde').css('color', '#DC2626');
-            $('#sub_solde_hint').css('color', '#991B1B').text('Reste dû par l\'élève');
+            $('#sub_solde_hint').css('color', '#991B1B').text('Reste dû par l\'étudiant');
           }
 
           $('#financial-preview-banner').stop(true, true).slideDown(250);
