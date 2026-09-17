@@ -92,40 +92,112 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
       <?php endif; ?>
 
       <!-- Bande Preview Financière Dynamique (Fiche Synthèse Élève) -->
-      <div id="financial-preview-banner" class="card" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(15,23,42,0.06); transition: all 0.3s ease;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+      <div id="financial-preview-banner" class="card" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(15,23,42,0.06); transition: all 0.3s ease;">
+        
+        <!-- 1. En-tête : Informations Identité & Contact Étudiant -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-bottom: 1.5px solid #F1F5F9; padding-bottom: 16px; margin-bottom: 18px;">
           
-          <!-- Infos Élève & Matricule -->
+          <!-- Identity Block -->
           <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 52px; height: 52px; border-radius: 50%; background: #1E3A5F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; box-shadow: 0 4px 10px rgba(30,58,95,0.25);" id="prev_avatar">ET</div>
+            <div id="prev_avatar_container" style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; font-weight: 800; font-size: 20px; border: 2.5px solid #E2E8F0; box-shadow: 0 4px 10px rgba(30,58,95,0.25);">
+              <span id="prev_avatar_initials">ET</span>
+            </div>
             <div>
-              <div style="font-weight: 800; color: #0F172A; font-size: 16px;" id="prev_nom">Nom Étudiant</div>
-              <div style="font-size: 13px; color: #64748B; margin-top: 2px;">
-                Matricule : <code id="prev_matricule" style="font-weight:800; color:#1E3A5F; font-size:13px;">-</code> &bull; 
-                Classe : <span id="prev_classe" style="font-weight:700; color:#334155;">-</span>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <h2 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;" id="prev_nom">Nom Étudiant</h2>
+                <span id="prev_affectation_badge" class="badge" style="background: #DCFCE7; color: #15803D; font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;">
+                  🎓 Étudiant Affecté (État)
+                </span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 5px; font-size: 13px; color: #64748B;">
+                <span>Matricule : <code id="prev_matricule" style="font-weight: 800; color: #1E3A5F; background: #F1F5F9; padding: 2px 8px; border-radius: 4px;">-</code></span>
+                <span>&bull; Classe : <strong id="prev_classe" style="color: #334155;">-</strong></span>
+                <span>&bull; Filière : <strong id="prev_filiere" style="color: #334155;">-</strong></span>
+                <span>&bull; Année : <strong id="prev_annee" style="color: #334155;">-</strong></span>
               </div>
             </div>
           </div>
 
-          <!-- Badges Financiers -->
-          <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-            <div style="text-align: center; padding: 10px 18px; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0;">
-              <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Scolarité Due</div>
-              <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 2px;" id="prev_due">0 FCFA</div>
+          <!-- Contact Pills -->
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; background: #F8FAFC; padding: 6px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+              <i data-lucide="phone" style="width: 14px; height: 14px; color: #1E3A5F;"></i>
+              <span id="prev_telephone">-</span>
             </div>
-
-            <div style="text-align: center; padding: 10px 18px; background: #F0FDF4; border-radius: 10px; border: 1px solid #BBF7D0;">
-              <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Total Déjà Payé</div>
-              <div style="font-size: 16px; font-weight: 800; color: #15803D; margin-top: 2px;" id="prev_paye">0 FCFA</div>
-            </div>
-
-            <div style="text-align: center; padding: 10px 18px; background: #FEF2F2; border-radius: 10px; border: 1px solid #FCA5A5;">
-              <div style="font-size: 11px; font-weight: 800; color: #991B1B; text-transform: uppercase; letter-spacing: 0.5px;">Solde Restant À Payer</div>
-              <div style="font-size: 16px; font-weight: 800; color: #DC2626; margin-top: 2px;" id="prev_solde">0 FCFA</div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; background: #F8FAFC; padding: 6px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+              <i data-lucide="mail" style="width: 14px; height: 14px; color: #1E3A5F;"></i>
+              <span id="prev_email">-</span>
             </div>
           </div>
 
         </div>
+
+        <!-- 2. Barre de Progression de Recouvrement (Taux %) -->
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 12.5px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="trending-up" style="width: 15px; height: 15px; color: #16A34A;"></i> Progression du Recouvrement
+            </span>
+            <span id="prev_taux_text" style="font-size: 13px; font-weight: 800; color: #16A34A;">0% Payé</span>
+          </div>
+          <div style="width: 100%; height: 10px; background: #E2E8F0; border-radius: 20px; overflow: hidden;">
+            <div id="prev_taux_bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #16A34A, #22C55E); border-radius: 20px; transition: width 0.6s ease;"></div>
+          </div>
+        </div>
+
+        <!-- 3. Grille des 4 Cartes Métriques Récapitulatif Scolarité -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+          
+          <!-- Total Scolarité Fixée -->
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Scolarité Fixée</span>
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: #E2E8F0; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="graduation-cap" style="width: 16px; height: 16px;"></i>
+              </div>
+            </div>
+            <div style="font-size: 17px; font-weight: 900; color: #0F172A;" id="prev_due">0 FCFA</div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Montant global annuel</div>
+          </div>
+
+          <!-- Total Déjà Payé -->
+          <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 12px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Total Déjà Encaissé</span>
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i>
+              </div>
+            </div>
+            <div style="font-size: 17px; font-weight: 900; color: #15803D;" id="prev_paye">0 FCFA</div>
+            <div style="font-size: 11px; color: #166534; margin-top: 2px;">Versement(s) validé(s)</div>
+          </div>
+
+          <!-- Solde Restant À Payer -->
+          <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 12px; padding: 14px 16px;" id="card_solde_container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: #991B1B; text-transform: uppercase; letter-spacing: 0.5px;" id="lbl_solde_restant">Solde Restant</span>
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center;" id="icon_solde_container">
+                <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+              </div>
+            </div>
+            <div style="font-size: 17px; font-weight: 900; color: #DC2626;" id="prev_solde">0 FCFA</div>
+            <div style="font-size: 11px; color: #991B1B; margin-top: 2px;" id="sub_solde_hint">Reste dû par l'élève</div>
+          </div>
+
+          <!-- Statut de Règlement -->
+          <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 12px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Statut Dossier</span>
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: #DBEAFE; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+              </div>
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; margin-top: 2px;" id="prev_statut_reglement">Solde Débiteur</div>
+            <div style="font-size: 11px; color: #3B82F6; margin-top: 2px;">Situation financière</div>
+          </div>
+
+        </div>
+
       </div>
 
       <!-- TABLEAU INTERACTIF DES TRANCHES DE L'ÉLÈVE -->
@@ -286,6 +358,19 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
 </div>
 
 <script>
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+if (typeof window.escapeHtml !== 'function') {
+  window.escapeHtml = escapeHtml;
+}
+
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
 
@@ -608,15 +693,89 @@ $(document).ready(function() {
         if (res.status === 1 && res.data) {
           var d = res.data;
           
-          var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
-          $('#prev_avatar').text(initials || 'ET');
+          // Photo ou Initiales
+          var photoPath = d.photo_etudiant ? String(d.photo_etudiant).trim() : '';
+          var $container = $('#prev_avatar_container');
+          $container.empty();
 
-          $('#prev_nom').text(d.nom_complet);
-          $('#prev_matricule').text(d.matricule);
-          $('#prev_classe').text(d.classe);
+          var initials = '';
+          var nomPart = (d.nom_etudiant || '').trim();
+          var prenomPart = (d.prenom_etudiant || '').trim();
+          if (nomPart && prenomPart) {
+            initials = (nomPart.charAt(0) + prenomPart.charAt(0)).toUpperCase();
+          } else if (nomPart) {
+            initials = nomPart.substring(0, 2).toUpperCase();
+          } else if (d.nom_complet) {
+            var parts = d.nom_complet.trim().split(/\s+/);
+            initials = (parts.length >= 2 ? (parts[0].charAt(0) + parts[1].charAt(0)) : parts[0].substring(0, 2)).toUpperCase();
+          } else {
+            initials = 'ET';
+          }
+
+          if (photoPath && photoPath !== 'null' && photoPath !== 'undefined') {
+            var photoUrl = (photoPath.indexOf('http') === 0 || photoPath.indexOf('/') === 0) ? photoPath : ('<?= RACINE ?>' + photoPath);
+            var $img = $('<img>', {
+              src: photoUrl,
+              style: 'width:100%; height:100%; object-fit:cover; border-radius:50%;'
+            });
+            $img.on('error', function() {
+              $container.html('<span id="prev_avatar_initials" style="font-weight:800; font-size:20px; color:#FFFFFF; text-transform:uppercase;">' + escapeHtml(initials) + '</span>');
+            });
+            $container.append($img);
+          } else {
+            $container.html('<span id="prev_avatar_initials" style="font-weight:800; font-size:20px; color:#FFFFFF; text-transform:uppercase;">' + escapeHtml(initials) + '</span>');
+          }
+
+          // Identité & Académique
+          $('#prev_nom').text(d.nom_complet || '-');
+          $('#prev_matricule').text(d.matricule || '-');
+          $('#prev_classe').text(d.classe || '-');
+          $('#prev_filiere').text(d.filiere || '-');
+          $('#prev_annee').text(d.annee || '-');
+          $('#prev_telephone').text(d.telephone_etudiant || 'Non renseigné');
+          $('#prev_email').text(d.email_etudiant || 'Non renseigné');
+
+          // Régime / Affectation
+          var $affBadge = $('#prev_affectation_badge');
+          if (d.affectation_etat === 'affecte' || d.affectation_etat === 'oui') {
+            $affBadge.css({'background': '#DCFCE7', 'color': '#15803D'}).html('🎓 Étudiant Affecté (État)');
+          } else {
+            $affBadge.css({'background': '#E0E7FF', 'color': '#4338CA'}).html('💼 Non Affecté (Privé)');
+          }
+
+          // Taux de recouvrement
+          var taux = parseFloat(d.taux_recouvrement) || 0;
+          $('#prev_taux_text').text(taux + '% Payé');
+          var $tauxBar = $('#prev_taux_bar');
+          $tauxBar.css('width', taux + '%');
+          if (taux >= 100) {
+            $tauxBar.css('background', 'linear-gradient(90deg, #16A34A, #22C55E)');
+          } else if (taux >= 50) {
+            $tauxBar.css('background', 'linear-gradient(90deg, #0284C7, #38BDF8)');
+          } else {
+            $tauxBar.css('background', 'linear-gradient(90deg, #D97706, #FBBF24)');
+          }
+
+          // Cartes Métriques
           $('#prev_due').text(d.scolarite_due_fmt);
           $('#prev_paye').text(d.total_paye_fmt);
           $('#prev_solde').text(d.solde_restant_fmt);
+          $('#prev_statut_reglement').text(d.statut_reglement || 'Acompte Payé');
+
+          var solde = parseFloat(d.solde_restant) || 0;
+          if (solde <= 0) {
+            $('#card_solde_container').css({'background': '#F0FDF4', 'border-color': '#BBF7D0'});
+            $('#lbl_solde_restant').css('color', '#166534');
+            $('#icon_solde_container').css({'background': '#DCFCE7', 'color': '#15803D'});
+            $('#prev_solde').css('color', '#15803D');
+            $('#sub_solde_hint').css('color', '#166534').text('Scolarité intégralement soldée');
+          } else {
+            $('#card_solde_container').css({'background': '#FEF2F2', 'border-color': '#FCA5A5'});
+            $('#lbl_solde_restant').css('color', '#991B1B');
+            $('#icon_solde_container').css({'background': '#FEE2E2', 'color': '#DC2626'});
+            $('#prev_solde').css('color', '#DC2626');
+            $('#sub_solde_hint').css('color', '#991B1B').text('Reste dû par l\'élève');
+          }
 
           $('#financial-preview-banner').stop(true, true).slideDown(250);
 

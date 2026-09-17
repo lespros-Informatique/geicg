@@ -73,7 +73,7 @@ class ForeignKeyValidator
         ],
         'tranche_code' => [
             'table' => 'tranches_scolarite',
-            'field' => 'code_tranche_scolarite',
+            'field' => 'code_tranche',
             'label' => 'Tranche de Scolarité'
         ],
         'role_code' => [
@@ -107,8 +107,8 @@ class ForeignKeyValidator
             'label' => 'Pièce à Fournir'
         ],
         'session_caisse_code' => [
-            'table' => 'ouvertures_caisse',
-            'field' => 'code_ouverture',
+            'table' => 'sessions_caisse',
+            'field' => 'code_session',
             'label' => 'Session de Caisse'
         ],
         'ouverture_caisse_code' => [
@@ -298,6 +298,10 @@ class ForeignKeyValidator
      */
     private static function checkKeyExistence(PDO $pdo, string $fkCol, string $val, ?string $customLabel = null): ?string
     {
+        if ($fkCol === 'tranche_code' && $val === 'SCOLARITE_GLOBALE') {
+            return null;
+        }
+
         $info = self::$fkRegistry[$fkCol] ?? null;
         if (!$info) {
             return null;

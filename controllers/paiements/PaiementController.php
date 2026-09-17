@@ -307,7 +307,7 @@ class PaiementController extends BaseController
 
         if (!empty($inscriptionCode)) {
             $stmt = $db->prepare("
-                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant,
+                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant, e.telephone_etudiant, e.email_etudiant,
                        c.libelle_classe, c.filiere_code, c.niveau_code,
                        f.libelle_filiere, n.libelle_niveau, a.libelle_annee
                 FROM inscriptions i
@@ -323,7 +323,7 @@ class PaiementController extends BaseController
             $ins = $stmt->fetch(PDO::FETCH_ASSOC);
         } elseif (!empty($etudiantCode)) {
             $stmt = $db->prepare("
-                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant,
+                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant, e.telephone_etudiant, e.email_etudiant,
                        c.libelle_classe, c.filiere_code, c.niveau_code,
                        f.libelle_filiere, n.libelle_niveau, a.libelle_annee
                 FROM etudiants e
@@ -537,13 +537,51 @@ class PaiementController extends BaseController
 
         $nomComplet = trim(($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? ''));
 
+        $tauxRecouvrement = ($scolariteDue > 0) ? min(100, round(($totalPaye / $scolariteDue) * 100, 1)) : 0;
+        $affLabel = $isAffecte ? 'Étudiant Affecté (État)' : 'Non Affecté (Privé)';
+
+        // Formater l'historique des versements
+        $historiquePaiements = [];
+        foreach ($allPayments as $p) {
+            $pId = (int)$p['id_paiement'];
+            $pIdCrypte = $this->validator->crypter($pId);
+            $modeP = $p['mode_paiement'] ?? 'espece';
+            $modeLabels = [
+                'espece' => 'Espèces',
+                'mobile_money' => 'Mobile Money',
+                'cheque' => 'Chèque',
+                'virement' => 'Virement'
+            ];
+            $historiquePaiements[] = [
+                'id_paiement' => $pId,
+                'id_crypte' => $pIdCrypte,
+                'code_paiement' => $p['code_paiement'] ?? ('RECU-'.$pId),
+                'date_paiement' => $p['date_paiement'],
+                'date_paiement_fmt' => !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : (isset($p['created_at']) ? date('d/m/Y', strtotime($p['created_at'])) : '-'),
+                'montant_paiement' => (float)$p['montant_paiement'],
+                'montant_paiement_fmt' => number_format((float)$p['montant_paiement'], 0, ',', ' ') . ' FCFA',
+                'mode_paiement' => $modeP,
+                'mode_paiement_fmt' => $modeLabels[$modeP] ?? ucfirst($modeP),
+                'type_paiement' => $p['type_paiement'] ?? 'Règlement Scolarité',
+                'reference_paiement' => !empty($p['reference_paiement']) ? $p['reference_paiement'] : '-',
+                'tranche_code' => !empty($p['tranche_code']) ? $p['tranche_code'] : '-'
+            ];
+        }
+
         $this->json([
             'status' => 1,
             'data' => [
                 'code_inscription' => $codeInscription,
                 'code_etudiant' => $ins['code_etudiant'] ?? '',
                 'matricule' => $ins['matricule_etudiant'] ?? '-',
+                'nom_etudiant' => $ins['nom_etudiant'] ?? '',
+                'prenom_etudiant' => $ins['prenom_etudiant'] ?? '',
                 'nom_complet' => $nomComplet,
+                'photo_etudiant' => $ins['photo_etudiant'] ?? '',
+                'telephone_etudiant' => !empty($ins['telephone_etudiant']) ? $ins['telephone_etudiant'] : '-',
+                'email_etudiant' => !empty($ins['email_etudiant']) ? $ins['email_etudiant'] : '-',
+                'affectation_etat' => $affEtat,
+                'affectation_label' => $affLabel,
                 'classe' => $ins['libelle_classe'] ?? 'Classe non définie',
                 'filiere' => $ins['libelle_filiere'] ?? '-',
                 'niveau' => $ins['libelle_niveau'] ?? '-',
@@ -554,10 +592,12 @@ class PaiementController extends BaseController
                 'total_paye_fmt' => number_format($totalPaye, 0, ',', ' ') . ' FCFA',
                 'solde_restant' => $soldeRestant,
                 'solde_restant_fmt' => number_format($soldeRestant, 0, ',', ' ') . ' FCFA',
+                'taux_recouvrement' => $tauxRecouvrement,
                 'statut_reglement' => $statutReglement,
                 'badge_class' => $badgeClass,
                 'tranches' => $tranchesList,
-                'suggested_tranche_code' => $suggestedTrancheCode
+                'suggested_tranche_code' => $suggestedTrancheCode,
+                'historique_paiements' => $historiquePaiements
             ]
         ]);
     }
@@ -679,18 +719,37 @@ class PaiementController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission('RECORD_PAIEMENTS');
+        $db = $this->model->getCon();
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $this->getActiveAnneeCode();
-        $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $inscriptionCode = trim($data['inscription_code'] ?? '');
+        if (empty($inscriptionCode)) {
+            $this->error("Veuillez sélectionner un dossier d'inscription valide.");
+            return;
+        }
+
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
+
+        $stmtInsInfo = $db->prepare("SELECT annee_code, etablissement_code FROM inscriptions WHERE code_inscription = ? LIMIT 1");
+        $stmtInsInfo->execute([$inscriptionCode]);
+        $insData = $stmtInsInfo->fetch(PDO::FETCH_ASSOC);
+
+        if (!empty($insData['annee_code'])) {
+            $anneeCode = $insData['annee_code'];
+        }
+        if (!empty($insData['etablissement_code'])) {
+            $etabCode = $insData['etablissement_code'];
+        }
 
         // Contrôle préalable des clés étrangères globales du versement
         $this->validateForeignKeys([
             'annee_code' => $anneeCode,
             'etablissement_code' => $etabCode,
             'user_code' => $userCode,
-            'inscription_code' => $data['inscription_code'] ?? ''
+            'inscription_code' => $inscriptionCode
         ]);
 
         if (!empty($data['tranche_code']) && $data['tranche_code'] !== 'SCOLARITE_GLOBALE') {
@@ -699,7 +758,6 @@ class PaiementController extends BaseController
             ]);
         }
 
-        $db = $this->model->getCon();
         $today = date('Y-m-d');
         $mode = strtolower($data['mode_paiement'] ?? 'espece');
 
@@ -821,7 +879,8 @@ class PaiementController extends BaseController
 
             $this->success('Règlement de caisse enregistré avec succès!', ['reload' => true]);
         } else {
-            $this->error('Erreur lors de l\'enregistrement du paiement');
+            $err = $this->model->getLastError() ?: 'Erreur lors de l\'enregistrement du paiement';
+            $this->error($err);
         }
     }
 
