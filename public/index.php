@@ -263,6 +263,7 @@ $route->addRoute('/dossier_etudiant/list', [$dossierEtudiantController, 'list'])
 $route->addRoute('/dossier_etudiant/apiList', [$dossierEtudiantController, 'apiList']);
 $route->addRoute('/dossier_etudiant/saveStatut', [$dossierEtudiantController, 'saveStatut']);
 $route->addRoute('/dossier_etudiant/saveAll', [$dossierEtudiantController, 'saveAll']);
+$route->addRoute('/dossier_etudiant/getRecepisseData', [$dossierEtudiantController, 'getRecepisseData']);
 
 // Module: piece_fournir (PieceFournirController)
 $route->addRoute('/piece_fournir/list', [$pieceFournirController, 'list']);

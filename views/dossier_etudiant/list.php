@@ -711,6 +711,7 @@ $(document).ready(function() {
     $.ajax({
       url: '<?= RACINE ?>dossier_etudiant/getRecepisseData',
       type: 'GET',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
       data: { inscription_code: inscrCode },
       dataType: 'json',
       success: function(res) {
@@ -769,12 +770,18 @@ $(document).ready(function() {
           var err = res.message || 'Erreur lors de la génération du récépissé.';
           if (typeof showToast === 'function') showToast(err, 'error');
           else if (window.toastr) toastr.error(err);
+          else if (window.Swal) Swal.fire({ icon: 'error', title: 'Erreur', text: err });
         }
       },
-      error: function() {
+      error: function(xhr) {
         var msg = 'Erreur lors de la connexion au serveur.';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch(e) {}
         if (typeof showToast === 'function') showToast(msg, 'error');
         else if (window.toastr) toastr.error(msg);
+        else if (window.Swal) Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
       }
     });
   }
