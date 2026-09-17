@@ -39,7 +39,7 @@ class AccessoireController extends BaseController
     public function registre()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS', 'MANAGE_ACCESSOIRES', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
 
         $anneeModel = new ModelAnnee();
         $annees = $anneeModel->getAll();

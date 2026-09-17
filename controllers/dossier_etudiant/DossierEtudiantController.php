@@ -10,7 +10,7 @@ class DossierEtudiantController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS', 'MANAGE_PIECES', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
 
         $anneeModel = new ModelAnnee();
         $annees = $anneeModel->getAll();
@@ -41,7 +41,7 @@ class DossierEtudiantController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS', 'MANAGE_PIECES', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
 
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? '';
         $classeCode = $_GET['classe_code'] ?? '';
