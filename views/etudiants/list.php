@@ -140,15 +140,7 @@ $anneeActive = $anneeActive ?? '';
             </select>
           </div>
 
-          <!-- Filtre Statut -->
-          <div class="form-group" style="margin: 0;">
-            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Statut Compte</label>
-            <select id="filter-statut" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
-              <option value="ALL">-- Tous les statuts --</option>
-              <option value="actif">Actifs uniquement</option>
-              <option value="inactif">Inactifs uniquement</option>
-            </select>
-          </div>
+
 
         </div>
       </div>
@@ -194,7 +186,6 @@ $(document).ready(function() {
         d.filiere_code = $('#filter-filiere').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
-        d.statut_etudiant = $('#filter-statut').val();
       }
     },
     processing: true,
@@ -307,7 +298,7 @@ $(document).ready(function() {
   }
 
   // Déclenchement automatique du rechargement et des colonnes intelligentes
-  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe, #filter-statut').on('change', function() {
+  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').on('change', function() {
     filterClassDropdown();
     updateSmartColumns();
     table.ajax.reload();
@@ -348,7 +339,6 @@ $(document).ready(function() {
     $('#filter-filiere').val('ALL');
     $('#filter-niveau').val('ALL');
     $('#filter-classe').val('ALL');
-    $('#filter-statut').val('ALL');
     filterClassDropdown();
     updateSmartColumns();
     table.ajax.reload();
