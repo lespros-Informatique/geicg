@@ -392,8 +392,8 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showSansPhoto): ?>
-                <a href="<?= RACINE ?>inscription/sans_photo" class="nav-item sub <?= strpos($currentUri, '/inscription/sans_photo') !== false ? 'active' : '' ?>" data-title="Inscriptions sans photo">
-                    <i data-lucide="camera-off"></i> <span>Inscriptions sans Photo</span>
+                <a href="<?= RACINE ?>inscription/prise_de_vue" class="nav-item sub <?= (strpos($currentUri, '/inscription/prise_de_vue') !== false || strpos($currentUri, '/inscription/sans_photo') !== false) ? 'active' : '' ?>" data-title="Prise de Vue (Photos d'Inscription)">
+                    <i data-lucide="camera"></i> <span>Prise de vue (Photos)</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showDepotDossiers): ?>

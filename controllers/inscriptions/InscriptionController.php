@@ -1038,6 +1038,11 @@ class InscriptionController extends BaseController
 
     public function sansPhoto()
     {
+        $this->priseDeVue();
+    }
+
+    public function priseDeVue()
+    {
         $this->requireAuth();
         $this->requirePermission(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
         $db = $this->model->getCon();
@@ -1047,7 +1052,7 @@ class InscriptionController extends BaseController
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $this->loadView('../views/inscriptions/sans_photo.php', [
+        $this->loadView('../views/inscriptions/prise_de_vue.php', [
             'annees' => $annees,
             'filieres' => $filieres,
             'classes' => $classes,
@@ -1057,12 +1062,18 @@ class InscriptionController extends BaseController
 
     public function apiSansPhoto()
     {
+        $this->apiPriseDeVue();
+    }
+
+    public function apiPriseDeVue()
+    {
         $this->requireAuth();
         $this->requirePermission(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
 
         $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
         $filiereCode = $_GET['filiere_code'] ?? '';
         $classeCode = $_GET['classe_code'] ?? '';
+        $filterPhoto = $_GET['filter_photo'] ?? 'all';
 
         try {
             $db = $this->model->getCon();
@@ -1089,7 +1100,7 @@ class InscriptionController extends BaseController
                 JOIN classes cl ON cl.code_classe = i.classe_code
                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN annees a ON a.code_annee = i.annee_code
-                WHERE (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '')
+                WHERE 1=1
             ";
 
             $params = [];
@@ -1106,6 +1117,12 @@ class InscriptionController extends BaseController
                 $params[] = $classeCode;
             }
 
+            if ($filterPhoto === 'sans_photo') {
+                $sql .= " AND (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '')";
+            } elseif ($filterPhoto === 'avec_photo') {
+                $sql .= " AND i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != ''";
+            }
+
             $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC";
 
             $stmt = $db->prepare($sql);
@@ -1116,15 +1133,19 @@ class InscriptionController extends BaseController
             foreach ($rows as $r) {
                 $id = $r['id_inscription'];
                 $idCrypte = $this->validator->crypter($id);
+                $hasPhoto = (!empty($r['photo_inscription']) || !empty($r['photo_etudiant']));
+                $photoPath = !empty($r['photo_inscription']) ? $r['photo_inscription'] : ($r['photo_etudiant'] ?? '');
                 $data[] = array_merge($r, [
                     'id' => $id,
                     'editId' => $idCrypte,
-                    'nom_complet' => trim($r['nom_etudiant'] . ' ' . $r['prenom_etudiant'])
+                    'nom_complet' => trim($r['nom_etudiant'] . ' ' . $r['prenom_etudiant']),
+                    'has_photo' => $hasPhoto,
+                    'photo_path' => $photoPath
                 ]);
             }
             $this->json(['data' => $data]);
         } catch (Exception $e) {
-            error_log("InscriptionController::apiSansPhoto error: " . $e->getMessage());
+            error_log("InscriptionController::apiPriseDeVue error: " . $e->getMessage());
             $this->json(['data' => [], 'error' => $e->getMessage()]);
         }
     }
@@ -1137,28 +1158,10 @@ class InscriptionController extends BaseController
 
         $idInscription = (int)($_POST['id_inscription'] ?? 0);
         $codeInscription = trim($_POST['code_inscription'] ?? '');
+        $webcamData = trim($_POST['photo_webcam_data'] ?? '');
 
         if (!$idInscription && empty($codeInscription)) {
             $this->error("Identifiant d'inscription valide requis.");
-            return;
-        }
-
-        if (!isset($_FILES['photo_inscription']) || $_FILES['photo_inscription']['error'] !== UPLOAD_ERR_OK) {
-            $this->error("Veuillez sélectionner un fichier d'image valide pour la photo d'inscription.");
-            return;
-        }
-
-        $file = $_FILES['photo_inscription'];
-        $maxSize = 5 * 1024 * 1024; // 5 MB
-        if ($file['size'] > $maxSize) {
-            $this->error("La photo dépasse la taille maximale autorisée de 5 Mo.");
-            return;
-        }
-
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $allowedExts = ['png', 'jpg', 'jpeg', 'webp'];
-        if (!in_array($ext, $allowedExts, true)) {
-            $this->error("Format d'image non autorisé. Formats acceptés : PNG, JPG, JPEG, WEBP.");
             return;
         }
 
@@ -1168,13 +1171,52 @@ class InscriptionController extends BaseController
         }
 
         $safeCode = preg_replace('/[^a-zA-Z0-9_-]/', '', $codeInscription ?: 'INS_' . $idInscription);
-        $filename = 'PHOTO_' . $safeCode . '_' . uniqid() . '.' . $ext;
-        $targetPath = $uploadDir . $filename;
+        $relativePath = null;
 
-        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-            $relativePath = 'public/uploads/photos_inscriptions/' . $filename;
+        if (!empty($webcamData)) {
+            if (preg_match('/^data:image\/(png|jpeg|jpg|webp);base64,/', $webcamData, $type)) {
+                $data = substr($webcamData, strpos($webcamData, ',') + 1);
+                $ext = strtolower($type[1]);
+                if ($ext === 'jpeg') $ext = 'jpg';
+                $data = base64_decode($data);
+                if ($data === false) {
+                    $this->error("Données de photo webcam invalides.");
+                    return;
+                }
+                $filename = 'PHOTO_' . $safeCode . '_' . uniqid() . '.' . $ext;
+                $targetPath = $uploadDir . $filename;
+                if (file_put_contents($targetPath, $data) !== false) {
+                    $relativePath = 'public/uploads/photos_inscriptions/' . $filename;
+                }
+            } else {
+                $this->error("Format de capture webcam invalide.");
+                return;
+            }
+        } elseif (isset($_FILES['photo_inscription']) && $_FILES['photo_inscription']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['photo_inscription'];
+            $maxSize = 5 * 1024 * 1024;
+            if ($file['size'] > $maxSize) {
+                $this->error("La photo dépasse la taille maximale autorisée de 5 Mo.");
+                return;
+            }
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowedExts = ['png', 'jpg', 'jpeg', 'webp'];
+            if (!in_array($ext, $allowedExts, true)) {
+                $this->error("Format d'image non autorisé. Formats acceptés : PNG, JPG, JPEG, WEBP.");
+                return;
+            }
+            $filename = 'PHOTO_' . $safeCode . '_' . uniqid() . '.' . $ext;
+            $targetPath = $uploadDir . $filename;
+            if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                $relativePath = 'public/uploads/photos_inscriptions/' . $filename;
+            }
+        } else {
+            $this->error("Veuillez sélectionner un fichier image ou capturer une photo depuis la webcam.");
+            return;
+        }
+
+        if ($relativePath) {
             $db = $this->model->getCon();
-
             if ($idInscription) {
                 $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE id_inscription = ?");
                 $ok = $stmt->execute([$relativePath, $idInscription]);
@@ -1184,14 +1226,14 @@ class InscriptionController extends BaseController
             }
 
             if ($ok) {
-                $this->success("La photo d'inscription a été téléversée et enregistrée avec succès !", [
+                $this->success("La photo d'inscription a été enregistrée avec succès !", [
                     'photo_url' => RACINE . $relativePath
                 ]);
             } else {
-                $this->error("Erreur lors de la mise à jour de la photo d'inscription dans la base de données.");
+                $this->error("Erreur lors de la mise à jour de la photo dans la base de données.");
             }
         } else {
-            $this->error("Erreur lors du déplacement du fichier téléversé.");
+            $this->error("Erreur lors de la sauvegarde du fichier photo.");
         }
     }
 }
