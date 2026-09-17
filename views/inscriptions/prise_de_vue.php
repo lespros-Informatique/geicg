@@ -445,10 +445,16 @@ $(document).ready(function() {
         if (window.lucide) lucide.createIcons();
 
         var msg = 'Erreur serveur ou réseau';
-        try {
-          var json = JSON.parse(xhr.responseText);
-          if (json && json.message) msg = json.message;
-        } catch(e) {}
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          msg = xhr.responseJSON.message;
+        } else if (xhr.responseText) {
+          try {
+            var json = JSON.parse(xhr.responseText);
+            if (json && json.message) msg = json.message;
+          } catch(e) {
+            if (xhr.statusText && xhr.status) msg = 'Erreur (' + xhr.status + ') : ' + xhr.statusText;
+          }
+        }
         showNotify(msg, 'error');
       }
     });

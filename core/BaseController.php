@@ -205,6 +205,9 @@ abstract class BaseController
 
     protected function json(array $data, int $code = 200): void
     {
+        if (ob_get_length()) {
+            @ob_clean();
+        }
         if (!headers_sent()) {
             http_response_code($code);
             header('Content-Type: application/json; charset=utf-8');
@@ -222,7 +225,7 @@ abstract class BaseController
             return true;
         }
         $uri = strtolower($_SERVER['REQUEST_URI'] ?? '');
-        if (strpos($uri, '/api') !== false || strpos($uri, 'apilist') !== false || strpos($uri, 'savestatut') !== false || strpos($uri, 'getrecepissedata') !== false) {
+        if (strpos($uri, '/api') !== false || strpos($uri, 'apilist') !== false || strpos($uri, 'savestatut') !== false || strpos($uri, 'getrecepissedata') !== false || strpos($uri, 'uploadphoto') !== false || strpos($uri, 'prisedevue') !== false) {
             return true;
         }
         return false;
