@@ -32,6 +32,7 @@ class ModelDossierEtudiant extends BaseModel
             JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
             LEFT JOIN dossier_etudiant de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
             WHERE i.code_inscription = ?
+            GROUP BY pfc.piece_code
             ORDER BY pf.libelle_piece ASC
         ";
         try {

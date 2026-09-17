@@ -87,7 +87,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
             <i data-lucide="package" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total Fournitures</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total kits</div>
             <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-kits"><?= $stats['total'] ?? 0 ?></div>
           </div>
         </div>
@@ -107,7 +107,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
             <i data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #16A34A; text-transform: uppercase;">Articles Remis</div>
+            <div style="font-size: 11px; font-weight: 800; color: #16A34A; text-transform: uppercase;">Kits remis</div>
             <div style="font-size: 22px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-retires"><?= $stats['retires'] ?? ($stats['retire'] ?? 0) ?></div>
           </div>
         </div>
@@ -131,8 +131,8 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
             <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
               <th>Étudiant</th>
               <th>Matricule & Classe</th>
-              <th>Composition du Kit & Statuts</th>
-              <th>Articles Remis</th>
+              <th>Nombre d'articles</th>
+              <th>Kits remis</th>
               <th>Progression Retrait</th>
               <th style="text-align: right;">Actions Émargement</th>
             </tr>
@@ -172,7 +172,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding: 14px 18px; background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
         <div>
           <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Statut des Remises</span>
-          <div style="font-size: 16px; font-weight: 800; color: #0F172A;" id="modal-kit-completion-text">0 / 0 Articles Remis</div>
+          <div style="font-size: 16px; font-weight: 800; color: #0F172A;" id="modal-kit-completion-text">0 / 0 Kits remis</div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <button type="button" id="btn-tout-valider-kit-modal" class="btn btn-sm btn-success" style="font-weight: 700; border-radius: 8px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: #15803D; border: none;">
@@ -620,7 +620,7 @@ $(document).ready(function() {
   function openStudentKitModal(d) {
     $('#modal-kit-student-name').text(d.nom_complet);
     $('#modal-kit-student-info').text('Matricule : ' + (d.matricule_etudiant || '-') + ' | Classe : ' + (d.libelle_classe || '-'));
-    $('#modal-kit-completion-text').text(d.total_retires + ' / ' + d.total_kits + ' Articles Remis (' + d.pourcentage + '%)');
+    $('#modal-kit-completion-text').text(d.total_retires + ' / ' + d.total_kits + ' Kits remis (' + d.pourcentage + '%)');
 
     var html = '';
     var items = d.items || [];

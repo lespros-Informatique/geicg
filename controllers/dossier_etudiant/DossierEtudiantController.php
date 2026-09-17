@@ -63,12 +63,10 @@ class DossierEtudiantController extends BaseController
                     e.telephone_etudiant,
                     cl.code_classe,
                     cl.libelle_classe,
-                    cl.filiere_code,
-                    fc.cycle_code
+                    cl.filiere_code
                 FROM inscriptions i
                 JOIN etudiants e ON e.code_etudiant = i.etudiant_code
                 JOIN classes cl ON cl.code_classe = i.classe_code
-                LEFT JOIN filiere_cycles fc ON fc.filiere_code = cl.filiere_code
                 WHERE 1=1
             ";
 
@@ -82,7 +80,7 @@ class DossierEtudiantController extends BaseController
                 $params[] = $classeCode;
             }
 
-            $sql .= " ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC";
+            $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC";
 
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
