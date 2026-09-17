@@ -21,11 +21,7 @@ class SettingController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        if (!$this->isSuperAdmin()) {
-            $_SESSION['error_msg'] = "Accès réservé au Super Admin.";
-            header('Location: ' . RACINE);
-            exit();
-        }
+        $this->requirePermission(['CONFIG_SYSTEM', 'MANAGE_ETABLISSEMENT']);
 
         $promoModel = new ModelPromotion();
 
