@@ -270,16 +270,22 @@ $pieces = (new ModelPieceFournir())->getAll();
                   Statut d'Affectation État / Régime de l'Étudiant <span style="color: #EF4444;">*</span>
                 </label>
                 <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                  <label class="label-affectation-choice" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid #1E3A5F; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #1E3A5F; background: #EFF6FF; transition: all 0.2s;">
-                    <input type="radio" name="affectation_etat" value="non_affecte" checked style="accent-color: #1E3A5F; width: 16px; height: 16px;">
-                    <span>Non Affecté (Privé)</span>
+                  <label class="label-affectation-choice label-affectation-non-affecte" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 2px solid #2563EB; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #1E3A5F; background: #EFF6FF; transition: all 0.2s;">
+                    <input type="radio" name="affectation_etat" value="non_affecte" checked style="accent-color: #2563EB; width: 16px; height: 16px;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                      <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #2563EB;"></span>
+                      Non Affecté (Privé - Régime Bleu)
+                    </span>
                   </label>
-                  <label class="label-affectation-choice" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid #CBD5E1; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #334155; background: #FFFFFF; transition: all 0.2s;">
-                    <input type="radio" name="affectation_etat" value="affecte" style="accent-color: #1E3A5F; width: 16px; height: 16px;">
-                    <span>Affecté (Subventionné par l'État)</span>
+                  <label class="label-affectation-choice label-affectation-affecte" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 2px solid #CBD5E1; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #334155; background: #FFFFFF; transition: all 0.2s;">
+                    <input type="radio" name="affectation_etat" value="affecte" style="accent-color: #16A34A; width: 16px; height: 16px;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                      <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #16A34A;"></span>
+                      Affecté (Subventionné État - Régime Vert)
+                    </span>
                   </label>
                 </div>
-                <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi.</small>
+                <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi (Vert = Affecté État, Bleu = Non Affecté Privé).</small>
               </div>
 
               <!-- ANNÉE ACADÉMIQUE -->
@@ -325,12 +331,12 @@ $pieces = (new ModelPieceFournir())->getAll();
             </div>
 
             <!-- FICHE TARIFAIRE AUTOMATIQUE & ÉCHÉANCIER COMPLET DES TRANCHES -->
-            <div id="wiz-class-tuition-box" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 22px 24px; margin-top: 22px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.06); transition: all 0.3s ease;">
+            <div id="wiz-class-tuition-box" style="display: none; background: #FFFFFF; border: 2px solid #CBD5E1; border-radius: 12px; padding: 22px 24px; margin-top: 22px; box-shadow: 0 4px 14px -2px rgba(0,0,0,0.08); transition: all 0.3s ease;">
               
               <!-- 1. En-tête avec résumé de la classe et total scolarité -->
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 16px; margin-bottom: 18px;">
+              <div id="wiz_tuition_header_bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 16px; margin-bottom: 18px; border-radius: 8px; padding: 12px 16px; transition: all 0.3s;">
                 <div>
-                  <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                  <div id="wiz_tuition_top_tag" style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
                     <i data-lucide="graduation-cap" style="width: 16px; height: 16px; color: #D97706;"></i> Grille Tarifaire & Échéancier de Scolarité
                   </div>
                   <div style="font-size: 17px; font-weight: 900; color: #0F172A; margin-top: 4px;" id="wiz_summary_classe_title">-</div>
@@ -338,8 +344,8 @@ $pieces = (new ModelPieceFournir())->getAll();
                 </div>
 
                 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                  <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; padding: 10px 18px; border-radius: 10px; text-align: right;">
-                    <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase;">Scolarité Annuelle</div>
+                  <div id="wiz_summary_total_scolarite_box" style="background: #EFF6FF; border: 1.5px solid #BFDBFE; padding: 10px 18px; border-radius: 10px; text-align: right; transition: all 0.3s;">
+                    <div id="wiz_summary_total_scolarite_label" style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase;">Scolarité Annuelle</div>
                     <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 2px;" id="wiz_summary_total_scolarite">0 FCFA</div>
                   </div>
                   <div id="wiz_summary_net_box" style="display: none; background: #F0FDF4; border: 1.5px solid #86EFAC; padding: 10px 18px; border-radius: 10px; text-align: right;">
@@ -352,7 +358,7 @@ $pieces = (new ModelPieceFournir())->getAll();
               <!-- 2. Titre de la section des tranches -->
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <span style="font-size: 13px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="calendar" style="width: 15px; height: 15px; color: #2563EB;"></i> Échéancier de Toutes les Tranches de Paiement
+                  <i id="wiz_tranches_calendar_icon" data-lucide="calendar" style="width: 15px; height: 15px; color: #2563EB;"></i> Échéancier de Toutes les Tranches de Paiement
                 </span>
                 <span id="wiz_tranches_count_badge" style="background: #F1F5F9; color: #475569; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
                   0 tranche(s)
@@ -363,7 +369,7 @@ $pieces = (new ModelPieceFournir())->getAll();
               <div style="overflow-x: auto;">
                 <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0;">
                   <thead>
-                    <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <tr id="wiz_tranches_table_header" style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s;">
                       <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0; width: 60px;">N°</th>
                       <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0;">Intitulé de l'Échéance / Tranche</th>
                       <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0; text-align: center; width: 140px;">Part</th>
@@ -1127,22 +1133,62 @@ $(document).ready(function() {
 
           if (totalScolarite > 0) {
             $('#wiz_montant_scolarite').val(totalScolarite);
-            var regimeBadge = d.affectation_etat === 'affecte' ? ' <span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #BFDBFE; font-weight:700;">Affecté État</span>' : ' <span class="badge" style="background:#F8FAFC; color:#475569; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #CBD5E1; font-weight:700;">Non Affecté / Privé</span>';
+
+            var isAffecte = d.affectation_etat === 'affecte';
+
+            // Palette de couleurs pour différenciation Régime Affecté (Vert) vs Non Affecté (Bleu)
+            var themeColor      = isAffecte ? '#15803D' : '#1E3A5F';
+            var themeBorder     = isAffecte ? '#86EFAC' : '#BFDBFE';
+            var themeBg         = isAffecte ? '#F0FDF4' : '#EFF6FF';
+            var themeBadgeBg    = isAffecte ? '#DCFCE7' : '#DBEAFE';
+            var themeBadgeText  = isAffecte ? '#15803D' : '#1D4ED8';
+            var themeIconColor  = isAffecte ? '#16A34A' : '#2563EB';
+
+            // Application dynamique de la thématique au container principal
+            $('#wiz-class-tuition-box').css({
+              'border-color': themeBorder,
+              'background': '#FFFFFF'
+            });
+
+            $('#wiz_tuition_header_bar').css({
+              'background': themeBg,
+              'border-color': themeBorder
+            });
+
+            var regimeBadge = isAffecte 
+              ? ' <span class="badge" style="background:#DCFCE7; color:#15803D; font-size:11.5px; padding:4px 10px; border-radius:6px; border:1.5px solid #86EFAC; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check-circle" style="width:13px; height:13px; color:#16A34A;"></i> Régime Affecté (Subventionné État - Vert)</span>' 
+              : ' <span class="badge" style="background:#DBEAFE; color:#1D4ED8; font-size:11.5px; padding:4px 10px; border-radius:6px; border:1.5px solid #BFDBFE; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="user-check" style="width:13px; height:13px; color:#2563EB;"></i> Régime Non Affecté (Privé - Bleu)</span>';
+
             $('#wiz_summary_classe_title').html(d.libelle_classe + regimeBadge);
             $('#wiz_summary_filiere_niveau').text(
               (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + 
               (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau + ' • ' : '') + 
               (d.libelle_annee ? 'Année : ' + d.libelle_annee : '')
             );
-            $('#wiz_summary_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
 
-            // Rendu dynamique de TOUTES les tranches
+            // Styling du bloc Total Scolarité selon le régime
+            $('#wiz_summary_total_scolarite_box').css({
+              'background': themeBg,
+              'border-color': themeBorder
+            });
+            $('#wiz_summary_total_scolarite_label').css('color', themeColor);
+            $('#wiz_summary_total_scolarite').css('color', themeColor).text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
+
+            // Header & icône des tranches
+            $('#wiz_tranches_calendar_icon').css('color', themeIconColor);
+            $('#wiz_tranches_table_header').css('background', themeBg);
+
+            // Rendu dynamique de TOUTES les tranches avec couleur selon le régime
             var tranches = d.tranches || [];
             var tbodyHtml = '';
             var sumTranches = 0;
 
             if (tranches.length > 0) {
-              $('#wiz_tranches_count_badge').text(tranches.length + ' tranche(s) configurée(s)').show();
+              $('#wiz_tranches_count_badge').css({
+                'background': themeBadgeBg,
+                'color': themeBadgeText,
+                'border': '1px solid ' + themeBorder
+              }).text(tranches.length + ' tranche(s) configurée(s)').show();
 
               tranches.forEach(function(tr, idx) {
                 var mt = Number(tr.montant_tranche || tr.montant_tranche_num || 0);
@@ -1151,12 +1197,13 @@ $(document).ready(function() {
                 var pct = totalScolarite > 0 ? Math.round((mt / totalScolarite) * 100) : 0;
                 var dateLimite = tr.date_limite_formatee || (tr.date_limite ? tr.date_limite : 'Non définie');
 
-                tbodyHtml += '<tr style="border-bottom: 1px solid #F1F5F9; background: ' + (isFirst ? '#F8FAFC' : '#FFFFFF') + ';">';
+                var rowBg = isFirst ? (isAffecte ? '#F0FDF4' : '#F8FAFC') : '#FFFFFF';
+                tbodyHtml += '<tr style="border-bottom: 1px solid #F1F5F9; background: ' + rowBg + ';">';
                 tbodyHtml += '  <td style="padding: 12px 16px; font-weight: 800; color: #64748B;">' + (idx + 1) + '</td>';
                 tbodyHtml += '  <td style="padding: 12px 16px;">';
                 tbodyHtml += '    <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;">' + (tr.libelle_tranche || ('Tranche ' + (idx + 1))) + '</div>';
                 if (isFirst) {
-                  tbodyHtml += '    <span style="background:#EFF6FF; color:#1D4ED8; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #BFDBFE;">Exigible à l\'inscription</span>';
+                  tbodyHtml += '    <span style="background:' + themeBadgeBg + '; color:' + themeBadgeText + '; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid ' + themeBorder + ';">Exigible à l\'inscription</span>';
                 }
                 tbodyHtml += '  </td>';
                 tbodyHtml += '  <td style="padding: 12px 16px; text-align: center;">';
@@ -1165,23 +1212,27 @@ $(document).ready(function() {
                 tbodyHtml += '  <td style="padding: 12px 16px; text-align: center; color: #475569; font-size: 12.5px; font-weight: 600;">';
                 tbodyHtml += '    <i data-lucide="calendar" style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px; color:#64748B;"></i>' + dateLimite;
                 tbodyHtml += '  </td>';
-                tbodyHtml += '  <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #1E3A5F; font-size: 14px;">';
+                tbodyHtml += '  <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: ' + themeColor + '; font-size: 14px;">';
                 tbodyHtml += '    ' + mt.toLocaleString('fr-FR') + ' FCFA';
                 tbodyHtml += '  </td>';
                 tbodyHtml += '</tr>';
               });
             } else {
-              $('#wiz_tranches_count_badge').text('Paiement Unique');
+              $('#wiz_tranches_count_badge').css({
+                'background': themeBadgeBg,
+                'color': themeBadgeText,
+                'border': '1px solid ' + themeBorder
+              }).text('Paiement Unique');
               sumTranches = totalScolarite;
               tbodyHtml += '<tr>';
               tbodyHtml += '  <td colspan="5" style="padding: 16px; text-align: center; color: #64748B; font-style: italic;">';
-              tbodyHtml += '    Aucune tranche intermédiaire configurée pour cette classe. Règlement unique de la scolarité totale : <strong>' + totalScolarite.toLocaleString('fr-FR') + ' FCFA</strong>';
+              tbodyHtml += '    Aucune tranche intermédiaire configurée pour cette classe. Règlement unique de la scolarité totale : <strong style="color:' + themeColor + ';">' + totalScolarite.toLocaleString('fr-FR') + ' FCFA</strong>';
               tbodyHtml += '  </td>';
               tbodyHtml += '</tr>';
             }
 
             $('#wiz_tranches_table_body').html(tbodyHtml);
-            $('#wiz_tranches_total_sum').text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
+            $('#wiz_tranches_total_sum').css('color', themeColor).text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
 
             hideRegimeWarningNotice();
             updateNetScolarite();
@@ -1217,11 +1268,20 @@ $(document).ready(function() {
   $('input[name="affectation_etat"]').on('change', function() {
     $('input[name="affectation_etat"]').each(function() {
       var isChecked = $(this).is(':checked');
-      $(this).closest('label').css({
-        'border-color': isChecked ? '#1E3A5F' : '#CBD5E1',
-        'background': isChecked ? '#EFF6FF' : '#FFFFFF',
-        'color': isChecked ? '#1E3A5F' : '#334155'
-      });
+      var val = $(this).val();
+      if (val === 'affecte') {
+        $(this).closest('label').css({
+          'border-color': isChecked ? '#16A34A' : '#CBD5E1',
+          'background': isChecked ? '#F0FDF4' : '#FFFFFF',
+          'color': isChecked ? '#15803D' : '#334155'
+        });
+      } else {
+        $(this).closest('label').css({
+          'border-color': isChecked ? '#2563EB' : '#CBD5E1',
+          'background': isChecked ? '#EFF6FF' : '#FFFFFF',
+          'color': isChecked ? '#1E3A5F' : '#334155'
+        });
+      }
     });
     filterWizardClassesByAnnee(refreshClassTuition);
   });
