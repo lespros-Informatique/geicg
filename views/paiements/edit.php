@@ -25,7 +25,10 @@ $today = date('Y-m-d');
 $stmtSessionToday = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
 $stmtSessionToday->execute([$today]);
 $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
+
+$targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
 ?>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -90,6 +93,63 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
           </a>
         </div>
       <?php endif; ?>
+
+      <!-- BLOC DE CRITÈRES ET DE RECHERCHE ÉLÈVE (PLEINE LARGEUR AU-DESSUS) -->
+      <div class="card" style="background: #FFFFFF; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; border: 1.5px solid #CBD5E1; box-shadow: 0 4px 14px rgba(15,23,42,0.06);">
+        <div style="font-weight: 800; font-size: 15px; color: #1E3A5F; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #EFF6FF; padding-bottom: 10px;">
+          <i data-lucide="search-code" style="width: 22px; height: 22px; color: #1E3A5F;"></i> Critères de Recherche & Sélection de l'Élève
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; align-items: start;">
+          
+          <!-- 1. Filtrage Rapide par Groupe / Classe (Optionnel) -->
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px;">
+            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="filter" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Filtrage rapide par groupe / classe (Optionnel) :
+            </label>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 140px;">
+                <select id="filter_niveau_select" class="form-control select2" style="width: 100%;">
+                  <option value="">-- Tous les Niveaux --</option>
+                  <?php foreach ($niveauxList as $n): ?>
+                    <option value="<?= htmlspecialchars($n['code_niveau']) ?>"><?= htmlspecialchars($n['libelle_niveau']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <select id="filter_classe_select" class="form-control select2" style="width: 100%;">
+                  <option value="">-- Toutes les Classes --</option>
+                  <?php foreach ($classesList as $c): ?>
+                    <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Recherche de l'étudiant (par Matricule, Nom ou Prénom) -->
+          <div>
+            <label style="display: block; font-weight: 700; font-size: 13.5px; color: #1E3A5F; margin-bottom: 8px;">
+              <i data-lucide="user-check" style="width: 16px; height: 16px; vertical-align: -2px;"></i> Recherche de l'étudiant (par Matricule, Nom ou Prénom) <span style="color: #EF4444;">*</span>
+            </label>
+            <select class="form-control select2" id="select_inscription_code" style="width: 100%;" required>
+              <option value="">-- Saisir le matricule ou le nom de l'élève --</option>
+              <?php foreach($inscriptionsList as $ins): ?>
+                <?php
+                  $mat = $ins['matricule_etudiant'] ?? '-';
+                  $nom = trim(($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? ''));
+                  $classe = $ins['libelle_classe'] ?? 'Non affecté';
+                  $labelOpt = "$mat - $nom ($classe)";
+                ?>
+                <option value="<?= $ins['code_inscription'] ?>" data-classe="<?= htmlspecialchars($ins['code_classe'] ?? '') ?>" data-niveau="<?= htmlspecialchars($ins['niveau_code'] ?? '') ?>" <?= ($targetInsCode == $ins['code_inscription']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($labelOpt) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+        </div>
+      </div>
 
       <!-- Bande Preview Financière Dynamique (Fiche Synthèse Élève) -->
       <div id="financial-preview-banner" class="card" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(15,23,42,0.06); transition: all 0.3s ease;">
@@ -239,6 +299,7 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
         <form action="<?= RACINE ?>paiement/<?= !empty($item['id_paiement']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;" id="form-paiement">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+          <input type="hidden" id="form_inscription_code" name="inscription_code" value="<?= htmlspecialchars($targetInsCode) ?>">
           <?php if (!empty($item['id_paiement'])): ?>
             <input type="hidden" name="id_paiement" value="<?= $item['id_paiement'] ?>">
           <?php endif; ?>
@@ -248,55 +309,6 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
           </h3>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%;">
-            
-            <!-- Filtre Rapide par Niveau & Classe -->
-            <div style="grid-column: 1 / -1; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px 18px; margin-bottom: 4px;">
-              <div style="font-weight: 700; font-size: 13px; color: #1E3A5F; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                <i data-lucide="filter" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Filtrage rapide par groupe / classe (Optionnel) :
-              </div>
-              <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 200px;">
-                  <select id="filter_niveau_select" class="form-control select2" style="width: 100%;">
-                    <option value="">-- Tous les Niveaux --</option>
-                    <?php foreach ($niveauxList as $n): ?>
-                      <option value="<?= htmlspecialchars($n['code_niveau']) ?>"><?= htmlspecialchars($n['libelle_niveau']) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div style="flex: 1; min-width: 220px;">
-                  <select id="filter_classe_select" class="form-control select2" style="width: 100%;">
-                    <option value="">-- Toutes les Classes --</option>
-                    <?php foreach ($classesList as $c): ?>
-                      <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Recherche Sélection Élève -->
-            <div class="form-group" style="width: 100%; grid-column: 1 / -1;">
-              <label style="display: block; font-weight: 700; font-size: 13.5px; color: #1E3A5F; margin-bottom: 6px;">
-                <i data-lucide="search" style="width: 16px; height: 16px; vertical-align: -2px;"></i> Recherche de l'étudiant (par Matricule, Nom ou Prénom) <span style="color: #EF4444;">*</span>
-              </label>
-              <select class="form-control select2" id="select_inscription_code" name="inscription_code" style="width: 100%;" required>
-                <option value="">-- Saisir le matricule ou le nom de l'élève --</option>
-                <?php 
-                  $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
-                  foreach($inscriptionsList as $ins): 
-                ?>
-                  <?php
-                    $mat = $ins['matricule_etudiant'] ?? '-';
-                    $nom = trim(($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? ''));
-                    $classe = $ins['libelle_classe'] ?? 'Non affecté';
-                    $labelOpt = "$mat - $nom ($classe)";
-                  ?>
-                  <option value="<?= $ins['code_inscription'] ?>" data-classe="<?= htmlspecialchars($ins['code_classe'] ?? '') ?>" data-niveau="<?= htmlspecialchars($ins['niveau_code'] ?? '') ?>" <?= ($targetInsCode == $ins['code_inscription']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($labelOpt) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
 
             <!-- Tranche correspondante (STRICTEMENT OBLIGATOIRE - SÉLECTION AUTOMATIQUE DE LA PROCHAINE TRANCHE IMPAYÉE) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box; grid-column: 1 / -1;">
@@ -310,23 +322,100 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
               <div id="tranche-helper-hint" style="font-size: 12px; color: #64748B; margin-top: 4px; display: none;"></div>
             </div>
 
-            <!-- Montant versé (Readonly / Automatique) -->
+            <!-- Montant versé -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                Montant versé (FCFA) <span style="font-size: 11px; font-weight: 600; color: #15803D; background: #DCFCE7; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">(Automatique)</span>
+                Montant du Règlement (FCFA) <span style="font-size: 11px; font-weight: 600; color: #15803D; background: #DCFCE7; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">(Automatique - Modifiable pour Acompte)</span>
               </label>
-              <input type="number" id="inp_montant_paiement" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 15px; font-weight: 800; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; pointer-events: none; cursor: not-allowed;" name="montant_paiement" value="<?= htmlspecialchars($item['montant_paiement'] ?? '') ?>" placeholder="Montant automatique" min="0" step="any" readonly required tabindex="-1">
+              <input type="number" id="inp_montant_paiement" class="form-control" style="width: 100%; box-sizing: border-box; padding: 12px 14px; font-size: 16px; font-weight: 800; border-radius: 10px; border: 2px solid #CBD5E1; background: #FFFFFF; color: #1E3A5F;" name="montant_paiement" value="<?= htmlspecialchars($item['montant_paiement'] ?? '') ?>" placeholder="Saisir ou ajuster le montant versé" min="1" step="any" required>
             </div>
 
-            <!-- Mode de paiement -->
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Mode de règlement <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="mode_paiement" required>
-                <option value="espece" <?= (($item['mode_paiement'] ?? '') === 'espece') ? 'selected' : '' ?>>Espèces (Caisse Guichet)</option>
-                <option value="mobile_money" <?= (($item['mode_paiement'] ?? '') === 'mobile_money') ? 'selected' : '' ?>>Mobile Money (Wave, Orange, MTN, Moov)</option>
-                <option value="cheque" <?= (($item['mode_paiement'] ?? '') === 'cheque') ? 'selected' : '' ?>>Chèque bancaire</option>
-                <option value="virement" <?= (($item['mode_paiement'] ?? '') === 'virement') ? 'selected' : '' ?>>Virement bancaire</option>
-              </select>
+            <!-- Mode de Paiement : Cartes Interactives -->
+            <div class="form-group" style="width: 100%; grid-column: 1 / -1; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13.5px; color: #1E3A5F; margin-bottom: 10px;">
+                Mode de Règlement <span style="color: #EF4444;">*</span>
+              </label>
+              <input type="hidden" name="mode_paiement" id="inp_mode_paiement" value="<?= htmlspecialchars($item['mode_paiement'] ?? 'espece') ?>">
+              
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+                
+                <div class="pay-mode-card active" data-mode="espece" style="background: #F0FDF4; border: 2px solid #16A34A; border-radius: 12px; padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(22,163,74,0.1);">
+                  <div style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="banknote" style="width: 22px; height: 22px;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 800; color: #14532D; font-size: 13.5px;">Espèces</div>
+                    <div style="font-size: 11px; color: #166534; margin-top: 1px;">Caisse Guichet</div>
+                  </div>
+                </div>
+
+                <div class="pay-mode-card" data-mode="mobile_money" style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+                  <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="smartphone" style="width: 22px; height: 22px;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">Mobile Money</div>
+                    <div style="font-size: 11px; color: #64748B; margin-top: 1px;">Wave, OM, MTN, Moov</div>
+                  </div>
+                </div>
+
+                <div class="pay-mode-card" data-mode="cheque" style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+                  <div style="width: 40px; height: 40px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="file-text" style="width: 22px; height: 22px;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">Chèque</div>
+                    <div style="font-size: 11px; color: #64748B; margin-top: 1px;">Chèque bancaire</div>
+                  </div>
+                </div>
+
+                <div class="pay-mode-card" data-mode="virement" style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+                  <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="building-2" style="width: 22px; height: 22px;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">Virement</div>
+                    <div style="font-size: 11px; color: #64748B; margin-top: 1px;">Ordre de virement</div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- MODULE CAISSE : CALCULATEUR DE MONNAIE À RENDRE (GUICHET ESPÈCES) -->
+            <div id="cash-change-calculator" style="grid-column: 1 / -1; background: #F8FAFC; border: 2px dashed #16A34A; border-radius: 14px; padding: 20px; margin-top: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+                <div style="font-size: 14px; font-weight: 800; color: #15803D; display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="calculator" style="width: 18px; height: 18px;"></i> Calculateur de Rendu Monnaie (Encaissement Espèces)
+                </div>
+                <span class="badge" style="background: #DCFCE7; color: #15803D; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px;">Assistant Guichetier</span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: center;">
+                
+                <!-- Somme reçue du client -->
+                <div>
+                  <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; display: block;">Somme Remise par le Parent / Élève (FCFA)</label>
+                  <input type="number" id="inp_somme_recue" class="form-control" style="font-size: 16px; font-weight: 800; border-radius: 8px; border: 1.5px solid #94A3B8; padding: 10px 14px; width: 100%; background: #FFFFFF; color: #0F172A;" placeholder="Ex: 50 000" min="0" step="any">
+                  
+                  <!-- Billets / Appoints Rapides -->
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+                    <button type="button" class="btn btn-sm btn-light btn-quick-cash" data-cash="exact" style="font-size: 11px; font-weight: 700; border: 1px solid #CBD5E1; padding: 3px 8px; border-radius: 6px;">Appoint Exact</button>
+                    <button type="button" class="btn btn-sm btn-light btn-quick-cash" data-cash="5000" style="font-size: 11px; font-weight: 700; border: 1px solid #CBD5E1; padding: 3px 8px; border-radius: 6px;">+ 5 000 F</button>
+                    <button type="button" class="btn btn-sm btn-light btn-quick-cash" data-cash="10000" style="font-size: 11px; font-weight: 700; border: 1px solid #CBD5E1; padding: 3px 8px; border-radius: 6px;">+ 10 000 F</button>
+                    <button type="button" class="btn btn-sm btn-light btn-quick-cash" data-cash="25000" style="font-size: 11px; font-weight: 700; border: 1px solid #CBD5E1; padding: 3px 8px; border-radius: 6px;">+ 25 000 F</button>
+                    <button type="button" class="btn btn-sm btn-light btn-quick-cash" data-cash="50000" style="font-size: 11px; font-weight: 700; border: 1px solid #CBD5E1; padding: 3px 8px; border-radius: 6px;">+ 50 000 F</button>
+                  </div>
+                </div>
+
+                <!-- Résultat Géant : Monnaie à Rendre -->
+                <div style="background: #FFFFFF; border-radius: 12px; padding: 16px; border: 1.5px solid #CBD5E1; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                  <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Monnaie à Rendre</div>
+                  <div style="font-size: 24px; font-weight: 900; color: #16A34A; margin-top: 4px;" id="display-monnaie-rendre">0 FCFA</div>
+                  <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 2px;" id="display-monnaie-status">Ajustement en temps réel</div>
+                </div>
+
+              </div>
             </div>
 
             <!-- Intitulé du versement -->
@@ -337,15 +426,15 @@ $sessionJour = $stmtSessionToday->fetch(PDO::FETCH_ASSOC);
 
             <!-- Numéro de transaction -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro de transaction</label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro de transaction / Référence</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1;" name="reference_paiement" value="<?= htmlspecialchars($item['reference_paiement'] ?? '') ?>" placeholder="Ex: TRX-928374 / BORD-10492">
             </div>
 
           </div>
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; border-radius: 8px; padding: 11px 28px; display: inline-flex; align-items: center; gap: 8px;">
-              <i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Enregistrer l'Encaissement
+            <button type="submit" id="btn-submit-paiement" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; border-radius: 10px; padding: 12px 32px; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; box-shadow: 0 4px 10px rgba(30,58,95,0.25); cursor: pointer;">
+              <i data-lucide="check-circle-2" style="width: 20px; height: 20px;"></i> Enregistrer l'Encaissement
             </button>
             <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px;">Annuler</a>
           </div>
@@ -413,7 +502,7 @@ $(document).ready(function() {
     if (selectedClasse || selectedNiveau) {
       $studentSelect.find('option').each(function() {
         var val = $(this).val();
-        if (!val) return; // Ne pas toucher l'option par défaut
+        if (!val) return;
 
         var cCode = $(this).attr('data-classe');
         var nCode = $(this).attr('data-niveau');
@@ -443,7 +532,6 @@ $(document).ready(function() {
   }
 
   var currentTranchesData = [];
-  var preSelectedTrancheCode = "<?= htmlspecialchars($item['tranche_code'] ?? '') ?>";
 
   function formatFcfa(val) {
     return Number(val || 0).toLocaleString('fr-FR') + ' FCFA';
@@ -467,10 +555,9 @@ $(document).ready(function() {
     $('#tranches-count-badge').text(tranches.length + ' tranche(s)');
     $select.append('<option value="">-- Choisir la tranche à encaisser --</option>');
 
-    // La tranche à sélectionner automatiquement est STRICTEMENT la prochaine tranche impayée (suggestedCode)
     var nextUnpaidCode = suggestedCode || '';
 
-    tranches.forEach(function(tr, idx) {
+    tranches.forEach(function(tr) {
       var isPaid = (tr.is_soldee === true || tr.is_soldee === 1 || tr.is_soldee === '1' || tr.statut_code === 'soldee' || parseFloat(tr.reste_a_payer) <= 0);
       var isPartiel = (!isPaid && (tr.statut_code === 'partiel' || parseFloat(tr.deja_paye) > 0));
       var isNextUnpaid = (!isPaid && tr.code_tranche === nextUnpaidCode);
@@ -495,7 +582,6 @@ $(document).ready(function() {
                             '</button>';
         }
       } else {
-        // Tranche ultérieure bloquée jusqu'au solde de la précédente
         statusBadgeHtml = '<button type="button" class="btn btn-sm" disabled style="background:#F1F5F9 !important; color:#94A3B8 !important; font-weight:700; font-size:12px; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; border:1px solid #E2E8F0 !important; cursor:not-allowed; opacity:0.65;" title="Solder obligatoirement la tranche impayée précédente d\'abord">' +
                             '🔒 Bloquée' +
                           '</button>';
@@ -503,7 +589,6 @@ $(document).ready(function() {
 
       var optLabel = tr.libelle_tranche + (isPaid ? ' - [Soldée - 0 F restant]' : (isNextUnpaid ? ' - [PROCHAINE TRANCHE À PAYER - Reste: ' + tr.reste_a_payer_fmt + ']' : ' - [Bloquée - Solder tranche précédente]'));
 
-      // Option in dropdown
       var $opt = $('<option></option>')
         .val(tr.code_tranche)
         .text(optLabel)
@@ -521,14 +606,13 @@ $(document).ready(function() {
       }
       $select.append($opt);
 
-      // Table Row
       var rowClass = isPaid ? 'tranche-item-row-soldee' : (isNextUnpaid ? 'tranche-item-row-active' : 'tranche-item-row-blocked');
       var rowCursor = isNextUnpaid ? 'pointer' : 'not-allowed';
       var rowOpacity = isBlocked ? '0.6' : (isPaid ? '0.85' : '1');
 
       var rowHtml = '<tr class="' + rowClass + '" data-code="' + tr.code_tranche + '" data-soldee="' + (isPaid ? '1' : '0') + '" data-blocked="' + (isBlocked ? '1' : '0') + '" data-next="' + (isNextUnpaid ? '1' : '0') + '" style="background:' + rowBg + '; border-bottom:' + rowBorder + '; cursor:' + rowCursor + '; opacity:' + rowOpacity + '; transition:background 0.2s;">' +
         '<td style="padding:12px 14px;">' +
-          '<div class="tranche-libelle-text" style="font-weight:800; color:#0F172A; font-size:13.5px;">' + $('<div>').text(tr.libelle_tranche).html() + '</div>' +
+          '<div class="tranche-libelle-text" style="font-weight:800; color:#0F172A; font-size:13.5px;">' + escapeHtml(tr.libelle_tranche) + '</div>' +
           '<code style="font-size:11px; color:#64748B;">' + tr.code_tranche + '</code>' +
         '</td>' +
         '<td style="padding:12px 14px; text-align:center; font-size:13px; color:#475569;">' +
@@ -554,7 +638,6 @@ $(document).ready(function() {
     $('#student-tranches-card').stop(true, true).slideDown(250);
     if (window.lucide) lucide.createIcons();
 
-    // Auto-apply the next unpaid tranche
     if (nextUnpaidCode) {
       applySelectedTranche(nextUnpaidCode);
     } else {
@@ -596,11 +679,9 @@ $(document).ready(function() {
       return;
     }
 
-    // Update select & hidden input
     $('#hidden_tranche_code').val(tCode);
     $('#select_tranche_code').val(tCode);
 
-    // Highlight active row in table
     $('#student-tranches-tbody tr').each(function() {
       var rowCode = $(this).data('code');
       if (rowCode === tCode) {
@@ -611,14 +692,10 @@ $(document).ready(function() {
       }
     });
 
-    // Auto set amount strictly to remaining balance of this tranche
     var maxAmount = parseFloat(selectedTr.reste_a_payer) || 0;
     $('#inp_montant_paiement').val(maxAmount).attr('max', maxAmount);
-
-    // Auto set wording
     $('#inp_type_paiement').val('Règlement ' + selectedTr.libelle_tranche);
 
-    // Helper hint
     $('#tranche-helper-hint')
       .html('Tranche sélectionnée automatiquement : <strong>' + selectedTr.libelle_tranche + '</strong> • Reste dû exigible : <strong style="color:#DC2626;">' + selectedTr.reste_a_payer_fmt + '</strong> (Montant total tranche : ' + selectedTr.montant_tranche_fmt + ').')
       .show();
@@ -653,9 +730,19 @@ $(document).ready(function() {
 
   $('#inp_montant_paiement').on('input change keyup', function() {
     validateMontant();
+    updateCashChange();
   });
 
   $('#form-paiement').on('submit', function(e) {
+    var insCode = $('#form_inscription_code').val() || $('#select_inscription_code').val();
+    if (!insCode) {
+      e.preventDefault();
+      var msg0 = 'Veuillez sélectionner un élève dans la liste ci-dessus.';
+      if (typeof showToast === 'function') showToast(msg0, 'warning');
+      else if (window.toastr) toastr.warning(msg0);
+      return false;
+    }
+
     var tCode = $('#hidden_tranche_code').val() || $('#select_tranche_code').val();
     if (!tCode) {
       e.preventDefault();
@@ -674,6 +761,7 @@ $(document).ready(function() {
   });
 
   function fetchStudentFinancialSummary(inscriptionCode) {
+    $('#form_inscription_code').val(inscriptionCode || '');
     if (!inscriptionCode) {
       $('#financial-preview-banner').slideUp(200);
       $('#student-tranches-card').slideUp(200);
@@ -693,7 +781,6 @@ $(document).ready(function() {
         if (res.status === 1 && res.data) {
           var d = res.data;
           
-          // Photo ou Initiales
           var photoPath = d.photo_etudiant ? String(d.photo_etudiant).trim() : '';
           var $container = $('#prev_avatar_container');
           $container.empty();
@@ -726,7 +813,6 @@ $(document).ready(function() {
             $container.html('<span id="prev_avatar_initials" style="font-weight:800; font-size:20px; color:#FFFFFF; text-transform:uppercase;">' + escapeHtml(initials) + '</span>');
           }
 
-          // Identité & Académique
           $('#prev_nom').text(d.nom_complet || '-');
           $('#prev_matricule').text(d.matricule || '-');
           $('#prev_classe').text(d.classe || '-');
@@ -735,7 +821,6 @@ $(document).ready(function() {
           $('#prev_telephone').text(d.telephone_etudiant || 'Non renseigné');
           $('#prev_email').text(d.email_etudiant || 'Non renseigné');
 
-          // Régime / Affectation
           var $affBadge = $('#prev_affectation_badge');
           if (d.affectation_etat === 'affecte' || d.affectation_etat === 'oui') {
             $affBadge.css({'background': '#DCFCE7', 'color': '#15803D'}).html('🎓 Étudiant Affecté (État)');
@@ -743,7 +828,6 @@ $(document).ready(function() {
             $affBadge.css({'background': '#E0E7FF', 'color': '#4338CA'}).html('💼 Non Affecté (Privé)');
           }
 
-          // Taux de recouvrement
           var taux = parseFloat(d.taux_recouvrement) || 0;
           $('#prev_taux_text').text(taux + '% Payé');
           var $tauxBar = $('#prev_taux_bar');
@@ -756,7 +840,6 @@ $(document).ready(function() {
             $tauxBar.css('background', 'linear-gradient(90deg, #D97706, #FBBF24)');
           }
 
-          // Cartes Métriques
           $('#prev_due').text(d.scolarite_due_fmt);
           $('#prev_paye').text(d.total_paye_fmt);
           $('#prev_solde').text(d.solde_restant_fmt);
@@ -797,7 +880,6 @@ $(document).ready(function() {
 
   $('#select_inscription_code').on('change select2:select', function() {
     var val = $(this).val();
-    preSelectedTrancheCode = '';
     fetchStudentFinancialSummary(val);
   });
 
@@ -822,7 +904,97 @@ $(document).ready(function() {
     applySelectedTranche(tCode);
   });
 
-  // Auto trigger if initial selected or passed via URL (e.g. Fiche Navette de réinscription)
+  // --- GESTION INTERACTIVE DES MODES DE PAIEMENT & CALCULATEUR GUICHET ---
+  function updatePayModeUI(mode) {
+    $('#inp_mode_paiement').val(mode);
+    $('.pay-mode-card').removeClass('active').css({
+      'background': '#FFFFFF',
+      'border': '1.5px solid #E2E8F0',
+      'box-shadow': 'none'
+    });
+    
+    var $activeCard = $('.pay-mode-card[data-mode="' + mode + '"]');
+    if ($activeCard.length) {
+      $activeCard.addClass('active');
+      if (mode === 'espece') {
+        $activeCard.css({
+          'background': '#F0FDF4',
+          'border': '2px solid #16A34A',
+          'box-shadow': '0 2px 4px rgba(22,163,74,0.1)'
+        });
+      } else {
+        $activeCard.css({
+          'background': '#EFF6FF',
+          'border': '2px solid #1E3A5F',
+          'box-shadow': '0 2px 4px rgba(30,58,95,0.1)'
+        });
+      }
+    }
+
+    if (mode === 'espece') {
+      $('#cash-change-calculator').stop(true, true).slideDown(200);
+    } else {
+      $('#cash-change-calculator').stop(true, true).slideUp(200);
+    }
+  }
+
+  $('.pay-mode-card').on('click', function() {
+    var mode = $(this).attr('data-mode');
+    updatePayModeUI(mode);
+  });
+
+  var initMode = $('#inp_mode_paiement').val() || 'espece';
+  updatePayModeUI(initMode);
+
+  // --- CALCULATEUR DE RENDU DE MONNAIE ---
+  function updateCashChange() {
+    var montantPaiement = parseFloat($('#inp_montant_paiement').val()) || 0;
+    var sommeRecue = parseFloat($('#inp_somme_recue').val()) || 0;
+
+    if (sommeRecue <= 0) {
+      $('#display-monnaie-rendre').text('0 FCFA').css('color', '#64748B');
+      $('#display-monnaie-status').text('Saisissez le montant remis par le parent').css('color', '#64748B');
+      return;
+    }
+
+    var monnaie = sommeRecue - montantPaiement;
+
+    if (monnaie < 0) {
+      var manque = Math.abs(monnaie);
+      $('#display-monnaie-rendre').text('0 FCFA').css('color', '#DC2626');
+      $('#display-monnaie-status').text('Somme insuffisante (Manque ' + formatFcfa(manque) + ')').css('color', '#DC2626');
+    } else if (monnaie === 0) {
+      $('#display-monnaie-rendre').text('0 FCFA').css('color', '#16A34A');
+      $('#display-monnaie-status').text('Appoint exact (Aucune monnaie à rendre)').css('color', '#16A34A');
+    } else {
+      $('#display-monnaie-rendre').text(formatFcfa(monnaie)).css('color', '#16A34A');
+      $('#display-monnaie-status').text('Monnaie à rendre au client').css('color', '#15803D');
+    }
+  }
+
+  $('#inp_somme_recue, #inp_montant_paiement').on('input change keyup', function() {
+    updateCashChange();
+  });
+
+  $('.btn-quick-cash').on('click', function() {
+    var cashType = $(this).attr('data-cash');
+    var montantPaiement = parseFloat($('#inp_montant_paiement').val()) || 0;
+
+    if (cashType === 'exact') {
+      $('#inp_somme_recue').val(montantPaiement);
+    } else {
+      var addVal = parseFloat(cashType) || 0;
+      var currentVal = parseFloat($('#inp_somme_recue').val()) || 0;
+      if (currentVal === 0) {
+        $('#inp_somme_recue').val(montantPaiement + addVal);
+      } else {
+        $('#inp_somme_recue').val(currentVal + addVal);
+      }
+    }
+    updateCashChange();
+  });
+
+  // Auto trigger URL params
   var urlParams = new URLSearchParams(window.location.search);
   var paramIns = urlParams.get('inscription_code');
   if (paramIns && !$('#select_inscription_code').val()) {
