@@ -153,19 +153,49 @@ class AccessoireController extends BaseController
     public function apiDistributions()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
+
         $filter = trim($_GET['filter'] ?? 'all');
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
-        $items = $this->model->getDistributions($filter, $anneeCode);
-        $data = [];
-        foreach ($items as $i) {
-            $id = $i['id_accessoire_inscription'];
-            $idCrypte = $this->validator->crypter($id);
-            $data[] = array_merge($i, [
-                'id' => $id,
-                'editId' => $idCrypte
-            ]);
+        $classeCode = $_GET['classe_code'] ?? null;
+
+        try {
+            $items = $this->model->getDistributions($filter, $anneeCode, $classeCode);
+            $this->json(['data' => $items]);
+        } catch (Exception $e) {
+            error_log("AccessoireController::apiDistributions error: " . $e->getMessage());
+            $this->json(['data' => [], 'error' => $e->getMessage()]);
         }
-        $this->json(['data' => $data]);
+    }
+
+    public function getBonRemiseData()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
+
+        $inscriptionCode = trim($_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? ''));
+        if (empty($inscriptionCode)) {
+            $this->error('Inscription introuvable.');
+            return;
+        }
+
+        try {
+            $data = $this->model->getBonRemiseData($inscriptionCode);
+            if (empty($data)) {
+                $this->error('Données de remise introuvables.');
+                return;
+            }
+
+            $agentName = ($_SESSION[USERS_AUTH]['prenom_user'] ?? '') . ' ' . ($_SESSION[USERS_AUTH]['nom_user'] ?? '');
+            $data['status'] = 1;
+            $data['date_emission'] = date('d/m/Y H:i');
+            $data['agent_nom'] = trim($agentName) ?: 'Administration';
+
+            $this->json($data);
+        } catch (Exception $e) {
+            error_log("AccessoireController::getBonRemiseData error: " . $e->getMessage());
+            $this->error($e->getMessage());
+        }
     }
 
     public function apiStats()

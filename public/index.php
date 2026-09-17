@@ -250,6 +250,7 @@ $route->addRoute('/accessoire/toggleRetrait', [$accessoireController, 'toggleRet
 $route->addRoute('/accessoire/toggleStudentAllKits', [$accessoireController, 'toggleStudentAllKits']);
 $route->addRoute('/accessoire/attribuerKit', [$accessoireController, 'attribuerKit']);
 $route->addRoute('/accessoire/getStudentKits', [$accessoireController, 'getStudentKits']);
+$route->addRoute('/accessoire/getBonRemiseData', [$accessoireController, 'getBonRemiseData']);
 $route->addRoute('/accessoire/add', [$accessoireController, 'add']);
 $route->addRoute('/accessoire/edit', [$accessoireController, 'edit']);
 $route->addRoute('/accessoire/changer', [$accessoireController, 'changer']);
