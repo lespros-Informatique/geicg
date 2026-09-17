@@ -237,6 +237,9 @@ $route->addRoute('/inscription/changer', [$inscriptionController, 'changer']);
 $route->addRoute('/inscription/details/{param}', [$inscriptionController, 'details']);
 $route->addRoute('/inscription/edition/{param}', [$inscriptionController, 'edition']);
 $route->addRoute('/inscription/formulaire', [$inscriptionController, 'formulaire']);
+$route->addRoute('/inscription/sans_photo', [$inscriptionController, 'sansPhoto']);
+$route->addRoute('/inscription/apiSansPhoto', [$inscriptionController, 'apiSansPhoto']);
+$route->addRoute('/inscription/uploadPhoto', [$inscriptionController, 'uploadPhoto']);
 $route->addRoute('/reinscription/formulaire', [$inscriptionController, 'formulaire']);
 
 // Module: accessoire (AccessoireController)

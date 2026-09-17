@@ -369,7 +369,8 @@
           $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ENROLLMENTS']);
           $showDepotDossiers = $canAccess(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
           $showRemiseKits = $canAccess(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
-          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showDepotDossiers || $showRemiseKits;
+          $showSansPhoto = $canAccess(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showDepotDossiers || $showRemiseKits || $showSansPhoto;
         ?>
         <?php if ($hasSecEleves): ?>
         <div class="nav-section">
@@ -386,8 +387,13 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showInscriptions): ?>
-                <a href="<?= RACINE ?>reinscription/list" class="nav-item sub <?= (strpos($currentUri, '/inscription/') !== false || strpos($currentUri, '/reinscription/') !== false) ? 'active' : '' ?>" data-title="Réinscriptions">
+                <a href="<?= RACINE ?>reinscription/list" class="nav-item sub <?= (strpos($currentUri, '/inscription/') !== false || strpos($currentUri, '/reinscription/') !== false) && strpos($currentUri, '/inscription/sans_photo') === false ? 'active' : '' ?>" data-title="Réinscriptions">
                     <i data-lucide="clipboard-check"></i> <span>Réinscriptions</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showSansPhoto): ?>
+                <a href="<?= RACINE ?>inscription/sans_photo" class="nav-item sub <?= strpos($currentUri, '/inscription/sans_photo') !== false ? 'active' : '' ?>" data-title="Inscriptions sans photo">
+                    <i data-lucide="camera-off"></i> <span>Inscriptions sans Photo</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showDepotDossiers): ?>

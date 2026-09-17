@@ -1035,4 +1035,163 @@ class InscriptionController extends BaseController
         $this->requirePermission('MANAGE_INSCRIPTIONS');
         $this->loadView('../views/inscriptions/edit.php', ['item' => []]);
     }
+
+    public function sansPhoto()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+        $db = $this->model->getCon();
+
+        $activeAnneeCode = $this->getActiveAnneeCode();
+        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->loadView('../views/inscriptions/sans_photo.php', [
+            'annees' => $annees,
+            'filieres' => $filieres,
+            'classes' => $classes,
+            'selectedAnneeCode' => $activeAnneeCode
+        ]);
+    }
+
+    public function apiSansPhoto()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+
+        $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
+        $filiereCode = $_GET['filiere_code'] ?? '';
+        $classeCode = $_GET['classe_code'] ?? '';
+
+        try {
+            $db = $this->model->getCon();
+            $sql = "
+                SELECT 
+                    i.id_inscription,
+                    i.code_inscription,
+                    i.created_at_inscription,
+                    i.statut_inscription,
+                    i.photo_inscription,
+                    e.code_etudiant,
+                    e.matricule_etudiant,
+                    e.nom_etudiant,
+                    e.prenom_etudiant,
+                    e.photo_etudiant,
+                    e.telephone_etudiant,
+                    cl.code_classe,
+                    cl.libelle_classe,
+                    f.code_filiere,
+                    f.libelle_filiere,
+                    a.libelle_annee
+                FROM inscriptions i
+                JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+                JOIN classes cl ON cl.code_classe = i.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
+                WHERE (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '')
+            ";
+
+            $params = [];
+            if (!empty($anneeCode)) {
+                $sql .= " AND i.annee_code = ?";
+                $params[] = $anneeCode;
+            }
+            if (!empty($filiereCode)) {
+                $sql .= " AND cl.filiere_code = ?";
+                $params[] = $filiereCode;
+            }
+            if (!empty($classeCode)) {
+                $sql .= " AND i.classe_code = ?";
+                $params[] = $classeCode;
+            }
+
+            $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $data = [];
+            foreach ($rows as $r) {
+                $id = $r['id_inscription'];
+                $idCrypte = $this->validator->crypter($id);
+                $data[] = array_merge($r, [
+                    'id' => $id,
+                    'editId' => $idCrypte,
+                    'nom_complet' => trim($r['nom_etudiant'] . ' ' . $r['prenom_etudiant'])
+                ]);
+            }
+            $this->json(['data' => $data]);
+        } catch (Exception $e) {
+            error_log("InscriptionController::apiSansPhoto error: " . $e->getMessage());
+            $this->json(['data' => [], 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function uploadPhoto()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(['MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+
+        $idInscription = (int)($_POST['id_inscription'] ?? 0);
+        $codeInscription = trim($_POST['code_inscription'] ?? '');
+
+        if (!$idInscription && empty($codeInscription)) {
+            $this->error("Identifiant d'inscription valide requis.");
+            return;
+        }
+
+        if (!isset($_FILES['photo_inscription']) || $_FILES['photo_inscription']['error'] !== UPLOAD_ERR_OK) {
+            $this->error("Veuillez sélectionner un fichier d'image valide pour la photo d'inscription.");
+            return;
+        }
+
+        $file = $_FILES['photo_inscription'];
+        $maxSize = 5 * 1024 * 1024; // 5 MB
+        if ($file['size'] > $maxSize) {
+            $this->error("La photo dépasse la taille maximale autorisée de 5 Mo.");
+            return;
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExts = ['png', 'jpg', 'jpeg', 'webp'];
+        if (!in_array($ext, $allowedExts, true)) {
+            $this->error("Format d'image non autorisé. Formats acceptés : PNG, JPG, JPEG, WEBP.");
+            return;
+        }
+
+        $uploadDir = __DIR__ . '/../../public/uploads/photos_inscriptions/';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0755, true);
+        }
+
+        $safeCode = preg_replace('/[^a-zA-Z0-9_-]/', '', $codeInscription ?: 'INS_' . $idInscription);
+        $filename = 'PHOTO_' . $safeCode . '_' . uniqid() . '.' . $ext;
+        $targetPath = $uploadDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            $relativePath = 'public/uploads/photos_inscriptions/' . $filename;
+            $db = $this->model->getCon();
+
+            if ($idInscription) {
+                $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE id_inscription = ?");
+                $ok = $stmt->execute([$relativePath, $idInscription]);
+            } else {
+                $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE code_inscription = ?");
+                $ok = $stmt->execute([$relativePath, $codeInscription]);
+            }
+
+            if ($ok) {
+                $this->success("La photo d'inscription a été téléversée et enregistrée avec succès !", [
+                    'photo_url' => RACINE . $relativePath
+                ]);
+            } else {
+                $this->error("Erreur lors de la mise à jour de la photo d'inscription dans la base de données.");
+            }
+        } else {
+            $this->error("Erreur lors du déplacement du fichier téléversé.");
+        }
+    }
 }
