@@ -104,6 +104,13 @@ abstract class BaseModel
     {
         $this->lastError = '';
         try {
+            unset($data['id']);
+            if (!empty($this->primaryKey) && array_key_exists($this->primaryKey, $data)) {
+                if ($data[$this->primaryKey] === '' || $data[$this->primaryKey] === null || $data[$this->primaryKey] === 0 || $data[$this->primaryKey] === '0') {
+                    unset($data[$this->primaryKey]);
+                }
+            }
+
             // Validation des clés étrangères avant insertion
             $fkError = ForeignKeyValidator::validate($this->pdo->getCon(), $this->table, $data);
             if ($fkError !== null) {

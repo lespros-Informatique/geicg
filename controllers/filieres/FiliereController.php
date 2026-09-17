@@ -41,6 +41,8 @@ class FiliereController extends BaseController
         $this->requirePermission('MANAGE_FILIERES');
         $data = $_POST;
         unset($data['csrf_token']);
+        unset($data['id_filiere']);
+        unset($data['id']);
         if (!empty($data['libelle_filiere'])) {
             if (!$this->checkUnique('filieres', 'libelle_filiere', $data['libelle_filiere'], 'Nom de la filière')) return;
         }
@@ -63,11 +65,16 @@ class FiliereController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $libelle = trim($data['libelle_filiere'] ?? '');
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $msg = !empty($libelle) ? "La filière « {$libelle} » a été créée avec succès !" : "Filière créée avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la création');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la création de la filière';
+            $this->error($msg);
         }
     }
 
@@ -102,9 +109,11 @@ class FiliereController extends BaseController
         }
         if (in_array('annee_code', $cols) && empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
 
+        $libelle = trim($data['libelle_filiere'] ?? '');
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Filière modifiée avec succès!');
+            $msg = !empty($libelle) ? "La filière « {$libelle} » a été modifiée avec succès !" : "Filière modifiée avec succès !";
+            $this->success($msg);
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la modification');
         }

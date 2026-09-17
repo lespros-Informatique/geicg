@@ -54,11 +54,16 @@ class MatiereController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $libelle = trim($data['libelle_matiere'] ?? '');
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $msg = !empty($libelle) ? "La matière « {$libelle} » a été créée avec succès !" : "Matière créée avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la création');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la création de la matière';
+            $this->error($msg);
         }
     }
 
@@ -75,12 +80,17 @@ class MatiereController extends BaseController
             if (!$this->checkUnique('matieres', 'libelle_matiere', $data['libelle_matiere'], 'Nom de la matiere', 'id_matiere', $id)) return;
         }
 
+        $libelle = trim($data['libelle_matiere'] ?? '');
         $cols = $this->model->getCon()->query("DESCRIBE matieres")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $msg = !empty($libelle) ? "La matière « {$libelle} » a été modifiée avec succès !" : "Matière modifiée avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la modification');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la modification de la matière';
+            $this->error($msg);
         }
     }
 

@@ -57,11 +57,16 @@ class NiveauController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $libelle = trim($data['libelle_niveau'] ?? '');
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $msg = !empty($libelle) ? "Le niveau « {$libelle} » a été créé avec succès !" : "Niveau créé avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la création');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la création du niveau';
+            $this->error($msg);
         }
     }
 
@@ -92,9 +97,11 @@ class NiveauController extends BaseController
         }
         if (in_array('annee_code', $cols) && empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
 
+        $libelle = trim($data['libelle_niveau'] ?? '');
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Niveau modifié avec succès!');
+            $msg = !empty($libelle) ? "Le niveau « {$libelle} » a été modifié avec succès !" : "Niveau modifié avec succès !";
+            $this->success($msg);
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la modification');
         }

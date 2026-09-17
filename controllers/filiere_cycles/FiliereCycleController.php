@@ -33,9 +33,11 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requireAnyPermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
+        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
         $data = $_POST;
         unset($data['csrf_token']);
+        unset($data['id_filiere_cycle']);
+        unset($data['id']);
 
         if (!empty($data['filiere_code']) && !empty($data['cycle_code'])) {
             if (!$this->checkUniquePair('filiere_cycles', [
@@ -58,6 +60,7 @@ class FiliereCycleController extends BaseController
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
 
         $filteredData = array_intersect_key($data, array_flip($cols));
+        unset($filteredData['id_filiere_cycle']);
 
         if ($this->model->create($filteredData)) {
             $this->success('Assignation Filière - Cycle créée avec succès!', RACINE . 'filiere_cycle/list');
@@ -73,7 +76,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requireAnyPermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
+        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
         $id = (int)$this->post('id_filiere_cycle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;

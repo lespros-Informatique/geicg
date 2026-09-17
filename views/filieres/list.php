@@ -444,13 +444,61 @@ $(document).ready(function() {
   });
 
   // ==========================================
+  // RECHARGEMENT DYNAMIQUE ET SELECT2 DES ASSIGNATIONS
+  // ==========================================
+  function initAssignSelect2() {
+    if ($.fn.select2) {
+      $('#assign_cycle_code, #assign_filiere_code, #assign_statut').select2({
+        width: '100%',
+        dropdownParent: $('#modal-assignation')
+      });
+    }
+  }
+
+  function reloadAssignSelects(selectedCycle, selectedFiliere) {
+    var cVal = selectedCycle || $('#assign_cycle_code').val();
+    var fVal = selectedFiliere || $('#assign_filiere_code').val();
+
+    $.getJSON('<?= RACINE ?>cycle/apiList', function(res) {
+      if (res && res.data) {
+        var opts = '<option value="">-- Sélectionner un cycle --</option>';
+        res.data.forEach(function(c) {
+          opts += '<option value="' + c.code_cycle + '">' + (c.libelle_cycle || c.slug_cycle || c.code_cycle) + '</option>';
+        });
+        $('#assign_cycle_code').html(opts);
+        if (cVal) $('#assign_cycle_code').val(cVal);
+        if ($.fn.select2) $('#assign_cycle_code').trigger('change.select2');
+      }
+    });
+
+    $.getJSON('<?= RACINE ?>filiere/apiList', function(res) {
+      if (res && res.data) {
+        var opts = '<option value="">-- Sélectionner une filière --</option>';
+        res.data.forEach(function(f) {
+          opts += '<option value="' + f.code_filiere + '">' + (f.libelle_filiere || f.slug_filiere || f.code_filiere) + '</option>';
+        });
+        $('#assign_filiere_code').html(opts);
+        if (fVal) $('#assign_filiere_code').val(fVal);
+        if ($.fn.select2) $('#assign_filiere_code').trigger('change.select2');
+      }
+    });
+  }
+
+  // ==========================================
   // HANDLERS : MODAL 1 (ASSIGNATIONS)
   // ==========================================
   $('.btn-add-assignation').on('click', function() {
     $('#form-assignation')[0].reset();
     $('#assign_id').val('');
     $('#modal-assignation-title').html('<i data-lucide="git-merge" style="width: 18px; height: 18px;"></i> Nouvelle Assignation Filière ↔ Cycle');
+    reloadAssignSelects();
     $('#modal-assignation').css('display', 'flex');
+    initAssignSelect2();
+    if ($.fn.select2) {
+      $('#assign_cycle_code').val('').trigger('change.select2');
+      $('#assign_filiere_code').val('').trigger('change.select2');
+      $('#assign_statut').val('actif').trigger('change.select2');
+    }
     if (window.lucide) lucide.createIcons();
   });
 
@@ -465,7 +513,14 @@ $(document).ready(function() {
     $('#assign_filiere_code').val(filiere);
     $('#assign_statut').val(statut || 'actif');
     $('#modal-assignation-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l\'Assignation');
+    reloadAssignSelects(cycle, filiere);
     $('#modal-assignation').css('display', 'flex');
+    initAssignSelect2();
+    if ($.fn.select2) {
+      $('#assign_cycle_code').val(cycle).trigger('change.select2');
+      $('#assign_filiere_code').val(filiere).trigger('change.select2');
+      $('#assign_statut').val(statut || 'actif').trigger('change.select2');
+    }
     if (window.lucide) lucide.createIcons();
   });
 
@@ -495,11 +550,13 @@ $(document).ready(function() {
         if (window.lucide) lucide.createIcons();
 
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Assignation enregistrée avec succès');
+          if (window.showToast) showToast(res.message || 'Assignation enregistrée avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Assignation enregistrée avec succès');
           $('#modal-assignation').css('display', 'none');
           tableAssign.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          if (window.showToast) showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
         }
       },
       error: function(xhr) {
@@ -511,7 +568,8 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json && json.message) msg = json.message;
         } catch(e) {}
-        if (window.toastr) toastr.error(msg);
+        if (window.showToast) showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });
@@ -574,11 +632,14 @@ $(document).ready(function() {
         if (window.lucide) lucide.createIcons();
 
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Filière enregistrée avec succès');
+          if (window.showToast) showToast(res.message || 'Filière enregistrée avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Filière enregistrée avec succès');
           $('#modal-filiere').css('display', 'none');
           tableFilieres.ajax.reload(null, false);
+          reloadAssignSelects();
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          if (window.showToast) showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
         }
       },
       error: function(xhr) {
@@ -590,7 +651,8 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json && json.message) msg = json.message;
         } catch(e) {}
-        if (window.toastr) toastr.error(msg);
+        if (window.showToast) showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });
@@ -651,11 +713,14 @@ $(document).ready(function() {
         if (window.lucide) lucide.createIcons();
 
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Cycle enregistré avec succès');
+          if (window.showToast) showToast(res.message || 'Cycle enregistré avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Cycle enregistré avec succès');
           $('#modal-cycle').css('display', 'none');
           tableCycles.ajax.reload(null, false);
+          reloadAssignSelects();
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          if (window.showToast) showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
         }
       },
       error: function(xhr) {
@@ -667,7 +732,8 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json && json.message) msg = json.message;
         } catch(e) {}
-        if (window.toastr) toastr.error(msg);
+        if (window.showToast) showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });
@@ -686,15 +752,18 @@ $(document).ready(function() {
         dataType: 'json',
         success: function(res) {
           if (res.status === 1 || res.success) {
-            if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+            if (window.showToast) showToast(res.message || 'Statut mis à jour avec succès', 'success');
+            else if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
             tableRef.ajax.reload(null, false);
           } else {
-            if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+            if (window.showToast) showToast(res.message || 'Erreur lors du changement de statut', 'error');
+            else if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
             $input.prop('checked', !isChecked);
           }
         },
         error: function() {
-          if (window.toastr) toastr.error('Erreur réseau');
+          if (window.showToast) showToast('Erreur réseau', 'error');
+          else if (window.toastr) toastr.error('Erreur réseau');
           $input.prop('checked', !isChecked);
         }
       });

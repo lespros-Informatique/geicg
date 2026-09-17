@@ -48,6 +48,9 @@ class ModelFiliereCycle
 
     public function create(array $data)
     {
+        unset($data['id']);
+        unset($data['id_filiere_cycle']);
+
         $fkErr = ForeignKeyValidator::validate($this->con, 'filiere_cycles', $data);
         if ($fkErr !== null) {
             $this->lastError = $fkErr;

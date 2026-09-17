@@ -51,11 +51,16 @@ class TypeDepenseController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $libelle = trim($data['libelle_type_depense'] ?? '');
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $msg = !empty($libelle) ? "Le type de dépense « {$libelle} » a été créé avec succès !" : "Type de dépense créé avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la création');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la création du type de dépense';
+            $this->error($msg);
         }
     }
 
@@ -71,12 +76,17 @@ class TypeDepenseController extends BaseController
             if (!$this->checkUnique('type_depenses', 'libelle_type_depense', $data['libelle_type_depense'], 'Type de depense', 'id_type_depense', $id)) return;
         }
 
+        $libelle = trim($data['libelle_type_depense'] ?? '');
         $cols = $this->model->getCon()->query("DESCRIBE type_depenses")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $msg = !empty($libelle) ? "Le type de dépense « {$libelle} » a été modifié avec succès !" : "Type de dépense modifié avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la modification');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la modification du type de dépense';
+            $this->error($msg);
         }
     }
 

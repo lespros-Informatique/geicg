@@ -530,6 +530,15 @@ abstract class BaseController
     }
 
     /**
+     * Alias de requirePermission pour vérifier plusieurs permissions alternatives
+     */
+    protected function requireAnyPermission(array $permissions, string $customMessage = ''): void
+    {
+        $this->requirePermission($permissions, $customMessage);
+    }
+
+
+    /**
      * Bloque la requête avec une page complète 403 si l'action CRUD n'est pas autorisée
      */
     protected function requireAction(string $action, string $customMessage = ''): void

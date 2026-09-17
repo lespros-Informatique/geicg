@@ -36,16 +36,19 @@ class CycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_CYCLES');
         $data = $_POST;
         unset($data['csrf_token']);
+        unset($data['id_cycle']);
+        unset($data['id']);
         if (!empty($data['libelle_cycle'])) {
-            if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libelle du cycle')) return;
+            if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libellé du cycle')) return;
         }
         if (isset($data['slug_cycle'])) {
             $data['slug_cycle'] = trim($data['slug_cycle']) !== '' ? trim($data['slug_cycle']) : null;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = $this->getCurrentUserCode() ?? ($_SESSION[USERS_AUTH]['code_user'] ?? '');
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_cycle'])) {
@@ -57,11 +60,16 @@ class CycleController extends BaseController
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $libelle = trim($data['libelle_cycle'] ?? '');
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $msg = !empty($libelle) ? "Le cycle d'études « {$libelle} » a été créé avec succès !" : "Cycle d'études créé avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la création');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la création du cycle';
+            $this->error($msg);
         }
     }
 
@@ -69,18 +77,19 @@ class CycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_CYCLES');
         $id = (int)$this->post('id_cycle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_cycle'])) {
-            if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libelle du cycle', 'id_cycle', $id)) return;
+            if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libellé du cycle', 'id_cycle', $id)) return;
         }
         if (isset($data['slug_cycle'])) {
             $data['slug_cycle'] = trim($data['slug_cycle']) !== '' ? trim($data['slug_cycle']) : null;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = $this->getCurrentUserCode() ?? ($_SESSION[USERS_AUTH]['code_user'] ?? '');
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
@@ -92,9 +101,11 @@ class CycleController extends BaseController
         }
         if (in_array('annee_code', $cols) && empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
 
+        $libelle = trim($data['libelle_cycle'] ?? '');
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Cycle modifié avec succès!');
+            $msg = !empty($libelle) ? "Le cycle d'études « {$libelle} » a été modifié avec succès !" : "Cycle d'études modifié avec succès !";
+            $this->success($msg);
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la modification');
         }
