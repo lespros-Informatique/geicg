@@ -155,11 +155,9 @@ $anneeActive = $anneeActive ?? '';
                 <th style="padding: 12px;">Matricule</th>
                 <th style="padding: 12px;">Étudiant (Nom & Prénoms)</th>
                 <th style="padding: 12px;">Sexe</th>
-                <th style="padding: 12px;">Téléphone</th>
                 <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px;">Filière</th>
                 <th style="padding: 12px;">Niveau</th>
-                <th style="padding: 12px; text-align: center;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -220,19 +218,13 @@ $(document).ready(function() {
         return '<span style="background:' + bg + '; color:' + col + '; border:1px solid ' + border + '; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;">' + d + '</span>';
       }},
 
-      // 4. Téléphone
-      { data: 'telephone_etudiant', defaultContent: '-', render: function(d) {
-        if (!d) return '<span style="color:#94A3B8;">-</span>';
-        return '<span style="font-weight:600; color:#334155; font-size:12px;">' + d + '</span>';
-      }},
-
-      // 5. Classe (Indépendante)
+      // 4. Classe (Indépendante)
       { data: 'libelle_classe', defaultContent: '-', render: function(d) {
         if (!d) return '<span style="color:#94A3B8; font-style:italic;">Non assigné</span>';
         return '<strong style="color:#0F172A; font-size:12px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="graduation-cap" style="width:14px;height:14px;color:#D97706;"></i> ' + d + '</strong>';
       }},
 
-      // 6. Filière (Indépendante)
+      // 5. Filière (Indépendante)
       { data: 'libelle_filiere', defaultContent: '-', render: function(d, type, row) {
         var useSlug = row.use_slug_filiere !== undefined ? row.use_slug_filiere : (<?= !empty($useSlugFiliere) ? 'true' : 'false' ?>);
         var slug = row.slug_filiere || '';
@@ -245,26 +237,12 @@ $(document).ready(function() {
         return '<span style="font-size:12px; font-weight:600; color:#1E293B;">' + libelle + '</span>';
       }},
 
-      // 7. Niveau (Indépendant)
+      // 6. Niveau (Indépendant)
       { data: 'libelle_niveau', defaultContent: '-', render: function(d, type, row) {
         if (!d && !row.slug_niveau) return '<span style="color:#94A3B8;">-</span>';
         var useSlugNiv = row.use_slug_niveau !== undefined ? row.use_slug_niveau : (<?= !empty($useSlugNiveau) ? 'true' : 'false' ?>);
         var nivVal = (useSlugNiv && row.slug_niveau) ? row.slug_niveau : (d || row.slug_niveau || '-');
         return '<span style="background:#F1F5F9; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700;" title="' + (d || '') + '">' + nivVal + '</span>';
-      }},
-
-      // 8. Statut Toggle
-      { data: 'statut_etudiant', width: '70px', className: 'text-center', render: function(d, type, row) {
-        var isActif = (d === 'actif');
-        var checkedAttr = isActif ? 'checked' : '';
-        return '<div style="display:flex; justify-content:center; align-items:center;">' +
-               '<label style="position:relative; display:inline-block; width:36px; height:18px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
-               '<input type="checkbox" class="toggle-statut-etudiant" data-id="' + row.id_etudiant + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#166534' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-               '<span style="position:absolute; content:\'\'; height:12px; width:12px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-               '</span>' +
-               '</label>' +
-               '</div>';
       }},
 
       // 9. Actions
@@ -287,14 +265,14 @@ $(document).ready(function() {
     var selNiv = $('#filter-niveau').val();
     var selCls = $('#filter-classe').val();
 
-    // Colonne 5 : Classe -> masquée si une classe spécifique est sélectionnée
-    table.column(5).visible(selCls === 'ALL' || !selCls);
+    // Colonne 4 : Classe -> masquée si une classe spécifique est sélectionnée
+    table.column(4).visible(selCls === 'ALL' || !selCls);
 
-    // Colonne 6 : Filière -> masquée si une filière spécifique est sélectionnée
-    table.column(6).visible(selFil === 'ALL' || !selFil);
+    // Colonne 5 : Filière -> masquée si une filière spécifique est sélectionnée
+    table.column(5).visible(selFil === 'ALL' || !selFil);
 
-    // Colonne 7 : Niveau -> masquée si un niveau spécifique est sélectionné
-    table.column(7).visible(selNiv === 'ALL' || !selNiv);
+    // Colonne 6 : Niveau -> masquée si un niveau spécifique est sélectionné
+    table.column(6).visible(selNiv === 'ALL' || !selNiv);
   }
 
   // Déclenchement automatique du rechargement et des colonnes intelligentes
