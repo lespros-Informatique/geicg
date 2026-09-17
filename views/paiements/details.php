@@ -41,7 +41,7 @@ $refCaiss = $numRecu . 'ScoFOF' . sprintf("%05d", rand(10000, 99999)) . ',' . sp
 <style>
 @media print {
   body { background: #FFFFFF !important; color: #000000 !important; font-family: Arial, Helvetica, sans-serif !important; }
-  .sidebar, .nav-header, .page-header-actions, .no-print, header, nav, .main-nav { display: none !important; }
+  .sidebar, .sidebar *, .nav-header, .page-header-actions, .no-print, header, header *, nav, nav *, .main-nav, .main-nav *, .topbar, .topbar *, .dropdown-panel, .dropdown-panel * { display: none !important; visibility: hidden !important; }
   .app-layout, .main-content, .content-wrapper { margin: 0 !important; padding: 0 !important; width: 100% !important; box-shadow: none !important; }
   .receipt-page-container { border: 2px solid #800000 !important; padding: 12px !important; margin: 0 !important; box-shadow: none !important; width: 100% !important; box-sizing: border-box !important; }
 }

@@ -27,12 +27,14 @@ class PaiementController extends BaseController
         $activeYear = $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
+        $dateDebut = $_GET['date_debut'] ?? null;
+        $dateFin = $_GET['date_fin'] ?? null;
 
         $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $classes = $db->query("SELECT code_classe, libelle_classe, niveau_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $stats = $this->computeFinancialStats($activeYear, $niveauCode, $classeCode);
+        $stats = $this->computeFinancialStats($activeYear, $niveauCode, $classeCode, $dateDebut, $dateFin);
 
         $this->loadView('../views/paiements/list.php', [
             'stats' => $stats,
@@ -51,12 +53,14 @@ class PaiementController extends BaseController
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
+        $dateDebut = $_GET['date_debut'] ?? null;
+        $dateFin = $_GET['date_fin'] ?? null;
 
-        $stats = $this->computeFinancialStats($anneeCode, $niveauCode, $classeCode);
+        $stats = $this->computeFinancialStats($anneeCode, $niveauCode, $classeCode, $dateDebut, $dateFin);
         $this->json(['status' => 1, 'stats' => $stats]);
     }
 
-    public function computeFinancialStats(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
+    public function computeFinancialStats(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $dateDebut = null, ?string $dateFin = null): array
     {
         $db = $this->model->getCon();
         $anneeCode = !empty($anneeCode) ? $anneeCode : $this->getActiveAnneeCode();
@@ -139,6 +143,14 @@ class PaiementController extends BaseController
         if (!empty($classeCode) && $classeCode !== 'ALL') {
             $wherePay[] = "ins.classe_code = ?";
             $paramsPay[] = $classeCode;
+        }
+        if (!empty($dateDebut)) {
+            $wherePay[] = "DATE(p.date_paiement) >= ?";
+            $paramsPay[] = $dateDebut;
+        }
+        if (!empty($dateFin)) {
+            $wherePay[] = "DATE(p.date_paiement) <= ?";
+            $paramsPay[] = $dateFin;
         }
 
         $strWherePay = implode(" AND ", $wherePay);
@@ -280,8 +292,10 @@ class PaiementController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
+        $dateDebut = $_GET['date_debut'] ?? null;
+        $dateFin = $_GET['date_fin'] ?? null;
 
-        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $dateDebut, $dateFin);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_paiement'];

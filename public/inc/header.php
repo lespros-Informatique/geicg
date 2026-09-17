@@ -141,6 +141,42 @@
             color: #1E3A5F !important;
             font-weight: 600 !important;
         }
+
+        /* RÈGLE GLOBALE D'IMPRESSION : MASQUAGE STRICT NAVBAR, TOPBAR, SIDEBAR, NAV ET DROPDOWNS */
+        @media print {
+            header,
+            header *,
+            .topbar,
+            .topbar *,
+            aside,
+            aside *,
+            .sidebar,
+            .sidebar *,
+            nav,
+            nav *,
+            .main-nav,
+            .main-nav *,
+            .no-print,
+            .no-print *,
+            .dropdown-panel,
+            .dropdown-panel *,
+            .js-toast-container,
+            .swal2-container {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                height: 0 !important;
+                min-height: 0 !important;
+                max-height: 0 !important;
+                width: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                position: absolute !important;
+                top: -9999px !important;
+                left: -9999px !important;
+            }
+        }
     </style>
     <script>
         window.RACINE = '<?= RACINE ?>';

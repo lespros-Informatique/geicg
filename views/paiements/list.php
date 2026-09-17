@@ -1,28 +1,63 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <style>
 @media print {
-  .sidebar, .main-nav, nav, .no-print, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate, button, a.btn {
-    display: none !important;
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
   }
-  .main-content, .content-wrapper, .app-layout {
+  body, html, .app-layout, .main-content, .content-wrapper {
+    background: #FFFFFF !important;
+    color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    box-shadow: none !important;
+  }
+  header, .topbar, .topbar *, .sidebar, .sidebar *, aside, nav, .main-nav, .page-header, .no-print, 
+  .card-filters, .card-kpi-container, .kpi-section-title,
+  .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate,
+  button, a.btn, input, select, textarea, .form-control, .select2, .select2-container {
+    display: none !important;
+  }
+  /* Masquer la colonne Actions lors de l'impression */
+  #table-paiements th:last-child,
+  #table-paiements td:last-child {
+    display: none !important;
   }
   .card {
     box-shadow: none !important;
-    border: 1px solid #CBD5E1 !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  table {
+  table#table-paiements {
     width: 100% !important;
     border-collapse: collapse !important;
+    margin-top: 10px !important;
   }
-  th, td {
-    border: 1px solid #94A3B8 !important;
+  table#table-paiements th,
+  table#table-paiements td {
+    border: 1px solid #334155 !important;
     padding: 6px 8px !important;
     font-size: 11px !important;
+    color: #000000 !important;
   }
+  table#table-paiements th {
+    background: #F1F5F9 !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+  }
+  table#table-paiements tr {
+    page-break-inside: avoid !important;
+  }
+  #print-header-banner, .print-signatures-block {
+    display: block !important;
+  }
+}
+
+#print-header-banner, .print-signatures-block {
+  display: none;
 }
 </style>
 <div class="app-layout">
@@ -30,13 +65,39 @@
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
+      
+      <!-- EN-TÊTE D'IMPRESSION OFFICIELLE (VISIBLE UNIQUEMENT À L'IMPRESSION) -->
+      <div id="print-header-banner" style="margin-bottom: 16px; border-bottom: 2px solid #1E3A5F; padding-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">GEICG - GROUPE ÉCOLE D'INGÉNIEURS ET DE COMMERCE DE GAGNOA</h2>
+            <div style="font-size: 12px; font-weight: 800; color: #0F172A; margin-top: 3px;">JOURNAL OFFICIEL DES ENCAISSEMENTS DE CAISSE & SCOLARITÉ</div>
+            <div style="font-size: 11px; color: #475569; margin-top: 3px;" id="print-filter-summary-text">
+              Année Académique : All &bull; Niveau : Tous &bull; Classe : Toutes
+            </div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #475569;">
+            <div>Date d'impression : <strong><?= date('d/m/Y H:i') ?></strong></div>
+            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim(($_SESSION['prenom_utilisateur'] ?? $_SESSION['nom_utilisateur'] ?? 'Caissier'))) ?></strong></div>
+          </div>
+        </div>
+        
+        <!-- Ligne synthèse financière -->
+        <div style="margin-top: 10px; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #0F172A;">
+          <span>Total Encaissé : <strong style="color: #15803D;" id="print-kpi-total">0 FCFA</strong></span>
+          <span>Espèces : <strong id="print-kpi-especes">0 FCFA</strong></span>
+          <span>Mobile Money : <strong id="print-kpi-mobile">0 FCFA</strong></span>
+          <span>Chèques / Banque : <strong id="print-kpi-banque">0 FCFA</strong></span>
+        </div>
+      </div>
+
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Caisse & Encaissements Scolarité</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Caisse & Encaissements Scolarité</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-          <button onclick="window.print()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre des encaissements">
+          <button onclick="printRegistry()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre des encaissements">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
           <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
@@ -46,8 +107,8 @@
       </div>
 
       <!-- BANDE DE FILTRES DYNAMIQUES -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: flex-end;">
+      <div class="card card-filters" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; align-items: flex-end;">
           
           <!-- Filtre Année Académique -->
           <div class="form-group" style="margin: 0;">
@@ -89,24 +150,33 @@
             </select>
           </div>
 
-          <!-- Bouton Réinitialiser -->
-          <div style="display: flex; justify-content: flex-end;">
-            <button type="button" id="btn-reset-filters" class="btn btn-light" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: center;">
-              <i data-lucide="rotate-ccw" style="width: 15px; height: 15px;"></i> Réinitialiser
-            </button>
+          <!-- Filtre Période : Date Début -->
+          <div class="form-group" style="margin: 0;">
+            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="calendar-days" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Date Début :
+            </label>
+            <input type="date" id="filter-date-debut" class="form-control" style="height: 42px; border-radius: 8px; border: 1px solid #CBD5E1; padding: 4px 10px; font-size: 13px; font-weight: 600; color: #1E293B; background-color: #FFFFFF; width: 100%; box-sizing: border-box;">
+          </div>
+
+          <!-- Filtre Période : Date Fin -->
+          <div class="form-group" style="margin: 0;">
+            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="calendar-check-2" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Date Fin :
+            </label>
+            <input type="date" id="filter-date-fin" class="form-control" style="height: 42px; border-radius: 8px; border: 1px solid #CBD5E1; padding: 4px 10px; font-size: 13px; font-weight: 600; color: #1E293B; background-color: #FFFFFF; width: 100%; box-sizing: border-box;">
           </div>
 
         </div>
       </div>
 
       <!-- SECTION 1 : ENCAISSEMENTS & CAISSE GUICHET -->
-      <div style="margin-bottom: 8px;">
+      <div class="kpi-section-title" style="margin-bottom: 8px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="landmark" style="width: 15px; height: 15px; color: #15803D;"></i> Arrêt de Caisse & Modes de Règlement
         </h4>
       </div>
       
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+      <div class="card-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
         
         <!-- Total Encaissé -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
@@ -183,13 +253,13 @@
       </div>
 
       <!-- SECTION 2 : RECOUUVREMENT ÉLÈVES & SUIVI POST-INSCRIPTION -->
-      <div style="margin-bottom: 8px;">
+      <div class="kpi-section-title" style="margin-bottom: 8px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="users" style="width: 15px; height: 15px; color: #EA580C;"></i> Suivi des Inscriptions & Santé Financière des Élèves
         </h4>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+      <div class="card-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
         
         <!-- CARTE SPÉCIFIQUE : En Attente Post-Inscription Immédiate -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1.5px solid #FDBA74; box-shadow: 0 2px 4px rgba(234,88,12,0.06); display: flex; align-items: center; justify-content: space-between;">
@@ -282,10 +352,37 @@
           </table>
         </div>
       </div>
+
+      <!-- BLOC SIGNATURES EN BAS D'IMPRESSION -->
+      <div class="print-signatures-block" style="margin-top: 35px; page-break-inside: avoid;">
+        <div style="display: flex; justify-content: space-between; padding: 0 40px;">
+          <div style="text-align: center; width: 220px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; color: #0F172A;">Le Caissier / Agent Guichet</div>
+            <div style="height: 55px;"></div>
+            <div style="font-size: 10px; color: #64748B;">Signature & Cachet</div>
+          </div>
+          <div style="text-align: center; width: 220px;">
+            <div style="font-weight: 800; font-size: 11px; text-transform: uppercase; color: #0F172A;">La Direction Financière</div>
+            <div style="height: 55px;"></div>
+            <div style="font-size: 10px; color: #64748B;">Signature & Cachet</div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
 <script>
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 $(document).ready(function() {
   if ($.fn.select2) {
     $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
@@ -315,6 +412,8 @@ $(document).ready(function() {
         d.annee_code = $('#filter-annee').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
+        d.date_debut = $('#filter-date-debut').val();
+        d.date_fin = $('#filter-date-fin').val();
       }
     },
     processing: true,
@@ -324,7 +423,7 @@ $(document).ready(function() {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
       { data: 'code_paiement', width: '130px', render: function(d) {
-        return '<code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + (d || '-') + '</code>';
+        return '<code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + escapeHtml(d || '-') + '</code>';
       } },
       { data: 'date_paiement', width: '130px', render: function(d) {
         if (!d) return '-';
@@ -335,13 +434,13 @@ $(document).ready(function() {
           var timeFr = parts[1] ? parts[1].substring(0,5) : '';
           return '<span style="font-weight:600; color:#334155;">' + dateFr + '</span>' + (timeFr && timeFr !== '00:00' ? ' <span style="font-size:11px; color:#64748B;">' + timeFr + '</span>' : '');
         }
-        return d;
+        return escapeHtml(d);
       } },
       { data: 'etudiant_nom', render: function(d, type, row) {
-        return '<div style="font-weight:700; color:#0F172A; font-size:13.5px;">' + (d || 'Étudiant non identifié') + '</div>';
+        return '<div style="font-weight:700; color:#0F172A; font-size:13.5px;">' + escapeHtml(d || 'Étudiant non identifié') + '</div>';
       } },
       { data: 'libelle_tranche', render: function(d, type, row) {
-        return '<span style="font-weight:600; color:#334155; font-size:13px;">' + (d || 'Frais de Scolarité') + '</span>';
+        return '<span style="font-weight:600; color:#334155; font-size:13px;">' + escapeHtml(d || 'Frais de Scolarité') + '</span>';
       } },
       { data: 'montant_paiement', width: '170px', className: 'text-end', render: function(d) {
         return d ? '<strong style="color:#15803D; font-size:14px;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
@@ -359,6 +458,38 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
+  // FONCTION DE GESTION IMPRESSION OFFICIELLE DU REGISTRE
+  window.printRegistry = function() {
+    var anneeTxt = $('#filter-annee option:selected').text().trim() || 'Toutes';
+    var niveauTxt = $('#filter-niveau option:selected').text().trim() || 'Tous';
+    var classeTxt = $('#filter-classe option:selected').text().trim() || 'Toutes';
+    var dtDeb = $('#filter-date-debut').val();
+    var dtFin = $('#filter-date-fin').val();
+    var periodTxt = '';
+    if (dtDeb || dtFin) {
+      periodTxt = ' &bull; Période : <strong>' + (dtDeb ? 'Du ' + dtDeb.split('-').reverse().join('/') : '') + (dtFin ? ' Au ' + dtFin.split('-').reverse().join('/') : '') + '</strong>';
+    }
+
+    $('#print-filter-summary-text').html(
+      'Année Académique : <strong>' + escapeHtml(anneeTxt) + '</strong> &bull; Niveau : <strong>' + escapeHtml(niveauTxt) + '</strong> &bull; Classe : <strong>' + escapeHtml(classeTxt) + '</strong>' + periodTxt
+    );
+
+    $('#print-kpi-total').text($('#kpi-total-encaisse').text() + ' FCFA');
+    $('#print-kpi-especes').text($('#kpi-encaisse-especes').text() + ' FCFA');
+    $('#print-kpi-mobile').text($('#kpi-encaisse-mobile').text() + ' FCFA');
+    $('#print-kpi-banque').text($('#kpi-encaisse-banque').text() + ' FCFA');
+
+    var currentLen = table.page.len();
+    table.page.len(-1).draw();
+
+    setTimeout(function() {
+      window.print();
+      setTimeout(function() {
+        table.page.len(currentLen).draw();
+      }, 400);
+    }, 300);
+  };
+
   // Fonction de rafraîchissement AJAX des statistiques KPI
   function refreshKpis() {
     $.ajax({
@@ -367,7 +498,9 @@ $(document).ready(function() {
       data: {
         annee_code: $('#filter-annee').val(),
         niveau_code: $('#filter-niveau').val(),
-        classe_code: $('#filter-classe').val()
+        classe_code: $('#filter-classe').val(),
+        date_debut: $('#filter-date-debut').val(),
+        date_fin: $('#filter-date-fin').val()
       },
       dataType: 'json',
       success: function(res) {
@@ -390,17 +523,8 @@ $(document).ready(function() {
     });
   }
 
-  // Événements de changement sur les filtres
-  $('#filter-annee, #filter-niveau, #filter-classe').on('change', function() {
-    table.ajax.reload();
-    refreshKpis();
-  });
-
-  // Réinitialisation des filtres
-  $('#btn-reset-filters').on('click', function() {
-    $('#filter-annee').val('<?= $selectedAnneeCode ?>').trigger('change.select2');
-    $('#filter-niveau').val('ALL').trigger('change.select2');
-    $('#filter-classe').val('ALL').trigger('change.select2');
+  // Événements de changement sur tous les filtres
+  $('#filter-annee, #filter-niveau, #filter-classe, #filter-date-debut, #filter-date-fin').on('change input', function() {
     table.ajax.reload();
     refreshKpis();
   });
