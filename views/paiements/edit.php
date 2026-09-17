@@ -100,15 +100,15 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
           <i data-lucide="search-code" style="width: 22px; height: 22px; color: #1E3A5F;"></i> Critères de Recherche & Sélection de l'Élève
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; align-items: start;">
+        <div style="display: flex; flex-direction: column; gap: 18px; width: 100%;">
           
-          <!-- 1. Filtrage Rapide par Groupe / Classe (Optionnel) -->
-          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px;">
-            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="filter" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Filtrage rapide par groupe / classe (Optionnel) :
+          <!-- 1. Filtrage Rapide par Groupe / Classe (Optionnel) - PLEINE LARGEUR & SUR LA MÊME LIGNE -->
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px 18px; width: 100%; box-sizing: border-box;">
+            <label style="font-weight: 700; font-size: 13px; color: #1E3A5F; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="filter" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Filtrage rapide par groupe / classe (Optionnel) :
             </label>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <div style="flex: 1; min-width: 140px;">
+            <div style="display: flex; gap: 16px; width: 100%; align-items: center; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 250px;">
                 <select id="filter_niveau_select" class="form-control select2" style="width: 100%;">
                   <option value="">-- Tous les Niveaux --</option>
                   <?php foreach ($niveauxList as $n): ?>
@@ -116,7 +116,7 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
                   <?php endforeach; ?>
                 </select>
               </div>
-              <div style="flex: 1; min-width: 150px;">
+              <div style="flex: 1; min-width: 250px;">
                 <select id="filter_classe_select" class="form-control select2" style="width: 100%;">
                   <option value="">-- Toutes les Classes --</option>
                   <?php foreach ($classesList as $c): ?>
@@ -127,8 +127,8 @@ $targetInsCode = $item['inscription_code'] ?? ($_GET['inscription_code'] ?? '');
             </div>
           </div>
 
-          <!-- 2. Recherche de l'étudiant (par Matricule, Nom ou Prénom) -->
-          <div>
+          <!-- 2. Recherche de l'étudiant (par Matricule, Nom ou Prénom) - PLEINE LARGEUR -->
+          <div style="width: 100%;">
             <label style="display: block; font-weight: 700; font-size: 13.5px; color: #1E3A5F; margin-bottom: 8px;">
               <i data-lucide="user-check" style="width: 16px; height: 16px; vertical-align: -2px;"></i> Recherche de l'étudiant (par Matricule, Nom ou Prénom) <span style="color: #EF4444;">*</span>
             </label>
