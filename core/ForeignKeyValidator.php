@@ -103,7 +103,7 @@ class ForeignKeyValidator
         ],
         'piece_code' => [
             'table' => 'pieces_fournir',
-            'field' => 'code_piece',
+            'field' => 'code_piece_fournir',
             'label' => 'Pièce à Fournir'
         ],
         'session_caisse_code' => [
