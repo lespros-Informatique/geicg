@@ -396,12 +396,30 @@ $(document).ready(function() {
         {
           data: null,
           render: function(d) {
-            var photo = d.photo ? '<?= RACINE ?>' + d.photo : '<?= RACINE ?>public/images/avatar.png';
-            return '<div style="display: flex; align-items: center; gap: 12px;">' +
-                   '<img src="' + photo + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0;" onerror="this.src=\'<?= RACINE ?>public/images/avatar.png\'">' +
-                   '<div>' +
-                     '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">' + escapeHtml(d.nom_complet) + '</div>' +
-                   '</div>' +
+            var rawName = (d.nom_complet ? d.nom_complet.trim() : '') || 'Étudiant non identifié';
+            var parts = rawName.split(' ').filter(function(p) { return p.length > 0; });
+            var initials = 'ET';
+            if (parts.length >= 2) {
+              initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            } else if (parts.length === 1 && parts[0].length >= 2) {
+              initials = parts[0].substring(0, 2).toUpperCase();
+            }
+
+            var photoPath = d.photo ? String(d.photo).trim() : '';
+            var initialsDiv = '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0;">' + escapeHtml(initials) + '</div>';
+
+            var avatarHtml = initialsDiv;
+            if (photoPath !== '') {
+              var photoUrl = (photoPath.indexOf('http') === 0) ? photoPath : ('<?= RACINE ?>' + photoPath.replace(/^\//, ''));
+              avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.style.display=\'none\'; if(this.nextElementSibling) this.nextElementSibling.style.display=\'flex\';">' +
+                           '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0;">' + escapeHtml(initials) + '</div>';
+            }
+
+            return '<div style="display: flex; align-items: center; gap: 12px; min-width: 180px;">' +
+                     avatarHtml +
+                     '<div>' +
+                       '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">' + escapeHtml(rawName) + '</div>' +
+                     '</div>' +
                    '</div>';
           }
         },

@@ -28,10 +28,13 @@ class DepenseController extends BaseController
         $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $stats = $this->model->getStats($activeYear);
 
+        $typeDepenses = (new ModelTypeDepense())->getAll();
+
         $this->loadView('../views/depenses/list.php', [
             'annees' => $annees,
             'selectedAnneeCode' => $activeYear,
-            'stats' => $stats
+            'stats' => $stats,
+            'typeDepenses' => $typeDepenses
         ]);
     }
 
@@ -85,6 +88,10 @@ class DepenseController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
 
+        if (empty($data['description_depense']) && !empty($data['libelle_depense'])) {
+            $data['description_depense'] = $data['libelle_depense'];
+        }
+
         $this->validateForeignKeys([
             'annee_code' => $anneeCode,
             'etablissement_code' => $etabCode,
@@ -94,6 +101,9 @@ class DepenseController extends BaseController
 
         if (empty($data['code_depense'])) {
             $data['code_depense'] = $this->validator->generateCode('depenses', 'code_depense', 'DEP-', 8);
+        }
+        if (empty($data['periode_depense'])) {
+            $data['periode_depense'] = date('Y-m-d H:i:s');
         }
         $data['statut_depense'] = $data['statut_depense'] ?? 'actif';
         $data['created_at_depense'] = date('Y-m-d H:i:s');

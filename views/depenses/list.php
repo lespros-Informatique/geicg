@@ -3,6 +3,7 @@
 $stats = $stats ?? (new ModelDepense())->getStats();
 $annees = $annees ?? [];
 $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -20,9 +21,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <a href="<?= RACINE ?>type_depense/list" class="btn btn-secondary" style="background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="tags" style="width: 18px; height: 18px;"></i> Catégories de Dépenses
           </a>
-          <a href="<?= RACINE ?>depense/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <button type="button" class="btn btn-primary btn-add-depense" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Décaissement / Dépense
-          </a>
+          </button>
         </div>
       </div>
 
@@ -137,11 +138,122 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
   </main>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : NOUVEAU / MODIFIER DÉCAISSEMENT / DÉPENSE -->
+<!-- ========================================================================= -->
+<div id="modal-depense" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 640px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-depense-title" style="font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="plus-circle" style="width: 20px; height: 20px;"></i> Nouveau Décaissement / Dépense
+      </h3>
+      <button type="button" class="btn-close-modal-depense" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-depense-modal" style="padding: 24px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_depense" id="depense_modal_id" value="">
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+        
+        <!-- Catégorie de Dépense -->
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Catégorie de dépense <span style="color: #EF4444;">*</span>
+          </label>
+          <select name="type_depense_code" id="depense_modal_type" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+            <option value="">-- Sélectionnez une catégorie --</option>
+            <?php foreach ($typeDepenses as $td): ?>
+              <option value="<?= htmlspecialchars($td['code_type_depense']) ?>">
+                <?= htmlspecialchars($td['libelle_type_depense']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- Motif / Description -->
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Motif / Description de la dépense <span style="color: #EF4444;">*</span>
+          </label>
+          <input type="text" name="description_depense" id="depense_modal_description" required placeholder="Ex: Achat de fournitures de bureau, maintenance..." class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+        </div>
+
+        <!-- Montant engagé -->
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Montant engagé (FCFA) <span style="color: #EF4444;">*</span>
+          </label>
+          <input type="number" name="montant_depense" id="depense_modal_montant" required min="1" step="any" placeholder="Ex: 85000" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+        </div>
+
+        <!-- Mode de paiement -->
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Mode de règlement <span style="color: #EF4444;">*</span>
+          </label>
+          <select name="mode_reglement" id="depense_modal_mode" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+            <option value="espece">Espèces (Caisse)</option>
+            <option value="mobile_money">Mobile Money (Wave, Orange, MTN, Moov)</option>
+            <option value="cheque">Chèque bancaire</option>
+            <option value="virement">Virement bancaire</option>
+          </select>
+        </div>
+
+        <!-- Bénéficiaire -->
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Bénéficiaire / Prestataire
+          </label>
+          <input type="text" name="beneficiaire" id="depense_modal_beneficiaire" placeholder="Ex: Librairie de France Abidjan" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+        </div>
+
+        <!-- Date d'engagement -->
+        <div class="form-group">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Date d'engagement <span style="color: #EF4444;">*</span>
+          </label>
+          <input type="date" name="periode_depense" id="depense_modal_date" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+        </div>
+
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
+        <button type="button" class="btn btn-secondary btn-close-modal-depense" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Annuler</button>
+        <button type="submit" id="btn-save-depense-modal" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Décaissement
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
     $('#filter-annee').select2({ width: '100%' });
+  }
+
+  function showNotify(msg, type) {
+    type = type || 'info';
+    if (window.toastr && typeof window.toastr[type] === 'function') {
+      window.toastr[type](msg);
+    } else if (window.Swal) {
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true
+      });
+      Toast.fire({
+        icon: type,
+        title: msg
+      });
+    } else {
+      alert(msg);
+    }
   }
 
   function reloadStats() {
@@ -177,10 +289,11 @@ $(document).ready(function() {
       { data: 'libelle_type_depense', render: function(d) {
         return '<span class="badge" style="background:#F3E8FF; color:#7E22CE; font-weight:700; padding:5px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="tag" style="width:12px;height:12px;"></i> ' + (d || 'Général') + '</span>';
       }},
-      { data: 'description_depense', render: function(d) {
-        if (!d) return '<span style="color:#94A3B8; font-style:italic;">Aucun motif spécifié</span>';
-        var shortText = (d.length > 55) ? d.substring(0, 55) + '...' : d;
-        return '<span style="color:#334155; font-weight:600; font-size:13px;" title="' + String(d).replace(/"/g, '&quot;') + '">' + shortText + '</span>';
+      { data: 'description_depense', render: function(d, t, r) {
+        var textVal = d || r.libelle_depense || '';
+        if (!textVal) return '<span style="color:#94A3B8; font-style:italic;">Aucun motif spécifié</span>';
+        var shortText = (textVal.length > 55) ? textVal.substring(0, 55) + '...' : textVal;
+        return '<span style="color:#334155; font-weight:600; font-size:13px;" title="' + String(textVal).replace(/"/g, '&quot;') + '">' + shortText + '</span>';
       }},
       { data: 'montant_depense', className: 'text-end', render: function(d) {
         var num = parseFloat(d) || 0;
@@ -212,12 +325,112 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'depense/edition/' + (d.editId || d.id_depense) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+        var descVal = $('<div>').text(d.description_depense || d.libelle_depense || '').html();
+        var benVal = $('<div>').text(d.beneficiaire || '').html();
+        var rawDate = d.periode_depense ? d.periode_depense.split(' ')[0] : '';
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-depense" ' +
+               'data-id="' + d.id_depense + '" ' +
+               'data-type="' + (d.type_depense_code || '') + '" ' +
+               'data-description="' + descVal + '" ' +
+               'data-montant="' + (d.montant_depense || '') + '" ' +
+               'data-mode="' + (d.mode_reglement || 'espece') + '" ' +
+               'data-beneficiaire="' + benVal + '" ' +
+               'data-date="' + rawDate + '" ' +
+               'style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">' +
+               '<i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                '<a href="' + window.RACINE + 'depense/details/' + (d.editId || d.id_depense) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  // Ouvrir la modale pour un NOUVEAU décaissement
+  $('.btn-add-depense').on('click', function() {
+    $('#depense_modal_id').val('');
+    $('#form-depense-modal')[0].reset();
+    var today = new Date().toISOString().split('T')[0];
+    $('#depense_modal_date').val(today);
+    $('#modal-depense-title').html('<i data-lucide="plus-circle" style="width: 20px; height: 20px;"></i> Nouveau Décaissement / Dépense');
+    $('#modal-depense').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#depense_modal_description').focus(); }, 100);
+  });
+
+  // Ouvrir la modale pour MODIFIER une dépense
+  $(document).on('click', '.btn-edit-depense', function() {
+    var id = $(this).data('id');
+    var type = $(this).data('type');
+    var description = $(this).data('description');
+    var montant = $(this).data('montant');
+    var mode = $(this).data('mode');
+    var beneficiaire = $(this).data('beneficiaire');
+    var date = $(this).data('date');
+
+    $('#depense_modal_id').val(id);
+    $('#depense_modal_type').val(type);
+    $('#depense_modal_description').val(description);
+    $('#depense_modal_montant').val(montant);
+    $('#depense_modal_mode').val(mode || 'espece');
+    $('#depense_modal_beneficiaire').val(beneficiaire);
+    $('#depense_modal_date').val(date);
+
+    $('#modal-depense-title').html('<i data-lucide="edit" style="width: 20px; height: 20px;"></i> Modifier la Dépense');
+    $('#modal-depense').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#depense_modal_description').focus(); }, 100);
+  });
+
+  // Fermer la modale
+  $('.btn-close-modal-depense').on('click', function() {
+    $('#modal-depense').css('display', 'none');
+  });
+  $('#modal-depense').on('click', function(e) {
+    if ($(e.target).is('#modal-depense')) {
+      $(this).css('display', 'none');
+    }
+  });
+
+  // Soumission AJAX du formulaire de modale
+  $('#form-depense-modal').on('submit', function(e) {
+    e.preventDefault();
+    var isEdit = !!$('#depense_modal_id').val();
+    var url = isEdit ? '<?= RACINE ?>depense/edit' : '<?= RACINE ?>depense/add';
+    var $btn = $('#btn-save-depense-modal');
+
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Enregistrement...');
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: $(this).serialize(),
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Décaissement');
+        if (window.lucide) lucide.createIcons();
+
+        if (res.status === 1 || res.success) {
+          showNotify(res.message || 'Décaissement enregistré avec succès !', 'success');
+          $('#modal-depense').css('display', 'none');
+          table.ajax.reload(null, false);
+          reloadStats();
+        } else {
+          showNotify(res.message || 'Erreur lors de l\'enregistrement', 'error');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Décaissement');
+        if (window.lucide) lucide.createIcons();
+
+        var msg = 'Erreur réseau ou serveur';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch(e) {}
+        showNotify(msg, 'error');
+      }
+    });
   });
 
   $(document).on('change', '.toggle-statut-depense', function() {
@@ -236,16 +449,16 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          showNotify(res.message || 'Statut mis à jour avec succès', 'success');
           table.ajax.reload(null, false);
           reloadStats();
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          showNotify(res.message || 'Erreur lors du changement de statut', 'error');
           $input.prop('checked', !isChecked);
         }
       },
       error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
+        showNotify('Erreur réseau', 'error');
         $input.prop('checked', !isChecked);
       }
     });

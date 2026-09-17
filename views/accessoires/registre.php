@@ -447,13 +447,37 @@ $(document).ready(function() {
         {
           data: null,
           render: function(d) {
-            var photo = d.photo_etudiant ? '<?= RACINE ?>' + d.photo_etudiant : '<?= RACINE ?>public/images/avatar.png';
-            return '<div style="display: flex; align-items: center; gap: 12px;">' +
-                   '<img src="' + photo + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0;" onerror="this.src=\'<?= RACINE ?>public/images/avatar.png\'">' +
-                   '<div>' +
-                     '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">' + escapeHtml(d.nom_complet || (d.nom_etudiant + ' ' + d.prenom_etudiant)) + '</div>' +
-                     '<div style="font-size: 11.5px; color: #64748B;">Tél : ' + escapeHtml(d.telephone_etudiant || '-') + '</div>' +
-                   '</div>' +
+            var rawName = (d.nom_complet ? d.nom_complet.trim() : '') || 
+                          ((d.nom_etudiant || '') + ' ' + (d.prenom_etudiant || '')).trim() || 
+                          'Étudiant non identifié';
+            
+            var parts = rawName.split(' ').filter(function(p) { return p.length > 0; });
+            var initials = 'ET';
+            if (parts.length >= 2) {
+              initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            } else if (parts.length === 1 && parts[0].length >= 2) {
+              initials = parts[0].substring(0, 2).toUpperCase();
+            }
+
+            var photoPath = d.photo_etudiant ? String(d.photo_etudiant).trim() : '';
+            var initialsDiv = '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0; box-shadow: 0 2px 4px rgba(30,58,95,0.15);">' + escapeHtml(initials) + '</div>';
+
+            var avatarHtml = initialsDiv;
+            if (photoPath !== '') {
+              var photoUrl = (photoPath.indexOf('http') === 0) ? photoPath : ('<?= RACINE ?>' + photoPath.replace(/^\//, ''));
+              avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.style.display=\'none\'; if(this.nextElementSibling) this.nextElementSibling.style.display=\'flex\';">' +
+                           '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0;">' + escapeHtml(initials) + '</div>';
+            }
+
+            var phone = (d.telephone_etudiant && d.telephone_etudiant !== '-') ? d.telephone_etudiant : null;
+            var phoneHtml = phone ? '<div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Tél : ' + escapeHtml(phone) + '</div>' : '<div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Tél : -</div>';
+
+            return '<div style="display: flex; align-items: center; gap: 12px; min-width: 180px;">' +
+                     avatarHtml +
+                     '<div style="min-width: 0;">' +
+                       '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px; line-height: 1.3;">' + escapeHtml(rawName) + '</div>' +
+                       phoneHtml +
+                     '</div>' +
                    '</div>';
           }
         },
