@@ -102,8 +102,13 @@ $anneeActive = $anneeActive ?? '';
             <select id="filter-filiere" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Toutes les filières --</option>
               <?php foreach ($filieres as $f): ?>
+                <?php 
+                  $displayFil = (!empty($useSlugFiliere) && !empty($f['slug_filiere']))
+                    ? $f['slug_filiere'] . ' - ' . $f['libelle_filiere']
+                    : $f['libelle_filiere'];
+                ?>
                 <option value="<?= htmlspecialchars($f['code_filiere']) ?>">
-                  <?= htmlspecialchars($f['libelle_filiere']) ?>
+                  <?= htmlspecialchars($displayFil) ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -238,14 +243,28 @@ $(document).ready(function() {
 
       // 6. Filière (Indépendante)
       { data: 'libelle_filiere', defaultContent: '-', render: function(d, type, row) {
-        var fil = d || row.code_filiere || '-';
-        return '<span style="font-size:12px; font-weight:600; color:#1E293B;">' + fil + '</span>';
+        var useSlug = row.use_slug_filiere !== undefined ? row.use_slug_filiere : (<?= !empty($useSlugFiliere) ? 'true' : 'false' ?>);
+        var slug = row.slug_filiere || '';
+        var libelle = d || row.libelle_filiere || row.code_filiere || '-';
+
+        if (useSlug && slug) {
+          return '<span style="font-size:12.5px; font-weight:800; color:#1E3A5F;" title="' + libelle + '">' + slug + '</span>' +
+                 ' <span style="font-size:11.5px; color:#64748B;">(' + libelle + ')</span>';
+        }
+
+        var html = '<span style="font-size:12px; font-weight:600; color:#1E293B;">' + libelle + '</span>';
+        if (slug) {
+          html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:5px;">' + slug + '</span>';
+        }
+        return html;
       }},
 
       // 7. Niveau (Indépendant)
-      { data: 'libelle_niveau', defaultContent: '-', render: function(d) {
-        if (!d) return '<span style="color:#94A3B8;">-</span>';
-        return '<span style="background:#F1F5F9; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700;">' + d + '</span>';
+      { data: 'libelle_niveau', defaultContent: '-', render: function(d, type, row) {
+        if (!d && !row.slug_niveau) return '<span style="color:#94A3B8;">-</span>';
+        var useSlugNiv = row.use_slug_niveau !== undefined ? row.use_slug_niveau : (<?= !empty($useSlugNiveau) ? 'true' : 'false' ?>);
+        var nivVal = (useSlugNiv && row.slug_niveau) ? row.slug_niveau : (d || row.slug_niveau || '-');
+        return '<span style="background:#F1F5F9; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700;" title="' + (d || '') + '">' + nivVal + '</span>';
       }},
 
       // 8. Statut Toggle

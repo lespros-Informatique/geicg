@@ -45,6 +45,11 @@ class EtudiantController extends BaseController
             'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? '')
         ];
 
+        $etabCfg = $this->getEtablissementConfig();
+        $useSlugFiliere = !empty($etabCfg['use_slug_filiere']);
+        $useSlugNiveau = !empty($etabCfg['use_slug_niveau']);
+        $useSlugCycle = !empty($etabCfg['use_slug_cycle']);
+
         $items = $this->model->getFilteredRegistry($filters);
         $data = [];
         foreach ($items as $i) {
@@ -52,7 +57,10 @@ class EtudiantController extends BaseController
             $idCrypte = $this->validator->crypter($id);
             $data[] = array_merge($i, [
                 'id' => $id,
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'use_slug_filiere' => $useSlugFiliere,
+                'use_slug_niveau' => $useSlugNiveau,
+                'use_slug_cycle' => $useSlugCycle
             ]);
         }
         $this->json(['data' => $data]);

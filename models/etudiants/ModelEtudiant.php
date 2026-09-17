@@ -144,8 +144,10 @@ class ModelEtudiant extends BaseModel
                 cl.libelle_classe,
                 f.code_filiere,
                 f.libelle_filiere,
+                f.slug_filiere,
                 n.code_niveau,
-                n.libelle_niveau
+                n.libelle_niveau,
+                n.slug_niveau
             FROM etudiants e
             JOIN inscriptions i ON i.etudiant_code = e.code_etudiant
             JOIN annees a ON a.code_annee = i.annee_code
