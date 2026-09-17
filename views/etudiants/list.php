@@ -104,10 +104,10 @@ $anneeActive = $anneeActive ?? '';
               <?php foreach ($filieres as $f): ?>
                 <?php 
                   $displayFil = (!empty($useSlugFiliere) && !empty($f['slug_filiere']))
-                    ? $f['slug_filiere'] . ' - ' . $f['libelle_filiere']
+                    ? $f['slug_filiere']
                     : $f['libelle_filiere'];
                 ?>
-                <option value="<?= htmlspecialchars($f['code_filiere']) ?>">
+                <option value="<?= htmlspecialchars($f['code_filiere']) ?>" title="<?= htmlspecialchars($f['libelle_filiere']) ?>">
                   <?= htmlspecialchars($displayFil) ?>
                 </option>
               <?php endforeach; ?>
@@ -248,15 +248,10 @@ $(document).ready(function() {
         var libelle = d || row.libelle_filiere || row.code_filiere || '-';
 
         if (useSlug && slug) {
-          return '<span style="font-size:12.5px; font-weight:800; color:#1E3A5F;" title="' + libelle + '">' + slug + '</span>' +
-                 ' <span style="font-size:11.5px; color:#64748B;">(' + libelle + ')</span>';
+          return '<span style="font-size:12.5px; font-weight:800; color:#1E3A5F;" title="' + libelle + '">' + slug + '</span>';
         }
 
-        var html = '<span style="font-size:12px; font-weight:600; color:#1E293B;">' + libelle + '</span>';
-        if (slug) {
-          html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:5px;">' + slug + '</span>';
-        }
-        return html;
+        return '<span style="font-size:12px; font-weight:600; color:#1E293B;">' + libelle + '</span>';
       }},
 
       // 7. Niveau (Indépendant)
