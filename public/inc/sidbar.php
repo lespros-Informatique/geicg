@@ -392,8 +392,8 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showSansPhoto): ?>
-                <a href="<?= RACINE ?>inscription/prise_de_vue" class="nav-item sub <?= (strpos($currentUri, '/inscription/prise_de_vue') !== false || strpos($currentUri, '/inscription/sans_photo') !== false) ? 'active' : '' ?>" data-title="Prise de Vue (Photos d'Inscription)">
-                    <i data-lucide="camera"></i> <span>Prise de vue (Photos)</span>
+                <a href="<?= RACINE ?>inscription/prise_de_vue" class="nav-item sub <?= (strpos($currentUri, '/inscription/prise_de_vue') !== false || strpos($currentUri, '/inscription/sans_photo') !== false) ? 'active' : '' ?>" data-title="Prise de vue">
+                    <i data-lucide="camera"></i> <span>Prise de vue</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showDepotDossiers): ?>
@@ -422,9 +422,10 @@
           $showOuvCaisse = $canAccess(['MANAGE_CAISSE', 'OUVERTURE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
           $showClotCaisse = $canAccess(['CLOTURE_CAISSE', 'VIEW_RAPPORTS_FINANCIERS', 'MANAGE_PAYMENTS']);
           $showImpayes = $canAccess(['MANAGE_IMPAYES', 'VIEW_IMPAYES', 'SEND_RELANCES', 'MANAGE_MORATOIRES']);
+          $showArrieres = $canAccess(['MANAGE_ARRIERES', 'VIEW_ARRIERES', 'MANAGE_IMPAYES', 'MANAGE_PAIEMENTS']);
           $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_EXPENSES']);
           $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'MANAGE_EXPENSES', 'VALIDATE_DEPENSES']);
-          $hasSecFinance = $showScolariteGrille || $showPaiements || $showOuvCaisse || $showClotCaisse || $showImpayes || $showTypeDep || $showDepenses;
+          $hasSecFinance = $showScolariteGrille || $showPaiements || $showOuvCaisse || $showClotCaisse || $showImpayes || $showArrieres || $showTypeDep || $showDepenses;
         ?>
         <?php if ($hasSecFinance): ?>
         <div class="nav-section">
@@ -453,6 +454,11 @@
                 <?php if ($showImpayes): ?>
                 <a href="<?= RACINE ?>impayes/list" class="nav-item sub <?= strpos($currentUri, '/impayes/') !== false ? 'active' : '' ?>" data-title="Relances & Impayés">
                     <i data-lucide="alert-triangle"></i> <span>Relances & Impayés</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showArrieres): ?>
+                <a href="<?= RACINE ?>arriere/list" class="nav-item sub <?= strpos($currentUri, '/arriere/') !== false ? 'active' : '' ?>" data-title="Arriérés Années Antérieures">
+                    <i data-lucide="history"></i> <span>Arriérés Années Antérieures</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showDepenses || $showTypeDep): ?>

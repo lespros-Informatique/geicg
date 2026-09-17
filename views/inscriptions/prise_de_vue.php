@@ -15,7 +15,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="camera" style="width: 26px; height: 26px; color: #1E3A5F;"></i> Prise de Vue & Photos d'Inscription
+            <i data-lucide="camera" style="width: 26px; height: 26px; color: #1E3A5F;"></i> Prise de vue
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Registre des étudiants régulièrement inscrits avec gestion de la prise de vue et capture des photos officielles</p>
         </div>
@@ -109,7 +109,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
   <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
     <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
       <h3 style="font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="camera" style="width: 20px; height: 20px;"></i> Prise de vue / Photo d'Inscription
+        <i data-lucide="camera" style="width: 20px; height: 20px;"></i> Prise de vue
       </h3>
       <button type="button" class="btn-close-modal-photo" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
@@ -242,9 +242,8 @@ $(document).ready(function() {
           : ' <span class="badge bg-danger" style="font-size:10px; padding:2px 6px; border-radius:4px; margin-left:4px;">Sans photo</span>';
         return '<span style="font-weight:800; color:#0F172A;">' + (d || '-') + '</span>' + badgePhoto;
       }},
-      { data: 'libelle_classe', render: function(d, t, r) {
-        var fil = r.libelle_filiere ? ' <span style="font-size:11.5px; color:#64748B;">(' + r.libelle_filiere + ')</span>' : '';
-        return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Classe non définie') + '</span>' + fil;
+      { data: 'libelle_classe', render: function(d) {
+        return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Classe non définie') + '</span>';
       }},
       { data: 'telephone_etudiant', render: function(d) {
         return '<span style="color:#475569; font-weight:600; font-size:13px;">' + (d || '-') + '</span>';

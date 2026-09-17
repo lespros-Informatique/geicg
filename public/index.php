@@ -27,6 +27,7 @@ $dossierEtudiantController = new DossierEtudiantController();
 $paiementController = new PaiementController();
 $sessionCaisseController = new SessionCaisseController();
 $impayesController = new ImpayesController();
+$arriereController = new ArriereController();
 $typeDepenseController = new TypeDepenseController();
 $depenseController = new DepenseController();
 $enseignantController = new EnseignantController();
@@ -334,6 +335,13 @@ $route->addRoute('/impayes/changer', [$impayesController, 'changer']);
 $route->addRoute('/impayes/details/{param}', [$impayesController, 'details']);
 $route->addRoute('/impayes/edition/{param}', [$impayesController, 'edition']);
 $route->addRoute('/impayes/formulaire', [$impayesController, 'formulaire']);
+
+// Module: arriere (ArriereController)
+$route->addRoute('/arriere/list', [$arriereController, 'list']);
+$route->addRoute('/arriere/apiList', [$arriereController, 'apiList']);
+$route->addRoute('/arriere/apiStats', [$arriereController, 'apiStats']);
+$route->addRoute('/arriere/apiDetailEtudiant', [$arriereController, 'apiDetailEtudiant']);
+$route->addRoute('/arriere/enregistrerReglement', [$arriereController, 'enregistrerReglement']);
 
 // Module: type_depense (TypeDepenseController)
 $route->addRoute('/type_depense/list', [$typeDepenseController, 'list']);

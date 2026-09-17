@@ -34,6 +34,7 @@ require_once __DIR__ . '/../models/scolarites/ModelScolarite.php';
 require_once __DIR__ . '/../models/tranches_scolarite/ModelTranche.php';
 require_once __DIR__ . '/../models/paiements/ModelPaiement.php';
 require_once __DIR__ . '/../models/sessions_caisse/ModelSessionCaisse.php';
+require_once __DIR__ . '/../models/arrieres/ModelArriere.php';
 require_once __DIR__ . '/../models/type_depenses/ModelTypeDepense.php';
 require_once __DIR__ . '/../models/depenses/ModelDepense.php';
 
@@ -84,6 +85,7 @@ require_once __DIR__ . '/../controllers/scolarites/ScolariteController.php';
 require_once __DIR__ . '/../controllers/tranches_scolarite/TrancheController.php';
 require_once __DIR__ . '/../controllers/paiements/PaiementController.php';
 require_once __DIR__ . '/../controllers/sessions_caisse/SessionCaisseController.php';
+require_once __DIR__ . '/../controllers/arrieres/ArriereController.php';
 require_once __DIR__ . '/../controllers/type_depenses/TypeDepenseController.php';
 require_once __DIR__ . '/../controllers/depenses/DepenseController.php';
 
