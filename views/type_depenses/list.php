@@ -49,6 +49,7 @@
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code Catégorie</th>
                 <th style="padding: 12px;">Désignation Catégorie</th>
+                <th style="padding: 12px; text-align: center; width: 100px;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -107,6 +108,18 @@ $(document).ready(function() {
       }},
       { data: 'code_type_depense', defaultContent: '-' },
       { data: 'libelle_type_depense', defaultContent: '-' },
+      { data: 'statut_type_depense', width: '100px', className: 'text-center', render: function(d, type, row) {
+        var isActif = (d !== 'inactif');
+        var checkedAttr = isActif ? 'checked' : '';
+        return '<div style="display:flex; justify-content:center; align-items:center;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+               '<input type="checkbox" class="toggle-statut-td" data-id="' + row.id_type_depense + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+               '</span>' +
+               '</label>' +
+               '</div>';
+      } },
       { data: null, orderable: false, render: function(d) {
         var safeLibelle = $('<div>').text(d.libelle_type_depense || '').html();
         return '<button type="button" class="btn btn-sm btn-secondary btn-edit-td" data-id="' + d.id_type_depense + '" data-libelle="' + safeLibelle + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
@@ -115,6 +128,33 @@ $(document).ready(function() {
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  // Modification dynamique de statut par toggle
+  $(document).on('change', '.toggle-statut-td', function() {
+    var id = $(this).data('id');
+    var isChecked = $(this).is(':checked');
+    var $input = $(this);
+    $.ajax({
+      url: '<?= RACINE ?>type_depense/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: { id: id, csrf_token: '<?= Validator::generateCsrfToken() ?>' },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          $input.prop('checked', !isChecked);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        $input.prop('checked', !isChecked);
+      }
+    });
   });
 
   // Bouton Ajouter en haut -> Ouvre la modale ou focus le formulaire rapide
