@@ -9,16 +9,10 @@ class ModelAccessoire extends BaseModel
 
     public function getAll(?string $anneeCode = null): array
     {
-        $sql = "SELECT * FROM accessoires";
-        $params = [];
-        if (!empty($anneeCode)) {
-            $sql .= " WHERE annee_code = ?";
-            $params[] = $anneeCode;
-        }
-        $sql .= " ORDER BY id_accessoire DESC";
+        $sql = "SELECT * FROM accessoires ORDER BY id_accessoire DESC";
         try {
             $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute($params);
+            $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("Get all accessoires: " . $e->getMessage());

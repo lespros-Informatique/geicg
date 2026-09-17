@@ -108,7 +108,11 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
       <!-- BOUTONS SWITCH / FILTRES INTERACTIFS -->
       <!-- ========================================================================= -->
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
-        <button type="button" class="btn-switch-filter active" data-filter="all" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; padding: 9px 18px; border-radius: 10px; border: 1.5px solid #1E3A5F; background: #1E3A5F; color: #FFFFFF; cursor: pointer; transition: all 0.2s;">
+        <button type="button" class="btn-switch-filter active" data-filter="catalogue" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; padding: 9px 18px; border-radius: 10px; border: 1.5px solid #1E3A5F; background: #1E3A5F; color: #FFFFFF; cursor: pointer; transition: all 0.2s;">
+          <i data-lucide="settings" style="width: 16px; height: 16px;"></i> Catalogue & Types de Kits
+        </button>
+
+        <button type="button" class="btn-switch-filter" data-filter="all" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; padding: 9px 18px; border-radius: 10px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer; transition: all 0.2s;">
           <i data-lucide="layers" style="width: 16px; height: 16px;"></i> Tous les Kits Souscrits
         </button>
 
@@ -119,44 +123,12 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
         <button type="button" class="btn-switch-filter" data-filter="retire" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; padding: 9px 18px; border-radius: 10px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #15803D; cursor: pointer; transition: all 0.2s;">
           <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i> Étudiants ayant Retiré leur Kit
         </button>
-
-        <button type="button" class="btn-switch-filter" data-filter="catalogue" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; padding: 9px 18px; border-radius: 10px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer; transition: all 0.2s; margin-left: auto;">
-          <i data-lucide="settings" style="width: 16px; height: 16px;"></i> Catalogue & Types de Kits
-        </button>
       </div>
 
       <!-- ========================================================================= -->
-      <!-- SECTION 1 : TABLEAU DES DISTRIBUTIONS ÉTUDIANTS (PAR DÉFAUT) -->
+      <!-- SECTION 1 : TABLEAU DU CATALOGUE DES ACCESSOIRES (PAR DÉFAUT) -->
       <!-- ========================================================================= -->
-      <div id="section-distributions" class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;" id="table-dist-title">Suivi des Distributions & Retraits des Kits</h3>
-            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;">Cliquez sur le switch d'un étudiant pour basculer instantanément son statut de retrait</p>
-          </div>
-        </div>
-
-        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-          <table id="table-distributions" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px;">Matricule</th>
-                <th style="padding: 12px;">Nom & Prénoms Étudiant</th>
-                <th style="padding: 12px;">Téléphone</th>
-                <th style="padding: 12px;">Classe</th>
-                <th style="padding: 12px; text-align: center;">Statut Global</th>
-                <th style="padding: 12px; text-align: right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ========================================================================= -->
-      <!-- SECTION 2 : TABLEAU DU CATALOGUE DES ACCESSOIRES (TYPES DE KITS) -->
-      <!-- ========================================================================= -->
-      <div id="section-catalogue" class="card" style="display: none; background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+      <div id="section-catalogue" class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
           <div>
             <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">Catalogue des Types d'Accessoires & Kits</h3>
@@ -175,6 +147,34 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Désignation du Kit</th>
                 <th style="padding: 12px;">Statut</th>
+                <th style="padding: 12px; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 2 : TABLEAU DES DISTRIBUTIONS ÉTUDIANTS -->
+      <!-- ========================================================================= -->
+      <div id="section-distributions" class="card" style="display: none; background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;" id="table-dist-title">Suivi des Distributions & Retraits des Kits</h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;">Cliquez sur le switch d'un étudiant pour basculer instantanément son statut de retrait</p>
+          </div>
+        </div>
+
+        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table id="table-distributions" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
+                <th style="padding: 12px;">Matricule</th>
+                <th style="padding: 12px;">Nom & Prénoms Étudiant</th>
+                <th style="padding: 12px;">Téléphone</th>
+                <th style="padding: 12px;">Classe</th>
+                <th style="padding: 12px; text-align: center;">Statut Global</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -554,13 +554,15 @@ $(document).ready(function() {
         if (window.lucide) lucide.createIcons();
 
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Opération réussie');
+          if (typeof showToast === 'function') showToast(res.message || 'Opération réussie', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Opération réussie');
           $('#modal-accessoire-type').css('display', 'none');
-          if (catalogueTable) {
-            catalogueTable.ajax.reload(null, false);
+          if (tableAcc) {
+            tableAcc.ajax.reload(null, false);
           }
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
         }
       },
       error: function(xhr) {
@@ -572,7 +574,8 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json && json.message) msg = json.message;
         } catch(e) {}
-        if (window.toastr) toastr.error(msg);
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
       }
     });
   });
@@ -589,20 +592,24 @@ $(document).ready(function() {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
       data: {
         id: id,
+        id_accessoire: id,
         csrf_token: '<?= Validator::generateCsrfToken() ?>'
       },
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          if (typeof showToast === 'function') showToast(res.message || 'Statut mis à jour avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
           if (tableAcc) tableAcc.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors du changement de statut', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
           $input.prop('checked', !isChecked);
         }
       },
       error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
+        if (typeof showToast === 'function') showToast('Erreur réseau', 'error');
+        else if (window.toastr) toastr.error('Erreur réseau');
         $input.prop('checked', !isChecked);
       }
     });
@@ -951,6 +958,7 @@ $(document).ready(function() {
   });
 
   // Initialisation au chargement
+  initCatalogueTable();
   initDistTable('all');
 });
 </script>

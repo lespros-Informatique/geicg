@@ -93,6 +93,8 @@ class AccessoireController extends BaseController
         $this->requireAuth();
         $data = $_POST;
         unset($data['csrf_token']);
+        unset($data['id_accessoire']);
+        unset($data['id']);
         if (!empty($data['libelle_accessoire'])) {
             if (!$this->checkUnique('accessoires', 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire')) return;
         }
@@ -415,7 +417,7 @@ class AccessoireController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = $this->post('id');
+        $id = $this->post('id') ?: $this->post('id_accessoire');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
