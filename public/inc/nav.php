@@ -148,8 +148,10 @@
                                             </div>
                                             <?php if ($isCurrentActiveDb): ?>
                                                 <div style="font-size: 10px; color: #16A34A; font-weight: 700;">Active en cours</div>
+                                            <?php elseif (($anItem['statut_annee'] ?? '') === 'planifie'): ?>
+                                                <div style="font-size: 10px; color: #2563EB; font-weight: 700;">En préparation (Future)</div>
                                             <?php else: ?>
-                                                <div style="font-size: 10px; color: #64748B; font-weight: 600;">Année antérieure</div>
+                                                <div style="font-size: 10px; color: #64748B; font-weight: 600;">Année clôturée (Historique)</div>
                                             <?php endif; ?>
                                         </div>
                                     </div>

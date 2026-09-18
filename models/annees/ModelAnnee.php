@@ -8,15 +8,15 @@ class ModelAnnee extends BaseModel
     protected ?string $createdAtField = 'created_at_annee';
 
     /**
-     * Active une année académique en désactivant automatiquement toutes les autres (Exclusivité)
+     * Active une année académique en clôturant automatiquement l'ancienne (Exclusivité)
      */
     public function setActiveYear(int $id): bool
     {
         try {
             $db = $this->getCon();
             $db->beginTransaction();
-            // Désactiver toutes les années
-            $db->exec("UPDATE `annees` SET `statut_annee` = 'inactif'");
+            // Clôturer toute année précédemment active
+            $db->exec("UPDATE `annees` SET `statut_annee` = 'cloture' WHERE `statut_annee` = 'actif'");
             // Activer l'année demandée
             $stmt = $db->prepare("UPDATE `annees` SET `statut_annee` = 'actif' WHERE `id_annee` = ?");
             $stmt->execute([$id]);
@@ -39,12 +39,13 @@ class ModelAnnee extends BaseModel
         $current = $this->getById($id);
         if (!$current) return false;
 
-        // Si l'année n'est pas active, on l'active (et désactive toutes les autres)
+        // Si l'année n'est pas active, on l'active (et clôture l'ancienne)
         if (($current['statut_annee'] ?? '') !== 'actif') {
             return $this->setActiveYear($id);
         } else {
-            // Si on désactive l'année active
-            return parent::updateStatus($id, 'inactif');
+            // Clôturer l'année active
+            $stmt = $this->getCon()->prepare("UPDATE `annees` SET `statut_annee` = 'cloture' WHERE `id_annee` = ?");
+            return $stmt->execute([$id]);
         }
     }
 
@@ -161,7 +162,8 @@ class ModelAnnee extends BaseModel
             $accessible = [];
             foreach ($allAnnees as $an) {
                 $isCurrentActiveDb = (($an['statut_annee'] ?? '') === 'actif');
-                $canAccess = $isCurrentActiveDb || $hasGlobalView || isset($userAcces[$an['code_annee']]);
+                $isPlanifie = (($an['statut_annee'] ?? '') === 'planifie');
+                $canAccess = $isCurrentActiveDb || $isPlanifie || $hasGlobalView || isset($userAcces[$an['code_annee']]);
                 if ($canAccess) {
                     $accessible[] = $an;
                 }
