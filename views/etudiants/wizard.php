@@ -397,28 +397,28 @@ $pieces = (new ModelPieceFournir())->getAll();
             
             <!-- SECTION A : ACCESSOIRES & KITS -->
             <div style="margin-bottom: 30px;">
-              <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin-bottom: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="package" style="width: 18px; height: 18px;"></i> Accessoires & Kits d'Inscription
-              </h3>
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
-                <p style="font-size: 13px; color: #64748B; margin: 0;">Sélectionnez les kits et accessoires souscrits lors de cette inscription :</p>
-                <div id="wiz_total_accessoires_badge" style="font-size: 12.5px; font-weight: 800; color: #1E3A5F; background: #EFF6FF; padding: 5px 12px; border-radius: 6px; border: 1px solid #BFDBFE;">
-                  Total kits : <span id="wiz_total_acc_amount">0 FCFA</span>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px;">
+                <div>
+                  <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="package" style="width: 18px; height: 18px;"></i> Accessoires & Kits d'Inscription
+                  </h3>
+                  <p style="font-size: 12.5px; color: #64748B; margin: 3px 0 0 0;">Sélectionnez les kits et accessoires souscrits lors de cette inscription :</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" id="btn-check-all-accessoires" style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A5F; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                    <i data-lucide="check-square" style="width: 14px; height: 14px;"></i> Tout cocher
+                  </button>
+                  <button type="button" id="btn-uncheck-all-accessoires" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #475569; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                    Tout décocher
+                  </button>
                 </div>
               </div>
               <?php if (!empty($accessoires)): ?>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
-                  <?php foreach($accessoires as $acc): 
-                    $montantAcc = (float)($acc['prix_accessoire'] ?? 0);
-                  ?>
-                    <label class="acc-checkbox-card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
-                      <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" data-prix="<?= $montantAcc ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
-                        <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 13px;"><?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?></span>
-                      </div>
-                      <span class="acc-price" style="font-weight: 800; color: #1E3A5F; font-size: 13px;">
-                        <?= $montantAcc > 0 ? number_format($montantAcc, 0, ',', ' ') . ' FCFA' : '<span style="color:#15803D; font-size:11.5px; background:#DCFCE7; padding:3px 8px; border-radius:6px; font-weight:700;">Inclus / Gratuit</span>' ?>
-                      </span>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+                  <?php foreach($accessoires as $acc): ?>
+                    <label class="acc-checkbox-card" style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
+                      <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
+                      <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 13.5px;"><?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?></span>
                     </label>
                   <?php endforeach; ?>
                 </div>
@@ -951,14 +951,9 @@ $(document).ready(function() {
       totalAccs++;
 
       var label = $(this).attr('data-label') || $(this).closest('.acc-checkbox-card').find('.acc-label').text().trim() || $(this).next('span').text().trim() || $(this).closest('label').text().trim() || val;
-      var prix = Number($(this).attr('data-prix') || 0);
-      var prixFormatted = prix > 0 ? ' (' + prix.toLocaleString('fr-FR') + ' FCFA)' : '';
-      accsHtml += '<div style="background: #EFF6FF; color: #1E3A5F; border: 1.5px solid #BFDBFE; padding: 7px 12px; border-radius: 8px; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(30,58,95,0.06); margin: 3px;">';
+      accsHtml += '<div style="background: #EFF6FF; color: #1E3A5F; border: 1.5px solid #BFDBFE; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(30,58,95,0.06); margin: 3px;">';
       accsHtml += '  <i data-lucide="check-circle" style="width: 15px; height: 15px; color: #15803D; flex-shrink: 0;"></i>';
       accsHtml += '  <span>' + label + '</span>';
-      if (prix > 0) {
-        accsHtml += '  <span style="color: #1E3A5F; font-weight: 800; font-size: 11.5px; background: #DBEAFE; padding: 2px 7px; border-radius: 4px;">' + prix.toLocaleString('fr-FR') + ' FCFA</span>';
-      }
       accsHtml += '</div>';
     });
 
@@ -981,21 +976,6 @@ $(document).ready(function() {
     } else {
       $card.css({ 'background': '#FFFFFF', 'border-color': '#CBD5E1' });
     }
-    updateTotalAccessoires();
-  }
-
-  function updateTotalAccessoires() {
-    var sum = 0;
-    var count = 0;
-    $('.chk-accessoire:checked').each(function() {
-      sum += Number($(this).attr('data-prix') || 0);
-      count++;
-    });
-    if (count > 0) {
-      $('#wiz_total_acc_amount').html('<strong style="color:#1E3A5F;">' + sum.toLocaleString('fr-FR') + ' FCFA</strong> (' + count + ' kit' + (count > 1 ? 's' : '') + ')');
-    } else {
-      $('#wiz_total_acc_amount').text('0 FCFA (0 kit)');
-    }
   }
 
   $(document).on('change', '.chk-accessoire', function() {
@@ -1017,6 +997,20 @@ $(document).ready(function() {
 
   $(document).on('change', '.chk-piece', function() {
     updatePieceCardStyle($(this));
+  });
+
+  $('#btn-check-all-accessoires').on('click', function() {
+    $('.chk-accessoire').prop('checked', true).each(function() {
+      updateAccCardStyle($(this));
+    });
+    saveFormData();
+  });
+
+  $('#btn-uncheck-all-accessoires').on('click', function() {
+    $('.chk-accessoire').prop('checked', false).each(function() {
+      updateAccCardStyle($(this));
+    });
+    saveFormData();
   });
 
   $('#btn-check-all-pieces').on('click', function() {
@@ -1463,7 +1457,6 @@ $(document).ready(function() {
 
   // Restore state on load
   restoreFormData();
-  updateTotalAccessoires();
   if ($.fn.select2) {
     $('.select2').select2({
       placeholder: "-- Rechercher / Sélectionner --",
