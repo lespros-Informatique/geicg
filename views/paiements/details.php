@@ -37,13 +37,37 @@ if ($opDroit == 0 && $montantOp == 105000) {
 }
 
 $refCaiss = $numRecu . 'ScoFOF' . sprintf("%05d", rand(10000, 99999)) . ',' . sprintf("%010d", rand(1000000000, 9999999999)) . 'ScaisKON';
+
+// Logo institutionnel officiel (dynamique depuis la base ou fallback logo_eicg.jpg)
+$logoSrc = '';
+try {
+    $dbEtab = (new Database())->getCon();
+    $stmtEtab = $dbEtab->query("SELECT logo_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
+    $rawEtabLogo = $stmtEtab->fetchColumn();
+    if (!empty($rawEtabLogo)) {
+        $cleanPath = ltrim($rawEtabLogo, '/');
+        if (file_exists(__DIR__ . '/../../' . $cleanPath)) {
+            $logoSrc = RACINE . $cleanPath;
+        }
+    }
+} catch (Exception $e) {
+    // continue
+}
+if (empty($logoSrc)) {
+    if (file_exists(__DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg')) {
+        $logoSrc = RACINE . 'public/assets/images/logo/logo_eicg.jpg';
+    } elseif (file_exists(__DIR__ . '/../../public/uploads/logos/logo_1787358264.jpg')) {
+        $logoSrc = RACINE . 'public/uploads/logos/logo_1787358264.jpg';
+    }
+}
 ?>
 <style>
 @media print {
-  body { background: #FFFFFF !important; color: #000000 !important; font-family: Arial, Helvetica, sans-serif !important; }
+  body { background: #FFFFFF !important; color: #000000 !important; font-family: Arial, Helvetica, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .sidebar, .sidebar *, .nav-header, .page-header-actions, .no-print, header, header *, nav, nav *, .main-nav, .main-nav *, .topbar, .topbar *, .dropdown-panel, .dropdown-panel * { display: none !important; visibility: hidden !important; }
   .app-layout, .main-content, .content-wrapper { margin: 0 !important; padding: 0 !important; width: 100% !important; box-shadow: none !important; }
   .receipt-page-container { border: 2px solid #800000 !important; padding: 12px !important; margin: 0 !important; box-shadow: none !important; width: 100% !important; box-sizing: border-box !important; }
+  .institution-logo-img { max-width: 145px !important; max-height: 70px !important; display: block !important; }
 }
 
 .receipt-outer-frame {
@@ -60,6 +84,13 @@ $refCaiss = $numRecu . 'ScoFOF' . sprintf("%05d", rand(10000, 99999)) . ',' . sp
 .receipt-header-table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.institution-logo-img {
+  max-width: 145px;
+  max-height: 70px;
+  object-fit: contain;
+  display: block;
 }
 
 .logo-eicg-box {
@@ -233,10 +264,14 @@ $refCaiss = $numRecu . 'ScoFOF' . sprintf("%05d", rand(10000, 99999)) . ',' . sp
         <!-- En-tête Institutionnel -->
         <table class="receipt-header-table">
           <tr>
-            <td style="width: 140px; vertical-align: top;">
-              <div class="logo-eicg-box">
-                GROUPE<br>EICG
-              </div>
+            <td style="width: 155px; vertical-align: middle; padding-right: 14px;">
+              <?php if (!empty($logoSrc)): ?>
+                <img src="<?= $logoSrc ?>" alt="Logo GROUPE EICG" class="institution-logo-img">
+              <?php else: ?>
+                <div class="logo-eicg-box">
+                  GROUPE<br>EICG
+                </div>
+              <?php endif; ?>
             </td>
             <td style="vertical-align: top; text-align: center;">
               <h1 class="institution-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>

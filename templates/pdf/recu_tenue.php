@@ -170,7 +170,12 @@
       <td style="width: 80%;">
         <table style="width: 100%;">
           <tr>
-            <td style="width: 33%;">N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? 'GE-25260003') ?></span></td>
+            <td style="width: 33%;">
+              N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? 'GE-25260003') ?></span>
+              <div style="margin-top: 2px;">
+                <barcode code="<?= htmlspecialchars($code_paiement ?? 'GE-25260003') ?>" type="C128A" size="0.6" height="0.6" />
+              </div>
+            </td>
             <td style="width: 33%;">Date : <span class="val-bold"><?= htmlspecialchars($date_operation ?? date('08/09/2025')) ?></span></td>
             <td style="width: 34%;">Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? 'AFFECTE') ?></span></td>
           </tr>
@@ -291,7 +296,12 @@
 
   <table class="info-table" style="font-size: 9.5px;">
     <tr>
-      <td style="width: 25%;">N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? 'GE-25260003') ?></span></td>
+      <td style="width: 25%;">
+        N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? 'GE-25260003') ?></span>
+        <div style="margin-top: 2px;">
+          <barcode code="<?= htmlspecialchars($code_paiement ?? 'GE-25260003') ?>" type="C128A" size="0.6" height="0.6" />
+        </div>
+      </td>
       <td style="width: 25%;">Fil/Niv : <span class="val-bold"><?= htmlspecialchars($filiere_niveau ?? 'RHC_1A') ?></span></td>
       <td style="width: 25%;">Contact : <span class="val-bold"><?= htmlspecialchars($telephone_etudiant ?? '0757885051') ?></span></td>
       <td style="width: 25%; text-align: right;">Date : <span class="val-bold"><?= htmlspecialchars($date_operation ?? '08/09/2025') ?></span></td>

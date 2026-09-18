@@ -232,7 +232,12 @@
       <td style="width: 78%;">
         <table style="width: 100%;">
           <tr>
-            <td style="width: 50%;">N° <span class="val-bold"><?= htmlspecialchars($code_inscription ?? 'GE-25260276') ?></span></td>
+            <td style="width: 50%;">
+              N° <span class="val-bold"><?= htmlspecialchars($code_inscription ?? 'GE-25260276') ?></span>
+              <div style="margin-top: 2px;">
+                <barcode code="<?= htmlspecialchars($code_inscription ?? 'GE-25260276') ?>" type="C128A" size="0.6" height="0.6" />
+              </div>
+            </td>
             <td style="width: 50%;"><?= htmlspecialchars($date_operation ?? date('d/m/Y H:i:s')) ?></td>
           </tr>
           <tr>
@@ -346,7 +351,12 @@
       <td style="width: 78%;">
         <table style="width: 100%;">
           <tr>
-            <td style="width: 50%;">N° <span class="val-bold"><?= htmlspecialchars($code_inscription ?? 'GE-25260276') ?></span></td>
+            <td style="width: 50%;">
+              N° <span class="val-bold"><?= htmlspecialchars($code_inscription ?? 'GE-25260276') ?></span>
+              <div style="margin-top: 2px;">
+                <barcode code="<?= htmlspecialchars($code_inscription ?? 'GE-25260276') ?>" type="C128A" size="0.6" height="0.6" />
+              </div>
+            </td>
             <td style="width: 50%; color: #94A3B8;"><?= htmlspecialchars($date_operation ?? date('14/10/2025 10:33:33')) ?></td>
           </tr>
           <tr>

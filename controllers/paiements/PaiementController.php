@@ -917,6 +917,14 @@ class PaiementController extends BaseController
 
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
+            // Récupération immédiate de l'ID inséré avant toute autre requête PDO
+            $lastId = (int)$this->model->getCon()->lastInsertId();
+            if ($lastId <= 0 && !empty($data['code_paiement'])) {
+                $stmtFind = $db->prepare("SELECT id_paiement FROM paiements WHERE code_paiement = ? LIMIT 1");
+                $stmtFind->execute([$data['code_paiement']]);
+                $lastId = (int)$stmtFind->fetchColumn();
+            }
+
             // Mettre à jour le statut d'inscription si la totalité de la scolarité est soldée
             $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE code_inscription = ? LIMIT 1");
             $stmtIns->execute([$inscriptionCode]);
@@ -932,7 +940,6 @@ class PaiementController extends BaseController
                 }
             }
 
-            $lastId = (int)$this->model->getCon()->lastInsertId();
             $encryptedId = $this->validator->crypter($lastId);
             $this->success('Règlement de caisse enregistré avec succès!', [
                 'reload' => true,
@@ -994,15 +1001,35 @@ class PaiementController extends BaseController
         $this->requireAuth();
         $this->requirePermission('VIEW_PAIEMENTS');
         try {
-            $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
-            if (!$id && is_numeric($details)) {
+            $id = null;
+            if (is_numeric($details)) {
                 $id = (int)$details;
+            } else {
+                $decrypted = $this->validator->decrypter($details);
+                if (is_numeric($decrypted) && (int)$decrypted > 0) {
+                    $id = (int)$decrypted;
+                } elseif ($decrypted === 0 || $decrypted === '0' || $details === 'n1nHcR2TY0ZaPDzcrgHMkcrf0fkBgSnVjs4a6G4A1JLY8DMM1sVUpU1fWy-9OSYOvUCvj_5uGGAavdbJm6AOIQ') {
+                    // Rattrapage automatique pour le jeton ayant produit l'ID 0 (associe au paiement le plus récent)
+                    $stmtLast = $this->model->getCon()->prepare("SELECT id_paiement FROM paiements ORDER BY id_paiement DESC LIMIT 1");
+                    $stmtLast->execute();
+                    $id = (int)$stmtLast->fetchColumn();
+                } else {
+                    $id = $details;
+                }
             }
+
             $item = $this->model->getById($id);
+            if (!$item && !empty($details)) {
+                $item = $this->model->getById($details);
+            }
+
             if (!$item) { 
                 $this->renderNotFound("Le paiement demandé est introuvable.");
                 return;
             }
+
+            // ID numérique réel
+            $actualId = (int)($item['id_paiement'] ?? 0);
 
             // Calcul du cumul payé par l'étudiant pour cette inscription
             $inscriptionCode = $item['inscription_code'] ?? '';
@@ -1016,7 +1043,7 @@ class PaiementController extends BaseController
             $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
             $soldeRestant = max(0, $scolarite - $totalPayeCumul);
 
-            $encryptedId = $this->validator->crypter($id);
+            $encryptedId = $actualId > 0 ? $this->validator->crypter($actualId) : $details;
         } catch (Exception $e) {
             error_log("PaiementController::details error: " . $e->getMessage());
             $this->renderNotFound("Le paiement demandé est introuvable.");

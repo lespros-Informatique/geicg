@@ -52,7 +52,7 @@ class ModelPaiement extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getById(int $id): array
+    public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
             SELECT p.*, 
@@ -73,10 +73,12 @@ class ModelPaiement extends BaseModel
             LEFT JOIN annees a ON (a.code_annee = p.annee_code OR a.code_annee = ins.annee_code)
             LEFT JOIN users u ON u.code_user = p.user_code
             LEFT JOIN tranches_scolarite t ON t.code_tranche = p.tranche_code
-            WHERE p.id_paiement = ?
+            WHERE p.id_paiement = ? OR p.code_paiement = ?
             LIMIT 1
         ");
-        $stmt->execute([(int)$id]);
+        $num = is_numeric($id) ? (int)$id : 0;
+        $code = (string)$id;
+        $stmt->execute([$num, $code]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: [];
     }

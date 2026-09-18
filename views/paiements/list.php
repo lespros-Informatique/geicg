@@ -656,12 +656,11 @@ $(document).ready(function() {
       { data: 'montant_paiement', width: '150px', className: 'text-end', render: function(d) {
         return d ? '<strong style="color:#15803D; font-size:14px;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
       } },
-      { data: null, width: '220px', orderable: false, className: 'text-end', render: function(d) {
+      { data: null, width: '160px', orderable: false, className: 'text-end', render: function(d) {
         var idCrypte = d.editId || d.id_paiement;
         return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
                '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer le reçu"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
                '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="eye" style="width:13px;height:13px;"></i> Détails</a>' +
-               '  <a href="' + window.RACINE + 'paiement/edition/' + idCrypte + '" class="btn btn-sm btn-secondary" style="font-weight:600; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="edit" style="width:13px;height:13px;"></i> Éditer</a>' +
                '</div>';
       } }
     ],

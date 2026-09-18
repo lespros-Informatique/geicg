@@ -105,6 +105,9 @@
         <div style="margin-top: 5px;">
           <span class="badge-code">N° <?= htmlspecialchars($code_paiement ?? 'PAI-0000') ?></span>
         </div>
+        <div style="margin-top: 5px;">
+          <barcode code="<?= htmlspecialchars($code_paiement ?? 'PAI-0000') ?>" type="C128A" size="0.75" height="0.8" />
+        </div>
         <div style="font-size: 10px; color: #64748B; margin-top: 4px;">
           Date : <?= htmlspecialchars($date_paiement ?? date('d/m/Y H:i')) ?>
         </div>

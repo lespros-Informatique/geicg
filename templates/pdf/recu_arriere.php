@@ -185,7 +185,12 @@
   <!-- INFORMATIONS ÉTUDIANT & TRANSACTION -->
   <table class="info-table">
     <tr>
-      <td style="width: 50%;">N° Reçu : <span class="val-bold"><?= htmlspecialchars($reference_paiement ?? $numero_recu ?? 'REC-ARR-2026-001') ?></span></td>
+      <td style="width: 50%;">
+        N° Reçu : <span class="val-bold"><?= htmlspecialchars($reference_paiement ?? $numero_recu ?? 'REC-ARR-2026-001') ?></span>
+        <div style="margin-top: 2px;">
+          <barcode code="<?= htmlspecialchars($reference_paiement ?? $numero_recu ?? 'REC-ARR-2026-001') ?>" type="C128A" size="0.6" height="0.6" />
+        </div>
+      </td>
       <td style="width: 50%; text-align: right;">Date du versement : <span class="val-bold"><?= htmlspecialchars($date_paiement ?? date('d/m/Y H:i:s')) ?></span></td>
     </tr>
     <tr>
