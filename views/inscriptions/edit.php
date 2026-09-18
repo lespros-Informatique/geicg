@@ -85,92 +85,105 @@ $annees = (new ModelAnnee())->getAll();
       <!-- ========================================================================= -->
       <!-- BANDEAU PREVIEW / FICHE SYNTHÈSE COMPLÈTE ÉTUDIANT (AFFICHÉ DÈS LA RECHERCHE) -->
       <!-- ========================================================================= -->
-      <div id="student-profile-preview-banner" class="card" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(15,23,42,0.06); transition: all 0.3s ease;">
+      <!-- ========================================================================= -->
+      <!-- FICHE SYNTHÈSE COMPLÈTE ÉTUDIANT (CARTES PAR ÉTAPES ET CARTE PHOTO D'IDENTITÉ) -->
+      <!-- ========================================================================= -->
+      <div id="student-profile-preview-banner" style="display: none; margin-bottom: 24px; transition: all 0.3s ease;">
         
-        <!-- En-tête : Identité Générale & Avatar -->
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; border-bottom: 1.5px solid #F1F5F9; padding-bottom: 16px; margin-bottom: 18px;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <div id="prev_stu_avatar" style="width: 56px; height: 56px; border-radius: 50%; background: #1E3A5F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; box-shadow: 0 4px 10px rgba(30,58,95,0.25);">ET</div>
-            <div>
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h2 id="prev_stu_nom" style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;">Nom et Prénoms</h2>
-                <span id="prev_stu_badge_sexe" class="badge" style="background: #EFF6FF; color: #1E3A5F; font-weight: 800; font-size: 12px; padding: 3px 8px; border-radius: 6px;">Masculin (M)</span>
-                <span id="prev_stu_badge_redoublant" class="badge" style="display: none; background: #FEF2F2; color: #991B1B; font-weight: 800; font-size: 12px; padding: 3px 8px; border-radius: 6px;">Redoublant</span>
+        <!-- 1. CARTE PHOTO D'IDENTITÉ & PROFIL ÉLÈVE -->
+        <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.06); margin-bottom: 18px;">
+          <!-- Header de la Carte Photo -->
+          <div style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 12px 20px; font-size: 12px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: #DBEAFE; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="camera" style="width: 16px; height: 16px; color: #2563EB;"></i>
               </div>
-              <div style="font-size: 13px; color: #64748B; margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span>Matricule : <code id="prev_stu_matricule" style="font-weight: 800; color: #1E3A5F; font-size: 13px; background: #F1F5F9; padding: 2px 8px; border-radius: 4px;">-</code></span>
-                <span>&bull; Nationalité : <strong id="prev_stu_nationalite" style="color: #0F172A;">Ivoirienne</strong></span>
+              <span>Photo d'Identité & Identité Élève</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; background: #EDF2F7; padding: 3px 10px; border-radius: 12px;">Identité Académique</span>
+          </div>
+
+          <!-- Corps de la Carte Photo -->
+          <div style="padding: 20px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+            <!-- Boîtier Photo / Avatar -->
+            <div style="position: relative; flex-shrink: 0; text-align: center;">
+              <div style="width: 84px; height: 84px; border-radius: 14px; background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 3px solid #CBD5E1; box-shadow: 0 4px 12px rgba(0,0,0,0.12); overflow: hidden; position: relative;">
+                <img id="prev_stu_photo_img" src="" alt="Photo d'identité" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                <span id="prev_stu_avatar">ET</span>
+              </div>
+              <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 6px; letter-spacing: 0.5px;">Photo d'identité</div>
+            </div>
+
+            <!-- Détails de l'étudiant -->
+            <div style="flex: 1; min-width: 260px;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
+                <h2 id="prev_stu_nom" style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.2px;">Nom et Prénoms</h2>
+                <span id="prev_stu_badge_sexe" class="badge" style="background: #E0F2FE; color: #0369A1; font-weight: 700; font-size: 11.5px; padding: 4px 10px; border-radius: 20px; border: 1px solid #BAE6FD;">Masculin (M)</span>
+                <span id="prev_stu_badge_redoublant" class="badge" style="display: none; background: #FEE2E2; color: #991B1B; font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 20px; border: 1px solid #FCA5A5;">Redoublant</span>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 13px; color: #475569; margin-top: 8px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; background: #F8FAFC; padding: 4px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                  <i data-lucide="shield" style="width: 14px; height: 14px; color: #2563EB;"></i>
+                  <strong>Matricule :</strong> <code id="prev_stu_matricule" style="font-weight: 800; color: #1E3A5F; font-size: 13px; background: transparent; padding: 0;">-</code>
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; background: #F8FAFC; padding: 4px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                  <i data-lucide="globe" style="width: 14px; height: 14px; color: #059669;"></i>
+                  <strong>Nationalité :</strong> <span id="prev_stu_nationalite" style="font-weight: 700; color: #0F172A;">Ivoirienne</span>
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Grille des 4 Blocs d'Informations Détaillées -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
+        <!-- 2. GRILLE DES CARTES D'INFORMATIONS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
           
-          <!-- Étape / Bloc 1 : Identité & Coordonnées -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px;">
-            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="user" style="width: 14px; height: 14px;"></i> Étape 1 : Identité & Coordonnées
-            </div>
-            <div style="font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 4px;">
-              <div><strong>Nom de famille :</strong> <span id="prev_stu_nom_famille">-</span></div>
-              <div><strong>Prénoms :</strong> <span id="prev_stu_prenoms">-</span></div>
-              <div><strong>Date de naissance :</strong> <span id="prev_stu_naissance">-</span></div>
-              <div><strong>Lieu de naissance :</strong> <span id="prev_stu_lieu_naissance">-</span></div>
-              <div><strong>Téléphone étudiant :</strong> <span id="prev_stu_contact" style="font-weight: 700; color: #0F172A;">-</span></div>
-              <div><strong>Email étudiant :</strong> <span id="prev_stu_email">-</span></div>
-              <div><strong>Adresse de résidence :</strong> <span id="prev_stu_residence">-</span></div>
-            </div>
-          </div>
-
-          <!-- Étape / Bloc 2 : Parents & Tuteurs Légaux -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px;">
-            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="users" style="width: 14px; height: 14px;"></i> Étape 2 : Parents & Tuteurs Légaux
-            </div>
-            <div style="font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 4px;">
-              <div><strong>Père / Tuteur :</strong> <span id="prev_stu_parent" style="font-weight: 700;">-</span></div>
-              <div><strong>Téléphone :</strong> <span id="prev_stu_parent_tel" style="color: #15803D; font-weight: 700;">-</span></div>
-              <div><strong>Profession :</strong> <span id="prev_stu_parent_prof">-</span></div>
-              <div id="prev_box_mere" style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #E2E8F0;">
-                <div><strong>Nom de la Mère :</strong> <span id="prev_stu_mere">-</span></div>
-                <div><strong>Tél. Mère :</strong> <span id="prev_stu_mere_tel" style="color: #15803D; font-weight: 700;">-</span></div>
+          <!-- Étape / Carte 1 : Identité & Coordonnées -->
+          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);">
+            <div style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 12px 16px; font-size: 11.5px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+              <div style="width: 26px; height: 26px; border-radius: 6px; background: #DBEAFE; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="user" style="width: 14px; height: 14px; color: #2563EB;"></i>
               </div>
+              <span>Étape 1 : Identité & Coordonnées</span>
             </div>
-          </div>
-
-          <!-- Étape / Bloc 3 : Cursus & Bilan Année Précédente (N-1) -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px;">
-            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="history" style="width: 14px; height: 14px;"></i> Étape 3 : Cursus & Bilan N-1
-            </div>
-            <div id="prev_history_content" style="font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 4px;">
-              <div><strong>Filière passée :</strong> <span id="prev_stu_filiere" style="font-weight: 700; color: #1E3A5F;">-</span></div>
-              <div><strong>Niveau d'études :</strong> <span id="prev_stu_niveau" style="font-weight: 700;">-</span></div>
-              <div><strong>Classe passée :</strong> <span id="prev_stu_classe" style="font-weight: 700;">-</span></div>
-              <div><strong>Session & Régime :</strong> <span id="prev_stu_annee_detail">-</span></div>
-              <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11.5px; color: #64748B;">Solde restant N-1 :</span>
-                <span id="prev_stu_solde" style="font-weight: 800; font-size: 13px; color: #DC2626;">0 FCFA</span>
+            <div style="padding: 16px 18px; font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Nom de famille :</span> <span id="prev_stu_nom_famille" style="font-weight: 700; color: #0F172A;">-</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Prénoms :</span> <span id="prev_stu_prenoms" style="font-weight: 700; color: #0F172A;">-</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Né(e) le :</span> <span id="prev_stu_naissance" style="font-weight: 700;">-</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Lieu de naissance :</span> <span id="prev_stu_lieu_naissance" style="font-weight: 600;">-</span></div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 4px; border-top: 1px dashed #E2E8F0;">
+                <span style="color: #64748B;">Téléphone :</span> 
+                <span id="prev_stu_contact" style="font-weight: 800; color: #047857; background: #ECFDF5; padding: 2px 8px; border-radius: 6px; border: 1px solid #A7F3D0;">-</span>
               </div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Email :</span> <span id="prev_stu_email" style="font-weight: 600; color: #2563EB;">-</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Résidence :</span> <span id="prev_stu_residence" style="font-weight: 600;">-</span></div>
             </div>
           </div>
 
-          <!-- Étape / Bloc 4 : Accessoires & Kits d'Inscription (PLEINE LARGEUR) -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px 18px; grid-column: 1 / -1; width: 100%; box-sizing: border-box;">
-            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="package" style="width: 15px; height: 15px;"></i> Étape 4 : Accessoires & Kits d'Inscription
+          <!-- Étape / Carte 2 : Cursus & Bilan N-1 -->
+          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);">
+            <div style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 12px 16px; font-size: 11.5px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+              <div style="width: 26px; height: 26px; border-radius: 6px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="history" style="width: 14px; height: 14px; color: #D97706;"></i>
+              </div>
+              <span>Étape 2 : Cursus & Bilan N-1</span>
             </div>
-            <div id="prev_accessories_content" style="font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 6px;">
-              <div style="font-size: 11.5px; color: #64748B;">Kits & accessoires associés / souscrits :</div>
-              <div id="prev_acc_list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
-                <span class="badge" style="background: #E2E8F0; color: #475569; padding: 4px 10px; border-radius: 6px; font-weight: 700;">Aucun accessoire souscrit</span>
+            <div id="prev_history_content" style="padding: 16px 18px; font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 8px;">
+              <div><span style="color: #64748B;">Filière passée :</span> <span id="prev_stu_filiere" style="font-weight: 700; color: #1E3A5F; display: block; margin-top: 2px;">-</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Niveau d'études :</span> <span id="prev_stu_niveau" style="font-weight: 700;">-</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Classe passée :</span> <span id="prev_stu_classe" style="font-weight: 700;">-</span></div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 2px;"><span id="prev_stu_annee_detail">-</span></div>
+              <div style="margin-top: 6px; padding: 8px 12px; background: #FEF2F2; border-radius: 8px; border: 1px solid #FCA5A5; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11.5px; font-weight: 700; color: #991B1B;">Solde restant N-1 :</span>
+                <span id="prev_stu_solde" style="font-weight: 900; font-size: 13.5px; color: #DC2626;">0 FCFA</span>
               </div>
             </div>
           </div>
 
         </div>
+
+      </div>
 
         <!-- ========================================================================= -->
         <!-- BANDEAU QUITUS FINANCIER N-1 (CONTRÔLE BUREAU SCOLARITÉ / CAISSE) -->
@@ -610,7 +623,13 @@ $(document).ready(function() {
           currentStudentData = d;
 
           var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
-          $('#prev_stu_avatar').text(initials || 'ET');
+          if (d.photo_url) {
+            $('#prev_stu_photo_img').attr('src', d.photo_url).show();
+            $('#prev_stu_avatar').hide();
+          } else {
+            $('#prev_stu_photo_img').hide();
+            $('#prev_stu_avatar').text(initials || 'ET').show();
+          }
 
           // Étape 1 : Identité & Coordonnées
           $('#prev_stu_nom').text(d.nom_complet);

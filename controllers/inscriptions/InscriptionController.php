@@ -357,6 +357,7 @@ class InscriptionController extends BaseController
                 'prev_solde' => $prevSolde,
                 'quitus_status' => ($prevSolde <= 0) ? 'ok' : 'impaye',
                 'statut_etudiant' => $etudiant['statut_etudiant'] ?? 'actif',
+                'photo_url' => !empty($prevIns['photo_inscription']) ? RACINE . ltrim($prevIns['photo_inscription'], '/') : (!empty($etudiant['photo_etudiant']) ? RACINE . ltrim($etudiant['photo_etudiant'], '/') : ''),
                 'is_already_registered_this_year' => !empty($alreadyThisYear),
                 'already_registered_classe' => $alreadyThisYear['libelle_classe'] ?? '',
                 'already_registered_code' => $alreadyThisYear['code_inscription'] ?? '',
