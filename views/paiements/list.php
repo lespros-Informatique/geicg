@@ -410,11 +410,16 @@
           </div>
         <?php endif; ?>
 
-        <!-- 1. Sélection de l'étudiant / Inscription -->
+        <!-- 1. Sélection de l'étudiant / Inscription (Uniquement année en session) -->
         <div style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1.5px solid #CBD5E1;">
-          <label style="font-size: 12px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase;">
-            <i data-lucide="user-check" style="width: 15px; height: 15px; color: #1E3A5F;"></i> 1. Rechercher l'étudiant / Dossier d'inscription <span class="text-danger">*</span>
-          </label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+            <label style="font-size: 12px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 6px; text-transform: uppercase;">
+              <i data-lucide="user-check" style="width: 15px; height: 15px; color: #1E3A5F;"></i> 1. Rechercher l'étudiant / Dossier d'inscription <span class="text-danger">*</span>
+            </label>
+            <span style="font-size: 11px; font-weight: 700; color: #16A34A; background: #DCFCE7; border: 1px solid #86EFAC; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+              <i data-lucide="calendar-check" style="width: 12px; height: 12px;"></i> Année en session : <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'En cours') ?>
+            </span>
+          </div>
           <select id="modal_select_inscription" name="inscription_code" class="form-control" style="width: 100%;" required>
             <option value="">-- Tapez le nom, matricule ou classe de l'étudiant --</option>
             <?php foreach (($inscriptions ?? []) as $ins): ?>

@@ -36,7 +36,7 @@ class PaiementController extends BaseController
 
         $stats = $this->computeFinancialStats($activeYear, $niveauCode, $classeCode, $dateDebut, $dateFin);
 
-        // Inscriptions pour sélection rapide dans le modal d'encaissement
+        // Inscriptions pour sélection dans le modal d'encaissement : UNIQUEMENT l'année active en session
         $stmtInscr = $db->prepare("
             SELECT 
                 i.code_inscription,
@@ -51,7 +51,8 @@ class PaiementController extends BaseController
             JOIN etudiants e ON i.etudiant_code = e.code_etudiant
             LEFT JOIN classes c ON i.classe_code = c.code_classe
             WHERE i.statut_inscription != 'annule'
-            ORDER BY (CASE WHEN i.annee_code = ? THEN 1 ELSE 2 END), e.nom_etudiant ASC, e.prenom_etudiant ASC
+              AND i.annee_code = ?
+            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
         $stmtInscr->execute([$activeYear]);
         $inscriptions = $stmtInscr->fetchAll(PDO::FETCH_ASSOC) ?: [];
