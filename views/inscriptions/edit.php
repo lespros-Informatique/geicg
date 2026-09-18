@@ -145,7 +145,7 @@ $annees = (new ModelAnnee())->getAll();
               <div style="width: 26px; height: 26px; border-radius: 6px; background: #DBEAFE; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
                 <i data-lucide="user" style="width: 14px; height: 14px; color: #2563EB;"></i>
               </div>
-              <span>Étape 1 : Identité & Coordonnées</span>
+              <span>Identité & Coordonnées</span>
             </div>
             <div style="padding: 16px 18px; font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 8px;">
               <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Nom de famille :</span> <span id="prev_stu_nom_famille" style="font-weight: 700; color: #0F172A;">-</span></div>
@@ -161,13 +161,13 @@ $annees = (new ModelAnnee())->getAll();
             </div>
           </div>
 
-          <!-- Étape / Carte 2 : Cursus & Bilan N-1 -->
+          <!-- Étape / Carte 2 : Cursus & Bilan Antérieur -->
           <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);">
             <div style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 12px 16px; font-size: 11.5px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
               <div style="width: 26px; height: 26px; border-radius: 6px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
                 <i data-lucide="history" style="width: 14px; height: 14px; color: #D97706;"></i>
               </div>
-              <span>Étape 2 : Cursus & Bilan N-1</span>
+              <span>Cursus & Bilan Antérieur</span>
             </div>
             <div id="prev_history_content" style="padding: 16px 18px; font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 8px;">
               <div><span style="color: #64748B;">Filière passée :</span> <span id="prev_stu_filiere" style="font-weight: 700; color: #1E3A5F; display: block; margin-top: 2px;">-</span></div>
@@ -175,7 +175,7 @@ $annees = (new ModelAnnee())->getAll();
               <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Classe passée :</span> <span id="prev_stu_classe" style="font-weight: 700;">-</span></div>
               <div style="font-size: 12px; color: #64748B; margin-top: 2px;"><span id="prev_stu_annee_detail">-</span></div>
               <div style="margin-top: 6px; padding: 8px 12px; background: #FEF2F2; border-radius: 8px; border: 1px solid #FCA5A5; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11.5px; font-weight: 700; color: #991B1B;">Solde restant N-1 :</span>
+                <span style="font-size: 11.5px; font-weight: 700; color: #991B1B;">Solde restant antérieur :</span>
                 <span id="prev_stu_solde" style="font-weight: 900; font-size: 13.5px; color: #DC2626;">0 FCFA</span>
               </div>
             </div>
@@ -658,22 +658,22 @@ $(document).ready(function() {
 
           // Étape 3 : Cursus & Situation Antérieure (N-1)
           if (d.has_history) {
-            $('#prev_stu_filiere').text(d.derniere_filiere || 'Filière N-1').show();
-            $('#prev_stu_niveau').text(d.dernier_niveau || 'Niveau N-1').show();
-            $('#prev_stu_classe').text(d.derniere_classe || 'Classe N-1').show();
+            $('#prev_stu_filiere').text(d.derniere_filiere || 'Filière antérieure').show();
+            $('#prev_stu_niveau').text(d.dernier_niveau || 'Niveau antérieur').show();
+            $('#prev_stu_classe').text(d.derniere_classe || 'Classe antérieure').show();
             $('#prev_stu_annee_detail').text((d.derniere_annee ? 'Session ' + d.derniere_annee + ' • ' : '') + 'Régime : ' + d.prev_regime);
             
             var solde = Number(d.prev_solde || 0);
             if (solde <= 0) {
               $('#prev_stu_solde').css('color', '#15803D').text('Compte Soldé (0 FCFA)');
-              // Quitus Financier N-1 Validé
+              // Quitus Financier Antérieur Validé
               $('#quitus-financial-status-box').css({
                 'background': '#F0FDF4',
                 'border-color': '#86EFAC'
               }).show();
               $('#quitus_icon_box').css('background', '#DCFCE7');
               $('#quitus_icon').attr('data-lucide', 'shield-check').css('color', '#15803D');
-              $('#quitus_title').css('color', '#166534').text('✅ Quitus Financier N-1 Validé');
+              $('#quitus_title').css('color', '#166534').text('✅ Quitus Financier Antérieur Validé');
               $('#quitus_desc').css('color', '#166534').text('L\'étudiant est entièrement à jour de ses règlements sur les sessions précédentes. Aucune dette antérieure enregistrée.');
               $('#quitus_badge_box').html('<span class="badge" style="background:#15803D; color:#FFFFFF; padding:6px 12px; border-radius:6px; font-weight:800; font-size:12px;">Quitus Accordé</span>');
               $('#quitus_derogation_zone').hide();
@@ -688,8 +688,8 @@ $(document).ready(function() {
               }).show();
               $('#quitus_icon_box').css('background', '#FEE2E2');
               $('#quitus_icon').attr('data-lucide', 'alert-octagon').css('color', '#DC2626');
-              $('#quitus_title').css('color', '#991B1B').text('⚠️ Alerte Financière : Arriérés N-1 Détectés (' + solde.toLocaleString('fr-FR') + ' FCFA)');
-              $('#quitus_desc').css('color', '#991B1B').html('L\'étudiant présente un reliquat impayé de <strong>' + solde.toLocaleString('fr-FR') + ' FCFA</strong> sur la session précédente (' + (d.derniere_annee || 'N-1') + '). La réinscription normale requiert la régularisation préalable au <strong>Bureau des Versements</strong>.');
+              $('#quitus_title').css('color', '#991B1B').text('⚠️ Alerte Financière : Arriérés Antérieurs Détectés (' + solde.toLocaleString('fr-FR') + ' FCFA)');
+              $('#quitus_desc').css('color', '#991B1B').html('L\'étudiant présente un reliquat impayé de <strong>' + solde.toLocaleString('fr-FR') + ' FCFA</strong> sur la session précédente (' + (d.derniere_annee || 'antérieure') + '). La réinscription normale requiert la régularisation préalable au <strong>Bureau des Versements</strong>.');
               $('#quitus_badge_box').html('<span class="badge" style="background:#DC2626; color:#FFFFFF; padding:6px 12px; border-radius:6px; font-weight:800; font-size:12px;">Solde Débiteur</span>');
               $('#quitus_derogation_zone').show();
 
