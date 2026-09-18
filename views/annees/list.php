@@ -80,31 +80,29 @@ $(document).ready(function() {
           return '<span style="font-weight:700; color:#1E293B; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="calendar" style="width:14px;height:14px;color:#1E3A5F;"></i> ' + formatted + '</span>';
         }
       },
-      { data: 'statut_annee', width: '80px', className: 'text-center', render: function(d, type, row) {
-        var isActif = (d === 'actif');
-        var checkedAttr = isActif ? 'checked' : '';
-        var todayStr = new Date().toISOString().split('T')[0];
-        var isPassed = (!isActif && row.date_fin_annee && row.date_fin_annee < todayStr);
-        var disabledAttr = isPassed ? 'disabled' : '';
-        var cursorStyle = isPassed ? 'cursor:not-allowed; opacity:0.5;' : 'cursor:pointer;';
-        var titleText = isActif ? 'Actif - Cliquez pour désactiver' : (isPassed ? 'Date de fin passée - Activation impossible' : 'Inactif - Cliquez pour activer');
-
-        return '<div style="display:flex; justify-content:center; align-items:center;">' +
-               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; ' + cursorStyle + '" title="' + titleText + '">' +
-               '<input type="checkbox" class="toggle-statut-annee" data-id="' + row.id_annee + '" ' + checkedAttr + ' ' + disabledAttr + ' style="opacity:0; width:0; height:0;">' +
-               '<span style="position:absolute; cursor:' + (isPassed ? 'not-allowed' : 'pointer') + '; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-               '</span>' +
-               '</label>' +
-               '</div>';
+      { data: 'statut_annee', width: '130px', className: 'text-center', render: function(d, type, row) {
+        if (d === 'actif') {
+          return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Active en cours</span>';
+        } else if (d === 'planifie') {
+          return '<span class="badge" style="background:#DBEAFE; color:#1E40AF; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="clock" style="width:14px;height:14px;"></i> En préparation</span>';
+        } else {
+          return '<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="lock" style="width:14px;height:14px;"></i> Clôturée</span>';
+        }
       }},
-      { data: null, width: '160px', orderable: false, render: function(d) {
+      { data: null, width: '220px', orderable: false, render: function(d) {
         var isActif = (d.statut_annee === 'actif');
-        var editBtn = isActif ?
-          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Impossible d\'éditer une année académique active"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
-          '<button type="button" class="btn btn-sm btn-secondary btn-edit-annee" data-id="' + d.id_annee + '" data-libelle="' + (d.libelle_annee ? $('<div>').text(d.libelle_annee).html() : '') + '" data-debut="' + (d.date_debut_annee || '') + '" data-fin="' + (d.date_fin_annee || '') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
 
-        return editBtn +
+        var statusBtn = isActif ?
+          '<button type="button" class="btn btn-sm btn-warning btn-activate-annee" data-id="' + d.id_annee + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer; background:#F59E0B; border-color:#F59E0B; color:#FFFFFF;" title="Clôturer cette année académique"><i data-lucide="lock" style="width:14px;height:14px;"></i> Clôturer</button>' :
+          '<button type="button" class="btn btn-sm btn-success btn-activate-annee" data-id="' + d.id_annee + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Activer cette année académique"><i data-lucide="power" style="width:14px;height:14px;"></i> Activer</button>';
+
+        var isPlanifie = (d.statut_annee === 'planifie');
+
+        var editBtn = isPlanifie ?
+          '<button type="button" class="btn btn-sm btn-secondary btn-edit-annee" data-id="' + d.id_annee + '" data-libelle="' + (d.libelle_annee ? $('<div>').text(d.libelle_annee).html() : '') + '" data-debut="' + (d.date_debut_annee || '') + '" data-fin="' + (d.date_fin_annee || '') + '" data-statut="' + (d.statut_annee || 'planifie') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
+          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Seule une année académique en préparation (planifiée) peut être éditée"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
+
+        return statusBtn + editBtn +
                '<a href="' + window.RACINE + 'annee/details/' + (d.editId || d.id_annee) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
@@ -112,11 +110,10 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  // Bascule de statut instantanée via Ajax
-  $(document).on('change', '.toggle-statut-annee', function() {
+  // Bascule d'activation d'année via Ajax
+  $(document).on('click', '.btn-activate-annee', function(e) {
+    e.preventDefault();
     var id = $(this).data('id');
-    var isChecked = $(this).is(':checked');
-    var $input = $(this);
 
     $.ajax({
       url: '<?= RACINE ?>annee/changer',
@@ -130,9 +127,9 @@ $(document).ready(function() {
       success: function(res) {
         if (res.status === 1 || res.success) {
           if (typeof showToast === 'function') {
-            showToast(res.message || 'Statut mis à jour avec succès', 'success');
+            showToast(res.message || 'Année activée avec succès', 'success');
           } else if (window.toastr) {
-            toastr.success(res.message || 'Statut mis à jour avec succès');
+            toastr.success(res.message || 'Année activée avec succès');
           }
           if (res.activeYear && res.activeYear.libelle_annee) {
             $('#activeAnneeDisplay').text(res.activeYear.libelle_annee);
@@ -144,7 +141,6 @@ $(document).ready(function() {
           } else if (window.toastr) {
             toastr.error(res.message || 'Erreur lors du changement de statut');
           }
-          $input.prop('checked', !isChecked);
         }
       },
       error: function() {
@@ -153,7 +149,6 @@ $(document).ready(function() {
         } else if (window.toastr) {
           toastr.error('Erreur réseau');
         }
-        $input.prop('checked', !isChecked);
       }
     });
   });
@@ -163,6 +158,7 @@ $(document).ready(function() {
     e.preventDefault();
     $('#form-annee')[0].reset();
     $('#annee_id').val('');
+    $('#annee_statut').val('planifie');
     $('#modal-annee-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Année Académique');
     $('#modal-annee').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
@@ -176,11 +172,13 @@ $(document).ready(function() {
     var libelle = $(this).data('libelle');
     var debut = $(this).data('debut');
     var fin = $(this).data('fin');
+    var statut = $(this).data('statut') || 'planifie';
 
     $('#annee_id').val(id);
     $('#annee_libelle').val(libelle);
     $('#annee_date_debut').val(debut);
     $('#annee_date_fin').val(fin);
+    $('#annee_statut').val(statut);
 
     $('#modal-annee-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Année Académique');
     $('#modal-annee').css('display', 'flex');
@@ -284,8 +282,17 @@ $(document).ready(function() {
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
             Date de Fin <span style="color: #EF4444;">*</span>
           </label>
-          <input type="date" name="date_fin_annee" id="annee_date_fin" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
-        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 22px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Statut de l'Année
+        </label>
+        <select name="statut_annee" id="annee_statut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 13.5px;">
+          <option value="planifie">🔵 En préparation (Année Future / Pré-inscriptions)</option>
+          <option value="cloture">⚪ Clôturée (Année Passée / Historique)</option>
+        </select>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">L'activation officielle de l'année active principale s'effectue via le bouton « Activer » du tableau.</small>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">

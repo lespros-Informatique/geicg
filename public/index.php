@@ -342,6 +342,7 @@ $route->addRoute('/arriere/apiList', [$arriereController, 'apiList']);
 $route->addRoute('/arriere/apiStats', [$arriereController, 'apiStats']);
 $route->addRoute('/arriere/apiDetailEtudiant', [$arriereController, 'apiDetailEtudiant']);
 $route->addRoute('/arriere/enregistrerReglement', [$arriereController, 'enregistrerReglement']);
+$route->addRoute('/arriere/imprimerRecuArriere', [$arriereController, 'imprimerRecuArriere']);
 
 // Module: type_depense (TypeDepenseController)
 $route->addRoute('/type_depense/list', [$typeDepenseController, 'list']);

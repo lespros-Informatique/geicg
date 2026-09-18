@@ -82,8 +82,8 @@ class AnneeController extends BaseController
             $data['code_annee'] = $this->validator->generateCode('annees', 'code_annee', 'ANN-', 8);
         }
         
-        // Toute nouvelle année académique est obligatoirement créée avec le statut inactif
-        $data['statut_annee'] = 'inactif';
+        // Toute nouvelle année académique est créée avec le statut 'planifie' par défaut (En préparation)
+        $data['statut_annee'] = (!empty($data['statut_annee']) && in_array($data['statut_annee'], ['planifie', 'cloture'], true)) ? $data['statut_annee'] : 'planifie';
         $data['created_at_annee'] = date('Y-m-d H:i:s');
         
         $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
@@ -113,8 +113,8 @@ class AnneeController extends BaseController
             return;
         }
 
-        if (($currentItem['statut_annee'] ?? '') === 'actif') {
-            $this->error('Impossible d\'éditer une année académique active.');
+        if (($currentItem['statut_annee'] ?? '') !== 'planifie') {
+            $this->error('Seule une année académique en préparation (planifiée) peut être modifiée.');
             return;
         }
 
@@ -134,8 +134,8 @@ class AnneeController extends BaseController
         }
 
         // Vérification des règles de dates si changement de statut
-        $newStatus = $data['statut_annee'] ?? ($currentItem['statut_annee'] ?? 'inactif');
-        $oldStatus = $currentItem['statut_annee'] ?? 'inactif';
+        $newStatus = $data['statut_annee'] ?? ($currentItem['statut_annee'] ?? 'planifie');
+        $oldStatus = $currentItem['statut_annee'] ?? 'planifie';
 
         $evalItem = array_merge($currentItem, $data);
 
@@ -145,7 +145,7 @@ class AnneeController extends BaseController
                 $this->error($errorMsg);
                 return;
             }
-        } elseif ($newStatus === 'inactif' && $oldStatus === 'actif') {
+        } elseif ($newStatus === 'cloture' && $oldStatus === 'actif') {
             $errorMsg = '';
             if (!$this->model->canClose($evalItem, $errorMsg)) {
                 $this->error($errorMsg);
