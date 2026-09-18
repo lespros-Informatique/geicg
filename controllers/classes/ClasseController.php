@@ -101,7 +101,12 @@ class ClasseController extends BaseController
         }
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : $this->getActiveAnneeCode();
+        $anneeCode = !empty($data['annee_code']) ? trim($data['annee_code']) : $this->getActiveAnneeCode();
+
+        if (empty($anneeCode)) {
+            $this->error("Impossible de créer la classe : Aucune année académique n'a été spécifiée ou n'est active. Veuillez sélectionner ou créer une année académique.");
+            return;
+        }
 
         if (!empty($data['libelle_classe'])) {
             if (!$this->checkUniquePair('classes', [
@@ -124,7 +129,8 @@ class ClasseController extends BaseController
         if ($this->model->create($filteredData)) {
             $this->success('Classe créée avec succès!');
         } else {
-            $this->error('Erreur lors de la création de la classe.');
+            $err = $this->model->getLastError() ?: 'Erreur lors de la création de la classe.';
+            $this->error($err);
         }
     }
 
@@ -153,7 +159,7 @@ class ClasseController extends BaseController
             }
         }
 
-        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : null;
+        $anneeCode = !empty($data['annee_code']) ? trim($data['annee_code']) : null;
         if (!$anneeCode) {
             $existing = $this->model->getById($id);
             $anneeCode = $existing['annee_code'] ?? $this->getActiveAnneeCode();
@@ -167,11 +173,15 @@ class ClasseController extends BaseController
         }
 
         $cols = $this->model->getCon()->query("DESCRIBE classes")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('annee_code', $cols) && !empty($anneeCode)) {
+            $data['annee_code'] = $anneeCode;
+        }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
             $this->success('Classe modifiée avec succès!');
         } else {
-            $this->error('Erreur lors de la modification de la classe.');
+            $err = $this->model->getLastError() ?: 'Erreur lors de la modification de la classe.';
+            $this->error($err);
         }
     }
 

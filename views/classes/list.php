@@ -21,6 +21,42 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe
         </button>
       </div>
+ 
+      <?php if (empty($annees)): ?>
+        <div style="background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; color: #991B1B;">
+            <i data-lucide="alert-triangle" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+            <span style="font-weight: 700; font-size: 13.5px;">Aucune année académique n'est configurée. Pour créer une classe, veuillez d'abord ajouter une année académique active.</span>
+          </div>
+          <a href="<?= RACINE ?>annee/list" class="btn btn-sm" style="background: #DC2626; color: #FFFFFF; font-weight: 700; border-radius: 6px; padding: 6px 14px; text-decoration: none;">
+            Ajouter une Année
+          </a>
+        </div>
+      <?php else: ?>
+        <!-- BANDEAU FILTRE PAR ANNÉE ACADÉMIQUE -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 14px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <label for="filter-annee-classe" style="font-size: 13px; font-weight: 700; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> Année Académique :
+              </label>
+              <select id="filter-annee-classe" class="form-control" style="width: 220px; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 13.5px;">
+                <option value="">-- Toutes les années --</option>
+                <?php foreach (($annees ?? []) as $a): ?>
+                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <?php if (!empty($currentAnneeCode)): ?>
+              <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 20px;">
+                Année active : <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Active') ?>
+              </span>
+            <?php endif; ?>
+          </div>
+        </div>
+      <?php endif; ?>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -32,6 +68,7 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
                 <th style="padding: 12px;">Libellé de la Classe</th>
                 <th style="padding: 12px;">Filière</th>
                 <th style="padding: 12px;">Niveau</th>
+                <th style="padding: 12px;">Année</th>
                 <th style="padding: 12px; text-align: center;">Capacité</th>
                 <th style="padding: 12px;" class="text-center">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
@@ -60,7 +97,29 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
     <form id="form-classe" style="padding: 22px;">
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       <input type="hidden" name="id_classe" id="classe_id" value="">
-      <input type="hidden" name="annee_code" id="classe_annee" value="<?= htmlspecialchars($currentAnneeCode) ?>">
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Année Académique <span style="color: #EF4444;">*</span>
+        </label>
+        <select name="annee_code" id="classe_annee" required class="form-control select2" style="width: 100%;">
+          <?php if (empty($annees)): ?>
+            <option value="">-- Aucune année disponible --</option>
+          <?php else: ?>
+            <?php foreach ($annees as $a): ?>
+              <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode === $a['code_annee']) || (($a['statut_annee'] ?? '') === 'actif' && empty($currentAnneeCode))) ? 'selected' : '' ?>>
+                <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+              </option>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </select>
+        <?php if (empty($annees)): ?>
+          <small style="color: #EF4444; font-size: 12px; margin-top: 4px; display: block; font-weight: 600;">
+            <i data-lucide="alert-circle" style="width: 13px; height: 13px; vertical-align: middle;"></i>
+            Veuillez d'abord configurer une année académique dans Configuration &gt; Années Académiques.
+          </small>
+        <?php endif; ?>
+      </div>
 
       <div class="form-group" style="margin-bottom: 16px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
@@ -141,7 +200,10 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
 $(document).ready(function() {
   var table = $('#table-classes').DataTable({
     ajax: {
-      url: '<?= RACINE ?>classe/apiList'
+      url: '<?= RACINE ?>classe/apiList',
+      data: function(d) {
+        d.annee_code = $('#filter-annee-classe').val();
+      }
     },
     processing: true,
     autoWidth: false,
@@ -165,6 +227,10 @@ $(document).ready(function() {
         if (type !== 'display') return d || row.niveau_code || '';
         return '<span style="color:#334155; font-weight:500;">' + (d || row.niveau_code || '-') + '</span>';
       }},
+      { data: 'libelle_annee', render: function(d) {
+        if (!d) return '-';
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px;">' + d + '</span>';
+      }},
       { data: 'capacite_max_classe', width: '90px', className: 'text-center', render: function(d, type) {
         if (type !== 'display') return d || '';
         return '<span style="font-weight:700; color:#475569;">' + (d ? d + ' places' : '-') + '</span>';
@@ -182,12 +248,16 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, width: '160px', orderable: false, render: function(d) {
-        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-classe" data-id="' + (d.id_classe) + '" data-libelle="' + (d.libelle_classe ? $('<div>').text(d.libelle_classe).html() : '') + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" data-statut="' + (d.statut_classe || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-classe" data-id="' + (d.id_classe) + '" data-libelle="' + (d.libelle_classe ? $('<div>').text(d.libelle_classe).html() : '') + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" data-statut="' + (d.statut_classe || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                '<a href="' + window.RACINE + 'classe/details/' + (d.editId || d.id_classe) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $('#filter-annee-classe').on('change', function() {
+    table.ajax.reload();
   });
 
   // Bascule de statut instantanée via Ajax
@@ -240,11 +310,11 @@ $(document).ready(function() {
 
   // INITIALISATION SELECT2 SUR LES DROPDOWNS DU MODAL
   if ($.fn.select2) {
-    $('#classe_filiere, #classe_niveau').select2({
+    $('#classe_filiere, #classe_niveau, #classe_annee').select2({
       dropdownParent: $('#modal-classe'),
       width: '100%',
       placeholder: '-- Choisir --',
-      allowClear: true
+      allowClear: false
     });
   }
 
@@ -279,6 +349,10 @@ $(document).ready(function() {
     updateStatutClasseUI(true);
     if ($.fn.select2) {
       $('#classe_filiere, #classe_niveau').val('').trigger('change.select2');
+      var selAnnee = $('#filter-annee-classe').val() || '<?= htmlspecialchars($currentAnneeCode) ?>';
+      if (selAnnee) {
+        $('#classe_annee').val(selAnnee).trigger('change.select2');
+      }
     }
     $('#modal-classe-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe / Promotion');
     $('#modal-classe').css('display', 'flex');
@@ -293,6 +367,7 @@ $(document).ready(function() {
     var libelle = $(this).data('libelle');
     var filiere = $(this).data('filiere');
     var niveau = $(this).data('niveau');
+    var annee = $(this).data('annee');
     var capacite = $(this).data('capacite');
     var statut = $(this).data('statut');
 
@@ -300,9 +375,11 @@ $(document).ready(function() {
     $('#classe_libelle').val(libelle);
     $('#classe_filiere').val(filiere);
     $('#classe_niveau').val(niveau);
+    $('#classe_annee').val(annee);
     if ($.fn.select2) {
       $('#classe_filiere').trigger('change.select2');
       $('#classe_niveau').trigger('change.select2');
+      $('#classe_annee').trigger('change.select2');
     }
     $('#classe_capacite').val(capacite || '35');
 
