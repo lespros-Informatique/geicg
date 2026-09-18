@@ -392,6 +392,17 @@ $(document).ready(function() {
           data: null,
           className: 'text-end',
           render: function(d) {
+            var totalRegle = parseFloat(d.total_deja_paye) || 0;
+            var isZeroRegle = (totalRegle <= 0);
+
+            if (isZeroRegle) {
+              return '<div style="display: flex; justify-content: flex-end; gap: 6px;">' +
+                       '<button type="button" class="btn btn-sm" disabled style="font-weight: 700; border-radius: 8px; padding: 6px 12px; background: #E2E8F0; color: #94A3B8; border: 1px solid #CBD5E1; cursor: not-allowed; opacity: 0.65;" title="Total réglé égal à 0 : Encaissement désactivé">' +
+                         '<i data-lucide="ban" style="width: 14px; height: 14px; margin-right: 4px;"></i> Encaisser Arriéré' +
+                       '</button>' +
+                     '</div>';
+            }
+
             return '<div style="display: flex; justify-content: flex-end; gap: 6px;">' +
                      '<button type="button" class="btn btn-sm btn-success btn-open-reglement" style="font-weight: 700; border-radius: 8px; padding: 6px 12px; background: #15803D; border: none;" title="Encaisser les arriérés de cet étudiant">' +
                        '<i data-lucide="banknote" style="width: 14px; height: 14px; margin-right: 4px;"></i> Encaisser Arriéré' +
@@ -440,6 +451,9 @@ $(document).ready(function() {
   // Ouvrir le modal d'encaissement d'arriéré
   $('#table-arrieres').on('click', '.btn-open-reglement', function() {
     var rowData = table.row($(this).closest('tr')).data();
+    if (!rowData || (parseFloat(rowData.total_deja_paye) || 0) <= 0) {
+      return;
+    }
     currentStudentData = rowData;
     openReglementModal(rowData);
   });

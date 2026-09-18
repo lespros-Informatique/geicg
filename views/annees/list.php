@@ -162,7 +162,6 @@ $(document).ready(function() {
     e.preventDefault();
     $('#form-annee')[0].reset();
     $('#annee_id').val('');
-    $('#annee_statut').val('planifie');
     $('#modal-annee-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Année Académique');
     $('#modal-annee').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
@@ -176,13 +175,11 @@ $(document).ready(function() {
     var libelle = $(this).data('libelle');
     var debut = $(this).data('debut');
     var fin = $(this).data('fin');
-    var statut = $(this).data('statut') || 'planifie';
 
     $('#annee_id').val(id);
     $('#annee_libelle').val(libelle);
     $('#annee_date_debut').val(debut);
     $('#annee_date_fin').val(fin);
-    $('#annee_statut').val(statut);
 
     $('#modal-annee-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Année Académique');
     $('#modal-annee').css('display', 'flex');
@@ -286,17 +283,8 @@ $(document).ready(function() {
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
             Date de Fin <span style="color: #EF4444;">*</span>
           </label>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 22px;">
-        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Statut de l'Année
-        </label>
-        <select name="statut_annee" id="annee_statut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 13.5px;">
-          <option value="planifie">🔵 En préparation (Année Future / Pré-inscriptions)</option>
-          <option value="cloture">⚪ Clôturée (Année Passée / Historique)</option>
-        </select>
-        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">L'activation officielle de l'année active principale s'effectue via le bouton « Activer » du tableau.</small>
+          <input type="date" name="date_fin_annee" id="annee_date_fin" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
+        </div>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">

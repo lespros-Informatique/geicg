@@ -57,7 +57,7 @@ class ModelPaiement extends BaseModel
         $stmt = $this->getCon()->prepare("
             SELECT p.*, 
                    e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant, e.photo_etudiant, e.code_etudiant,
-                   ins.affectation_etat,
+                   ins.affectation_etat, ins.photo_inscription,
                    TRIM(CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, ''))) as etudiant_nom,
                    cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
                    a.libelle_annee,

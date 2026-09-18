@@ -41,10 +41,12 @@ class PaiementController extends BaseController
             SELECT 
                 i.code_inscription,
                 i.annee_code,
+                i.photo_inscription,
                 e.code_etudiant,
                 e.matricule_etudiant,
                 e.nom_etudiant,
                 e.prenom_etudiant,
+                e.photo_etudiant,
                 c.libelle_classe,
                 c.code_classe
             FROM inscriptions i
@@ -59,12 +61,22 @@ class PaiementController extends BaseController
 
         // État de la caisse du jour
         $today = date('Y-m-d');
-        $stmtSess = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
+        $stmtSess = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? AND statut_session = 'ouverte' ORDER BY id_session DESC LIMIT 1");
         $stmtSess->execute([$today]);
         $activeSession = $stmtSess->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if (!$activeSession) {
+            $stmtLast = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
+            $stmtLast->execute([$today]);
+            $activeSession = $stmtLast->fetch(PDO::FETCH_ASSOC) ?: null;
+        }
+
         $isCaisseOuverte = ($activeSession && ($activeSession['statut_session'] ?? '') === 'ouverte');
+        $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
         $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS', 'MANAGE_PAYMENTS']);
+        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
 
         $this->loadView('../views/paiements/list.php', [
             'stats' => $stats,
@@ -75,7 +87,10 @@ class PaiementController extends BaseController
             'inscriptions' => $inscriptions,
             'isCaisseOuverte' => $isCaisseOuverte,
             'activeSession' => $activeSession,
-            'canRecord' => $canRecord
+            'encryptedSessionId' => $encryptedSessionId,
+            'canRecord' => $canRecord,
+            'canOpenCaisse' => $canOpenCaisse,
+            'canCloseCaisse' => $canCloseCaisse
         ]);
     }
 
@@ -279,9 +294,41 @@ class PaiementController extends BaseController
         $montantEnAttente = max(0, $totalScolariteAttendue - $totalEncaisse);
         $tauxRecouvrement = ($totalScolariteAttendue > 0) ? round(($totalEncaisse / $totalScolariteAttendue) * 100, 1) : 0;
 
+        // Montant total de l'exercice pour l'année dans la session (dynamique)
+        $sessionAnneeCode = $this->getActiveAnneeCode();
+        $targetExerciceAnnee = (!empty($anneeCode) && $anneeCode !== 'ALL') ? $anneeCode : $sessionAnneeCode;
+
+        $stmtExercice = $db->prepare("
+            SELECT COALESCE(SUM(
+                CASE 
+                    WHEN i.montant_scolarite_inscription IS NOT NULL AND i.montant_scolarite_inscription > 0 THEN i.montant_scolarite_inscription
+                    WHEN s.montant_scolarite IS NOT NULL AND s.montant_scolarite > 0 THEN s.montant_scolarite
+                    ELSE 0
+                END
+            ), 0) as total_exercice
+            FROM inscriptions i
+            LEFT JOIN classes c ON i.classe_code = c.code_classe
+            LEFT JOIN scolarites s ON (
+                s.filiere_code = c.filiere_code 
+                AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
+                AND (s.annee_code = i.annee_code OR s.annee_code = '')
+                AND (s.affectation_etat = i.affectation_etat OR s.affectation_etat IS NULL OR s.affectation_etat = '')
+                AND s.statut_scolarite = 'actif'
+            )
+            WHERE i.annee_code = ? AND i.statut_inscription != 'annule'
+        ");
+        $stmtExercice->execute([$targetExerciceAnnee]);
+        $totalExerciceSession = (float)$stmtExercice->fetchColumn();
+
+        $stmtLib = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+        $stmtLib->execute([$targetExerciceAnnee]);
+        $anneeExerciceLibelle = $stmtLib->fetchColumn() ?: ($_SESSION['annee_active_libelle'] ?? 'En session');
+
         return [
             'total_inscrits' => $totalInscrits,
             'total_scolarite_attendue' => $totalScolariteAttendue,
+            'total_exercice_session' => $totalExerciceSession,
+            'annee_exercice_libelle' => $anneeExerciceLibelle,
             'total_encaisse' => $totalEncaisse,
             'montant_en_attente' => $montantEnAttente,
             'taux_recouvrement' => $tauxRecouvrement,
@@ -466,7 +513,7 @@ class PaiementController extends BaseController
                       AND (t.annee_code = ? OR ? = '')
                     )
                   )
-                ORDER BY t.date_limite ASC, t.id_tranche ASC
+                ORDER BY t.created_at_tranche ASC, t.id_tranche ASC
             ");
             $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $anneeCode, $anneeCode]);
         } else {
@@ -478,7 +525,7 @@ class PaiementController extends BaseController
                   AND t.filiere_code = ?
                   AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
                   AND (t.annee_code = ? OR ? = '')
-                ORDER BY t.date_limite ASC, t.id_tranche ASC
+                ORDER BY t.created_at_tranche ASC, t.id_tranche ASC
             ");
             $stmtTr->execute([$filiereCode, $niveauCode, $anneeCode, $anneeCode]);
         }
@@ -616,6 +663,9 @@ class PaiementController extends BaseController
             ];
         }
 
+        $photoPath = !empty($ins['photo_inscription']) ? trim($ins['photo_inscription']) : (!empty($ins['photo_etudiant']) ? trim($ins['photo_etudiant']) : '');
+        $photoUrl = !empty($photoPath) ? RACINE . ltrim($photoPath, '/') : '';
+
         $this->json([
             'status' => 1,
             'data' => [
@@ -626,6 +676,9 @@ class PaiementController extends BaseController
                 'prenom_etudiant' => $ins['prenom_etudiant'] ?? '',
                 'nom_complet' => $nomComplet,
                 'photo_etudiant' => $ins['photo_etudiant'] ?? '',
+                'photo_inscription' => $ins['photo_inscription'] ?? '',
+                'photo' => $photoPath,
+                'photo_url' => $photoUrl,
                 'telephone_etudiant' => !empty($ins['telephone_etudiant']) ? $ins['telephone_etudiant'] : '-',
                 'email_etudiant' => !empty($ins['email_etudiant']) ? $ins['email_etudiant'] : '-',
                 'affectation_etat' => $affEtat,
@@ -700,7 +753,7 @@ class PaiementController extends BaseController
                       AND (t.annee_code = ? OR ? = '')
                     )
                   )
-                ORDER BY t.date_limite ASC, t.id_tranche ASC
+                ORDER BY t.created_at_tranche ASC, t.id_tranche ASC
             ");
             $stmtTr->execute([$codeScolarite, $filiereCode, $niveauCode, $anneeCode, $anneeCode]);
         } else {
@@ -712,7 +765,7 @@ class PaiementController extends BaseController
                   AND t.filiere_code = ?
                   AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
                   AND (t.annee_code = ? OR ? = '')
-                ORDER BY t.date_limite ASC, t.id_tranche ASC
+                ORDER BY t.created_at_tranche ASC, t.id_tranche ASC
             ");
             $stmtTr->execute([$filiereCode, $niveauCode, $anneeCode, $anneeCode]);
         }
@@ -1042,6 +1095,22 @@ class PaiementController extends BaseController
 
             $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
             $soldeRestant = max(0, $scolarite - $totalPayeCumul);
+
+            // Récupération de la photo de l'étudiant si manquante
+            if (empty($item['photo_inscription']) && empty($item['photo_etudiant']) && !empty($inscriptionCode)) {
+                $stmtPhoto = $this->model->getCon()->prepare("
+                    SELECT i.photo_inscription, e.photo_etudiant 
+                    FROM inscriptions i 
+                    LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code 
+                    WHERE i.code_inscription = ? LIMIT 1
+                ");
+                $stmtPhoto->execute([$inscriptionCode]);
+                $pRow = $stmtPhoto->fetch(PDO::FETCH_ASSOC);
+                if ($pRow) {
+                    $item['photo_inscription'] = $pRow['photo_inscription'] ?? null;
+                    $item['photo_etudiant'] = $pRow['photo_etudiant'] ?? null;
+                }
+            }
 
             $encryptedId = $actualId > 0 ? $this->validator->crypter($actualId) : $details;
         } catch (Exception $e) {

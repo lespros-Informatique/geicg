@@ -38,7 +38,7 @@ $enseignants = (new ModelEnseignant())->getAll();
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule École (Auto-généré si vide)</label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-family: monospace; font-weight: 700;" name="matricule_etudiant" value="<?= htmlspecialchars($item['matricule_etudiant'] ?? '') ?>" placeholder="Auto-généré : XX-123/GEB/AA26">
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-family: monospace; font-weight: 700; cursor: not-allowed;" name="matricule_etudiant" value="<?= htmlspecialchars($item['matricule_etudiant'] ?? '') ?>" placeholder="Auto-généré : XX-123/GEB/AA26" readonly>
             </div>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule MENET-FP</label>

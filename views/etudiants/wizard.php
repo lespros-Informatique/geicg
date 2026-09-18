@@ -159,8 +159,8 @@ $pieces = (new ModelPieceFournir())->getAll();
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule École (Auto-généré)</label>
-                <input type="text" class="form-control" name="matricule_etudiant" id="wiz_matricule" placeholder="Auto-généré : XX-123/GEB/AA26" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-family: monospace; font-weight: 700; color: #1E3A5F;">
-                <small style="color: #64748B; font-size: 11px; margin-top: 3px; display: block;">Format : Initiales - Ordre / GEB / Filière + Année (laissé vide pour génération auto)</small>
+                <input type="text" class="form-control" name="matricule_etudiant" id="wiz_matricule" placeholder="Auto-généré : XX-123/GEB/AA26" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-family: monospace; font-weight: 700; color: #1E3A5F; cursor: not-allowed;" readonly>
+                <small style="color: #64748B; font-size: 11px; margin-top: 3px; display: block;">Format : Initiales - Ordre / GEB / Filière + Année (Généré automatiquement par le système)</small>
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule MENET-FP</label>

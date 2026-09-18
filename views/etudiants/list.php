@@ -50,9 +50,6 @@ $anneeActive = $anneeActive ?? '';
           <button onclick="window.print()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste des étudiants">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
-          <a href="<?= RACINE ?>inscription/list" class="btn btn-outline-primary" style="border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Réinscription des étudiants pour la session active">
-            <i data-lucide="user-check" style="width: 18px; height: 18px;"></i> Réinscriptions
-          </a>
           <a href="<?= RACINE ?>etudiant/wizard" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Dossier Étudiant
           </a>

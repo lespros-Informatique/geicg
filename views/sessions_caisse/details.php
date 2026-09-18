@@ -41,12 +41,41 @@ $ecart = (float)($item['ecart_caisse'] ?? 0);
       <div class="card print-area" style="background: #FFFFFF; border-radius: 12px; padding: 32px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
         
         <!-- En-tête du Reçu / PV -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-          <div>
-            <span style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 1px;">Établissement GEICG &bull; Service Comptabilité & Caisse</span>
-            <h2 style="font-size: 22px; font-weight: 900; color: #0F172A; margin: 4px 0 0 0;">Procès-Verbal de Session de Caisse</h2>
-            <div style="font-size: 13px; color: #64748B; margin-top: 4px;">
-              Date de session : <strong><?= date('d/m/Y', strtotime($item['date_session'])) ?></strong>
+        <?php 
+          $logoUrl = '';
+          try {
+              $dbEtab = (new Database())->getCon();
+              $stmtEtab = $dbEtab->query("SELECT logo_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
+              $rawEtabLogo = $stmtEtab->fetchColumn();
+              if (!empty($rawEtabLogo)) {
+                  $cleanPath = ltrim($rawEtabLogo, '/');
+                  if (strpos($cleanPath, 'public/') === 0 && file_exists(__DIR__ . '/../../' . $cleanPath)) {
+                      $logoUrl = RACINE . $cleanPath;
+                  } elseif (file_exists(__DIR__ . '/../../public/' . $cleanPath)) {
+                      $logoUrl = RACINE . 'public/' . $cleanPath;
+                  }
+              }
+          } catch (Exception $e) {}
+
+          if (empty($logoUrl)) {
+              if (file_exists(__DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg')) {
+                  $logoUrl = RACINE . 'public/assets/images/logo/logo_eicg.jpg';
+              } elseif (file_exists(__DIR__ . '/../../public/uploads/logos/logo_1787358264.jpg')) {
+                  $logoUrl = RACINE . 'public/uploads/logos/logo_1787358264.jpg';
+              }
+          }
+        ?>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <?php if (!empty($logoUrl)): ?>
+              <img src="<?= $logoUrl ?>" alt="Logo GROUPE EICG" style="max-height: 65px; width: auto; object-fit: contain;">
+            <?php endif; ?>
+            <div>
+              <span style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 1px;">Établissement GEICG &bull; Service Comptabilité & Caisse</span>
+              <h2 style="font-size: 22px; font-weight: 900; color: #0F172A; margin: 4px 0 0 0;">Procès-Verbal de Session de Caisse</h2>
+              <div style="font-size: 13px; color: #64748B; margin-top: 4px;">
+                Date de session : <strong><?= date('d/m/Y', strtotime($item['date_session'])) ?></strong>
+              </div>
             </div>
           </div>
           <div style="text-align: right;">

@@ -60,11 +60,51 @@
   display: none;
 }
 
+/* --- ANIMATIONS ET INTERACTIONS PREMIUM --- */
+@keyframes kpiEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes liveRadar {
+  0% { transform: scale(0.6); opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes btnPulseGlow {
+  0%, 100% {
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 6px 22px rgba(22, 163, 74, 0.45);
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes modalZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .card-kpi-container {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 22px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 @media (max-width: 1200px) {
   .card-kpi-container {
@@ -76,7 +116,166 @@
     grid-template-columns: 1fr;
   }
 }
+
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 118px !important;
+  padding: 22px 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  box-sizing: border-box;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: kpiEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  cursor: default;
+}
+
+.kpi-card > div:first-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
+
+.kpi-card [id^="kpi-"] {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+/* Échelonnement de l'apparition des cartes (Staggered entrance) */
+.card-kpi-container:nth-of-type(1) .kpi-card:nth-child(1) { animation-delay: 0.04s; }
+.card-kpi-container:nth-of-type(1) .kpi-card:nth-child(2) { animation-delay: 0.08s; }
+.card-kpi-container:nth-of-type(1) .kpi-card:nth-child(3) { animation-delay: 0.12s; }
+.card-kpi-container:nth-of-type(1) .kpi-card:nth-child(4) { animation-delay: 0.16s; }
+
+.card-kpi-container:nth-of-type(2) .kpi-card:nth-child(1) { animation-delay: 0.20s; }
+.card-kpi-container:nth-of-type(2) .kpi-card:nth-child(2) { animation-delay: 0.24s; }
+.card-kpi-container:nth-of-type(2) .kpi-card:nth-child(3) { animation-delay: 0.28s; }
+.card-kpi-container:nth-of-type(2) .kpi-card:nth-child(4) { animation-delay: 0.32s; }
+
+.card-kpi-container:nth-of-type(3) .kpi-card:nth-child(1) { animation-delay: 0.36s; }
+.card-kpi-container:nth-of-type(3) .kpi-card:nth-child(2) { animation-delay: 0.40s; }
+.card-kpi-container:nth-of-type(3) .kpi-card:nth-child(3) { animation-delay: 0.44s; }
+.card-kpi-container:nth-of-type(3) .kpi-card:nth-child(4) { animation-delay: 0.48s; }
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.08), 0 6px 10px -3px rgba(15, 23, 42, 0.03) !important;
+}
+
+.kpi-icon-box {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+}
+
+.kpi-icon-box svg, .kpi-icon-box i {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.kpi-card:hover .kpi-icon-box {
+  transform: scale(1.15) rotate(4deg);
+}
+
+/* Effet reflet de lumière (Shimmer shine) */
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-22deg);
+  pointer-events: none;
+}
+
+.kpi-card:hover::after {
+  left: 180%;
+  transition: left 0.85s ease-in-out;
+}
+
+/* Bouton Encaisser scolarité Pulse lumineux */
+#btn-open-encaissement-modal {
+  animation: btnPulseGlow 2.8s infinite ease-in-out;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#btn-open-encaissement-modal:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Indicateur radar vert en direct */
+.live-status-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10B981;
+  position: relative;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.live-status-pulse::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: rgba(16, 185, 129, 0.55);
+  animation: liveRadar 2s infinite ease-out;
+}
+
+/* Carte filtres */
+.card-filters {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-filters:focus-within {
+  box-shadow: 0 6px 18px rgba(30, 58, 95, 0.08) !important;
+  border-color: #CBD5E1 !important;
+}
+
+/* Animation tableau DataTables */
+#table-paiements tbody tr {
+  transition: background-color 0.18s ease;
+}
+#table-paiements tbody tr:hover {
+  background-color: #F8FAFC !important;
+}
+
+/* Boutons d'actions avec micro-rebond */
+#table-paiements a.btn {
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+#table-paiements a.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Modals animés avec ouverture fluide */
+#modal-encaissement-scolarite > div,
+#modal-recu-paiement-success > div {
+  animation: modalZoomIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
 </style>
+<?php
+$isCaisseOuverte = $isCaisseOuverte ?? false;
+$activeSession = $activeSession ?? null;
+$encryptedSessionId = $encryptedSessionId ?? '';
+$canRecord = $canRecord ?? false;
+$canOpenCaisse = $canOpenCaisse ?? false;
+$canCloseCaisse = $canCloseCaisse ?? false;
+?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -117,6 +316,21 @@
           <button onclick="printRegistry()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;" title="Imprimer le registre des encaissements">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
+
+          <?php if (!empty($isCaisseOuverte)): ?>
+            <?php if (!empty($canCloseCaisse)): ?>
+              <a href="<?= RACINE ?>session_caisse/cloturer/<?= !empty($encryptedSessionId) ? $encryptedSessionId : '' ?>" class="btn btn-danger" style="background: #DC2626; border-color: #DC2626; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(220,38,38,0.2); text-decoration: none;" title="Clôturer la session de caisse du jour (<?= htmlspecialchars($activeSession['code_session'] ?? '') ?>)">
+                <i data-lucide="lock" style="width: 18px; height: 18px;"></i> Fermeture de caisse
+              </a>
+            <?php endif; ?>
+          <?php else: ?>
+            <?php if (!empty($canOpenCaisse)): ?>
+              <button type="button" class="btn btn-primary btn-open-session-caisse" style="background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(30,58,95,0.2); cursor: pointer;" title="Ouvrir la session de caisse du jour">
+                <i data-lucide="unlock" style="width: 18px; height: 18px;"></i> Ouverture de caisse
+              </button>
+            <?php endif; ?>
+          <?php endif; ?>
+
           <?php if (!empty($canRecord)): ?>
           <button type="button" id="btn-open-encaissement-modal" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(22,163,74,0.2); cursor: pointer;">
             <i data-lucide="banknote" style="width: 18px; height: 18px;"></i> Encaisser scolarité
@@ -191,44 +405,46 @@
       <!-- SECTION 1 : ENCAISSEMENTS & CAISSE GUICHET (4 CARTES) -->
       <div class="kpi-section-title" style="margin-bottom: 8px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
-          <i data-lucide="landmark" style="width: 15px; height: 15px; color: #15803D;"></i> Arrêt de Caisse & Modes de Règlement
+          <span class="live-status-pulse"></span><i data-lucide="landmark" style="width: 15px; height: 15px; color: #15803D;"></i> Arrêt de Caisse & Modes de Règlement
         </h4>
       </div>
       
       <div class="card-kpi-container">
         
         <!-- 1. Total Encaissé -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé</div>
             <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
               <span id="kpi-total-encaisse"><?= number_format((float)($stats['total_encaisse'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              Taux : <strong style="color: #15803D;" id="kpi-taux-recouvrement"><?= number_format((float)($stats['taux_recouvrement'] ?? 0), 1, ',', ' ') ?>%</strong>
+              Taux : <strong style="color: #15803D;"><span id="kpi-taux-recouvrement"><?= number_format((float)($stats['taux_recouvrement'] ?? 0), 1, ',', ' ') ?></span>%</strong>
             </div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="wallet" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- 2. Encaissements Jour -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Jour</div>
             <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 3px;">
               <span id="kpi-encaisse-aujourdhui"><?= number_format((float)($stats['encaisse_aujourdhui'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Aujourd'hui</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              <span class="live-status-pulse"></span>Aujourd'hui
+            </div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- 3. Caisse Espèces -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">Espèces (Caisse)</div>
             <div style="font-size: 18px; font-weight: 900; color: #065F46; margin-top: 3px;">
@@ -236,13 +452,13 @@
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Liquide au guichet</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #D1FAE5; color: #047857; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #D1FAE5; color: #047857; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="banknote" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- 4. Reste à Recouvrer -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FCA5A5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FCA5A5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Reste à Recouvrer</div>
             <div style="font-size: 18px; font-weight: 900; color: #B91C1C; margin-top: 3px;">
@@ -250,7 +466,7 @@
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Scolarités attendues</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
@@ -267,7 +483,7 @@
       <div class="card-kpi-container">
         
         <!-- 5. Affectés (État) -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Affectés (État)</div>
             <div style="font-size: 18px; font-weight: 900; color: #0369A1; margin-top: 3px;">
@@ -275,13 +491,13 @@
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Montant encaissé (État)</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- 6. Non Affectés (Privés) -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés (Privés)</div>
             <div style="font-size: 18px; font-weight: 900; color: #3730A3; margin-top: 3px;">
@@ -289,13 +505,13 @@
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Montant encaissé (Privés)</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="user" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- 7. Encaissements Mois -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #0E7490; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Mois</div>
             <div style="font-size: 18px; font-weight: 900; color: #0E7490; margin-top: 3px;">
@@ -303,22 +519,24 @@
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Mois en cours</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #CFFAFE; color: #0E7490; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #CFFAFE; color: #0E7490; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
-        <!-- 8. En Attente Post-Inscription -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1.5px solid #FDBA74; box-shadow: 0 2px 4px rgba(234,88,12,0.06); display: flex; align-items: center; justify-content: space-between;">
+        <!-- 8. Montant Total de l'Exercice de l'Année en Session -->
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #C2410C; text-transform: uppercase; letter-spacing: 0.5px;">En Attente Post-Inscription</div>
-            <div style="font-size: 18px; font-weight: 900; color: #C2410C; margin-top: 3px;">
-              <span id="kpi-attente-post-inscription"><?= number_format((float)($stats['attente_post_inscription'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Total Exercice Année</div>
+            <div style="font-size: 18px; font-weight: 900; color: #1E3A8A; margin-top: 3px;">
+              <span id="kpi-total-exercice"><?= number_format((float)($stats['total_exercice_session'] ?? ($stats['total_scolarite_attendue'] ?? 0)), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 700; color: #EA580C; margin-top: 2px;">Solde scolarité des inscrits</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? ($_SESSION['annee_active_libelle'] ?? 'En session')) ?></strong>
+            </div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #FFEDD5; color: #EA580C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="calculator" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
@@ -334,7 +552,7 @@
       <div class="card-kpi-container">
         
         <!-- 9. Étudiants Soldés -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Soldés (100%)</div>
             <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
@@ -342,13 +560,13 @@
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Scolarité entièrement payée</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- 10. Étudiants en Acompte -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants en Acompte</div>
             <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
@@ -356,27 +574,27 @@
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Versements partiels</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
-        <!-- 11. Étudiants Non Payeurs -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <!-- 11. Frais d'inscription non réglé -->
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #E11D48; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Non Payeurs</div>
+            <div style="font-size: 11px; font-weight: 800; color: #E11D48; text-transform: uppercase; letter-spacing: 0.5px;">Frais d'inscription non réglé</div>
             <div style="font-size: 18px; font-weight: 900; color: #BE123C; margin-top: 3px;">
               <span id="kpi-eleves-non-payeurs"><?= number_format((int)($stats['eleves_non_payeurs'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">0 FCFA versé</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="user-x" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
         <!-- 12. Total Inscrits -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Total Inscrits</div>
             <div style="font-size: 18px; font-weight: 900; color: #7E22CE; margin-top: 3px;">
@@ -384,7 +602,7 @@
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Effectif académique suivi</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
@@ -461,7 +679,7 @@
           <div id="caisse-warning-notice" style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 10px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 10px;">
             <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: #D97706; flex-shrink: 0; margin-top: 1px;"></i>
             <div style="font-size: 12.5px; color: #92400E; line-height: 1.4;">
-              <strong>Session de caisse fermée :</strong> Aucune session de caisse n'est ouverte pour aujourd'hui. Pour les règlements en espèces, veuillez d'abord <a href="<?= RACINE ?>session_caisse/list" target="_blank" style="color: #1E3A5F; font-weight: 800; text-decoration: underline;">ouvrir une session de caisse</a>. Les modes Mobile Money, Chèque et Virement sont toutefois immédiatement acceptés.
+              <strong>Session de caisse fermée :</strong> Aucune session de caisse n'est ouverte pour aujourd'hui. Pour les règlements en espèces, veuillez d'abord <a href="javascript:void(0)" class="btn-open-session-caisse" style="color: #1E3A5F; font-weight: 800; text-decoration: underline;">ouvrir une session de caisse</a>. Les modes Mobile Money, Chèque et Virement sont toutefois immédiatement acceptés.
             </div>
           </div>
         <?php endif; ?>
@@ -479,7 +697,16 @@
           <select id="modal_select_inscription" name="inscription_code" class="form-control" style="width: 100%;" required>
             <option value="">-- Tapez le nom, matricule ou classe de l'étudiant --</option>
             <?php foreach (($inscriptions ?? []) as $ins): ?>
-              <option value="<?= htmlspecialchars($ins['code_inscription']) ?>" data-matricule="<?= htmlspecialchars($ins['matricule_etudiant'] ?? '') ?>" data-annee="<?= htmlspecialchars($ins['annee_code'] ?? '') ?>">
+              <?php 
+                $photoPath = !empty($ins['photo_inscription']) ? trim($ins['photo_inscription']) : (!empty($ins['photo_etudiant']) ? trim($ins['photo_etudiant']) : '');
+                $photoUrl = !empty($photoPath) ? RACINE . ltrim($photoPath, '/') : '';
+              ?>
+              <option value="<?= htmlspecialchars($ins['code_inscription']) ?>" 
+                      data-matricule="<?= htmlspecialchars($ins['matricule_etudiant'] ?? '') ?>" 
+                      data-annee="<?= htmlspecialchars($ins['annee_code'] ?? '') ?>"
+                      data-photo="<?= htmlspecialchars($photoUrl) ?>"
+                      data-nom="<?= htmlspecialchars(($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? '')) ?>"
+                      data-classe="<?= htmlspecialchars($ins['libelle_classe'] ?? 'Classe non assignée') ?>">
                 <?= htmlspecialchars(($ins['matricule_etudiant'] ?? '') . ' - ' . ($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? '') . ' (' . ($ins['libelle_classe'] ?? 'Classe non assignée') . ')') ?>
               </option>
             <?php endforeach; ?>
@@ -489,16 +716,21 @@
         <!-- 2. Synthèse Financière & Profil Étudiant (Chargé dynamiquement) -->
         <div id="encaisse-student-summary-card" style="display: none; background: #FFFFFF; border: 1.5px solid #93C5FD; border-radius: 12px; padding: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
           
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #E2E8F0; padding-bottom: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid #E2E8F0; padding-bottom: 14px;">
             <div style="display: flex; align-items: center; gap: 14px;">
-              <div id="encaisse-stu-avatar" style="width: 44px; height: 44px; border-radius: 10px; background: #1E3A5F; color: #FFFFFF; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center;">
-                ET
+              <!-- Photo de l'étudiant avec Fallback Avatar stylisé -->
+              <div style="position: relative; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; border: 2.5px solid #3B82F6; box-shadow: 0 4px 10px rgba(30, 58, 95, 0.12); flex-shrink: 0; background: #F8FAFC; display: flex; align-items: center; justify-content: center;">
+                <img id="encaisse-stu-photo" src="" alt="Photo étudiant" style="display: none; width: 100%; height: 100%; object-fit: cover; transition: transform 0.25s ease;">
+                <div id="encaisse-stu-avatar" style="width: 100%; height: 100%; background: linear-gradient(135deg, #1E3A5F 0%, #0F233D 100%); color: #FFFFFF; font-weight: 900; font-size: 17px; display: flex; align-items: center; justify-content: center; letter-spacing: 0.5px;">
+                  ET
+                </div>
               </div>
               <div>
                 <div id="encaisse-stu-nom" style="font-weight: 800; font-size: 15px; color: #0F172A;">-</div>
-                <div style="font-size: 12px; color: #64748B; margin-top: 2px;">
-                  Matricule : <code id="encaisse-stu-mat" style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px;">-</code>
-                  &bull; Classe : <strong id="encaisse-stu-classe" style="color: #0F172A;">-</strong>
+                <div style="font-size: 12px; color: #64748B; margin-top: 2px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+                  <span>Matricule : <code id="encaisse-stu-mat" style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px; border: 1px solid #DBEAFE;">-</code></span>
+                  <span>&bull;</span>
+                  <span>Classe : <strong id="encaisse-stu-classe" style="color: #0F172A;">-</strong></span>
                 </div>
               </div>
             </div>
@@ -529,29 +761,29 @@
         <div id="encaisse-payment-inputs-section" style="display: none; background: #FFFFFF; border-radius: 12px; padding: 18px; border: 1px solid #E2E8F0;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             
-            <!-- Tranche / Échéance -->
+            <!-- Tranche / Échéance (Sélectionnée par ordre de création) -->
             <div style="grid-column: span 2;">
               <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">
                 2. Tranche / Échéance à régler <span class="text-danger">*</span>
               </label>
-              <select id="modal_select_tranche" name="tranche_code" class="form-control" style="font-weight: 700; border-radius: 8px;" required>
-                <!-- Rempli dynamiquement -->
-              </select>
+              <div style="position: relative;">
+                <select id="modal_select_tranche" name="tranche_code" class="form-control form-control-lg" style="font-weight: 800; font-size: 14.5px; color: #1E3A5F; border-radius: 10px; background-color: #F8FAFC; cursor: not-allowed; pointer-events: none; padding-right: 40px;" readonly tabindex="-1" required>
+                  <!-- Rempli dynamiquement -->
+                </select>
+                <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #64748B; pointer-events: none;">
+                  <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                </span>
+              </div>
               <div id="tranche-hint-info" style="font-size: 11.5px; color: #64748B; margin-top: 4px;">
                 <!-- Rempli dynamiquement -->
               </div>
             </div>
 
-            <!-- Montant versé (Strictement en lecture seule / Readonly) -->
+            <!-- Montant versé -->
             <div style="grid-column: span 2;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin: 0; text-transform: uppercase;">
-                  3. Montant Versé (FCFA) <span class="text-danger">*</span>
-                </label>
-                <span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                  <i data-lucide="lock" style="width: 12px; height: 12px;"></i> Montant fixe (Readonly)
-                </span>
-              </div>
+              <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">
+                3. Montant Versé (FCFA) <span class="text-danger">*</span>
+              </label>
               <div style="position: relative;">
                 <input type="number" step="1" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 20px; color: #15803D; padding-right: 70px; border-radius: 10px; background-color: #F8FAFC; cursor: not-allowed;" placeholder="0" readonly required>
                 <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #64748B; font-size: 14px;">FCFA</span>
@@ -631,6 +863,65 @@
       </a>
     </div>
 
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : OUVERTURE DE LA SESSION DE CAISSE DU JOUR            -->
+<!-- ========================================================================= -->
+<div id="modal-open-session-caisse" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 10002; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); overflow: hidden; animation: modalZoomIn 0.25s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="unlock" style="width: 18px; height: 18px;"></i> Ouverture de Session de Caisse
+      </h3>
+      <button type="button" class="btn-close-modal-session" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-open-session-caisse" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+
+      <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="info" style="color: #15803D; width: 20px; height: 20px; flex-shrink: 0;"></i>
+        <div style="font-size: 12.5px; color: #166534; line-height: 1.4;">
+          L'ouverture initialise la journée financière. Tous les encaissements effectués seront rattachés à cette session.
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Date de la session <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="date" name="date_session" id="session_date" required value="<?= date('Y-m-d') ?>" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 14px;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Fond de caisse initial (FCFA) <span style="color: #EF4444;">*</span>
+        </label>
+        <div style="position: relative;">
+          <input type="number" min="0" step="any" name="fond_initial" id="session_fond_initial" required value="0" placeholder="Ex: 50000" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px 10px 42px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 800; font-size: 15px; color: #0F172A;">
+          <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748B; font-weight: 700; font-size: 13px;">F</span>
+        </div>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Montant en espèces disponible dans le tiroir au démarrage.</small>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 22px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Observations / Remarques d'ouverture
+        </label>
+        <textarea name="observations_ouverture" id="session_observations" rows="2" placeholder="Ex: Fond de caisse vérifié en présence du responsable..." class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-session" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-session" class="btn btn-primary" style="background: #1E3A5F; border: none; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 9px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(30,58,95,0.2);">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Confirmer l'Ouverture
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 <script>
@@ -757,6 +1048,63 @@ $(document).ready(function() {
   };
 
   // Fonction de rafraîchissement AJAX des statistiques KPI
+  // Helper d'animation de compteur numérique fluide (CountUp)
+  function animateCounter($elem, targetValue, isFloat, duration) {
+    if (!$elem || !$elem.length) return;
+    duration = duration || 650;
+    var rawText = ($elem.text() || '0').toString().replace(/\s/g, '').replace(/,/g, '.');
+    var startValue = parseFloat($elem.data('current-val') !== undefined ? $elem.data('current-val') : rawText.replace(/[^0-9.-]/g, '')) || 0;
+    $elem.data('current-val', targetValue);
+    
+    if (Math.abs(startValue - targetValue) < 0.001) {
+      if (isFloat) {
+        $elem.text(targetValue.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+      } else {
+        $elem.text(Math.round(targetValue).toLocaleString('fr-FR'));
+      }
+      return;
+    }
+
+    var startTime = null;
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var ease = 1 - Math.pow(1 - progress, 3);
+      var current = startValue + (targetValue - startValue) * ease;
+      
+      if (isFloat) {
+        $elem.text(current.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+      } else {
+        $elem.text(Math.round(current).toLocaleString('fr-FR'));
+      }
+      
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        if (isFloat) {
+          $elem.text(targetValue.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+        } else {
+          $elem.text(Math.round(targetValue).toLocaleString('fr-FR'));
+        }
+      }
+    }
+    window.requestAnimationFrame(step);
+  }
+
+  // Lancement de l'animation de défilement des compteurs au chargement initial
+  setTimeout(function() {
+    $('.card-kpi-container [id^="kpi-"]').each(function() {
+      var $el = $(this);
+      var raw = $el.text().replace(/\s/g, '').replace(/,/g, '.');
+      var val = parseFloat(raw) || 0;
+      var isFloat = $el.attr('id') === 'kpi-taux-recouvrement';
+      $el.data('current-val', 0);
+      $el.text(isFloat ? '0,0' : '0');
+      animateCounter($el, val, isFloat, 750);
+    });
+  }, 120);
+
+  // Fonction de rafraîchissement AJAX des statistiques KPI avec transition animée
   function refreshKpis() {
     $.ajax({
       url: '<?= RACINE ?>paiement/apiStats',
@@ -772,20 +1120,24 @@ $(document).ready(function() {
       success: function(res) {
         if (res.status === 1 && res.stats) {
           var s = res.stats;
-          $('#kpi-total-encaisse').text(Number(s.total_encaisse || 0).toLocaleString('fr-FR'));
-          $('#kpi-taux-recouvrement').text(Number(s.taux_recouvrement || 0).toLocaleString('fr-FR', { minimumFractionDigits: 1 }));
-          $('#kpi-encaisse-especes').text(Number(s.encaisse_especes || 0).toLocaleString('fr-FR'));
-          $('#kpi-encaisse-affectes').text(Number(s.encaisse_affectes || 0).toLocaleString('fr-FR'));
-          $('#kpi-encaisse-prives').text(Number(s.encaisse_prives || 0).toLocaleString('fr-FR'));
-          $('#kpi-montant-en-attente').text(Number(s.montant_en_attente || 0).toLocaleString('fr-FR'));
+          animateCounter($('#kpi-total-encaisse'), Number(s.total_encaisse || 0), false);
+          animateCounter($('#kpi-taux-recouvrement'), Number(s.taux_recouvrement || 0), true);
+          animateCounter($('#kpi-encaisse-aujourdhui'), Number(s.encaisse_aujourdhui || 0), false);
+          animateCounter($('#kpi-encaisse-especes'), Number(s.encaisse_especes || 0), false);
+          animateCounter($('#kpi-montant-en-attente'), Number(s.montant_en_attente || 0), false);
           
-          $('#kpi-attente-post-inscription').text(Number(s.attente_post_inscription || 0).toLocaleString('fr-FR'));
-          $('#kpi-eleves-soldes').text(Number(s.eleves_soldes || 0).toLocaleString('fr-FR'));
-          $('#kpi-eleves-acomptes').text(Number(s.eleves_acomptes || 0).toLocaleString('fr-FR'));
-          $('#kpi-eleves-non-payeurs').text(Number(s.eleves_non_payeurs || 0).toLocaleString('fr-FR'));
-          $('#kpi-encaisse-aujourdhui').text(Number(s.encaisse_aujourdhui || 0).toLocaleString('fr-FR'));
-          if ($('#kpi-encaisse-mois').length) $('#kpi-encaisse-mois').text(Number(s.encaisse_mois || 0).toLocaleString('fr-FR'));
-          if ($('#kpi-total-inscrits').length) $('#kpi-total-inscrits').text(Number(s.total_inscrits || 0).toLocaleString('fr-FR'));
+          animateCounter($('#kpi-encaisse-affectes'), Number(s.encaisse_affectes || 0), false);
+          animateCounter($('#kpi-encaisse-prives'), Number(s.encaisse_prives || 0), false);
+          animateCounter($('#kpi-encaisse-mois'), Number(s.encaisse_mois || 0), false);
+          animateCounter($('#kpi-total-exercice'), Number(s.total_exercice_session || s.total_scolarite_attendue || 0), false);
+          if (s.annee_exercice_libelle) {
+            $('#kpi-exercice-session-libelle').text(s.annee_exercice_libelle);
+          }
+          
+          animateCounter($('#kpi-eleves-soldes'), Number(s.eleves_soldes || 0), false);
+          animateCounter($('#kpi-eleves-acomptes'), Number(s.eleves_acomptes || 0), false);
+          animateCounter($('#kpi-eleves-non-payeurs'), Number(s.eleves_non_payeurs || 0), false);
+          animateCounter($('#kpi-total-inscrits'), Number(s.total_inscrits || 0), false);
         }
       }
     });
@@ -809,7 +1161,34 @@ $(document).ready(function() {
         dropdownParent: $('#modal-encaisser-scolarite'),
         width: '100%',
         placeholder: "-- Tapez le nom, matricule ou classe de l'étudiant --",
-        allowClear: true
+        allowClear: true,
+        escapeMarkup: function(m) { return m; },
+        templateResult: function(data) {
+          if (!data.id) return data.text;
+          var photo = $(data.element).data('photo');
+          var nom = $(data.element).data('nom') || data.text;
+          var mat = $(data.element).data('matricule') || '';
+          var classe = $(data.element).data('classe') || '';
+          var inits = (nom || 'ET').split(' ').filter(function(x){return x;}).map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
+          
+          var photoHtml = '';
+          if (photo && photo.trim() !== '') {
+            photoHtml = '<div style="width: 34px; height: 34px; border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 1.5px solid #CBD5E1; background: #F1F5F9; display: flex; align-items: center; justify-content: center;">' +
+                          '<img src="' + escapeHtml(photo) + '" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\'none\'; $(this).next().show();">' +
+                          '<span style="display:none; font-size: 11px; font-weight: 800; color: #1E3A5F;">' + escapeHtml(inits) + '</span>' +
+                        '</div>';
+          } else {
+            photoHtml = '<div style="width: 34px; height: 34px; border-radius: 8px; background: #EFF6FF; color: #1E3A5F; border: 1px solid #DBEAFE; font-weight: 800; font-size: 11.5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">' + escapeHtml(inits) + '</div>';
+          }
+
+          return '<div style="display: flex; align-items: center; gap: 10px; padding: 2px 0;">' +
+                   photoHtml +
+                   '<div style="line-height: 1.25;">' +
+                     '<div style="font-weight: 700; color: #0F172A; font-size: 13px;">' + escapeHtml(nom) + '</div>' +
+                     '<div style="font-size: 11px; color: #64748B;"><code style="color: #1E3A5F; font-weight: 700; background: #F1F5F9; padding: 1px 4px; border-radius: 3px;">' + escapeHtml(mat) + '</code> &bull; ' + escapeHtml(classe) + '</div>' +
+                   '</div>' +
+                 '</div>';
+        }
       });
     }
     if (preselectedCode) {
@@ -824,6 +1203,10 @@ $(document).ready(function() {
     if ($.fn.select2) {
       $('#modal_select_inscription').val('').trigger('change.select2');
     }
+    $('#encaisse-stu-photo').hide().attr('src', '');
+    $('#encaisse-stu-avatar').show().text('ET');
+    $('#modal_select_tranche').html('');
+    $('#tranche-hint-info').html('');
     $('#encaisse-student-summary-card').hide();
     $('#encaisse-payment-inputs-section').hide();
     currentStudentSummary = null;
@@ -883,7 +1266,7 @@ $(document).ready(function() {
           currentStudentSummary = d;
 
           // Remplir la fiche étudiant
-          var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
+          var initials = (d.nom_complet || 'ET').split(' ').filter(function(x){return x;}).map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
           $('#encaisse-stu-avatar').text(initials || 'ET');
           $('#encaisse-stu-nom').text(d.nom_complet);
           $('#encaisse-stu-mat').text(d.matricule);
@@ -895,6 +1278,24 @@ $(document).ready(function() {
             $('#encaisse-stu-regime-badge').css({'background': '#EFF6FF', 'color': '#1E3A5F', 'border-color': '#BFDBFE'});
           }
 
+          // Affichage dynamique de la photo de l'étudiant
+          if (d.photo_url && d.photo_url.trim() !== '') {
+            $('#encaisse-stu-photo')
+              .attr('src', d.photo_url)
+              .off('load error')
+              .on('load', function() {
+                $(this).show();
+                $('#encaisse-stu-avatar').hide();
+              })
+              .on('error', function() {
+                $(this).hide();
+                $('#encaisse-stu-avatar').show();
+              });
+          } else {
+            $('#encaisse-stu-photo').hide().attr('src', '');
+            $('#encaisse-stu-avatar').show();
+          }
+
           // Compteurs
           $('#encaisse-val-scolarite').text(d.scolarite_due_fmt);
           $('#encaisse-val-paye').text(d.total_paye_fmt);
@@ -904,7 +1305,7 @@ $(document).ready(function() {
           var trHtml = '';
           if (d.tranches && d.tranches.length > 0) {
             d.tranches.forEach(function(tr) {
-              var suffix = tr.is_soldee ? ' (SOLDÉE)' : ' (Reste : ' + tr.reste_a_payer_fmt + ')';
+              var suffix = tr.is_soldee ? ' (SOLDÉE)' : '';
               trHtml += '<option value="' + escapeHtml(tr.code_tranche) + '" data-reste="' + tr.reste_a_payer + '" data-soldee="' + (tr.is_soldee ? '1' : '0') + '" data-limite="' + escapeHtml(tr.date_limite_fmt || '') + '" ' + (tr.is_soldee ? 'style="color:#94A3B8;"' : '') + '>' +
                         escapeHtml(tr.libelle_tranche) + ' - ' + tr.montant_tranche_fmt + suffix +
                         '</option>';
@@ -914,6 +1315,9 @@ $(document).ready(function() {
 
           if (d.suggested_tranche_code) {
             $('#modal_select_tranche').val(d.suggested_tranche_code);
+          } else if (d.tranches && d.tranches.length > 0) {
+            // Sélection automatique de la première tranche par ordre de création
+            $('#modal_select_tranche').val(d.tranches[0].code_tranche);
           }
           
           $('#modal_select_tranche').trigger('change');
@@ -939,6 +1343,12 @@ $(document).ready(function() {
     });
   });
 
+  // Verrouillage strict du champ Tranche (Lecture seule, non modifiable)
+  $('#modal_select_tranche').on('mousedown keydown focus click touchstart', function(e) {
+    e.preventDefault();
+    return false;
+  });
+
   // Changement de tranche (Calcul et verrouillage readonly du montant)
   $('#modal_select_tranche').on('change', function() {
     var $opt = $(this).find('option:selected');
@@ -947,20 +1357,21 @@ $(document).ready(function() {
     var limite = $opt.data('limite');
 
     if (isSoldee) {
-      $('#montant-max-hint').html('<span style="color:#DC2626; font-weight:700;">⚠️ Cette tranche est déjà totalement soldée. Veuillez sélectionner une tranche avec un solde restant.</span>');
+      $('#montant-max-hint').html('<span style="color:#DC2626; font-weight:700;">⚠️ Cette tranche est déjà totalement soldée. Aucun versement requis.</span>');
       $('#input-montant-versement').val(0);
       $('#btn-submit-encaissement').prop('disabled', true);
     } else {
-      $('#montant-max-hint').html('Montant fixé par la tranche : <strong id="lbl-max-autorise" style="color: #15803D;">' + Number(reste).toLocaleString('fr-FR') + ' FCFA</strong> (Lecture seule)');
+      $('#montant-max-hint').html('Montant fixé par la tranche : <strong id="lbl-max-autorise" style="color: #15803D;">' + Number(reste).toLocaleString('fr-FR') + ' FCFA</strong>');
       $('#input-montant-versement').val(reste);
       $('#btn-submit-encaissement').prop('disabled', false);
     }
 
     if (limite && limite !== 'Non définie') {
-      $('#tranche-hint-info').html('📅 Date d\'échéance / limite : <strong>' + escapeHtml(limite) + '</strong>');
+      $('#tranche-hint-info').html('📅 Date d\'échéance : <strong>' + escapeHtml(limite) + '</strong>');
     } else {
       $('#tranche-hint-info').html('');
     }
+    if (window.lucide) lucide.createIcons();
   });
 
   // Soumission AJAX du formulaire d'encaissement
@@ -1019,6 +1430,70 @@ $(document).ready(function() {
           if (r && r.message) errMsg = r.message;
         } catch(e) {}
         alert(errMsg);
+      }
+    });
+  });
+
+  // GESTION MODALE OUVERTURE DE CAISSE DU JOUR
+  $(document).on('click', '.btn-open-session-caisse', function(e) {
+    e.preventDefault();
+    $('#form-open-session-caisse')[0].reset();
+    $('#session_date').val(new Date().toISOString().split('T')[0]);
+    $('#session_fond_initial').val(0);
+    $('#modal-open-session-caisse').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#session_fond_initial').focus().select(); }, 100);
+  });
+
+  $(document).on('click', '.btn-close-modal-session', function() {
+    $('#modal-open-session-caisse').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-open-session-caisse')) {
+      $('#modal-open-session-caisse').hide();
+    }
+  });
+
+  $('#form-open-session-caisse').on('submit', function(e) {
+    e.preventDefault();
+    var $btn = $('#btn-submit-session');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;" class="lucide-spin"></i> Ouverture...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: window.RACINE + 'session_caisse/add',
+      type: 'POST',
+      data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Confirmer l\'Ouverture');
+        if (window.lucide) lucide.createIcons();
+        if (res.status === 1 || res.success) {
+          if (typeof showToast === 'function') showToast(res.message || 'Session de caisse ouverte avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Session de caisse ouverte avec succès');
+          $('#modal-open-session-caisse').hide();
+          setTimeout(function() {
+            window.location.reload();
+          }, 600);
+        } else {
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'ouverture de la session', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'ouverture de la session');
+          else alert(res.message || 'Erreur lors de l\'ouverture de la session');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Confirmer l\'Ouverture');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur lors de l\'ouverture de la session';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json.message) msg = json.message;
+        } catch(e) {}
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
+        else alert(msg);
       }
     });
   });

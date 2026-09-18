@@ -36,7 +36,99 @@ if ($opDroit == 0 && $montantOp == 105000) {
     $opDroit = 80000;
 }
 
-$refCaiss = $numRecu . 'ScoFOF' . sprintf("%05d", rand(10000, 99999)) . ',' . sprintf("%010d", rand(1000000000, 9999999999)) . 'ScaisKON';
+$refSeed = !empty($item['code_paiement']) ? $item['code_paiement'] : $numRecu;
+$refCaissHash1 = sprintf("%05d", abs(crc32($refSeed . '_sco')) % 90000 + 10000);
+$refCaissHash2 = sprintf("%010d", abs(crc32($refSeed . '_cais')) % 9000000000 + 1000000000);
+$refCaiss = !empty($item['reference_paiement']) 
+    ? $item['reference_paiement'] 
+    : ($numRecu . 'ScoFOF' . $refCaissHash1 . ',' . $refCaissHash2 . 'ScaisKON');
+
+$barcodeCode = !empty($item['recu_numero_paiement']) 
+    ? $item['recu_numero_paiement'] 
+    : (!empty($item['code_paiement']) ? $item['code_paiement'] : $numRecu);
+
+// Résolution robuste de la photo de l'étudiant
+$studentPhotoUrl = '';
+$rawPhoto = !empty($item['photo_inscription']) ? $item['photo_inscription'] : (!empty($item['photo_etudiant']) ? $item['photo_etudiant'] : '');
+
+if (!empty($rawPhoto)) {
+    $cleanPhotoPath = ltrim($rawPhoto, '/');
+    if (strpos($cleanPhotoPath, 'public/') === 0) {
+        if (file_exists(__DIR__ . '/../../' . $cleanPhotoPath)) {
+            $studentPhotoUrl = RACINE . $cleanPhotoPath;
+        }
+    } else {
+        if (file_exists(__DIR__ . '/../../public/' . $cleanPhotoPath)) {
+            $studentPhotoUrl = RACINE . 'public/' . $cleanPhotoPath;
+        } elseif (file_exists(__DIR__ . '/../../' . $cleanPhotoPath)) {
+            $studentPhotoUrl = RACINE . $cleanPhotoPath;
+        }
+    }
+}
+
+if (empty($studentPhotoUrl) && !empty($item['nom_etudiant'])) {
+    $slugNom = preg_replace('/[^a-zA-Z0-9_]/', '_', $item['nom_etudiant']);
+    $anneeFolder = !empty($anneeLibelle) ? $anneeLibelle : '2025-2026';
+    $potentialPath = 'public/uploads/photos_inscriptions/' . $anneeFolder . '/' . $slugNom . '.png';
+    if (file_exists(__DIR__ . '/../../' . $potentialPath)) {
+        $studentPhotoUrl = RACINE . $potentialPath;
+    }
+}
+
+// Générateur vectoriel SVG Code 128 (Subset B) natif, net et conforme pour impression et lecture scanner
+if (!function_exists('generateCode128BarcodeSvg')) {
+    function generateCode128BarcodeSvg($code, $height = 34, $scale = 1.2) {
+        $patterns = [
+            '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
+            '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
+            '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
+            '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
+            '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
+            '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
+            '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
+            '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
+            '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
+            '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
+            '114131','311141','411131','211412','211214','211232','2331112'
+        ];
+        $code = (string)$code;
+        if ($code === '') $code = 'GEICG-REC';
+        $startB = 104;
+        $checksum = $startB;
+        $sequence = [$patterns[$startB]];
+        $len = strlen($code);
+        for ($i = 0; $i < $len; $i++) {
+            $charVal = ord($code[$i]) - 32;
+            if ($charVal < 0 || $charVal > 95) $charVal = 0;
+            $checksum += $charVal * ($i + 1);
+            $sequence[] = $patterns[$charVal];
+        }
+        $checkVal = $checksum % 103;
+        $sequence[] = $patterns[$checkVal];
+        $sequence[] = $patterns[106];
+        
+        $totalModules = 0;
+        foreach ($sequence as $p) {
+            for ($j = 0; $j < strlen($p); $j++) {
+                $totalModules += (int)$p[$j];
+            }
+        }
+        $totalWidth = round($totalModules * $scale, 1);
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' . $totalWidth . '" height="' . $height . '" viewBox="0 0 ' . $totalWidth . ' ' . $height . '" style="display:block; margin:0 auto; max-width:100%; height:' . $height . 'px;">';
+        $x = 0;
+        foreach ($sequence as $p) {
+            for ($j = 0; $j < strlen($p); $j++) {
+                $w = (int)$p[$j] * $scale;
+                if ($j % 2 == 0) {
+                    $svg .= '<rect x="' . round($x, 2) . '" y="0" width="' . round($w, 2) . '" height="' . $height . '" fill="#000000" />';
+                }
+                $x += $w;
+            }
+        }
+        $svg .= '</svg>';
+        return $svg;
+    }
+}
 
 // Logo institutionnel officiel (dynamique depuis la base ou fallback logo_eicg.jpg)
 $logoSrc = '';
@@ -291,8 +383,8 @@ if (empty($logoSrc)) {
         <div style="clear: both; margin-bottom: 10px;">
           
           <div class="student-photo-box">
-            <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
+            <?php if (!empty($studentPhotoUrl)): ?>
+              <img src="<?= htmlspecialchars($studentPhotoUrl) ?>" alt="Photo de l'étudiant" style="width: 100%; height: 100%; object-fit: cover; display: block;">
             <?php else: ?>
               <div style="text-align: center; color: #94A3B8;">
                 <span style="font-size: 24px; font-weight: 900; display: block;"><?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1)) ?></span>
@@ -380,12 +472,15 @@ if (empty($logoSrc)) {
               </span>
             </td>
             <td style="text-align: right; vertical-align: top;">
-              <div style="font-size: 11px; font-family: monospace; font-weight: bold; margin-bottom: 2px;">
-                ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-                <br>
-                <?= htmlspecialchars(substr($refCaiss, 0, 35)) ?>
+              <div style="display: inline-block; text-align: center; margin-bottom: 3px;">
+                <div style="line-height: 1;">
+                  <?= generateCode128BarcodeSvg($barcodeCode, 32, 1.15) ?>
+                </div>
+                <div style="font-size: 10px; font-family: 'Courier New', Courier, monospace; font-weight: 700; letter-spacing: 1px; margin-top: 2px; color: #000000;">
+                  * <?= htmlspecialchars($barcodeCode) ?> *
+                </div>
               </div>
-              <div style="font-weight: bold; font-size: 13px; margin-top: 4px;">CAISSIER(RE)</div>
+              <div style="font-weight: bold; font-size: 13px; margin-top: 2px;">CAISSIER(RE)</div>
               <div style="font-size: 12px; font-weight: 600;"><?= htmlspecialchars($caissierNom) ?></div>
             </td>
           </tr>
@@ -426,8 +521,8 @@ if (empty($logoSrc)) {
         <div style="clear: both; margin-bottom: 10px;">
           
           <div class="student-photo-box">
-            <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
+            <?php if (!empty($studentPhotoUrl)): ?>
+              <img src="<?= htmlspecialchars($studentPhotoUrl) ?>" alt="Photo de l'étudiant" style="width: 100%; height: 100%; object-fit: cover; display: block;">
             <?php else: ?>
               <div style="text-align: center; color: #94A3B8;">
                 <span style="font-size: 24px; font-weight: 900; display: block;"><?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1)) ?></span>
@@ -477,12 +572,15 @@ if (empty($logoSrc)) {
               </span>
             </td>
             <td style="text-align: right; vertical-align: top;">
-              <div style="font-size: 11px; font-family: monospace; font-weight: bold; margin-bottom: 2px;">
-                ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-                <br>
-                <?= htmlspecialchars(substr($refCaiss, 0, 35)) ?>
+              <div style="display: inline-block; text-align: center; margin-bottom: 3px;">
+                <div style="line-height: 1;">
+                  <?= generateCode128BarcodeSvg($barcodeCode, 32, 1.15) ?>
+                </div>
+                <div style="font-size: 10px; font-family: 'Courier New', Courier, monospace; font-weight: 700; letter-spacing: 1px; margin-top: 2px; color: #000000;">
+                  * <?= htmlspecialchars($barcodeCode) ?> *
+                </div>
               </div>
-              <div style="font-weight: bold; font-size: 13px; margin-top: 4px;">CAISSIER(RE)</div>
+              <div style="font-weight: bold; font-size: 13px; margin-top: 2px;">CAISSIER(RE)</div>
               <div style="font-size: 12px; font-weight: 600;"><?= htmlspecialchars($caissierNom) ?></div>
             </td>
           </tr>
@@ -490,7 +588,7 @@ if (empty($logoSrc)) {
 
         <!-- Pied de page Partie 2 -->
         <div style="font-size: 10px; font-family: monospace; margin-top: 14px; display: flex; justify-content: space-between; color: #334155;">
-          <div>GE-25260276ScoFOF45944,4399676042ScaisKON</div>
+          <div>Réf_caiss <?= htmlspecialchars($refCaiss) ?></div>
           <div><?= htmlspecialchars($datePrint) ?></div>
         </div>
 
