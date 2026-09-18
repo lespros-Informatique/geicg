@@ -486,27 +486,22 @@
               </div>
             </div>
 
-            <!-- Montant versé -->
+            <!-- Montant versé (Strictement en lecture seule / Readonly) -->
             <div style="grid-column: span 2;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin: 0; text-transform: uppercase;">
                   3. Montant Versé (FCFA) <span class="text-danger">*</span>
                 </label>
-                <div style="display: flex; gap: 6px;">
-                  <button type="button" id="btn-quick-fill-tranche" style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A5F; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
-                    Reste de la tranche
-                  </button>
-                  <button type="button" id="btn-quick-fill-total" style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
-                    Tout solder
-                  </button>
-                </div>
+                <span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                  <i data-lucide="lock" style="width: 12px; height: 12px;"></i> Montant fixe (Readonly)
+                </span>
               </div>
               <div style="position: relative;">
-                <input type="number" step="500" min="500" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 20px; color: #15803D; padding-right: 70px; border-radius: 10px;" placeholder="Ex: 50000" required>
+                <input type="number" step="1" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 20px; color: #15803D; padding-right: 70px; border-radius: 10px; background-color: #F8FAFC; cursor: not-allowed;" placeholder="0" readonly required>
                 <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #64748B; font-size: 14px;">FCFA</span>
               </div>
               <div id="montant-max-hint" style="font-size: 11.5px; color: #64748B; margin-top: 4px;">
-                Montant maximal autorisé pour cette tranche : <strong id="lbl-max-autorise" style="color: #15803D;">0 FCFA</strong>
+                Montant déterminé automatiquement par la tranche sélectionnée.
               </div>
             </div>
 
@@ -887,7 +882,7 @@ $(document).ready(function() {
     });
   });
 
-  // Changement de tranche
+  // Changement de tranche (Calcul et verrouillage readonly du montant)
   $('#modal_select_tranche').on('change', function() {
     var $opt = $(this).find('option:selected');
     var reste = parseFloat($opt.data('reste') || 0);
@@ -896,11 +891,11 @@ $(document).ready(function() {
 
     if (isSoldee) {
       $('#montant-max-hint').html('<span style="color:#DC2626; font-weight:700;">⚠️ Cette tranche est déjà totalement soldée. Veuillez sélectionner une tranche avec un solde restant.</span>');
-      $('#input-montant-versement').val('').prop('disabled', true);
+      $('#input-montant-versement').val(0);
       $('#btn-submit-encaissement').prop('disabled', true);
     } else {
-      $('#montant-max-hint').html('Montant maximal autorisé pour cette tranche : <strong id="lbl-max-autorise" style="color: #15803D;">' + Number(reste).toLocaleString('fr-FR') + ' FCFA</strong>');
-      $('#input-montant-versement').prop('disabled', false).attr('max', reste).val(reste);
+      $('#montant-max-hint').html('Montant fixé par la tranche : <strong id="lbl-max-autorise" style="color: #15803D;">' + Number(reste).toLocaleString('fr-FR') + ' FCFA</strong> (Lecture seule)');
+      $('#input-montant-versement').val(reste);
       $('#btn-submit-encaissement').prop('disabled', false);
     }
 
@@ -908,23 +903,6 @@ $(document).ready(function() {
       $('#tranche-hint-info').html('📅 Date d\'échéance / limite : <strong>' + escapeHtml(limite) + '</strong>');
     } else {
       $('#tranche-hint-info').html('');
-    }
-  });
-
-  // Boutons de remplissage rapide
-  $('#btn-quick-fill-tranche').on('click', function() {
-    var $opt = $('#modal_select_tranche').find('option:selected');
-    var reste = parseFloat($opt.data('reste') || 0);
-    if (reste > 0) {
-      $('#input-montant-versement').val(reste);
-    }
-  });
-
-  $('#btn-quick-fill-total').on('click', function() {
-    var $opt = $('#modal_select_tranche').find('option:selected');
-    var resteTranche = parseFloat($opt.data('reste') || 0);
-    if (resteTranche > 0) {
-      $('#input-montant-versement').val(resteTranche);
     }
   });
 
