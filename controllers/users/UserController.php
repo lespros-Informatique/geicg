@@ -144,7 +144,10 @@ class UserController extends BaseController
             }
 
             $idDisplay = $email ?: ($telephone ?: $nom);
-            $this->success("Utilisateur créé avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", ['password' => $rawPassword]);
+            $this->success("Utilisateur créé avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
+                'redirect' => RACINE . 'user/list',
+                'password' => $rawPassword
+            ]);
         } else {
             $this->error('Erreur lors de la création de l\'utilisateur.');
         }
@@ -152,14 +155,19 @@ class UserController extends BaseController
 
     public function edit()
     {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            header('Location: ' . RACINE . 'user/list');
+            exit;
+        }
+
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission('MANAGE_USERS');
         $id = (int)$this->post('id_user');
-        if (!$id) { $this->error('Identifiant invalide'); return; }
+        if (!$id) { $this->error('Identifiant invalide', RACINE . 'user/list'); return; }
 
         $user = $this->model->getById($id);
-        if (!$user) { $this->error('Utilisateur introuvable'); return; }
+        if (!$user) { $this->error('Utilisateur introuvable', RACINE . 'user/list'); return; }
 
         $nom = trim($_POST['nom'] ?? '');
         $prenom = trim($_POST['prenom'] ?? '');
@@ -237,7 +245,7 @@ class UserController extends BaseController
                 $this->model->saveUserAnneeAcces($user['code_user'], $_POST['annee_acces']);
             }
 
-            $this->success('Utilisateur et permissions par rôle mis à jour avec succès !');
+            $this->success('Utilisateur et permissions par rôle mis à jour avec succès !', RACINE . 'user/list');
         } else {
             $this->error('Erreur lors de la modification de l\'utilisateur.');
         }

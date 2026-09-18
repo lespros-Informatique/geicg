@@ -21,7 +21,7 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>user/<?= !empty($user['id_user']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form id="form-user" action="<?= RACINE ?>user/<?= !empty($user['id_user']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($user['id_user'])): ?>
             <input type="hidden" name="id_user" value="<?= $user['id_user'] ?>">
@@ -124,6 +124,9 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
               <span style="font-size: 12px; color: #64748B;">Configurez les autorisations pour chaque rôle sélectionné</span>
             </div>
 
+            <div id="rolesPermissionsContainer" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          </div>
+
           <!-- Matrice d'Accès aux Années Antérieures -->
           <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 28px 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 8px;">
             <i data-lucide="calendar-clock" style="width: 18px; height: 18px; color: var(--primary-color);"></i> Accès aux Années Académiques Antérieures
@@ -175,9 +178,14 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
             </div>
           </div>
 
-          <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer l'Utilisateur & Permissions</button>
-            <a href="<?= RACINE ?>user/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
+          <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%; align-items: center;">
+            <button type="submit" id="btn-save-user" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 11px 26px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+              <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+              Enregistrer l'Utilisateur & Permissions
+            </button>
+            <a href="<?= RACINE ?>user/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 22px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+              <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Annuler
+            </a>
           </div>
         </form>
       </div>
@@ -295,6 +303,47 @@ $(document).ready(function() {
     $('#sel_roles_user').select2({ placeholder: "Sélectionnez un ou plusieurs rôles", closeOnSelect: false, width: '100%' });
     $('#sel_roles_user').on('change', renderRolePermissions);
   }
+
+  // Soumission AJAX du formulaire avec retour dynamique et redirection
+  $('#form-user').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $btn = $('#btn-save-user');
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Enregistrement en cours...');
+
+    $.ajax({
+      url: $form.attr('action'),
+      type: 'POST',
+      data: $form.serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (typeof showToast === 'function') showToast(res.message || 'Utilisateur enregistré avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Utilisateur enregistré avec succès');
+          setTimeout(function() {
+            window.location.href = res.redirect || '<?= RACINE ?>user/list';
+          }, 600);
+        } else {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer l\'Utilisateur & Permissions');
+          if (window.lucide) lucide.createIcons();
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer l\'Utilisateur & Permissions');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur réseau ou serveur';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch(e) {}
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
+      }
+    });
+  });
 
   // Premier rendu à l'ouverture
   renderRolePermissions();

@@ -77,10 +77,9 @@ class RoleController extends BaseController
             VALUES (?, ?, ?, ?, ?, 'actif')
         ");
         if ($stmtIns->execute([$codeRole, $libelle, $module, $groupe, $description])) {
-            if (!empty($permissions) && is_array($permissions)) {
-                $this->model->syncPermissions($codeRole, $permissions);
-            }
-            $this->success('Rôle créé avec succès !');
+            $permissions = isset($data['permissions']) && is_array($data['permissions']) ? $data['permissions'] : [];
+            $this->model->syncPermissions($codeRole, $permissions);
+            $this->success('Rôle créé avec succès !', RACINE . 'role/list');
         } else {
             $this->error('Erreur lors de la création du rôle.');
         }
@@ -92,10 +91,10 @@ class RoleController extends BaseController
         $this->requireAuth();
         $this->requirePermission('MANAGE_ROLES');
         $id = (int)$this->post('id');
-        if (!$id) { $this->error('Identifiant invalide'); return; }
+        if (!$id) { $this->error('Identifiant invalide', RACINE . 'role/list'); return; }
 
         $role = $this->model->getById($id);
-        if (!$role) { $this->error('Rôle introuvable'); return; }
+        if (!$role) { $this->error('Rôle introuvable', RACINE . 'role/list'); return; }
 
         $data = $_POST;
         unset($data['csrf_token']);
@@ -104,8 +103,8 @@ class RoleController extends BaseController
         $module = trim($data['module'] ?? $role['module']);
         $groupe = trim($data['groupe'] ?? $role['groupe']);
         $description = trim($data['description'] ?? $role['description']);
-        $statut = $data['statut_role'] ?? 'actif';
-        $permissions = $data['permissions'] ?? [];
+        $statut = $data['statut_role'] ?? ($role['statut_role'] ?? 'actif');
+        $permissions = isset($data['permissions']) && is_array($data['permissions']) ? $data['permissions'] : [];
 
         if (empty($libelle)) {
             $this->error('Le libellé du rôle est obligatoire.');
@@ -118,10 +117,8 @@ class RoleController extends BaseController
             WHERE id = ?
         ");
         if ($stmtUp->execute([$libelle, $module, $groupe, $description, $statut, $id])) {
-            if (isset($data['permissions']) && is_array($permissions)) {
-                $this->model->syncPermissions($role['code_role'], $permissions);
-            }
-            $this->success('Rôle et permissions mis à jour avec succès !');
+            $this->model->syncPermissions($role['code_role'], $permissions);
+            $this->success('Rôle et permissions mis à jour avec succès !', RACINE . 'role/list');
         } else {
             $this->error('Erreur lors de la modification du rôle.');
         }

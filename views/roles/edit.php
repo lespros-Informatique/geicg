@@ -156,11 +156,13 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
           </div>
         </div>
 
-        <div style="display: flex; gap: 12px; padding: 20px 0;">
-          <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 12px 28px; font-size: 14px;">
-            Enregistrer le Rôle & Permissions
+        <div style="display: flex; gap: 12px; padding: 20px 0; align-items: center;">
+          <button type="submit" id="btn-save-role" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 12px 28px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+            <i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Rôle & Permissions
           </button>
-          <a href="<?= RACINE ?>role/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px;">Annuler</a>
+          <a href="<?= RACINE ?>role/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Annuler
+          </a>
         </div>
       </form>
     </div>
@@ -170,6 +172,47 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
 <script>
 $(document).ready(function() { 
   if (window.lucide) lucide.createIcons(); 
+
+  // Soumission AJAX du formulaire avec retour dynamique et redirection
+  $('form').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $btn = $('#btn-save-role');
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Enregistrement en cours...');
+
+    $.ajax({
+      url: $form.attr('action'),
+      type: 'POST',
+      data: $form.serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (typeof showToast === 'function') showToast(res.message || 'Rôle enregistré avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Rôle enregistré avec succès');
+          setTimeout(function() {
+            window.location.href = res.redirect || '<?= RACINE ?>role/list';
+          }, 600);
+        } else {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Rôle & Permissions');
+          if (window.lucide) lucide.createIcons();
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Rôle & Permissions');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur réseau ou serveur';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch(e) {}
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
+      }
+    });
+  });
 });
 
 // Toggle ouvrir / réduire un module avec rotation du chevron
