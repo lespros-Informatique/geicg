@@ -724,8 +724,12 @@ class InscriptionController extends BaseController
         }
 
         $derogationAcceptee = !empty($data['derogation_arriere']) && in_array($data['derogation_arriere'], ['1', 'oui', 'true']);
+        if ($derogationAcceptee && !$this->hasPermission('MANAGE_DEROGATION_INSCRIPTION')) {
+            $this->error("Accès refusé : Vous ne possédez pas le privilège [MANAGE_DEROGATION_INSCRIPTION] requis pour accorder une dérogation administrative.");
+            return;
+        }
         if ($prevSolde > 0 && !$derogationAcceptee) {
-            $this->error("L'étudiant présente un reliquat impayé de " . number_format($prevSolde, 0, ',', ' ') . " FCFA sur la session précédente (" . ($prevIns['libelle_annee'] ?? 'N-1') . "). La réinscription requiert un quitus financier au Bureau des Versements ou une dérogation administrative formelle.");
+            $this->error("L'étudiant présente un reliquat impayé de " . number_format($prevSolde, 0, ',', ' ') . " FCFA sur la session précédente (" . ($prevIns['libelle_annee'] ?? 'antérieure') . "). La réinscription requiert un quitus financier au Bureau des Versements ou une dérogation administrative formelle.");
             return;
         }
 
@@ -1019,14 +1023,16 @@ class InscriptionController extends BaseController
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'inscription/list'); exit();
         }
-        $this->loadView('../views/inscriptions/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $canDerogate = $this->hasPermission('MANAGE_DEROGATION_INSCRIPTION');
+        $this->loadView('../views/inscriptions/edit.php', ['item' => $item, 'encryptedId' => $encryptedId, 'canDerogate' => $canDerogate]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
         $this->requirePermission('MANAGE_INSCRIPTIONS');
-        $this->loadView('../views/inscriptions/edit.php', ['item' => []]);
+        $canDerogate = $this->hasPermission('MANAGE_DEROGATION_INSCRIPTION');
+        $this->loadView('../views/inscriptions/edit.php', ['item' => [], 'canDerogate' => $canDerogate]);
     }
 
     public function sansPhoto()

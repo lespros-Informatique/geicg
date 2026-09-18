@@ -202,16 +202,24 @@ $annees = (new ModelAnnee())->getAll();
             <div id="quitus_badge_box"></div>
           </div>
 
-          <!-- ZONE DE DÉROGATION ADMINISTRATIVE SI ARRIÉRÉS DÉTECTÉS -->
+          <!-- ZONE DE DÉROGATION ADMINISTRATIVE SI ARRIÉRÉS DÉTECTÉS (SOUMIS À PERMISSION RBAC) -->
+          <?php $canDerogate = $canDerogate ?? true; ?>
           <div id="quitus_derogation_zone" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #FECACA; background: #FFF5F5; padding: 14px 16px; border-radius: 8px; border: 1px solid #FEE2E2;">
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 13px; color: #991B1B; margin: 0;">
-              <input type="checkbox" name="derogation_arriere" value="1" id="chk_derogation_arriere" style="width: 18px; height: 18px; accent-color: #DC2626; cursor: pointer;">
-              <span>Dérogation Administrative : Autoriser la réinscription sous réserve d'apurement des arriérés au Bureau des Versements</span>
-            </label>
-            <div id="derogation_motif_container" style="display: none; margin-top: 10px;">
-              <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Motif de la dérogation / Référence du moratoire ou accord :</label>
-              <input type="text" name="derogation_motif" id="inp_derogation_motif" class="form-control" style="font-size: 12.5px; padding: 8px 12px; border-radius: 6px;" placeholder="Ex: Accord Direction Générale / Engagement écrit de paiement échelonné">
-            </div>
+            <?php if (!empty($canDerogate)): ?>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 13px; color: #991B1B; margin: 0;">
+                <input type="checkbox" name="derogation_arriere" value="1" id="chk_derogation_arriere" style="width: 18px; height: 18px; accent-color: #DC2626; cursor: pointer;">
+                <span>Dérogation Administrative : Autoriser la réinscription sous réserve d'apurement des arriérés au Bureau des Versements</span>
+              </label>
+              <div id="derogation_motif_container" style="display: none; margin-top: 10px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Motif de la dérogation / Référence du moratoire ou accord :</label>
+                <input type="text" name="derogation_motif" id="inp_derogation_motif" class="form-control" style="font-size: 12.5px; padding: 8px 12px; border-radius: 6px;" placeholder="Ex: Accord Direction Générale / Engagement écrit de paiement échelonné">
+              </div>
+            <?php else: ?>
+              <div style="font-size: 12.5px; color: #991B1B; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="lock" style="width: 16px; height: 16px; color: #DC2626;"></i>
+                <span>Dérogation Administrative : Privilège restreint (permission <code>MANAGE_DEROGATION_INSCRIPTION</code> requise pour accorder une dérogation).</span>
+              </div>
+            <?php endif; ?>
           </div>
         </div>
 
