@@ -172,7 +172,7 @@ $stats = $stats ?? ['nb_etudiants' => 0, 'total_du' => 0, 'total_recouvre' => 0,
           <div style="grid-column: span 2;">
             <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">2. Montant Versé (FCFA) <span class="text-danger">*</span></label>
             <div style="position: relative;">
-              <input type="number" step="1000" min="1000" id="input-montant-arriere" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 20px; color: #15803D; padding-right: 70px; border-radius: 10px;" placeholder="Ex: 50000" required>
+              <input type="number" step="1000" min="1000" id="input-montant-arriere" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 20px; color: #15803D; padding-right: 70px; border-radius: 10px; background-color: #F1F5F9; cursor: not-allowed;" placeholder="Ex: 50000" required readonly>
               <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #64748B; font-size: 14px;">FCFA</span>
             </div>
             <div id="help-solde-max" style="font-size: 11.5px; color: #64748B; margin-top: 4px;">Solde restant disponible sur l'année sélectionnée : <strong id="lbl-solde-dispo">0 FCFA</strong></div>
