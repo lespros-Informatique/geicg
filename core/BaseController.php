@@ -310,7 +310,7 @@ abstract class BaseController
             return true;
         }
         $uri = strtolower($_SERVER['REQUEST_URI'] ?? '');
-        if (strpos($uri, '/api') !== false || strpos($uri, 'apilist') !== false || strpos($uri, 'savestatut') !== false || strpos($uri, 'getrecepissedata') !== false || strpos($uri, 'uploadphoto') !== false || strpos($uri, 'prisedevue') !== false) {
+        if (strpos($uri, '/api') !== false || strpos($uri, 'apilist') !== false || strpos($uri, 'savestatut') !== false || strpos($uri, 'getrecepissedata') !== false || strpos($uri, 'uploadphoto') !== false || strpos($uri, 'prisedevue') !== false || strpos($uri, '/add') !== false || strpos($uri, '/edit') !== false || strpos($uri, '/changer') !== false || strpos($uri, 'getstudentprofilesummary') !== false || strpos($uri, 'gettuitionbyclass') !== false) {
             return true;
         }
         return false;

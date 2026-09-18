@@ -148,7 +148,7 @@ $pieces = (new ModelPieceFournir())->getAll();
 
       <!-- Form Wizard -->
       <div class="wizard-card">
-        <form id="form-wizard-etudiant" action="<?= RACINE ?>etudiant/addWizard" method="POST">
+        <form id="form-wizard-etudiant" action="<?= RACINE ?>etudiant/addWizard" method="POST" novalidate>
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
           <!-- ÉTAPE 1 : IDENTITÉ ÉTUDIANT -->
@@ -400,16 +400,25 @@ $pieces = (new ModelPieceFournir())->getAll();
               <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin-bottom: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="package" style="width: 18px; height: 18px;"></i> Accessoires & Kits d'Inscription
               </h3>
-              <p style="font-size: 13px; color: #64748B; margin-bottom: 14px;">Sélectionnez les kits et accessoires souscrits lors de cette inscription :</p>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                <p style="font-size: 13px; color: #64748B; margin: 0;">Sélectionnez les kits et accessoires souscrits lors de cette inscription :</p>
+                <div id="wiz_total_accessoires_badge" style="font-size: 12.5px; font-weight: 800; color: #1E3A5F; background: #EFF6FF; padding: 5px 12px; border-radius: 6px; border: 1px solid #BFDBFE;">
+                  Total kits : <span id="wiz_total_acc_amount">0 FCFA</span>
+                </div>
+              </div>
               <?php if (!empty($accessoires)): ?>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
-                  <?php foreach($accessoires as $acc): ?>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+                  <?php foreach($accessoires as $acc): 
+                    $montantAcc = (float)($acc['prix_accessoire'] ?? 0);
+                  ?>
                     <label class="acc-checkbox-card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
                       <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" data-prix="<?= (float)($acc['prix_accessoire'] ?? 0) ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
+                        <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" data-prix="<?= $montantAcc ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
                         <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 13px;"><?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?></span>
                       </div>
-                      <span class="acc-price" style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= number_format((float)($acc['prix_accessoire'] ?? 0), 0, ',', ' ') ?> FCFA</span>
+                      <span class="acc-price" style="font-weight: 800; color: #1E3A5F; font-size: 13px;">
+                        <?= $montantAcc > 0 ? number_format($montantAcc, 0, ',', ' ') . ' FCFA' : '<span style="color:#15803D; font-size:11.5px; background:#DCFCE7; padding:3px 8px; border-radius:6px; font-weight:700;">Inclus / Gratuit</span>' ?>
+                      </span>
                     </label>
                   <?php endforeach; ?>
                 </div>
@@ -797,9 +806,9 @@ $(document).ready(function() {
 
   function validateStep(step) {
     if (step === 1) {
-      var nom = $('#wiz_nom').val().trim();
-      var prenom = $('#wiz_prenom').val().trim();
-      var tel = $('#wiz_tel').val().trim();
+      var nom = ($('#wiz_nom').val() || '').trim();
+      var prenom = ($('#wiz_prenom').val() || '').trim();
+      var tel = ($('#wiz_tel').val() || '').trim();
       if (!nom || !prenom || !tel) {
         showToast('Veuillez remplir le nom, les prénoms et le téléphone de l\'étudiant avant de continuer.', 'warning', 'Champs requis');
         return false;
@@ -971,6 +980,21 @@ $(document).ready(function() {
       $card.css({ 'background': '#EFF6FF', 'border-color': '#93C5FD' });
     } else {
       $card.css({ 'background': '#FFFFFF', 'border-color': '#CBD5E1' });
+    }
+    updateTotalAccessoires();
+  }
+
+  function updateTotalAccessoires() {
+    var sum = 0;
+    var count = 0;
+    $('.chk-accessoire:checked').each(function() {
+      sum += Number($(this).attr('data-prix') || 0);
+      count++;
+    });
+    if (count > 0) {
+      $('#wiz_total_acc_amount').html('<strong style="color:#1E3A5F;">' + sum.toLocaleString('fr-FR') + ' FCFA</strong> (' + count + ' kit' + (count > 1 ? 's' : '') + ')');
+    } else {
+      $('#wiz_total_acc_amount').text('0 FCFA (0 kit)');
     }
   }
 
@@ -1353,14 +1377,93 @@ $(document).ready(function() {
     );
   });
 
-  // Clear storage on form submit
-  $('#form-wizard-etudiant').on('submit', function() {
-    localStorage.removeItem('geicg_etudiant_wizard_data');
-    localStorage.removeItem('geicg_etudiant_wizard_step');
+  // Validation globale et soumission AJAX du Wizard
+  function submitWizardForm() {
+    // 1. Validation de l'Étape 1 (Identité)
+    if (!validateStep(1)) {
+      currentStep = 1;
+      updateWizardUI();
+      return false;
+    }
+
+    // 2. Validation de l'Étape 3 (Inscription)
+    if (!validateStep(3)) {
+      currentStep = 3;
+      updateWizardUI();
+      return false;
+    }
+
+    var $form = $('#form-wizard-etudiant');
+    var $btnSubmit = $('#btn-wizard-submit');
+    var originalHtml = $btnSubmit.html();
+
+    $btnSubmit.prop('disabled', true).css('opacity', '0.75').html(
+      '<svg class="lvx-spinner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: lvxSpin 0.75s linear infinite; vertical-align: -2px; margin-right: 8px; display: inline-block;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg> Enregistrement du dossier...'
+    );
+
+    var formData = new FormData($form[0]);
+
+    $.ajax({
+      url: $form.attr('action'),
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      dataType: 'json',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      success: function(res) {
+        if (res && res.status === 1) {
+          localStorage.removeItem('geicg_etudiant_wizard_data');
+          localStorage.removeItem('geicg_etudiant_wizard_step');
+          if (typeof showToast === 'function') {
+            showToast(res.message || "Dossier d'inscription créé avec succès !", 'success', 'Succès');
+          }
+          setTimeout(function() {
+            window.location.href = res.redirect || ('<?= RACINE ?>etudiant/list');
+          }, 600);
+        } else {
+          $btnSubmit.prop('disabled', false).css('opacity', '1').html(originalHtml);
+          if (window.lucide) lucide.createIcons();
+          var msg = (res && res.message) ? res.message : "Erreur lors de l'enregistrement de l'inscription.";
+          if (typeof showToast === 'function') {
+            showToast(msg, 'error', 'Erreur');
+          } else {
+            alert(msg);
+          }
+        }
+      },
+      error: function(xhr, status, err) {
+        $btnSubmit.prop('disabled', false).css('opacity', '1').html(originalHtml);
+        if (window.lucide) lucide.createIcons();
+        var errMsg = "Erreur de communication avec le serveur lors de l'enregistrement.";
+        try {
+          var parsed = JSON.parse(xhr.responseText);
+          if (parsed && parsed.message) errMsg = parsed.message;
+        } catch(e) {}
+        if (typeof showToast === 'function') {
+          showToast(errMsg, 'error', 'Erreur Serveur');
+        } else {
+          alert(errMsg);
+        }
+      }
+    });
+
+    return false;
+  }
+
+  $('#form-wizard-etudiant').on('submit', function(e) {
+    e.preventDefault();
+    submitWizardForm();
+  });
+
+  $('#btn-wizard-submit').on('click', function(e) {
+    e.preventDefault();
+    submitWizardForm();
   });
 
   // Restore state on load
   restoreFormData();
+  updateTotalAccessoires();
   if ($.fn.select2) {
     $('.select2').select2({
       placeholder: "-- Rechercher / Sélectionner --",

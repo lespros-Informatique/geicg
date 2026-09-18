@@ -64,7 +64,7 @@ class SemestreController extends BaseController
     private function validateDatesSemestre(string $dateDebut, string $dateFin, string $anneeCode = ''): ?string
     {
         if (empty($dateDebut) || empty($dateFin)) {
-            return null;
+            return "Les dates de début et de fin du semestre sont obligatoires.";
         }
 
         $timeDebut = strtotime($dateDebut);
@@ -159,7 +159,7 @@ class SemestreController extends BaseController
         if (empty($data['code_semestre'])) {
             $data['code_semestre'] = $this->validator->generateCode('semestres', 'code_semestre', 'SEM-', 8);
         }
-        $data['statut_semestre'] = !empty($data['statut_semestre']) ? $data['statut_semestre'] : 'inactif';
+        $data['statut_semestre'] = (!empty($data['statut_semestre']) && in_array($data['statut_semestre'], ['planifie', 'cloture'], true)) ? $data['statut_semestre'] : 'planifie';
         $data['created_at_semestre'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE semestres")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
@@ -183,8 +183,8 @@ class SemestreController extends BaseController
         $current = $this->model->getById($id);
         if (!$current) { $this->error('Semestre introuvable'); return; }
 
-        if (($current['statut_semestre'] ?? '') === 'actif') {
-            $this->error('Impossible d\'éditer un semestre actif.');
+        if (($current['statut_semestre'] ?? '') !== 'planifie') {
+            $this->error('Seul un semestre en préparation (planifié) peut être modifié.');
             return;
         }
 
@@ -238,15 +238,32 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        $id = (int)$this->post('id');
+        $item = $id ? $this->model->getById($id) : null;
+        if ($item) {
+            $currentStatus = $item['statut_semestre'] ?? 'planifie';
+            $errorMsg = '';
+
+            if ($currentStatus !== 'actif') {
+                if (!$this->model->canActivate($item, $errorMsg)) {
+                    $this->error($errorMsg);
+                    return;
+                }
+            } else {
+                if (!$this->model->canClose($item, $errorMsg)) {
+                    $this->error($errorMsg);
+                    return;
+                }
+            }
+
             if ($this->model->toggleStatus($id)) {
-                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+                $msg = ($currentStatus === 'actif') ? 'Semestre clôturé avec succès !' : 'Semestre activé avec succès !';
+                $this->success($msg, ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
             }
         } else {
-            $this->error('Item introuvable');
+            $this->error('Semestre introuvable');
         }
     }
 

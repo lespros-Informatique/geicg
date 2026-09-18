@@ -362,6 +362,19 @@ class InscriptionController extends BaseController
                 'already_registered_classe' => $alreadyThisYear['libelle_classe'] ?? '',
                 'already_registered_code' => $alreadyThisYear['code_inscription'] ?? '',
                 'already_registered_annee' => $alreadyThisYear['libelle_annee'] ?? '',
+                'history_payments' => (function() use ($db, $etudiant) {
+                    $stmtP = $db->prepare("
+                        SELECT p.code_paiement, p.montant_paiement, p.mode_paiement, p.date_paiement, p.reference_paiement, p.statut_paiement, a.libelle_annee
+                        FROM paiements p
+                        LEFT JOIN inscriptions i ON i.code_inscription = p.inscription_code
+                        LEFT JOIN annees a ON (a.code_annee = i.annee_code OR a.id_annee = i.annee_code)
+                        WHERE (i.etudiant_code = ? OR i.etudiant_code = ?)
+                          AND p.statut_paiement != 'annule'
+                        ORDER BY p.date_paiement DESC, p.id_paiement DESC
+                    ");
+                    $stmtP->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant'] ?? '']);
+                    return $stmtP->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                })(),
                 'accessoires_etudiant' => (function() use ($db, $etudiantCode, $anneeActive) {
                     $stmt = $db->prepare("
                         SELECT a.code_accessoire, a.libelle_accessoire, COALESCE(ai.statut_accessoire_inscription, 'actif') as statut
@@ -764,9 +777,11 @@ class InscriptionController extends BaseController
         $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
 
         $officialScolarite = 0;
+        $officialScolarite = 0;
+        $codeScolarite = '';
         if ($cl) {
             $stmtSco = $db->prepare("
-                SELECT montant_scolarite FROM scolarites 
+                SELECT code_scolarite, montant_scolarite FROM scolarites 
                 WHERE filiere_code = ? 
                   AND (annee_code = ? OR ? = '')
                   AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
@@ -791,23 +806,27 @@ class InscriptionController extends BaseController
             $scol = $stmtSco->fetch(PDO::FETCH_ASSOC);
             if ($scol) {
                 $officialScolarite = (float)$scol['montant_scolarite'];
+                $codeScolarite = $scol['code_scolarite'] ?? '';
+            } else {
+                $regimeTxt = ($affectationEtat === 'affecte') ? 'Affecté (État)' : 'Non Affecté (Privé)';
+                $classeLib = $cl['libelle_classe'] ?? 'sélectionnée';
+                $this->error("Réinscription impossible : Aucun tarif de scolarité actif n'est configuré pour la classe [$classeLib] sous le régime $regimeTxt pour cette session académique. Veuillez d'abord paramétrer la scolarité dans le module Finance.");
+                return;
             }
         }
 
         // Récupération de la première tranche (Droit de réinscription exigible à la caisse)
         $tranche1Amount = $officialScolarite;
         $tranche1Libelle = 'Scolarité / Droit de réinscription';
-        if ($cl) {
+        if (!empty($codeScolarite)) {
             $stmtTr = $db->prepare("
                 SELECT libelle_tranche, montant_tranche, date_limite 
                 FROM tranches_scolarite 
-                WHERE filiere_code = ? 
-                  AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '')
-                  AND (affectation_etat = ? OR affectation_etat IS NULL OR affectation_etat = '')
-                  AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
-                ORDER BY ordre_tranche ASC, id_tranche ASC
+                WHERE scolarite_code = ? 
+                  AND statut_tranche = 'actif'
+                ORDER BY id_tranche ASC
             ");
-            $stmtTr->execute([$cl['filiere_code'], $cl['niveau_code'], $affectationEtat, $anneeCode]);
+            $stmtTr->execute([$codeScolarite]);
             $tranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC) ?: [];
             if (!empty($tranches)) {
                 $tranche1Amount = (float)$tranches[0]['montant_tranche'];
@@ -914,6 +933,10 @@ class InscriptionController extends BaseController
                 $scol = $stmtSco->fetch(PDO::FETCH_ASSOC);
                 if ($scol) {
                     $data['montant_scolarite_inscription'] = (float)$scol['montant_scolarite'];
+                } else {
+                    $regimeTxt = ($affectationEtat === 'affecte') ? 'Affecté (État)' : 'Non Affecté (Privé)';
+                    $this->error("Modification impossible : Aucun tarif de scolarité actif n'est configuré pour cette classe sous le régime $regimeTxt.");
+                    return;
                 }
             }
         }

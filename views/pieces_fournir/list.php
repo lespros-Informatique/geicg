@@ -13,9 +13,11 @@
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Répertoire central des pièces administratives et justificatifs demandés aux étudiants (CNI, Acte de naissance, Diplômes...)</p>
         </div>
+        <?php if (isset($canAccess) && $canAccess(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE'])): ?>
         <a href="<?= RACINE ?>piece_fournir/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Document
         </a>
+        <?php endif; ?>
       </div>
 
       <!-- Navigation Tabs (Répertoire vs Dossiers par Cycle) -->
@@ -167,8 +169,12 @@ $(document).ready(function() {
         return '<span class="cycle-badge" style="background:#F1F5F9; color:#94A3B8; font-weight:600; padding:4px 8px; border-radius:6px; display:inline-block; position:static;">Non assigné</span>';
       } },
       { data: null, orderable: false, className: 'text-end', render: function(d) {
+        <?php if (isset($canAccess) && $canAccess(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE'])): ?>
         return '<a href="<?= RACINE ?>piece_fournir/edition/' + (d.editId || d.id_piece_fournir) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</a>' +
                '<a href="<?= RACINE ?>piece_fournir/supprimer/' + (d.editId || d.id_piece_fournir) + '" onclick="return confirm(\'Voulez-vous vraiment supprimer cette pièce du répertoire ?\')" class="btn btn-sm btn-danger" style="background:#EF4444; color:#fff; border:none; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></a>';
+        <?php else: ?>
+        return '<span style="color:#94A3B8; font-size:12px; font-style:italic;">Consultation</span>';
+        <?php endif; ?>
       } }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },

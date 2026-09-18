@@ -427,22 +427,27 @@ class EtudiantController extends BaseController
 
             // 3. Insert Academic Inscription into `inscriptions` if classe_code provided
             if (!empty($data['classe_code'])) {
+                $affectationEtatVal = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'oui' : 'non';
+                $regimeScol = ($affectationEtatVal === 'oui') ? 'affecte' : 'non_affecte';
                 $montantScolarite = (float)($data['montant_scolarite_inscription'] ?? 0);
                 if ($montantScolarite <= 0) {
                     $stmtCl = $db->prepare("SELECT * FROM classes WHERE code_classe = ? LIMIT 1");
                     $stmtCl->execute([$data['classe_code']]);
                     $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
                     if ($cl) {
-                        $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? ORDER BY id_scolarite DESC LIMIT 1");
-                        $stmtSco->execute([$cl['filiere_code'], $cl['niveau_code']]);
+                        $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND affectation_etat = ? AND statut_scolarite = 'actif' ORDER BY id_scolarite DESC LIMIT 1");
+                        $stmtSco->execute([$cl['filiere_code'], $cl['niveau_code'], $anneeCode, $regimeScol]);
                         $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
+                        if (!$sco) {
+                            $stmtSco2 = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? ORDER BY id_scolarite DESC LIMIT 1");
+                            $stmtSco2->execute([$cl['filiere_code'], $cl['niveau_code']]);
+                            $sco = $stmtSco2->fetch(PDO::FETCH_ASSOC);
+                        }
                         if ($sco) {
                             $montantScolarite = (float)$sco['montant_scolarite'];
                         }
                     }
                 }
-
-                $affectationEtatVal = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'oui' : 'non';
                 $codeInscription = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
                 
                 $fkErrIns = ForeignKeyValidator::validate($db, 'inscriptions', [

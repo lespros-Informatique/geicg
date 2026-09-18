@@ -18,30 +18,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
         </button>
       </div>
 
-      <!-- Filtre Année Académique (Select2) -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
-            </div>
-            <div>
-              <span style="font-size: 13px; font-weight: 700; color: #0F172A; display: block;">Année Académique</span>
-              <span style="font-size: 11.5px; color: #64748B;">Filtrer les semestres par année</span>
-            </div>
-          </div>
-          <div style="min-width: 260px; flex-grow: 0;">
-            <select id="filter-annee" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les années --</option>
-              <?php foreach ($annees as $a): ?>
-                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-        </div>
-      </div>
+
 
       <!-- Navigation Tabs (Années Académiques vs Semestres & Périodes) -->
       <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
@@ -77,18 +54,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 <script>
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('#filter-annee').select2({ width: '100%' });
-  }
 
   var table = $('#table-semestres').DataTable({
-    ajax: {
-      url: '<?= RACINE ?>semestre/apiList',
-      type: 'GET',
-      data: function(d) {
-        d.annee_code = $('#filter-annee').val();
-      }
-    },
+    ajax: '<?= RACINE ?>semestre/apiList',
     processing: true,
     autoWidth: false,
     columns: [
@@ -109,25 +77,31 @@ $(document).ready(function() {
       }},
       { data: 'date_debut_semestre', defaultContent: '-' },
       { data: 'date_fin_semestre', defaultContent: '-' },
-      { data: 'statut_semestre', width: '80px', className: 'text-center', render: function(d, type, row) {
-        var isActif = (d === 'actif');
-        var checkedAttr = isActif ? 'checked' : '';
-        return '<div style="display:flex; justify-content:center; align-items:center;">' +
-               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
-               '<input type="checkbox" class="toggle-statut-semestre" data-id="' + row.id_semestre + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-               '</span>' +
-               '</label>' +
-               '</div>';
+      { data: 'statut_semestre', width: '130px', className: 'text-center', render: function(d, type, row) {
+        if (d === 'actif') {
+          return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Active en cours</span>';
+        } else if (d === 'planifie') {
+          return '<span class="badge" style="background:#DBEAFE; color:#1E40AF; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="clock" style="width:14px;height:14px;"></i> En préparation</span>';
+        } else {
+          return '<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="lock" style="width:14px;height:14px;"></i> Clôturé</span>';
+        }
       }},
-      { data: null, width: '160px', orderable: false, render: function(d) {
+      { data: null, width: '220px', orderable: false, render: function(d) {
         var isActif = (d.statut_semestre === 'actif');
-        var editBtn = isActif ?
-          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Impossible d\'éditer un semestre actif"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
-          '<button type="button" class="btn btn-sm btn-secondary btn-edit-semestre" data-id="' + d.id_semestre + '" data-libelle="' + (d.libelle_semestre || '') + '" data-annee="' + (d.annee_code || '') + '" data-debut="' + (d.date_debut_semestre || '') + '" data-fin="' + (d.date_fin_semestre || '') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
+        var isPlanifie = (d.statut_semestre === 'planifie');
 
-        return editBtn +
+        var statusBtn = '';
+        if (isActif) {
+          statusBtn = '<button type="button" class="btn btn-sm btn-warning btn-activate-semestre" data-id="' + d.id_semestre + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer; background:#F59E0B; border-color:#F59E0B; color:#FFFFFF;" title="Clôturer ce semestre"><i data-lucide="lock" style="width:14px;height:14px;"></i> Clôturer</button>';
+        } else if (isPlanifie) {
+          statusBtn = '<button type="button" class="btn btn-sm btn-success btn-activate-semestre" data-id="' + d.id_semestre + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Activer ce semestre"><i data-lucide="power" style="width:14px;height:14px;"></i> Activer</button>';
+        }
+
+        var editBtn = isPlanifie ?
+          '<button type="button" class="btn btn-sm btn-secondary btn-edit-semestre" data-id="' + d.id_semestre + '" data-libelle="' + (d.libelle_semestre || '') + '" data-annee="' + (d.annee_code || '') + '" data-debut="' + (d.date_debut_semestre || '') + '" data-fin="' + (d.date_fin_semestre || '') + '" data-statut="' + (d.statut_semestre || 'planifie') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
+          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Seul un semestre en préparation (planifié) peut être édité"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
+
+        return statusBtn + editBtn +
                '<a href="' + window.RACINE + 'semestre/details/' + (d.editId || d.id_semestre) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
@@ -135,16 +109,11 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  $('#filter-annee').on('change', function() {
-    var val = $(this).val();
-    window.location.href = window.RACINE + 'semestre/list?annee_code=' + encodeURIComponent(val);
-  });
 
-  // Bascule de statut instantanée via Ajax
-  $(document).on('change', '.toggle-statut-semestre', function() {
+  // Bascule de statut d'un semestre via Ajax (Activer / Clôturer)
+  $(document).on('click', '.btn-activate-semestre', function(e) {
+    e.preventDefault();
     var id = $(this).data('id');
-    var isChecked = $(this).is(':checked');
-    var $input = $(this);
 
     $.ajax({
       url: '<?= RACINE ?>semestre/changer',
@@ -157,16 +126,26 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          if (typeof showToast === 'function') {
+            showToast(res.message || 'Statut mis à jour avec succès', 'success');
+          } else if (window.toastr) {
+            toastr.success(res.message || 'Statut mis à jour avec succès');
+          }
           table.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
-          $input.prop('checked', !isChecked);
+          if (typeof showToast === 'function') {
+            showToast(res.message || 'Erreur lors du changement de statut', 'error');
+          } else if (window.toastr) {
+            toastr.error(res.message || 'Erreur lors du changement de statut');
+          }
         }
       },
       error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
-        $input.prop('checked', !isChecked);
+        if (typeof showToast === 'function') {
+          showToast('Erreur réseau', 'error');
+        } else if (window.toastr) {
+          toastr.error('Erreur réseau');
+        }
       }
     });
   });
@@ -176,6 +155,7 @@ $(document).ready(function() {
     e.preventDefault();
     $('#form-semestre')[0].reset();
     $('#semestre_id').val('');
+    $('#semestre_statut').val('planifie');
     $('#semestre_annee').val('<?= htmlspecialchars($selectedAnneeCode) ?>');
     $('#modal-semestre-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Semestre');
     $('#modal-semestre').css('display', 'flex');
@@ -191,12 +171,14 @@ $(document).ready(function() {
     var annee = $(this).data('annee');
     var debut = $(this).data('debut');
     var fin = $(this).data('fin');
+    var statut = $(this).data('statut') || 'planifie';
 
     $('#semestre_id').val(id);
     $('#semestre_libelle').val(libelle);
     $('#semestre_annee').val(annee);
     $('#semestre_date_debut').val(debut !== '-' ? debut : '');
     $('#semestre_date_fin').val(fin !== '-' ? fin : '');
+    $('#semestre_statut').val(statut);
 
     $('#modal-semestre-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Semestre');
     $('#modal-semestre').css('display', 'flex');
@@ -301,16 +283,27 @@ $(document).ready(function() {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px;">
         <div class="form-group">
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-            Date de Début
+            Date de Début <span style="color: #EF4444;">*</span>
           </label>
-          <input type="date" name="date_debut_semestre" id="semestre_date_debut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
+          <input type="date" name="date_debut_semestre" id="semestre_date_debut" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
         </div>
         <div class="form-group">
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-            Date de Fin
+            Date de Fin <span style="color: #EF4444;">*</span>
           </label>
-          <input type="date" name="date_fin_semestre" id="semestre_date_fin" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
+          <input type="date" name="date_fin_semestre" id="semestre_date_fin" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
         </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 22px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Statut du Semestre
+        </label>
+        <select name="statut_semestre" id="semestre_statut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 13.5px;">
+          <option value="planifie">🔵 En préparation (Semestre Futur)</option>
+          <option value="cloture">⚪ Clôturé (Semestre Passé / Historique)</option>
+        </select>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">L'activation officielle du semestre active s'effectue via le bouton « Activer » du tableau.</small>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">

@@ -15,16 +15,59 @@ $typeDepenses = (new ModelTypeDepense())->getAll();
 $users = (new ModelUser())->getAll();
 $enseignants = (new ModelEnseignant())->getAll();
 $annees = (new ModelAnnee())->getAll();
+
+if (!isset($globalEtablissementLogo)) {
+    try {
+        $dbConnLogo = (new Database())->getCon();
+        $stmtLogo = $dbConnLogo->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
+        $etabRowLogo = $stmtLogo ? $stmtLogo->fetch(PDO::FETCH_ASSOC) : null;
+        $rawLogo = $etabRowLogo['logo_etablissement'] ?? '';
+        $globalEtablissementLogo = (!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : '';
+        $globalEtablissementNom = $etabRowLogo['libelle_etablissement'] ?? 'GEICG';
+    } catch (Exception $e) {
+        $globalEtablissementLogo = '';
+        $globalEtablissementNom = 'GEICG';
+    }
+}
 ?>
 <style>
 @media print {
   body {
     background: #FFFFFF !important;
   }
-  .app-layout, .sidebar, .main-nav, nav, .page-header, .card, #quitus-financial-status-box, #smart_class_suggestion_hint, form, .btn, .content-wrapper > div:not(#modal_fiche_navette) {
+  .app-layout, .sidebar, .main-nav, nav, .page-header, .card, #quitus-financial-status-box, #smart_class_suggestion_hint, form, .btn, .no-print {
     display: none !important;
   }
-  #modal_fiche_navette {
+  
+  /* Impression spécifique Fiche Financière Étudiant */
+  body.printing-financial-statement #modal_fiche_navette {
+    display: none !important;
+  }
+  body.printing-financial-statement #financial-statement-modal {
+    display: block !important;
+    position: static !important;
+    background: #FFFFFF !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    z-index: 999999 !important;
+  }
+  body.printing-financial-statement #financial-statement-modal > div {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body.printing-financial-statement #printable-financial-zone {
+    display: block !important;
+    visibility: visible !important;
+    padding: 20px !important;
+  }
+
+  /* Impression spécifique Fiche Navette */
+  body:not(.printing-financial-statement) #modal_fiche_navette {
     display: block !important;
     position: static !important;
     background: none !important;
@@ -33,20 +76,20 @@ $annees = (new ModelAnnee())->getAll();
     height: auto !important;
     z-index: 1 !important;
   }
-  #modal_fiche_navette > div {
+  body:not(.printing-financial-statement) #modal_fiche_navette > div {
     box-shadow: none !important;
     border: none !important;
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
   }
-  #modal_fiche_navette .btn-close-fiche-navette,
-  #modal_fiche_navette .modal-custom-header,
-  #modal_fiche_navette .modal-custom-footer,
-  #modal_fiche_navette .no-print {
+  body:not(.printing-financial-statement) #modal_fiche_navette .btn-close-fiche-navette,
+  body:not(.printing-financial-statement) #modal_fiche_navette .modal-custom-header,
+  body:not(.printing-financial-statement) #modal_fiche_navette .modal-custom-footer,
+  body:not(.printing-financial-statement) #modal_fiche_navette .no-print {
     display: none !important;
   }
-  #printable-voucher-zone {
+  body:not(.printing-financial-statement) #printable-voucher-zone {
     display: block !important;
     visibility: visible !important;
     position: static !important;
@@ -100,7 +143,12 @@ $annees = (new ModelAnnee())->getAll();
               </div>
               <span>Photo d'Identité & Identité Élève</span>
             </div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; background: #EDF2F7; padding: 3px 10px; border-radius: 12px;">Identité Académique</span>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button type="button" id="btn-quick-print-finance" class="btn btn-sm" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <i data-lucide="file-text" style="width: 14px; height: 14px; color: #059669;"></i> Imprimer l'État Financier
+              </button>
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; background: #EDF2F7; padding: 3px 10px; border-radius: 12px;">Identité Académique</span>
+            </div>
           </div>
 
           <!-- Corps de la Carte Photo -->
@@ -398,6 +446,10 @@ $annees = (new ModelAnnee())->getAll();
               <i data-lucide="sparkles" style="width: 15px; height: 15px; vertical-align: -2px; display: inline-block;"></i>
               <span id="smart_class_suggestion_text"></span>
             </div>
+            <div id="no_tuition_warning" style="display: none; font-size: 13px; font-weight: 700; color: #991B1B; background: #FEF2F2; border: 1.5px solid #FCA5A5; padding: 10px 14px; border-radius: 8px; margin-top: 8px;">
+              <i data-lucide="alert-octagon" style="width: 16px; height: 16px; vertical-align: -3px; display: inline-block; color: #DC2626;"></i>
+              <span id="no_tuition_warning_text">Aucun tarif de scolarité actif n'est enregistré pour cette classe sous le régime sélectionné. L'inscription est impossible tant que la scolarité n'est pas paramétrée dans le module Finance.</span>
+            </div>
           </div>
 
           <!-- SCOLARITÉ DUE ET DATE D'INSCRIPTION (2 COLONNES) -->
@@ -425,31 +477,7 @@ $annees = (new ModelAnnee())->getAll();
             <input type="number" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #64748B; font-weight: 600; pointer-events: none; cursor: not-allowed;" name="remise_accordee" value="<?= htmlspecialchars($item['remise_accordee'] ?? '0') ?>" placeholder="0" readonly>
           </div>
 
-          <!-- BLOC REPLIABLE : VÉRIFICATION & MISE À JOUR RAPIDE DES COORDONNÉES (SERVICE SCOLARITÉ) -->
-          <div style="margin-bottom: 24px; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #FFFFFF;">
-            <div id="toggle-contact-update" style="padding: 12px 18px; background: #F8FAFC; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
-              <span style="font-weight: 700; font-size: 13px; color: #1E3A5F; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="phone-call" style="width: 15px; height: 15px;"></i> Mise à jour rapide des coordonnées étudiant (Optionnel)
-              </span>
-              <span style="font-size: 12px; font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 3px 8px; border-radius: 4px;" id="toggle-contact-icon">Afficher ▼</span>
-            </div>
-            <div id="contact-update-body" style="display: none; padding: 18px; background: #FFFFFF; border-top: 1px solid #E2E8F0;">
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
-                <div>
-                  <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">Téléphone Étudiant</label>
-                  <input type="text" name="telephone_etudiant" id="inp_edit_telephone" class="form-control" style="font-size: 13px; padding: 8px 12px; border-radius: 6px;" placeholder="+225 07 00 00 00">
-                </div>
-                <div>
-                  <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">Email Étudiant</label>
-                  <input type="email" name="email_etudiant" id="inp_edit_email" class="form-control" style="font-size: 13px; padding: 8px 12px; border-radius: 6px;" placeholder="etudiant@exemple.com">
-                </div>
-                <div>
-                  <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">Lieu de Résidence / Commune</label>
-                  <input type="text" name="lieu_residence_etudiant" id="inp_edit_residence" class="form-control" style="font-size: 13px; padding: 8px 12px; border-radius: 6px;" placeholder="Ex: Cocody Angré, Abidjan">
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           <div style="display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%; align-items: center; flex-wrap: wrap;">
             <button type="submit" id="btn_submit_inscription" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 11px 26px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(30,58,95,0.25);">
@@ -498,10 +526,15 @@ $annees = (new ModelAnnee())->getAll();
             
             <!-- En-tête officiel du Bon de versement -->
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1E3A5F; padding-bottom: 14px; margin-bottom: 18px;">
-              <div>
-                <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; letter-spacing: 0.5px;">GROUPE EICG - ADMINISTRATION</div>
-                <div style="font-size: 11.5px; color: #64748B; font-weight: 600;">SERVICE SCOLARITÉ • BUREAU DES ADMISSIONS</div>
-                <div style="font-size: 11px; color: #15803D; font-weight: 700; margin-top: 2px;">Session Académique : <span id="v_annee_libelle">-</span></div>
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <?php if (!empty($globalEtablissementLogo)): ?>
+                  <img src="<?= htmlspecialchars($globalEtablissementLogo) ?>" alt="Logo" style="max-height: 52px; width: auto; object-fit: contain; flex-shrink: 0;">
+                <?php endif; ?>
+                <div>
+                  <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; letter-spacing: 0.5px;">GROUPE EICG - ADMINISTRATION</div>
+                  <div style="font-size: 11.5px; color: #64748B; font-weight: 600;">SERVICE SCOLARITÉ • BUREAU DES ADMISSIONS</div>
+                  <div style="font-size: 11px; color: #15803D; font-weight: 700; margin-top: 2px;">Session Académique : <span id="v_annee_libelle">-</span></div>
+                </div>
               </div>
               <div style="text-align: right;">
                 <span style="display: inline-block; background: #1E3A5F; color: #FFFFFF; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 6px; letter-spacing: 0.5px;">BON DE VERSEMENT N°</span>
@@ -561,6 +594,9 @@ $annees = (new ModelAnnee())->getAll();
           </a>
 
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" id="btn-print-financial-statement" class="btn btn-outline-success" style="border: 1.5px solid #059669; color: #047857; background: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+              <i data-lucide="file-text" style="width: 18px; height: 18px; color: #059669;"></i> Imprimer l'État Financier
+            </button>
             <button type="button" id="btn-print-voucher" class="btn btn-outline-primary" style="border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
               <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer la Fiche Navette
             </button>
@@ -568,6 +604,143 @@ $annees = (new ModelAnnee())->getAll();
               <i data-lucide="arrow-right-circle" style="width: 18px; height: 18px;"></i> Passer au Bureau des Versements (Caisse)
             </a>
           </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL & MODÈLE IMPRIMABLE : FICHE DE SITUATION FINANCIÈRE ÉTUDIANT -->
+    <!-- ========================================================================= -->
+    <div id="financial-statement-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 20px; overflow-y: auto;">
+      <div style="background: #FFFFFF; border-radius: 16px; max-width: 850px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); overflow: hidden;">
+        
+        <!-- En-tête Modal (Non Imprimé) -->
+        <div class="no-print" style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+          <div style="font-weight: 800; font-size: 15px; color: #1E3A5F; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="file-text" style="width: 18px; height: 18px; color: #059669;"></i>
+            <span>Fiche de Situation Financière Élève</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" onclick="printFinancialStatement()" class="btn btn-success" style="background: #059669; border: none; color: #FFF; font-weight: 700; border-radius: 8px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Lancer l'impression
+            </button>
+            <button type="button" onclick="$('#financial-statement-modal').fadeOut(200)" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 8px 14px; cursor: pointer;">
+              Fermer
+            </button>
+          </div>
+        </div>
+
+        <!-- Zone Imprimable : Relevé de Compte & Fiche Financière -->
+        <div id="printable-financial-zone" style="padding: 28px 32px; overflow-y: auto; background: #FFFFFF; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+          
+          <!-- En-tête Officiel EICG -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #1E3A5F; padding-bottom: 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <?php if (!empty($globalEtablissementLogo)): ?>
+                <img src="<?= htmlspecialchars($globalEtablissementLogo) ?>" alt="Logo" style="max-height: 56px; width: auto; object-fit: contain; flex-shrink: 0;">
+              <?php endif; ?>
+              <div>
+                <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; letter-spacing: 0.5px;">GROUPE EICG - DIRECTION FINANCIÈRE</div>
+                <div style="font-size: 11.5px; color: #64748B; font-weight: 700; margin-top: 2px;">SERVICE COMPTABILITÉ & RECOUVREMENT • RELEVÉ DE COMPTE ÉTUDIANT</div>
+                <div style="font-size: 11px; color: #059669; font-weight: 700; margin-top: 3px;">Date d'édition : <span id="fin_doc_date">-</span></div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span style="display: inline-block; background: #1E3A5F; color: #FFFFFF; font-size: 11px; font-weight: 800; padding: 5px 14px; border-radius: 6px; letter-spacing: 0.5px;">SITUATION FINANCIÈRE</span>
+              <div style="font-size: 11px; color: #64748B; margin-top: 4px;">Session Académique : <strong id="fin_session_libelle" style="color: #1E3A5F;">-</strong></div>
+            </div>
+          </div>
+
+          <!-- Bloc Cartouche Étudiant (Photo + Identité) -->
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 18px 22px; margin-bottom: 22px; display: flex; align-items: center; gap: 22px;">
+            <!-- Boîtier Photo -->
+            <div style="width: 80px; height: 80px; border-radius: 12px; background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 2.5px solid #CBD5E1; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+              <img id="fin_stu_photo_img" src="" alt="Photo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+              <span id="fin_stu_avatar">ET</span>
+            </div>
+
+            <!-- Détails de l'étudiant -->
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <h2 id="fin_stu_nom" style="font-size: 18px; font-weight: 900; color: #0F172A; margin: 0;">-</h2>
+                  <div style="font-size: 12.5px; color: #475569; margin-top: 4px;">
+                    Matricule : <strong id="fin_stu_matricule" style="color: #1E3A5F; font-size: 13px;">-</strong> &bull; 
+                    Nationalité : <span id="fin_stu_nationalite" style="font-weight: 700;">-</span>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <span id="fin_stu_regime_badge" class="badge" style="background: #DBEAFE; color: #1E3A5F; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px;">Affecté (État)</span>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #CBD5E1; font-size: 12px;">
+                <div><strong>Classe :</strong> <span id="fin_stu_classe" style="font-weight: 700; color: #1E3A5F;">-</span></div>
+                <div><strong>Téléphone :</strong> <span id="fin_stu_contact" style="font-weight: 700; color: #047857;">-</span></div>
+                <div id="fin_stu_parent_box"><strong>Parent / Tuteur :</strong> <span id="fin_stu_parent" style="font-weight: 600;">-</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Synthèse des Totaux Financiers (Bilan 3 Cartes) -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px;">
+            <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Scolarité Totale Prévue</div>
+              <div id="fin_scolarite_totale" style="font-size: 18px; font-weight: 900; color: #0F172A; margin-top: 4px;">0 FCFA</div>
+            </div>
+            <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 10.5px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Total Règlement Encaissements</div>
+              <div id="fin_total_paye" style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 4px;">0 FCFA</div>
+            </div>
+            <div id="fin_solde_box_card" style="background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 10.5px; font-weight: 800; color: #991B1B; text-transform: uppercase; letter-spacing: 0.5px;">Solde Restant Dû</div>
+              <div id="fin_solde_restant" style="font-size: 18px; font-weight: 900; color: #DC2626; margin-top: 4px;">0 FCFA</div>
+            </div>
+          </div>
+
+          <!-- Alerte Reliquat Antérieur si présent -->
+          <div id="fin_arrieres_alert_box" style="display: none; background: #FFF5F5; border: 1px solid #FEE2E2; border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; font-size: 12px; color: #991B1B;">
+            <i data-lucide="alert-triangle" style="width: 14px; height: 14px; color: #DC2626; vertical-align: middle; margin-right: 6px;"></i>
+            <strong>Reliquat Antérieur :</strong> L'étudiant enregistre un solde restant impayé de <strong id="fin_arrieres_montant">0 FCFA</strong> sur les exercices antérieurs.
+          </div>
+
+          <!-- Tableau des Règlements Effectués (Journal des Reçus) -->
+          <div style="margin-bottom: 22px;">
+            <div style="font-size: 12px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+              <span>Historique & Journal des Paiements Effectués</span>
+              <span id="fin_paiements_count" style="font-size: 11px; font-weight: 700; color: #64748B;">0 règlement(s)</span>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <thead>
+                <tr style="background: #F1F5F9; color: #334155; font-size: 11px; font-weight: 800; text-transform: uppercase; border-top: 1.5px solid #CBD5E1; border-bottom: 1.5px solid #CBD5E1;">
+                  <th style="padding: 8px 10px; text-align: left;">N° Reçu / Code</th>
+                  <th style="padding: 8px 10px; text-align: left;">Date</th>
+                  <th style="padding: 8px 10px; text-align: left;">Mode</th>
+                  <th style="padding: 8px 10px; text-align: left;">Référence</th>
+                  <th style="padding: 8px 10px; text-align: right;">Montant Versé</th>
+                </tr>
+              </thead>
+              <tbody id="fin_payments_table_body">
+                <tr>
+                  <td colspan="5" style="padding: 12px; text-align: center; color: #64748B; font-style: italic;">Aucun paiement enregistré pour cet étudiant.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Signatures & Visas Officiels -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding-top: 16px; border-top: 1px solid #CBD5E1; font-size: 11.5px;">
+            <div>
+              <div style="font-weight: 800; color: #334155; margin-bottom: 40px;">Le Service Scolarité / Comptabilité :</div>
+              <div style="font-size: 10.5px; color: #64748B; font-style: italic;">Signature & Cachet Officiel</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 800; color: #334155; margin-bottom: 40px;">Émargement Étudiant / Parent :</div>
+              <div style="font-size: 10.5px; color: #64748B; font-style: italic;">Mention "Lu et approuvé"</div>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -632,7 +805,10 @@ $(document).ready(function() {
 
           var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
           if (d.photo_url) {
-            $('#prev_stu_photo_img').attr('src', d.photo_url).show();
+            $('#prev_stu_photo_img').off('error').on('error', function() {
+              $(this).hide();
+              $('#prev_stu_avatar').text(initials || 'ET').show();
+            }).attr('src', d.photo_url).show();
             $('#prev_stu_avatar').hide();
           } else {
             $('#prev_stu_photo_img').hide();
@@ -720,10 +896,7 @@ $(document).ready(function() {
               });
             });
 
-            // Pré-remplissage des champs de mise à jour rapide des coordonnées
-            $('#inp_edit_telephone').val(d.telephone !== 'Non renseigné' ? d.telephone : '');
-            $('#inp_edit_email').val(d.email !== 'Non renseigné' ? d.email : '');
-            $('#inp_edit_residence').val(d.residence !== 'Non renseigné' ? d.residence : '');
+
 
             // Gestion automatique de l'état Redoublant / Passant avec suggestion intelligente
             handleRedoublantState();
@@ -786,8 +959,16 @@ $(document).ready(function() {
     });
   }
 
-  // Contrôle de l'état du bouton selon le Quitus et la dérogation
+  var isTuitionValid = true;
+
+  // Contrôle de l'état du bouton selon le Quitus, la scolarité et la dérogation
   function updateSubmitButtonQuitusState() {
+    if (!isTuitionValid) {
+      $('#btn_submit_inscription').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
+      $('#submit_block_notice').html('<i data-lucide="alert-octagon" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;"></i> Aucun tarif de scolarité configuré pour cette classe').show();
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
     if (!currentStudentData) return;
     var isEditMode = <?= !empty($item['id_inscription']) ? 'true' : 'false' ?>;
     if (currentStudentData.is_already_registered_this_year && !isEditMode) {
@@ -821,13 +1002,7 @@ $(document).ready(function() {
     updateSubmitButtonQuitusState();
   });
 
-  // Toggle de la section Mise à jour rapide des coordonnées
-  $('#toggle-contact-update').on('click', function() {
-    $('#contact-update-body').slideToggle(200, function() {
-      var isVisible = $(this).is(':visible');
-      $('#toggle-contact-icon').text(isVisible ? 'Masquer ▲' : 'Afficher ▼');
-    });
-  });
+
 
   // 2. Gestion de l'option Redoublant / Passant (Smart Class Progression)
   function handleRedoublantState() {
@@ -869,7 +1044,10 @@ $(document).ready(function() {
   // 3. Auto-suggestion et affichage des détails tarifaires de la classe sélectionnée
   function fetchTuitionForClass(classeCode) {
     if (!classeCode) {
+      isTuitionValid = true;
+      $('#no_tuition_warning').slideUp(200);
       $('#prev_class_tuition_section').slideUp(200);
+      updateSubmitButtonQuitusState();
       return;
     }
     var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
@@ -885,6 +1063,8 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 && res.data) {
+          isTuitionValid = true;
+          $('#no_tuition_warning').slideUp(200);
           var d = res.data;
           var totalScolarite = Number(d.montant_scolarite || 0);
 
@@ -947,14 +1127,28 @@ $(document).ready(function() {
           $('#prev_modalite_tranches_total_sum').text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
 
           $('#prev_class_tuition_section').stop(true, true).slideDown(250);
+          updateSubmitButtonQuitusState();
           if (window.lucide) lucide.createIcons();
         } else {
+          isTuitionValid = false;
+          $('#inp_montant_scolarite').val('0');
+          var errMsg = res.message || "Aucun tarif de scolarité actif n'est configuré pour cette classe sous le régime sélectionné.";
+          $('#no_tuition_warning_text').html(errMsg);
+          $('#no_tuition_warning').stop(true, true).slideDown(250);
           $('#prev_class_tuition_section').slideUp(200);
+          updateSubmitButtonQuitusState();
+          if (window.lucide) lucide.createIcons();
         }
       },
       error: function(err) {
         console.error('Erreur chargement tarif classe:', err);
+        isTuitionValid = false;
+        $('#inp_montant_scolarite').val('0');
+        $('#no_tuition_warning_text').html("Erreur lors de la vérification du tarif de scolarité pour cette classe.");
+        $('#no_tuition_warning').stop(true, true).slideDown(250);
         $('#prev_class_tuition_section').slideUp(200);
+        updateSubmitButtonQuitusState();
+        if (window.lucide) lucide.createIcons();
       }
     });
   }
@@ -1061,6 +1255,9 @@ $(document).ready(function() {
       type: 'POST',
       data: $form.serialize(),
       dataType: 'json',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      },
       success: function(res) {
         loading($submitBtn, false, 'Valider la Réinscription & Émettre Fiche Navette');
         if (res.status === 1) {
@@ -1151,6 +1348,112 @@ $(document).ready(function() {
   // Impression de la Fiche Navette
   $('#btn-print-voucher').on('click', function() {
     window.print();
+  });
+
+  // Fonctions de contrôle et d'impression de la Fiche de Situation Financière
+  window.openFinancialStatementModal = function() {
+    if (!currentStudentData) {
+      if (typeof showToast === 'function') {
+        showToast("Veuillez d'abord sélectionner un étudiant.", "warning");
+      } else {
+        alert("Veuillez d'abord sélectionner un étudiant.");
+      }
+      return;
+    }
+    var d = currentStudentData;
+
+    $('#fin_doc_date').text(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }));
+    $('#fin_session_libelle').text(d.derniere_annee || d.already_registered_annee || 'Session Active');
+    $('#fin_stu_nom').text(d.nom_complet || '-');
+    $('#fin_stu_matricule').text(d.matricule || '-');
+    $('#fin_stu_nationalite').text(d.nationalite || 'Ivoirienne');
+    $('#fin_stu_regime_badge').text(d.prev_regime || 'Non Défini');
+    $('#fin_stu_classe').text(d.derniere_classe || d.already_registered_classe || 'Classe non assignée');
+    $('#fin_stu_contact').text(d.telephone || '-');
+    
+    var parentVal = (d.parent_nom || '').trim();
+    if (parentVal && parentVal.toLowerCase().indexOf('non renseigné') === -1 && parentVal.toLowerCase().indexOf('non meublé') === -1 && parentVal !== '-') {
+      $('#fin_stu_parent').text(parentVal);
+      $('#fin_stu_parent_box').show();
+    } else {
+      $('#fin_stu_parent_box').hide();
+    }
+
+    var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
+    if (d.photo_url) {
+      $('#fin_stu_photo_img').off('error').on('error', function() {
+        $(this).hide();
+        $('#fin_stu_avatar').text(initials || 'ET').show();
+      }).attr('src', d.photo_url).show();
+      $('#fin_stu_avatar').hide();
+    } else {
+      $('#fin_stu_photo_img').hide();
+      $('#fin_stu_avatar').text(initials || 'ET').show();
+    }
+
+    var scolarite = Number(d.prev_scolarite || 0);
+    var paye = Number(d.prev_paye || 0);
+    var solde = Number(d.prev_solde || 0);
+
+    $('#fin_scolarite_totale').text(scolarite.toLocaleString('fr-FR') + ' FCFA');
+    $('#fin_total_paye').text(paye.toLocaleString('fr-FR') + ' FCFA');
+
+    if (solde <= 0) {
+      $('#fin_solde_restant').css('color', '#15803D').text('Compte Soldé (0 FCFA)');
+      $('#fin_solde_box_card').css({ 'background': '#F0FDF4', 'border-color': '#86EFAC' });
+      $('#fin_arrieres_alert_box').hide();
+    } else {
+      $('#fin_solde_restant').css('color', '#DC2626').text(solde.toLocaleString('fr-FR') + ' FCFA');
+      $('#fin_solde_box_card').css({ 'background': '#FEF2F2', 'border-color': '#FECACA' });
+      $('#fin_arrieres_montant').text(solde.toLocaleString('fr-FR') + ' FCFA');
+      $('#fin_arrieres_alert_box').show();
+    }
+
+    // Remplissage du tableau des paiements
+    var payments = d.history_payments || [];
+    $('#fin_paiements_count').text(payments.length + ' règlement(s)');
+    if (payments.length > 0) {
+      var rowsHtml = '';
+      payments.forEach(function(p) {
+        var dateFmt = p.date_paiement ? new Date(p.date_paiement).toLocaleDateString('fr-FR') : '-';
+        var mntFmt = Number(p.montant_paiement || 0).toLocaleString('fr-FR') + ' FCFA';
+        rowsHtml += '<tr style="border-bottom: 1px solid #E2E8F0;">' +
+          '<td style="padding: 8px 10px; font-weight: 700; color: #1E3A5F; font-family: monospace;">' + (p.code_paiement || '-') + '</td>' +
+          '<td style="padding: 8px 10px;">' + dateFmt + '</td>' +
+          '<td style="padding: 8px 10px; text-transform: capitalize;">' + (p.mode_paiement || 'Espèces') + '</td>' +
+          '<td style="padding: 8px 10px; color: #64748B;">' + (p.reference_paiement || '-') + '</td>' +
+          '<td style="padding: 8px 10px; text-align: right; font-weight: 800; color: #047857;">' + mntFmt + '</td>' +
+        '</tr>';
+      });
+      $('#fin_payments_table_body').html(rowsHtml);
+    } else {
+      $('#fin_payments_table_body').html('<tr><td colspan="5" style="padding: 12px; text-align: center; color: #64748B; font-style: italic;">Aucun paiement enregistré pour cet étudiant.</td></tr>');
+    }
+
+    $('#financial-statement-modal').css('display', 'flex').hide().fadeIn(200);
+    $('body').css('overflow', 'hidden');
+    if (window.lucide) lucide.createIcons();
+  };
+
+  window.printFinancialStatement = function() {
+    $('body').addClass('printing-financial-statement');
+    window.print();
+    setTimeout(function() {
+      $('body').removeClass('printing-financial-statement');
+    }, 1000);
+  };
+
+  $(document).on('click', '#btn-print-financial-statement, #btn-quick-print-finance', function(e) {
+    e.preventDefault();
+    openFinancialStatementModal();
+  });
+
+  $('#financial-statement-modal').on('click', function(e) {
+    if (e.target === this) {
+      $(this).fadeOut(150, function() {
+        $('body').css('overflow', '');
+      });
+    }
   });
 });
 </script>

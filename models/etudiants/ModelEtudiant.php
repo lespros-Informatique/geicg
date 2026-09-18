@@ -28,11 +28,17 @@ class ModelEtudiant extends BaseModel
         $nextOrder = $lastId + 1;
 
         // 3. Sigle Établissement (dynamique depuis la base)
-        $stmtEtabSigle = $pdo->query("SELECT sigle_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
+        $stmtEtabSigle = $pdo->query("SELECT code_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
         $rowEtabSigle = $stmtEtabSigle ? $stmtEtabSigle->fetch(PDO::FETCH_ASSOC) : null;
-        $sigleEtab = !empty($rowEtabSigle['sigle_etablissement']) 
-            ? strtoupper(trim($rowEtabSigle['sigle_etablissement'])) 
-            : (!empty($rowEtabSigle['libelle_etablissement']) ? strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $rowEtabSigle['libelle_etablissement']), 0, 3)) : 'GEB');
+        $sigleEtab = 'GEB';
+        if (!empty($rowEtabSigle['code_etablissement']) && !is_numeric($rowEtabSigle['code_etablissement']) && strlen(trim($rowEtabSigle['code_etablissement'])) <= 6) {
+            $sigleEtab = strtoupper(trim(str_replace('ETA-', '', $rowEtabSigle['code_etablissement'])));
+        } elseif (!empty($rowEtabSigle['libelle_etablissement'])) {
+            $cleanLib = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $rowEtabSigle['libelle_etablissement']), 0, 3));
+            if (!empty($cleanLib)) {
+                $sigleEtab = $cleanLib;
+            }
+        }
 
         // 4. Deux premières lettres de la Filière en Majuscule
         $filiereCodeLetters = 'GE';
