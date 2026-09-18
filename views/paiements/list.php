@@ -59,6 +59,23 @@
 #print-header-banner, .print-signatures-block {
   display: none;
 }
+
+.card-kpi-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+@media (max-width: 1200px) {
+  .card-kpi-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .card-kpi-container {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -171,16 +188,16 @@
         </div>
       </div>
 
-      <!-- SECTION 1 : ENCAISSEMENTS & CAISSE GUICHET -->
+      <!-- SECTION 1 : ENCAISSEMENTS & CAISSE GUICHET (4 CARTES) -->
       <div class="kpi-section-title" style="margin-bottom: 8px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="landmark" style="width: 15px; height: 15px; color: #15803D;"></i> Arrêt de Caisse & Modes de Règlement
         </h4>
       </div>
       
-      <div class="card-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+      <div class="card-kpi-container">
         
-        <!-- Total Encaissé -->
+        <!-- 1. Total Encaissé -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé</div>
@@ -196,7 +213,21 @@
           </div>
         </div>
 
-        <!-- Caisse Espèces -->
+        <!-- 2. Encaissements Jour -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Jour</div>
+            <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 3px;">
+              <span id="kpi-encaisse-aujourdhui"><?= number_format((float)($stats['encaisse_aujourdhui'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Aujourd'hui</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- 3. Caisse Espèces -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">Espèces (Caisse)</div>
@@ -210,35 +241,7 @@
           </div>
         </div>
 
-        <!-- Encaissements Étudiants Affectés (État) -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Affectés (État)</div>
-            <div style="font-size: 18px; font-weight: 900; color: #0369A1; margin-top: 3px;">
-              <span id="kpi-encaisse-affectes"><?= number_format((float)($stats['encaisse_affectes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Montant encaissé (État)</div>
-          </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- Encaissements Étudiants Non Affectés (Privés) -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés (Privés)</div>
-            <div style="font-size: 18px; font-weight: 900; color: #3730A3; margin-top: 3px;">
-              <span id="kpi-encaisse-prives"><?= number_format((float)($stats['encaisse_prives'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Montant encaissé (Privés)</div>
-          </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="user" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- Montant en Attente (Global) -->
+        <!-- 4. Reste à Recouvrer -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FCA5A5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Reste à Recouvrer</div>
@@ -254,16 +257,58 @@
 
       </div>
 
-      <!-- SECTION 2 : RECOUVREMENT ÉTUDIANTS & SUIVI POST-INSCRIPTION -->
+      <!-- SECTION 2 : RÉPARTITION PAR RÉGIME & POST-INSCRIPTION (4 CARTES) -->
       <div class="kpi-section-title" style="margin-bottom: 8px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
-          <i data-lucide="users" style="width: 15px; height: 15px; color: #EA580C;"></i> Suivi des Inscriptions & Santé Financière des Étudiants
+          <i data-lucide="pie-chart" style="width: 15px; height: 15px; color: #0284C7;"></i> Répartition par Régime & Période
         </h4>
       </div>
 
-      <div class="card-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+      <div class="card-kpi-container">
         
-        <!-- CARTE SPÉCIFIQUE : En Attente Post-Inscription Immédiate -->
+        <!-- 5. Affectés (État) -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Affectés (État)</div>
+            <div style="font-size: 18px; font-weight: 900; color: #0369A1; margin-top: 3px;">
+              <span id="kpi-encaisse-affectes"><?= number_format((float)($stats['encaisse_affectes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Montant encaissé (État)</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- 6. Non Affectés (Privés) -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés (Privés)</div>
+            <div style="font-size: 18px; font-weight: 900; color: #3730A3; margin-top: 3px;">
+              <span id="kpi-encaisse-prives"><?= number_format((float)($stats['encaisse_prives'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Montant encaissé (Privés)</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- 7. Encaissements Mois -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #0E7490; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Mois</div>
+            <div style="font-size: 18px; font-weight: 900; color: #0E7490; margin-top: 3px;">
+              <span id="kpi-encaisse-mois"><?= number_format((float)($stats['encaisse_mois'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Mois en cours</div>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #CFFAFE; color: #0E7490; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- 8. En Attente Post-Inscription -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1.5px solid #FDBA74; box-shadow: 0 2px 4px rgba(234,88,12,0.06); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #C2410C; text-transform: uppercase; letter-spacing: 0.5px;">En Attente Post-Inscription</div>
@@ -277,7 +322,18 @@
           </div>
         </div>
 
-        <!-- Étudiants Soldés -->
+      </div>
+
+      <!-- SECTION 3 : SANTÉ FINANCIÈRE & STATUTS DES ÉTUDIANTS (4 CARTES) -->
+      <div class="kpi-section-title" style="margin-bottom: 8px;">
+        <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="users" style="width: 15px; height: 15px; color: #EA580C;"></i> Suivi des Inscriptions & Santé Financière des Étudiants
+        </h4>
+      </div>
+
+      <div class="card-kpi-container">
+        
+        <!-- 9. Étudiants Soldés -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Soldés (100%)</div>
@@ -291,7 +347,7 @@
           </div>
         </div>
 
-        <!-- Étudiants en Acompte -->
+        <!-- 10. Étudiants en Acompte -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants en Acompte</div>
@@ -305,7 +361,7 @@
           </div>
         </div>
 
-        <!-- Étudiants Non Payeurs -->
+        <!-- 11. Étudiants Non Payeurs -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #E11D48; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Non Payeurs</div>
@@ -319,17 +375,17 @@
           </div>
         </div>
 
-        <!-- Session du Jour -->
+        <!-- 12. Total Inscrits -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Jour</div>
-            <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 3px;">
-              <span id="kpi-encaisse-aujourdhui"><?= number_format((float)($stats['encaisse_aujourdhui'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            <div style="font-size: 11px; font-weight: 800; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Total Inscrits</div>
+            <div style="font-size: 18px; font-weight: 900; color: #7E22CE; margin-top: 3px;">
+              <span id="kpi-total-inscrits"><?= number_format((int)($stats['total_inscrits'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Aujourd'hui</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Effectif académique suivi</div>
           </div>
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
@@ -728,6 +784,8 @@ $(document).ready(function() {
           $('#kpi-eleves-acomptes').text(Number(s.eleves_acomptes || 0).toLocaleString('fr-FR'));
           $('#kpi-eleves-non-payeurs').text(Number(s.eleves_non_payeurs || 0).toLocaleString('fr-FR'));
           $('#kpi-encaisse-aujourdhui').text(Number(s.encaisse_aujourdhui || 0).toLocaleString('fr-FR'));
+          if ($('#kpi-encaisse-mois').length) $('#kpi-encaisse-mois').text(Number(s.encaisse_mois || 0).toLocaleString('fr-FR'));
+          if ($('#kpi-total-inscrits').length) $('#kpi-total-inscrits').text(Number(s.total_inscrits || 0).toLocaleString('fr-FR'));
         }
       }
     });
