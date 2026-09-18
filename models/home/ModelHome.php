@@ -243,10 +243,10 @@ class ModelHome extends BaseModel
             }
 
             $stmtD = $db->prepare("
-                SELECT MONTH(date_depense) as mois, SUM(montant_depense) as total
+                SELECT MONTH(COALESCE(periode_depense, created_at_depense)) as mois, SUM(montant_depense) as total
                 FROM depenses
                 WHERE (annee_code = ? OR ? = '') AND (statut_depense != 'annule' OR statut_depense IS NULL)
-                GROUP BY MONTH(date_depense)
+                GROUP BY MONTH(COALESCE(periode_depense, created_at_depense))
             ");
             $stmtD->execute([$anneeCode, $anneeCode]);
             while ($r = $stmtD->fetch(PDO::FETCH_ASSOC)) {

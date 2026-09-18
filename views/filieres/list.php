@@ -75,6 +75,7 @@ $filieres = (new ModelFiliere())->getByStatus('actif');
                   <th style="width: 50px;">#</th>
                   <th>Code</th>
                   <th>Nom de la Filière</th>
+                  <th>Sigle / Slug</th>
                   <th>Type</th>
                   <th>Description</th>
                   <th class="text-center">Statut</th>
@@ -103,6 +104,7 @@ $filieres = (new ModelFiliere())->getByStatus('actif');
                   <th style="width: 50px;">#</th>
                   <th>Code Cycle</th>
                   <th>Libellé du Cycle</th>
+                  <th>Slug</th>
                   <th>Description</th>
                   <th class="text-center">Statut</th>
                   <th class="text-end">Actions</th>
@@ -356,17 +358,12 @@ $(document).ready(function() {
     columns: [
       { data: 'id_filiere', defaultContent: '-' },
       { data: 'code_filiere', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
-      { data: 'libelle_filiere', render: function(d, type, row) { 
-        var useSlug = row.use_slug_filiere;
-        if (useSlug && row.slug_filiere) {
-          return '<span style="font-weight:700; color:#0F172A;">' + row.slug_filiere + '</span>' +
-                 ' <span style="font-size:12px; color:#64748B; margin-left:6px;">(' + (d || '-') + ')</span>';
-        }
-        var html = '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>';
-        if (row.slug_filiere) {
-          html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:6px;">' + row.slug_filiere + '</span>';
-        }
-        return html;
+      { data: 'libelle_filiere', render: function(d) { 
+        return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>';
+      } },
+      { data: 'slug_filiere', render: function(d) {
+        if (!d) return '<span style="color:#94A3B8; font-style:italic;">-</span>';
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; font-weight:800; font-size:11.5px; padding:3px 9px; border-radius:6px; letter-spacing:0.3px;">' + d + '</span>';
       } },
       { data: 'type_filiere', render: function(d) {
         if (d === 'INDUSTRIELLE') return '<span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Industrielle</span>';
@@ -406,17 +403,12 @@ $(document).ready(function() {
     columns: [
       { data: 'id_cycle', defaultContent: '-' },
       { data: 'code_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
-      { data: 'libelle_cycle', render: function(d, type, row) { 
-        var useSlug = row.use_slug_cycle;
-        if (useSlug && row.slug_cycle) {
-          return '<span style="font-weight:700; color:#1E3A5F;">' + row.slug_cycle + '</span>' +
-                 ' <span style="font-size:12px; color:#64748B; margin-left:6px;">(' + (d || '-') + ')</span>';
-        }
-        var html = '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>';
-        if (row.slug_cycle) {
-          html += ' <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px; margin-left:6px;">' + row.slug_cycle + '</span>';
-        }
-        return html;
+      { data: 'libelle_cycle', render: function(d) { 
+        return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>';
+      } },
+      { data: 'slug_cycle', render: function(d) {
+        if (!d) return '<span style="color:#94A3B8; font-style:italic;">-</span>';
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; font-weight:800; font-size:11.5px; padding:3px 9px; border-radius:6px; letter-spacing:0.3px;">' + d + '</span>';
       } },
       { data: 'description_cycle', render: function(d) { return d || '-'; } },
       { data: 'statut_cycle', width: '80px', className: 'text-center', render: function(d, type, row) {

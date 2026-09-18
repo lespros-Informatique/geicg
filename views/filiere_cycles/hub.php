@@ -71,6 +71,7 @@
                   <th style="padding: 12px;">ID</th>
                   <th style="padding: 12px;">Code</th>
                   <th style="padding: 12px;">Nom de la Filière</th>
+                  <th style="padding: 12px;">Sigle / Slug</th>
                   <th style="padding: 12px;">Description</th>
                   <th style="padding: 12px;" class="text-center">Statut</th>
                   <th style="padding: 12px; text-align: right;">Actions</th>
@@ -98,6 +99,7 @@
                   <th style="padding: 12px;">ID</th>
                   <th style="padding: 12px;">Code Cycle</th>
                   <th style="padding: 12px;">Libellé du Cycle</th>
+                  <th style="padding: 12px;">Slug</th>
                   <th style="padding: 12px;">Description</th>
                   <th style="padding: 12px;" class="text-center">Statut</th>
                   <th style="padding: 12px; text-align: right;">Actions</th>
@@ -174,6 +176,11 @@ $(document).ready(function() {
         if (type !== 'display') return d || '';
         return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>';
       }},
+      { data: 'slug_filiere', width: '100px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        if (!d) return '<span style="color:#94A3B8; font-style:italic;">-</span>';
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; font-weight:800; font-size:11.5px; padding:3px 9px; border-radius:6px; letter-spacing:0.3px;">' + d + '</span>';
+      }},
       { data: 'description_filiere', defaultContent: '-', render: function(d, type) {
         if (type !== 'display') return d || '';
         return d || '-';
@@ -205,6 +212,11 @@ $(document).ready(function() {
       { data: 'libelle_cycle', width: '200px', render: function(d, type) {
         if (type !== 'display') return d || '';
         return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>';
+      }},
+      { data: 'slug_cycle', width: '100px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        if (!d) return '<span style="color:#94A3B8; font-style:italic;">-</span>';
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; font-weight:800; font-size:11.5px; padding:3px 9px; border-radius:6px; letter-spacing:0.3px;">' + d + '</span>';
       }},
       { data: 'description_cycle', defaultContent: '-', render: function(d, type) {
         if (type !== 'display') return d || '';
