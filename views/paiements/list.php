@@ -97,12 +97,14 @@
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Caisse & Encaissements Scolarité</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-          <button onclick="printRegistry()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre des encaissements">
+          <button onclick="printRegistry()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;" title="Imprimer le registre des encaissements">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
-          <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(22,163,74,0.2);">
+          <?php if (!empty($canRecord)): ?>
+          <button type="button" id="btn-open-encaissement-modal" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(22,163,74,0.2); cursor: pointer;">
             <i data-lucide="banknote" style="width: 18px; height: 18px;"></i> Encaisser scolarité
-          </a>
+          </button>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -374,6 +376,207 @@
     </div>
   </main>
 </div>
+
+<!-- ========================================================================= -->
+<!-- MODAL SUR MESURE : ENCAISSEMENT DIRECT DE SCOLARITÉ                      -->
+<!-- ========================================================================= -->
+<div id="modal-encaisser-scolarite" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 820px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    
+    <!-- En-tête modal -->
+    <div style="background: linear-gradient(135deg, #1E3A5F 0%, #0F233D 100%); color: #FFFFFF; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #16A34A;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(22,163,74,0.25); border: 1.5px solid #4ADE80; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="banknote" style="width: 22px; height: 22px; color: #4ADE80;"></i>
+        </div>
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: #FFFFFF;">Encaisser un Versement de Scolarité</h3>
+          <div style="font-size: 12px; color: #94A3B8; margin-top: 2px;">Guichet Caisse &bull; Échéancier Réglementaire</div>
+        </div>
+      </div>
+      <button type="button" class="btn-close-modal-encaissement" style="background: transparent; border: none; color: #FFFFFF; font-size: 26px; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
+    </div>
+
+    <!-- Corps du modal (Formulaire) -->
+    <form id="form-encaissement-scolarite" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+      <div style="padding: 22px 24px; background: #F8FAFC; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 18px;">
+        
+        <?php if (empty($isCaisseOuverte)): ?>
+          <div id="caisse-warning-notice" style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 10px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 10px;">
+            <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: #D97706; flex-shrink: 0; margin-top: 1px;"></i>
+            <div style="font-size: 12.5px; color: #92400E; line-height: 1.4;">
+              <strong>Session de caisse fermée :</strong> Aucune session de caisse n'est ouverte pour aujourd'hui. Pour les règlements en espèces, veuillez d'abord <a href="<?= RACINE ?>session_caisse/list" target="_blank" style="color: #1E3A5F; font-weight: 800; text-decoration: underline;">ouvrir une session de caisse</a>. Les modes Mobile Money, Chèque et Virement sont toutefois immédiatement acceptés.
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <!-- 1. Sélection de l'étudiant / Inscription -->
+        <div style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1.5px solid #CBD5E1;">
+          <label style="font-size: 12px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase;">
+            <i data-lucide="user-check" style="width: 15px; height: 15px; color: #1E3A5F;"></i> 1. Rechercher l'étudiant / Dossier d'inscription <span class="text-danger">*</span>
+          </label>
+          <select id="modal_select_inscription" name="inscription_code" class="form-control" style="width: 100%;" required>
+            <option value="">-- Tapez le nom, matricule ou classe de l'étudiant --</option>
+            <?php foreach (($inscriptions ?? []) as $ins): ?>
+              <option value="<?= htmlspecialchars($ins['code_inscription']) ?>" data-matricule="<?= htmlspecialchars($ins['matricule_etudiant'] ?? '') ?>" data-annee="<?= htmlspecialchars($ins['annee_code'] ?? '') ?>">
+                <?= htmlspecialchars(($ins['matricule_etudiant'] ?? '') . ' - ' . ($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? '') . ' (' . ($ins['libelle_classe'] ?? 'Classe non assignée') . ')') ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- 2. Synthèse Financière & Profil Étudiant (Chargé dynamiquement) -->
+        <div id="encaisse-student-summary-card" style="display: none; background: #FFFFFF; border: 1.5px solid #93C5FD; border-radius: 12px; padding: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #E2E8F0; padding-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div id="encaisse-stu-avatar" style="width: 44px; height: 44px; border-radius: 10px; background: #1E3A5F; color: #FFFFFF; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center;">
+                ET
+              </div>
+              <div>
+                <div id="encaisse-stu-nom" style="font-weight: 800; font-size: 15px; color: #0F172A;">-</div>
+                <div style="font-size: 12px; color: #64748B; margin-top: 2px;">
+                  Matricule : <code id="encaisse-stu-mat" style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px;">-</code>
+                  &bull; Classe : <strong id="encaisse-stu-classe" style="color: #0F172A;">-</strong>
+                </div>
+              </div>
+            </div>
+            <div id="encaisse-stu-regime-badge" style="font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 6px; background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;">
+              -
+            </div>
+          </div>
+
+          <!-- 3 Compteurs Financiers -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Scolarité Totale</div>
+              <div id="encaisse-val-scolarite" style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin-top: 2px;">0 FCFA</div>
+            </div>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Total Déjà Payé</div>
+              <div id="encaisse-val-paye" style="font-size: 16px; font-weight: 900; color: #15803D; margin-top: 2px;">0 FCFA</div>
+            </div>
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #DC2626; text-transform: uppercase;">Reste à Payer</div>
+              <div id="encaisse-val-reste" style="font-size: 16px; font-weight: 900; color: #DC2626; margin-top: 2px;">0 FCFA</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 3. Sélection de la tranche & Paramètres du versement -->
+        <div id="encaisse-payment-inputs-section" style="display: none; background: #FFFFFF; border-radius: 12px; padding: 18px; border: 1px solid #E2E8F0;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            
+            <!-- Tranche / Échéance -->
+            <div style="grid-column: span 2;">
+              <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">
+                2. Tranche / Échéance à régler <span class="text-danger">*</span>
+              </label>
+              <select id="modal_select_tranche" name="tranche_code" class="form-control" style="font-weight: 700; border-radius: 8px;" required>
+                <!-- Rempli dynamiquement -->
+              </select>
+              <div id="tranche-hint-info" style="font-size: 11.5px; color: #64748B; margin-top: 4px;">
+                <!-- Rempli dynamiquement -->
+              </div>
+            </div>
+
+            <!-- Montant versé -->
+            <div style="grid-column: span 2;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin: 0; text-transform: uppercase;">
+                  3. Montant Versé (FCFA) <span class="text-danger">*</span>
+                </label>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" id="btn-quick-fill-tranche" style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A5F; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
+                    Reste de la tranche
+                  </button>
+                  <button type="button" id="btn-quick-fill-total" style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
+                    Tout solder
+                  </button>
+                </div>
+              </div>
+              <div style="position: relative;">
+                <input type="number" step="500" min="500" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 20px; color: #15803D; padding-right: 70px; border-radius: 10px;" placeholder="Ex: 50000" required>
+                <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #64748B; font-size: 14px;">FCFA</span>
+              </div>
+              <div id="montant-max-hint" style="font-size: 11.5px; color: #64748B; margin-top: 4px;">
+                Montant maximal autorisé pour cette tranche : <strong id="lbl-max-autorise" style="color: #15803D;">0 FCFA</strong>
+              </div>
+            </div>
+
+            <!-- Mode de règlement -->
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Mode de Règlement <span class="text-danger">*</span></label>
+              <select id="modal_select_mode" name="mode_paiement" class="form-control" style="border-radius: 8px; font-weight: 700;" required>
+                <option value="espece" selected>💵 Espèces (Caisse Guichet)</option>
+                <option value="mobile_money">📱 Mobile Money (Wave / OM / MTN / Moov)</option>
+                <option value="cheque">🏦 Chèque Bancaire</option>
+                <option value="virement">🏛️ Virement Bancaire</option>
+              </select>
+            </div>
+
+            <!-- Référence / Transaction -->
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Réf. Transaction / N° Chèque</label>
+              <input type="text" name="reference_paiement" id="input_ref_paiement" class="form-control" style="border-radius: 8px;" placeholder="Ex: TRX-99214 / CHQ-8820">
+            </div>
+
+            <!-- Observations / Remarques -->
+            <div style="grid-column: span 2;">
+              <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Observations / Notes (facultatif)</label>
+              <input type="text" name="observations" class="form-control" style="border-radius: 8px;" placeholder="Ex: Payé par le tuteur M. Kouassi...">
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pied de modal -->
+      <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-encaissement" style="font-weight: 700; border-radius: 8px; padding: 10px 20px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-encaissement" class="btn btn-success" style="font-weight: 800; border-radius: 8px; padding: 10px 26px; background: #16A34A; border: none; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(22,163,74,0.3);">
+          <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL SUCCÈS & IMPRESSION DU REÇU OFFICIEL                               -->
+<!-- ========================================================================= -->
+<div id="modal-recu-paiement-success" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; text-align: center; padding: 30px 24px;">
+    
+    <div style="width: 64px; height: 64px; border-radius: 50%; background: #DCFCE7; border: 2px solid #86EFAC; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+      <i data-lucide="check" style="width: 32px; height: 32px; color: #16A34A;"></i>
+    </div>
+
+    <h3 style="font-size: 18px; font-weight: 900; color: #0F172A; margin: 0 0 6px 0;">Encaissement Réussi avec Succès !</h3>
+    <p style="font-size: 13.5px; color: #64748B; margin: 0 0 16px 0;">Le versement a été enregistré et rattaché à l'échéancier de l'étudiant.</p>
+
+    <div style="background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 10px; padding: 14px; margin-bottom: 22px;">
+      <div style="font-size: 11.5px; color: #64748B; font-weight: 700; text-transform: uppercase;">N° Quittance / Reçu</div>
+      <div id="success-recu-num" style="font-size: 20px; font-weight: 900; color: #1E3A5F; font-family: monospace; margin: 4px 0;">PAI-XXXXXXXX</div>
+      <div id="success-recu-montant" style="font-size: 14px; font-weight: 800; color: #15803D;">0 FCFA</div>
+    </div>
+
+    <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+      <button type="button" class="btn btn-secondary btn-close-modal-success" style="font-weight: 700; border-radius: 8px; padding: 10px 20px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+        Fermer
+      </button>
+      <a id="success-recu-print-link" href="#" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 22px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+        <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu Officiel
+      </a>
+    </div>
+
+  </div>
+</div>
 <script>
 function escapeHtml(text) {
   if (text === null || text === undefined) return '';
@@ -535,6 +738,249 @@ $(document).ready(function() {
   $('#filter-annee, #filter-niveau, #filter-classe, #filter-date-debut, #filter-date-fin').on('change input', function() {
     table.ajax.reload();
     refreshKpis();
+  });
+
+  // =========================================================================
+  // GESTION DU MODAL D'ENCAISSEMENT DIRECT DE SCOLARITÉ
+  // =========================================================================
+  var currentStudentSummary = null;
+
+  function openEncaissementModal(preselectedCode) {
+    $('#modal-encaisser-scolarite').css('display', 'flex');
+    if ($.fn.select2) {
+      $('#modal_select_inscription').select2({
+        dropdownParent: $('#modal-encaisser-scolarite'),
+        width: '100%',
+        placeholder: "-- Tapez le nom, matricule ou classe de l'étudiant --",
+        allowClear: true
+      });
+    }
+    if (preselectedCode) {
+      $('#modal_select_inscription').val(preselectedCode).trigger('change');
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeEncaissementModal() {
+    $('#modal-encaisser-scolarite').hide();
+    $('#form-encaissement-scolarite')[0].reset();
+    if ($.fn.select2) {
+      $('#modal_select_inscription').val('').trigger('change.select2');
+    }
+    $('#encaisse-student-summary-card').hide();
+    $('#encaisse-payment-inputs-section').hide();
+    currentStudentSummary = null;
+  }
+
+  $('#btn-open-encaissement-modal').on('click', function() {
+    openEncaissementModal();
+  });
+
+  $('.btn-close-modal-encaissement').on('click', function() {
+    closeEncaissementModal();
+  });
+
+  $('.btn-close-modal-success').on('click', function() {
+    $('#modal-recu-paiement-success').hide();
+  });
+
+  $('#modal-encaisser-scolarite').on('click', function(e) {
+    if ($(e.target).is('#modal-encaisser-scolarite')) {
+      closeEncaissementModal();
+    }
+  });
+
+  $('#modal-recu-paiement-success').on('click', function(e) {
+    if ($(e.target).is('#modal-recu-paiement-success')) {
+      $('#modal-recu-paiement-success').hide();
+    }
+  });
+
+  // Détection du paramètre URL ?action=encaissement
+  var urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('action') === 'encaissement') {
+    var preCode = urlParams.get('inscription_code') || '';
+    openEncaissementModal(preCode);
+  }
+
+  // Chargement dynamique de la synthèse financière au choix de l'étudiant
+  $('#modal_select_inscription').on('change', function() {
+    var val = $(this).val();
+    if (!val) {
+      $('#encaisse-student-summary-card').slideUp(150);
+      $('#encaisse-payment-inputs-section').slideUp(150);
+      currentStudentSummary = null;
+      return;
+    }
+
+    $('#btn-submit-encaissement').prop('disabled', true);
+    
+    $.ajax({
+      url: '<?= RACINE ?>paiement/getStudentFinancialSummary',
+      type: 'GET',
+      data: { inscription_code: val },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 && res.data) {
+          var d = res.data;
+          currentStudentSummary = d;
+
+          // Remplir la fiche étudiant
+          var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
+          $('#encaisse-stu-avatar').text(initials || 'ET');
+          $('#encaisse-stu-nom').text(d.nom_complet);
+          $('#encaisse-stu-mat').text(d.matricule);
+          $('#encaisse-stu-classe').text(d.classe + (d.filiere ? ' - ' + d.filiere : ''));
+          $('#encaisse-stu-regime-badge').text(d.affectation_label || 'Non Défini');
+          if (d.affectation_etat === 'affecte') {
+            $('#encaisse-stu-regime-badge').css({'background': '#DCFCE7', 'color': '#15803D', 'border-color': '#86EFAC'});
+          } else {
+            $('#encaisse-stu-regime-badge').css({'background': '#EFF6FF', 'color': '#1E3A5F', 'border-color': '#BFDBFE'});
+          }
+
+          // Compteurs
+          $('#encaisse-val-scolarite').text(d.scolarite_due_fmt);
+          $('#encaisse-val-paye').text(d.total_paye_fmt);
+          $('#encaisse-val-reste').text(d.solde_restant_fmt);
+
+          // Remplir les tranches
+          var trHtml = '';
+          if (d.tranches && d.tranches.length > 0) {
+            d.tranches.forEach(function(tr) {
+              var suffix = tr.is_soldee ? ' (SOLDÉE)' : ' (Reste : ' + tr.reste_a_payer_fmt + ')';
+              trHtml += '<option value="' + escapeHtml(tr.code_tranche) + '" data-reste="' + tr.reste_a_payer + '" data-soldee="' + (tr.is_soldee ? '1' : '0') + '" data-limite="' + escapeHtml(tr.date_limite_fmt || '') + '" ' + (tr.is_soldee ? 'style="color:#94A3B8;"' : '') + '>' +
+                        escapeHtml(tr.libelle_tranche) + ' - ' + tr.montant_tranche_fmt + suffix +
+                        '</option>';
+            });
+          }
+          $('#modal_select_tranche').html(trHtml);
+
+          if (d.suggested_tranche_code) {
+            $('#modal_select_tranche').val(d.suggested_tranche_code);
+          }
+          
+          $('#modal_select_tranche').trigger('change');
+
+          $('#encaisse-student-summary-card').stop(true, true).slideDown(200);
+          $('#encaisse-payment-inputs-section').stop(true, true).slideDown(200);
+
+          if (d.solde_restant <= 0) {
+            $('#montant-max-hint').html('<span style="color:#15803D; font-weight:800;">🎉 Scolarité intégralement soldée pour cet étudiant. Aucun versement supplémentaire attendu.</span>');
+            $('#btn-submit-encaissement').prop('disabled', true);
+          } else {
+            $('#btn-submit-encaissement').prop('disabled', false);
+          }
+
+          if (window.lucide) lucide.createIcons();
+        } else {
+          alert(res.message || 'Impossible de récupérer la situation financière de cet étudiant.');
+        }
+      },
+      error: function() {
+        alert('Erreur lors de la communication avec le serveur.');
+      }
+    });
+  });
+
+  // Changement de tranche
+  $('#modal_select_tranche').on('change', function() {
+    var $opt = $(this).find('option:selected');
+    var reste = parseFloat($opt.data('reste') || 0);
+    var isSoldee = $opt.data('soldee') === '1' || $opt.data('soldee') === 1;
+    var limite = $opt.data('limite');
+
+    if (isSoldee) {
+      $('#montant-max-hint').html('<span style="color:#DC2626; font-weight:700;">⚠️ Cette tranche est déjà totalement soldée. Veuillez sélectionner une tranche avec un solde restant.</span>');
+      $('#input-montant-versement').val('').prop('disabled', true);
+      $('#btn-submit-encaissement').prop('disabled', true);
+    } else {
+      $('#montant-max-hint').html('Montant maximal autorisé pour cette tranche : <strong id="lbl-max-autorise" style="color: #15803D;">' + Number(reste).toLocaleString('fr-FR') + ' FCFA</strong>');
+      $('#input-montant-versement').prop('disabled', false).attr('max', reste).val(reste);
+      $('#btn-submit-encaissement').prop('disabled', false);
+    }
+
+    if (limite && limite !== 'Non définie') {
+      $('#tranche-hint-info').html('📅 Date d\'échéance / limite : <strong>' + escapeHtml(limite) + '</strong>');
+    } else {
+      $('#tranche-hint-info').html('');
+    }
+  });
+
+  // Boutons de remplissage rapide
+  $('#btn-quick-fill-tranche').on('click', function() {
+    var $opt = $('#modal_select_tranche').find('option:selected');
+    var reste = parseFloat($opt.data('reste') || 0);
+    if (reste > 0) {
+      $('#input-montant-versement').val(reste);
+    }
+  });
+
+  $('#btn-quick-fill-total').on('click', function() {
+    var $opt = $('#modal_select_tranche').find('option:selected');
+    var resteTranche = parseFloat($opt.data('reste') || 0);
+    if (resteTranche > 0) {
+      $('#input-montant-versement').val(resteTranche);
+    }
+  });
+
+  // Soumission AJAX du formulaire d'encaissement
+  $('#form-encaissement-scolarite').on('submit', function(e) {
+    e.preventDefault();
+    
+    var montant = parseFloat($('#input-montant-versement').val() || 0);
+    if (montant <= 0) {
+      alert('Le montant du versement doit être supérieur à 0 FCFA.');
+      return;
+    }
+
+    var $opt = $('#modal_select_tranche').find('option:selected');
+    var resteTranche = parseFloat($opt.data('reste') || 0);
+    if (resteTranche > 0 && montant > resteTranche) {
+      alert('Le montant saisi (' + Number(montant).toLocaleString('fr-FR') + ' FCFA) dépasse le solde restant de la tranche (' + Number(resteTranche).toLocaleString('fr-FR') + ' FCFA).');
+      return;
+    }
+
+    var $btn = $('#btn-submit-encaissement');
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right:6px;"></span> Validation en cours...');
+
+    $.ajax({
+      url: '<?= RACINE ?>paiement/add',
+      type: 'POST',
+      data: $(this).serialize(),
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
+        if (window.lucide) lucide.createIcons();
+
+        if (res.status === 1) {
+          closeEncaissementModal();
+          table.ajax.reload(null, false);
+          refreshKpis();
+
+          // Afficher le modal de confirmation & impression
+          var codePaiement = res.code_paiement || 'PAI-CONFIRME';
+          var idCrypte = res.encrypted_id || res.id_paiement;
+          $('#success-recu-num').text(codePaiement);
+          $('#success-recu-montant').text(Number(montant).toLocaleString('fr-FR') + ' FCFA Encaissé');
+          $('#success-recu-print-link').attr('href', window.RACINE + 'paiement/details/' + idCrypte + '?print=1');
+          $('#modal-recu-paiement-success').css('display', 'flex');
+
+          if (window.lucide) lucide.createIcons();
+        } else {
+          alert(res.message || 'Erreur lors de l\'encaissement.');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
+        if (window.lucide) lucide.createIcons();
+        var errMsg = 'Une erreur est survenue lors de la communication avec le serveur.';
+        try {
+          var r = JSON.parse(xhr.responseText);
+          if (r && r.message) errMsg = r.message;
+        } catch(e) {}
+        alert(errMsg);
+      }
+    });
   });
 });
 </script>

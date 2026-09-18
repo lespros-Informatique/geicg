@@ -101,8 +101,8 @@ $tauxPaiement = ($scolarite > 0) ? min(100, round(($totalPaye / $scolarite) * 10
               <i data-lucide="credit-card" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Suivi des Paiements de la Scolarité
             </h3>
           </div>
-          <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Encaisser un versement
+          <a href="<?= RACINE ?>paiement/list?action=encaissement&inscription_code=<?= urlencode($item['code_inscription'] ?? '') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> Encaisser un versement
           </a>
         </div>
 

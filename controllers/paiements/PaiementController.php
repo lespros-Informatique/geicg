@@ -36,12 +36,45 @@ class PaiementController extends BaseController
 
         $stats = $this->computeFinancialStats($activeYear, $niveauCode, $classeCode, $dateDebut, $dateFin);
 
+        // Inscriptions pour sélection rapide dans le modal d'encaissement
+        $stmtInscr = $db->prepare("
+            SELECT 
+                i.code_inscription,
+                i.annee_code,
+                e.code_etudiant,
+                e.matricule_etudiant,
+                e.nom_etudiant,
+                e.prenom_etudiant,
+                c.libelle_classe,
+                c.code_classe
+            FROM inscriptions i
+            JOIN etudiants e ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN classes c ON i.classe_code = c.code_classe
+            WHERE i.statut_inscription != 'annule'
+            ORDER BY (CASE WHEN i.annee_code = ? THEN 1 ELSE 2 END), e.nom_etudiant ASC, e.prenom_etudiant ASC
+        ");
+        $stmtInscr->execute([$activeYear]);
+        $inscriptions = $stmtInscr->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // État de la caisse du jour
+        $today = date('Y-m-d');
+        $stmtSess = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
+        $stmtSess->execute([$today]);
+        $activeSession = $stmtSess->fetch(PDO::FETCH_ASSOC) ?: null;
+        $isCaisseOuverte = ($activeSession && ($activeSession['statut_session'] ?? '') === 'ouverte');
+
+        $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS', 'MANAGE_PAYMENTS']);
+
         $this->loadView('../views/paiements/list.php', [
             'stats' => $stats,
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
-            'selectedAnneeCode' => $activeYear
+            'selectedAnneeCode' => $activeYear,
+            'inscriptions' => $inscriptions,
+            'isCaisseOuverte' => $isCaisseOuverte,
+            'activeSession' => $activeSession,
+            'canRecord' => $canRecord
         ]);
     }
 
@@ -849,6 +882,13 @@ class PaiementController extends BaseController
         }
         $data['statut_paiement'] = $data['statut_paiement'] ?? 'confirme';
         $data['date_paiement'] = date('Y-m-d H:i:s');
+        if (empty($data['type_paiement'])) {
+            if (!empty($tranche['libelle_tranche'])) {
+                $data['type_paiement'] = 'Règlement ' . $tranche['libelle_tranche'];
+            } else {
+                $data['type_paiement'] = 'Règlement Scolarité';
+            }
+        }
 
         // Rattachement automatique à la session de caisse ouverte
         $todayDate = date('Y-m-d');
@@ -891,7 +931,15 @@ class PaiementController extends BaseController
                 }
             }
 
-            $this->success('Règlement de caisse enregistré avec succès!', ['reload' => true]);
+            $lastId = (int)$this->model->getCon()->lastInsertId();
+            $encryptedId = $this->validator->crypter($lastId);
+            $this->success('Règlement de caisse enregistré avec succès!', [
+                'reload' => true,
+                'id_paiement' => $lastId,
+                'encrypted_id' => $encryptedId,
+                'code_paiement' => $data['code_paiement'],
+                'montant' => $montantPaiement
+            ]);
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de l\'enregistrement du paiement';
             $this->error($err);
@@ -990,7 +1038,12 @@ class PaiementController extends BaseController
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'paiement/list');
+        $inscrCode = $_GET['inscription_code'] ?? ($_GET['code'] ?? '');
+        $etuCode = $_GET['etudiant_code'] ?? '';
+        $query = '?action=encaissement';
+        if (!empty($inscrCode)) $query .= '&inscription_code=' . urlencode($inscrCode);
+        if (!empty($etuCode)) $query .= '&etudiant_code=' . urlencode($etuCode);
+        header('Location: ' . RACINE . 'paiement/list' . $query);
         exit();
     }
 }
