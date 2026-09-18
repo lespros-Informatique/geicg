@@ -10,8 +10,7 @@ class BulletinController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
         $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;

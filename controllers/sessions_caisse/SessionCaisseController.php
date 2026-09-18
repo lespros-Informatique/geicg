@@ -12,8 +12,7 @@ class SessionCaisseController extends BaseController
         $this->requireAuth();
         $today = date('Y-m-d');
         
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);

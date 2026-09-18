@@ -145,21 +145,13 @@ class TypeDepenseController extends BaseController
 
     public function edition($details)
     {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'type_depense/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'type_depense/list'); exit();
-        }
-        $this->loadView('../views/type_depenses/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        header('Location: ' . RACINE . 'type_depense/list');
+        exit();
     }
 
     public function formulaire()
     {
-        $this->requireAuth();
-        $this->loadView('../views/type_depenses/edit.php', ['item' => []]);
+        header('Location: ' . RACINE . 'type_depense/list');
+        exit();
     }
 }

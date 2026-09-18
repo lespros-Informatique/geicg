@@ -146,21 +146,13 @@ class SalleController extends BaseController
 
     public function edition($details)
     {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'salle/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'salle/list'); exit();
-        }
-        $this->loadView('../views/salles/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        header('Location: ' . RACINE . 'salle/list');
+        exit();
     }
 
     public function formulaire()
     {
-        $this->requireAuth();
-        $this->loadView('../views/salles/edit.php', ['item' => []]);
+        header('Location: ' . RACINE . 'salle/list');
+        exit();
     }
 }

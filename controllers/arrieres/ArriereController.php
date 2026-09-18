@@ -19,8 +19,7 @@ class ArriereController extends BaseController
         $this->requireAuth();
         $this->requirePermission(['MANAGE_ARRIERES', 'VIEW_ARRIERES', 'MANAGE_IMPAYES', 'MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS']);
 
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
 
         $niveauModel = new ModelNiveau();
         $niveaux = $niveauModel->getAll();

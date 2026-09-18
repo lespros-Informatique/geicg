@@ -15,26 +15,11 @@ class InscriptionController extends BaseController
 
         $activeAnneeCode = $this->getActiveAnneeCode();
 
-        // 1. Récupérer l'ID de l'année active
-        $stmtActive = $db->prepare("SELECT id_annee FROM annees WHERE code_annee = ? LIMIT 1");
-        $stmtActive->execute([$activeAnneeCode]);
-        $activeAnneeId = (int)($stmtActive->fetchColumn() ?: 0);
+        // Récupérer la liste des années accessibles (identique au sélecteur navbar)
+        $annees = $this->getAccessibleAnnees();
 
-        // 2. Récupérer uniquement les années dont l'id_annee est strictement inférieur à l'année active
-        $annees = [];
-        if ($activeAnneeId > 0) {
-            $stmtA = $db->prepare("SELECT id_annee, code_annee, libelle_annee, statut_annee FROM annees WHERE id_annee < ? ORDER BY id_annee DESC");
-            $stmtA->execute([$activeAnneeId]);
-            $annees = $stmtA->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        }
-        if (empty($annees)) {
-            $stmtFallback = $db->prepare("SELECT id_annee, code_annee, libelle_annee, statut_annee FROM annees WHERE code_annee != ? ORDER BY id_annee DESC");
-            $stmtFallback->execute([$activeAnneeCode]);
-            $annees = $stmtFallback->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        }
-
-        // Année sélectionnée par défaut (la plus récente des années inférieures)
-        $selectedAnneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : ($annees[0]['code_annee'] ?? '');
+        // Année sélectionnée par défaut
+        $selectedAnneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : ($activeAnneeCode ?: ($annees[0]['code_annee'] ?? ''));
 
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -1048,7 +1033,7 @@ class InscriptionController extends BaseController
         $db = $this->model->getCon();
 
         $activeAnneeCode = $this->getActiveAnneeCode();
-        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $annees = $this->getAccessibleAnnees();
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 

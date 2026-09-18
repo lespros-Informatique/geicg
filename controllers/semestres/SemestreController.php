@@ -10,8 +10,7 @@ class SemestreController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);

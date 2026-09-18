@@ -10,8 +10,7 @@ class ImpayesController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
         
@@ -129,27 +128,20 @@ class ImpayesController extends BaseController
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'impayes/list'); exit();
         }
-        $this->loadView('../views/impayes/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        header('Location: ' . RACINE . 'impayes/list');
+        exit();
     }
 
     public function edition($details)
     {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'impayes/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'impayes/list'); exit();
-        }
-        $this->loadView('../views/impayes/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        header('Location: ' . RACINE . 'impayes/list');
+        exit();
     }
 
     public function formulaire()
     {
-        $this->requireAuth();
-        $this->loadView('../views/impayes/edit.php', ['item' => []]);
+        header('Location: ' . RACINE . 'impayes/list');
+        exit();
     }
 
     public function changer()

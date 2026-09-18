@@ -25,7 +25,7 @@ class DepenseController extends BaseController
         }
 
         $activeYear = $this->getActiveAnneeCode();
-        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $annees = $this->getAccessibleAnnees();
         $stats = $this->model->getStats($activeYear);
 
         $typeDepenses = (new ModelTypeDepense())->getAll();

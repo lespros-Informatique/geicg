@@ -138,6 +138,11 @@ class UserController extends BaseController
             }
 
             $this->model->syncUserRoles($code_user, $rolesData);
+
+            if (!empty($_POST['annee_acces']) && is_array($_POST['annee_acces'])) {
+                $this->model->saveUserAnneeAcces($code_user, $_POST['annee_acces']);
+            }
+
             $idDisplay = $email ?: ($telephone ?: $nom);
             $this->success("Utilisateur créé avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", ['password' => $rawPassword]);
         } else {
@@ -227,6 +232,11 @@ class UserController extends BaseController
 
                 $this->model->syncUserRoles($user['code_user'], $rolesData);
             }
+
+            if (isset($_POST['annee_acces']) && is_array($_POST['annee_acces'])) {
+                $this->model->saveUserAnneeAcces($user['code_user'], $_POST['annee_acces']);
+            }
+
             $this->success('Utilisateur et permissions par rôle mis à jour avec succès !');
         } else {
             $this->error('Erreur lors de la modification de l\'utilisateur.');
@@ -283,13 +293,16 @@ class UserController extends BaseController
         $this->requirePermission('MANAGE_USERS');
         $roles = (new ModelRole())->getAll();
         $fonctions = (new ModelFonction())->getAll();
+        $allAnneesList = (new ModelAnnee())->getAll();
         $this->loadView('../views/users/edit.php', [
             'user' => [],
             'role' => [],
             'userRoles' => [],
             'userRoleCodes' => [],
             'roles' => $roles,
-            'fonctions' => $fonctions
+            'fonctions' => $fonctions,
+            'allAnneesList' => $allAnneesList,
+            'userAnneeAcces' => []
         ]);
     }
 
@@ -310,6 +323,8 @@ class UserController extends BaseController
             $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
             $roles = (new ModelRole())->getAll();
             $fonctions = (new ModelFonction())->getAll();
+            $allAnneesList = (new ModelAnnee())->getAll();
+            $userAnneeAcces = $this->model->getUserAnneeAcces($userProfile['code_user']);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'user/list');
             exit();
@@ -321,7 +336,9 @@ class UserController extends BaseController
             'userRoles' => $userRoles,
             'userRoleCodes' => $userRoleCodes,
             'roles' => $roles,
-            'fonctions' => $fonctions
+            'fonctions' => $fonctions,
+            'allAnneesList' => $allAnneesList,
+            'userAnneeAcces' => $userAnneeAcces
         ]);
     }
 

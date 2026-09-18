@@ -103,40 +103,64 @@
                 <span id="activeAnneeDisplay" style="white-space: nowrap;"><?= htmlspecialchars($activeAnneeLibelle) ?></span>
                 <i data-lucide="chevron-down" style="width: 13px; height: 13px; color: #64748B;"></i>
             </button>
-            <div class="dropdown-panel" id="anneeSwitcherPanel" style="width: 270px; padding: 12px; border-radius: 14px; box-shadow: 0 15px 35px -5px rgba(0,0,0,0.2); border: 1px solid #E2E8F0; z-index: 1050;">
+            <div class="dropdown-panel" id="anneeSwitcherPanel" style="width: 290px; padding: 12px; border-radius: 14px; box-shadow: 0 15px 35px -5px rgba(0,0,0,0.2); border: 1px solid #E2E8F0; z-index: 1050;">
                 <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 6px 8px 6px; border-bottom: 1.5px solid #F1F5F9; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <span style="display: flex; align-items: center; gap: 5px;">
                         <i data-lucide="calendar" style="width: 13px; height: 13px;"></i> Année Académique
                     </span>
-                    <span class="badge" style="background:#DCFCE7; color:#15803D; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px;">Active</span>
+                    <span class="badge" style="background:#DCFCE7; color:#15803D; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px;">Sélecteur</span>
                 </div>
-                <div style="max-height: 250px; overflow-y: auto; padding-right: 2px;">
+                <div style="max-height: 270px; overflow-y: auto; padding-right: 2px;">
                     <?php if (!empty($allAnneesNav)): ?>
+                        <?php 
+                            $userCodeNav = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+                            $userPermsNav = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+                            $hasGlobalViewNav = in_array('*', $userPermsNav, true) || in_array('VIEW_ANNEES_ANTERIEURES', $userPermsNav, true);
+                            
+                            $userAccesNav = [];
+                            if (!$hasGlobalViewNav && !empty($userCodeNav) && $dbNav) {
+                                try {
+                                    $stNav = $dbNav->prepare("SELECT annee_code, niveau_acces FROM user_annee_acces WHERE user_code = ?");
+                                    $stNav->execute([$userCodeNav]);
+                                    foreach ($stNav->fetchAll(PDO::FETCH_ASSOC) as $rNav) {
+                                        $userAccesNav[$rNav['annee_code']] = $rNav['niveau_acces'];
+                                    }
+                                } catch(Exception $e) {}
+                            }
+                        ?>
                         <?php foreach ($allAnneesNav as $anItem): ?>
                             <?php 
+                                $isCurrentActiveDb = (($anItem['statut_annee'] ?? '') === 'actif');
                                 $isSelected = ($anItem['code_annee'] === $activeAnneeCode || $anItem['libelle_annee'] === $activeAnneeLibelle);
+                                
+                                $canAccessThisYear = $isCurrentActiveDb || $hasGlobalViewNav || isset($userAccesNav[$anItem['code_annee']]);
+                                $accessLevelThisYear = $isCurrentActiveDb ? 'actif' : ($userAccesNav[$anItem['code_annee']] ?? ($hasGlobalViewNav ? 'global' : 'none'));
                             ?>
-                            <button type="button" class="btn-select-annee-item" data-code="<?= htmlspecialchars($anItem['code_annee']) ?>" data-libelle="<?= htmlspecialchars($anItem['libelle_annee']) ?>" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 8px; border: <?= $isSelected ? '1.5px solid #3B82F6' : '1px solid transparent' ?>; background: <?= $isSelected ? '#EFF6FF' : 'transparent' ?>; text-align: left; cursor: pointer; margin-bottom: 4px; transition: all 0.15s ease;">
-                                <div style="display: flex; align-items: center; gap: 9px;">
-                                    <div style="width: 26px; height: 26px; border-radius: 6px; background: <?= $isSelected ? '#DBEAFE' : '#F1F5F9' ?>; color: <?= $isSelected ? '#1E3A5F' : '#64748B' ?>; display: flex; align-items: center; justify-content: center;">
-                                        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-weight: <?= $isSelected ? '800' : '600' ?>; color: <?= $isSelected ? '#1E3A5F' : '#0F172A' ?>; font-size: 13px; line-height: 1.2;">
-                                            <?= htmlspecialchars($anItem['libelle_annee']) ?>
+                            <?php if ($canAccessThisYear): ?>
+                                <button type="button" class="btn-select-annee-item" data-code="<?= htmlspecialchars($anItem['code_annee']) ?>" data-libelle="<?= htmlspecialchars($anItem['libelle_annee']) ?>" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 8px; border: <?= $isSelected ? '1.5px solid #3B82F6' : '1px solid transparent' ?>; background: <?= $isSelected ? '#EFF6FF' : 'transparent' ?>; text-align: left; cursor: pointer; margin-bottom: 4px; transition: all 0.15s ease;">
+                                    <div style="display: flex; align-items: center; gap: 9px;">
+                                        <div style="width: 26px; height: 26px; border-radius: 6px; background: <?= $isSelected ? '#DBEAFE' : '#F1F5F9' ?>; color: <?= $isSelected ? '#1E3A5F' : '#64748B' ?>; display: flex; align-items: center; justify-content: center;">
+                                            <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
                                         </div>
-                                        <?php if (($anItem['statut_annee'] ?? '') === 'actif'): ?>
-                                            <div style="font-size: 10px; color: #16A34A; font-weight: 700;">Active par défaut</div>
-                                        <?php endif; ?>
+                                        <div>
+                                            <div style="font-weight: <?= $isSelected ? '800' : '600' ?>; color: <?= $isSelected ? '#1E3A5F' : '#0F172A' ?>; font-size: 13px; line-height: 1.2;">
+                                                <?= htmlspecialchars($anItem['libelle_annee']) ?>
+                                            </div>
+                                            <?php if ($isCurrentActiveDb): ?>
+                                                <div style="font-size: 10px; color: #16A34A; font-weight: 700;">Active en cours</div>
+                                            <?php else: ?>
+                                                <div style="font-size: 10px; color: #64748B; font-weight: 600;">Année antérieure</div>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-                                </div>
-                                <?php if ($isSelected): ?>
-                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-size: 11px; font-weight: 800;">✓</span>
-                                <?php endif; ?>
-                            </button>
+                                    <?php if ($isSelected): ?>
+                                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-size: 11px; font-weight: 800;">✓</span>
+                                    <?php endif; ?>
+                                </button>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div style="padding: 12px; font-size: 12px; color: #64748B; text-align: center;">Aucune année trouvée</div>
+                        <div style="padding: 12px; font-size: 12px; color: #64748B; text-align: center;">Aucune année disponible</div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -430,3 +454,54 @@
         </div>
     </div>
 </header>
+<?php
+  $isPastAnneeNav = false;
+  $isReadOnlyAnneeNav = false;
+
+  if (!empty($allAnneesNav)) {
+      foreach ($allAnneesNav as $aObjNav) {
+          if ($aObjNav['code_annee'] === $activeAnneeCode) {
+              if (($aObjNav['statut_annee'] ?? '') !== 'actif') {
+                  $isPastAnneeNav = true;
+              }
+              break;
+          }
+      }
+  }
+
+  if ($isPastAnneeNav) {
+      $uCodeBanner = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+      $uPermsBanner = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+      $hasEditPermBanner = in_array('*', $uPermsBanner, true) || in_array('EDIT_ANNEES_ANTERIEURES', $uPermsBanner, true);
+
+      if (!$hasEditPermBanner && !empty($uCodeBanner) && isset($dbNav)) {
+          try {
+              $stChk = $dbNav->prepare("SELECT niveau_acces FROM user_annee_acces WHERE user_code = ? AND annee_code = ? LIMIT 1");
+              $stChk->execute([$uCodeBanner, $activeAnneeCode]);
+              $lvlNav = $stChk->fetchColumn();
+              if ($lvlNav !== 'ecriture') {
+                  $isReadOnlyAnneeNav = true;
+              }
+          } catch(Exception $e) {
+              $isReadOnlyAnneeNav = true;
+          }
+      } elseif (!$hasEditPermBanner) {
+          $isReadOnlyAnneeNav = true;
+      }
+  }
+?>
+
+<?php if ($isPastAnneeNav): ?>
+  <div style="background: <?= $isReadOnlyAnneeNav ? '#FFFBEB' : '#EFF6FF' ?>; color: <?= $isReadOnlyAnneeNav ? '#B45309' : '#1E40AF' ?>; border-bottom: 1.5px solid <?= $isReadOnlyAnneeNav ? '#FCD34D' : '#93C5FD' ?>; padding: 8px 24px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; box-sizing: border-box;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i data-lucide="<?= $isReadOnlyAnneeNav ? 'lock' : 'unlock' ?>" style="width: 16px; height: 16px; flex-shrink: 0; color: <?= $isReadOnlyAnneeNav ? '#D97706' : '#2563EB' ?>;"></i>
+      <span>
+        Mode Historique (Année <?= htmlspecialchars($activeAnneeLibelle) ?>) — 
+        <?= $isReadOnlyAnneeNav ? '<strong>Lecture seule</strong> (Aucune modification autorisée sur cette année)' : '<strong>Édition / Régularisation autorisée</strong>' ?>
+      </span>
+    </div>
+    <span class="badge" style="background: <?= $isReadOnlyAnneeNav ? '#FEF3C7' : '#DBEAFE' ?>; color: <?= $isReadOnlyAnneeNav ? '#92400E' : '#1E3A5F' ?>; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
+      <?= $isReadOnlyAnneeNav ? 'Lecture Seule' : 'Mode Saisie' ?>
+    </span>
+  </div>
+<?php endif; ?>

@@ -284,27 +284,14 @@ class AnneeController extends BaseController
 
     public function edition($details)
     {
-        $this->requireAuth();
-        $this->requirePermission('MANAGE_ANNEES');
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item || ($item['statut_annee'] ?? '') === 'actif') { 
-                header('Location: ' . RACINE . 'annee/list'); 
-                exit(); 
-            }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'annee/list'); exit();
-        }
-        $this->loadView('../views/annees/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        header('Location: ' . RACINE . 'annee/list');
+        exit();
     }
 
     public function formulaire()
     {
-        $this->requireAuth();
-        $this->requirePermission('MANAGE_ANNEES');
-        $this->loadView('../views/annees/edit.php', ['item' => []]);
+        header('Location: ' . RACINE . 'annee/list');
+        exit();
     }
 
     /**

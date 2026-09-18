@@ -1,6 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$annees = (new ModelAnnee())->getAll();
+$annees = (new ModelAnnee())->getAccessibleAnnees();
 $modelAnnee = new ModelAnnee();
 $activeYearRow = $modelAnnee->getActiveYear();
 $activeAnneeCode = $_SESSION['annee_active_code'] ?? ($activeYearRow['code_annee'] ?? '');

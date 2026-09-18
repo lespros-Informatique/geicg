@@ -130,6 +130,49 @@ class ModelAnnee extends BaseModel
             return [];
         }
     }
+
+    /**
+     * Récupère la liste des années académiques accessibles pour l'utilisateur courant (identique à la navbar)
+     */
+    public function getAccessibleAnnees(): array
+    {
+        try {
+            $db = $this->getCon();
+            if (!$db) return [];
+
+            $allAnnees = $db->query("SELECT * FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if (empty($allAnnees)) return [];
+
+            $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+            $userPerms = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+            $hasGlobalView = in_array('*', $userPerms, true) || in_array('VIEW_ANNEES_ANTERIEURES', $userPerms, true);
+
+            $userAcces = [];
+            if (!$hasGlobalView && !empty($userCode)) {
+                try {
+                    $st = $db->prepare("SELECT annee_code, niveau_acces FROM user_annee_acces WHERE user_code = ?");
+                    $st->execute([$userCode]);
+                    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                        $userAcces[$r['annee_code']] = $r['niveau_acces'];
+                    }
+                } catch (Exception $e) {}
+            }
+
+            $accessible = [];
+            foreach ($allAnnees as $an) {
+                $isCurrentActiveDb = (($an['statut_annee'] ?? '') === 'actif');
+                $canAccess = $isCurrentActiveDb || $hasGlobalView || isset($userAcces[$an['code_annee']]);
+                if ($canAccess) {
+                    $accessible[] = $an;
+                }
+            }
+
+            return $accessible;
+        } catch (Exception $e) {
+            return [];
+        }
+    }
 }
+
 
 

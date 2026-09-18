@@ -11,8 +11,7 @@ class AbsenceController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission('VIEW_ABSENCES');
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
         

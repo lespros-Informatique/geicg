@@ -11,8 +11,7 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
@@ -41,8 +40,7 @@ class AccessoireController extends BaseController
         $this->requireAuth();
         $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
 
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
@@ -470,26 +468,19 @@ class AccessoireController extends BaseController
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'accessoire/list'); exit();
         }
-        $this->loadView('../views/accessoires/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        header('Location: ' . RACINE . 'accessoire/list');
+        exit();
     }
 
     public function edition($details)
     {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'accessoire/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'accessoire/list'); exit();
-        }
-        $this->loadView('../views/accessoires/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        header('Location: ' . RACINE . 'accessoire/list');
+        exit();
     }
 
     public function formulaire()
     {
-        $this->requireAuth();
-        $this->loadView('../views/accessoires/edit.php', ['item' => []]);
+        header('Location: ' . RACINE . 'accessoire/list');
+        exit();
     }
 }

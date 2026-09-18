@@ -147,4 +147,56 @@ class ModelUser extends BaseModel
             return false;
         }
     }
+
+    /**
+     * Récupère les privilèges d'accès aux années antérieures pour un utilisateur
+     * Retourne un tableau associatif : ['ANN-CODE-1' => 'lecture', 'ANN-CODE-2' => 'ecriture']
+     */
+    public function getUserAnneeAcces(string $userCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("SELECT annee_code, niveau_acces FROM user_annee_acces WHERE user_code = ?");
+            $stmt->execute([$userCode]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $res = [];
+            foreach ($rows as $r) {
+                $res[$r['annee_code']] = $r['niveau_acces'];
+            }
+            return $res;
+        } catch (Exception $e) {
+            error_log("ModelUser::getUserAnneeAcces error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Enregistre ou met à jour les privilèges d'accès aux années antérieures pour un utilisateur
+     * @param string $userCode Code de l'utilisateur
+     * @param array $accesList Tableau associatif ['annee_code' => 'lecture'|'ecriture']
+     */
+    public function saveUserAnneeAcces(string $userCode, array $accesList): bool
+    {
+        try {
+            $pdo = $this->getCon();
+            $stmtDel = $pdo->prepare("DELETE FROM user_annee_acces WHERE user_code = ?");
+            $stmtDel->execute([$userCode]);
+
+            if (empty($accesList)) {
+                return true;
+            }
+
+            $stmtIns = $pdo->prepare("INSERT INTO user_annee_acces (user_code, annee_code, niveau_acces) VALUES (?, ?, ?)");
+            foreach ($accesList as $anneeCode => $niveau) {
+                $anneeCode = trim($anneeCode);
+                $niveau = strtolower(trim($niveau));
+                if (!empty($anneeCode) && in_array($niveau, ['lecture', 'ecriture'], true)) {
+                    $stmtIns->execute([$userCode, $anneeCode, $niveau]);
+                }
+            }
+            return true;
+        } catch (Exception $e) {
+            error_log("ModelUser::saveUserAnneeAcces error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

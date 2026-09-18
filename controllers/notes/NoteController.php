@@ -11,8 +11,7 @@ class NoteController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission('VIEW_NOTES');
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
         

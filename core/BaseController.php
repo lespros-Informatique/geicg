@@ -110,6 +110,91 @@ abstract class BaseController
         }
     }
 
+    /**
+     * Vérifie si l'utilisateur courant peut consulter l'année spécifiée (ou l'année en session)
+     */
+    protected function canViewAnnee(?string $anneeCode = null): bool
+    {
+        $anneeCode = $anneeCode ?: $this->getActiveAnneeCode();
+        if (empty($anneeCode)) return true;
+
+        $activeAnnee = $this->getActiveAnnee();
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+            return true;
+        }
+
+        if ($this->hasPermission('VIEW_ANNEES_ANTERIEURES') || $this->hasPermission('*')) {
+            return true;
+        }
+
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        if (empty($userCode)) return false;
+
+        try {
+            $db = (new Database())->getCon();
+            $stmt = $db->prepare("SELECT niveau_acces FROM user_annee_acces WHERE user_code = ? AND annee_code = ? LIMIT 1");
+            $stmt->execute([$userCode, $anneeCode]);
+            $level = $stmt->fetchColumn();
+            return !empty($level) && in_array($level, ['lecture', 'ecriture'], true);
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Vérifie si l'utilisateur courant peut modifier/saisir sur l'année spécifiée (ou l'année en session)
+     */
+    protected function canEditAnnee(?string $anneeCode = null): bool
+    {
+        $anneeCode = $anneeCode ?: $this->getActiveAnneeCode();
+        if (empty($anneeCode)) return true;
+
+        $activeAnnee = $this->getActiveAnnee();
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+            return true;
+        }
+
+        if ($this->hasPermission('EDIT_ANNEES_ANTERIEURES') || $this->hasPermission('*')) {
+            return true;
+        }
+
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        if (empty($userCode)) return false;
+
+        try {
+            $db = (new Database())->getCon();
+            $stmt = $db->prepare("SELECT niveau_acces FROM user_annee_acces WHERE user_code = ? AND annee_code = ? LIMIT 1");
+            $stmt->execute([$userCode, $anneeCode]);
+            $level = $stmt->fetchColumn();
+            return $level === 'ecriture';
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Détermine si la session actuelle est sur une année antérieure en Mode Lecture Seule
+     */
+    protected function isAnneeReadOnly(?string $anneeCode = null): bool
+    {
+        $anneeCode = $anneeCode ?: $this->getActiveAnneeCode();
+        $activeAnnee = $this->getActiveAnnee();
+
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+            return false;
+        }
+
+        return !$this->canEditAnnee($anneeCode);
+    }
+
+    /**
+     * Récupère les années académiques accessibles par l'utilisateur courant (identique à la navbar)
+     */
+    protected function getAccessibleAnnees(): array
+    {
+        return (new ModelAnnee())->getAccessibleAnnees();
+    }
+
     protected function requirePost(bool $checkCsrf = true): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

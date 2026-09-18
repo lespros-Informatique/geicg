@@ -30,7 +30,7 @@ class PaiementController extends BaseController
         $dateDebut = $_GET['date_debut'] ?? null;
         $dateFin = $_GET['date_fin'] ?? null;
 
-        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $annees = $this->getAccessibleAnnees();
         $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $classes = $db->query("SELECT code_classe, libelle_classe, niveau_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -984,26 +984,13 @@ class PaiementController extends BaseController
 
     public function edition($details)
     {
-        $this->requireAuth();
-        $this->requirePermission('RECORD_PAIEMENTS');
-        try {
-            $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
-            if (!$id && is_numeric($details)) {
-                $id = (int)$details;
-            }
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'paiement/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'paiement/list'); exit();
-        }
-        $this->loadView('../views/paiements/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        header('Location: ' . RACINE . 'paiement/list');
+        exit();
     }
 
     public function formulaire()
     {
-        $this->requireAuth();
-        $this->requirePermission('RECORD_PAIEMENTS');
-        $this->loadView('../views/paiements/edit.php', ['item' => []]);
+        header('Location: ' . RACINE . 'paiement/list');
+        exit();
     }
 }

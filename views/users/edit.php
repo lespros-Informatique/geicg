@@ -124,8 +124,54 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
               <span style="font-size: 12px; color: #64748B;">Configurez les autorisations pour chaque rôle sélectionné</span>
             </div>
 
-            <div id="rolesPermissionsContainer" style="display: flex; flex-direction: column; gap: 12px;">
-              <!-- Les cartes de configuration de chaque rôle sont générées dynamiquement ici -->
+          <!-- Matrice d'Accès aux Années Antérieures -->
+          <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 28px 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 8px;">
+            <i data-lucide="calendar-clock" style="width: 18px; height: 18px; color: var(--primary-color);"></i> Accès aux Années Académiques Antérieures
+          </h3>
+          <p style="font-size: 12.5px; color: #64748B; margin-top: -10px; margin-bottom: 16px;">
+            Définissez les privilèges de consultation ou de régularisation/édition accordés à cet utilisateur sur chaque année antérieure.
+          </p>
+
+          <?php 
+            $allAnneesList = isset($allAnneesList) ? $allAnneesList : (new ModelAnnee())->getAll();
+            $userAnneeAcces = isset($userAnneeAcces) ? $userAnneeAcces : (!empty($user['code_user']) ? (new ModelUser())->getUserAnneeAcces($user['code_user']) : []);
+          ?>
+
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+              <?php foreach ($allAnneesList as $an): ?>
+                <?php 
+                  $isActif = (($an['statut_annee'] ?? '') === 'actif');
+                  $curVal = $userAnneeAcces[$an['code_annee']] ?? 'none';
+                ?>
+                <div style="background: #FFFFFF; border: 1.5px solid <?= $isActif ? '#BBF7D0' : '#E2E8F0' ?>; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div>
+                      <strong style="font-size: 14px; color: #0F172A; display: block;"><?= htmlspecialchars($an['libelle_annee']) ?></strong>
+                      <?php if ($isActif): ?>
+                        <span style="font-size: 10.5px; font-weight: 700; color: #166534; background: #DCFCE7; padding: 2px 7px; border-radius: 4px; display: inline-block; margin-top: 3px;">Année active (Accès libre)</span>
+                      <?php else: ?>
+                        <span style="font-size: 10.5px; font-weight: 600; color: #64748B; background: #F1F5F9; padding: 2px 7px; border-radius: 4px; display: inline-block; margin-top: 3px;">Année antérieure</span>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+
+                  <?php if ($isActif): ?>
+                    <div style="font-size: 12px; color: #15803D; font-weight: 600; background: #F0FDF4; padding: 8px 10px; border-radius: 6px; border: 1px solid #DCFCE7;">
+                      ✓ Accès automatique pour tous les utilisateurs
+                    </div>
+                  <?php else: ?>
+                    <div>
+                      <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">Privilège d'accès :</label>
+                      <select name="annee_acces[<?= htmlspecialchars($an['code_annee']) ?>]" class="form-control" style="width: 100%; border-radius: 8px; font-weight: 600; font-size: 13px; padding: 8px 10px; border: 1px solid #CBD5E1;">
+                        <option value="none" <?= $curVal === 'none' ? 'selected' : '' ?>>⛔ Aucun accès (Masquée)</option>
+                        <option value="lecture" <?= $curVal === 'lecture' ? 'selected' : '' ?>>👁️ Lecture seule (Consultation)</option>
+                        <option value="ecriture" <?= $curVal === 'ecriture' ? 'selected' : '' ?>>✏️ Édition (Saisie / Régularisation)</option>
+                      </select>
+                    </div>
+                  <?php endif; ?>
+                </div>
+              <?php endforeach; ?>
             </div>
           </div>
 

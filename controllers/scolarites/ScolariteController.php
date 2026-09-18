@@ -24,7 +24,7 @@ class ScolariteController extends BaseController
         }
 
         $activeYear = $this->getActiveAnneeCode();
-        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $annees = $this->getAccessibleAnnees();
 
         $stmtTot = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (annee_code = ? OR ? = '')");
         $stmtTot->execute([$activeYear, $activeYear]);
