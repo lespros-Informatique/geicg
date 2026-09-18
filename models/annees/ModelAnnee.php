@@ -90,14 +90,6 @@ class ModelAnnee extends BaseModel
             return false;
         }
 
-        $today = date('Y-m-d');
-        if ($dateFin > $today) {
-            $dateFinFr = date('d/m/Y', strtotime($dateFin));
-            $libelle = $annee['libelle_annee'] ?? '';
-            $errorMsg = "Impossible de clôturer / désactiver l'année académique {$libelle} : la date de fin ({$dateFinFr}) n'est pas encore arrivée.";
-            return false;
-        }
-
         return true;
     }
 

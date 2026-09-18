@@ -91,10 +91,14 @@ $(document).ready(function() {
       }},
       { data: null, width: '220px', orderable: false, render: function(d) {
         var isActif = (d.statut_annee === 'actif');
+        var isPlanifie = (d.statut_annee === 'planifie');
 
-        var statusBtn = isActif ?
-          '<button type="button" class="btn btn-sm btn-warning btn-activate-annee" data-id="' + d.id_annee + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer; background:#F59E0B; border-color:#F59E0B; color:#FFFFFF;" title="Clôturer cette année académique"><i data-lucide="lock" style="width:14px;height:14px;"></i> Clôturer</button>' :
-          '<button type="button" class="btn btn-sm btn-success btn-activate-annee" data-id="' + d.id_annee + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Activer cette année académique"><i data-lucide="power" style="width:14px;height:14px;"></i> Activer</button>';
+        var statusBtn = '';
+        if (isActif) {
+          statusBtn = '<button type="button" class="btn btn-sm btn-warning btn-activate-annee" data-id="' + d.id_annee + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer; background:#F59E0B; border-color:#F59E0B; color:#FFFFFF;" title="Clôturer cette année académique"><i data-lucide="lock" style="width:14px;height:14px;"></i> Clôturer</button>';
+        } else if (isPlanifie) {
+          statusBtn = '<button type="button" class="btn btn-sm btn-success btn-activate-annee" data-id="' + d.id_annee + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Activer cette année académique"><i data-lucide="power" style="width:14px;height:14px;"></i> Activer</button>';
+        }
 
         var isPlanifie = (d.statut_annee === 'planifie');
 
