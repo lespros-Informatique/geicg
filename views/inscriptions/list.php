@@ -74,7 +74,7 @@
               <option value="">-- Choisir l'année académique --</option>
               <?php foreach (($annees ?? []) as $a): ?>
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'cloture' ? ' (Clôturée)' : (($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '') ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -129,7 +129,9 @@
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
                 <th style="padding: 14px 12px; width: 45px;">#</th>
-                <th style="padding: 14px 12px;">Étudiant & Matricule</th>
+                <th style="padding: 14px 12px;">Matricule</th>
+                <th style="padding: 14px 12px;">Nom & Prénoms</th>
+                <th style="padding: 14px 12px;">Contact</th>
                 <th style="padding: 14px 12px;">Filière & Niveau Antérieur</th>
                 <th style="padding: 14px 12px;">Classe Antérieure (N-1)</th>
                 <th style="padding: 14px 12px; text-align: right;">Action</th>
@@ -169,18 +171,18 @@ $(document).ready(function() {
       { data: null, width: '45px', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
-      { data: 'nom_complet', render: function(d, type, row) {
-        var mat = row.matricule_etudiant || '-';
-        var tel = row.telephone && row.telephone !== '-' ? '<span style="color:#64748B; font-size:11.5px; margin-left:6px;"><i data-lucide="phone" style="width:11px;height:11px;display:inline-block;vertical-align:middle;"></i> ' + row.telephone + '</span>' : '';
-        
-        return '<div>' +
-               '  <div style="font-weight:800; color:#0F172A; font-size:13.5px;">' + d + '</div>' +
-               '  <div style="font-size:11.5px; color:#475569; margin-top:1px;"><code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; padding:1px 4px; border-radius:4px;">' + mat + '</code>' + tel + '</div>' +
-               '</div>';
-      } },
+      { data: 'matricule_etudiant', render: function(d) {
+        return '<code style="font-weight:800; color:#1E3A5F; background:#EFF6FF; padding:3px 7px; border-radius:6px; font-size:12px;">' + (d || '-') + '</code>';
+      }},
+      { data: 'nom_complet', render: function(d) {
+        return '<span style="font-weight:800; color:#0F172A; font-size:13.5px;">' + (d || '-') + '</span>';
+      }},
+      { data: 'telephone', render: function(d) {
+        if (!d || d === '-') return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Non renseigné</span>';
+        return '<span style="color:#334155; font-weight:700; font-size:12.5px;"><i data-lucide="phone" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:4px;color:#2563EB;"></i>' + d + '</span>';
+      }},
       { data: 'filiere_precedente', render: function(d, type, row) {
         var fil = d || 'Non définie';
-        var niv = row.niveau_precedent ? ' • ' + row.niveau_precedent : '';
         return '<div>' +
                '  <div style="font-weight:700; color:#1E3A5F; font-size:13px;">' + fil + '</div>' +
                '  <div style="font-size:11.5px; color:#64748B;">' + (row.niveau_precedent || 'Niveau non défini') + '</div>' +
@@ -204,6 +206,7 @@ $(document).ready(function() {
                '</div>';
       } }
     ],
+
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { 
       if (window.lucide) lucide.createIcons(); 

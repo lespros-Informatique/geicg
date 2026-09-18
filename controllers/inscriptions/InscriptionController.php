@@ -15,11 +15,18 @@ class InscriptionController extends BaseController
 
         $activeAnneeCode = $this->getActiveAnneeCode();
 
-        // Récupérer la liste des années accessibles (identique au sélecteur navbar)
-        $annees = $this->getAccessibleAnnees();
+        // Récupérer la liste des années académiques clôturées pour la réinscription
+        $stmtCloture = $db->query("SELECT id_annee, code_annee, libelle_annee, statut_annee FROM annees WHERE statut_annee = 'cloture' ORDER BY id_annee DESC");
+        $annees = $stmtCloture ? ($stmtCloture->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
 
-        // Année sélectionnée par défaut
-        $selectedAnneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : ($activeAnneeCode ?: ($annees[0]['code_annee'] ?? ''));
+        if (empty($annees)) {
+            $stmtFallback = $db->prepare("SELECT id_annee, code_annee, libelle_annee, statut_annee FROM annees WHERE code_annee != ? ORDER BY id_annee DESC");
+            $stmtFallback->execute([$activeAnneeCode]);
+            $annees = $stmtFallback->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        // Année sélectionnée par défaut (la plus récente des années clôturées)
+        $selectedAnneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : ($annees[0]['code_annee'] ?? '');
 
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];

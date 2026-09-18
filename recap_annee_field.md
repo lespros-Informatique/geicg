@@ -29,7 +29,7 @@ Ces interfaces intègrent une liste déroulante ou un filtre d'année académiqu
 
 | N° | Fichier Vue | Libellé / Identifiant du Champ | Nature du Champ & Rôle Fonctionnel |
 |---|---|---|---|
-| 1 | [`views/inscriptions/list.php`](file:///var/www/html/geicg/views/inscriptions/list.php#L73) | `<select id="filter-annee" class="select2">` | **Filtre Liste Inscriptions** : Permet de choisir n'importe quelle année pour consulter les étudiants inscrits. |
+| 1 | [`views/inscriptions/list.php`](file:///var/www/html/geicg/views/inscriptions/list.php#L73) | `<select id="filter-annee" class="select2">` | **Filtre Liste Réinscriptions** : Affiche la liste des années académiques clôturées (`statut_annee = 'cloture'`) pour cibler les étudiants des sessions antérieures à réinscrire. |
 | 2 | [`views/inscriptions/prise_de_vue.php`](file:///var/www/html/geicg/views/inscriptions/prise_de_vue.php#L31) | `<select id="filter-annee" class="select2">` | **Filtre Studio Photos** : Filtre interactif pour cibler la prise de vue des étudiants par année. |
 | 3 | [`views/inscriptions/sans_photo.php`](file:///var/www/html/geicg/views/inscriptions/sans_photo.php#L31) | `<select id="filter-annee" class="select2">` | **Filtre Relance Photo** : Permet de filtrer les étudiants sans photo de n'importe quelle année. |
 | 4 | [`views/inscriptions/edit.php`](file:///var/www/html/geicg/views/inscriptions/edit.php#L353) | `<select id="sel_annee_inscription" name="annee_code">` | **Formulaire Inscription / Réinscription** : Sélection dynamique de l'année d'inscription. |
