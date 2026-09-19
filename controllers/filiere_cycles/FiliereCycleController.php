@@ -40,10 +40,14 @@ class FiliereCycleController extends BaseController
         unset($data['id']);
 
         if (!empty($data['filiere_code']) && !empty($data['cycle_code'])) {
-            if (!$this->checkUniquePair('filiere_cycles', [
+            $uniqueParams = [
                 'filiere_code' => $data['filiere_code'],
                 'cycle_code' => $data['cycle_code']
-            ], 'Assignation Filière - Cycle')) return;
+            ];
+            if (!empty($data['niveau_code'])) {
+                $uniqueParams['niveau_code'] = $data['niveau_code'];
+            }
+            if (!$this->checkUniquePair('filiere_cycles', $uniqueParams, 'Assignation Parcours (Cycle - Filière - Niveau)')) return;
         }
 
         $userCode = $this->getCurrentUserCode();
@@ -63,7 +67,7 @@ class FiliereCycleController extends BaseController
         unset($filteredData['id_filiere_cycle']);
 
         if ($this->model->create($filteredData)) {
-            $this->success('Assignation Filière - Cycle créée avec succès!', RACINE . 'filiere_cycle/list');
+            $this->success('Assignation Parcours Pivot créée avec succès!', RACINE . 'filiere_cycle/list');
         } else {
             $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
                 ? $this->model->getLastError() 
@@ -83,10 +87,14 @@ class FiliereCycleController extends BaseController
         unset($data['csrf_token']);
 
         if (!empty($data['filiere_code']) && !empty($data['cycle_code'])) {
-            if (!$this->checkUniquePair('filiere_cycles', [
+            $uniqueParams = [
                 'filiere_code' => $data['filiere_code'],
                 'cycle_code' => $data['cycle_code']
-            ], 'Assignation Filière - Cycle', 'id_filiere_cycle', $id)) return;
+            ];
+            if (!empty($data['niveau_code'])) {
+                $uniqueParams['niveau_code'] = $data['niveau_code'];
+            }
+            if (!$this->checkUniquePair('filiere_cycles', $uniqueParams, 'Assignation Parcours (Cycle - Filière - Niveau)', 'id_filiere_cycle', $id)) return;
         }
 
         $userCode = $this->getCurrentUserCode();
@@ -100,7 +108,7 @@ class FiliereCycleController extends BaseController
 
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Assignation Filière - Cycle modifiée avec succès!', RACINE . 'filiere_cycle/list');
+            $this->success('Assignation Parcours Pivot modifiée avec succès!', RACINE . 'filiere_cycle/list');
         } else {
             $this->error('Erreur lors de la modification');
         }

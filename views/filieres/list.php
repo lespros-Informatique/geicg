@@ -2,6 +2,7 @@
 <?php
 $cycles = (new ModelCycle())->getByStatus('actif');
 $filieres = (new ModelFiliere())->getByStatus('actif');
+$niveaux = (new ModelNiveau())->getActifs();
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -13,16 +14,16 @@ $filieres = (new ModelFiliere())->getByStatus('actif');
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="layers" style="color: #1E3A5F; width: 24px; height: 24px;"></i> Filières & Cycles d'Études
+            <i data-lucide="layers" style="color: #1E3A5F; width: 24px; height: 24px;"></i> Offre Académique : Cycles, Filières & Niveaux
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion centralisée du Catalogue des Filières, des Cycles et de leurs Assignations</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion des Cycles, Filières, Niveaux</p>
         </div>
       </div>
 
       <!-- Barre d'Onglets Structurée -->
       <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #E2E8F0; padding-bottom: 2px; flex-wrap: wrap;">
         <button type="button" class="tab-btn active" data-tab="tab-assignations" style="padding: 10px 20px; font-weight: 700; font-size: 14px; border: none; background: transparent; color: #1E3A5F; border-bottom: 3px solid #1E3A5F; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="git-merge" style="width: 16px; height: 16px;"></i> 1. Assignations Filières - Cycles
+          <i data-lucide="git-merge" style="width: 16px; height: 16px;"></i> 1.(Cycle - Filière - Niveau)
         </button>
         <button type="button" class="tab-btn" data-tab="tab-filieres" style="padding: 10px 20px; font-weight: 700; font-size: 14px; border: none; background: transparent; color: #64748B; border-bottom: 3px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="book-open" style="width: 16px; height: 16px;"></i> 2. Catalogue des Filières
@@ -30,14 +31,17 @@ $filieres = (new ModelFiliere())->getByStatus('actif');
         <button type="button" class="tab-btn" data-tab="tab-cycles" style="padding: 10px 20px; font-weight: 700; font-size: 14px; border: none; background: transparent; color: #64748B; border-bottom: 3px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="layers" style="width: 16px; height: 16px;"></i> 3. Cycles d'Études
         </button>
+        <button type="button" class="tab-btn" data-tab="tab-niveaux" style="padding: 10px 20px; font-weight: 700; font-size: 14px; border: none; background: transparent; color: #64748B; border-bottom: 3px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="graduation-cap" style="width: 16px; height: 16px;"></i> 4. Niveaux d'Études
+        </button>
       </div>
 
-      <!-- CONTENU DU TAB 1 : ASSIGNATIONS -->
+      <!-- CONTENU DU TAB 1 : ASSIGNATIONS PARCOURS PIVOTS -->
       <div id="tab-assignations" class="tab-content" style="display: block;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-          <h2 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0;">Table d'Assignation Filières ↔ Cycles</h2>
+          <h2 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0;">Table des Parcours Pivots (Cycle ↔ Filière ↔ Niveau)</h2>
           <button type="button" class="btn btn-primary btn-add-assignation" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-            <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Nouvelle Assignation
+            <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Nouveau Parcours Pivot
           </button>
         </div>
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
@@ -49,6 +53,7 @@ $filieres = (new ModelFiliere())->getByStatus('actif');
                   <th>Code</th>
                   <th>Cycle D'Études</th>
                   <th>Filière Associée</th>
+                  <th>Niveau d'Études</th>
                   <th class="text-center">Statut</th>
                   <th class="text-end">Actions</th>
                 </tr>
@@ -116,6 +121,33 @@ $filieres = (new ModelFiliere())->getByStatus('actif');
         </div>
       </div>
 
+      <!-- CONTENU DU TAB 4 : NIVEAUX D'ÉTUDES -->
+      <div id="tab-niveaux" class="tab-content" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <h2 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0;">Référentiel des Niveaux d'Études</h2>
+          <button type="button" class="btn btn-primary btn-add-niveau" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+            <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter un Niveau
+          </button>
+        </div>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
+          <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table id="table-niveaux-list" class="table display nowrap" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">#</th>
+                  <th>Code Niveau</th>
+                  <th>Libellé du Niveau</th>
+                  <th>Sigle / Slug</th>
+                  <th class="text-center">Statut</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
@@ -156,6 +188,18 @@ $filieres = (new ModelFiliere())->getByStatus('actif');
           <option value="">-- Sélectionner une filière --</option>
           <?php foreach ($filieres as $fil): ?>
             <option value="<?= htmlspecialchars($fil['code_filiere']) ?>"><?= htmlspecialchars($fil['libelle_filiere']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Niveau d'études <span style="font-size: 11px; color: #64748B; font-weight: 500;">(Optionnel pour cibler un niveau spécifique)</span>
+        </label>
+        <select name="niveau_code" id="assign_niveau_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="">-- Tous les niveaux / Global --</option>
+          <?php foreach (($niveaux ?? []) as $niv): ?>
+            <option value="<?= htmlspecialchars($niv['code_niveau']) ?>"><?= htmlspecialchars($niv['libelle_niveau']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
@@ -317,7 +361,7 @@ $(document).ready(function() {
     $('.tab-btn[data-tab="tab-filieres"]').click();
   }
 
-  // Table 1: Assignations
+  // Table 1: Assignations Parcours Pivots
   var tableAssign = $('#table-assignations').DataTable({
     ajax: '<?= RACINE ?>filiere_cycle/apiList',
     processing: true,
@@ -329,6 +373,10 @@ $(document).ready(function() {
       { data: 'code_filiere_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_cycle', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Non défini') + '</span>'; } },
       { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>'; } },
+      { data: 'libelle_niveau', render: function(d) { 
+        if (!d) return '<span style="color:#94A3B8; font-style:italic;">Tous / Global</span>';
+        return '<span class="badge" style="background:#F1F5F9; color:#334155; border:1px solid #CBD5E1; font-weight:600; font-size:12px; padding:3px 8px; border-radius:6px;">' + d + '</span>';
+      } },
       { data: 'statut_filiere_cycle', width: '80px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');
         var checkedAttr = isActif ? 'checked' : '';
@@ -342,7 +390,7 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, className: 'text-end', render: function(d) {
-        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-assign" data-id="' + d.id_filiere_cycle + '" data-cycle="' + (d.cycle_code || '') + '" data-filiere="' + (d.filiere_code || '') + '" data-statut="' + (d.statut_filiere_cycle || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-assign" data-id="' + d.id_filiere_cycle + '" data-cycle="' + (d.cycle_code || '') + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-statut="' + (d.statut_filiere_cycle || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                '<a href="<?= RACINE ?>filiere_cycle/details/' + (d.editId || d.id_filiere_cycle) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       } }
     ],
@@ -435,12 +483,39 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
+  // Table 4: Niveaux d'Études
+  var tableNiveaux = $('#table-niveaux-list').DataTable({
+    ajax: '<?= RACINE ?>niveau/apiList',
+    processing: true,
+    autoWidth: false,
+    columns: [
+      { data: 'id_niveau', defaultContent: '-' },
+      { data: 'code_niveau', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
+      { data: 'libelle_niveau', render: function(d) { 
+        return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>';
+      } },
+      { data: 'slug_niveau', render: function(d) {
+        if (!d) return '<span style="color:#94A3B8; font-style:italic;">-</span>';
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; font-weight:800; font-size:11.5px; padding:3px 9px; border-radius:6px;">' + d + '</span>';
+      } },
+      { data: 'statut_niveau', width: '80px', className: 'text-center', render: function(d, type, row) {
+        var isActif = (d === 'actif');
+        return '<span class="badge" style="background:' + (isActif ? '#DCFCE7' : '#F1F5F9') + '; color:' + (isActif ? '#15803D' : '#64748B') + '; font-weight:700; padding:4px 10px; border-radius:6px;">' + (isActif ? 'Actif' : 'Inactif') + '</span>';
+      }},
+      { data: null, className: 'text-end', render: function(d) {
+        return '<a href="<?= RACINE ?>niveau/details/' + (d.editId || d.id_niveau) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      } }
+    ],
+    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
+    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
   // ==========================================
   // RECHARGEMENT DYNAMIQUE ET SELECT2 DES ASSIGNATIONS
   // ==========================================
   function initAssignSelect2() {
     if ($.fn.select2) {
-      $('#assign_cycle_code, #assign_filiere_code, #assign_statut').select2({
+      $('#assign_cycle_code, #assign_filiere_code, #assign_niveau_code, #assign_statut').select2({
         width: '100%',
         dropdownParent: $('#modal-assignation')
       });
@@ -482,13 +557,14 @@ $(document).ready(function() {
   $('.btn-add-assignation').on('click', function() {
     $('#form-assignation')[0].reset();
     $('#assign_id').val('');
-    $('#modal-assignation-title').html('<i data-lucide="git-merge" style="width: 18px; height: 18px;"></i> Nouvelle Assignation Filière ↔ Cycle');
+    $('#modal-assignation-title').html('<i data-lucide="git-merge" style="width: 18px; height: 18px;"></i> Nouveau Parcours Pivot (Cycle - Filière - Niveau)');
     reloadAssignSelects();
     $('#modal-assignation').css('display', 'flex');
     initAssignSelect2();
     if ($.fn.select2) {
       $('#assign_cycle_code').val('').trigger('change.select2');
       $('#assign_filiere_code').val('').trigger('change.select2');
+      $('#assign_niveau_code').val('').trigger('change.select2');
       $('#assign_statut').val('actif').trigger('change.select2');
     }
     if (window.lucide) lucide.createIcons();
@@ -498,19 +574,22 @@ $(document).ready(function() {
     var id = $(this).data('id');
     var cycle = $(this).data('cycle');
     var filiere = $(this).data('filiere');
+    var niveau = $(this).data('niveau');
     var statut = $(this).data('statut');
 
     $('#assign_id').val(id);
     $('#assign_cycle_code').val(cycle);
     $('#assign_filiere_code').val(filiere);
+    $('#assign_niveau_code').val(niveau || '');
     $('#assign_statut').val(statut || 'actif');
-    $('#modal-assignation-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l\'Assignation');
-    reloadAssignSelects(cycle, filiere);
+    $('#modal-assignation-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le Parcours Pivot');
+    reloadAssignSelects(cycle, filiere, niveau);
     $('#modal-assignation').css('display', 'flex');
     initAssignSelect2();
     if ($.fn.select2) {
       $('#assign_cycle_code').val(cycle).trigger('change.select2');
       $('#assign_filiere_code').val(filiere).trigger('change.select2');
+      $('#assign_niveau_code').val(niveau || '').trigger('change.select2');
       $('#assign_statut').val(statut || 'actif').trigger('change.select2');
     }
     if (window.lucide) lucide.createIcons();
