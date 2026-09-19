@@ -291,14 +291,9 @@
                     <i data-lucide="landmark"></i> <span>Configuration Établissement</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showFilCycles): ?>
-                <a href="<?= RACINE ?>filiere_cycle/list" class="nav-item sub <?= strpos($currentUri, '/filiere_cycle/') !== false || strpos($currentUri, '/filiere/') !== false || strpos($currentUri, '/cycle/') !== false ? 'active' : '' ?>" data-title="Filières & Cycles">
-                    <i data-lucide="layers"></i> <span>Filières & Cycles</span>
-                </a>
-                <?php endif; ?>
-                <?php if ($showNiveaux): ?>
-                <a href="<?= RACINE ?>niveau/list" class="nav-item sub <?= strpos($currentUri, '/niveau/') !== false ? 'active' : '' ?>" data-title="Niveaux d'Études">
-                    <i data-lucide="trending-up"></i> <span>Niveaux d'Études</span>
+                <?php if ($showFilCycles || $showNiveaux): ?>
+                <a href="<?= RACINE ?>filiere_cycle/list" class="nav-item sub <?= strpos($currentUri, '/filiere_cycle/') !== false || strpos($currentUri, '/filiere/') !== false || strpos($currentUri, '/cycle/') !== false || strpos($currentUri, '/niveau/') !== false ? 'active' : '' ?>" data-title="Offre Académique (Cycles, Filières & Niveaux)">
+                    <i data-lucide="layers"></i> <span>Cycles, Filières & Niveaux</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showSalles): ?>

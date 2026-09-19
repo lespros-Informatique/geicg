@@ -424,7 +424,7 @@ $(document).ready(function() {
       { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>'; } },
       { data: 'libelle_niveau', render: function(d) { 
         if (!d) return '<span style="color:#94A3B8; font-style:italic;">Tous / Global</span>';
-        return '<span class="badge" style="background:#F1F5F9; color:#334155; border:1px solid #CBD5E1; font-weight:600; font-size:12px; padding:3px 8px; border-radius:6px;">' + d + '</span>';
+        return '<span style="font-weight:700; color:#334155;">' + d + '</span>';
       } },
       { data: 'statut_filiere_cycle', width: '80px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');
