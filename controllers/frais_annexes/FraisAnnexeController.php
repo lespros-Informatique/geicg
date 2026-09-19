@@ -26,10 +26,12 @@ class FraisAnnexeController extends BaseController
 
         $activeYear = $this->getActiveAnneeCode();
         $annees = $this->getAccessibleAnnees();
+        $niveaux = (new ModelNiveau())->getActifs();
 
         $this->loadView('../views/frais_annexes/list.php', [
             'annees' => $annees,
-            'selectedAnneeCode' => $activeYear
+            'selectedAnneeCode' => $activeYear,
+            'niveaux' => $niveaux
         ]);
     }
 
@@ -52,7 +54,9 @@ class FraisAnnexeController extends BaseController
 
         $anneeCode = $this->getActiveAnneeCode();
         $typeFiliere = $_GET['type_filiere'] ?? null;
-        $items = $this->model->getAll($anneeCode, $typeFiliere);
+        $niveauCode = $_GET['niveau_code'] ?? null;
+
+        $items = $this->model->getAll($anneeCode, $typeFiliere, $niveauCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_frais_annexe'];
@@ -79,6 +83,10 @@ class FraisAnnexeController extends BaseController
 
         if (empty($data['code_frais_annexe'])) {
             $data['code_frais_annexe'] = $this->validator->generateCode('frais_annexes', 'code_frais_annexe', 'FRAIS-ANN-', 8);
+        }
+
+        if (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') {
+            $data['niveau_code'] = null;
         }
 
         $data['annee_code'] = $anneeCode;
@@ -115,6 +123,11 @@ class FraisAnnexeController extends BaseController
 
         $data = $_POST;
         unset($data['csrf_token']);
+
+        if (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') {
+            $data['niveau_code'] = null;
+        }
+
         $data['updated_at_frais_annexe'] = date('Y-m-d H:i:s');
 
         $cols = $this->model->getCon()->query("DESCRIBE frais_annexes")->fetchAll(PDO::FETCH_COLUMN);

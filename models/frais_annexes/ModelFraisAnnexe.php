@@ -7,12 +7,13 @@ class ModelFraisAnnexe extends BaseModel
     protected ?string $statusField = 'statut_frais_annexe';
     protected ?string $createdAtField = 'created_at_frais_annexe';
 
-    public function getAll(?string $anneeCode = null, ?string $typeFiliere = null): array
+    public function getAll(?string $anneeCode = null, ?string $typeFiliere = null, ?string $niveauCode = null): array
     {
         $sql = "
-            SELECT fa.*, a.libelle_annee
+            SELECT fa.*, a.libelle_annee, n.libelle_niveau
             FROM frais_annexes fa
             LEFT JOIN annees a ON fa.annee_code = a.code_annee
+            LEFT JOIN niveaux n ON fa.niveau_code = n.code_niveau
         ";
         $conditions = [];
         $params = [];
@@ -23,6 +24,10 @@ class ModelFraisAnnexe extends BaseModel
         if (!empty($typeFiliere)) {
             $conditions[] = "(fa.type_filiere = ? OR fa.type_filiere = 'TOUT')";
             $params[] = $typeFiliere;
+        }
+        if (!empty($niveauCode)) {
+            $conditions[] = "(fa.niveau_code = ? OR fa.niveau_code IS NULL OR fa.niveau_code = '')";
+            $params[] = $niveauCode;
         }
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
@@ -37,9 +42,10 @@ class ModelFraisAnnexe extends BaseModel
     public function getById(int $id): array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT fa.*, a.libelle_annee
+            SELECT fa.*, a.libelle_annee, n.libelle_niveau
             FROM frais_annexes fa
             LEFT JOIN annees a ON fa.annee_code = a.code_annee
+            LEFT JOIN niveaux n ON fa.niveau_code = n.code_niveau
             WHERE fa.id_frais_annexe = ?
             LIMIT 1
         ");
@@ -48,18 +54,35 @@ class ModelFraisAnnexe extends BaseModel
         return $row ?: [];
     }
 
-    public function getMontantByTypeFiliere(string $typeFiliere, string $anneeCode): float
+    public function getMontantByTypeFiliere(string $typeFiliere, string $anneeCode, ?string $niveauCode = null): float
     {
-        $stmt = $this->getCon()->prepare("
+        $sql = "
             SELECT montant_frais_annexe 
             FROM frais_annexes 
             WHERE statut_frais_annexe = 'actif'
               AND (type_filiere = ? OR type_filiere = 'TOUT')
               AND annee_code = ?
-            ORDER BY (CASE WHEN type_filiere = ? THEN 1 ELSE 2 END), id_frais_annexe DESC
-            LIMIT 1
-        ");
-        $stmt->execute([$typeFiliere, $anneeCode, $typeFiliere]);
+        ";
+        $params = [$typeFiliere, $anneeCode];
+
+        if (!empty($niveauCode)) {
+            $sql .= " AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '') ";
+            $params[] = $niveauCode;
+            $sql .= " ORDER BY 
+                (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END), 
+                (CASE WHEN type_filiere = ? THEN 1 ELSE 2 END), 
+                id_frais_annexe DESC ";
+            $params[] = $niveauCode;
+            $params[] = $typeFiliere;
+        } else {
+            $sql .= " ORDER BY (CASE WHEN type_filiere = ? THEN 1 ELSE 2 END), id_frais_annexe DESC ";
+            $params[] = $typeFiliere;
+        }
+
+        $sql .= " LIMIT 1 ";
+
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? (float)$row['montant_frais_annexe'] : 0.0;
     }
