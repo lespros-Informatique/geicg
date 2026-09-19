@@ -142,9 +142,13 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
         </label>
         <select id="sel_parcours_pivot" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
           <option value="">-- Sélectionner un parcours pivot --</option>
-          <?php foreach ($parcoursPivots as $p): ?>
-            <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>" data-cycle="<?= htmlspecialchars($p['libelle_cycle'] ?? '') ?>">
-              <?= htmlspecialchars($p['libelle_cycle']) ?> &rarr; <?= htmlspecialchars($p['libelle_filiere']) ?><?= !empty($p['libelle_niveau']) ? ' (' . htmlspecialchars($p['libelle_niveau']) . ')' : '' ?>
+          <?php foreach ($parcoursPivots as $p): 
+            $cSlug = !empty($p['slug_cycle']) ? $p['slug_cycle'] : $p['libelle_cycle'];
+            $fSlug = !empty($p['slug_filiere']) ? $p['slug_filiere'] : $p['libelle_filiere'];
+            $nSlug = !empty($p['slug_niveau']) ? $p['slug_niveau'] : ($p['libelle_niveau'] ?? '');
+          ?>
+            <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>" data-cycle="<?= htmlspecialchars($p['libelle_cycle'] ?? '') ?>" data-cycle-slug="<?= htmlspecialchars($cSlug) ?>" data-filiere-slug="<?= htmlspecialchars($fSlug) ?>" data-niveau-slug="<?= htmlspecialchars($nSlug) ?>">
+              <?= htmlspecialchars($cSlug) ?> &rarr; <?= htmlspecialchars($fSlug) ?><?= !empty($nSlug) ? ' (' . htmlspecialchars($nSlug) . ')' : '' ?>
             </option>
           <?php endforeach; ?>
         </select>
@@ -557,7 +561,7 @@ $(document).ready(function() {
     var $opt = $(this).find('option:selected');
     var filiereCode = $opt.data('filiere') || '';
     var niveauCode = $opt.data('niveau') || '';
-    var cycleName = $opt.data('cycle') || '';
+    var cycleName = $opt.data('cycle-slug') || $opt.data('cycle') || '';
 
     $('#classe_filiere').val(filiereCode);
     if ($.fn.select2) $('#classe_filiere').trigger('change.select2');

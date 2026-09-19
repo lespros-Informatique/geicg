@@ -29,7 +29,10 @@ class ClasseController extends BaseController
 
         // Récupérer la liste des combinaisons pivots Cycle - Filière - Niveau
         $parcoursPivots = $db->query("
-            SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau
+            SELECT fc.*, 
+                   f.libelle_filiere, f.slug_filiere,
+                   c.libelle_cycle, c.slug_cycle,
+                   n.libelle_niveau, n.slug_niveau
             FROM filiere_cycles fc
             LEFT JOIN filieres f ON f.code_filiere = fc.filiere_code
             LEFT JOIN cycles c ON c.code_cycle = fc.cycle_code
