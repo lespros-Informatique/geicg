@@ -56,6 +56,15 @@ class FiliereCycleController extends BaseController
         if (empty($data['code_filiere_cycle'])) {
             $data['code_filiere_cycle'] = $this->validator->generateCode('filiere_cycles', 'code_filiere_cycle', 'FCYC-', 8);
         }
+
+        // Auto-déduction du type de filière depuis le catalogue des filières si non renseigné
+        if ((empty($data['type_filiere']) || $data['type_filiere'] === 'AUTO') && !empty($data['filiere_code'])) {
+            $stmtF = $this->model->getCon()->prepare("SELECT type_filiere FROM filieres WHERE code_filiere = ? LIMIT 1");
+            $stmtF->execute([$data['filiere_code']]);
+            $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
+            $data['type_filiere'] = $fRow['type_filiere'] ?? null;
+        }
+
         $data['statut_filiere_cycle'] = $data['statut_filiere_cycle'] ?? 'actif';
         $data['created_at_filiere_cycle'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE filiere_cycles")->fetchAll(PDO::FETCH_COLUMN);
@@ -95,6 +104,14 @@ class FiliereCycleController extends BaseController
                 $uniqueParams['niveau_code'] = $data['niveau_code'];
             }
             if (!$this->checkUniquePair('filiere_cycles', $uniqueParams, 'Assignation Parcours (Cycle - Filière - Niveau)', 'id_filiere_cycle', $id)) return;
+        }
+
+        // Auto-déduction du type de filière depuis le catalogue des filières si non renseigné
+        if ((empty($data['type_filiere']) || $data['type_filiere'] === 'AUTO') && !empty($data['filiere_code'])) {
+            $stmtF = $this->model->getCon()->prepare("SELECT type_filiere FROM filieres WHERE code_filiere = ? LIMIT 1");
+            $stmtF->execute([$data['filiere_code']]);
+            $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
+            $data['type_filiere'] = $fRow['type_filiere'] ?? null;
         }
 
         $userCode = $this->getCurrentUserCode();

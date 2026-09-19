@@ -23,7 +23,8 @@ class ModelFiliereCycle
     public function getAll()
     {
         $sql = "
-            SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau 
+            SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau,
+                   COALESCE(fc.type_filiere, f.type_filiere) AS type_filiere
             FROM filiere_cycles fc
             LEFT JOIN filieres f ON fc.filiere_code = f.code_filiere
             LEFT JOIN cycles c ON fc.cycle_code = c.code_cycle
@@ -36,7 +37,8 @@ class ModelFiliereCycle
     public function getById($id)
     {
         $stmt = $this->con->prepare("
-            SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau 
+            SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau,
+                   COALESCE(fc.type_filiere, f.type_filiere) AS type_filiere
             FROM filiere_cycles fc
             LEFT JOIN filieres f ON fc.filiere_code = f.code_filiere
             LEFT JOIN cycles c ON fc.cycle_code = c.code_cycle

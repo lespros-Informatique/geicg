@@ -53,6 +53,7 @@ $niveaux = (new ModelNiveau())->getActifs();
                   <th>Code</th>
                   <th>Cycle D'Études</th>
                   <th>Filière Associée</th>
+                  <th>Type Filière</th>
                   <th>Niveau d'Études</th>
                   <th class="text-center">Statut</th>
                   <th class="text-end">Actions</th>
@@ -189,6 +190,17 @@ $niveaux = (new ModelNiveau())->getActifs();
           <?php foreach ($filieres as $fil): ?>
             <option value="<?= htmlspecialchars($fil['code_filiere']) ?>"><?= htmlspecialchars($fil['libelle_filiere']) ?></option>
           <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Type de Filière <span style="font-size: 11px; color: #64748B; font-weight: 500;">(Optionnel, déduit de la filière si 'Automatique')</span>
+        </label>
+        <select name="type_filiere" id="assign_type_filiere" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="AUTO">-- Automatique (Déduit du catalogue) --</option>
+          <option value="INDUSTRIELLE">Filière Industrielle</option>
+          <option value="TERTIAIRE">Filière Tertiaire</option>
         </select>
       </div>
 
@@ -422,6 +434,11 @@ $(document).ready(function() {
       { data: 'code_filiere_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_cycle', render: function(d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || 'Non défini') + '</span>'; } },
       { data: 'libelle_filiere', render: function(d) { return '<span style="font-weight:700; color:#0F172A;">' + (d || 'Non défini') + '</span>'; } },
+      { data: 'type_filiere', render: function(d) {
+        if (d === 'INDUSTRIELLE') return '<span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Industrielle</span>';
+        if (d === 'TERTIAIRE') return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tertiaire</span>';
+        return '<span style="color:#94A3B8; font-style:italic; font-size:11px;">Non spécifié</span>';
+      }},
       { data: 'libelle_niveau', render: function(d) { 
         if (!d) return '<span style="color:#94A3B8; font-style:italic;">Tous / Global</span>';
         return '<span style="font-weight:700; color:#334155;">' + d + '</span>';
@@ -439,7 +456,7 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, className: 'text-end', render: function(d) {
-        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-assign" data-id="' + d.id_filiere_cycle + '" data-cycle="' + (d.cycle_code || '') + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-statut="' + (d.statut_filiere_cycle || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-assign" data-id="' + d.id_filiere_cycle + '" data-cycle="' + (d.cycle_code || '') + '" data-filiere="' + (d.filiere_code || '') + '" data-type-filiere="' + (d.type_filiere || 'AUTO') + '" data-niveau="' + (d.niveau_code || '') + '" data-statut="' + (d.statut_filiere_cycle || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                '<a href="<?= RACINE ?>filiere_cycle/details/' + (d.editId || d.id_filiere_cycle) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       } }
     ],
@@ -577,7 +594,7 @@ $(document).ready(function() {
   // ==========================================
   function initAssignSelect2() {
     if ($.fn.select2) {
-      $('#assign_cycle_code, #assign_filiere_code, #assign_niveau_code, #assign_statut').select2({
+      $('#assign_cycle_code, #assign_filiere_code, #assign_type_filiere, #assign_niveau_code, #assign_statut').select2({
         width: '100%',
         dropdownParent: $('#modal-assignation')
       });
@@ -626,6 +643,7 @@ $(document).ready(function() {
     if ($.fn.select2) {
       $('#assign_cycle_code').val('').trigger('change.select2');
       $('#assign_filiere_code').val('').trigger('change.select2');
+      $('#assign_type_filiere').val('AUTO').trigger('change.select2');
       $('#assign_niveau_code').val('').trigger('change.select2');
       $('#assign_statut').val('actif').trigger('change.select2');
     }
@@ -636,12 +654,14 @@ $(document).ready(function() {
     var id = $(this).data('id');
     var cycle = $(this).data('cycle');
     var filiere = $(this).data('filiere');
+    var typeFiliere = $(this).data('type-filiere');
     var niveau = $(this).data('niveau');
     var statut = $(this).data('statut');
 
     $('#assign_id').val(id);
     $('#assign_cycle_code').val(cycle);
     $('#assign_filiere_code').val(filiere);
+    $('#assign_type_filiere').val(typeFiliere || 'AUTO');
     $('#assign_niveau_code').val(niveau || '');
     $('#assign_statut').val(statut || 'actif');
     $('#modal-assignation-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le Parcours Pivot');
@@ -651,6 +671,7 @@ $(document).ready(function() {
     if ($.fn.select2) {
       $('#assign_cycle_code').val(cycle).trigger('change.select2');
       $('#assign_filiere_code').val(filiere).trigger('change.select2');
+      $('#assign_type_filiere').val(typeFiliere || 'AUTO').trigger('change.select2');
       $('#assign_niveau_code').val(niveau || '').trigger('change.select2');
       $('#assign_statut').val(statut || 'actif').trigger('change.select2');
     }
