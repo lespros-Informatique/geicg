@@ -111,14 +111,15 @@ class ModelClasse extends BaseModel
             
             $stmtInsert = $db->prepare("
                 INSERT INTO classes 
-                (code_classe, libelle_classe, capacite_max_classe, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
+                (code_classe, libelle_classe, capacite_max_classe, cycle_code, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
             ");
             
             $inserted = $stmtInsert->execute([
                 $newCode,
                 $cls['libelle_classe'],
                 $cls['capacite_max_classe'],
+                $cls['cycle_code'] ?? null,
                 $cls['filiere_code'],
                 $etabCode ?: $cls['etablissement_code'],
                 $cls['niveau_code'],

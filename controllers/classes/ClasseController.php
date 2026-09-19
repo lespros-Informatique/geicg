@@ -68,12 +68,14 @@ class ClasseController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
 
         $sql = "SELECT c.*, 
-                       f.libelle_filiere,
-                       n.libelle_niveau,
+                       f.libelle_filiere, f.slug_filiere,
+                       n.libelle_niveau, n.slug_niveau,
+                       cy.libelle_cycle, cy.slug_cycle,
                        a.libelle_annee
                 FROM classes c
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN cycles cy ON cy.code_cycle = c.cycle_code
                 LEFT JOIN annees a ON a.code_annee = c.annee_code
                 WHERE (c.annee_code = ? OR ? = '')
                 ORDER BY c.id_classe DESC";
@@ -99,6 +101,20 @@ class ClasseController extends BaseController
         $this->requirePermission('MANAGE_CLASSES');
         $data = $_POST;
         unset($data['csrf_token']);
+
+        // Déduction automatique de cycle_code depuis filiere_cycles si non fourni
+        if (empty($data['cycle_code']) && !empty($data['filiere_code'])) {
+            $stmtCy = $this->model->getCon()->prepare("
+                SELECT cycle_code FROM filiere_cycles 
+                WHERE filiere_code = ? AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '') 
+                LIMIT 1
+            ");
+            $stmtCy->execute([$data['filiere_code'], $data['niveau_code'] ?? '']);
+            $cyCode = $stmtCy->fetchColumn();
+            if ($cyCode) {
+                $data['cycle_code'] = $cyCode;
+            }
+        }
 
         // Génération automatique intelligente de secours si le champ libelle_classe est vide
         if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
@@ -158,6 +174,20 @@ class ClasseController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
+        // Déduction automatique de cycle_code depuis filiere_cycles si non fourni
+        if (empty($data['cycle_code']) && !empty($data['filiere_code'])) {
+            $stmtCy = $this->model->getCon()->prepare("
+                SELECT cycle_code FROM filiere_cycles 
+                WHERE filiere_code = ? AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '') 
+                LIMIT 1
+            ");
+            $stmtCy->execute([$data['filiere_code'], $data['niveau_code'] ?? '']);
+            $cyCode = $stmtCy->fetchColumn();
+            if ($cyCode) {
+                $data['cycle_code'] = $cyCode;
+            }
+        }
 
         // Génération automatique intelligente de secours si le champ libelle_classe est vide
         if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {

@@ -102,6 +102,7 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
     <form id="form-classe" style="padding: 24px;">
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       <input type="hidden" name="id_classe" id="classe_id" value="">
+      <input type="hidden" name="cycle_code" id="classe_cycle_code" value="">
 
       <!-- LIGNE 1 : ANNÉE ACADÉMIQUE ET CAPACITÉ D'ACCUEIL (2 COLONNES) -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
@@ -147,7 +148,7 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
             $fSlug = !empty($p['slug_filiere']) ? $p['slug_filiere'] : $p['libelle_filiere'];
             $nSlug = !empty($p['slug_niveau']) ? $p['slug_niveau'] : ($p['libelle_niveau'] ?? '');
           ?>
-            <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>" data-cycle="<?= htmlspecialchars($p['libelle_cycle'] ?? '') ?>" data-cycle-slug="<?= htmlspecialchars($cSlug) ?>" data-filiere-slug="<?= htmlspecialchars($fSlug) ?>" data-niveau-slug="<?= htmlspecialchars($nSlug) ?>">
+            <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>" data-cycle="<?= htmlspecialchars($p['libelle_cycle'] ?? '') ?>" data-cycle-code="<?= htmlspecialchars($p['cycle_code'] ?? '') ?>" data-cycle-slug="<?= htmlspecialchars($cSlug) ?>" data-filiere-slug="<?= htmlspecialchars($fSlug) ?>" data-niveau-slug="<?= htmlspecialchars($nSlug) ?>">
               <?= htmlspecialchars($cSlug) ?> &rarr; <?= htmlspecialchars($fSlug) ?><?= !empty($nSlug) ? ' (' . htmlspecialchars($nSlug) . ')' : '' ?>
             </option>
           <?php endforeach; ?>
@@ -561,6 +562,7 @@ $(document).ready(function() {
     var $opt = $(this).find('option:selected');
     var filiereCode = $opt.data('filiere') || '';
     var niveauCode = $opt.data('niveau') || '';
+    var cycleCode = $opt.data('cycle-code') || '';
     var cycleName = $opt.data('cycle-slug') || $opt.data('cycle') || '';
 
     $('#classe_filiere').val(filiereCode);
@@ -569,6 +571,7 @@ $(document).ready(function() {
     $('#classe_niveau').val(niveauCode);
     if ($.fn.select2) $('#classe_niveau').trigger('change.select2');
 
+    $('#classe_cycle_code').val(cycleCode);
     $('#classe_cycle').val(cycleName);
     autoGenerateLibelleClasse();
   });
