@@ -31,6 +31,7 @@ require_once __DIR__ . '/../models/matieres/ModelMatiere.php';
 
 // Scolarité & Finances Models
 require_once __DIR__ . '/../models/scolarites/ModelScolarite.php';
+require_once __DIR__ . '/../models/frais_annexes/ModelFraisAnnexe.php';
 require_once __DIR__ . '/../models/tranches_scolarite/ModelTranche.php';
 require_once __DIR__ . '/../models/paiements/ModelPaiement.php';
 require_once __DIR__ . '/../models/sessions_caisse/ModelSessionCaisse.php';
@@ -82,6 +83,7 @@ require_once __DIR__ . '/../controllers/salles/SalleController.php';
 
 // Finance & Scolarité Controllers
 require_once __DIR__ . '/../controllers/scolarites/ScolariteController.php';
+require_once __DIR__ . '/../controllers/frais_annexes/FraisAnnexeController.php';
 require_once __DIR__ . '/../controllers/tranches_scolarite/TrancheController.php';
 require_once __DIR__ . '/../controllers/paiements/PaiementController.php';
 require_once __DIR__ . '/../controllers/sessions_caisse/SessionCaisseController.php';

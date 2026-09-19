@@ -16,6 +16,7 @@ $classeController = new ClasseController();
 $semestreController = new SemestreController();
 $matiereController = new MatiereController();
 $scolariteController = new ScolariteController();
+$fraisAnnexeController = new FraisAnnexeController();
 $trancheController = new TrancheController();
 $etudiantController = new EtudiantController();
 $parentController = new ParentController();
@@ -193,6 +194,19 @@ $route->addRoute('/scolarite/changer', [$scolariteController, 'changer']);
 $route->addRoute('/scolarite/details/{param}', [$scolariteController, 'details']);
 $route->addRoute('/scolarite/edition/{param}', [$scolariteController, 'edition']);
 $route->addRoute('/scolarite/formulaire', [$scolariteController, 'formulaire']);
+
+// Module: frais_annexe (FraisAnnexeController)
+$route->addRoute('/fraisAnnexe/list', [$fraisAnnexeController, 'list']);
+$route->addRoute('/frais_annexe/list', [$fraisAnnexeController, 'list']);
+$route->addRoute('/fraisAnnexe/apiList', [$fraisAnnexeController, 'apiList']);
+$route->addRoute('/frais_annexe/apiList', [$fraisAnnexeController, 'apiList']);
+$route->addRoute('/fraisAnnexe/store', [$fraisAnnexeController, 'store']);
+$route->addRoute('/frais_annexe/store', [$fraisAnnexeController, 'store']);
+$route->addRoute('/fraisAnnexe/add', [$fraisAnnexeController, 'store']);
+$route->addRoute('/fraisAnnexe/edit', [$fraisAnnexeController, 'edit']);
+$route->addRoute('/frais_annexe/edit', [$fraisAnnexeController, 'edit']);
+$route->addRoute('/fraisAnnexe/toggleStatut', [$fraisAnnexeController, 'toggleStatut']);
+$route->addRoute('/frais_annexe/toggleStatut', [$fraisAnnexeController, 'toggleStatut']);
 
 // Module: tranche (TrancheController)
 $route->addRoute('/tranche/list', [$trancheController, 'list']);

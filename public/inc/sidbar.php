@@ -436,6 +436,11 @@
                     <i data-lucide="receipt"></i> <span>Scolarités & Échéanciers</span>
                 </a>
                 <?php endif; ?>
+                <?php if ($canAccess(['MANAGE_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE'])): ?>
+                <a href="<?= RACINE ?>fraisAnnexe/list" class="nav-item sub <?= strpos($currentUri, '/fraisAnnexe/') !== false ? 'active' : '' ?>" data-title="Grille Frais Annexes">
+                    <i data-lucide="package-check"></i> <span>Grille Frais Annexes</span>
+                </a>
+                <?php endif; ?>
                 <?php if ($showPaiements): ?>
                 <a href="<?= RACINE ?>paiement/list" class="nav-item sub <?= strpos($currentUri, '/paiement/') !== false ? 'active' : '' ?>" data-title="Caisse & Encaissements">
                     <i data-lucide="credit-card"></i> <span>Caisse & Encaissements</span>

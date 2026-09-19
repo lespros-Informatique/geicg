@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
 $item = isset($item) ? $item : [];
-$prix = (float)($item['prix_accessoire'] ?? ($item['montant_accessoire'] ?? 0));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -38,9 +37,16 @@ $prix = (float)($item['prix_accessoire'] ?? ($item['montant_accessoire'] ?? 0));
           </div>
 
           <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Tarif / Prix Unitaire</span>
-            <div style="font-size: 24px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= number_format($prix, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Montant facturé à l'inscription</div>
+            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Public Cible (Filières)</span>
+            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-top: 6px;">
+              <?php 
+                $tf = $item['type_filiere_cible'] ?? 'TOUT';
+                if ($tf === 'INDUSTRIELLE') echo '<span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 12px; border-radius:6px; font-weight:800;">Filière Industrielle</span>';
+                elseif ($tf === 'TERTIAIRE') echo '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 12px; border-radius:6px; font-weight:800;">Filière Tertiaire</span>';
+                else echo '<span class="badge" style="background:#F1F5F9; color:#475569; padding:4px 12px; border-radius:6px; font-weight:800;">Toutes Filières</span>';
+              ?>
+            </div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Attribution automatique selon la classe</div>
           </div>
 
           <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">

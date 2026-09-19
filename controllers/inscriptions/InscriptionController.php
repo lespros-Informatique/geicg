@@ -415,9 +415,9 @@ class InscriptionController extends BaseController
 
         $db = $this->model->getCon();
 
-        // Récupérer la classe avec ses libellés filière, niveau et année
+        // Récupérer la classe avec ses libellés filière, type de filière, niveau et année
         $stmtCl = $db->prepare("
-            SELECT c.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee 
+            SELECT c.*, f.libelle_filiere, f.type_filiere, n.libelle_niveau, a.libelle_annee 
             FROM classes c
             LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
             LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
@@ -434,6 +434,7 @@ class InscriptionController extends BaseController
         }
 
         $filiereCode = $classe['filiere_code'] ?? '';
+        $typeFiliere = $classe['type_filiere'] ?? 'INDUSTRIELLE';
         $niveauCode = $classe['niveau_code'] ?? '';
         $classAnneeCode = $classe['annee_code'] ?? '';
         $activeAnneeCode = !empty($anneeCodeReq) ? $anneeCodeReq : ($classAnneeCode ?: $this->getActiveAnneeCode());
@@ -508,6 +509,10 @@ class InscriptionController extends BaseController
             $dateLimiteTranche = $firstTranche['date_limite_formatee'];
         }
 
+        // 3. Récupérer le tarif officiel des Frais Annexes depuis la table dédiée `frais_annexes`
+        $modelFraisAnnexe = new ModelFraisAnnexe();
+        $totalFraisAnnexes = $modelFraisAnnexe->getMontantByTypeFiliere($typeFiliere, $activeAnneeCode);
+
         $this->json([
             'status' => 1,
             'data' => [
@@ -515,6 +520,8 @@ class InscriptionController extends BaseController
                 'libelle_classe' => $classe['libelle_classe'],
                 'filiere_code' => $filiereCode,
                 'libelle_filiere' => $classe['libelle_filiere'] ?? '',
+                'type_filiere' => $typeFiliere,
+                'libelle_type_filiere' => ($typeFiliere === 'INDUSTRIELLE') ? 'Filière Industrielle' : 'Filière Tertiaire',
                 'niveau_code' => $niveauCode,
                 'libelle_niveau' => $classe['libelle_niveau'] ?? '',
                 'annee_code' => $activeAnneeCode,
@@ -527,7 +534,10 @@ class InscriptionController extends BaseController
                 'libelle_premiere_tranche' => $libellePremiereTranche,
                 'date_limite_tranche' => $dateLimiteTranche,
                 'nombre_tranches' => count($tranches),
-                'tranches' => $tranches
+                'tranches' => $tranches,
+                'accessoires_cibles' => $accessoiresCibles,
+                'total_frais_annexes' => $totalFraisAnnexes,
+                'total_frais_annexes_formate' => number_format($totalFraisAnnexes, 0, ',', ' ') . ' FCFA'
             ]
         ]);
     }

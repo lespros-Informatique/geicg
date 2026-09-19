@@ -145,8 +145,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code</th>
-                <th style="padding: 12px;">Désignation du Kit</th>
-                <th style="padding: 12px;">Statut</th>
+                <th style="padding: 12px;">Désignation du Kit / Article</th>
+                <th style="padding: 12px;">Cible Filière</th>
+                <th style="padding: 12px;" class="text-center">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -289,9 +290,13 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Prix Unitaire (FCFA) <span style="color: #EF4444;">*</span>
+          Public Cible (Type de Filière) <span style="color: #EF4444;">*</span>
         </label>
-        <input type="number" min="0" step="any" name="prix_accessoire" id="acc_type_prix" required placeholder="Ex: 25000" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+        <select name="type_filiere_cible" id="acc_type_filiere_cible" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="TOUT">Toutes les Filières (Général)</option>
+          <option value="INDUSTRIELLE">Filière Industrielle uniquement (Ex: IDA, RIT...)</option>
+          <option value="TERTIAIRE">Filière Tertiaire uniquement (Ex: RHCOM, GEC...)</option>
+        </select>
       </div>
 
       <div class="form-group" style="margin-bottom: 24px;">
@@ -468,6 +473,11 @@ $(document).ready(function() {
           { data: 'libelle_accessoire', render: function(d) {
             return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
           }},
+          { data: 'type_filiere_cible', render: function(d) {
+            if (d === 'INDUSTRIELLE') return '<span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Industrielle</span>';
+            if (d === 'TERTIAIRE') return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tertiaire</span>';
+            return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Toutes Filières</span>';
+          }},
           { data: 'statut_accessoire', width: '80px', className: 'text-center', render: function(d, type, row) {
             var isActif = (d === 'actif');
             var checkedAttr = isActif ? 'checked' : '';
@@ -482,7 +492,7 @@ $(document).ready(function() {
           }},
           { data: null, width: '160px', orderable: false, render: function(d) {
             var safeLibelle = $('<div>').text(d.libelle_accessoire || '').html();
-            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-prix="' + (d.prix_accessoire || '') + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
+            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-filiere-cible="' + (d.type_filiere_cible || 'TOUT') + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                    '<a href="' + window.RACINE + 'accessoire/details/' + (d.editId || d.id_accessoire) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
           }, className: 'text-end' }
         ],
@@ -501,6 +511,7 @@ $(document).ready(function() {
   $(document).on('click', '.btn-add-acc-type', function() {
     $('#form-accessoire-type')[0].reset();
     $('#acc_type_id').val('');
+    $('#acc_type_filiere_cible').val('TOUT');
     $('#modal-accessoire-type-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Type de Kit / Article');
     $('#modal-accessoire-type').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
@@ -511,12 +522,12 @@ $(document).ready(function() {
   $(document).on('click', '.btn-edit-acc-type', function() {
     var id = $(this).data('id');
     var libelle = $(this).data('libelle');
-    var prix = $(this).data('prix');
+    var filiereCible = $(this).data('filiere-cible');
     var statut = $(this).data('statut');
 
     $('#acc_type_id').val(id);
     $('#acc_type_libelle').val(libelle);
-    $('#acc_type_prix').val(prix);
+    $('#acc_type_filiere_cible').val(filiereCible || 'TOUT');
     $('#acc_type_statut').val(statut || 'actif');
     $('#modal-accessoire-type-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le Type de Kit');
     $('#modal-accessoire-type').css('display', 'flex');
