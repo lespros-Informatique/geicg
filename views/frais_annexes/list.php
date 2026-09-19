@@ -174,8 +174,16 @@ $(document).ready(function() {
                '</div>';
       }},
       { data: null, width: '120px', orderable: false, render: function(d) {
-        var safeLibelle = $('<div>').text(d.libelle_frais_annexe || '').html();
-        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-frais" data-id="' + d.id_frais_annexe + '" data-libelle="' + safeLibelle + '" data-type-filiere="' + (d.type_filiere || 'TOUT') + '" data-montant="' + (d.montant_frais_annexe || '0') + '" data-statut="' + (d.statut_frais_annexe || 'actif') + '" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
+        var safeLib = (d.libelle_frais_annexe || '').replace(/"/g, '&quot;');
+        var fid = d.id_frais_annexe || d.id || '';
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-frais" ' +
+               'data-id="' + fid + '" ' +
+               'data-libelle="' + safeLib + '" ' +
+               'data-type-filiere="' + (d.type_filiere || 'TOUT') + '" ' +
+               'data-montant="' + (d.montant_frais_annexe || '0') + '" ' +
+               'data-statut="' + (d.statut_frais_annexe || 'actif') + '" ' +
+               'style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">' +
+               '<i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
       }, className: 'text-end' }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
@@ -198,14 +206,17 @@ $(document).ready(function() {
 
   // Modal : Éditer
   $(document).on('click', '.btn-edit-frais', function() {
-    var id = $(this).data('id');
-    var libelle = $(this).data('libelle');
-    var typeFiliere = $(this).data('type-filiere');
-    var montant = $(this).data('montant');
-    var statut = $(this).data('statut');
+    var $btn = $(this);
+    var id = $btn.attr('data-id') || $btn.data('id');
+    var libelle = $btn.attr('data-libelle') || $btn.data('libelle');
+    var typeFiliere = $btn.attr('data-type-filiere') || $btn.data('typeFiliere') || $btn.data('type-filiere');
+    var montant = $btn.attr('data-montant') || $btn.data('montant');
+    var statut = $btn.attr('data-statut') || $btn.data('statut');
+
+    var decLib = $('<div>').html(libelle || '').text();
 
     $('#frais_annexe_id').val(id);
-    $('#frais_libelle').val(libelle);
+    $('#frais_libelle').val(decLib || libelle);
     $('#frais_type_filiere').val(typeFiliere || 'TOUT');
     $('#frais_montant').val(montant);
     $('#frais_statut').val(statut || 'actif');
@@ -214,33 +225,62 @@ $(document).ready(function() {
     if (window.lucide) lucide.createIcons();
   });
 
-  // Fermer modal
-  $('.btn-close-modal-frais').on('click', function() {
-    $('#modal-frais-annexe').hide();
+  // Fermer modal via bouton (croix ou Annuler)
+  $(document).on('click', '.btn-close-modal-frais', function() {
+    $('#modal-frais-annexe').css('display', 'none');
   });
+
+  // Fermer modal en cliquant sur l'arrière-plan (backdrop)
+  $(document).on('click', '#modal-frais-annexe', function(e) {
+    if ($(e.target).is('#modal-frais-annexe')) {
+      $(this).css('display', 'none');
+    }
+  });
+
+  // Helper de notification
+  function notify(msg, type) {
+    if (typeof showToast === 'function') {
+      showToast(msg, type);
+    } else if (window.toastr && typeof toastr[type] === 'function') {
+      toastr[type](msg);
+    } else {
+      alert(msg);
+    }
+  }
 
   // Soumission Formulaire
   $('#form-frais-annexe').on('submit', function(e) {
     e.preventDefault();
     var isEdit = $('#frais_annexe_id').val() !== '';
     var targetUrl = isEdit ? '<?= RACINE ?>fraisAnnexe/edit' : '<?= RACINE ?>fraisAnnexe/store';
+    var $btn = $('#btn-save-frais');
+
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Enregistrement...');
 
     $.ajax({
       url: targetUrl,
       type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
       data: $(this).serialize(),
       dataType: 'json',
       success: function(res) {
-        if (res.status === 1) {
-          toastr.success(res.message);
-          $('#modal-frais-annexe').hide();
-          tableFrais.ajax.reload();
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+
+        if (res.status === 1 || res.success) {
+          notify(res.message || 'Opération réussie avec succès !', 'success');
+          $('#modal-frais-annexe').css('display', 'none');
+          tableFrais.ajax.reload(null, false);
         } else {
-          toastr.error(res.message || 'Erreur survenue');
+          notify(res.message || 'Erreur lors de l\'enregistrement', 'error');
         }
       },
-      error: function() {
-        toastr.error('Erreur de communication avec le serveur.');
+      error: function(xhr, status, err) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+
+        var msg = xhr.responseJSON?.message || err || 'Erreur lors de l\'enregistrement';
+        notify(msg, 'error');
       }
     });
   });
@@ -255,15 +295,14 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1) {
-          toastr.success(res.message);
-          tableFrais.ajax.reload(null, false);
+          notify(res.message, 'success');
         } else {
-          toastr.error(res.message);
-          tableFrais.ajax.reload(null, false);
+          notify(res.message, 'error');
         }
+        tableFrais.ajax.reload(null, false);
       },
       error: function() {
-        toastr.error('Erreur serveur lors du changement de statut');
+        notify('Erreur serveur lors du changement de statut', 'error');
         tableFrais.ajax.reload(null, false);
       }
     });

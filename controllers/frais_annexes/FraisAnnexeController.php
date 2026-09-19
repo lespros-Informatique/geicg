@@ -102,9 +102,14 @@ class FraisAnnexeController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission(['MANAGE_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE']);
-        $id = (int)$this->post('id_frais_annexe');
+        
+        $rawId = $this->post('id_frais_annexe');
+        $id = (int)$rawId;
+        if (!$id && !empty($rawId)) {
+            $id = (int)$this->validator->decrypter($rawId);
+        }
         if (!$id) {
-            $this->error('Identifiant invalide');
+            $this->error('Identifiant invalide pour la modification');
             return;
         }
 
@@ -118,7 +123,10 @@ class FraisAnnexeController extends BaseController
         if ($this->model->update($filteredData, $id)) {
             $this->success("Tarif de frais annexes modifié avec succès !");
         } else {
-            $this->error("Erreur lors de la modification du tarif de frais annexes.");
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : "Erreur lors de la modification du tarif de frais annexes.";
+            $this->error($msg);
         }
     }
 
