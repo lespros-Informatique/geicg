@@ -149,17 +149,21 @@ class FiliereCycleController extends BaseController
                 return;
             }
 
-            // Classes liées à cette filière
+            // Classes liées à ce parcours pivot (Cycle - Filière - Niveau)
             $stmtClasses = $this->model->getCon()->prepare("
                 SELECT cl.*, n.libelle_niveau, COUNT(i.id_inscription) as nb_etudiants
                 FROM classes cl
                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
                 LEFT JOIN inscriptions i ON i.classe_code = cl.code_classe AND i.statut_inscription = 'actif'
                 WHERE cl.filiere_code = ?
+                  AND (cl.cycle_code = ? OR ? = '' OR cl.cycle_code IS NULL)
+                  AND (cl.niveau_code = ? OR ? = '' OR cl.niveau_code IS NULL)
                 GROUP BY cl.id_classe
                 ORDER BY cl.libelle_classe ASC
             ");
-            $stmtClasses->execute([$item['filiere_code']]);
+            $cycleCodeVal = $item['cycle_code'] ?? '';
+            $niveauCodeVal = $item['niveau_code'] ?? '';
+            $stmtClasses->execute([$item['filiere_code'], $cycleCodeVal, $cycleCodeVal, $niveauCodeVal, $niveauCodeVal]);
             $classes = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
 
             $encryptedId = $this->validator->crypter($id);
