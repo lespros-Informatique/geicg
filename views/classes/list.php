@@ -103,7 +103,8 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       <input type="hidden" name="id_classe" id="classe_id" value="">
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
+      <!-- LIGNE 1 : ANNÉE ACADÉMIQUE ET CAPACITÉ D'ACCUEIL (2 COLONNES) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
         <div class="form-group" style="margin-bottom: 0;">
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
             Année Académique <span style="color: #EF4444;">*</span>
@@ -127,45 +128,36 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
           <?php endif; ?>
         </div>
 
-        <?php if (!empty($parcoursPivots)): ?>
-        <div class="form-group" style="margin-bottom: 0; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
-          <label style="display: block; font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 4px;">
-            <i data-lucide="layers" style="width: 14px; height: 14px; vertical-align: middle;"></i> Parcours Pivot (Cycle - Filière - Niveau) <span style="color: #EF4444;">*</span>
-          </label>
-          <select id="sel_parcours_pivot" class="form-control" style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12.5px; font-weight: 600;">
-            <option value="">-- Sélectionner un parcours pivot --</option>
-            <?php foreach ($parcoursPivots as $p): ?>
-              <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>" data-cycle="<?= htmlspecialchars($p['libelle_cycle'] ?? '') ?>">
-                <?= htmlspecialchars($p['libelle_cycle']) ?> &rarr; <?= htmlspecialchars($p['libelle_filiere']) ?><?= !empty($p['libelle_niveau']) ? ' (' . htmlspecialchars($p['libelle_niveau']) . ')' : '' ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Capacité d'accueil</label>
+          <input type="number" min="1" max="500" name="capacite_max_classe" id="classe_capacite" value="35" class="form-control" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px;">
         </div>
-        <?php endif; ?>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px;">
+      <!-- LIGNE 2 : PARCOURS PIVOT SUR UNE LIGNE PLEINE LARGEUR -->
+      <?php if (!empty($parcoursPivots)): ?>
+      <div class="form-group" style="margin-bottom: 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;">
+        <label style="display: block; font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 4px;">
+          <i data-lucide="layers" style="width: 14px; height: 14px; vertical-align: middle;"></i> Parcours Pivot (Cycle - Filière - Niveau) <span style="color: #EF4444;">*</span>
+        </label>
+        <select id="sel_parcours_pivot" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
+          <option value="">-- Sélectionner un parcours pivot --</option>
+          <?php foreach ($parcoursPivots as $p): ?>
+            <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>" data-cycle="<?= htmlspecialchars($p['libelle_cycle'] ?? '') ?>">
+              <?= htmlspecialchars($p['libelle_cycle']) ?> &rarr; <?= htmlspecialchars($p['libelle_filiere']) ?><?= !empty($p['libelle_niveau']) ? ' (' . htmlspecialchars($p['libelle_niveau']) . ')' : '' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <?php endif; ?>
+
+      <!-- LIGNE 3 : CYCLE D'ÉTUDES ET NIVEAU D'ÉTUDES SUR UNE LIGNE (2 COLONNES) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
         <div class="form-group" style="margin-bottom: 0;">
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
             Cycle d'études <span style="font-weight: 400; font-size: 11px; color: #64748B;">(Lecture seule)</span>
           </label>
-          <input type="text" id="classe_cycle" readonly placeholder="-- Dérivé du pivot --" class="form-control" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 8px; border: 1px solid #CBD5E1; background-color: #F8FAFC; color: #1E3A5F; font-weight: 700; font-size: 13px; cursor: not-allowed;">
-        </div>
-
-        <div class="form-group" style="margin-bottom: 0;">
-          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-            Filière rattachée <span style="color: #EF4444;">*</span> <span style="font-weight: 400; font-size: 11px; color: #64748B;">(Lecture seule)</span>
-          </label>
-          <div style="pointer-events: none; opacity: 0.95;">
-            <select name="filiere_code" id="classe_filiere" required class="form-control select2" style="width: 100%; background-color: #F8FAFC;">
-              <option value="">-- Choisir une filière --</option>
-              <?php foreach ($filieres as $f): ?>
-                <option value="<?= htmlspecialchars($f['code_filiere']) ?>" data-nom="<?= htmlspecialchars($f['libelle_filiere']) ?>">
-                  <?= htmlspecialchars($f['libelle_filiere']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
+          <input type="text" id="classe_cycle" readonly placeholder="-- Dérivé du pivot --" class="form-control" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 8px; border: 1px solid #CBD5E1; background-color: #F8FAFC; color: #1E3A5F; font-weight: 700; font-size: 13.5px; cursor: not-allowed;">
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
@@ -185,32 +177,29 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
         </div>
       </div>
 
+      <!-- LIGNE 4 : FILIÈRE RATTACHÉE SUR UNE LIGNE DÉDIÉE -->
       <div class="form-group" style="margin-bottom: 16px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Libellé de la classe / promotion <span style="color: #EF4444;">*</span>
-          <span style="font-size: 11px; font-weight: 500; color: #64748B; margin-left: 6px;">(Généré automatiquement)</span>
+          Filière rattachée <span style="color: #EF4444;">*</span> <span style="font-weight: 400; font-size: 11px; color: #64748B;">(Lecture seule)</span>
         </label>
-        <input type="text" name="libelle_classe" id="classe_libelle" required placeholder="Ex: IDA - Première année" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 14px;">
-        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Modifiable pour spécifier une section ou un groupe (ex: IDA 1A Groupe B, Soir).</small>
+        <div style="pointer-events: none; opacity: 0.95;">
+          <select name="filiere_code" id="classe_filiere" required class="form-control select2" style="width: 100%; background-color: #F8FAFC;">
+            <option value="">-- Choisir une filière --</option>
+            <?php foreach ($filieres as $f): ?>
+              <option value="<?= htmlspecialchars($f['code_filiere']) ?>" data-nom="<?= htmlspecialchars($f['libelle_filiere']) ?>">
+                <?= htmlspecialchars($f['libelle_filiere']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 22px; align-items: center;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Capacité d'accueil</label>
-          <input type="number" min="1" max="500" name="capacite_max_classe" id="classe_capacite" value="35" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 14px;">
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut de la classe</label>
-          <div style="display: flex; align-items: center; gap: 10px; padding-top: 4px;">
-            <label style="position: relative; display: inline-block; width: 42px; height: 22px; margin: 0; cursor: pointer;">
-              <input type="checkbox" name="statut_classe" id="classe_statut" value="actif" checked style="opacity: 0; width: 0; height: 0;">
-              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #15803D; transition: .3s; border-radius: 22px;" id="statut_classe_slider">
-                <span style="position: absolute; content: ''; height: 16px; width: 16px; left: 22px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%;" id="statut_classe_knob"></span>
-              </span>
-            </label>
-            <span id="statut_classe_text" style="font-weight: 700; font-size: 13px; color: #15803D;">Actif</span>
-          </div>
-        </div>
+      <!-- LIGNE 5 : LIBELLÉ DE LA CLASSE SUR UNE LIGNE DÉDIÉE -->
+      <div class="form-group" style="margin-bottom: 22px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Libellé de la classe / promotion <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="text" name="libelle_classe" id="classe_libelle" required placeholder="Ex: IDA - Première année" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 14px;">
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
