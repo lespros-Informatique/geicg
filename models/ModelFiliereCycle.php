@@ -23,11 +23,12 @@ class ModelFiliereCycle
     public function getAll()
     {
         $sql = "
-            SELECT fc.*, f.libelle_filiere, c.libelle_cycle 
+            SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau 
             FROM filiere_cycles fc
             LEFT JOIN filieres f ON fc.filiere_code = f.code_filiere
             LEFT JOIN cycles c ON fc.cycle_code = c.code_cycle
-            ORDER BY c.libelle_cycle ASC, f.libelle_filiere ASC
+            LEFT JOIN niveaux n ON fc.niveau_code = n.code_niveau
+            ORDER BY c.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC
         ";
         return $this->con->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -35,10 +36,11 @@ class ModelFiliereCycle
     public function getById($id)
     {
         $stmt = $this->con->prepare("
-            SELECT fc.*, f.libelle_filiere, c.libelle_cycle 
+            SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau 
             FROM filiere_cycles fc
             LEFT JOIN filieres f ON fc.filiere_code = f.code_filiere
             LEFT JOIN cycles c ON fc.cycle_code = c.code_cycle
+            LEFT JOIN niveaux n ON fc.niveau_code = n.code_niveau
             WHERE fc.id_filiere_cycle = ? 
             LIMIT 1
         ");

@@ -27,9 +27,21 @@ class ClasseController extends BaseController
         $activeYear = $this->getActiveAnneeCode();
         $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+        // Récupérer la liste des combinaisons pivots Cycle - Filière - Niveau
+        $parcoursPivots = $db->query("
+            SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau
+            FROM filiere_cycles fc
+            LEFT JOIN filieres f ON f.code_filiere = fc.filiere_code
+            LEFT JOIN cycles c ON c.code_cycle = fc.cycle_code
+            LEFT JOIN niveaux n ON n.code_niveau = fc.niveau_code
+            WHERE fc.statut_filiere_cycle = 'actif'
+            ORDER BY c.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
         $this->loadView('../views/classes/list.php', [
             'annees' => $annees,
-            'selectedAnneeCode' => $activeYear
+            'selectedAnneeCode' => $activeYear,
+            'parcoursPivots' => $parcoursPivots
         ]);
     }
 
@@ -313,5 +325,36 @@ class ClasseController extends BaseController
             'annee_code' => $anneeCode,
             'total' => count($classes)
         ]);
+    }
+
+    public function reconduire()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission('MANAGE_CLASSES');
+
+        $anneeSourceCode = trim($_POST['annee_source_code'] ?? '');
+        $anneeCibleCode = trim($_POST['annee_cible_code'] ?? '');
+
+        if (empty($anneeSourceCode) || empty($anneeCibleCode)) {
+            $this->error("Veuillez sélectionner l'année source et l'année cible.");
+            return;
+        }
+
+        if ($anneeSourceCode === $anneeCibleCode) {
+            $this->error("L'année source et l'année cible doivent être différentes.");
+            return;
+        }
+
+        $etabCode = $this->getActiveEtablissementCode();
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+
+        $res = $this->model->reconduireClassesAnnee($anneeSourceCode, $anneeCibleCode, $etabCode, $userCode);
+
+        if ($res['success']) {
+            $this->success($res['message'], ['reload' => true, 'count' => $res['count'], 'skipped' => $res['skipped']]);
+        } else {
+            $this->error($res['message']);
+        }
     }
 }

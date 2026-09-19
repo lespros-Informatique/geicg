@@ -17,9 +17,14 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Classes & Promotions</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre des promotions d'étudiants</p>
         </div>
-        <button type="button" class="btn btn-primary btn-add-classe" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;">
-          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe
-        </button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary btn-reconduire-classes" style="background: #0D9488; border-color: #0D9488; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;" title="Reconduire toutes les classes d'une année vers une autre">
+            <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduire les Classes (N-1 &rarr; N)
+          </button>
+          <button type="button" class="btn btn-primary btn-add-classe" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;">
+            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe
+          </button>
+        </div>
       </div>
  
       <?php if (empty($annees)): ?>
@@ -119,7 +124,22 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
             Veuillez d'abord configurer une année académique dans Configuration &gt; Années Académiques.
           </small>
         <?php endif; ?>
+      <?php if (!empty($parcoursPivots)): ?>
+      <div class="form-group" style="margin-bottom: 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;">
+        <label style="display: block; font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 4px;">
+          <i data-lucide="layers" style="width: 14px; height: 14px; vertical-align: middle;"></i> Parcours Pivot (Cycle - Filière - Niveau)
+        </label>
+        <select id="sel_parcours_pivot" class="form-control" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 13px;">
+          <option value="">-- Choisir une combinaison pivot pré-configurée --</option>
+          <?php foreach ($parcoursPivots as $p): ?>
+            <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>">
+              <?= htmlspecialchars($p['libelle_cycle']) ?> &rarr; <?= htmlspecialchars($p['libelle_filiere']) ?><?= !empty($p['libelle_niveau']) ? ' (' . htmlspecialchars($p['libelle_niveau']) . ')' : '' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <small style="color: #64748B; font-size: 11.5px; display: block; margin-top: 4px;">Permet d'auto-sélectionner la filière et le niveau associés.</small>
       </div>
+      <?php endif; ?>
 
       <div class="form-group" style="margin-bottom: 16px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
@@ -189,6 +209,61 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
   </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : RECONDUCTION DES CLASSES (N-1 -> N)                  -->
+<!-- ========================================================================= -->
+<div id="modal-reconduire-classes" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #0D9488; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduction des Classes (N-1 &rarr; N)
+      </h3>
+      <button type="button" class="btn-close-modal-reconduire" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-reconduire-classes" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      
+      <p style="font-size: 13px; color: #475569; margin-top: 0; margin-bottom: 16px; line-height: 1.5;">
+        Cet outil va copier automatiquement toutes les classes actives de l'<strong>Année Source</strong> vers l'<strong>Année Cible</strong> sans dupliquer les classes déjà existantes.
+      </p>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Année Source (Classes à copier) <span style="color: #EF4444;">*</span></label>
+        <select name="annee_source_code" id="reconduire_annee_source" required class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #CBD5E1;">
+          <option value="">-- Sélectionner l'année source --</option>
+          <?php foreach (($annees ?? []) as $a): ?>
+            <option value="<?= htmlspecialchars($a['code_annee']) ?>">
+              <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Année Cible (Destination) <span style="color: #EF4444;">*</span></label>
+        <select name="annee_cible_code" id="reconduire_annee_cible" required class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #CBD5E1;">
+          <option value="">-- Sélectionner l'année cible --</option>
+          <?php foreach (($annees ?? []) as $a): ?>
+            <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
+              <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-reconduire" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-reconduire" class="btn btn-primary" style="background: #0D9488; border: none; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 9px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="copy-check" style="width: 16px; height: 16px;"></i> Lancer la Reconduction
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <style>
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-12px); }
@@ -247,8 +322,10 @@ $(document).ready(function() {
                '</label>' +
                '</div>';
       }},
-      { data: null, width: '160px', orderable: false, render: function(d) {
-        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-classe" data-id="' + (d.id_classe) + '" data-libelle="' + (d.libelle_classe ? $('<div>').text(d.libelle_classe).html() : '') + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" data-statut="' + (d.statut_classe || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
+      { data: null, width: '230px', orderable: false, render: function(d) {
+        var safeLib = d.libelle_classe ? $('<div>').text(d.libelle_classe).html() : '';
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-classe" data-id="' + (d.id_classe) + '" data-libelle="' + safeLib + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" data-statut="' + (d.statut_classe || 'actif') + '" style="margin-right:4px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
+               '<button type="button" class="btn btn-sm btn-outline-primary btn-duplicate-classe" data-libelle="' + safeLib + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" style="margin-right:4px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer; color:#1E3A5F; border-color:#CBD5E1;" title="Dupliquer pour créer une nouvelle section"><i data-lucide="copy" style="width:14px;height:14px;"></i> Dupliquer</button>' +
                '<a href="' + window.RACINE + 'classe/details/' + (d.editId || d.id_classe) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
@@ -446,6 +523,111 @@ $(document).ready(function() {
         $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
         if (window.lucide) lucide.createIcons();
         var msg = 'Erreur lors de l\'enregistrement';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json.message) msg = json.message;
+        } catch(e) {}
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
+      }
+    });
+  // SELECTION PARCOURSPIVOT DANS LE MODAL
+  $('#sel_parcours_pivot').on('change', function() {
+    var $opt = $(this).find('option:selected');
+    var filiereCode = $opt.data('filiere');
+    var niveauCode = $opt.data('niveau');
+    if (filiereCode) {
+      $('#classe_filiere').val(filiereCode);
+      if ($.fn.select2) $('#classe_filiere').trigger('change.select2');
+    }
+    if (niveauCode) {
+      $('#classe_niveau').val(niveauCode);
+      if ($.fn.select2) $('#classe_niveau').trigger('change.select2');
+    }
+    autoGenerateLibelleClasse();
+  });
+
+  // DUPLICATION RAPIDE DE CLASSE (CRÉATION DE SECTION B, C...)
+  $(document).on('click', '.btn-duplicate-classe', function(e) {
+    e.preventDefault();
+    $('#form-classe')[0].reset();
+    var libelle = $(this).data('libelle') || '';
+    var filiere = $(this).data('filiere') || '';
+    var niveau = $(this).data('niveau') || '';
+    var annee = $(this).data('annee') || '';
+    var capacite = $(this).data('capacite') || '35';
+
+    $('#classe_id').val(''); // Nouveau record !
+    $('#classe_libelle').val(libelle ? libelle + ' B' : '');
+    $('#classe_filiere').val(filiere);
+    $('#classe_niveau').val(niveau);
+    $('#classe_annee').val(annee);
+    if ($.fn.select2) {
+      $('#classe_filiere').trigger('change.select2');
+      $('#classe_niveau').trigger('change.select2');
+      $('#classe_annee').trigger('change.select2');
+    }
+    $('#classe_capacite').val(capacite);
+    $('#classe_statut').prop('checked', true);
+    updateStatutClasseUI(true);
+
+    $('#modal-classe-title').html('<i data-lucide="copy" style="width: 18px; height: 18px;"></i> Dupliquer la Classe / Nouvelle Section');
+    $('#modal-classe').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#classe_libelle').focus(); }, 100);
+  });
+
+  // GESTION MODALE RECONDUCTION DES CLASSES N-1 -> N
+  $(document).on('click', '.btn-reconduire-classes', function(e) {
+    e.preventDefault();
+    $('#form-reconduire-classes')[0].reset();
+    var currentYear = $('#filter-annee-classe').val() || '<?= htmlspecialchars($currentAnneeCode) ?>';
+    if (currentYear) {
+      $('#reconduire_annee_cible').val(currentYear);
+    }
+    $('#modal-reconduire-classes').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+  });
+
+  $('.btn-close-modal-reconduire').on('click', function() {
+    $('#modal-reconduire-classes').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-reconduire-classes')) {
+      $('#modal-reconduire-classes').hide();
+    }
+  });
+
+  $('#form-reconduire-classes').on('submit', function(e) {
+    e.preventDefault();
+    var $btn = $('#btn-submit-reconduire');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;" class="lucide-spin"></i> Traitement...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: window.RACINE + 'classe/reconduire',
+      type: 'POST',
+      data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="copy-check" style="width:16px;height:16px;"></i> Lancer la Reconduction');
+        if (window.lucide) lucide.createIcons();
+        if (res.status === 1 || res.success) {
+          if (typeof showToast === 'function') showToast(res.message || 'Reconduction effectuée avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Reconduction effectuée avec succès');
+          $('#modal-reconduire-classes').hide();
+          table.ajax.reload(null, false);
+        } else {
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de la reconduction', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de la reconduction');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="copy-check" style="width:16px;height:16px;"></i> Lancer la Reconduction');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur lors de la reconduction';
         try {
           var json = JSON.parse(xhr.responseText);
           if (json.message) msg = json.message;

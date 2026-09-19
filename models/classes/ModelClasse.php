@@ -72,4 +72,70 @@ class ModelClasse extends BaseModel
         $stmt->execute([$anneeCode, $anneeCode]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+
+    /**
+     * Reconduit toutes les classes actives d'une année source vers une année cible.
+     */
+    public function reconduireClassesAnnee(string $anneeSourceCode, string $anneeCibleCode, ?string $etabCode = null, ?string $userCode = null): array
+    {
+        $db = $this->getCon();
+        $validator = new Validator();
+
+        // 1. Récupérer toutes les classes actives de l'année source
+        $stmt = $db->prepare("SELECT * FROM classes WHERE annee_code = ? AND statut_classe = 'actif'");
+        $stmt->execute([$anneeSourceCode]);
+        $classesSource = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($classesSource)) {
+            return [
+                'success' => false,
+                'message' => "Aucune classe active trouvée pour l'année source sélectionnée.",
+                'count' => 0
+            ];
+        }
+
+        $createdCount = 0;
+        $skippedCount = 0;
+
+        foreach ($classesSource as $cls) {
+            // Vérifier si la classe existe déjà dans l'année cible
+            $stmtCheck = $db->prepare("SELECT id_classe FROM classes WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
+            $stmtCheck->execute([$cls['libelle_classe'], $anneeCibleCode]);
+            if ($stmtCheck->fetch()) {
+                $skippedCount++;
+                continue;
+            }
+
+            // Générer un nouveau code unique
+            $newCode = $validator->generateCode('classes', 'code_classe', 'CLA-', 8);
+            
+            $stmtInsert = $db->prepare("
+                INSERT INTO classes 
+                (code_classe, libelle_classe, capacite_max_classe, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
+            ");
+            
+            $inserted = $stmtInsert->execute([
+                $newCode,
+                $cls['libelle_classe'],
+                $cls['capacite_max_classe'],
+                $cls['filiere_code'],
+                $etabCode ?: $cls['etablissement_code'],
+                $cls['niveau_code'],
+                $anneeCibleCode,
+                $userCode ?: $cls['user_code']
+            ]);
+
+            if ($inserted) {
+                $createdCount++;
+            }
+        }
+
+        return [
+            'success' => true,
+            'message' => "Reconduction terminée : {$createdCount} classe(s) créée(s), {$skippedCount} ignorée(s) (déjà existantes).",
+            'count' => $createdCount,
+            'skipped' => $skippedCount
+        ];
+    }
 }
