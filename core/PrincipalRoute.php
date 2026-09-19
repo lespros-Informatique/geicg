@@ -137,9 +137,6 @@ if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['annee_active_cod
             if (!$rowInit) {
                 $stmtFallback = $dbInit->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
                 $rowInit = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
-                if ($rowInit) {
-                    $dbInit->exec("UPDATE annees SET statut_annee = 'actif' WHERE code_annee = " . $dbInit->quote($rowInit['code_annee']));
-                }
             }
             if ($rowInit) {
                 $_SESSION['annee_active_code'] = $rowInit['code_annee'];

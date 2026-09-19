@@ -83,7 +83,7 @@ class AnneeController extends BaseController
         }
         
         // Toute nouvelle année académique est créée avec le statut 'planifie' par défaut (En préparation)
-        $data['statut_annee'] = (!empty($data['statut_annee']) && in_array($data['statut_annee'], ['planifie', 'cloture'], true)) ? $data['statut_annee'] : 'planifie';
+        $data['statut_annee'] = 'planifie';
         $data['created_at_annee'] = date('Y-m-d H:i:s');
         
         $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
@@ -93,7 +93,7 @@ class AnneeController extends BaseController
         $filteredData = array_intersect_key($data, array_flip($cols));
         $libelle = $data['libelle_annee'] ?? '';
         if ($this->model->create($filteredData)) {
-            $this->success("L'année académique « {$libelle} » a été créée avec succès (statut initial : inactif).");
+            $this->success("L'année académique « {$libelle} » a été créée avec succès (statut initial : en préparation).");
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la création de l\'année académique');
         }

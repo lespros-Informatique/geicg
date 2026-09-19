@@ -195,18 +195,18 @@ $niveaux = (new ModelNiveau())->getActifs();
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Type de Filière <span style="font-size: 11px; color: #64748B; font-weight: 500;">(Lecture seule, déduit automatiquement du catalogue)</span>
+          Type de Filière
         </label>
-        <input type="text" id="assign_type_filiere_display" readonly value="-- Automatique --" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #475569; font-weight: 700; font-size: 14px; cursor: not-allowed;">
+        <input type="text" id="assign_type_filiere_display" readonly value="" placeholder="Type de filière" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #475569; font-weight: 700; font-size: 14px; cursor: not-allowed;">
         <input type="hidden" name="type_filiere" id="assign_type_filiere" value="AUTO">
       </div>
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Niveau d'études <span style="font-size: 11px; color: #64748B; font-weight: 500;">(Optionnel pour cibler un niveau spécifique)</span>
+          Niveau d'études <span style="color: #EF4444;">*</span>
         </label>
-        <select name="niveau_code" id="assign_niveau_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
-          <option value="">-- Tous les niveaux / Global --</option>
+        <select name="niveau_code" id="assign_niveau_code" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="">-- Sélectionner un niveau --</option>
           <?php foreach (($niveaux ?? []) as $niv): ?>
             <option value="<?= htmlspecialchars($niv['code_niveau']) ?>"><?= htmlspecialchars($niv['libelle_niveau']) ?></option>
           <?php endforeach; ?>
@@ -592,7 +592,7 @@ $(document).ready(function() {
   var filieresTypeMap = {};
 
   function updateAssignTypeDisplay(typeVal) {
-    var labelText = 'Automatique';
+    var labelText = '';
     if (typeVal === 'INDUSTRIELLE') labelText = 'Filière Industrielle';
     else if (typeVal === 'TERTIAIRE') labelText = 'Filière Tertiaire';
     else if (typeVal && typeVal !== 'AUTO') labelText = typeVal;

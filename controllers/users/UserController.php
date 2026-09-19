@@ -470,9 +470,6 @@ class UserController extends BaseController
                         if (!$anneeActive) {
                             $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
                             $anneeActive = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
-                            if ($anneeActive) {
-                                $db->exec("UPDATE annees SET statut_annee = 'actif' WHERE code_annee = " . $db->quote($anneeActive['code_annee']));
-                            }
                         }
                         if ($anneeActive) {
                             $_SESSION['annee_active_code'] = $anneeActive['code_annee'];

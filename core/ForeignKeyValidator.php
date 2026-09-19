@@ -156,7 +156,7 @@ class ForeignKeyValidator
         'annees' => ['etablissement_code'],
         'emplois_temps' => ['classe_code', 'matiere_code', 'enseignant_code', 'annee_code', 'etablissement_code'],
         'enseignant_matiere' => ['enseignant_code', 'matiere_code', 'classe_code', 'annee_code', 'etablissement_code'],
-        'filiere_cycles' => ['filiere_code', 'cycle_code', 'etablissement_code'],
+        'filiere_cycles' => ['filiere_code', 'cycle_code', 'niveau_code', 'etablissement_code'],
         'filiere_niveaux' => ['filiere_code', 'niveau_code', 'etablissement_code'],
         'scolarites' => ['filiere_code', 'niveau_code', 'annee_code', 'etablissement_code'],
         'tranches_scolarite' => ['scolarite_code', 'annee_code', 'etablissement_code'],

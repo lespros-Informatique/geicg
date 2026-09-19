@@ -27,9 +27,6 @@ class ModelHome extends BaseModel
                 if (!$activeRow) {
                     $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
                     $activeRow = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
-                    if ($activeRow) {
-                        $db->exec("UPDATE annees SET statut_annee = 'actif' WHERE code_annee = " . $db->quote($activeRow['code_annee']));
-                    }
                 }
                 if ($activeRow) {
                     $anneeCode = $activeRow['code_annee'];
