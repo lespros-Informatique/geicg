@@ -72,11 +72,11 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
     transform: translateY(-2px);
   }
   
-  /* Grille à 4 Colonnes & Grandes Cartes avec Métriques Géantes */
+  /* Grille & Cartes des 5 Sections Fonctionnelles Réduites & Harmonieuses */
   .dash-module-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 14px;
   }
   @media (max-width: 1366px) {
     .dash-module-grid {
@@ -91,35 +91,64 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
   .dash-module-card {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 16px;
-    padding: 22px;
+    border-radius: 12px;
+    padding: 14px 16px;
     text-decoration: none !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 170px;
-    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.03), 0 2px 4px -1px rgba(15, 23, 42, 0.02);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 124px;
+    box-shadow: 0 2px 4px -1px rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .dash-module-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 16px 28px -4px rgba(15, 23, 42, 0.1), 0 8px 16px -4px rgba(15, 23, 42, 0.06);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -4px rgba(15, 23, 42, 0.04);
     border-color: #CBD5E1;
   }
   .dash-module-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
+  .dash-module-icon svg,
+  .dash-module-icon i {
+    width: 18px !important;
+    height: 18px !important;
+  }
   .dash-module-num {
-    font-size: 26px;
-    font-weight: 900;
+    font-size: 20px !important;
+    font-weight: 800;
     line-height: 1.1;
-    margin-top: 12px;
-    letter-spacing: -0.5px;
+    margin-top: 8px !important;
+    letter-spacing: -0.3px;
+  }
+  .dash-module-card span[style*="border-radius: 20px"] {
+    font-size: 10.5px !important;
+    padding: 2px 8px !important;
+  }
+  .dash-module-card div > div[style*="font-size: 12px"] {
+    font-size: 11px !important;
+    margin-top: 2px !important;
+  }
+  .dash-module-card > div:last-child {
+    border-top: 1px solid #F1F5F9;
+    padding-top: 8px !important;
+    margin-top: 10px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dash-module-card > div:last-child strong {
+    font-size: 12px !important;
+  }
+  .dash-module-card > div:last-child svg,
+  .dash-module-card > div:last-child i {
+    width: 14px !important;
+    height: 14px !important;
   }
 </style>
 
@@ -428,7 +457,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
 
           <!-- GROUPE 1 : Admissions & Scolarité -->
           <?php if ($canGroup1): ?>
-            <div style="margin-bottom: 30px;">
+            <div style="margin-bottom: 22px;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <div style="background: #1E3A5F; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
@@ -532,7 +561,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
 
           <!-- GROUPE 2 : Finance & Caisse -->
           <?php if ($canGroup2): ?>
-            <div style="margin-bottom: 30px;">
+            <div style="margin-bottom: 22px;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <div style="background: #047857; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
@@ -636,7 +665,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
 
           <!-- GROUPE 3 : Pédagogie, Examens & Notes -->
           <?php if ($canGroup3): ?>
-            <div style="margin-bottom: 30px;">
+            <div style="margin-bottom: 22px;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <div style="background: #7E22CE; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
@@ -759,7 +788,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
 
           <!-- GROUPE 4 : Structure Académique & Formations -->
           <?php if ($canGroup4): ?>
-            <div style="margin-bottom: 30px;">
+            <div style="margin-bottom: 22px;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <div style="background: #334155; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
