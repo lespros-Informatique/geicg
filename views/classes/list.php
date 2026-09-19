@@ -124,6 +124,7 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
             Veuillez d'abord configurer une année académique dans Configuration &gt; Années Académiques.
           </small>
         <?php endif; ?>
+      </div>
       <?php if (!empty($parcoursPivots)): ?>
       <div class="form-group" style="margin-bottom: 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;">
         <label style="display: block; font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 4px;">
@@ -531,6 +532,8 @@ $(document).ready(function() {
         else if (window.toastr) toastr.error(msg);
       }
     });
+  });
+
   // SELECTION PARCOURSPIVOT DANS LE MODAL
   $('#sel_parcours_pivot').on('change', function() {
     var $opt = $(this).find('option:selected');
