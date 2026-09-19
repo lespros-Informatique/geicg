@@ -195,13 +195,10 @@ $niveaux = (new ModelNiveau())->getActifs();
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Type de Filière <span style="font-size: 11px; color: #64748B; font-weight: 500;">(Optionnel, déduit de la filière si 'Automatique')</span>
+          Type de Filière <span style="font-size: 11px; color: #64748B; font-weight: 500;">(Lecture seule, déduit automatiquement du catalogue)</span>
         </label>
-        <select name="type_filiere" id="assign_type_filiere" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
-          <option value="AUTO">-- Automatique (Déduit du catalogue) --</option>
-          <option value="INDUSTRIELLE">Filière Industrielle</option>
-          <option value="TERTIAIRE">Filière Tertiaire</option>
-        </select>
+        <input type="text" id="assign_type_filiere_display" readonly value="-- Automatique --" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #475569; font-weight: 700; font-size: 14px; cursor: not-allowed;">
+        <input type="hidden" name="type_filiere" id="assign_type_filiere" value="AUTO">
       </div>
 
       <div class="form-group" style="margin-bottom: 18px;">
@@ -592,16 +589,28 @@ $(document).ready(function() {
   // ==========================================
   // RECHARGEMENT DYNAMIQUE ET SELECT2 DES ASSIGNATIONS
   // ==========================================
+  var filieresTypeMap = {};
+
+  function updateAssignTypeDisplay(typeVal) {
+    var labelText = 'Automatique';
+    if (typeVal === 'INDUSTRIELLE') labelText = 'Filière Industrielle';
+    else if (typeVal === 'TERTIAIRE') labelText = 'Filière Tertiaire';
+    else if (typeVal && typeVal !== 'AUTO') labelText = typeVal;
+
+    $('#assign_type_filiere_display').val(labelText);
+    $('#assign_type_filiere').val(typeVal || 'AUTO');
+  }
+
   function initAssignSelect2() {
     if ($.fn.select2) {
-      $('#assign_cycle_code, #assign_filiere_code, #assign_type_filiere, #assign_niveau_code, #assign_statut').select2({
+      $('#assign_cycle_code, #assign_filiere_code, #assign_niveau_code, #assign_statut').select2({
         width: '100%',
         dropdownParent: $('#modal-assignation')
       });
     }
   }
 
-  function reloadAssignSelects(selectedCycle, selectedFiliere) {
+  function reloadAssignSelects(selectedCycle, selectedFiliere, selectedType) {
     var cVal = selectedCycle || $('#assign_cycle_code').val();
     var fVal = selectedFiliere || $('#assign_filiere_code').val();
 
@@ -620,15 +629,27 @@ $(document).ready(function() {
     $.getJSON('<?= RACINE ?>filiere/apiList?statut=actif', function(res) {
       if (res && res.data) {
         var opts = '<option value="">-- Sélectionner une filière --</option>';
+        filieresTypeMap = {};
         res.data.forEach(function(f) {
-          opts += '<option value="' + f.code_filiere + '">' + (f.libelle_filiere || f.slug_filiere || f.code_filiere) + '</option>';
+          filieresTypeMap[f.code_filiere] = f.type_filiere || '';
+          opts += '<option value="' + f.code_filiere + '" data-type="' + (f.type_filiere || '') + '">' + (f.libelle_filiere || f.slug_filiere || f.code_filiere) + '</option>';
         });
         $('#assign_filiere_code').html(opts);
-        if (fVal) $('#assign_filiere_code').val(fVal);
+        if (fVal) {
+          $('#assign_filiere_code').val(fVal);
+          var typeToUse = selectedType || filieresTypeMap[fVal] || '';
+          updateAssignTypeDisplay(typeToUse);
+        }
         if ($.fn.select2) $('#assign_filiere_code').trigger('change.select2');
       }
     });
   }
+
+  $(document).on('change', '#assign_filiere_code', function() {
+    var code = $(this).val();
+    var type = filieresTypeMap[code] || $(this).find('option:selected').data('type') || '';
+    updateAssignTypeDisplay(type);
+  });
 
   // ==========================================
   // HANDLERS : MODAL 1 (ASSIGNATIONS)
@@ -637,13 +658,13 @@ $(document).ready(function() {
     $('#form-assignation')[0].reset();
     $('#assign_id').val('');
     $('#modal-assignation-title').html('<i data-lucide="git-merge" style="width: 18px; height: 18px;"></i> Nouveau Parcours Pivot (Cycle - Filière - Niveau)');
+    updateAssignTypeDisplay('AUTO');
     reloadAssignSelects();
     $('#modal-assignation').css('display', 'flex');
     initAssignSelect2();
     if ($.fn.select2) {
       $('#assign_cycle_code').val('').trigger('change.select2');
       $('#assign_filiere_code').val('').trigger('change.select2');
-      $('#assign_type_filiere').val('AUTO').trigger('change.select2');
       $('#assign_niveau_code').val('').trigger('change.select2');
       $('#assign_statut').val('actif').trigger('change.select2');
     }
@@ -661,17 +682,16 @@ $(document).ready(function() {
     $('#assign_id').val(id);
     $('#assign_cycle_code').val(cycle);
     $('#assign_filiere_code').val(filiere);
-    $('#assign_type_filiere').val(typeFiliere || 'AUTO');
+    updateAssignTypeDisplay(typeFiliere || filieresTypeMap[filiere] || 'AUTO');
     $('#assign_niveau_code').val(niveau || '');
     $('#assign_statut').val(statut || 'actif');
     $('#modal-assignation-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le Parcours Pivot');
-    reloadAssignSelects(cycle, filiere, niveau);
+    reloadAssignSelects(cycle, filiere, typeFiliere);
     $('#modal-assignation').css('display', 'flex');
     initAssignSelect2();
     if ($.fn.select2) {
       $('#assign_cycle_code').val(cycle).trigger('change.select2');
       $('#assign_filiere_code').val(filiere).trigger('change.select2');
-      $('#assign_type_filiere').val(typeFiliere || 'AUTO').trigger('change.select2');
       $('#assign_niveau_code').val(niveau || '').trigger('change.select2');
       $('#assign_statut').val(statut || 'actif').trigger('change.select2');
     }
