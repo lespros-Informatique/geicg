@@ -5,45 +5,9 @@ $annees = (new ModelAnnee())->getAll();
 
 $currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
 
-if (!empty($currentAnneeCode)) {
-    // Cycles des filières ayant au moins une classe enregistrée pour l'année académique active
-    $stmtCycles = $dbScol->prepare("
-        SELECT DISTINCT cy.* 
-        FROM cycles cy 
-        INNER JOIN filiere_cycles fc ON cy.code_cycle = fc.cycle_code 
-        INNER JOIN classes c ON fc.filiere_code = c.filiere_code 
-        WHERE c.annee_code = ? AND (c.statut_classe = 'actif' OR c.statut_classe IS NULL)
-        ORDER BY cy.libelle_cycle ASC
-    ");
-    $stmtCycles->execute([$currentAnneeCode]);
-    $cycles = $stmtCycles->fetchAll(PDO::FETCH_ASSOC);
-
-    // Filières ayant au moins une classe enregistrée pour l'année académique active
-    $stmtFilieres = $dbScol->prepare("
-        SELECT DISTINCT f.* 
-        FROM filieres f 
-        INNER JOIN classes c ON f.code_filiere = c.filiere_code 
-        WHERE c.annee_code = ? AND (c.statut_classe = 'actif' OR c.statut_classe IS NULL)
-        ORDER BY f.libelle_filiere ASC
-    ");
-    $stmtFilieres->execute([$currentAnneeCode]);
-    $filieres = $stmtFilieres->fetchAll(PDO::FETCH_ASSOC);
-
-    // Niveaux d'études ayant au moins une classe enregistrée pour l'année académique active
-    $stmtNiveaux = $dbScol->prepare("
-        SELECT DISTINCT n.* 
-        FROM niveaux n 
-        INNER JOIN classes c ON n.code_niveau = c.niveau_code 
-        WHERE c.annee_code = ? AND (c.statut_classe = 'actif' OR c.statut_classe IS NULL)
-        ORDER BY n.libelle_niveau ASC
-    ");
-    $stmtNiveaux->execute([$currentAnneeCode]);
-    $niveaux = $stmtNiveaux->fetchAll(PDO::FETCH_ASSOC);
-} else {
-    $cycles = (new ModelCycle())->getAll();
-    $filieres = (new ModelFiliere())->getAll();
-    $niveaux = (new ModelNiveau())->getAll();
-}
+$cycles = (new ModelCycle())->getAll();
+$filieres = (new ModelFiliere())->getAll();
+$niveaux = (new ModelNiveau())->getAll();
 
 // En mode édition, s'assurer que les choix de la fiche existante sont inclus
 if (!empty($item['filiere_code'])) {
@@ -68,14 +32,32 @@ if (!empty($item['niveau_code'])) {
 }
 
 $filiereCyclesMap = $dbScol->query("
-    SELECT filiere_code, cycle_code 
-    FROM filiere_cycles 
-    WHERE (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)
+    SELECT fc.filiere_code, fc.cycle_code, fc.niveau_code, fc.type_filiere, f.type_filiere as f_type 
+    FROM filiere_cycles fc
+    LEFT JOIN filieres f ON f.code_filiere = fc.filiere_code
+    WHERE (fc.statut_filiere_cycle = 'actif' OR fc.statut_filiere_cycle IS NULL)
 ")->fetchAll(PDO::FETCH_ASSOC);
 
+$cycleToNiveaux = [];
 $filiereToCycles = [];
+
 foreach ($filiereCyclesMap as $fc) {
-    $filiereToCycles[$fc['filiere_code']][] = $fc['cycle_code'];
+    $cCode = $fc['cycle_code'] ?? '';
+    $fCode = $fc['filiere_code'] ?? '';
+    $nCode = $fc['niveau_code'] ?? '';
+
+    if (!empty($cCode) && !empty($nCode)) {
+        if (!isset($cycleToNiveaux[$cCode])) {
+            $cycleToNiveaux[$cCode] = [];
+        }
+        if (!in_array($nCode, $cycleToNiveaux[$cCode], true)) {
+            $cycleToNiveaux[$cCode][] = $nCode;
+        }
+    }
+
+    if (!empty($fCode) && !empty($cCode)) {
+        $filiereToCycles[$fCode][] = $cCode;
+    }
 }
 ?>
 <div class="app-layout">
@@ -133,29 +115,36 @@ foreach ($filiereCyclesMap as $fc) {
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle Académique <span style="color: #EF4444;">*</span> </label>
               <select class="form-control select2" id="sel_cycle_scolarite" name="cycle_code" style="width: 100%;" required>
-                <option value="">-- Tous les cycles --</option>
+                <option value="">-- Choisir un cycle académique --</option>
                 <?php 
                   $selectedFiliereCycles = !empty($item['filiere_code']) ? ($filiereToCycles[$item['filiere_code']] ?? []) : [];
                   foreach($cycles as $c): 
                     $isCycleSelected = in_array($c['code_cycle'], $selectedFiliereCycles);
                 ?>
                   <option value="<?= htmlspecialchars($c['code_cycle']) ?>" <?= $isCycleSelected ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($c['libelle_cycle']) ?>
+                    <?= htmlspecialchars($c['libelle_cycle']) ?> (<?= htmlspecialchars($c['code_cycle']) ?>)
                   </option>
                 <?php endforeach; ?>
               </select>
             </div>
 
-            <!-- Niveau d'études (Select2 Simple) -->
+            <!-- Niveau d'études (Select2 Multi-Select en création, Simple en édition) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                Niveau d'études <span style="color: #EF4444;">*</span>
-              </label>
-              <select class="form-control select2" id="sel_niveau_scolarite" name="niveau_code" style="width: 100%;" required>
-                <option value="">-- Choisir un niveau --</option>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-weight: 700; font-size: 13px; color: #334155; margin: 0;">
+                  <?= $isAddMode ? 'Niveau(x) d\'études <span style="color: #EF4444;">*</span>' : 'Niveau d\'études <span style="color: #EF4444;">*</span>' ?>
+                </label>
+                <?php if ($isAddMode): ?>
+                  <button type="button" id="btn-toggle-all-niveaux" style="background: none; border: none; font-size: 12px; font-weight: 700; color: #1E3A5F; cursor: pointer; padding: 0;">Tout sélectionner</button>
+                <?php endif; ?>
+              </div>
+              <select class="form-control select2" id="sel_niveau_scolarite" name="<?= $isAddMode ? 'niveau_codes[]' : 'niveau_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : 'required' ?> style="width: 100%;">
+                <?php if (!$isAddMode): ?>
+                  <option value="">-- Choisir un niveau --</option>
+                <?php endif; ?>
                 <?php foreach($niveaux as $n): ?>
                   <option value="<?= htmlspecialchars($n['code_niveau']) ?>" <?= (($item['niveau_code'] ?? '') == $n['code_niveau']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($n['libelle_niveau']) ?>
+                    <?= htmlspecialchars($n['libelle_niveau']) ?> (<?= htmlspecialchars($n['code_niveau']) ?>)
                   </option>
                 <?php endforeach; ?>
               </select>
@@ -188,9 +177,14 @@ foreach ($filiereCyclesMap as $fc) {
 
             <!-- Filière (Select2 Multi-Select en création, Simple en édition) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                <?= $isAddMode ? 'Filière(s) rattachée(s) <small style="color: #64748B; font-weight: 400;">(Optionnel — toutes si vide)</small>' : 'Filière rattachée <span style="color: #EF4444;">*</span>' ?>
-              </label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-weight: 700; font-size: 13px; color: #334155; margin: 0;">
+                  <?= $isAddMode ? 'Filière(s) rattachée(s) <small style="color: #64748B; font-weight: 400;">(Optionnel — toutes si vide)</small>' : 'Filière rattachée <span style="color: #EF4444;">*</span>' ?>
+                </label>
+                <?php if ($isAddMode): ?>
+                  <button type="button" id="btn-toggle-all-filieres" style="background: none; border: none; font-size: 12px; font-weight: 700; color: #1E3A5F; cursor: pointer; padding: 0;">Tout sélectionner</button>
+                <?php endif; ?>
+              </div>
               <select class="form-control select2" id="sel_filiere_scolarite" name="<?= $isAddMode ? 'filiere_codes[]' : 'filiere_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : 'required' ?> style="width: 100%;">
                 <?php if (!$isAddMode): ?>
                   <option value="">-- Choisir une filière --</option>
@@ -200,7 +194,7 @@ foreach ($filiereCyclesMap as $fc) {
                   $cyclesAttr = htmlspecialchars(implode(',', $fCycles));
                 ?>
                   <option value="<?= htmlspecialchars($f['code_filiere']) ?>" data-cycles="<?= $cyclesAttr ?>" <?= (($item['filiere_code'] ?? '') == $f['code_filiere']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($f['libelle_filiere']) ?>
+                    <?= htmlspecialchars($f['libelle_filiere']) ?> (<?= htmlspecialchars($f['code_filiere']) ?>)
                   </option>
                 <?php endforeach; ?>
               </select>
@@ -303,7 +297,11 @@ $(document).ready(function() {
       allowClear: !isAddMode,
       width: '100%'
     });
-    $('#sel_niveau_scolarite').select2({ placeholder: "-- Choisir un niveau --", allowClear: true, width: '100%' });
+    $('#sel_niveau_scolarite').select2({
+      placeholder: isAddMode ? "Sélectionnez un ou plusieurs niveaux..." : "-- Choisir un niveau --",
+      allowClear: !isAddMode,
+      width: '100%'
+    });
     $('#sel_affectation_scolarite').select2({ minimumResultsForSearch: Infinity, width: '100%' });
 
     $('#sel_annee_scolarite').on('change select2:select', function() {
@@ -311,7 +309,7 @@ $(document).ready(function() {
     });
   }
 
-  // Tout sélectionner / Tout désélectionner
+  // Tout sélectionner / Tout désélectionner filières
   $('#btn-toggle-all-filieres').on('click', function(e) {
     e.preventDefault();
     var $sel = $('#sel_filiere_scolarite');
@@ -326,8 +324,29 @@ $(document).ready(function() {
     }
   });
 
+  // Tout sélectionner / Tout désélectionner niveaux
+  $('#btn-toggle-all-niveaux').on('click', function(e) {
+    e.preventDefault();
+    var $sel = $('#sel_niveau_scolarite');
+    var allVals = $sel.find('option').map(function() { return $(this).val(); }).get().filter(Boolean);
+    var currentVals = $sel.val() || [];
+    if (Array.isArray(currentVals) && currentVals.length >= allVals.length) {
+      $sel.val(null).trigger('change');
+      $(this).text('Tout sélectionner');
+    } else {
+      $sel.val(allVals).trigger('change');
+      $(this).text('Tout désélectionner');
+    }
+  });
 
 
+
+  var allNiveaux = <?= json_encode(array_map(function($n) {
+      return [
+          'code_niveau' => $n['code_niveau'],
+          'libelle_niveau' => $n['libelle_niveau']
+      ];
+  }, $niveaux)) ?>;
   var allFilieres = <?= json_encode(array_map(function($f) use ($filiereToCycles) {
       return [
           'code_filiere' => $f['code_filiere'],
@@ -336,59 +355,193 @@ $(document).ready(function() {
           'cycles' => $filiereToCycles[$f['code_filiere']] ?? []
       ];
   }, $filieres)) ?>;
+  var cycleToNiveauxMap = <?= json_encode($cycleToNiveaux) ?>;
+  var filiereCyclesPivot = <?= json_encode($filiereCyclesMap) ?>;
   var preselectedFiliereCode = <?= json_encode($item['filiere_code'] ?? '') ?>;
+  var preselectedNiveauCode = <?= json_encode($item['niveau_code'] ?? '') ?>;
 
-  function filterFilieresByCycle() {
+  // Verrouillage / Déverrouillage séquentiel strict en cascade
+  function updateCascadeLocks() {
     var selectedCycle = $('#sel_cycle_scolarite').val();
+    var rawNiveaux = $('#sel_niveau_scolarite').val();
+    var selectedNiveaux = [];
+    if (Array.isArray(rawNiveaux)) {
+      selectedNiveaux = rawNiveaux.filter(Boolean);
+    } else if (rawNiveaux) {
+      selectedNiveaux = [rawNiveaux];
+    }
+
+    var hasCycle = Boolean(selectedCycle);
+    var hasNiveau = selectedNiveaux.length > 0;
+
+    // Étape 2: Verrouiller / Déverrouiller le champ Niveau(x) d'études
+    if (!hasCycle) {
+      $('#sel_niveau_scolarite').prop('disabled', true);
+      if (isAddMode) $('#btn-toggle-all-niveaux').hide();
+    } else {
+      $('#sel_niveau_scolarite').prop('disabled', false);
+      if (isAddMode) $('#btn-toggle-all-niveaux').show();
+    }
+
+    // Étape 3 & 4: Verrouiller / Déverrouiller Type de Filière et Filière(s) rattachée(s)
+    if (!hasCycle || !hasNiveau) {
+      $('#sel_type_filiere_scolarite').prop('disabled', true);
+      $('#sel_filiere_scolarite').prop('disabled', true);
+      if (isAddMode) $('#btn-toggle-all-filieres').hide();
+    } else {
+      $('#sel_type_filiere_scolarite').prop('disabled', false);
+      $('#sel_filiere_scolarite').prop('disabled', false);
+      if (isAddMode) $('#btn-toggle-all-filieres').show();
+    }
+
+    // Rafraîchir le composant Select2
+    if ($.fn.select2) {
+      $('#sel_niveau_scolarite, #sel_type_filiere_scolarite, #sel_filiere_scolarite').trigger('change.select2');
+    }
+  }
+
+  // 1. Filtrage en cascade des Niveaux d'études selon le Cycle sélectionné (via pivot filiere_cycles)
+  function filterNiveauxByCycle() {
+    var selectedCycle = $('#sel_cycle_scolarite').val();
+    var $niveauSelect = $('#sel_niveau_scolarite');
+    var currentVals = $niveauSelect.val();
+
+    $niveauSelect.empty();
+
+    if (!selectedCycle) {
+      $niveauSelect.append('<option value="" disabled selected>-- 2. Choisir d\'abord un cycle académique --</option>');
+      $niveauSelect.trigger('change.select2');
+      updateCascadeLocks();
+      return;
+    }
+
+    if (!isAddMode) {
+      $niveauSelect.append('<option value="">-- Choisir un niveau --</option>');
+    }
+
+    var validNiveauCodes = cycleToNiveauxMap[selectedCycle] || [];
+    var count = 0;
+
+    allNiveaux.forEach(function(n) {
+      if (validNiveauCodes.indexOf(n.code_niveau) !== -1) {
+        count++;
+        var isSel = false;
+        if (Array.isArray(currentVals)) {
+          isSel = currentVals.indexOf(n.code_niveau) !== -1;
+        } else {
+          isSel = (n.code_niveau === currentVals || n.code_niveau === preselectedNiveauCode);
+        }
+        var labelText = n.libelle_niveau + (n.code_niveau ? ' (' + n.code_niveau + ')' : '');
+        var optHtml = '<option value="' + $('<div>').text(n.code_niveau).html() + '"' + (isSel ? ' selected' : '') + '>' + $('<div>').text(labelText).html() + '</option>';
+        $niveauSelect.append(optHtml);
+      }
+    });
+
+    if (count === 0) {
+      $niveauSelect.append('<option value="" disabled>(Aucun niveau rattaché à ce cycle)</option>');
+    }
+
+    $niveauSelect.trigger('change.select2');
+    updateCascadeLocks();
+  }
+
+  // 2. Filtrage en cascade des Filières selon (Cycle x Niveaux d'études x Type de Filière)
+  function filterFilieresByCascade() {
+    var selectedCycle = $('#sel_cycle_scolarite').val();
+    var rawNiveaux = $('#sel_niveau_scolarite').val();
+    var selectedNiveaux = [];
+    if (Array.isArray(rawNiveaux)) {
+      selectedNiveaux = rawNiveaux.filter(Boolean);
+    } else if (rawNiveaux) {
+      selectedNiveaux = [rawNiveaux];
+    }
     var selectedType = $('#sel_type_filiere_scolarite').val();
     var $filiereSelect = $('#sel_filiere_scolarite');
-    var currentVal = $filiereSelect.val();
+    var currentVals = $filiereSelect.val();
 
     $filiereSelect.empty();
 
+    if (!selectedCycle || selectedNiveaux.length === 0) {
+      $filiereSelect.append('<option value="" disabled selected>-- 4. Choisir d\'abord le(s) niveau(x) d\'études --</option>');
+      $filiereSelect.trigger('change.select2');
+      updateCascadeLocks();
+      return;
+    }
+
     if (!isAddMode) {
-      if (!selectedCycle) {
-        $filiereSelect.append('<option value="">-- Choisir d\'abord un cycle --</option>');
-        $filiereSelect.val(null).trigger('change.select2');
-        return;
-      }
       $filiereSelect.append('<option value="">-- Choisir une filière --</option>');
     }
 
     var count = 0;
     allFilieres.forEach(function(f) {
-      var matchCycle = !selectedCycle || (f.cycles && f.cycles.indexOf(selectedCycle) !== -1);
+      // Étape 1 : Cycle
+      var matchCycle = (f.cycles && f.cycles.indexOf(selectedCycle) !== -1);
+      
+      // Étape 3 : Type de filière
       var matchType = !selectedType || (f.type_filiere === selectedType);
 
-      if (matchCycle && matchType) {
+      // Étape 2 & 4 : Niveau(x) d'études via la table pivot
+      var matchNiveau = filiereCyclesPivot.some(function(fc) {
+        return fc.cycle_code === selectedCycle &&
+               fc.filiere_code === f.code_filiere &&
+               (!fc.niveau_code || selectedNiveaux.indexOf(fc.niveau_code) !== -1);
+      });
+
+      if (matchCycle && matchType && matchNiveau) {
         count++;
         var isSel = false;
-        if (Array.isArray(currentVal)) {
-          isSel = currentVal.indexOf(f.code_filiere) !== -1;
+        if (Array.isArray(currentVals)) {
+          isSel = currentVals.indexOf(f.code_filiere) !== -1;
         } else {
-          isSel = (f.code_filiere === currentVal || f.code_filiere === preselectedFiliereCode);
+          isSel = (f.code_filiere === currentVals || f.code_filiere === preselectedFiliereCode);
         }
-        var optHtml = '<option value="' + $('<div>').text(f.code_filiere).html() + '"' + (isSel ? ' selected' : '') + '>' + $('<div>').text(f.libelle_filiere).html() + '</option>';
+        var labelText = f.libelle_filiere + (f.code_filiere ? ' (' + f.code_filiere + ')' : '');
+        var optHtml = '<option value="' + $('<div>').text(f.code_filiere).html() + '"' + (isSel ? ' selected' : '') + '>' + $('<div>').text(labelText).html() + '</option>';
         $filiereSelect.append(optHtml);
       }
     });
 
     if (count === 0) {
-      $filiereSelect.append('<option value="" disabled>(Aucune filière disponible)</option>');
+      $filiereSelect.append('<option value="" disabled>(Aucune filière disponible pour ces critères)</option>');
     }
 
     $filiereSelect.trigger('change.select2');
+    updateCascadeLocks();
   }
 
-  $('#sel_cycle_scolarite, #sel_type_filiere_scolarite').on('change select2:select select2:clear', function() {
+  // Événements de cascade avec réinitialisation explicite des sous-champs
+  $('#sel_cycle_scolarite').on('change select2:select select2:clear', function() {
+    preselectedNiveauCode = '';
     preselectedFiliereCode = '';
-    filterFilieresByCycle();
+    $('#sel_niveau_scolarite').val(null);
+    $('#sel_filiere_scolarite').val(null);
+    filterNiveauxByCycle();
+    filterFilieresByCascade();
     if (typeof checkDuplicateScolarites === 'function') {
       checkDuplicateScolarites();
     }
   });
 
-  filterFilieresByCycle();
+  $('#sel_niveau_scolarite').on('change select2:select select2:unselect select2:clear', function() {
+    preselectedFiliereCode = '';
+    $('#sel_filiere_scolarite').val(null);
+    filterFilieresByCascade();
+    if (typeof checkDuplicateScolarites === 'function') {
+      checkDuplicateScolarites();
+    }
+  });
+
+  $('#sel_type_filiere_scolarite').on('change select2:select select2:clear', function() {
+    filterFilieresByCascade();
+    if (typeof checkDuplicateScolarites === 'function') {
+      checkDuplicateScolarites();
+    }
+  });
+
+  // Initialisation au chargement de la page
+  filterNiveauxByCycle();
+  filterFilieresByCascade();
+  updateCascadeLocks();
 
   var isAllDuplicate = false;
 
