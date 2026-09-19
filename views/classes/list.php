@@ -91,101 +91,116 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
 <!-- MODAL INTERACTIVE : AJOUTER / MODIFIER UNE CLASSE                        -->
 <!-- ========================================================================= -->
 <div id="modal-classe" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
-  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
-    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
-      <h3 id="modal-classe-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 700px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-classe-title" style="font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
         <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe / Promotion
       </h3>
       <button type="button" class="btn-close-modal-classe" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
 
-    <form id="form-classe" style="padding: 22px;">
+    <form id="form-classe" style="padding: 24px;">
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       <input type="hidden" name="id_classe" id="classe_id" value="">
 
-      <div class="form-group" style="margin-bottom: 16px;">
-        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Année Académique <span style="color: #EF4444;">*</span>
-        </label>
-        <select name="annee_code" id="classe_annee" required class="form-control select2" style="width: 100%;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Année Académique <span style="color: #EF4444;">*</span>
+          </label>
+          <select name="annee_code" id="classe_annee" required class="form-control select2" style="width: 100%;">
+            <?php if (empty($annees)): ?>
+              <option value="">-- Aucune année disponible --</option>
+            <?php else: ?>
+              <?php foreach ($annees as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode === $a['code_annee']) || (($a['statut_annee'] ?? '') === 'actif' && empty($currentAnneeCode))) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </select>
           <?php if (empty($annees)): ?>
-            <option value="">-- Aucune année disponible --</option>
-          <?php else: ?>
-            <?php foreach ($annees as $a): ?>
-              <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode === $a['code_annee']) || (($a['statut_annee'] ?? '') === 'actif' && empty($currentAnneeCode))) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+            <small style="color: #EF4444; font-size: 12px; margin-top: 4px; display: block; font-weight: 600;">
+              <i data-lucide="alert-circle" style="width: 13px; height: 13px; vertical-align: middle;"></i>
+              Veuillez d'abord configurer une année académique dans Configuration &gt; Années Académiques.
+            </small>
+          <?php endif; ?>
+        </div>
+
+        <?php if (!empty($parcoursPivots)): ?>
+        <div class="form-group" style="margin-bottom: 0; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
+          <label style="display: block; font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 4px;">
+            <i data-lucide="layers" style="width: 14px; height: 14px; vertical-align: middle;"></i> Parcours Pivot (Cycle - Filière - Niveau) <span style="color: #EF4444;">*</span>
+          </label>
+          <select id="sel_parcours_pivot" class="form-control" style="width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12.5px; font-weight: 600;">
+            <option value="">-- Sélectionner un parcours pivot --</option>
+            <?php foreach ($parcoursPivots as $p): ?>
+              <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>" data-cycle="<?= htmlspecialchars($p['libelle_cycle'] ?? '') ?>">
+                <?= htmlspecialchars($p['libelle_cycle']) ?> &rarr; <?= htmlspecialchars($p['libelle_filiere']) ?><?= !empty($p['libelle_niveau']) ? ' (' . htmlspecialchars($p['libelle_niveau']) . ')' : '' ?>
               </option>
             <?php endforeach; ?>
-          <?php endif; ?>
-        </select>
-        <?php if (empty($annees)): ?>
-          <small style="color: #EF4444; font-size: 12px; margin-top: 4px; display: block; font-weight: 600;">
-            <i data-lucide="alert-circle" style="width: 13px; height: 13px; vertical-align: middle;"></i>
-            Veuillez d'abord configurer une année académique dans Configuration &gt; Années Académiques.
-          </small>
+          </select>
+        </div>
         <?php endif; ?>
       </div>
-      <?php if (!empty($parcoursPivots)): ?>
-      <div class="form-group" style="margin-bottom: 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;">
-        <label style="display: block; font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 4px;">
-          <i data-lucide="layers" style="width: 14px; height: 14px; vertical-align: middle;"></i> Parcours Pivot (Cycle - Filière - Niveau)
-        </label>
-        <select id="sel_parcours_pivot" class="form-control" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 13px;">
-          <option value="">-- Choisir une combinaison pivot pré-configurée --</option>
-          <?php foreach ($parcoursPivots as $p): ?>
-            <option value="<?= htmlspecialchars($p['code_filiere_cycle']) ?>" data-filiere="<?= htmlspecialchars($p['filiere_code']) ?>" data-niveau="<?= htmlspecialchars($p['niveau_code'] ?? '') ?>">
-              <?= htmlspecialchars($p['libelle_cycle']) ?> &rarr; <?= htmlspecialchars($p['libelle_filiere']) ?><?= !empty($p['libelle_niveau']) ? ' (' . htmlspecialchars($p['libelle_niveau']) . ')' : '' ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
-        <small style="color: #64748B; font-size: 11.5px; display: block; margin-top: 4px;">Permet d'auto-sélectionner la filière et le niveau associés.</small>
-      </div>
-      <?php endif; ?>
 
-      <div class="form-group" style="margin-bottom: 16px;">
-        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Filière rattachée <span style="color: #EF4444;">*</span>
-        </label>
-        <select name="filiere_code" id="classe_filiere" required class="form-control select2" style="width: 100%;">
-          <option value="">-- Choisir une filière --</option>
-          <?php foreach ($filieres as $f): ?>
-            <option value="<?= htmlspecialchars($f['code_filiere']) ?>" data-nom="<?= htmlspecialchars($f['libelle_filiere']) ?>">
-              <?= htmlspecialchars($f['libelle_filiere']) ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
-      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Cycle d'études <span style="font-weight: 400; font-size: 11px; color: #64748B;">(Lecture seule)</span>
+          </label>
+          <input type="text" id="classe_cycle" readonly placeholder="-- Dérivé du pivot --" class="form-control" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 8px; border: 1px solid #CBD5E1; background-color: #F8FAFC; color: #1E3A5F; font-weight: 700; font-size: 13px; cursor: not-allowed;">
+        </div>
 
-      <div class="form-group" style="margin-bottom: 16px;">
-        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Niveau d'études <span style="color: #EF4444;">*</span>
-        </label>
-        <select name="niveau_code" id="classe_niveau" required class="form-control select2" style="width: 100%;">
-          <option value="">-- Choisir un niveau --</option>
-          <?php foreach ($niveaux as $n): ?>
-            <option value="<?= htmlspecialchars($n['code_niveau']) ?>" data-nom="<?= htmlspecialchars($n['libelle_niveau']) ?>">
-              <?= htmlspecialchars($n['libelle_niveau']) ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Filière rattachée <span style="color: #EF4444;">*</span> <span style="font-weight: 400; font-size: 11px; color: #64748B;">(Lecture seule)</span>
+          </label>
+          <div style="pointer-events: none; opacity: 0.95;">
+            <select name="filiere_code" id="classe_filiere" required class="form-control select2" style="width: 100%; background-color: #F8FAFC;">
+              <option value="">-- Choisir une filière --</option>
+              <?php foreach ($filieres as $f): ?>
+                <option value="<?= htmlspecialchars($f['code_filiere']) ?>" data-nom="<?= htmlspecialchars($f['libelle_filiere']) ?>">
+                  <?= htmlspecialchars($f['libelle_filiere']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Niveau d'études <span style="color: #EF4444;">*</span> <span style="font-weight: 400; font-size: 11px; color: #64748B;">(Lecture seule)</span>
+          </label>
+          <div style="pointer-events: none; opacity: 0.95;">
+            <select name="niveau_code" id="classe_niveau" required class="form-control select2" style="width: 100%; background-color: #F8FAFC;">
+              <option value="">-- Choisir un niveau --</option>
+              <?php foreach ($niveaux as $n): ?>
+                <option value="<?= htmlspecialchars($n['code_niveau']) ?>" data-nom="<?= htmlspecialchars($n['libelle_niveau']) ?>">
+                  <?= htmlspecialchars($n['libelle_niveau']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div class="form-group" style="margin-bottom: 16px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Libellé de la classe <span style="color: #EF4444;">*</span>
+          Libellé de la classe / promotion <span style="color: #EF4444;">*</span>
           <span style="font-size: 11px; font-weight: 500; color: #64748B; margin-left: 6px;">(Généré automatiquement)</span>
         </label>
         <input type="text" name="libelle_classe" id="classe_libelle" required placeholder="Ex: IDA - Première année" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 14px;">
-        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Modifiable pour ajouter une section (ex: Gr. A, Gr. B, Soir).</small>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Modifiable pour spécifier une section ou un groupe (ex: IDA 1A Groupe B, Soir).</small>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; align-items: center;">
-        <div class="form-group">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 22px; align-items: center;">
+        <div class="form-group" style="margin-bottom: 0;">
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Capacité d'accueil</label>
           <input type="number" min="1" max="500" name="capacite_max_classe" id="classe_capacite" value="35" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 14px;">
         </div>
-        <div class="form-group">
-          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut de la classe</label>
           <div style="display: flex; align-items: center; gap: 10px; padding-top: 4px;">
             <label style="position: relative; display: inline-block; width: 42px; height: 22px; margin: 0; cursor: pointer;">
               <input type="checkbox" name="statut_classe" id="classe_statut" value="actif" checked style="opacity: 0; width: 0; height: 0;">
@@ -432,10 +447,12 @@ $(document).ready(function() {
         $('#classe_annee').val(selAnnee).trigger('change.select2');
       }
     }
+    $('#sel_parcours_pivot').val('');
+    $('#classe_cycle').val('');
     $('#modal-classe-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe / Promotion');
     $('#modal-classe').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
-    setTimeout(function() { $('#classe_filiere').focus(); }, 100);
+    setTimeout(function() { $('#sel_parcours_pivot').focus(); }, 100);
   });
 
   $(document).on('click', '.btn-edit-classe', function(e) {
@@ -459,6 +476,18 @@ $(document).ready(function() {
       $('#classe_niveau').trigger('change.select2');
       $('#classe_annee').trigger('change.select2');
     }
+
+    var $matchOpt = $('#sel_parcours_pivot option').filter(function() {
+      return $(this).data('filiere') == filiere && $(this).data('niveau') == niveau;
+    });
+    if ($matchOpt.length > 0) {
+      $('#sel_parcours_pivot').val($matchOpt.val());
+      $('#classe_cycle').val($matchOpt.data('cycle') || '');
+    } else {
+      $('#sel_parcours_pivot').val('');
+      $('#classe_cycle').val('');
+    }
+
     $('#classe_capacite').val(capacite || '35');
 
     var isActif = (statut === 'actif');
@@ -537,16 +566,17 @@ $(document).ready(function() {
   // SELECTION PARCOURSPIVOT DANS LE MODAL
   $('#sel_parcours_pivot').on('change', function() {
     var $opt = $(this).find('option:selected');
-    var filiereCode = $opt.data('filiere');
-    var niveauCode = $opt.data('niveau');
-    if (filiereCode) {
-      $('#classe_filiere').val(filiereCode);
-      if ($.fn.select2) $('#classe_filiere').trigger('change.select2');
-    }
-    if (niveauCode) {
-      $('#classe_niveau').val(niveauCode);
-      if ($.fn.select2) $('#classe_niveau').trigger('change.select2');
-    }
+    var filiereCode = $opt.data('filiere') || '';
+    var niveauCode = $opt.data('niveau') || '';
+    var cycleName = $opt.data('cycle') || '';
+
+    $('#classe_filiere').val(filiereCode);
+    if ($.fn.select2) $('#classe_filiere').trigger('change.select2');
+
+    $('#classe_niveau').val(niveauCode);
+    if ($.fn.select2) $('#classe_niveau').trigger('change.select2');
+
+    $('#classe_cycle').val(cycleName);
     autoGenerateLibelleClasse();
   });
 
