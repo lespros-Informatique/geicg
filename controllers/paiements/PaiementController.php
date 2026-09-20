@@ -94,6 +94,267 @@ class PaiementController extends BaseController
         ]);
     }
 
+    public function comptabiliteEtudiants()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_COMPTABILITE_ETUDIANTS', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $db = $this->model->getCon();
+
+        if (!empty($_GET['annee_code'])) {
+            $getAnnee = trim($_GET['annee_code']);
+            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$getAnnee]);
+            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            if ($aRow) {
+                $_SESSION['annee_active_code'] = $aRow['code_annee'];
+                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+            }
+        }
+
+        $activeYear = $this->getActiveAnneeCode();
+        $annees = $this->getAccessibleAnnees();
+        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $stmtInscr = $db->prepare("
+            SELECT 
+                i.code_inscription,
+                i.annee_code,
+                i.photo_inscription,
+                e.code_etudiant,
+                e.matricule_etudiant,
+                e.nom_etudiant,
+                e.prenom_etudiant,
+                e.photo_etudiant,
+                c.libelle_classe,
+                c.code_classe
+            FROM inscriptions i
+            JOIN etudiants e ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN classes c ON i.classe_code = c.code_classe
+            WHERE i.statut_inscription != 'annule'
+              AND i.annee_code = ?
+            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+        ");
+        $stmtInscr->execute([$activeYear]);
+        $inscriptions = $stmtInscr->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $today = date('Y-m-d');
+        $stmtSess = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? AND statut_session = 'ouverte' ORDER BY id_session DESC LIMIT 1");
+        $stmtSess->execute([$today]);
+        $activeSession = $stmtSess->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if (!$activeSession) {
+            $stmtLast = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
+            $stmtLast->execute([$today]);
+            $activeSession = $stmtLast->fetch(PDO::FETCH_ASSOC) ?: null;
+        }
+
+        $isCaisseOuverte = ($activeSession && ($activeSession['statut_session'] ?? '') === 'ouverte');
+        $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
+
+        $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS', 'MANAGE_PAYMENTS']);
+        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+
+        $this->loadView('../views/paiements/comptabilite_etudiants.php', [
+            'annees' => $annees,
+            'niveaux' => $niveaux,
+            'classes' => $classes,
+            'selectedAnneeCode' => $activeYear,
+            'inscriptions' => $inscriptions,
+            'isCaisseOuverte' => $isCaisseOuverte,
+            'activeSession' => $activeSession,
+            'encryptedSessionId' => $encryptedSessionId,
+            'canRecord' => $canRecord,
+            'canOpenCaisse' => $canOpenCaisse,
+            'canCloseCaisse' => $canCloseCaisse
+        ]);
+    }
+
+    public function apiComptabiliteEtudiants()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_COMPTABILITE_ETUDIANTS', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $db = $this->model->getCon();
+
+        $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
+        $niveauCode = $_GET['niveau_code'] ?? 'ALL';
+        $classeCode = $_GET['classe_code'] ?? 'ALL';
+        $regime = $_GET['regime'] ?? 'ALL';
+        $statutPaiement = $_GET['statut_paiement'] ?? 'ALL';
+
+        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
+        $modelFA = new ModelFraisAnnexe();
+
+        $where = "WHERE i.statut_inscription != 'annule' AND i.annee_code = ?";
+        $params = [$anneeCode];
+
+        if ($niveauCode !== 'ALL' && !empty($niveauCode)) {
+            $where .= " AND c.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if ($classeCode !== 'ALL' && !empty($classeCode)) {
+            $where .= " AND i.classe_code = ?";
+            $params[] = $classeCode;
+        }
+        if ($regime !== 'ALL' && !empty($regime)) {
+            if ($regime === 'affecte') {
+                $where .= " AND (i.affectation_etat = 'affecte' OR i.affectation_etat = 'oui')";
+            } else {
+                $where .= " AND (i.affectation_etat = 'non_affecte' OR i.affectation_etat = 'non')";
+            }
+        }
+
+        $sql = "
+            SELECT 
+                i.code_inscription,
+                i.affectation_etat,
+                i.montant_scolarite_inscription,
+                i.photo_inscription,
+                e.code_etudiant,
+                e.matricule_etudiant,
+                e.nom_etudiant,
+                e.prenom_etudiant,
+                e.telephone_etudiant,
+                e.photo_etudiant,
+                c.code_classe,
+                c.libelle_classe,
+                c.filiere_code,
+                c.niveau_code,
+                f.libelle_filiere,
+                f.type_filiere,
+                n.libelle_niveau
+            FROM inscriptions i
+            JOIN etudiants e ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN classes c ON i.classe_code = c.code_classe
+            LEFT JOIN filieres f ON c.filiere_code = f.code_filiere
+            LEFT JOIN niveaux n ON c.niveau_code = n.code_niveau
+            {$where}
+            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+        ";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $inscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $stmtPay = $db->prepare("
+            SELECT inscription_code, SUM(montant_paiement) as total_paye
+            FROM paiements
+            WHERE statut_paiement != 'annule'
+              AND (annee_code = ? OR inscription_code IN (SELECT code_inscription FROM inscriptions WHERE annee_code = ?))
+            GROUP BY inscription_code
+        ");
+        $stmtPay->execute([$anneeCode, $anneeCode]);
+        $paymentsGrouped = [];
+        foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $rowP) {
+            $paymentsGrouped[$rowP['inscription_code']] = (float)$rowP['total_paye'];
+        }
+
+        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM scolarites WHERE statut_scolarite = 'actif' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
+        $stmtScoAll->execute([$anneeCode]);
+        $scolariteGrid = $stmtScoAll->fetchAll(PDO::FETCH_ASSOC);
+
+        $data = [];
+        $kpiCount = 0;
+        $kpiScolariteDueTotal = 0;
+        $kpiFraisAnnexesDueTotal = 0;
+        $kpiTotalAttendu = 0;
+        $kpiTotalEncaisse = 0;
+        $kpiResteARecouvrer = 0;
+
+        foreach ($inscriptions as $ins) {
+            $codeIns = $ins['code_inscription'];
+            $filiereCode = $ins['filiere_code'] ?? '';
+            $nCode = $ins['niveau_code'] ?? '';
+            $affRaw = $ins['affectation_etat'] ?? 'non';
+            $isAffecte = ($affRaw === 'affecte' || $affRaw === 'oui');
+            $targetAff = $isAffecte ? 'affecte' : 'non_affecte';
+            $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
+
+            $scolariteDue = 0;
+            foreach ($scolariteGrid as $sg) {
+                $sgAff = ($sg['affectation_etat'] === 'affecte' || $sg['affectation_etat'] === 'oui') ? 'affecte' : 'non_affecte';
+                if ($sg['filiere_code'] === $filiereCode && $sg['niveau_code'] === $nCode && $sgAff === $targetAff) {
+                    $scolariteDue = (float)$sg['montant_scolarite'];
+                    break;
+                }
+            }
+            if ($scolariteDue <= 0) {
+                $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+            }
+
+            $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $nCode);
+            $totalAttendu = $scolariteDue + $fraisAnnexesDus;
+            $totalEncaisse = $paymentsGrouped[$codeIns] ?? 0;
+            $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
+            $taux = ($totalAttendu > 0) ? min(100, round(($totalEncaisse / $totalAttendu) * 100, 1)) : 0;
+
+            $statusCode = 'non_paye';
+            if ($totalEncaisse >= $totalAttendu && $totalAttendu > 0) {
+                $statusCode = 'solde';
+            } elseif ($totalEncaisse > 0) {
+                $statusCode = 'partiel';
+            }
+
+            if ($statutPaiement !== 'ALL' && $statutPaiement !== $statusCode) {
+                continue;
+            }
+
+            $kpiCount++;
+            $kpiScolariteDueTotal += $scolariteDue;
+            $kpiFraisAnnexesDueTotal += $fraisAnnexesDus;
+            $kpiTotalAttendu += $totalAttendu;
+            $kpiTotalEncaisse += $totalEncaisse;
+            $kpiResteARecouvrer += $soldeRestant;
+
+            $photoUrl = !empty($ins['photo_etudiant']) 
+                ? RACINE . 'public/uploads/etudiants/' . $ins['photo_etudiant']
+                : (!empty($ins['photo_inscription']) ? RACINE . 'public/uploads/inscriptions/' . $ins['photo_inscription'] : RACINE . 'public/assets/images/default-avatar.png');
+
+            $data[] = [
+                'code_inscription' => $codeIns,
+                'encrypted_inscription_code' => $this->validator->crypter($codeIns),
+                'code_etudiant' => $ins['code_etudiant'] ?? '',
+                'encrypted_etudiant_code' => !empty($ins['code_etudiant']) ? $this->validator->crypter($ins['code_etudiant']) : '',
+                'matricule' => $ins['matricule_etudiant'] ?? 'N/A',
+                'nom' => strtoupper($ins['nom_etudiant'] ?? ''),
+                'prenom' => ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
+                'nom_complet' => strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
+                'photo' => $photoUrl,
+                'telephone' => $ins['telephone_etudiant'] ?? 'N/A',
+                'classe' => $ins['libelle_classe'] ?? 'N/A',
+                'niveau' => $ins['libelle_niveau'] ?? 'N/A',
+                'regime' => $isAffecte ? 'Affecté' : 'Privé',
+                'regime_code' => $targetAff,
+                'scolarite_due' => $scolariteDue,
+                'frais_annexes_dus' => $fraisAnnexesDus,
+                'total_attendu' => $totalAttendu,
+                'total_encaisse' => $totalEncaisse,
+                'solde_restant' => $soldeRestant,
+                'taux_reglement' => $taux,
+                'statut_code' => $statusCode,
+                'statut_libelle' => ($statusCode === 'solde') ? 'Soldé' : (($statusCode === 'partiel') ? 'Acompte Payé' : 'Non Réglé'),
+                'badge_class' => ($statusCode === 'solde') ? 'badge-success' : (($statusCode === 'partiel') ? 'badge-warning' : 'badge-danger')
+            ];
+        }
+
+        $kpiTauxGlobal = ($kpiTotalAttendu > 0) ? min(100, round(($kpiTotalEncaisse / $kpiTotalAttendu) * 100, 1)) : 0;
+
+        $this->json([
+            'status' => 1,
+            'success' => true,
+            'data' => $data,
+            'kpis' => [
+                'total_etudiants' => $kpiCount,
+                'total_scolarites' => $kpiScolariteDueTotal,
+                'total_frais_annexes' => $kpiFraisAnnexesDueTotal,
+                'total_attendu' => $kpiTotalAttendu,
+                'total_encaisse' => $kpiTotalEncaisse,
+                'reste_a_recouvrer' => $kpiResteARecouvrer,
+                'taux_recouvrement' => $kpiTauxGlobal
+            ]
+        ]);
+    }
+
     public function apiStats()
     {
         $this->requireAuth();
@@ -430,7 +691,8 @@ class PaiementController extends BaseController
 
         $db = $this->model->getCon();
 
-        $activeYear = $this->getActiveAnneeCode();
+        $anneeParam = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
+        $activeYear = !empty($anneeParam) ? trim($anneeParam) : $this->getActiveAnneeCode();
 
         if (!empty($inscriptionCode)) {
             $stmt = $db->prepare("
@@ -1257,9 +1519,22 @@ class PaiementController extends BaseController
             $firstDateMinute = !empty($allPayments) ? substr($allPayments[0]['date_paiement'] ?? '', 0, 16) : '';
             
             $firstPaymentGroupIds = [];
-            foreach ($allPayments as $pItem) {
-                if (substr($pItem['date_paiement'] ?? '', 0, 16) === $firstDateMinute || count($firstPaymentGroupIds) < 2) {
-                    $firstPaymentGroupIds[] = (int)$pItem['id_paiement'];
+            $firstGroupScolarite = 0.0;
+            $firstGroupFraisAnnexes = 0.0;
+
+            if (!empty($allPayments)) {
+                foreach ($allPayments as $pItem) {
+                    $pDateMin = substr($pItem['date_paiement'] ?? '', 0, 16);
+                    $isFA = (($pItem['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($pItem['categorie_paiement'] ?? '')) === 'frais_annexes');
+                    
+                    if ($pDateMin === $firstDateMinute || (count($firstPaymentGroupIds) < 2 && count($allPayments) <= 2)) {
+                        $firstPaymentGroupIds[] = (int)$pItem['id_paiement'];
+                        if ($isFA) {
+                            $firstGroupFraisAnnexes += (float)$pItem['montant_paiement'];
+                        } else {
+                            $firstGroupScolarite += (float)$pItem['montant_paiement'];
+                        }
+                    }
                 }
             }
 
@@ -1313,6 +1588,8 @@ class PaiementController extends BaseController
             'totalPayeCumul' => $totalPayeCumul,
             'totalScolariteCumul' => $totalScolariteCumul,
             'totalFraisAnnexesCumul' => $totalFraisAnnexesCumul,
+            'firstGroupScolarite' => $firstGroupScolarite,
+            'firstGroupFraisAnnexes' => $firstGroupFraisAnnexes,
             'isFirstPayment' => $isFirstPayment,
             'soldeRestant' => $soldeRestant,
             'scolarite' => $scolarite,

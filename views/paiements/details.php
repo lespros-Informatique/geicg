@@ -23,8 +23,6 @@ $anneeLibelle = $item['libelle_annee'] ?? '2025-2026';
 $caissierNom = trim(($item['prenom_caissier'] ?? '') . ' ' . ($item['nom_caissier'] ?? 'Mlle KONE N\'diatty A. Mariam'));
 if (empty($caissierNom)) $caissierNom = 'Mlle KONE N\'diatty A. Mariam';
 
-$montantEnLettres = Validator::numberToWordsFCFA($montantOp);
-
 $isFirstPayment = isset($isFirstPayment) ? (bool)$isFirstPayment : true;
 $totalScolariteCumul = (float)($totalScolariteCumul ?? $totalPayeCumul);
 $totalFraisAnnexesCumul = (float)($totalFraisAnnexesCumul ?? 0);
@@ -33,40 +31,53 @@ $trancheCodeItem = $item['tranche_code'] ?? '';
 $catItem = strtolower(trim($item['categorie_paiement'] ?? ''));
 $isFAItem = ($trancheCodeItem === 'FRAIS_ANNEXES' || $catItem === 'frais_annexes');
 
-$typeOp = !empty($item['libelle_tranche']) ? $item['libelle_tranche'] : (!empty($item['type_paiement']) ? $item['type_paiement'] : ($isFAItem ? 'Frais Annexes' : 'SCOLARITE'));
-
 if ($isFirstPayment) {
     $mainRecuTitle = "REÇU D'INSCRIPTION";
     $copieRecuTitle = "COPIE REÇU DE VERSEMENT POUR ARCHIVAGE";
     $pageTitle = "Reçu d'Inscription Officiel N° " . $numRecu;
+    $typeOp = "INSCRIPTION";
 
-    if ($isFAItem) {
-        $opDroit = $montantOp;
-        $opScolarite = 0;
-    } else {
-        $opFA = (float)($item['montant_frais_annexes'] ?? 0);
-        if ($opFA > 0) {
-            $opDroit = $opFA;
-            $opScolarite = max(0, $montantOp - $opFA);
-        } elseif ($montantOp > 80000 && $montantOp > $scolarite) {
-            $opDroit = 80000;
-            $opScolarite = max(0, $montantOp - 80000);
-        } elseif ($montantOp == 105000) {
-            $opScolarite = 25000;
-            $opDroit = 80000;
+    $opScolarite = isset($firstGroupScolarite) ? (float)$firstGroupScolarite : 0;
+    $opDroit = isset($firstGroupFraisAnnexes) ? (float)$firstGroupFraisAnnexes : 0;
+
+    if ($opScolarite == 0 && $opDroit == 0) {
+        if ($isFAItem) {
+            $opDroit = $montantOp;
+            $opScolarite = 0;
         } else {
-            $opScolarite = $montantOp;
-            $opDroit = 0;
+            $opFA = (float)($item['montant_frais_annexes'] ?? 0);
+            if ($opFA > 0) {
+                $opDroit = $opFA;
+                $opScolarite = max(0, $montantOp - $opFA);
+            } elseif ($montantOp > 80000 && $montantOp > $scolarite) {
+                $opDroit = 80000;
+                $opScolarite = max(0, $montantOp - 80000);
+            } elseif ($montantOp == 105000) {
+                $opScolarite = 25000;
+                $opDroit = 80000;
+            } else {
+                $opScolarite = $montantOp;
+                $opDroit = 0;
+            }
         }
+    }
+
+    $montantOpAfficher = $opScolarite + $opDroit;
+    if ($montantOpAfficher <= 0) {
+        $montantOpAfficher = $montantOp;
     }
 } else {
     $mainRecuTitle = "REÇU DE VERSEMENT";
     $copieRecuTitle = "COPIE REÇU DU 1er VERSEMENT POUR ARCHIVAGE";
     $pageTitle = "Reçu de Versement Officiel N° " . $numRecu;
+    $typeOp = !empty($item['libelle_tranche']) ? $item['libelle_tranche'] : (!empty($item['type_paiement']) ? $item['type_paiement'] : ($isFAItem ? 'Frais Annexes' : 'SCOLARITE'));
 
     $opScolarite = 0;
     $opDroit = 0;
+    $montantOpAfficher = $montantOp;
 }
+
+$montantEnLettres = Validator::numberToWordsFCFA($montantOpAfficher);
 
 $refSeed = !empty($item['code_paiement']) ? $item['code_paiement'] : $numRecu;
 $refCaissHash1 = sprintf("%05d", abs(crc32($refSeed . '_sco')) % 90000 + 10000);
@@ -447,7 +458,7 @@ if (empty($logoSrc)) {
             </tr>
             <tr>
               <td colspan="2" style="padding-top: 4px;">
-                Montant de l'Opération : <strong><?= number_format($montantOp, 0, '', ' ') ?>CFA</strong>
+                Montant de l'Opération : <strong><?= number_format($montantOpAfficher, 0, '', ' ') ?>CFA</strong>
                 &nbsp;&nbsp;&nbsp;&nbsp;
                 <span class="blue-text-words"><?= htmlspecialchars($montantEnLettres) ?></span>
               </td>
@@ -507,7 +518,7 @@ if (empty($logoSrc)) {
               </tr>
               <tr>
                 <td style="font-weight: bold;">Versement</td>
-                <td style="text-align: center; font-weight: bold;"><?= number_format($montantOp, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($montantOpAfficher, 0, '', ' ') ?>CFA</td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -515,7 +526,7 @@ if (empty($logoSrc)) {
             <?php endif; ?>
             <tr class="fin-total-row">
               <td style="font-weight: bold; background: #404040;">TOTAL</td>
-              <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($montantOp, 0, '', ' ') ?>CFA</td>
+              <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($montantOpAfficher, 0, '', ' ') ?>CFA</td>
               <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($scolarite, 0, '', ' ') ?>CFA</td>
               <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($totalPayeCumul, 0, '', ' ') ?>CFA</td>
               <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</td>
@@ -617,7 +628,7 @@ if (empty($logoSrc)) {
             </tr>
             <tr>
               <td colspan="2" style="padding-top: 4px;">
-                Montant de l'Opération : <strong><?= number_format($montantOp, 0, '', ' ') ?>CFA</strong>
+                Montant de l'Opération : <strong><?= number_format($montantOpAfficher, 0, '', ' ') ?>CFA</strong>
                 &nbsp;&nbsp;&nbsp;&nbsp;
                 <span class="blue-text-words"><?= htmlspecialchars($montantEnLettres) ?></span>
               </td>

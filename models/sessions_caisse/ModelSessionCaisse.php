@@ -39,7 +39,7 @@ class ModelSessionCaisse extends BaseModel
     /**
      * Récupère une session par son ID avec détails
      */
-    public function getById(int $id): array
+    public function getById($id): array
     {
         $sql = "
             SELECT s.*, 

@@ -41,7 +41,7 @@ class ModelScolarite extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getById(int $id): array
+    public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
             SELECT s.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
@@ -49,10 +49,10 @@ class ModelScolarite extends BaseModel
             LEFT JOIN filieres f ON s.filiere_code = f.code_filiere
             LEFT JOIN niveaux n ON s.niveau_code = n.code_niveau
             LEFT JOIN annees a ON s.annee_code = a.code_annee
-            WHERE s.id_scolarite = ?
+            WHERE s.id_scolarite = ? OR s.code_scolarite = ?
             LIMIT 1
         ");
-        $stmt->execute([(int)$id]);
+        $stmt->execute([$id, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: [];
     }

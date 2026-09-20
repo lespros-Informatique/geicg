@@ -164,7 +164,16 @@ class EtudiantController extends BaseController
         $this->requirePermission('VIEW_ETUDIANTS');
         try {
             $id = $this->validator->decrypter($details);
+            if (empty($id)) {
+                $id = $details;
+            }
             $item = $this->model->getById($id);
+            if (!$item && is_string($id)) {
+                $item = $this->model->getByCode($id);
+            }
+            if (!$item && is_string($details)) {
+                $item = $this->model->getById($details);
+            }
             if (!$item) { 
                 $this->renderNotFound("Le dossier étudiant demandé est introuvable.");
                 return;

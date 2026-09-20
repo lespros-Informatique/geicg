@@ -38,7 +38,7 @@ class ModelPieceFournirCycle extends BaseModel
         }
     }
 
-    public function getById(int $id): array
+    public function getById($id): array
     {
         $sql = "
             SELECT pfc.*, 

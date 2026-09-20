@@ -39,17 +39,17 @@ class ModelFraisAnnexe extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getById(int $id): array
+    public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
             SELECT fa.*, a.libelle_annee, n.libelle_niveau
             FROM frais_annexes fa
             LEFT JOIN annees a ON fa.annee_code = a.code_annee
             LEFT JOIN niveaux n ON fa.niveau_code = n.code_niveau
-            WHERE fa.id_frais_annexe = ?
+            WHERE fa.id_frais_annexe = ? OR fa.code_frais_annexe = ?
             LIMIT 1
         ");
-        $stmt->execute([(int)$id]);
+        $stmt->execute([$id, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: [];
     }

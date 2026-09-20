@@ -414,13 +414,14 @@
         <?php
           $showScolariteGrille = $canAccess(['MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
           $showPaiements = $canAccess(['MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+          $showComptabiliteEtudiants = $canAccess(['VIEW_COMPTABILITE_ETUDIANTS', 'MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'VIEW_RAPPORTS_FINANCIERS', 'EXPORT_FINANCE']);
           $showOuvCaisse = $canAccess(['MANAGE_CAISSE', 'OUVERTURE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
           $showClotCaisse = $canAccess(['CLOTURE_CAISSE', 'VIEW_RAPPORTS_FINANCIERS', 'MANAGE_PAYMENTS']);
           $showImpayes = $canAccess(['MANAGE_IMPAYES', 'VIEW_IMPAYES', 'SEND_RELANCES', 'MANAGE_MORATOIRES']);
           $showArrieres = $canAccess(['MANAGE_ARRIERES', 'VIEW_ARRIERES', 'MANAGE_IMPAYES', 'MANAGE_PAIEMENTS']);
           $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_EXPENSES']);
           $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'MANAGE_EXPENSES', 'VALIDATE_DEPENSES']);
-          $hasSecFinance = $showScolariteGrille || $showPaiements || $showOuvCaisse || $showClotCaisse || $showImpayes || $showArrieres || $showTypeDep || $showDepenses;
+          $hasSecFinance = $showScolariteGrille || $showPaiements || $showComptabiliteEtudiants || $showOuvCaisse || $showClotCaisse || $showImpayes || $showArrieres || $showTypeDep || $showDepenses;
         ?>
         <?php if ($hasSecFinance): ?>
         <div class="nav-section">
@@ -442,8 +443,13 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showPaiements): ?>
-                <a href="<?= RACINE ?>paiement/list" class="nav-item sub <?= strpos($currentUri, '/paiement/') !== false ? 'active' : '' ?>" data-title="Caisse & Encaissements">
+                <a href="<?= RACINE ?>paiement/list" class="nav-item sub <?= (strpos($currentUri, '/paiement/') !== false && strpos($currentUri, '/comptabilite_etudiants') === false) ? 'active' : '' ?>" data-title="Caisse & Encaissements">
                     <i data-lucide="credit-card"></i> <span>Caisse & Encaissements</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($showComptabiliteEtudiants): ?>
+                <a href="<?= RACINE ?>paiement/comptabilite_etudiants" class="nav-item sub <?= strpos($currentUri, '/comptabilite_etudiants') !== false ? 'active' : '' ?>" data-title="Comptabilité Étudiants">
+                    <i data-lucide="users"></i> <span>Comptabilité Étudiants</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showOuvCaisse || $showClotCaisse): ?>

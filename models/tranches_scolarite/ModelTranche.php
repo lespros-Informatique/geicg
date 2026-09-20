@@ -36,7 +36,7 @@ class ModelTranche extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getById(int $id): array
+    public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
             SELECT t.*, 
@@ -50,10 +50,10 @@ class ModelTranche extends BaseModel
             LEFT JOIN filieres f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
             LEFT JOIN niveaux n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
             LEFT JOIN annees a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
-            WHERE t.id_tranche = ?
+            WHERE t.id_tranche = ? OR t.code_tranche = ?
             LIMIT 1
         ");
-        $stmt->execute([(int)$id]);
+        $stmt->execute([$id, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: [];
     }

@@ -62,13 +62,24 @@ abstract class BaseModel
         }
     }
 
-    public function getById(int $id): array
+    public function getById($id): array
     {
         try {
+            if (empty($id)) return [];
+
             $sql = "SELECT * FROM {$this->table} WHERE {$this->primaryKey} = ?";
             $stmt = $this->pdo->getCon()->prepare($sql);
             $stmt->execute([$id]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                return $row;
+            }
+
+            if (is_string($id) && !is_numeric($id)) {
+                return $this->getByCode($id);
+            }
+
+            return [];
         } catch (Exception $e) {
             error_log("Get by id {$this->table}: " . $e->getMessage());
             return [];
