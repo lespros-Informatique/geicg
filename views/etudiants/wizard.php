@@ -295,8 +295,8 @@ $pieces = (new ModelPieceFournir())->getAll();
                 </label>
                 <select class="form-control select2" id="wiz_annee" name="annee_code" style="width: 100%;" required>
                   <?php foreach($annees as $a): ?>
-                    <option value="<?= $a['code_annee'] ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif')) ? 'selected' : '' ?>>
-                      <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' (Active)' : '' ?>
+                    <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif')) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($a['libelle_annee']) ?> (<?= htmlspecialchars($a['code_annee']) ?>)<?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' — Session Active' : '' ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
@@ -309,7 +309,7 @@ $pieces = (new ModelPieceFournir())->getAll();
                   <?php if (!empty($classes)): ?>
                     <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
                     <?php foreach($classes as $cl): ?>
-                      <option value="<?= $cl['code_classe'] ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"><?= htmlspecialchars($cl['libelle_classe']) ?></option>
+                      <option value="<?= htmlspecialchars($cl['code_classe']) ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"><?= htmlspecialchars($cl['libelle_classe']) ?> (<?= htmlspecialchars($cl['code_classe']) ?>)</option>
                     <?php endforeach; ?>
                   <?php else: ?>
                     <option value="">-- Aucune classe avec scolarité enregistrée pour cette année --</option>
@@ -326,7 +326,7 @@ $pieces = (new ModelPieceFournir())->getAll();
 
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
-                <input type="number" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="0" readonly style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #64748B; font-weight: 600; pointer-events: none; cursor: not-allowed;">
+                <input type="number" min="0" step="any" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="0" readonly style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #64748B; font-weight: 600; pointer-events: none; cursor: not-allowed;">
               </div>
             </div>
 
@@ -1029,9 +1029,6 @@ $(document).ready(function() {
 
   function showRegimeWarningNotice(regimeName) {
     var msg = "Aucun tarif de scolarité actif n'est enregistré pour le régime <strong>" + escapeHtml(regimeName) + "</strong> pour cette année académique. Veuillez configurer le tarif correspondant dans le module Scolarité.";
-    if (typeof showToast === 'function') {
-      showToast("Aucun tarif de scolarité actif pour le régime " + regimeName + ".", "warning", "Scolarité manquante");
-    }
     
     if ($('#wiz_regime_notice_banner').length === 0) {
       var html = '<div id="wiz_regime_notice_banner" style="margin-top: 12px; font-size: 13px; color: #B45309; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 12px 16px; border-radius: 8px; line-height: 1.4; display: flex; align-items: center; gap: 10px;">' +
@@ -1086,7 +1083,8 @@ $(document).ready(function() {
           classes.forEach(function(cl) {
             var isSel = (currentVal && cl.code_classe === currentVal);
             if (isSel) valFound = true;
-            optionsHtml += '<option value="' + escapeHtml(cl.code_classe) + '" data-annee="' + escapeHtml(cl.annee_code || selectedAnnee) + '"' + (isSel ? ' selected' : '') + '>' + escapeHtml(cl.libelle_classe) + '</option>';
+            var classLabel = escapeHtml(cl.libelle_classe) + (cl.code_classe ? ' (' + escapeHtml(cl.code_classe) + ')' : '');
+            optionsHtml += '<option value="' + escapeHtml(cl.code_classe) + '" data-annee="' + escapeHtml(cl.annee_code || selectedAnnee) + '"' + (isSel ? ' selected' : '') + '>' + classLabel + '</option>';
           });
           if ($emptyMsg.length) $emptyMsg.slideUp(150);
           hideRegimeWarningNotice();
@@ -1392,7 +1390,7 @@ $(document).ready(function() {
     var originalHtml = $btnSubmit.html();
 
     $btnSubmit.prop('disabled', true).css('opacity', '0.75').html(
-      '<svg class="lvx-spinner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: lvxSpin 0.75s linear infinite; vertical-align: -2px; margin-right: 8px; display: inline-block;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg> Enregistrement du dossier...'
+      '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Enregistrement du dossier...'
     );
 
     var formData = new FormData($form[0]);

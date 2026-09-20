@@ -130,14 +130,9 @@ foreach ($filiereCyclesMap as $fc) {
 
             <!-- Niveau d'études (Select2 Multi-Select en création, Simple en édition) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label style="font-weight: 700; font-size: 13px; color: #334155; margin: 0;">
-                  <?= $isAddMode ? 'Niveau(x) d\'études <span style="color: #EF4444;">*</span>' : 'Niveau d\'études <span style="color: #EF4444;">*</span>' ?>
-                </label>
-                <?php if ($isAddMode): ?>
-                  <button type="button" id="btn-toggle-all-niveaux" style="background: none; border: none; font-size: 12px; font-weight: 700; color: #1E3A5F; cursor: pointer; padding: 0;">Tout sélectionner</button>
-                <?php endif; ?>
-              </div>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                <?= $isAddMode ? 'Niveau(x) d\'études <span style="color: #EF4444;">*</span>' : 'Niveau d\'études <span style="color: #EF4444;">*</span>' ?>
+              </label>
               <select class="form-control select2" id="sel_niveau_scolarite" name="<?= $isAddMode ? 'niveau_codes[]' : 'niveau_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : 'required' ?> style="width: 100%;">
                 <?php if (!$isAddMode): ?>
                   <option value="">-- Choisir un niveau --</option>
@@ -177,14 +172,9 @@ foreach ($filiereCyclesMap as $fc) {
 
             <!-- Filière (Select2 Multi-Select en création, Simple en édition) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label style="font-weight: 700; font-size: 13px; color: #334155; margin: 0;">
-                  <?= $isAddMode ? 'Filière(s) rattachée(s) <small style="color: #64748B; font-weight: 400;">(Optionnel — toutes si vide)</small>' : 'Filière rattachée <span style="color: #EF4444;">*</span>' ?>
-                </label>
-                <?php if ($isAddMode): ?>
-                  <button type="button" id="btn-toggle-all-filieres" style="background: none; border: none; font-size: 12px; font-weight: 700; color: #1E3A5F; cursor: pointer; padding: 0;">Tout sélectionner</button>
-                <?php endif; ?>
-              </div>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                <?= $isAddMode ? 'Filière(s) rattachée(s) <span style="color: #EF4444;">*</span>' : 'Filière rattachée <span style="color: #EF4444;">*</span>' ?>
+              </label>
               <select class="form-control select2" id="sel_filiere_scolarite" name="<?= $isAddMode ? 'filiere_codes[]' : 'filiere_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : 'required' ?> style="width: 100%;">
                 <?php if (!$isAddMode): ?>
                   <option value="">-- Choisir une filière --</option>
@@ -308,36 +298,6 @@ $(document).ready(function() {
       updateTranchesSummary();
     });
   }
-
-  // Tout sélectionner / Tout désélectionner filières
-  $('#btn-toggle-all-filieres').on('click', function(e) {
-    e.preventDefault();
-    var $sel = $('#sel_filiere_scolarite');
-    var allVals = $sel.find('option').map(function() { return $(this).val(); }).get().filter(Boolean);
-    var currentVals = $sel.val() || [];
-    if (Array.isArray(currentVals) && currentVals.length >= allVals.length) {
-      $sel.val(null).trigger('change');
-      $(this).text('Tout sélectionner');
-    } else {
-      $sel.val(allVals).trigger('change');
-      $(this).text('Tout désélectionner');
-    }
-  });
-
-  // Tout sélectionner / Tout désélectionner niveaux
-  $('#btn-toggle-all-niveaux').on('click', function(e) {
-    e.preventDefault();
-    var $sel = $('#sel_niveau_scolarite');
-    var allVals = $sel.find('option').map(function() { return $(this).val(); }).get().filter(Boolean);
-    var currentVals = $sel.val() || [];
-    if (Array.isArray(currentVals) && currentVals.length >= allVals.length) {
-      $sel.val(null).trigger('change');
-      $(this).text('Tout sélectionner');
-    } else {
-      $sel.val(allVals).trigger('change');
-      $(this).text('Tout désélectionner');
-    }
-  });
 
 
 
