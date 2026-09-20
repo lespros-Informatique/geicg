@@ -677,7 +677,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
                 <th style="padding: 12px; width: 110px;">Matricule</th>
                 <th style="padding: 12px;">Étudiant</th>
                 <th style="padding: 12px; width: 110px;">Classe</th>
-                <th style="padding: 12px;">Motif / Tranche</th>
+                <th style="padding: 12px;">Type Transaction</th>
                 <th style="padding: 12px; width: 150px; text-align: right;">Montant Versé</th>
                 <th style="padding: 12px; width: 220px; text-align: right;">Actions</th>
               </tr>
@@ -1070,7 +1070,12 @@ $(document).ready(function() {
         return '<span style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + escapeHtml(d || '-') + '</span>';
       } },
       { data: 'libelle_tranche', render: function(d, type, row) {
-        return '<span style="font-weight:600; color:#334155; font-size:13px;">' + escapeHtml(d || 'Frais de Scolarité') + '</span>';
+        var isFA = (row.tranche_code === 'FRAIS_ANNEXES' || (row.categorie_paiement && row.categorie_paiement.toUpperCase() === 'FRAIS_ANNEXES'));
+        if (isFA) {
+          return '<span style="font-weight:700; color:#B45309; background:#FEF3C7; border:1px solid #FDE68A; padding:4px 10px; border-radius:6px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="package" style="width:13px;height:13px;"></i> Frais Annexes</span>';
+        }
+        var libelle = (d && d.trim() !== '') ? 'Scolarité (' + escapeHtml(d) + ')' : 'Frais de Scolarité';
+        return '<span style="font-weight:700; color:#15803D; background:#DCFCE7; border:1px solid #86EFAC; padding:4px 10px; border-radius:6px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="graduation-cap" style="width:13px;height:13px;"></i> ' + libelle + '</span>';
       } },
       { data: 'montant_paiement', width: '150px', className: 'text-end', render: function(d) {
         return d ? '<strong style="color:#15803D; font-size:14px;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
