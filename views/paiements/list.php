@@ -772,7 +772,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
             <!-- Tranche / Échéance (Readonly) -->
             <div style="grid-column: span 2;">
               <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">
-                2. Tranche / Échéance à régler <span style="font-weight: 700; color: #64748B; text-transform: none;">(Sélectionnée automatiquement - Readonly)</span> <span class="text-danger">*</span>
+                2. Tranche / Échéance à régler <span style="font-weight: 700; color: #64748B; text-transform: none;"> </span> <span class="text-danger">*</span>
               </label>
               <div style="position: relative;">
                 <select id="modal_select_tranche" name="tranche_code" class="form-control form-control-lg" style="font-weight: 800; font-size: 14px; color: #1E3A5F; border-radius: 10px; background-color: #F8FAFC; border: 1.5px solid #CBD5E1; pointer-events: none; cursor: not-allowed; padding-right: 40px;" tabindex="-1" required>
@@ -789,17 +789,9 @@ $canCloseCaisse = $canCloseCaisse ?? false;
 
             <!-- Champ Montant des frais d'annexe (Masqué si déjà payé / a déjà effectué versement) -->
             <div id="container-frais-annexes" style="display: none; grid-column: span 2;">
-              <label style="font-size: 11.5px; font-weight: 700; color: #B45309; margin-bottom: 4px; display: block;">Montant des Frais d'Annexe (Readonly)</label>
+              <label style="font-size: 11.5px; font-weight: 700; color: #B45309; margin-bottom: 4px; display: block;">Montant des Frais d'Annexe </label>
               <div style="position: relative;">
                 <input type="text" id="input-montant-frais-annexes" class="form-control" style="font-weight: 800; font-size: 14px; color: #B45309; background: #FFFBEB; border: 1.5px solid #FDE68A;" value="0 FCFA" readonly>
-              </div>
-            </div>
-
-            <!-- Champ Montant de la tranche à verser (Readonly - Toute la largeur) -->
-            <div id="container-tranche-scolarite" style="grid-column: span 2;">
-              <label style="font-size: 11.5px; font-weight: 700; color: #1E3A5F; margin-bottom: 4px; display: block;">Montant de la Tranche à verser (Readonly)</label>
-              <div style="position: relative;">
-                <input type="text" id="input-montant-tranche-scolarite" class="form-control" style="font-weight: 800; font-size: 14px; color: #1E3A5F; background: #F8FAFC; border: 1.5px solid #CBD5E1;" value="0 FCFA" readonly>
               </div>
             </div>
 
