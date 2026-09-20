@@ -164,11 +164,7 @@
         <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer l'État
       </button>
 
-      <?php if ($canRecord && $isCaisseOuverte): ?>
-      <button type="button" onclick="openModalEncaissementCompta()" class="btn btn-success" style="border-radius: 10px; font-weight: 800; font-size: 13px; padding: 9px 18px; background: #16A34A; border: none; color: #FFF; display: inline-flex; align-items: center; gap: 8px; animation: btnPulseGlow 3s infinite;">
-        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Encaisser un Versement
-      </button>
-      <?php endif; ?>
+
 
     </div>
   </div>
