@@ -81,14 +81,27 @@ class FraisAnnexeController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
+        $libelle = trim($data['libelle_frais_annexe'] ?? '');
+        $typeFiliere = $data['type_filiere'] ?? 'TOUT';
+        $niveauCode = (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') ? null : $data['niveau_code'];
+
+        if (empty($libelle)) {
+            $this->error("Le libellé de la tarification est obligatoire.");
+            return;
+        }
+        // Contrôle Anti-Doublon (Cible Filière x Niveau d'étude pour la même année)
+        $duplicate = $this->model->checkDuplicate($anneeCode, $typeFiliere, $niveauCode);
+        if ($duplicate) {
+            $cibleStr = "Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
+            $this->error("Création impossible : Un tarif de frais annexes est déjà configuré pour la cible [{$cibleStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
+            return;
+        }
+
         if (empty($data['code_frais_annexe'])) {
             $data['code_frais_annexe'] = $this->validator->generateCode('frais_annexes', 'code_frais_annexe', 'FRAIS-ANN-', 8);
         }
 
-        if (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') {
-            $data['niveau_code'] = null;
-        }
-
+        $data['niveau_code'] = $niveauCode;
         $data['annee_code'] = $anneeCode;
         $data['etablissement_code'] = $etabCode;
         $data['user_code'] = $userCode;
@@ -124,10 +137,31 @@ class FraisAnnexeController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
 
-        if (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') {
-            $data['niveau_code'] = null;
+        $libelle = trim($data['libelle_frais_annexe'] ?? '');
+        $typeFiliere = $data['type_filiere'] ?? 'TOUT';
+        $niveauCode = (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') ? null : $data['niveau_code'];
+
+        if (empty($libelle)) {
+            $this->error("Le libellé de la tarification est obligatoire.");
+            return;
         }
 
+        $existingItem = $this->model->getById($id);
+        if (!$existingItem) {
+            $this->error('Enregistrement introuvable pour la modification');
+            return;
+        }
+        $itemAnneeCode = $existingItem['annee_code'] ?? $this->getActiveAnneeCode();
+
+        // Contrôle Anti-Doublon sur la combinaison cible
+        $duplicate = $this->model->checkDuplicate($itemAnneeCode, $typeFiliere, $niveauCode, $id);
+        if ($duplicate) {
+            $cibleStr = "Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
+            $this->error("Modification impossible : Un autre tarif de frais annexes est déjà configuré pour la cible [{$cibleStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
+            return;
+        }
+
+        $data['niveau_code'] = $niveauCode;
         $data['updated_at_frais_annexe'] = date('Y-m-d H:i:s');
 
         $cols = $this->model->getCon()->query("DESCRIBE frais_annexes")->fetchAll(PDO::FETCH_COLUMN);

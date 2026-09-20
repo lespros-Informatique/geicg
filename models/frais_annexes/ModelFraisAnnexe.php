@@ -86,4 +86,25 @@ class ModelFraisAnnexe extends BaseModel
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? (float)$row['montant_frais_annexe'] : 0.0;
     }
+
+    public function checkDuplicate(string $anneeCode, string $typeFiliere, ?string $niveauCode, ?int $excludeId = null): ?array
+    {
+        // Contrôle d'unicité sur la combinaison Cible (type_filiere x niveau_code x annee_code)
+        $sql = "SELECT * FROM frais_annexes WHERE annee_code = ? AND type_filiere = ?";
+        $params = [$anneeCode, $typeFiliere];
+        if (empty($niveauCode) || $niveauCode === 'TOUT') {
+            $sql .= " AND (niveau_code IS NULL OR niveau_code = '' OR niveau_code = 'TOUT')";
+        } else {
+            $sql .= " AND niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if ($excludeId) {
+            $sql .= " AND id_frais_annexe != ?";
+            $params[] = $excludeId;
+        }
+        $stmt = $this->getCon()->prepare($sql . " LIMIT 1");
+        $stmt->execute($params);
+        $dup = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $dup ?: null;
+    }
 }
