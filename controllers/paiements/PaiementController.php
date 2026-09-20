@@ -310,8 +310,11 @@ class PaiementController extends BaseController
                 ? RACINE . 'public/uploads/etudiants/' . $ins['photo_etudiant']
                 : (!empty($ins['photo_inscription']) ? RACINE . 'public/uploads/inscriptions/' . $ins['photo_inscription'] : RACINE . 'public/assets/images/default-avatar.png');
 
+            $idInscr = (int)($ins['id_inscription'] ?? 0);
             $data[] = [
+                'id_inscription' => $idInscr,
                 'code_inscription' => $codeIns,
+                'encrypted_inscription_id' => $idInscr > 0 ? $this->validator->crypter($idInscr) : $this->validator->crypter($codeIns),
                 'encrypted_inscription_code' => $this->validator->crypter($codeIns),
                 'code_etudiant' => $ins['code_etudiant'] ?? '',
                 'encrypted_etudiant_code' => !empty($ins['code_etudiant']) ? $this->validator->crypter($ins['code_etudiant']) : '',
@@ -395,6 +398,7 @@ class PaiementController extends BaseController
 
         $sqlIns = "
             SELECT 
+                i.id_inscription,
                 i.code_inscription,
                 i.etudiant_code,
                 i.annee_code,
@@ -694,7 +698,9 @@ class PaiementController extends BaseController
         $anneeParam = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
         $activeYear = !empty($anneeParam) ? trim($anneeParam) : $this->getActiveAnneeCode();
 
-        if (!empty($inscriptionCode)) {
+        $lookupKey = !empty($inscriptionCode) ? $inscriptionCode : $etudiantCode;
+
+        if (!empty($lookupKey)) {
             $stmt = $db->prepare("
                 SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant, e.telephone_etudiant, e.email_etudiant,
                        c.libelle_classe, c.filiere_code, c.niveau_code,
@@ -705,28 +711,37 @@ class PaiementController extends BaseController
                 LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
                 LEFT JOIN annees a ON a.code_annee = i.annee_code
-                WHERE i.code_inscription = ? OR i.id_inscription = ?
-                LIMIT 1
-            ");
-            $stmt->execute([$inscriptionCode, is_numeric($inscriptionCode) ? (int)$inscriptionCode : 0]);
-            $ins = $stmt->fetch(PDO::FETCH_ASSOC);
-        } elseif (!empty($etudiantCode)) {
-            $stmt = $db->prepare("
-                SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant, e.telephone_etudiant, e.email_etudiant,
-                       c.libelle_classe, c.filiere_code, c.niveau_code,
-                       f.libelle_filiere, f.type_filiere, n.libelle_niveau, a.libelle_annee
-                FROM etudiants e
-                LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant AND (i.annee_code = ? OR ? = '') AND (i.statut_inscription != 'annule')
-                LEFT JOIN classes c ON i.classe_code = c.code_classe
-                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-                LEFT JOIN annees a ON a.code_annee = i.annee_code
-                WHERE e.code_etudiant = ? OR e.matricule_etudiant = ?
+                WHERE i.code_inscription = ? OR i.id_inscription = ? OR e.matricule_etudiant = ? OR e.code_etudiant = ?
                 ORDER BY (CASE WHEN i.annee_code = ? THEN 1 ELSE 2 END), i.id_inscription DESC
                 LIMIT 1
             ");
-            $stmt->execute([$activeYear, $etudiantCode, $etudiantCode, $activeYear]);
+            $stmt->execute([
+                $lookupKey, 
+                is_numeric($lookupKey) ? (int)$lookupKey : 0, 
+                $lookupKey, 
+                $lookupKey, 
+                $activeYear
+            ]);
             $ins = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$ins) {
+                $stmtEtu = $db->prepare("
+                    SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant, e.telephone_etudiant, e.email_etudiant,
+                           c.libelle_classe, c.filiere_code, c.niveau_code,
+                           f.libelle_filiere, f.type_filiere, n.libelle_niveau, a.libelle_annee
+                    FROM etudiants e
+                    LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant AND (i.annee_code = ? OR ? = '') AND (i.statut_inscription != 'annule')
+                    LEFT JOIN classes c ON i.classe_code = c.code_classe
+                    LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                    LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                    LEFT JOIN annees a ON a.code_annee = i.annee_code
+                    WHERE e.code_etudiant = ? OR e.matricule_etudiant = ?
+                    ORDER BY (CASE WHEN i.annee_code = ? THEN 1 ELSE 2 END), i.id_inscription DESC
+                    LIMIT 1
+                ");
+                $stmtEtu->execute([$activeYear, $activeYear, $lookupKey, $lookupKey, $activeYear]);
+                $ins = $stmtEtu->fetch(PDO::FETCH_ASSOC);
+            }
         } else {
             $this->json(['status' => 0, 'message' => 'Code inscription ou matricule manquant']);
             return;
@@ -894,18 +909,23 @@ class PaiementController extends BaseController
                 $tranchesList[] = [
                     'id_tranche' => $tr['id_tranche'],
                     'code_tranche' => $tCode,
+                    'libelle' => $tr['libelle_tranche'],
                     'libelle_tranche' => $tr['libelle_tranche'],
+                    'montant' => $montantTranche,
                     'montant_tranche' => $montantTranche,
                     'montant_tranche_fmt' => number_format($montantTranche, 0, ',', ' ') . ' FCFA',
                     'date_limite' => $tr['date_limite'],
                     'date_limite_fmt' => !empty($tr['date_limite']) ? date('d/m/Y', strtotime($tr['date_limite'])) : 'Non définie',
                     'deja_paye' => $dejaPaye,
                     'deja_paye_fmt' => number_format($dejaPaye, 0, ',', ' ') . ' FCFA',
+                    'reste' => $resteAPayer,
                     'reste_a_payer' => $resteAPayer,
                     'reste_a_payer_fmt' => number_format($resteAPayer, 0, ',', ' ') . ' FCFA',
                     'is_soldee' => $isSoldee,
+                    'statut' => $statutLibelle,
                     'statut_code' => $statutCode,
                     'statut_libelle' => $statutLibelle,
+                    'badge' => ($statutCode === 'soldee') ? 'badge-success' : (($statutCode === 'partiel') ? 'badge-warning' : 'badge-info'),
                     'badge_bg' => $badgeBg,
                     'badge_color' => $badgeColor
                 ];
@@ -916,18 +936,23 @@ class PaiementController extends BaseController
             $tranchesList[] = [
                 'id_tranche' => 0,
                 'code_tranche' => 'SCOLARITE_GLOBALE',
+                'libelle' => 'Scolarité Complète',
                 'libelle_tranche' => 'Scolarité Complète',
+                'montant' => $scolariteDue,
                 'montant_tranche' => $scolariteDue,
                 'montant_tranche_fmt' => number_format($scolariteDue, 0, ',', ' ') . ' FCFA',
                 'date_limite' => '',
                 'date_limite_fmt' => 'Annuelle',
                 'deja_paye' => $totalPaye,
                 'deja_paye_fmt' => number_format($totalPaye, 0, ',', ' ') . ' FCFA',
+                'reste' => $soldeRestant,
                 'reste_a_payer' => $soldeRestant,
                 'reste_a_payer_fmt' => number_format($soldeRestant, 0, ',', ' ') . ' FCFA',
                 'is_soldee' => $isSoldee,
+                'statut' => $isSoldee ? 'Payée (Soldée)' : 'À Payer',
                 'statut_code' => $isSoldee ? 'soldee' : ($totalPaye > 0 ? 'partiel' : 'a_payer'),
                 'statut_libelle' => $isSoldee ? 'Payée (Soldée)' : 'À Payer',
+                'badge' => $isSoldee ? 'badge-success' : 'badge-info',
                 'badge_bg' => $isSoldee ? '#DCFCE7' : '#EFF6FF',
                 'badge_color' => $isSoldee ? '#15803D' : '#1E3A5F'
             ];
@@ -943,19 +968,24 @@ class PaiementController extends BaseController
             array_unshift($tranchesList, [
                 'id_tranche' => 'FA',
                 'code_tranche' => 'FRAIS_ANNEXES',
+                'libelle' => 'Frais Annexes Officiels (' . $libelleFraisAnnexe . ')',
                 'libelle_tranche' => 'Frais Annexes Officiels (' . $libelleFraisAnnexe . ')',
                 'is_frais_annexe' => true,
+                'montant' => $montantFraisAnnexes,
                 'montant_tranche' => $montantFraisAnnexes,
                 'montant_tranche_fmt' => number_format($montantFraisAnnexes, 0, ',', ' ') . ' FCFA',
                 'date_limite' => '',
                 'date_limite_fmt' => 'Exigible à l\'inscription',
                 'deja_paye' => $faPaye,
                 'deja_paye_fmt' => number_format($faPaye, 0, ',', ' ') . ' FCFA',
+                'reste' => $faReste,
                 'reste_a_payer' => $faReste,
                 'reste_a_payer_fmt' => number_format($faReste, 0, ',', ' ') . ' FCFA',
                 'is_soldee' => $faIsSoldee,
+                'statut' => $faIsSoldee ? 'Payés (Soldés)' : 'À Payer',
                 'statut_code' => $faIsSoldee ? 'soldee' : ($faPaye > 0 ? 'partiel' : 'a_payer'),
                 'statut_libelle' => $faIsSoldee ? 'Payés (Soldés)' : 'À Payer',
+                'badge' => $faIsSoldee ? 'badge-success' : 'badge-warning',
                 'badge_bg' => $faIsSoldee ? '#DCFCE7' : '#FFFBEB',
                 'badge_color' => $faIsSoldee ? '#15803D' : '#B45309'
             ]);
@@ -975,7 +1005,7 @@ class PaiementController extends BaseController
         foreach ($allPayments as $p) {
             $pId = (int)$p['id_paiement'];
             $pIdCrypte = $this->validator->crypter($pId);
-            $modeP = $p['mode_paiement'] ?? 'espece';
+            $modeP = strtolower($p['mode_paiement'] ?? 'espece');
             $modeLabels = [
                 'espece' => 'Espèces',
                 'mobile_money' => 'Mobile Money',
@@ -985,6 +1015,7 @@ class PaiementController extends BaseController
             $historiquePaiements[] = [
                 'id_paiement' => $pId,
                 'id_crypte' => $pIdCrypte,
+                'encrypted_id' => $pIdCrypte,
                 'code_paiement' => $p['code_paiement'] ?? ('RECU-'.$pId),
                 'date_paiement' => $p['date_paiement'],
                 'date_paiement_fmt' => !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : (isset($p['created_at']) ? date('d/m/Y', strtotime($p['created_at'])) : '-'),
@@ -993,6 +1024,7 @@ class PaiementController extends BaseController
                 'mode_paiement' => $modeP,
                 'mode_paiement_fmt' => $modeLabels[$modeP] ?? ucfirst($modeP),
                 'type_paiement' => $p['type_paiement'] ?? 'Règlement Scolarité',
+                'type_transaction' => $p['type_paiement'] ?? 'Versement',
                 'reference_paiement' => !empty($p['reference_paiement']) ? $p['reference_paiement'] : '-',
                 'tranche_code' => !empty($p['tranche_code']) ? $p['tranche_code'] : '-'
             ];
@@ -1003,12 +1035,14 @@ class PaiementController extends BaseController
 
         $this->json([
             'status' => 1,
+            'success' => true,
             'data' => [
                 'code_inscription' => $codeInscription,
                 'code_etudiant' => $ins['code_etudiant'] ?? '',
                 'matricule' => $ins['matricule_etudiant'] ?? '-',
                 'nom_etudiant' => $ins['nom_etudiant'] ?? '',
                 'prenom_etudiant' => $ins['prenom_etudiant'] ?? '',
+                'etudiant_nom' => $nomComplet,
                 'nom_complet' => $nomComplet,
                 'photo_etudiant' => $ins['photo_etudiant'] ?? '',
                 'photo_inscription' => $ins['photo_inscription'] ?? '',
@@ -1025,6 +1059,7 @@ class PaiementController extends BaseController
                 'scolarite_due' => $scolariteDue,
                 'scolarite_due_fmt' => number_format($scolariteDue, 0, ',', ' ') . ' FCFA',
                 'total_frais_annexes' => $montantFraisAnnexes,
+                'montant_frais_annexes' => $montantFraisAnnexes,
                 'total_frais_annexes_fmt' => number_format($montantFraisAnnexes, 0, ',', ' ') . ' FCFA',
                 'frais_annexes_paye' => $faPaye ?? 0,
                 'frais_annexes_reste' => $faReste ?? $montantFraisAnnexes,
@@ -1039,7 +1074,8 @@ class PaiementController extends BaseController
                 'badge_class' => $badgeClass,
                 'tranches' => $tranchesList,
                 'suggested_tranche_code' => $suggestedTrancheCode,
-                'historique_paiements' => $historiquePaiements
+                'historique_paiements' => $historiquePaiements,
+                'all_payments' => $historiquePaiements
             ]
         ]);
     }

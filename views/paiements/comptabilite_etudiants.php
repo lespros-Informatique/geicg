@@ -538,9 +538,9 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
             
             <div style="grid-column: span 2;">
-              <label style="font-size: 11.5px; font-weight: 800; color: #0F172A; margin-bottom: 4px; display: block;">2. Tranche / Échéance à régler</label>
+              <label style="font-size: 11.5px; font-weight: 800; color: #0F172A; margin-bottom: 4px; display: block;">1. Tranche / Échéance à régler <span class="text-danger">*</span></label>
               <div style="position: relative;">
-                <select id="modal_select_tranche" name="tranche_code" class="form-control" style="font-weight: 800; font-size: 13px; color: #1E3A5F; background: #F8FAFC; pointer-events: none; cursor: not-allowed;" tabindex="-1" required>
+                <select id="modal_select_tranche" name="tranche_code" class="form-control" style="font-weight: 800; font-size: 13px; color: #1E3A5F; background: #FFFFFF;" required>
                 </select>
               </div>
               <div id="tranche-hint-info" style="font-size: 11px; color: #64748B; margin-top: 3px;"></div>
@@ -552,9 +552,9 @@
             </div>
 
             <div style="grid-column: span 2;">
-              <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 4px; display: block;">3. Montant Total Versé (FCFA) <span class="text-danger">*</span></label>
+              <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 4px; display: block;">2. Montant Total Versé (FCFA) <span class="text-danger">*</span></label>
               <div style="position: relative;">
-                <input type="number" step="1" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 18px; color: #15803D; background: #F0FDF4; border: 2px solid #86EFAC;" readonly required>
+                <input type="number" step="1" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 18px; color: #15803D; background: #F0FDF4; border: 2px solid #86EFAC;" placeholder="Ex: 50000" required>
               </div>
             </div>
 
@@ -621,6 +621,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (selInscr) {
         selInscr.addEventListener('change', function() {
             onInscriptionSelected(this.value);
+        });
+    }
+
+    // Handle tranche change in modal
+    const selTranche = document.getElementById('modal_select_tranche');
+    if (selTranche) {
+        selTranche.addEventListener('change', function() {
+            const selectedOpt = this.options[this.selectedIndex];
+            if (selectedOpt) {
+                const mTranche = parseFloat(selectedOpt.dataset.montantTranche || 0);
+                document.getElementById('hidden_montant_tranche').value = mTranche;
+                const mFA = parseFloat(document.getElementById('hidden_montant_frais_annexes').value || 0);
+                document.getElementById('input-montant-versement').value = mTranche + mFA;
+            }
         });
     }
 });
@@ -702,6 +716,14 @@ function initDataTableCompta() {
                                 <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
                                </button>`;
 
+                let btnRecuInscription = (d.encrypted_inscription_id || d.encrypted_inscription_code) ? 
+                    `<a href="${window.RACINE}inscription/details/${d.encrypted_inscription_id || d.encrypted_inscription_code}" target="_blank" 
+                        class="btn btn-sm btn-info" 
+                        style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #0EA5E9; border-color: #0EA5E9; color: #FFF; box-shadow: 0 2px 4px rgba(14,165,233,0.25);" 
+                        title="Imprimer le reçu / fiche d'inscription">
+                        <i data-lucide="printer" style="width: 15px; height: 15px;"></i>
+                     </a>` : '';
+
                 let btnProfil = d.encrypted_etudiant_code ? 
                     `<a href="${window.RACINE}etudiant/details/${d.encrypted_etudiant_code}" target="_blank" 
                         class="btn btn-sm btn-outline-secondary" 
@@ -713,6 +735,7 @@ function initDataTableCompta() {
                 return `<div style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: nowrap;">
                             ${btnEncaisse}
                             ${btnVoir}
+                            ${btnRecuInscription}
                             ${btnProfil}
                         </div>`;
             }}
@@ -780,18 +803,22 @@ function formatFCFA(amount) {
 
 function openStudentFinancialSummaryModal(inscriptionCode) {
     const anneeCode = document.getElementById('filter_annee_code').value;
-    fetch(`<?= RACINE ?>paiement/getStudentFinancialSummary?inscription_code=${inscriptionCode}&annee_code=${anneeCode}`)
+    fetch(`<?= RACINE ?>paiement/getStudentFinancialSummary?inscription_code=${encodeURIComponent(inscriptionCode)}&annee_code=${encodeURIComponent(anneeCode)}`)
     .then(r => r.json())
     .then(res => {
         if (res.status === 1 || res.success) {
             const data = res.data || res;
             
-            document.getElementById('sum-student-name').innerText = data.etudiant_nom;
-            document.getElementById('sum-student-details').innerText = `Matricule: ${data.matricule} | Classe: ${data.classe}`;
-            document.getElementById('sum-student-photo').src = data.photo || '<?= RACINE ?>public/assets/images/default-avatar.png';
+            const studentName = data.etudiant_nom || data.nom_complet || (data.nom_etudiant ? (data.nom_etudiant + ' ' + (data.prenom_etudiant || '')) : 'Étudiant');
+            const studentMatricule = data.matricule || data.matricule_etudiant || '-';
+            const studentClasse = data.classe || data.libelle_classe || '-';
+
+            document.getElementById('sum-student-name').innerText = studentName;
+            document.getElementById('sum-student-details').innerText = `Matricule: ${studentMatricule} | Classe: ${studentClasse}`;
+            document.getElementById('sum-student-photo').src = data.photo || data.photo_url || '<?= RACINE ?>public/assets/images/default-avatar.png';
 
             document.getElementById('sum-val-scolarite').innerText = formatFCFA(data.scolarite_due);
-            document.getElementById('sum-val-frais-annexes').innerText = formatFCFA(data.montant_frais_annexes || 0);
+            document.getElementById('sum-val-frais-annexes').innerText = formatFCFA(data.montant_frais_annexes || data.total_frais_annexes || 0);
             document.getElementById('sum-val-paye').innerText = formatFCFA(data.total_paye);
             document.getElementById('sum-val-reste').innerText = formatFCFA(data.solde_restant);
 
@@ -799,12 +826,19 @@ function openStudentFinancialSummaryModal(inscriptionCode) {
             let htmlTr = '';
             if (data.tranches && data.tranches.length > 0) {
                 data.tranches.forEach(tr => {
+                    const libelle = tr.libelle || tr.libelle_tranche || 'Tranche';
+                    const montant = tr.montant || tr.montant_tranche || 0;
+                    const dejaPaye = tr.deja_paye !== undefined ? tr.deja_paye : 0;
+                    const reste = tr.reste !== undefined ? tr.reste : (tr.reste_a_payer !== undefined ? tr.reste_a_payer : 0);
+                    const badge = tr.badge || 'badge-info';
+                    const statut = tr.statut || tr.statut_libelle || 'En attente';
+
                     htmlTr += `<tr>
-                        <td><strong>${tr.libelle}</strong></td>
-                        <td style="text-align: right;">${formatFCFA(tr.montant)}</td>
-                        <td style="text-align: right;" class="text-success">${formatFCFA(tr.deja_paye)}</td>
-                        <td style="text-align: right;" class="text-danger">${formatFCFA(tr.reste)}</td>
-                        <td style="text-align: center;"><span class="badge-status ${tr.badge}">${tr.statut}</span></td>
+                        <td><strong>${libelle}</strong></td>
+                        <td style="text-align: right;">${formatFCFA(montant)}</td>
+                        <td style="text-align: right;" class="text-success">${formatFCFA(dejaPaye)}</td>
+                        <td style="text-align: right;" class="text-danger">${formatFCFA(reste)}</td>
+                        <td style="text-align: center;"><span class="badge-status ${badge}">${statut}</span></td>
                     </tr>`;
                 });
             } else {
@@ -814,29 +848,42 @@ function openStudentFinancialSummaryModal(inscriptionCode) {
 
             // Populate payments history
             let htmlPay = '';
-            if (data.all_payments && data.all_payments.length > 0) {
-                data.all_payments.forEach(p => {
+            const payments = data.all_payments || data.historique_paiements || [];
+            if (payments.length > 0) {
+                payments.forEach(p => {
+                    const codePaiement = p.code_paiement || ('PAI-' + p.id_paiement);
+                    const datePaiement = p.date_paiement_fmt || p.date_paiement || '-';
+                    const modePaiement = p.mode_paiement_fmt || p.mode_paiement || 'Espèces';
+                    const typePaiement = p.type_transaction || p.type_paiement || 'Versement';
+                    const encId = p.encrypted_id || p.id_crypte || '';
+
                     htmlPay += `<tr>
-                        <td>${p.date_paiement}</td>
-                        <td class="font-monospace"><strong>${p.code_paiement}</strong></td>
-                        <td>${p.type_transaction || 'Versement'}</td>
-                        <td class="text-uppercase">${p.mode_paiement}</td>
+                        <td>${datePaiement}</td>
+                        <td class="font-monospace"><strong>${codePaiement}</strong></td>
+                        <td>${typePaiement}</td>
+                        <td class="text-uppercase">${modePaiement}</td>
                         <td style="text-align: right;" class="fw-bold text-success">${formatFCFA(p.montant_paiement)}</td>
                         <td style="text-align: center;">
-                            <a href="<?= RACINE ?>paiement/details/${p.encrypted_id}" target="_blank" class="btn btn-sm btn-outline-primary" style="padding: 2px 6px; font-size: 11px;">
+                            <a href="<?= RACINE ?>paiement/details/${encId}" target="_blank" class="btn btn-sm btn-outline-primary" style="padding: 2px 6px; font-size: 11px;">
                                 Reçu <i data-lucide="printer" style="width: 12px; height: 12px;"></i>
                             </a>
                         </td>
                     </tr>`;
                 });
             } else {
-                htmlPay = '<tr><td colspan="6" class="text-center text-muted">Aucun règlement encaisse pour le moment.</td></tr>';
+                htmlPay = '<tr><td colspan="6" class="text-center text-muted">Aucun règlement encaissé pour le moment.</td></tr>';
             }
             document.getElementById('sum-tbody-paiements').innerHTML = htmlPay;
 
             document.getElementById('modal-student-financial-summary').style.display = 'flex';
             if (window.lucide) { lucide.createIcons(); }
+        } else {
+            alert(res.message || "Impossible de charger les données financières de cet étudiant.");
         }
+    })
+    .catch(err => {
+        console.error("Erreur résumé financier :", err);
+        alert("Une erreur de communication est survenue.");
     });
 }
 
@@ -872,20 +919,25 @@ function onInscriptionSelected(inscriptionCode) {
     }
 
     const anneeCode = document.getElementById('filter_annee_code').value;
-    fetch(`<?= RACINE ?>paiement/getStudentFinancialSummary?inscription_code=${inscriptionCode}&annee_code=${anneeCode}`)
+    fetch(`<?= RACINE ?>paiement/getStudentFinancialSummary?inscription_code=${encodeURIComponent(inscriptionCode)}&annee_code=${encodeURIComponent(anneeCode)}`)
     .then(r => r.json())
     .then(res => {
         if (res.status === 1 || res.success) {
             const data = res.data || res;
-            document.getElementById('encaisse-student-name').innerText = data.etudiant_nom;
-            document.getElementById('encaisse-student-meta').innerText = `Matricule: ${data.matricule} | Classe: ${data.classe}`;
-            document.getElementById('encaisse-photo-preview').src = data.photo || '<?= RACINE ?>public/assets/images/default-avatar.png';
+
+            const studentName = data.etudiant_nom || data.nom_complet || (data.nom_etudiant ? (data.nom_etudiant + ' ' + (data.prenom_etudiant || '')) : 'Étudiant');
+            const studentMatricule = data.matricule || data.matricule_etudiant || '-';
+            const studentClasse = data.classe || data.libelle_classe || '-';
+
+            document.getElementById('encaisse-student-name').innerText = studentName;
+            document.getElementById('encaisse-student-meta').innerText = `Matricule: ${studentMatricule} | Classe: ${studentClasse}`;
+            document.getElementById('encaisse-photo-preview').src = data.photo || data.photo_url || '<?= RACINE ?>public/assets/images/default-avatar.png';
 
             document.getElementById('encaisse-val-scolarite').innerText = formatFCFA(data.scolarite_due);
             document.getElementById('encaisse-val-paye').innerText = formatFCFA(data.total_paye);
             document.getElementById('encaisse-val-reste').innerText = formatFCFA(data.solde_restant);
 
-            const montantFA = parseFloat(data.montant_frais_annexes || 0);
+            const montantFA = parseFloat(data.montant_frais_annexes || data.total_frais_annexes || 0);
             const cardFA = document.getElementById('encaisse-card-frais-annexes');
             if (montantFA > 0 && !data.has_paid_before) {
                 if (cardFA) cardFA.style.display = 'block';
@@ -901,16 +953,24 @@ function onInscriptionSelected(inscriptionCode) {
                 let suggested = null;
                 data.tranches.forEach(tr => {
                     const opt = document.createElement('option');
-                    opt.value = tr.code_tranche;
-                    opt.text = `${tr.libelle} - Dû: ${formatFCFA(tr.reste)}`;
-                    opt.dataset.montantTranche = tr.reste;
+                    const trCode = tr.code_tranche || '';
+                    const libelle = tr.libelle || tr.libelle_tranche || 'Tranche';
+                    const reste = tr.reste !== undefined ? tr.reste : (tr.reste_a_payer !== undefined ? tr.reste_a_payer : 0);
+                    
+                    opt.value = trCode;
+                    opt.text = `${libelle} - Dû: ${formatFCFA(reste)}`;
+                    opt.dataset.montantTranche = reste;
                     selTr.appendChild(opt);
-                    if (tr.reste > 0 && !suggested) { suggested = tr.code_tranche; }
+
+                    if (reste > 0 && !suggested) { 
+                        suggested = trCode; 
+                    }
                 });
                 if (suggested) selTr.value = suggested;
             }
 
-            const currentTrancheMontant = parseFloat(data.suggested_tranche_reste || 0);
+            const selectedOpt = selTr.options[selTr.selectedIndex];
+            const currentTrancheMontant = selectedOpt ? parseFloat(selectedOpt.dataset.montantTranche || 0) : parseFloat(data.suggested_tranche_reste || 0);
             document.getElementById('hidden_montant_tranche').value = currentTrancheMontant;
 
             let totalPaiementAuto = currentTrancheMontant;
@@ -928,11 +988,20 @@ function onInscriptionSelected(inscriptionCode) {
 
             document.getElementById('encaisse-student-summary-card').style.display = 'block';
             document.getElementById('encaisse-payment-inputs-section').style.display = 'block';
+        } else {
+            alert(res.message || "Erreur de chargement des données de l'étudiant.");
         }
+    })
+    .catch(err => {
+        console.error("Erreur encaissement étudiant :", err);
+        alert("Une erreur de communication est survenue.");
     });
 }
 
 function submitEncaissementForm(form) {
+    const btnSubmit = document.getElementById('btn-submit-encaissement');
+    if (btnSubmit) { btnSubmit.disabled = true; }
+
     const formData = new FormData(form);
     fetch(form.action, {
         method: 'POST',
@@ -940,16 +1009,19 @@ function submitEncaissementForm(form) {
     })
     .then(r => r.json())
     .then(res => {
+        if (btnSubmit) { btnSubmit.disabled = false; }
         if (res.status === 1 || res.success) {
             document.getElementById('modal-encaisse-versement').style.display = 'none';
             loadComptaData();
-            alert("Versement encaissé avec succès !");
+            alert(res.message || "Versement encaissé avec succès !");
         } else {
-            alert(res.message || "Erreur lors de l'enregistrement du versement.");
+            alert(res.message || res.error || "Erreur lors de l'enregistrement du versement.");
         }
     })
     .catch(err => {
-        alert("Erreur de communication avec le serveur.");
+        if (btnSubmit) { btnSubmit.disabled = false; }
+        console.error("Erreur encaissement :", err);
+        alert("Une erreur de communication est survenue avec le serveur.");
     });
 }
 </script>

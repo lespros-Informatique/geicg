@@ -1000,9 +1000,9 @@ class InscriptionController extends BaseController
                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
                 LEFT JOIN annees a ON a.code_annee = ins.annee_code
-                WHERE ins.id_inscription = ?
+                WHERE ins.id_inscription = ? OR ins.code_inscription = ?
             ");
-            $stmt->execute([$id]);
+            $stmt->execute([is_numeric($id) ? (int)$id : 0, $details]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { 
                 $this->renderNotFound("L'inscription demandée est introuvable.");
