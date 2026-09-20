@@ -302,6 +302,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
         <div style="margin-top: 10px; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #0F172A;">
           <span>Total Encaissé : <strong style="color: #15803D;" id="print-kpi-total">0 FCFA</strong></span>
           <span>Espèces : <strong id="print-kpi-especes">0 FCFA</strong></span>
+          <span>Frais Annexes : <strong style="color: #B45309;" id="print-kpi-frais-annexes">0 FCFA</strong></span>
           <span>Affectés (État) : <strong id="print-kpi-affectes">0 FCFA</strong></span>
           <span>Non Affectés (Privés) : <strong id="print-kpi-prives">0 FCFA</strong></span>
         </div>
@@ -473,7 +474,62 @@ $canCloseCaisse = $canCloseCaisse ?? false;
 
       </div>
 
-      <!-- SECTION 2 : RÉPARTITION PAR RÉGIME & POST-INSCRIPTION (4 CARTES) -->
+      <!-- SECTION 2 : SUIVI & RECOUVREMENT DES FRAIS ANNEXES OFFICIELES (4 CARTES) -->
+      <div class="kpi-section-title" style="margin-bottom: 8px; margin-top: 20px;">
+        <h4 style="font-size: 12px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="package" style="width: 15px; height: 15px; color: #B45309;"></i> Suivi & Recouvrement des Frais Annexes Officiels
+        </h4>
+      </div>
+
+      <div class="card-kpi-container">
+        
+        <!-- Frais Annexes Encaissés -->
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FDE68A; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Frais Annexes Encaissés</div>
+            <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
+              <span id="kpi-encaisse-frais-annexes"><?= number_format((float)($stats['encaisse_frais_annexes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              Taux : <strong style="color: #B45309;"><span id="kpi-taux-recouvrement-fa"><?= number_format((float)($stats['taux_recouvrement_fa'] ?? 0), 1, ',', ' ') ?></span>%</strong>
+            </div>
+          </div>
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="package-check" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Frais Annexes Reste Dû -->
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FED7AA; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #C2410C; text-transform: uppercase; letter-spacing: 0.5px;">Frais Annexes Reste Dû</div>
+            <div style="font-size: 18px; font-weight: 900; color: #C2410C; margin-top: 3px;">
+              <span id="kpi-attente-frais-annexes"><?= number_format((float)($stats['attente_frais_annexes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Non encore encaissés</div>
+          </div>
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FFEDD5; color: #C2410C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Total Frais Annexes Attendus -->
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #78350F; text-transform: uppercase; letter-spacing: 0.5px;">Total Frais Annexes Attendus</div>
+            <div style="font-size: 18px; font-weight: 900; color: #78350F; margin-top: 3px;">
+              <span id="kpi-total-frais-annexes-attendus"><?= number_format((float)($stats['total_frais_annexes_attendus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Budget exigible effectif</div>
+          </div>
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FFFBEB; color: #78350F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION 3 : RÉPARTITION PAR RÉGIME & PÉRIODE (4 CARTES) -->
       <div class="kpi-section-title" style="margin-bottom: 8px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="pie-chart" style="width: 15px; height: 15px; color: #0284C7;"></i> Répartition par Régime & Période
@@ -1049,6 +1105,7 @@ $(document).ready(function() {
 
     $('#print-kpi-total').text($('#kpi-total-encaisse').text() + ' FCFA');
     $('#print-kpi-especes').text($('#kpi-encaisse-especes').text() + ' FCFA');
+    $('#print-kpi-frais-annexes').text($('#kpi-encaisse-frais-annexes').text() + ' FCFA');
     $('#print-kpi-affectes').text($('#kpi-encaisse-affectes').text() + ' FCFA');
     $('#print-kpi-prives').text($('#kpi-encaisse-prives').text() + ' FCFA');
 
@@ -1113,7 +1170,7 @@ $(document).ready(function() {
       var $el = $(this);
       var raw = $el.text().replace(/\s/g, '').replace(/,/g, '.');
       var val = parseFloat(raw) || 0;
-      var isFloat = $el.attr('id') === 'kpi-taux-recouvrement';
+      var isFloat = ($el.attr('id') === 'kpi-taux-recouvrement' || $el.attr('id') === 'kpi-taux-recouvrement-fa');
       $el.data('current-val', 0);
       $el.text(isFloat ? '0,0' : '0');
       animateCounter($el, val, isFloat, 750);
@@ -1142,6 +1199,11 @@ $(document).ready(function() {
           animateCounter($('#kpi-encaisse-especes'), Number(s.encaisse_especes || 0), false);
           animateCounter($('#kpi-montant-en-attente'), Number(s.montant_en_attente || 0), false);
           
+          animateCounter($('#kpi-encaisse-frais-annexes'), Number(s.encaisse_frais_annexes || 0), false);
+          animateCounter($('#kpi-taux-recouvrement-fa'), Number(s.taux_recouvrement_fa || 0), true);
+          animateCounter($('#kpi-attente-frais-annexes'), Number(s.attente_frais_annexes || 0), false);
+          animateCounter($('#kpi-total-frais-annexes-attendus'), Number(s.total_frais_annexes_attendus || 0), false);
+
           animateCounter($('#kpi-encaisse-affectes'), Number(s.encaisse_affectes || 0), false);
           animateCounter($('#kpi-encaisse-prives'), Number(s.encaisse_prives || 0), false);
           animateCounter($('#kpi-encaisse-mois'), Number(s.encaisse_mois || 0), false);

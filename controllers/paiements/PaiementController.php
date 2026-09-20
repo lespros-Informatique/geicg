@@ -136,7 +136,11 @@ class PaiementController extends BaseController
             SELECT 
                 i.code_inscription,
                 i.etudiant_code,
+                i.annee_code,
                 i.affectation_etat,
+                c.filiere_code,
+                c.niveau_code,
+                COALESCE(f.type_filiere, 'TERTIAIRE') as type_filiere,
                 COALESCE(
                     CASE 
                         WHEN i.montant_scolarite_inscription IS NOT NULL AND i.montant_scolarite_inscription > 0 THEN i.montant_scolarite_inscription
@@ -146,6 +150,7 @@ class PaiementController extends BaseController
                 ) as montant_du
             FROM inscriptions i
             LEFT JOIN classes c ON i.classe_code = c.code_classe
+            LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
             LEFT JOIN scolarites s ON (
                 s.filiere_code = c.filiere_code 
                 AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
@@ -160,6 +165,10 @@ class PaiementController extends BaseController
         $stmtIns->execute($paramsIns);
         $inscriptions = $stmtIns->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
+        $modelFA = new ModelFraisAnnexe();
+        $totalFraisAnnexesAttendus = 0.0;
+
         $totalInscrits = count($inscriptions);
         $totalScolariteAttendue = 0.0;
 
@@ -168,6 +177,12 @@ class PaiementController extends BaseController
             $codeInscr = $ins['code_inscription'];
             $du = (float)$ins['montant_du'];
             $totalScolariteAttendue += $du;
+
+            $tf = $ins['type_filiere'] ?? 'TERTIAIRE';
+            $ac = !empty($ins['annee_code']) ? $ins['annee_code'] : $anneeCode;
+            $nc = $ins['niveau_code'] ?? '';
+            $faAmt = (float)$modelFA->getMontantByTypeFiliere($tf, $ac, $nc);
+            $totalFraisAnnexesAttendus += $faAmt;
 
             $inscrMap[$codeInscr] = [
                 'code_inscription' => $codeInscr,
@@ -210,6 +225,8 @@ class PaiementController extends BaseController
                 p.montant_paiement,
                 p.date_paiement,
                 p.mode_paiement,
+                p.tranche_code,
+                p.categorie_paiement,
                 p.inscription_code,
                 ins.affectation_etat
             FROM paiements p
@@ -223,6 +240,7 @@ class PaiementController extends BaseController
         $paiements = $stmtPay->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $totalEncaisse = 0.0;
+        $encaisseFraisAnnexes = 0.0;
         $encaisseAujourdhui = 0.0;
         $encaisseMois = 0.0;
         $encaisseEspeces = 0.0;
@@ -237,6 +255,11 @@ class PaiementController extends BaseController
         foreach ($paiements as $p) {
             $m = (float)$p['montant_paiement'];
             $totalEncaisse += $m;
+
+            $isFA = (($p['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($p['categorie_paiement'] ?? '')) === 'frais_annexes');
+            if ($isFA) {
+                $encaisseFraisAnnexes += $m;
+            }
 
             $dateP = !empty($p['date_paiement']) ? substr($p['date_paiement'], 0, 10) : '';
             $monthP = !empty($p['date_paiement']) ? substr($p['date_paiement'], 0, 7) : '';
@@ -324,6 +347,9 @@ class PaiementController extends BaseController
         $stmtLib->execute([$targetExerciceAnnee]);
         $anneeExerciceLibelle = $stmtLib->fetchColumn() ?: ($_SESSION['annee_active_libelle'] ?? 'En session');
 
+        $attenteFraisAnnexes = max(0, $totalFraisAnnexesAttendus - $encaisseFraisAnnexes);
+        $tauxRecouvrementFA = ($totalFraisAnnexesAttendus > 0) ? min(100, round(($encaisseFraisAnnexes / $totalFraisAnnexesAttendus) * 100, 1)) : 0;
+
         return [
             'total_inscrits' => $totalInscrits,
             'total_scolarite_attendue' => $totalScolariteAttendue,
@@ -335,6 +361,12 @@ class PaiementController extends BaseController
             'encaisse_aujourdhui' => $encaisseAujourdhui,
             'encaisse_mois' => $encaisseMois,
             'total_operations' => count($paiements),
+
+            // Frais Annexes KPIs
+            'encaisse_frais_annexes' => $encaisseFraisAnnexes,
+            'total_frais_annexes_attendus' => $totalFraisAnnexesAttendus,
+            'attente_frais_annexes' => $attenteFraisAnnexes,
+            'taux_recouvrement_fa' => $tauxRecouvrementFA,
 
             // Mode de paiement
             'encaisse_especes' => $encaisseEspeces,
