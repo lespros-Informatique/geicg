@@ -597,6 +597,28 @@
 let dataTableCompta = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('statut_paiement')) {
+        const selStatut = document.getElementById('filter_statut_paiement');
+        if (selStatut) selStatut.value = urlParams.get('statut_paiement');
+    }
+    if (urlParams.has('annee_code')) {
+        const selAnnee = document.getElementById('filter_annee_code');
+        if (selAnnee) selAnnee.value = urlParams.get('annee_code');
+    }
+    if (urlParams.has('niveau_code')) {
+        const selNiveau = document.getElementById('filter_niveau_code');
+        if (selNiveau) selNiveau.value = urlParams.get('niveau_code');
+    }
+    if (urlParams.has('classe_code')) {
+        const selClasse = document.getElementById('filter_classe_code');
+        if (selClasse) selClasse.value = urlParams.get('classe_code');
+    }
+    if (urlParams.has('regime')) {
+        const selRegime = document.getElementById('filter_regime');
+        if (selRegime) selRegime.value = urlParams.get('regime');
+    }
+
     initDataTableCompta();
     loadComptaData();
 

@@ -133,6 +133,14 @@
   cursor: default;
 }
 
+.kpi-card-clickable {
+  cursor: pointer !important;
+}
+.kpi-card-clickable:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
 .kpi-card > div:first-child {
   display: flex;
   flex-direction: column;
@@ -608,13 +616,13 @@ $canCloseCaisse = $canCloseCaisse ?? false;
       <div class="card-kpi-container">
         
         <!-- 9. Étudiants Soldés -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div onclick="window.location.href='<?= RACINE ?>paiement/comptabilite_etudiants?statut_paiement=solde'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants soldés">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Soldés (100%)</div>
             <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
               <span id="kpi-eleves-soldes"><?= number_format((int)($stats['eleves_soldes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Scolarité entièrement payée</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Scolarité entièrement payée &bull; <span style="color: #15803D; font-weight: 700;">Voir liste &rarr;</span></div>
           </div>
           <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
@@ -622,13 +630,13 @@ $canCloseCaisse = $canCloseCaisse ?? false;
         </div>
 
         <!-- 10. Étudiants en Acompte -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div onclick="window.location.href='<?= RACINE ?>paiement/comptabilite_etudiants?statut_paiement=partiel'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FEF3C7; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants en acompte">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants en Acompte</div>
             <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
               <span id="kpi-eleves-acomptes"><?= number_format((int)($stats['eleves_acomptes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Versements partiels</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Versements partiels &bull; <span style="color: #D97706; font-weight: 700;">Voir liste &rarr;</span></div>
           </div>
           <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
@@ -636,13 +644,13 @@ $canCloseCaisse = $canCloseCaisse ?? false;
         </div>
 
         <!-- 11. Frais d'inscription non réglé -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div onclick="window.location.href='<?= RACINE ?>paiement/comptabilite_etudiants?statut_paiement=non_paye'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FECACA; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants non réglés">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #E11D48; text-transform: uppercase; letter-spacing: 0.5px;">Frais d'inscription non réglé</div>
             <div style="font-size: 18px; font-weight: 900; color: #BE123C; margin-top: 3px;">
               <span id="kpi-eleves-non-payeurs"><?= number_format((int)($stats['eleves_non_payeurs'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">0 FCFA versé</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">0 FCFA versé &bull; <span style="color: #E11D48; font-weight: 700;">Voir liste &rarr;</span></div>
           </div>
           <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="user-x" style="width: 20px; height: 20px;"></i>
@@ -650,13 +658,13 @@ $canCloseCaisse = $canCloseCaisse ?? false;
         </div>
 
         <!-- 12. Total Inscrits -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+        <div onclick="window.location.href='<?= RACINE ?>paiement/comptabilite_etudiants'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E9D5FF; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste complète des étudiants inscrits">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Total Inscrits</div>
             <div style="font-size: 18px; font-weight: 900; color: #7E22CE; margin-top: 3px;">
               <span id="kpi-total-inscrits"><?= number_format((int)($stats['total_inscrits'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">étudiant(s)</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Effectif académique suivi</div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Effectif académique suivi &bull; <span style="color: #7E22CE; font-weight: 700;">Voir liste &rarr;</span></div>
           </div>
           <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i>
