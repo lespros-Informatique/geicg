@@ -504,20 +504,7 @@
     <form id="form-encaisse-versement" action="<?= RACINE ?>paiement/add" method="POST" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
       <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
 
-        <div style="margin-bottom: 16px;">
-          <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">
-            1. Sélectionner l'Étudiant Inscrit <span class="text-danger">*</span>
-          </label>
-          <select id="modal_select_inscription" name="inscription_code" class="form-control" style="width: 100%; font-size: 14px;" required>
-            <option value="">-- Choisir un étudiant dans la liste --</option>
-            <?php foreach ($inscriptions as $ins): ?>
-              <option value="<?= htmlspecialchars($ins['code_inscription']) ?>">
-                <?= htmlspecialchars(strtoupper($ins['nom_etudiant']) . ' ' . ucwords(strtolower($ins['prenom_etudiant']))) ?> 
-                (<?= htmlspecialchars($ins['matricule_etudiant']) ?> - <?= htmlspecialchars($ins['libelle_classe'] ?? 'Classe N/A') ?>)
-              </option>
-            <?php endforeach; ?>
-          </select>
-        </div>
+        <input type="hidden" id="modal_select_inscription" name="inscription_code" value="" required>
 
         <div id="encaisse-student-summary-card" style="display: none; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
@@ -698,36 +685,36 @@ function initDataTableCompta() {
 
                 if (canRecord && isCaisseOuverte) {
                     btnEncaisse = `<button type="button" onclick="openModalPayementForStudent('${d.code_inscription}')" 
-                                           class="btn btn-sm btn-success me-1" 
-                                           style="border-radius: 8px; font-weight: 800; font-size: 12px; padding: 5px 12px; background: #16A34A; border: none; color: #FFF; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(22,163,74,0.25);" 
+                                           class="btn btn-sm btn-success" 
+                                           style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 800; background: #16A34A; border: none; color: #FFF; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(22,163,74,0.25);" 
                                            title="Encaisser un versement de scolarité">
-                                    <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> Versement
+                                    <i data-lucide="credit-card" style="width: 15px; height: 15px;"></i>
                                    </button>`;
                 } else if (canRecord && !isCaisseOuverte) {
                     btnEncaisse = `<button type="button" onclick="alert('La caisse du jour est actuellement fermée. Veuillez d\'abord ouvrir une session de caisse.')" 
-                                           class="btn btn-sm btn-secondary me-1" 
-                                           style="border-radius: 8px; font-weight: 800; font-size: 12px; padding: 5px 12px; opacity: 0.7; display: inline-flex; align-items: center; gap: 5px;" 
+                                           class="btn btn-sm btn-secondary" 
+                                           style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 800; opacity: 0.6; display: inline-flex; align-items: center; justify-content: center;" 
                                            title="Caisse du jour fermée">
-                                    <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> Versement
+                                    <i data-lucide="credit-card" style="width: 15px; height: 15px;"></i>
                                    </button>`;
                 }
 
                 let btnVoir = `<button type="button" onclick="openStudentFinancialSummaryModal('${d.code_inscription}')" 
-                                       class="btn btn-sm btn-primary me-1" 
-                                       style="border-radius: 8px; font-weight: 800; font-size: 12px; padding: 5px 12px; background: #1E3A5F; border-color: #1E3A5F; color: #FFF; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(30,58,95,0.2);" 
-                                       title="Voir les détails & le récapitulatif de l'étudiant">
-                                <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Voir
+                                       class="btn btn-sm btn-primary" 
+                                       style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 800; background: #1E3A5F; border-color: #1E3A5F; color: #FFF; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(30,58,95,0.2);" 
+                                       title="Voir résumé financier & récapitulatif">
+                                <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
                                </button>`;
 
                 let btnProfil = d.encrypted_etudiant_code ? 
                     `<a href="${window.RACINE}etudiant/details/${d.encrypted_etudiant_code}" target="_blank" 
                         class="btn btn-sm btn-outline-secondary" 
-                        style="border-radius: 8px; font-weight: 700; font-size: 12px; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;" 
+                        style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; color: #475569; border-color: #CBD5E1;" 
                         title="Consulter le dossier profil de l'étudiant">
-                        <i data-lucide="user" style="width: 14px; height: 14px;"></i> Profil
+                        <i data-lucide="user" style="width: 15px; height: 15px;"></i>
                      </a>` : '';
 
-                return `<div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: nowrap;">
+                return `<div style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: nowrap;">
                             ${btnEncaisse}
                             ${btnVoir}
                             ${btnProfil}
@@ -862,9 +849,13 @@ function closeStudentSummaryModal() {
 }
 
 function openModalEncaissementCompta() {
-    document.getElementById('modal_select_inscription').value = '';
-    document.getElementById('encaisse-student-summary-card').style.display = 'none';
-    document.getElementById('encaisse-payment-inputs-section').style.display = 'none';
+    if (dataTableCompta && dataTableCompta.rows().count() > 0) {
+        const firstStudent = dataTableCompta.row(0).data();
+        if (firstStudent && firstStudent.code_inscription) {
+            openModalPayementForStudent(firstStudent.code_inscription);
+            return;
+        }
+    }
     document.getElementById('modal-encaisse-versement').style.display = 'flex';
 }
 
