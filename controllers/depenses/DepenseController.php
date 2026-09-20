@@ -48,7 +48,11 @@ class DepenseController extends BaseController
         $this->requireAuth();
         $this->requirePermission('VIEW_DEPENSES');
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
-        $stats = $this->model->getStats($anneeCode);
+        $typeCode = !empty($_GET['type_depense_code']) ? trim($_GET['type_depense_code']) : null;
+        $dateDebut = !empty($_GET['date_debut']) ? trim($_GET['date_debut']) : null;
+        $dateFin = !empty($_GET['date_fin']) ? trim($_GET['date_fin']) : null;
+
+        $stats = $this->model->getStats($anneeCode, $typeCode, $dateDebut, $dateFin);
         $this->json(['status' => 1, 'stats' => $stats]);
     }
 
@@ -69,7 +73,11 @@ class DepenseController extends BaseController
         }
 
         $anneeCode = $this->getActiveAnneeCode();
-        $items = $this->model->getAll($anneeCode);
+        $typeCode = !empty($_GET['type_depense_code']) ? trim($_GET['type_depense_code']) : null;
+        $dateDebut = !empty($_GET['date_debut']) ? trim($_GET['date_debut']) : null;
+        $dateFin = !empty($_GET['date_fin']) ? trim($_GET['date_fin']) : null;
+
+        $items = $this->model->getAll($anneeCode, $typeCode, $dateDebut, $dateFin);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_depense'];
@@ -80,6 +88,40 @@ class DepenseController extends BaseController
             ]);
         }
         $this->json(['data' => $data]);
+    }
+
+    private function handleFileUpload(?array $fileInfo): ?string
+    {
+        if (empty($fileInfo) || empty($fileInfo['name']) || $fileInfo['error'] !== UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $maxBytes = 3 * 1024 * 1024; // 3 Mo
+        if ($fileInfo['size'] > $maxBytes) {
+            $this->error('La pièce justificative dépasse la taille maximale autorisée de 3 Mo');
+            exit;
+        }
+
+        $allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
+        $ext = strtolower(pathinfo($fileInfo['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExts, true)) {
+            $this->error('Format de fichier non autorisé. Formats acceptés : PDF, JPG, JPEG, PNG.');
+            exit;
+        }
+
+        $uploadDir = __DIR__ . '/../../public/uploads/depenses/';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0777, true);
+        }
+
+        $filename = 'depense_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $targetPath = $uploadDir . $filename;
+
+        if (move_uploaded_file($fileInfo['tmp_name'], $targetPath)) {
+            return 'uploads/depenses/' . $filename;
+        }
+
+        return null;
     }
 
     public function add()
@@ -95,6 +137,13 @@ class DepenseController extends BaseController
 
         if (empty($data['description_depense']) && !empty($data['libelle_depense'])) {
             $data['description_depense'] = $data['libelle_depense'];
+        }
+
+        if (!empty($_FILES['piece_justificative'])) {
+            $uploadedPath = $this->handleFileUpload($_FILES['piece_justificative']);
+            if ($uploadedPath) {
+                $data['piece_justificative'] = $uploadedPath;
+            }
         }
 
         $this->validateForeignKeys([
@@ -145,6 +194,14 @@ class DepenseController extends BaseController
         unset($data['csrf_token'], $data['statut_depense']);
         $cols = $this->model->getCon()->query("DESCRIBE depenses")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
+
+        if (!empty($_FILES['piece_justificative']) && $_FILES['piece_justificative']['error'] === UPLOAD_ERR_OK) {
+            $uploadedPath = $this->handleFileUpload($_FILES['piece_justificative']);
+            if ($uploadedPath) {
+                $filteredData['piece_justificative'] = $uploadedPath;
+            }
+        }
+
         $filteredData['updated_at_depense'] = date('Y-m-d H:i:s');
 
         if ($this->model->update($filteredData, $id)) {
@@ -202,11 +259,13 @@ class DepenseController extends BaseController
                 SELECT d.*, 
                        td.libelle_type_depense, 
                        a.libelle_annee, 
-                       u.nom_user, u.prenom_user
+                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) as auteur_nom_complet,
+                       CONCAT(COALESCE(uc.nom_user, ''), ' ', COALESCE(uc.prenom_user, '')) as confirmateur_nom_complet
                 FROM depenses d
                 LEFT JOIN type_depenses td ON td.code_type_depense = d.type_depense_code
                 LEFT JOIN annees a ON a.code_annee = d.annee_code
                 LEFT JOIN users u ON u.code_user = d.user_code
+                LEFT JOIN users uc ON uc.code_user = d.user_confirm
                 WHERE d.id_depense = ?
             ");
             $stmt->execute([$id]);

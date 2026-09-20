@@ -7,14 +7,28 @@ class ModelDepense extends BaseModel
     protected ?string $statusField = 'statut_depense';
     protected ?string $createdAtField = 'created_at_depense';
 
-    public function getAll(?string $anneeCode = null): array
+    public function getAll(?string $anneeCode = null, ?string $typeCode = null, ?string $dateDebut = null, ?string $dateFin = null): array
     {
-        $where = "";
+        $where = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $where = "WHERE d.annee_code = ?";
-            $params = [$anneeCode];
+            $where[] = "d.annee_code = ?";
+            $params[] = $anneeCode;
         }
+        if (!empty($typeCode)) {
+            $where[] = "d.type_depense_code = ?";
+            $params[] = $typeCode;
+        }
+        if (!empty($dateDebut)) {
+            $where[] = "DATE(d.periode_depense) >= ?";
+            $params[] = $dateDebut;
+        }
+        if (!empty($dateFin)) {
+            $where[] = "DATE(d.periode_depense) <= ?";
+            $params[] = $dateFin;
+        }
+
+        $whereSql = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
         $sql = "
             SELECT d.*, 
@@ -25,7 +39,7 @@ class ModelDepense extends BaseModel
             LEFT JOIN type_depenses t ON t.code_type_depense = d.type_depense_code
             LEFT JOIN users u ON u.code_user = d.user_code
             LEFT JOIN users uc ON uc.code_user = d.user_confirm
-            {$where}
+            {$whereSql}
             ORDER BY d.id_depense DESC
         ";
         $stmt = $this->getCon()->prepare($sql);
@@ -33,44 +47,63 @@ class ModelDepense extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getStats(?string $anneeCode = null): array
+    public function getStats(?string $anneeCode = null, ?string $typeCode = null, ?string $dateDebut = null, ?string $dateFin = null): array
     {
-        $where = "";
+        $where = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $where = "WHERE annee_code = ?";
-            $params = [$anneeCode];
+            $where[] = "annee_code = ?";
+            $params[] = $anneeCode;
         }
+        if (!empty($typeCode)) {
+            $where[] = "type_depense_code = ?";
+            $params[] = $typeCode;
+        }
+        if (!empty($dateDebut)) {
+            $where[] = "DATE(periode_depense) >= ?";
+            $params[] = $dateDebut;
+        }
+        if (!empty($dateFin)) {
+            $where[] = "DATE(periode_depense) <= ?";
+            $params[] = $dateFin;
+        }
+
+        $whereSql = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
+        $andSql = !empty($where) ? "AND " . implode(" AND ", $where) : "";
 
         $db = $this->getCon();
         
-        $stmtTot = $db->prepare("SELECT SUM(montant_depense) FROM depenses " . (!empty($where) ? $where . " AND statut_depense != 'annule'" : "WHERE statut_depense != 'annule'"));
+        $stmtTot = $db->prepare("SELECT SUM(montant_depense) FROM depenses WHERE statut_depense != 'annule' " . $andSql);
         $stmtTot->execute($params);
         $totalMontant = (float)($stmtTot->fetchColumn() ?: 0);
 
-        $stmtApp = $db->prepare("SELECT SUM(montant_depense) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'approuve'" : "WHERE statut_depense = 'approuve'"));
+        $stmtApp = $db->prepare("SELECT SUM(montant_depense) FROM depenses WHERE statut_depense = 'approuve' " . $andSql);
         $stmtApp->execute($params);
         $montantApprouve = (float)($stmtApp->fetchColumn() ?: 0);
 
-        $stmtAtt = $db->prepare("SELECT SUM(montant_depense) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'en_attente'" : "WHERE statut_depense = 'en_attente'"));
+        $stmtAtt = $db->prepare("SELECT SUM(montant_depense) FROM depenses WHERE statut_depense = 'en_attente' " . $andSql);
         $stmtAtt->execute($params);
         $montantEnAttente = (float)($stmtAtt->fetchColumn() ?: 0);
 
-        $stmtCount = $db->prepare("SELECT COUNT(*) FROM depenses " . $where);
+        $stmtCount = $db->prepare("SELECT COUNT(*) FROM depenses " . $whereSql);
         $stmtCount->execute($params);
         $totalCount = (int)($stmtCount->fetchColumn() ?: 0);
 
-        $stmtCntAtt = $db->prepare("SELECT COUNT(*) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'en_attente'" : "WHERE statut_depense = 'en_attente'"));
+        $stmtCntAtt = $db->prepare("SELECT COUNT(*) FROM depenses WHERE statut_depense = 'en_attente' " . $andSql);
         $stmtCntAtt->execute($params);
         $countEnAttente = (int)($stmtCntAtt->fetchColumn() ?: 0);
 
-        $stmtCntApp = $db->prepare("SELECT COUNT(*) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'approuve'" : "WHERE statut_depense = 'approuve'"));
+        $stmtCntApp = $db->prepare("SELECT COUNT(*) FROM depenses WHERE statut_depense = 'approuve' " . $andSql);
         $stmtCntApp->execute($params);
         $countApprouve = (int)($stmtCntApp->fetchColumn() ?: 0);
 
-        $stmtCntAnn = $db->prepare("SELECT COUNT(*) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'annule'" : "WHERE statut_depense = 'annule'"));
+        $stmtCntAnn = $db->prepare("SELECT COUNT(*) FROM depenses WHERE statut_depense = 'annule' " . $andSql);
         $stmtCntAnn->execute($params);
         $countAnnule = (int)($stmtCntAnn->fetchColumn() ?: 0);
+
+        $stmtAnnSum = $db->prepare("SELECT SUM(montant_depense) FROM depenses WHERE statut_depense = 'annule' " . $andSql);
+        $stmtAnnSum->execute($params);
+        $montantAnnule = (float)($stmtAnnSum->fetchColumn() ?: 0);
 
         $moyenne = $totalCount > 0 ? round($totalMontant / $totalCount) : 0;
         $totalTypes = (int)$db->query("SELECT COUNT(*) FROM type_depenses")->fetchColumn();
@@ -79,6 +112,7 @@ class ModelDepense extends BaseModel
             'total_montant' => $totalMontant,
             'montant_approuve' => $montantApprouve,
             'montant_en_attente' => $montantEnAttente,
+            'montant_annule' => $montantAnnule,
             'total_count' => $totalCount,
             'count_en_attente' => $countEnAttente,
             'count_approuve' => $countApprouve,

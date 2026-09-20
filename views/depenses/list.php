@@ -32,52 +32,112 @@ $canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_ar
       </div>
 
 
+<style>
+.kpi-card {
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.28s ease;
+}
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -4px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04) !important;
+  border-color: #CBD5E1 !important;
+}
+.kpi-icon-wrapper {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.kpi-card:hover .kpi-icon-wrapper {
+  transform: scale(1.12) rotate(-4deg);
+}
+</style>
+
+      <!-- ========================================================================= -->
+      <!-- BARRE DE FILTRAGE : CATÉGORIE & PÉRIODE -->
+      <!-- ========================================================================= -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="filter" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+              <span style="font-size: 13.5px; font-weight: 800; color: #0F172A; display: block;">Filtrer les Dépenses</span>
+              <span style="font-size: 11.5px; color: #64748B;">Filtrage par catégorie et période d'engagement</span>
+            </div>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-grow: 1; justify-content: flex-end;">
+            <!-- Filtre Catégorie -->
+            <div style="min-width: 200px;">
+              <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Catégorie</label>
+              <select id="filter-type-depense" class="form-control select2" style="width: 100%;">
+                <option value="">-- Toutes les catégories --</option>
+                <?php foreach ($typeDepenses as $t): ?>
+                  <option value="<?= htmlspecialchars($t['code_type_depense']) ?>">
+                    <?= htmlspecialchars($t['libelle_type_depense']) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
+            <!-- Filtre Date Début -->
+            <div style="min-width: 150px;">
+              <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Période (Du)</label>
+              <input type="date" id="filter-date-debut" class="form-control" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
+            </div>
+
+            <!-- Filtre Date Fin -->
+            <div style="min-width: 150px;">
+              <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Au</label>
+              <input type="date" id="filter-date-fin" class="form-control" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
+            </div>
+
+            <!-- Bouton Réinitialiser -->
+            <div style="margin-top: 18px;">
+              <button type="button" id="btn-reset-filters" class="btn btn-secondary" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Réinitialiser tous les filtres">
+                <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Réinitialiser
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ========================================================================= -->
       <!-- CARTES KPI DE STATISTIQUES FINANCIÈRES DES DÉPENSES -->
       <!-- ========================================================================= -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 24px;">
         
         <!-- Total Approuvé -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F0FDF4; color: #16A34A; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 22px; min-height: 105px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px; box-sizing: border-box;">
+          <div class="kpi-icon-wrapper" style="width: 50px; height: 50px; border-radius: 12px; background: #F0FDF4; color: #16A34A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="check-circle" style="width: 25px; height: 25px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Dépenses Approuvées</div>
-            <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-montant-approuve"><?= number_format($stats['montant_approuve'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px;">Dépenses Approuvées</div>
+            <div style="font-size: 19px; font-weight: 900; color: #15803D; margin-top: 4px;" id="kpi-montant-approuve"><?= number_format($stats['montant_approuve'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 12px; font-weight: 700; color: #16A34A; margin-top: 3px;" id="kpi-count-approuve"><?= ($stats['count_approuve'] ?? 0) ?> dépense(s)</div>
           </div>
         </div>
 
         <!-- En Attente de Validation -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 22px; min-height: 105px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px; box-sizing: border-box;">
+          <div class="kpi-icon-wrapper" style="width: 50px; height: 50px; border-radius: 12px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="clock" style="width: 25px; height: 25px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">En Attente de Validation</div>
-            <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 2px;" id="kpi-montant-attente"><?= number_format($stats['montant_en_attente'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px;">En Attente de Validation</div>
+            <div style="font-size: 19px; font-weight: 900; color: #B45309; margin-top: 4px;" id="kpi-montant-attente"><?= number_format($stats['montant_en_attente'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 12px; font-weight: 700; color: #D97706; margin-top: 3px;" id="kpi-count-attente"><?= ($stats['count_en_attente'] ?? 0) ?> dépense(s)</div>
           </div>
         </div>
 
-        <!-- Total Engagé -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="trending-down" style="width: 24px; height: 24px;"></i>
+        <!-- Dépenses Annulées -->
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 22px; min-height: 105px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px; box-sizing: border-box;">
+          <div class="kpi-icon-wrapper" style="width: 50px; height: 50px; border-radius: 12px; background: #F8FAFC; color: #64748B; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="x-circle" style="width: 25px; height: 25px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total Général Engagé</div>
-            <div style="font-size: 20px; font-weight: 900; color: #991B1B; margin-top: 2px;" id="kpi-total-montant"><?= number_format($stats['total_montant'] ?? 0, 0, ',', ' ') ?> FCFA</div>
-          </div>
-        </div>
-
-        <!-- Volume et Catégories -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="receipt" style="width: 24px; height: 24px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Volume Dépenses</div>
-            <div style="font-size: 18px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-count"><?= ($stats['total_count'] ?? 0) ?> enregistrements</div>
+            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px;">Dépenses Annulées</div>
+            <div style="font-size: 19px; font-weight: 900; color: #64748B; margin-top: 4px;" id="kpi-montant-annule"><?= number_format($stats['montant_annule'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 12px; font-weight: 700; color: #EF4444; margin-top: 3px;" id="kpi-count-annule"><?= ($stats['count_annule'] ?? 0) ?> dépense(s)</div>
           </div>
         </div>
 
@@ -101,7 +161,6 @@ $canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_ar
                 <th style="padding: 12px; width: 40px;">#</th>
                 <th style="padding: 12px;">Code Dépense</th>
                 <th style="padding: 12px;">Catégorie</th>
-                <th style="padding: 12px;">Motif / Description</th>
                 <th style="padding: 12px; text-align: right;">Montant Engagé</th>
                 <th style="padding: 12px;">Date Engagement</th>
                 <th style="padding: 12px;">Auteur / Traitement</th>
@@ -130,7 +189,7 @@ $canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_ar
       <button type="button" class="btn-close-modal-depense" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
 
-    <form id="form-depense-modal" style="padding: 24px;">
+    <form id="form-depense-modal" enctype="multipart/form-data" style="padding: 24px;">
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       <input type="hidden" name="id_depense" id="depense_modal_id" value="">
 
@@ -141,7 +200,7 @@ $canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_ar
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
             Catégorie de dépense <span style="color: #EF4444;">*</span>
           </label>
-          <select name="type_depense_code" id="depense_modal_type" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <select name="type_depense_code" id="depense_modal_type" required class="form-control select2" style="width: 100%;">
             <option value="">-- Sélectionnez une catégorie --</option>
             <?php foreach ($typeDepenses as $td): ?>
               <option value="<?= htmlspecialchars($td['code_type_depense']) ?>">
@@ -196,6 +255,15 @@ $canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_ar
           <input type="date" name="periode_depense" id="depense_modal_date" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
         </div>
 
+        <!-- Document / Pièce Justificative -->
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+            Document / Pièce justificative <span style="font-size: 11.5px; color: #64748B; font-weight: 500;">(PDF, JPG, PNG - Max 3 Mo)</span>
+          </label>
+          <input type="file" name="piece_justificative" id="depense_modal_piece" accept=".pdf,.jpg,.jpeg,.png" class="form-control" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; background: #F8FAFC;">
+          <div id="piece-justificative-preview" style="margin-top: 6px; font-size: 12.5px;"></div>
+        </div>
+
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
@@ -236,13 +304,35 @@ $(document).ready(function() {
     }
   }
 
+  if ($.fn.select2) {
+    $('#filter-type-depense').select2({ width: '100%' });
+    $('#depense_modal_type').select2({
+      dropdownParent: $('#modal-depense'),
+      width: '100%',
+      placeholder: '-- Sélectionnez une catégorie --'
+    });
+  }
+
   function reloadStats() {
-    $.getJSON('<?= RACINE ?>depense/apiStats', function(res) {
+    var typeCode = $('#filter-type-depense').val();
+    var dateDebut = $('#filter-date-debut').val();
+    var dateFin = $('#filter-date-fin').val();
+
+    var params = [];
+    if (typeCode) params.push('type_depense_code=' + encodeURIComponent(typeCode));
+    if (dateDebut) params.push('date_debut=' + encodeURIComponent(dateDebut));
+    if (dateFin) params.push('date_fin=' + encodeURIComponent(dateFin));
+
+    var url = '<?= RACINE ?>depense/apiStats' + (params.length ? '?' + params.join('&') : '');
+
+    $.getJSON(url, function(res) {
       if (res.status === 1 && res.stats) {
-        $('#kpi-total-montant').text(Number(res.stats.total_montant || 0).toLocaleString('fr-FR') + ' FCFA');
         $('#kpi-montant-approuve').text(Number(res.stats.montant_approuve || 0).toLocaleString('fr-FR') + ' FCFA');
+        $('#kpi-count-approuve').text((res.stats.count_approuve || 0) + ' dépense(s)');
         $('#kpi-montant-attente').text(Number(res.stats.montant_en_attente || 0).toLocaleString('fr-FR') + ' FCFA');
-        $('#kpi-total-count').text((res.stats.total_count || 0) + ' enregistrements');
+        $('#kpi-count-attente').text((res.stats.count_en_attente || 0) + ' dépense(s)');
+        $('#kpi-montant-annule').text(Number(res.stats.montant_annule || 0).toLocaleString('fr-FR') + ' FCFA');
+        $('#kpi-count-annule').text((res.stats.count_annule || 0) + ' dépense(s)');
       }
     });
   }
@@ -250,7 +340,12 @@ $(document).ready(function() {
   var table = $('#table-depenses').DataTable({
     ajax: {
       url: '<?= RACINE ?>depense/apiList',
-      type: 'GET'
+      type: 'GET',
+      data: function(d) {
+        d.type_depense_code = $('#filter-type-depense').val();
+        d.date_debut = $('#filter-date-debut').val();
+        d.date_fin = $('#filter-date-fin').val();
+      }
     },
     processing: true,
     autoWidth: false,
@@ -263,13 +358,7 @@ $(document).ready(function() {
         return '<code style="font-weight:800; color:#1E3A5F; background:#F1F5F9; padding:4px 8px; border-radius:6px;">' + d + '</code>';
       }},
       { data: 'libelle_type_depense', render: function(d) {
-        return '<span class="badge" style="background:#F3E8FF; color:#7E22CE; font-weight:700; padding:5px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="tag" style="width:12px;height:12px;"></i> ' + (d || 'Général') + '</span>';
-      }},
-      { data: 'description_depense', render: function(d, t, r) {
-        var textVal = d || r.libelle_depense || '';
-        if (!textVal) return '<span style="color:#94A3B8; font-style:italic;">Aucun motif spécifié</span>';
-        var shortText = (textVal.length > 55) ? textVal.substring(0, 55) + '...' : textVal;
-        return '<span style="color:#334155; font-weight:600; font-size:13px;" title="' + String(textVal).replace(/"/g, '&quot;') + '">' + shortText + '</span>';
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #DBEAFE; font-weight:700; padding:5px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="tag" style="width:12px;height:12px;color:#2563EB;"></i> ' + (d || 'Général') + '</span>';
       }},
       { data: 'montant_depense', className: 'text-end', render: function(d) {
         var num = parseFloat(d) || 0;
@@ -320,6 +409,7 @@ $(document).ready(function() {
                     'data-mode="' + (d.mode_reglement || 'espece') + '" ' +
                     'data-beneficiaire="' + benVal + '" ' +
                     'data-date="' + rawDate + '" ' +
+                    'data-piece="' + (d.piece_justificative || '') + '" ' +
                     'style="width:32px; height:32px; padding:0; border-radius:8px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; background:#64748B; border:none; color:#FFF; box-shadow:0 2px 4px rgba(100,116,139,0.25);" ' +
                     'title="Modifier la dépense (En attente)">' +
                     '<i data-lucide="edit" style="width:15px;height:15px;"></i></button>';
@@ -369,10 +459,21 @@ $(document).ready(function() {
                          'title="Consulter la fiche détails de la dépense">' +
                          '<i data-lucide="eye" style="width:15px;height:15px;"></i></a>';
 
+        // 4. BOUTON PIÈCE JUSTIFICATIVE (Icône paperclip)
+        var btnDoc = '';
+        if (d.piece_justificative) {
+          btnDoc = '<a href="' + window.RACINE + 'public/' + d.piece_justificative + '" target="_blank" ' +
+                   'class="btn btn-sm btn-outline-info" ' +
+                   'style="width:32px; height:32px; padding:0; border-radius:8px; font-weight:800; color:#0284C7; border:1px solid #BAE6FD; background:#F0F9FF; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(2,132,199,0.15);" ' +
+                   'title="Consulter / Télécharger la pièce justificative (Max 3 Mo)">' +
+                   '<i data-lucide="paperclip" style="width:15px;height:15px;"></i></a>';
+        }
+
         return '<div style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:nowrap;">' +
                btnEdit +
                btnStatus +
                btnDetails +
+               btnDoc +
                '</div>';
       }}
     ],
@@ -384,6 +485,11 @@ $(document).ready(function() {
   $('.btn-add-depense').on('click', function() {
     $('#depense_modal_id').val('');
     $('#form-depense-modal')[0].reset();
+    if ($.fn.select2) {
+      $('#depense_modal_type').val('').trigger('change');
+    }
+    $('#depense_modal_piece').val('');
+    $('#piece-justificative-preview').html('');
     var today = new Date().toISOString().split('T')[0];
     $('#depense_modal_date').val(today);
     $('#modal-depense-title').html('<i data-lucide="plus-circle" style="width: 20px; height: 20px;"></i> Nouveau Décaissement / Dépense');
@@ -401,14 +507,26 @@ $(document).ready(function() {
     var mode = $(this).data('mode');
     var beneficiaire = $(this).data('beneficiaire');
     var date = $(this).data('date');
+    var piece = $(this).data('piece');
 
     $('#depense_modal_id').val(id);
-    $('#depense_modal_type').val(type);
+    if ($.fn.select2) {
+      $('#depense_modal_type').val(type).trigger('change');
+    } else {
+      $('#depense_modal_type').val(type);
+    }
     $('#depense_modal_description').val(description);
     $('#depense_modal_montant').val(montant);
     $('#depense_modal_mode').val(mode || 'espece');
     $('#depense_modal_beneficiaire').val(beneficiaire);
     $('#depense_modal_date').val(date);
+    $('#depense_modal_piece').val('');
+
+    if (piece) {
+      $('#piece-justificative-preview').html('<a href="' + window.RACINE + 'public/' + piece + '" target="_blank" style="color:#0284C7; font-weight:700; text-decoration:underline; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="paperclip" style="width:13px;height:13px;"></i> Voir la pièce justificative actuelle</a>');
+    } else {
+      $('#piece-justificative-preview').html('');
+    }
 
     $('#modal-depense-title').html('<i data-lucide="edit" style="width: 20px; height: 20px;"></i> Modifier la Dépense');
     $('#modal-depense').css('display', 'flex');
@@ -429,9 +547,23 @@ $(document).ready(function() {
   // Soumission AJAX du formulaire de modale
   $('#form-depense-modal').on('submit', function(e) {
     e.preventDefault();
+
+    // Contrôle client de la taille de la pièce justificative (Max 3 Mo)
+    var fileInput = $('#depense_modal_piece')[0];
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      var file = fileInput.files[0];
+      var maxBytes = 3 * 1024 * 1024; // 3 Mo
+      if (file.size > maxBytes) {
+        var currentMb = (file.size / (1024 * 1024)).toFixed(2);
+        showNotify('La pièce justificative dépasse la taille maximale autorisée de 3 Mo (Fichier actuel : ' + currentMb + ' Mo)', 'error');
+        return false;
+      }
+    }
+
     var isEdit = !!$('#depense_modal_id').val();
     var url = isEdit ? '<?= RACINE ?>depense/edit' : '<?= RACINE ?>depense/add';
     var $btn = $('#btn-save-depense-modal');
+    var formData = new FormData(this);
 
     $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Enregistrement...');
 
@@ -439,7 +571,9 @@ $(document).ready(function() {
       url: url,
       type: 'POST',
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      data: $(this).serialize(),
+      data: formData,
+      processData: false,
+      contentType: false,
       dataType: 'json',
       success: function(res) {
         $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer la Dépense');
@@ -503,6 +637,23 @@ $(document).ready(function() {
       }
     });
   };
+
+  $('#filter-type-depense, #filter-date-debut, #filter-date-fin').on('change input', function() {
+    table.ajax.reload();
+    reloadStats();
+  });
+
+  $('#btn-reset-filters').on('click', function() {
+    if ($.fn.select2 && $('#filter-type-depense').data('select2')) {
+      $('#filter-type-depense').val('').trigger('change.select2');
+    } else {
+      $('#filter-type-depense').val('');
+    }
+    $('#filter-date-debut').val('');
+    $('#filter-date-fin').val('');
+    table.ajax.reload();
+    reloadStats();
+  });
 
 });
 </script>
