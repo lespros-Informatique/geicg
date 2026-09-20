@@ -18,7 +18,7 @@
 
       <!-- BANDE DE FILTRES DYNAMIQUES -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: center;">
+        <div style="display: grid; grid-template-columns: minmax(260px, 400px); gap: 16px; align-items: center;">
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Année Académique</label>
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
@@ -27,24 +27,6 @@
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
                   <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
                 </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau d'Études</label>
-            <select id="filter-niveau" class="form-control select2" style="width: 100%;">
-              <option value="">-- Tous les niveaux --</option>
-              <?php foreach (($niveaux ?? []) as $n): ?>
-                <option value="<?= htmlspecialchars($n['code_niveau']) ?>"><?= htmlspecialchars($n['libelle_niveau']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Classe</label>
-            <select id="filter-classe" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les classes --</option>
-              <?php foreach (($classes ?? []) as $c): ?>
-                <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -222,30 +204,10 @@
 <script>
 $(document).ready(function() {
   if ($.fn.select2) {
-    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
+    $('#filter-annee').select2({ width: '100%' });
   }
 
-  // Filtrage en cascade Niveau -> Classe
-  $('#filter-niveau').on('change', function() {
-    var niveauCode = $(this).val();
-    $('#filter-classe option').each(function() {
-      var optNiveau = $(this).data('niveau');
-      if (!niveauCode || !optNiveau || optNiveau === niveauCode || $(this).val() === '') {
-        $(this).prop('disabled', false);
-      } else {
-        $(this).prop('disabled', true);
-      }
-    });
-    if ($('#filter-classe option:selected').prop('disabled')) {
-      $('#filter-classe').val('').trigger('change.select2');
-    } else {
-      $('#filter-classe').select2({ width: '100%' });
-    }
-    tableScolarites.ajax.reload();
-    tableTranches.ajax.reload();
-  });
-
-  $('#filter-classe, #filter-annee').on('change', function() {
+  $('#filter-annee').on('change', function() {
     tableScolarites.ajax.reload();
     tableTranches.ajax.reload();
   });
@@ -255,8 +217,6 @@ $(document).ready(function() {
       url: '<?= RACINE ?>scolarite/apiList',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
-        d.niveau_code = $('#filter-niveau').val();
-        d.classe_code = $('#filter-classe').val();
       }
     },
     processing: true,
@@ -304,8 +264,6 @@ $(document).ready(function() {
       url: '<?= RACINE ?>tranche/apiList',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
-        d.niveau_code = $('#filter-niveau').val();
-        d.classe_code = $('#filter-classe').val();
       }
     },
     processing: true,

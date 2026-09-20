@@ -317,7 +317,7 @@ $pieces = (new ModelPieceFournir())->getAll();
                 </select>
                 <div id="wiz_classe_empty_msg" style="<?= empty($classes) ? '' : 'display: none;' ?> margin-top: 8px; font-size: 12.5px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: 8px; line-height: 1.4;">
                   <i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline-block; vertical-align: middle; margin-right: 6px; color: #D97706;"></i>
-                  <span>Aucune classe n'a de scolarité enregistrée pour l'année académique sélectionnée. Veuillez d'abord configurer la grille tarifaire dans le module Scolarité avant d'inscrire des étudiants.</span>
+                  <span>Aucune classe n'a été créée pour l'année académique sélectionnée. Veuillez créer les classes dans le module Structure Académique &gt; Classes pour associer les tarifs de scolarité enregistrés.</span>
                 </div>
               </div>
 
@@ -1028,7 +1028,7 @@ $(document).ready(function() {
   });
 
   function showRegimeWarningNotice(regimeName) {
-    var msg = "Aucun tarif de scolarité actif n'est enregistré pour le régime <strong>" + escapeHtml(regimeName) + "</strong> pour cette année académique. Veuillez configurer le tarif correspondant dans le module Scolarité.";
+    var msg = "Aucune classe n'a été créée pour l'année académique sélectionnée pour le régime <strong>" + escapeHtml(regimeName) + "</strong>. Veuillez ajouter les classes dans le module Classes.";
     
     if ($('#wiz_regime_notice_banner').length === 0) {
       var html = '<div id="wiz_regime_notice_banner" style="margin-top: 12px; font-size: 13px; color: #B45309; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 12px 16px; border-radius: 8px; line-height: 1.4; display: flex; align-items: center; gap: 10px;">' +
@@ -1090,9 +1090,9 @@ $(document).ready(function() {
           hideRegimeWarningNotice();
         } else {
           var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
-          optionsHtml += '<option value="">-- Aucune classe avec scolarité pour le régime ' + escapeHtml(regimeName) + ' --</option>';
+          optionsHtml += '<option value="">-- Aucune classe disponible pour le régime ' + escapeHtml(regimeName) + ' --</option>';
           if ($emptyMsg.length) {
-            $emptyMsg.find('span').html('Aucune classe n\'a de scolarité enregistrée pour le régime <strong>' + escapeHtml(regimeName) + '</strong> pour l\'année académique sélectionnée. Veuillez configurer le tarif dans le module Scolarité.');
+            $emptyMsg.find('span').html('Aucune classe n\'a été créée pour le régime <strong>' + escapeHtml(regimeName) + '</strong> pour l\'année académique sélectionnée. Veuillez ajouter les classes dans le module Classes.');
             $emptyMsg.slideDown(200);
             if (window.lucide) lucide.createIcons();
           }
