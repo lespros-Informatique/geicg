@@ -25,15 +25,47 @@ if (empty($caissierNom)) $caissierNom = 'Mlle KONE N\'diatty A. Mariam';
 
 $montantEnLettres = Validator::numberToWordsFCFA($montantOp);
 
-$typeOp = !empty($item['libelle_tranche']) ? $item['libelle_tranche'] : (!empty($item['type_paiement']) ? $item['type_paiement'] : 'INSCRIPTION');
+$isFirstPayment = isset($isFirstPayment) ? (bool)$isFirstPayment : true;
+$totalScolariteCumul = (float)($totalScolariteCumul ?? $totalPayeCumul);
+$totalFraisAnnexesCumul = (float)($totalFraisAnnexesCumul ?? 0);
 
-// Décomposition financière
-$isDroitInscription = (stripos($typeOp, 'droit') !== false || stripos($typeOp, 'inscription') !== false && $montantOp <= 80000);
-$opScolarite = $isDroitInscription ? max(0, $montantOp - 80000) : $montantOp;
-$opDroit = $isDroitInscription ? min($montantOp, 80000) : 0;
-if ($opDroit == 0 && $montantOp == 105000) {
-    $opScolarite = 25000;
-    $opDroit = 80000;
+$trancheCodeItem = $item['tranche_code'] ?? '';
+$catItem = strtolower(trim($item['categorie_paiement'] ?? ''));
+$isFAItem = ($trancheCodeItem === 'FRAIS_ANNEXES' || $catItem === 'frais_annexes');
+
+$typeOp = !empty($item['libelle_tranche']) ? $item['libelle_tranche'] : (!empty($item['type_paiement']) ? $item['type_paiement'] : ($isFAItem ? 'Frais Annexes' : 'SCOLARITE'));
+
+if ($isFirstPayment) {
+    $mainRecuTitle = "REÇU D'INSCRIPTION";
+    $copieRecuTitle = "COPIE REÇU DE VERSEMENT POUR ARCHIVAGE";
+    $pageTitle = "Reçu d'Inscription Officiel N° " . $numRecu;
+
+    if ($isFAItem) {
+        $opDroit = $montantOp;
+        $opScolarite = 0;
+    } else {
+        $opFA = (float)($item['montant_frais_annexes'] ?? 0);
+        if ($opFA > 0) {
+            $opDroit = $opFA;
+            $opScolarite = max(0, $montantOp - $opFA);
+        } elseif ($montantOp > 80000 && $montantOp > $scolarite) {
+            $opDroit = 80000;
+            $opScolarite = max(0, $montantOp - 80000);
+        } elseif ($montantOp == 105000) {
+            $opScolarite = 25000;
+            $opDroit = 80000;
+        } else {
+            $opScolarite = $montantOp;
+            $opDroit = 0;
+        }
+    }
+} else {
+    $mainRecuTitle = "REÇU DE VERSEMENT";
+    $copieRecuTitle = "COPIE REÇU DU 1er VERSEMENT POUR ARCHIVAGE";
+    $pageTitle = "Reçu de Versement Officiel N° " . $numRecu;
+
+    $opScolarite = 0;
+    $opDroit = 0;
 }
 
 $refSeed = !empty($item['code_paiement']) ? $item['code_paiement'] : $numRecu;
@@ -333,7 +365,7 @@ if (empty($logoSrc)) {
       <!-- Barre d'Action Haut -->
       <div class="page-header no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Reçu d'Inscription Officiel N° <?= htmlspecialchars($numRecu) ?></h1>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= htmlspecialchars($pageTitle) ?></h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Étudiant : <strong><?= htmlspecialchars($nomComplet) ?></strong> &bull; Impression conforme au modèle institutionnel</p>
         </div>
         <div style="display: flex; gap: 12px;">
@@ -350,7 +382,7 @@ if (empty($logoSrc)) {
       <div class="receipt-page-container receipt-outer-frame">
         
         <!-- ========================================================================= -->
-        <!-- PARTIE 1 : REÇU D'INSCRIPTION (COPIE ÉTUDIANT)                            -->
+        <!-- PARTIE 1 : REÇU D'INSCRIPTION OU DE VERSEMENT                            -->
         <!-- ========================================================================= -->
         
         <!-- En-tête Institutionnel -->
@@ -374,7 +406,7 @@ if (empty($logoSrc)) {
         </table>
 
         <!-- Bandeau Titre -->
-        <div class="title-gray-banner">REÇU D'INSCRIPTION</div>
+        <div class="title-gray-banner"><?= htmlspecialchars($mainRecuTitle) ?></div>
 
         <!-- Année Académique -->
         <div class="annee-academique-title">ANNEE ACADEMIQUE : <?= htmlspecialchars($anneeLibelle) ?></div>
@@ -428,36 +460,65 @@ if (empty($logoSrc)) {
         <table class="fin-breakdown-table">
           <thead>
             <tr>
-              <th style="width: 25%; text-align: left;">OP. DU JOUR</th>
-              <th style="width: 25%;">Total à payer</th>
-              <th style="width: 25%;">Total Versé</th>
-              <th style="width: 25%;">Reste à Payer</th>
+              <th style="width: 24%; text-align: left;"></th>
+              <th style="width: 19%; text-align: center;">OP. DU JOUR</th>
+              <th style="width: 19%; text-align: center;">Total à payer</th>
+              <th style="width: 19%; text-align: center;">Total Versé</th>
+              <th style="width: 19%; text-align: center;">Reste à Payer</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style="font-weight: bold;">SCOLARITE</td>
-              <td style="text-align: center; font-weight: bold;"><?= number_format($opScolarite, 0, '', ' ') ?>CFA</td>
-              <td style="text-align: center; font-weight: bold;"><?= number_format($scolarite, 0, '', ' ') ?>CFA</td>
-              <td style="text-align: center; font-weight: bold;"><?= number_format($totalPayeCumul, 0, '', ' ') ?>CFA</td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold;">Droit d'Inscription</td>
-              <td style="text-align: center; font-weight: bold;"><?= number_format($opDroit, 0, '', ' ') ?>CFA</td>
-              <td style="background: #E0E0E0;"></td>
-              <td style="text-align: center; font-weight: bold;"><?= number_format($opDroit, 0, '', ' ') ?>CFA</td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold;">AUTRES FRAIS</td>
-              <td></td>
-              <td></td>
-              <td></td>
-            </tr>
+            <?php if ($isFirstPayment): ?>
+              <tr>
+                <td style="font-weight: bold;">SCOLARITE</td>
+                <td style="text-align: center; font-weight: bold;"><?= $opScolarite > 0 ? number_format($opScolarite, 0, '', ' ') . 'CFA' : '' ?></td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($scolarite, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($totalScolariteCumul, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">Droit d'Inscription</td>
+                <td style="text-align: center; font-weight: bold;"><?= $opDroit > 0 ? number_format($opDroit, 0, '', ' ') . 'CFA' : '' ?></td>
+                <td style="background: #FFFFFF;"></td>
+                <td style="text-align: center; font-weight: bold;"><?= $opDroit > 0 ? number_format($opDroit, 0, '', ' ') . 'CFA' : '' ?></td>
+                <td style="background: #FFFFFF;"></td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">AUTRES FRAIS</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            <?php else: ?>
+              <tr>
+                <td style="font-weight: bold;">SCOLARITE</td>
+                <td></td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($scolarite, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($totalScolariteCumul, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">Droit d'Inscription</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">Versement</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($montantOp, 0, '', ' ') ?>CFA</td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            <?php endif; ?>
             <tr class="fin-total-row">
               <td style="font-weight: bold; background: #404040;">TOTAL</td>
               <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($montantOp, 0, '', ' ') ?>CFA</td>
               <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($scolarite, 0, '', ' ') ?>CFA</td>
               <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($totalPayeCumul, 0, '', ' ') ?>CFA</td>
+              <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</td>
             </tr>
           </tbody>
         </table>
@@ -508,11 +569,11 @@ if (empty($logoSrc)) {
         <div style="border-top: 2px dashed #000000; margin: 18px 0;"></div>
 
         <!-- ========================================================================= -->
-        <!-- PARTIE 2 : COPIE REÇU DE VERSEMENT POUR ARCHIVAGE                         -->
+        <!-- PARTIE 2 : COPIE REÇU POUR ARCHIVAGE                                      -->
         <!-- ========================================================================= -->
         
         <!-- Bandeau Titre Copie Archivage -->
-        <div class="title-gray-banner" style="font-size: 16px;">COPIE REÇU DE VERSEMENT POUR ARCHIVAGE</div>
+        <div class="title-gray-banner" style="font-size: 16px;"><?= htmlspecialchars($copieRecuTitle) ?></div>
 
         <!-- Année Académique -->
         <div class="annee-academique-title">ANNEE ACADEMIQUE : <?= htmlspecialchars($anneeLibelle) ?></div>
@@ -549,7 +610,10 @@ if (empty($logoSrc)) {
             </tr>
             <tr>
               <td>Type d'Opération &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($typeOp) ?></span></td>
-              <td>Banque : &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($item['banque_paiement'] ?? 'CAISSE CENTRALE') ?></span></td>
+              <td>
+                Banque : &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($item['mode_paiement_fmt'] ?? ($item['mode_paiement'] ?? 'CAISSE CENTRALE')) ?></span>
+                &nbsp;&nbsp;&nbsp;&nbsp; Reste à Payer &nbsp; <strong><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</strong>
+              </td>
             </tr>
             <tr>
               <td colspan="2" style="padding-top: 4px;">

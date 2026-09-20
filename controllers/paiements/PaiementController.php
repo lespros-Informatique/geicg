@@ -1241,18 +1241,50 @@ class PaiementController extends BaseController
 
             // ID numérique réel
             $actualId = (int)($item['id_paiement'] ?? 0);
-
-            // Calcul du cumul payé par l'étudiant pour cette inscription
             $inscriptionCode = $item['inscription_code'] ?? '';
-            $stmtCumul = $this->model->getCon()->prepare("
-                SELECT COALESCE(SUM(montant_paiement), 0) FROM paiements 
+
+            // Tous les paiements non annulés pour cette inscription
+            $stmtAllPay = $this->model->getCon()->prepare("
+                SELECT id_paiement, montant_paiement, date_paiement, tranche_code, categorie_paiement 
+                FROM paiements 
                 WHERE inscription_code = ? AND statut_paiement != 'annule'
+                ORDER BY date_paiement ASC, id_paiement ASC
             ");
-            $stmtCumul->execute([$inscriptionCode]);
-            $totalPayeCumul = (float)$stmtCumul->fetchColumn();
+            $stmtAllPay->execute([$inscriptionCode]);
+            $allPayments = $stmtAllPay->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $firstPaymentId = !empty($allPayments) ? (int)$allPayments[0]['id_paiement'] : 0;
+            $firstDateMinute = !empty($allPayments) ? substr($allPayments[0]['date_paiement'] ?? '', 0, 16) : '';
+            
+            $firstPaymentGroupIds = [];
+            foreach ($allPayments as $pItem) {
+                if (substr($pItem['date_paiement'] ?? '', 0, 16) === $firstDateMinute || count($firstPaymentGroupIds) < 2) {
+                    $firstPaymentGroupIds[] = (int)$pItem['id_paiement'];
+                }
+            }
+
+            $isFirstPayment = in_array($actualId, $firstPaymentGroupIds, true) || ($actualId === $firstPaymentId) || (count($allPayments) <= 1);
+
+            $totalPayeCumul = 0.0;
+            $totalScolariteCumul = 0.0;
+            $totalFraisAnnexesCumul = 0.0;
+
+            foreach ($allPayments as $p) {
+                $m = (float)$p['montant_paiement'];
+                $totalPayeCumul += $m;
+                $isFA = (($p['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($p['categorie_paiement'] ?? '')) === 'frais_annexes');
+                if ($isFA) {
+                    $totalFraisAnnexesCumul += $m;
+                } else {
+                    $totalScolariteCumul += $m;
+                }
+                if ((int)$p['id_paiement'] === $actualId) {
+                    break;
+                }
+            }
 
             $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
-            $soldeRestant = max(0, $scolarite - $totalPayeCumul);
+            $soldeRestant = max(0, $scolarite - $totalScolariteCumul);
 
             // Récupération de la photo de l'étudiant si manquante
             if (empty($item['photo_inscription']) && empty($item['photo_etudiant']) && !empty($inscriptionCode)) {
@@ -1279,6 +1311,9 @@ class PaiementController extends BaseController
         $this->loadView('../views/paiements/details.php', [
             'item' => $item, 
             'totalPayeCumul' => $totalPayeCumul,
+            'totalScolariteCumul' => $totalScolariteCumul,
+            'totalFraisAnnexesCumul' => $totalFraisAnnexesCumul,
+            'isFirstPayment' => $isFirstPayment,
             'soldeRestant' => $soldeRestant,
             'scolarite' => $scolarite,
             'encryptedId' => $encryptedId
