@@ -87,6 +87,39 @@ class ModelFraisAnnexe extends BaseModel
         return $row ? (float)$row['montant_frais_annexe'] : 0.0;
     }
 
+    public function getFraisAnnexeDetails(string $typeFiliere, string $anneeCode, ?string $niveauCode = null): ?array
+    {
+        $sql = "
+            SELECT * 
+            FROM frais_annexes 
+            WHERE statut_frais_annexe = 'actif'
+              AND (type_filiere = ? OR type_filiere = 'TOUT')
+              AND annee_code = ?
+        ";
+        $params = [$typeFiliere, $anneeCode];
+
+        if (!empty($niveauCode)) {
+            $sql .= " AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '') ";
+            $params[] = $niveauCode;
+            $sql .= " ORDER BY 
+                (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END), 
+                (CASE WHEN type_filiere = ? THEN 1 ELSE 2 END), 
+                id_frais_annexe DESC ";
+            $params[] = $niveauCode;
+            $params[] = $typeFiliere;
+        } else {
+            $sql .= " ORDER BY (CASE WHEN type_filiere = ? THEN 1 ELSE 2 END), id_frais_annexe DESC ";
+            $params[] = $typeFiliere;
+        }
+
+        $sql .= " LIMIT 1 ";
+
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
     public function checkDuplicate(string $anneeCode, string $typeFiliere, ?string $niveauCode, ?int $excludeId = null): ?array
     {
         // Contrôle d'unicité sur la combinaison Cible (type_filiere x niveau_code x annee_code)

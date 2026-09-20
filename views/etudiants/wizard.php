@@ -348,6 +348,10 @@ $pieces = (new ModelPieceFournir())->getAll();
                     <div id="wiz_summary_total_scolarite_label" style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase;">Scolarité Annuelle</div>
                     <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 2px;" id="wiz_summary_total_scolarite">0 FCFA</div>
                   </div>
+                  <div id="wiz_summary_frais_annexes_box" style="background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 10px 18px; border-radius: 10px; text-align: right; transition: all 0.3s;">
+                    <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase;">Frais Annexes Cibles</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 2px;" id="wiz_summary_total_frais_annexes">0 FCFA</div>
+                  </div>
                   <div id="wiz_summary_net_box" style="display: none; background: #F0FDF4; border: 1.5px solid #86EFAC; padding: 10px 18px; border-radius: 10px; text-align: right;">
                     <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase;">Net à Payer (Après Remise)</div>
                     <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 2px;" id="wiz_summary_net_scolarite">0 FCFA</div>
@@ -387,6 +391,21 @@ $pieces = (new ModelPieceFournir())->getAll();
                     </tr>
                   </tfoot>
                 </table>
+              </div>
+
+              <!-- 4. Carte détaillée des Frais Annexes cibles (Type de Filière x Niveau) -->
+              <div id="wiz_frais_annexes_detail_card" style="margin-top: 18px; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 14px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <span style="font-size: 11.5px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="package" style="width: 16px; height: 16px; color: #D97706;"></i> Frais Annexes Officiels (Uniforme, Badge, Assurance...)
+                  </span>
+                  <div style="font-size: 14px; font-weight: 700; color: #78350F; margin-top: 4px;" id="wiz_frais_annexes_title_text">-</div>
+                  <div style="font-size: 12px; color: #92400E; margin-top: 2px;" id="wiz_frais_annexes_cible_desc">-</div>
+                </div>
+                <div style="background: #FEF3C7; border: 1px solid #FCD34D; padding: 8px 16px; border-radius: 8px; text-align: right;">
+                  <div style="font-size: 10.5px; font-weight: 800; color: #92400E; text-transform: uppercase;">Tarif Forfaitaire</div>
+                  <div style="font-size: 17px; font-weight: 900; color: #B45309;" id="wiz_frais_annexes_amount_badge">0 FCFA</div>
+                </div>
               </div>
 
             </div>
@@ -601,12 +620,16 @@ $pieces = (new ModelPieceFournir())->getAll();
                     <div style="font-size: 10.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">Tarif Officiel</div>
                     <div style="font-size: 16px; font-weight: 900; color: #0F172A;" id="recap_scolarite_officielle">0 FCFA</div>
                   </div>
+                  <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 8px 14px; border-radius: 8px; text-align: right;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #B45309; text-transform: uppercase;">Frais Annexes</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #B45309;" id="recap_frais_annexes_val">0 FCFA</div>
+                  </div>
                   <div style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 8px 14px; border-radius: 8px; text-align: right;">
                     <div style="font-size: 10.5px; font-weight: 700; color: #15803D; text-transform: uppercase;">Remise Accordée</div>
                     <div style="font-size: 16px; font-weight: 900; color: #15803D;" id="recap_remise_val">0 FCFA</div>
                   </div>
                   <div style="background: #166534; border: 1px solid #14532D; padding: 8px 16px; border-radius: 8px; text-align: right;">
-                    <div style="font-size: 10.5px; font-weight: 700; color: #DCFCE7; text-transform: uppercase;">Net Définitif</div>
+                    <div style="font-size: 10.5px; font-weight: 700; color: #DCFCE7; text-transform: uppercase;">Net Définitif (Scolarité)</div>
                     <div style="font-size: 17px; font-weight: 900; color: #FFFFFF;" id="recap_net_scolarite">0 FCFA</div>
                   </div>
                 </div>
@@ -908,6 +931,7 @@ $(document).ready(function() {
     $('#recap_classe_title').text(classeText && classeText.indexOf('Choisir') === -1 ? classeText : 'Classe non sélectionnée');
     $('#recap_regime_text').html(isAffecte ? '<span style="color:#1E3A5F; font-weight:800;">● Régime Affecté (Subventionné par l\'État)</span>' : '<span style="color:#475569; font-weight:800;">● Régime Non Affecté (Privé)</span>');
     $('#recap_scolarite_officielle').text(montant > 0 ? montant.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
+    $('#recap_frais_annexes_val').text($('#wiz_summary_total_frais_annexes').text() || '0 FCFA');
     $('#recap_remise_val').text(remise > 0 ? remise.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
     $('#recap_net_scolarite').text(net.toLocaleString('fr-FR') + ' FCFA');
 
@@ -1128,6 +1152,10 @@ $(document).ready(function() {
     if (!classeCode) {
       $('#wiz-class-tuition-box').slideUp(200);
       $('#wiz_montant_scolarite').val(0);
+      $('#wiz_summary_total_frais_annexes').text('0 FCFA');
+      $('#wiz_frais_annexes_amount_badge').text('0 FCFA');
+      $('#wiz_frais_annexes_title_text').text('-');
+      $('#wiz_frais_annexes_cible_desc').text('-');
       updateNetScolarite();
       hideRegimeWarningNotice();
       return;
@@ -1146,6 +1174,18 @@ $(document).ready(function() {
         if (res && res.status === 1 && res.data) {
           var d = res.data;
           var totalScolarite = Number(d.montant_scolarite || 0);
+
+          // Mis à jour des Frais Annexes dynamiques (Niveau x Type Filière)
+          var totalFA = Number(d.total_frais_annexes || 0);
+          var totalFAFormate = d.total_frais_annexes_formate || (totalFA.toLocaleString('fr-FR') + ' FCFA');
+          var libelleFA = d.libelle_frais_annexe || 'Frais Annexes Général';
+          var targetDescFA = (d.libelle_type_filiere ? d.libelle_type_filiere : '') + 
+                              (d.libelle_niveau ? (d.libelle_type_filiere ? ' • ' : '') + d.libelle_niveau : '');
+
+          $('#wiz_summary_total_frais_annexes').text(totalFAFormate);
+          $('#wiz_frais_annexes_amount_badge').text(totalFAFormate);
+          $('#wiz_frais_annexes_title_text').text(libelleFA);
+          $('#wiz_frais_annexes_cible_desc').text(targetDescFA ? ('Cible : ' + targetDescFA) : 'Frais annexes généraux');
 
           if (totalScolarite > 0) {
             $('#wiz_montant_scolarite').val(totalScolarite);

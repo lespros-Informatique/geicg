@@ -506,9 +506,10 @@ class InscriptionController extends BaseController
             $dateLimiteTranche = $firstTranche['date_limite_formatee'];
         }
 
-        // 3. Récupérer le tarif officiel des Frais Annexes depuis la table dédiée `frais_annexes`
+        // 3. Récupérer le tarif officiel des Frais Annexes depuis la table dédiée `frais_annexes` par Type de Filière et Niveau
         $modelFraisAnnexe = new ModelFraisAnnexe();
-        $totalFraisAnnexes = $modelFraisAnnexe->getMontantByTypeFiliere($typeFiliere, $activeAnneeCode);
+        $totalFraisAnnexes = $modelFraisAnnexe->getMontantByTypeFiliere($typeFiliere, $activeAnneeCode, $niveauCode);
+        $fraisAnnexeDetails = $modelFraisAnnexe->getFraisAnnexeDetails($typeFiliere, $activeAnneeCode, $niveauCode);
 
         $this->json([
             'status' => 1,
@@ -518,7 +519,7 @@ class InscriptionController extends BaseController
                 'filiere_code' => $filiereCode,
                 'libelle_filiere' => $classe['libelle_filiere'] ?? '',
                 'type_filiere' => $typeFiliere,
-                'libelle_type_filiere' => ($typeFiliere === 'INDUSTRIELLE') ? 'Filière Industrielle' : 'Filière Tertiaire',
+                'libelle_type_filiere' => ($typeFiliere === 'INDUSTRIELLE') ? 'Filière Industrielle' : (($typeFiliere === 'TERTIAIRE') ? 'Filière Tertiaire' : 'Toutes Filières'),
                 'niveau_code' => $niveauCode,
                 'libelle_niveau' => $classe['libelle_niveau'] ?? '',
                 'annee_code' => $activeAnneeCode,
@@ -532,9 +533,10 @@ class InscriptionController extends BaseController
                 'date_limite_tranche' => $dateLimiteTranche,
                 'nombre_tranches' => count($tranches),
                 'tranches' => $tranches,
-                'accessoires_cibles' => $accessoiresCibles,
                 'total_frais_annexes' => $totalFraisAnnexes,
-                'total_frais_annexes_formate' => number_format($totalFraisAnnexes, 0, ',', ' ') . ' FCFA'
+                'total_frais_annexes_formate' => number_format($totalFraisAnnexes, 0, ',', ' ') . ' FCFA',
+                'libelle_frais_annexe' => $fraisAnnexeDetails['libelle_frais_annexe'] ?? '',
+                'code_frais_annexe' => $fraisAnnexeDetails['code_frais_annexe'] ?? ''
             ]
         ]);
     }
