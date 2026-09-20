@@ -19,10 +19,12 @@ class ModelDepense extends BaseModel
         $sql = "
             SELECT d.*, 
                    t.libelle_type_depense, 
-                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) as auteur_nom_complet
+                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) as auteur_nom_complet,
+                   CONCAT(COALESCE(uc.nom_user, ''), ' ', COALESCE(uc.prenom_user, '')) as confirmateur_nom_complet
             FROM depenses d
             LEFT JOIN type_depenses t ON t.code_type_depense = d.type_depense_code
             LEFT JOIN users u ON u.code_user = d.user_code
+            LEFT JOIN users uc ON uc.code_user = d.user_confirm
             {$where}
             ORDER BY d.id_depense DESC
         ";
@@ -41,23 +43,61 @@ class ModelDepense extends BaseModel
         }
 
         $db = $this->getCon();
-        $stmtTot = $db->prepare("SELECT SUM(montant_depense) FROM depenses " . $where);
+        
+        $stmtTot = $db->prepare("SELECT SUM(montant_depense) FROM depenses " . (!empty($where) ? $where . " AND statut_depense != 'annule'" : "WHERE statut_depense != 'annule'"));
         $stmtTot->execute($params);
         $totalMontant = (float)($stmtTot->fetchColumn() ?: 0);
+
+        $stmtApp = $db->prepare("SELECT SUM(montant_depense) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'approuve'" : "WHERE statut_depense = 'approuve'"));
+        $stmtApp->execute($params);
+        $montantApprouve = (float)($stmtApp->fetchColumn() ?: 0);
+
+        $stmtAtt = $db->prepare("SELECT SUM(montant_depense) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'en_attente'" : "WHERE statut_depense = 'en_attente'"));
+        $stmtAtt->execute($params);
+        $montantEnAttente = (float)($stmtAtt->fetchColumn() ?: 0);
 
         $stmtCount = $db->prepare("SELECT COUNT(*) FROM depenses " . $where);
         $stmtCount->execute($params);
         $totalCount = (int)($stmtCount->fetchColumn() ?: 0);
 
-        $moyenne = $totalCount > 0 ? round($totalMontant / $totalCount) : 0;
+        $stmtCntAtt = $db->prepare("SELECT COUNT(*) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'en_attente'" : "WHERE statut_depense = 'en_attente'"));
+        $stmtCntAtt->execute($params);
+        $countEnAttente = (int)($stmtCntAtt->fetchColumn() ?: 0);
 
+        $stmtCntApp = $db->prepare("SELECT COUNT(*) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'approuve'" : "WHERE statut_depense = 'approuve'"));
+        $stmtCntApp->execute($params);
+        $countApprouve = (int)($stmtCntApp->fetchColumn() ?: 0);
+
+        $stmtCntAnn = $db->prepare("SELECT COUNT(*) FROM depenses " . (!empty($where) ? $where . " AND statut_depense = 'annule'" : "WHERE statut_depense = 'annule'"));
+        $stmtCntAnn->execute($params);
+        $countAnnule = (int)($stmtCntAnn->fetchColumn() ?: 0);
+
+        $moyenne = $totalCount > 0 ? round($totalMontant / $totalCount) : 0;
         $totalTypes = (int)$db->query("SELECT COUNT(*) FROM type_depenses")->fetchColumn();
 
         return [
             'total_montant' => $totalMontant,
+            'montant_approuve' => $montantApprouve,
+            'montant_en_attente' => $montantEnAttente,
             'total_count' => $totalCount,
+            'count_en_attente' => $countEnAttente,
+            'count_approuve' => $countApprouve,
+            'count_annule' => $countAnnule,
             'moyenne' => $moyenne,
             'total_types' => $totalTypes
         ];
+    }
+
+    public function updateStatusWithConfirm($id, string $statut, ?string $userCode = null): bool
+    {
+        $allowed = ['en_attente', 'approuve', 'annule'];
+        if (!in_array($statut, $allowed, true)) {
+            return false;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $sql = "UPDATE depenses SET statut_depense = ?, user_confirm = ?, created_at_confirm = ?, updated_at_depense = ? WHERE id_depense = ?";
+        $stmt = $this->getCon()->prepare($sql);
+        return $stmt->execute([$statut, $userCode, $now, $now, $id]);
     }
 }

@@ -30,11 +30,16 @@ class DepenseController extends BaseController
 
         $typeDepenses = (new ModelTypeDepense())->getAll();
 
+        $canValidate = $this->hasPermission('VALIDATE_DEPENSES');
+        $canRecord = $this->hasPermission('RECORD_DEPENSES');
+
         $this->loadView('../views/depenses/list.php', [
             'annees' => $annees,
             'selectedAnneeCode' => $activeYear,
             'stats' => $stats,
-            'typeDepenses' => $typeDepenses
+            'typeDepenses' => $typeDepenses,
+            'canValidate' => $canValidate,
+            'canRecord' => $canRecord
         ]);
     }
 
@@ -105,7 +110,7 @@ class DepenseController extends BaseController
         if (empty($data['periode_depense'])) {
             $data['periode_depense'] = date('Y-m-d H:i:s');
         }
-        $data['statut_depense'] = $data['statut_depense'] ?? 'actif';
+        $data['statut_depense'] = 'en_attente';
         $data['created_at_depense'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE depenses")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
@@ -113,7 +118,7 @@ class DepenseController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Dépense enregistrée avec succès!');
+            $this->success('Dépense enregistrée avec le statut "En attente" !');
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la création de la dépense');
         }
@@ -126,12 +131,24 @@ class DepenseController extends BaseController
         $this->requirePermission('RECORD_DEPENSES');
         $id = (int)$this->post('id_depense');
         if (!$id) { $this->error('Identifiant invalide'); return; }
+
+        $item = $this->model->getById($id);
+        if (!$item) { $this->error('Dépense introuvable'); return; }
+
+        if (($item['statut_depense'] ?? '') !== 'en_attente') {
+            $currentLabel = ($item['statut_depense'] === 'approuve') ? 'Approuvée' : 'Annulée';
+            $this->error('Seule une dépense au statut "En attente" peut être modifiée. Cette dépense est actuellement : ' . $currentLabel);
+            return;
+        }
+
         $data = $_POST;
-        unset($data['csrf_token']);
+        unset($data['csrf_token'], $data['statut_depense']);
         $cols = $this->model->getCon()->query("DESCRIBE depenses")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData['updated_at_depense'] = date('Y-m-d H:i:s');
+
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $this->success('Dépense modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -142,15 +159,36 @@ class DepenseController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission('VALIDATE_DEPENSES');
-        $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
-            if ($this->model->toggleStatus($id)) {
-                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
-            } else {
-                $this->error('Erreur lors de la mise à jour du statut');
-            }
+        $id = (int)$this->post('id');
+        $statut = trim($this->post('statut') ?: $this->post('status') ?: '');
+
+        $allowed = ['en_attente', 'approuve', 'annule'];
+        if (!$id || !in_array($statut, $allowed, true)) {
+            $this->error('Paramètres invalides pour le changement de statut');
+            return;
+        }
+
+        $item = $this->model->getById($id);
+        if (!$item) {
+            $this->error('Dépense introuvable');
+            return;
+        }
+
+        if (($item['statut_depense'] ?? '') === 'approuve') {
+            $this->error('Une dépense approuvée le reste indéfiniment. Son statut est définitif et ne peut plus être modifié.');
+            return;
+        }
+
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        if ($this->model->updateStatusWithConfirm($id, $statut, $userCode)) {
+            $labels = [
+                'en_attente' => 'remise en attente',
+                'approuve' => 'approuvée',
+                'annule' => 'annulée'
+            ];
+            $this->success('Dépense marquée comme ' . ($labels[$statut] ?? $statut) . ' avec succès!', ['reload' => true]);
         } else {
-            $this->error('Item introuvable');
+            $this->error('Erreur lors de la mise à jour du statut');
         }
     }
 

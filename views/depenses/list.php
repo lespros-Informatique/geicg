@@ -4,6 +4,8 @@ $stats = $stats ?? (new ModelDepense())->getStats();
 $annees = $annees ?? [];
 $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
 $typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
+$canValidate = $canValidate ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_array('VALIDATE_DEPENSES', $_SESSION[USERS_AUTH]['permissions']));
+$canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_array('RECORD_DEPENSES', $_SESSION[USERS_AUTH]['permissions']));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -15,89 +17,67 @@ $typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Dépenses & Charges de Fonctionnement</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et suivi des décaissements, engagements budgétaires et frais généraux</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et suivi des décaissements, engagements budgétaires et validation des dépenses</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <a href="<?= RACINE ?>type_depense/list" class="btn btn-secondary" style="background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="tags" style="width: 18px; height: 18px;"></i> Catégories de Dépenses
           </a>
+          <?php if ($canRecord): ?>
           <button type="button" class="btn btn-primary btn-add-depense" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Décaissement / Dépense
           </button>
+          <?php endif; ?>
         </div>
       </div>
 
-      <!-- Barre de Filtrage Année Académique (Select2) -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
-            </div>
-            <div>
-              <span style="font-size: 13px; font-weight: 700; color: #0F172A; display: block;">Année Académique</span>
-              <span style="font-size: 11.5px; color: #64748B;">Filtrer le registre des dépenses par année</span>
-            </div>
-          </div>
-          <div style="min-width: 260px; flex-grow: 0;">
-            <select id="filter-annee" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les années --</option>
-              <?php foreach ($annees as $a): ?>
-                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['statut_annee']) && $a['statut_annee'] === 'actif') ? ' (Active)' : '' ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-        </div>
-      </div>
 
       <!-- ========================================================================= -->
       <!-- CARTES KPI DE STATISTIQUES FINANCIÈRES DES DÉPENSES -->
       <!-- ========================================================================= -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
         
-        <!-- Total Montant Engagé -->
+        <!-- Total Approuvé -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F0FDF4; color: #16A34A; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Dépenses Approuvées</div>
+            <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-montant-approuve"><?= number_format($stats['montant_approuve'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+          </div>
+        </div>
+
+        <!-- En Attente de Validation -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">En Attente de Validation</div>
+            <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 2px;" id="kpi-montant-attente"><?= number_format($stats['montant_en_attente'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+          </div>
+        </div>
+
+        <!-- Total Engagé -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
           <div style="width: 48px; height: 48px; border-radius: 12px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="trending-down" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total Dépenses Engagées</div>
-            <div style="font-size: 20px; font-weight: 900; color: #991B1B; margin-top: 2px;" id="kpi-total-montant"><?= number_format($stats['total_montant'], 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total Général Engagé</div>
+            <div style="font-size: 20px; font-weight: 900; color: #991B1B; margin-top: 2px;" id="kpi-total-montant"><?= number_format($stats['total_montant'] ?? 0, 0, ',', ' ') ?> FCFA</div>
           </div>
         </div>
 
-        <!-- Nombre de Dépenses -->
+        <!-- Volume et Catégories -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="receipt" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Dépenses Enregistrées</div>
-            <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-count"><?= $stats['total_count'] ?></div>
-          </div>
-        </div>
-
-        <!-- Dépense Moyenne -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FFF7ED; color: #C2410C; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="calculator" style="width: 24px; height: 24px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Dépense Moyenne</div>
-            <div style="font-size: 20px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-moyenne"><?= number_format($stats['moyenne'], 0, ',', ' ') ?> FCFA</div>
-          </div>
-        </div>
-
-        <!-- Catégories de Dépenses -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="tags" style="width: 24px; height: 24px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Catégories Actives</div>
-            <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-types"><?= $stats['total_types'] ?></div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Volume Dépenses</div>
+            <div style="font-size: 18px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-count"><?= ($stats['total_count'] ?? 0) ?> enregistrements</div>
           </div>
         </div>
 
@@ -109,8 +89,8 @@ $typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
           <div>
-            <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">Registre des Dépenses & Décaissements</h3>
-            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;">Liste détaillée de tous les engagements financiers enregistrés</p>
+            <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">Registre des Dépenses & Validation</h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;">Seules les dépenses au statut <strong style="color: #B45309;">En attente</strong> peuvent être modifiées par l'utilisateur.</p>
           </div>
         </div>
 
@@ -118,13 +98,13 @@ $typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
           <table id="table-depenses" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px; width: 50px;">#</th>
+                <th style="padding: 12px; width: 40px;">#</th>
                 <th style="padding: 12px;">Code Dépense</th>
                 <th style="padding: 12px;">Catégorie</th>
                 <th style="padding: 12px;">Motif / Description</th>
-                <th style="padding: 12px; text-align: right;">Montant Engagé (FCFA)</th>
+                <th style="padding: 12px; text-align: right;">Montant Engagé</th>
                 <th style="padding: 12px;">Date Engagement</th>
-                <th style="padding: 12px;">Enregistré Par</th>
+                <th style="padding: 12px;">Auteur / Traitement</th>
                 <th style="padding: 12px; text-align: center;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
@@ -221,7 +201,7 @@ $typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
         <button type="button" class="btn btn-secondary btn-close-modal-depense" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Annuler</button>
         <button type="submit" id="btn-save-depense-modal" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px; display: inline-flex; align-items: center; gap: 6px;">
-          <i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Décaissement
+          <i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer la Dépense
         </button>
       </div>
     </form>
@@ -257,13 +237,12 @@ $(document).ready(function() {
   }
 
   function reloadStats() {
-    var anneeCode = $('#filter-annee').val();
-    $.getJSON('<?= RACINE ?>depense/apiStats?annee_code=' + encodeURIComponent(anneeCode), function(res) {
+    $.getJSON('<?= RACINE ?>depense/apiStats', function(res) {
       if (res.status === 1 && res.stats) {
-        $('#kpi-total-montant').text(Number(res.stats.total_montant).toLocaleString('fr-FR') + ' FCFA');
-        $('#kpi-total-count').text(res.stats.total_count);
-        $('#kpi-moyenne').text(Number(res.stats.moyenne).toLocaleString('fr-FR') + ' FCFA');
-        $('#kpi-total-types').text(res.stats.total_types);
+        $('#kpi-total-montant').text(Number(res.stats.total_montant || 0).toLocaleString('fr-FR') + ' FCFA');
+        $('#kpi-montant-approuve').text(Number(res.stats.montant_approuve || 0).toLocaleString('fr-FR') + ' FCFA');
+        $('#kpi-montant-attente').text(Number(res.stats.montant_en_attente || 0).toLocaleString('fr-FR') + ' FCFA');
+        $('#kpi-total-count').text((res.stats.total_count || 0) + ' enregistrements');
       }
     });
   }
@@ -271,15 +250,12 @@ $(document).ready(function() {
   var table = $('#table-depenses').DataTable({
     ajax: {
       url: '<?= RACINE ?>depense/apiList',
-      type: 'GET',
-      data: function(d) {
-        d.annee_code = $('#filter-annee').val();
-      }
+      type: 'GET'
     },
     processing: true,
     autoWidth: false,
     columns: [
-      { data: null, width: '50px', render: function(d, type, row, meta) {
+      { data: null, width: '40px', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
       { data: 'code_depense', render: function(d) {
@@ -308,38 +284,97 @@ $(document).ready(function() {
         }
         return d;
       }},
-      { data: 'auteur_nom_complet', render: function(d) {
-        if (!d || d.trim() === '') return '<span style="color:#94A3B8;">-</span>';
-        return '<span style="color:#0F172A; font-weight:700; font-size:12.5px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="user" style="width:13px;height:13px;color:#64748B;"></i> ' + d + '</span>';
+      { data: null, render: function(d) {
+        var auteur = d.auteur_nom_complet ? d.auteur_nom_complet.trim() : '-';
+        var confirmateur = d.confirmateur_nom_complet ? d.confirmateur_nom_complet.trim() : '';
+        var html = '<div style="font-size:12px; color:#0F172A; font-weight:700;"><i data-lucide="user" style="width:12px;height:12px;color:#64748B;"></i> ' + auteur + '</div>';
+        if (confirmateur && d.statut_depense !== 'en_attente') {
+          var label = (d.statut_depense === 'approuve') ? 'Validé par' : 'Annulé par';
+          html += '<div style="font-size:10.5px; color:#64748B; font-weight:600;">' + label + ' : ' + confirmateur + '</div>';
+        }
+        return html;
       }},
-      { data: 'statut_depense', width: '80px', className: 'text-center', render: function(d, type, row) {
-        var isActif = (d === 'actif');
-        var checkedAttr = isActif ? 'checked' : '';
-        return '<div style="display:flex; justify-content:center; align-items:center;">' +
-               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
-               '<input type="checkbox" class="toggle-statut-depense" data-id="' + row.id_depense + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-               '</span>' +
-               '</label>' +
-               '</div>';
+      { data: 'statut_depense', width: '130px', className: 'text-center', render: function(d) {
+        if (d === 'approuve') {
+          return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:800; padding:6px 12px; border-radius:10px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:13px;height:13px;"></i> Approuvé</span>';
+        } else if (d === 'annule') {
+          return '<span class="badge" style="background:#FEE2E2; color:#991B1B; font-weight:800; padding:6px 12px; border-radius:10px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="x-circle" style="width:13px;height:13px;"></i> Annulé</span>';
+        } else {
+          return '<span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:800; padding:6px 12px; border-radius:10px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:13px;height:13px;"></i> En attente</span>';
+        }
       }},
-      { data: null, orderable: false, render: function(d) {
+      { data: null, orderable: false, className: 'text-center no-print', render: function(d) {
         var descVal = $('<div>').text(d.description_depense || d.libelle_depense || '').html();
         var benVal = $('<div>').text(d.beneficiaire || '').html();
         var rawDate = d.periode_depense ? d.periode_depense.split(' ')[0] : '';
-        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-depense" ' +
-               'data-id="' + d.id_depense + '" ' +
-               'data-type="' + (d.type_depense_code || '') + '" ' +
-               'data-description="' + descVal + '" ' +
-               'data-montant="' + (d.montant_depense || '') + '" ' +
-               'data-mode="' + (d.mode_reglement || 'espece') + '" ' +
-               'data-beneficiaire="' + benVal + '" ' +
-               'data-date="' + rawDate + '" ' +
-               'style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">' +
-               '<i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
-               '<a href="' + window.RACINE + 'depense/details/' + (d.editId || d.id_depense) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
-      }, className: 'text-end' }
+        var canValidate = <?= $canValidate ? 'true' : 'false' ?>;
+
+        // 1. BOUTON ÉDITER (Icône uniquement) - Disponible UNIQUEMENT si la dépense est En attente
+        var btnEdit = '';
+        if (d.statut_depense === 'en_attente') {
+          btnEdit = '<button type="button" class="btn btn-sm btn-secondary btn-edit-depense" ' +
+                    'data-id="' + d.id_depense + '" ' +
+                    'data-type="' + (d.type_depense_code || '') + '" ' +
+                    'data-description="' + descVal + '" ' +
+                    'data-montant="' + (d.montant_depense || '') + '" ' +
+                    'data-mode="' + (d.mode_reglement || 'espece') + '" ' +
+                    'data-beneficiaire="' + benVal + '" ' +
+                    'data-date="' + rawDate + '" ' +
+                    'style="width:32px; height:32px; padding:0; border-radius:8px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; background:#64748B; border:none; color:#FFF; box-shadow:0 2px 4px rgba(100,116,139,0.25);" ' +
+                    'title="Modifier la dépense (En attente)">' +
+                    '<i data-lucide="edit" style="width:15px;height:15px;"></i></button>';
+        } else {
+          var labelStatut = (d.statut_depense === 'approuve') ? 'approuvée (statut définitif)' : 'annulée';
+          btnEdit = '<button type="button" class="btn btn-sm btn-outline-secondary" disabled ' +
+                    'style="width:32px; height:32px; padding:0; border-radius:8px; opacity:0.4; cursor:not-allowed; display:inline-flex; align-items:center; justify-content:center; border-color:#CBD5E1; color:#94A3B8;" ' +
+                    'title="Impossible de modifier une dépense ' + labelStatut + '">' +
+                    '<i data-lucide="lock" style="width:15px;height:15px;"></i></button>';
+        }
+
+        // 2. BOUTONS D'APPROBATION ET D'ANNULATION (Icônes uniquement)
+        var btnStatus = '';
+        if (d.statut_depense === 'en_attente') {
+          if (canValidate) {
+            btnStatus = '<button type="button" onclick="changerStatutDepense(' + d.id_depense + ', \'approuve\')" ' +
+                        'class="btn btn-sm btn-success" ' +
+                        'style="width:32px; height:32px; padding:0; border-radius:8px; font-weight:800; background:#16A34A; border:none; color:#FFF; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(22,163,74,0.25);" ' +
+                        'title="Approuver définitivement cette dépense">' +
+                        '<i data-lucide="check" style="width:15px;height:15px;"></i></button> ' +
+                        '<button type="button" onclick="changerStatutDepense(' + d.id_depense + ', \'annule\')" ' +
+                        'class="btn btn-sm btn-danger" ' +
+                        'style="width:32px; height:32px; padding:0; border-radius:8px; font-weight:800; background:#DC2626; border:none; color:#FFF; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(220,38,38,0.25);" ' +
+                        'title="Annuler cette dépense">' +
+                        '<i data-lucide="x" style="width:15px;height:15px;"></i></button>';
+          }
+        } else if (d.statut_depense === 'approuve') {
+          // Une dépense approuvée LE RESTE INDÉFINIMENT
+          btnStatus = '<button type="button" class="btn btn-sm btn-success" disabled ' +
+                      'style="width:32px; height:32px; padding:0; border-radius:8px; opacity:0.85; background:#16A34A; border:none; color:#FFF; cursor:not-allowed; display:inline-flex; align-items:center; justify-content:center;" ' +
+                      'title="Dépense approuvée indéfiniment (Statut définitif non modifiable)">' +
+                      '<i data-lucide="check-circle" style="width:15px;height:15px;"></i></button>';
+        } else if (d.statut_depense === 'annule') {
+          if (canValidate) {
+            btnStatus = '<button type="button" onclick="changerStatutDepense(' + d.id_depense + ', \'en_attente\')" ' +
+                        'class="btn btn-sm btn-outline-warning" ' +
+                        'style="width:32px; height:32px; padding:0; border-radius:8px; font-weight:700; color:#B45309; border:1px solid #FCD34D; background:#FFFBEB; display:inline-flex; align-items:center; justify-content:center;" ' +
+                        'title="Remettre en attente de validation">' +
+                        '<i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i></button>';
+          }
+        }
+
+        // 3. BOUTON DÉTAILS (Icône eye uniquement)
+        var btnDetails = '<a href="' + window.RACINE + 'depense/details/' + (d.editId || d.id_depense) + '" ' +
+                         'class="btn btn-sm btn-primary" ' +
+                         'style="width:32px; height:32px; padding:0; border-radius:8px; font-weight:800; background:#1E3A5F; border-color:#1E3A5F; color:#FFF; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(30,58,95,0.2);" ' +
+                         'title="Consulter la fiche détails de la dépense">' +
+                         '<i data-lucide="eye" style="width:15px;height:15px;"></i></a>';
+
+        return '<div style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:nowrap;">' +
+               btnEdit +
+               btnStatus +
+               btnDetails +
+               '</div>';
+      }}
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
@@ -407,7 +442,7 @@ $(document).ready(function() {
       data: $(this).serialize(),
       dataType: 'json',
       success: function(res) {
-        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Décaissement');
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer la Dépense');
         if (window.lucide) lucide.createIcons();
 
         if (res.status === 1 || res.success) {
@@ -420,7 +455,7 @@ $(document).ready(function() {
         }
       },
       error: function(xhr) {
-        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Décaissement');
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer la Dépense');
         if (window.lucide) lucide.createIcons();
 
         var msg = 'Erreur réseau ou serveur';
@@ -433,10 +468,16 @@ $(document).ready(function() {
     });
   });
 
-  $(document).on('change', '.toggle-statut-depense', function() {
-    var id = $(this).data('id');
-    var isChecked = $(this).is(':checked');
-    var $input = $(this);
+  window.changerStatutDepense = function(id, newStatut) {
+    var labels = {
+      'approuve': 'approuver',
+      'annule': 'annuler',
+      'en_attente': 'remettre en attente'
+    };
+    var actionMsg = labels[newStatut] || 'modifier le statut de';
+    if (!confirm('Voulez-vous vraiment ' + actionMsg + ' cette dépense ?')) {
+      return;
+    }
 
     $.ajax({
       url: '<?= RACINE ?>depense/changer',
@@ -444,6 +485,7 @@ $(document).ready(function() {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
       data: {
         id: id,
+        statut: newStatut,
         csrf_token: '<?= Validator::generateCsrfToken() ?>'
       },
       dataType: 'json',
@@ -454,20 +496,14 @@ $(document).ready(function() {
           reloadStats();
         } else {
           showNotify(res.message || 'Erreur lors du changement de statut', 'error');
-          $input.prop('checked', !isChecked);
         }
       },
       error: function() {
-        showNotify('Erreur réseau', 'error');
-        $input.prop('checked', !isChecked);
+        showNotify('Erreur réseau ou permission insuffisante', 'error');
       }
     });
-  });
+  };
 
-  $('#filter-annee').on('change', function() {
-    var val = $(this).val();
-    window.location.href = '<?= RACINE ?>depense/list?annee_code=' + encodeURIComponent(val);
-  });
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
