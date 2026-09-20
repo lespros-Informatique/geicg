@@ -404,7 +404,7 @@ class PaiementController extends BaseController
             $stmt = $db->prepare("
                 SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant, e.telephone_etudiant, e.email_etudiant,
                        c.libelle_classe, c.filiere_code, c.niveau_code,
-                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                       f.libelle_filiere, f.type_filiere, n.libelle_niveau, a.libelle_annee
                 FROM inscriptions i
                 LEFT JOIN etudiants e ON i.etudiant_code = e.code_etudiant
                 LEFT JOIN classes c ON i.classe_code = c.code_classe
@@ -420,7 +420,7 @@ class PaiementController extends BaseController
             $stmt = $db->prepare("
                 SELECT i.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.code_etudiant, e.photo_etudiant, e.telephone_etudiant, e.email_etudiant,
                        c.libelle_classe, c.filiere_code, c.niveau_code,
-                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                       f.libelle_filiere, f.type_filiere, n.libelle_niveau, a.libelle_annee
                 FROM etudiants e
                 LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant AND (i.annee_code = ? OR ? = '') AND (i.statut_inscription != 'annule')
                 LEFT JOIN classes c ON i.classe_code = c.code_classe
@@ -475,6 +475,14 @@ class PaiementController extends BaseController
             $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
         }
 
+        // Récupération des frais annexes applicables (Type de Filière x Niveau)
+        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
+        $modelFA = new ModelFraisAnnexe();
+        $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
+        $montantFraisAnnexes = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $niveauCode);
+        $faDetails = $modelFA->getFraisAnnexeDetails($typeFiliere, $anneeCode, $niveauCode);
+        $libelleFraisAnnexe = $faDetails['libelle_frais_annexe'] ?? 'Frais Annexes';
+
         // Récupération de tous les paiements existants pour cette inscription
         $stmtPay = $db->prepare("SELECT * FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule' ORDER BY date_paiement ASC, id_paiement ASC");
         $stmtPay->execute([$codeInscription]);
@@ -484,6 +492,8 @@ class PaiementController extends BaseController
         foreach ($allPayments as $p) {
             $totalPaye += (float)$p['montant_paiement'];
         }
+
+        $hasPaidBefore = (count($allPayments) > 0 || $totalPaye > 0);
 
         $soldeRestant = max(0, $scolariteDue - $totalPaye);
 
@@ -630,6 +640,37 @@ class PaiementController extends BaseController
             $suggestedTrancheCode = 'SCOLARITE_GLOBALE';
         }
 
+        // Ajout explicite du motif Frais Annexes dans les options de versement
+        if ($montantFraisAnnexes > 0) {
+            $faPaye = $paymentsByTranche['FRAIS_ANNEXES'] ?? 0;
+            $faReste = max(0, $montantFraisAnnexes - $faPaye);
+            $faIsSoldee = ($faReste <= 0);
+
+            array_unshift($tranchesList, [
+                'id_tranche' => 'FA',
+                'code_tranche' => 'FRAIS_ANNEXES',
+                'libelle_tranche' => 'Frais Annexes Officiels (' . $libelleFraisAnnexe . ')',
+                'is_frais_annexe' => true,
+                'montant_tranche' => $montantFraisAnnexes,
+                'montant_tranche_fmt' => number_format($montantFraisAnnexes, 0, ',', ' ') . ' FCFA',
+                'date_limite' => '',
+                'date_limite_fmt' => 'Exigible à l\'inscription',
+                'deja_paye' => $faPaye,
+                'deja_paye_fmt' => number_format($faPaye, 0, ',', ' ') . ' FCFA',
+                'reste_a_payer' => $faReste,
+                'reste_a_payer_fmt' => number_format($faReste, 0, ',', ' ') . ' FCFA',
+                'is_soldee' => $faIsSoldee,
+                'statut_code' => $faIsSoldee ? 'soldee' : ($faPaye > 0 ? 'partiel' : 'a_payer'),
+                'statut_libelle' => $faIsSoldee ? 'Payés (Soldés)' : 'À Payer',
+                'badge_bg' => $faIsSoldee ? '#DCFCE7' : '#FFFBEB',
+                'badge_color' => $faIsSoldee ? '#15803D' : '#B45309'
+            ]);
+
+            if (!$faIsSoldee) {
+                $suggestedTrancheCode = 'FRAIS_ANNEXES';
+            }
+        }
+
         $nomComplet = trim(($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? ''));
 
         $tauxRecouvrement = ($scolariteDue > 0) ? min(100, round(($totalPaye / $scolariteDue) * 100, 1)) : 0;
@@ -689,10 +730,16 @@ class PaiementController extends BaseController
                 'annee' => $ins['libelle_annee'] ?? '-',
                 'scolarite_due' => $scolariteDue,
                 'scolarite_due_fmt' => number_format($scolariteDue, 0, ',', ' ') . ' FCFA',
+                'total_frais_annexes' => $montantFraisAnnexes,
+                'total_frais_annexes_fmt' => number_format($montantFraisAnnexes, 0, ',', ' ') . ' FCFA',
+                'frais_annexes_paye' => $faPaye ?? 0,
+                'frais_annexes_reste' => $faReste ?? $montantFraisAnnexes,
+                'libelle_frais_annexe' => $libelleFraisAnnexe,
                 'total_paye' => $totalPaye,
                 'total_paye_fmt' => number_format($totalPaye, 0, ',', ' ') . ' FCFA',
                 'solde_restant' => $soldeRestant,
                 'solde_restant_fmt' => number_format($soldeRestant, 0, ',', ' ') . ' FCFA',
+                'has_paid_before' => $hasPaidBefore,
                 'taux_recouvrement' => $tauxRecouvrement,
                 'statut_reglement' => $statutReglement,
                 'badge_class' => $badgeClass,
@@ -853,7 +900,7 @@ class PaiementController extends BaseController
             'inscription_code' => $inscriptionCode
         ]);
 
-        if (!empty($data['tranche_code']) && $data['tranche_code'] !== 'SCOLARITE_GLOBALE') {
+        if (!empty($data['tranche_code']) && $data['tranche_code'] !== 'SCOLARITE_GLOBALE' && $data['tranche_code'] !== 'FRAIS_ANNEXES') {
             $this->validateForeignKeys([
                 'tranche_code' => $data['tranche_code']
             ]);
@@ -896,6 +943,10 @@ class PaiementController extends BaseController
             return;
         }
 
+        $montantFA = (float)($data['montant_frais_annexes'] ?? 0);
+        $montantTranche = (float)($data['montant_tranche'] ?? ($montantPaiement - $montantFA));
+        $tranche = null;
+
         // Contrôle backend strict de l'ordre chronologique des tranches (Prochaine tranche impayée obligatoire)
         if ($trancheCode !== 'SCOLARITE_GLOBALE') {
             $nextUnpaid = $this->getNextUnpaidTranche($inscriptionCode);
@@ -923,12 +974,87 @@ class PaiementController extends BaseController
                 return;
             }
 
-            if ($montantPaiement > $resteAutorise) {
+            if ($montantTranche > $resteAutorise) {
                 $resteFmt = number_format($resteAutorise, 0, ',', ' ');
-                $montantSaisiFmt = number_format($montantPaiement, 0, ',', ' ');
-                $this->error("Le montant saisi ($montantSaisiFmt FCFA) dépasse le solde restant dû pour cette tranche ($resteFmt FCFA). Veuillez saisir un montant inférieur ou égal à $resteFmt FCFA.");
+                $montantSaisiFmt = number_format($montantTranche, 0, ',', ' ');
+                $this->error("Le montant saisi pour la tranche ($montantSaisiFmt FCFA) dépasse le solde restant dû pour cette tranche ($resteFmt FCFA). Veuillez saisir un montant inférieur ou égal à $resteFmt FCFA.");
                 return;
             }
+        }
+
+        // Si le versement contient des Frais Annexes (> 0), on enregistre chaque opération séparément en BDD
+        if ($montantFA > 0) {
+            $todayDate = date('Y-m-d');
+            $stmtActiveSes = $db->prepare("SELECT code_session FROM sessions_caisse WHERE date_session = ? AND statut_session = 'ouverte' ORDER BY id_session DESC LIMIT 1");
+            $stmtActiveSes->execute([$todayDate]);
+            $activeSesCode = $stmtActiveSes->fetchColumn() ?: null;
+
+            $sessionCode = !empty($data['session_caisse_code']) ? $data['session_caisse_code'] : $activeSesCode;
+            $now = date('Y-m-d H:i:s');
+            $ref = $data['reference_paiement'] ?? '';
+            $obs = $data['observations'] ?? '';
+            $createdCodes = [];
+            $lastPaiementId = 0;
+
+            // Opération 1 : Frais Annexes Officiels
+            $codeFA = $this->validator->generateCode('paiements', 'code_paiement', 'PAI-', 8);
+            $stmtFA = $db->prepare("
+                INSERT INTO paiements (
+                    code_paiement, inscription_code, etablissement_code, annee_code, tranche_code,
+                    montant_paiement, mode_paiement, reference_paiement, type_paiement, categorie_paiement, observations,
+                    statut_paiement, date_paiement, session_caisse_code, user_code
+                ) VALUES (?, ?, ?, ?, 'FRAIS_ANNEXES', ?, ?, ?, 'Frais Annexes Officiels', 'FRAIS_ANNEXES', ?, 'confirme', ?, ?, ?)
+            ");
+            $obsFA = trim($obs ? ($obs . ' - Frais Annexes') : 'Règlement Frais Annexes Officiels');
+            $stmtFA->execute([
+                $codeFA, $inscriptionCode, $etabCode, $anneeCode,
+                $montantFA, $mode, $ref, $obsFA, $now, $sessionCode, $userCode
+            ]);
+            $lastPaiementId = (int)$db->lastInsertId();
+            $createdCodes[] = $codeFA;
+
+            // Opération 2 : Scolarité (Tranche)
+            if ($montantTranche > 0) {
+                $codeTr = $this->validator->generateCode('paiements', 'code_paiement', 'PAI-', 8);
+                $typeTr = !empty($tranche['libelle_tranche']) ? 'Règlement ' . $tranche['libelle_tranche'] : 'Règlement Scolarité';
+                $stmtTrIns = $db->prepare("
+                    INSERT INTO paiements (
+                        code_paiement, inscription_code, etablissement_code, annee_code, tranche_code,
+                        montant_paiement, mode_paiement, reference_paiement, type_paiement, categorie_paiement, observations,
+                        statut_paiement, date_paiement, session_caisse_code, user_code
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'SCOLARITE', ?, 'confirme', ?, ?, ?)
+                ");
+                $stmtTrIns->execute([
+                    $codeTr, $inscriptionCode, $etabCode, $anneeCode, $trancheCode,
+                    $montantTranche, $mode, $ref, $typeTr, $obs, $now, $sessionCode, $userCode
+                ]);
+                $lastPaiementId = (int)$db->lastInsertId();
+                $createdCodes[] = $codeTr;
+            }
+
+            // Mise à jour du statut d'inscription
+            $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE code_inscription = ? LIMIT 1");
+            $stmtIns->execute([$inscriptionCode]);
+            $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
+            if ($ins) {
+                $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+                $stmtTot = $db->prepare("SELECT SUM(montant_paiement) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+                $stmtTot->execute([$inscriptionCode]);
+                $totalPayeCumul = (float)($stmtTot->fetchColumn() ?: 0);
+                if ($totalPayeCumul >= $scolariteDue && $scolariteDue > 0) {
+                    $db->prepare("UPDATE inscriptions SET statut_inscription = 'solde' WHERE code_inscription = ?")->execute([$inscriptionCode]);
+                }
+            }
+
+            $encryptedId = $this->validator->crypter($lastPaiementId);
+            $this->success('Encaissements enregistrés avec succès ! (' . count($createdCodes) . ' opérations générées)', [
+                'reload' => true,
+                'id_paiement' => $lastPaiementId,
+                'encrypted_id' => $encryptedId,
+                'code_paiement' => implode(' & ', $createdCodes),
+                'montant' => $montantFA + $montantTranche
+            ]);
+            return;
         }
 
         if (empty($data['code_paiement'])) {

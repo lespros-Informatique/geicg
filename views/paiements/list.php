@@ -739,11 +739,15 @@ $canCloseCaisse = $canCloseCaisse ?? false;
             </div>
           </div>
 
-          <!-- 3 Compteurs Financiers -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px;">
+          <!-- 4 Compteurs Financiers -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 14px;">
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
-              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Scolarité Totale</div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Scolarité Nette</div>
               <div id="encaisse-val-scolarite" style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin-top: 2px;">0 FCFA</div>
+            </div>
+            <div id="encaisse-card-frais-annexes" style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;" id="encaisse-lbl-frais-annexes">Frais Annexes</div>
+              <div id="encaisse-val-frais-annexes" style="font-size: 16px; font-weight: 900; color: #B45309; margin-top: 2px;">0 FCFA</div>
             </div>
             <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px 14px;">
               <div style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Total Déjà Payé</div>
@@ -757,21 +761,25 @@ $canCloseCaisse = $canCloseCaisse ?? false;
 
         </div>
 
+        <!-- Hidden inputs for payment breakdown -->
+        <input type="hidden" id="hidden_montant_tranche" name="montant_tranche" value="0">
+        <input type="hidden" id="hidden_montant_frais_annexes" name="montant_frais_annexes" value="0">
+
         <!-- 3. Sélection de la tranche & Paramètres du versement -->
         <div id="encaisse-payment-inputs-section" style="display: none; background: #FFFFFF; border-radius: 12px; padding: 18px; border: 1px solid #E2E8F0;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             
-            <!-- Tranche / Échéance (Sélectionnée par ordre de création) -->
+            <!-- Tranche / Échéance (Readonly) -->
             <div style="grid-column: span 2;">
               <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">
-                2. Tranche / Échéance à régler <span class="text-danger">*</span>
+                2. Tranche / Échéance à régler <span style="font-weight: 700; color: #64748B; text-transform: none;">(Sélectionnée automatiquement - Readonly)</span> <span class="text-danger">*</span>
               </label>
               <div style="position: relative;">
-                <select id="modal_select_tranche" name="tranche_code" class="form-control form-control-lg" style="font-weight: 800; font-size: 14.5px; color: #1E3A5F; border-radius: 10px; background-color: #F8FAFC; cursor: not-allowed; pointer-events: none; padding-right: 40px;" readonly tabindex="-1" required>
+                <select id="modal_select_tranche" name="tranche_code" class="form-control form-control-lg" style="font-weight: 800; font-size: 14px; color: #1E3A5F; border-radius: 10px; background-color: #F8FAFC; border: 1.5px solid #CBD5E1; pointer-events: none; cursor: not-allowed; padding-right: 40px;" tabindex="-1" required>
                   <!-- Rempli dynamiquement -->
                 </select>
                 <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #64748B; pointer-events: none;">
-                  <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                  <i data-lucide="lock" style="width: 18px; height: 18px; color: #64748B;"></i>
                 </span>
               </div>
               <div id="tranche-hint-info" style="font-size: 11.5px; color: #64748B; margin-top: 4px;">
@@ -779,17 +787,33 @@ $canCloseCaisse = $canCloseCaisse ?? false;
               </div>
             </div>
 
-            <!-- Montant versé -->
+            <!-- Champ Montant des frais d'annexe (Masqué si déjà payé / a déjà effectué versement) -->
+            <div id="container-frais-annexes" style="display: none; grid-column: span 2;">
+              <label style="font-size: 11.5px; font-weight: 700; color: #B45309; margin-bottom: 4px; display: block;">Montant des Frais d'Annexe (Readonly)</label>
+              <div style="position: relative;">
+                <input type="text" id="input-montant-frais-annexes" class="form-control" style="font-weight: 800; font-size: 14px; color: #B45309; background: #FFFBEB; border: 1.5px solid #FDE68A;" value="0 FCFA" readonly>
+              </div>
+            </div>
+
+            <!-- Champ Montant de la tranche à verser (Readonly - Toute la largeur) -->
+            <div id="container-tranche-scolarite" style="grid-column: span 2;">
+              <label style="font-size: 11.5px; font-weight: 700; color: #1E3A5F; margin-bottom: 4px; display: block;">Montant de la Tranche à verser (Readonly)</label>
+              <div style="position: relative;">
+                <input type="text" id="input-montant-tranche-scolarite" class="form-control" style="font-weight: 800; font-size: 14px; color: #1E3A5F; background: #F8FAFC; border: 1.5px solid #CBD5E1;" value="0 FCFA" readonly>
+              </div>
+            </div>
+
+            <!-- Montant Total versé (Readonly, Somme Scolarité + Frais Annexes si 1er versement) -->
             <div style="grid-column: span 2;">
               <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">
-                3. Montant Versé (FCFA) <span class="text-danger">*</span>
+                3. Montant Total Versé (FCFA) <span class="text-danger">*</span>
               </label>
               <div style="position: relative;">
-                <input type="number" step="1" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 20px; color: #15803D; padding-right: 70px; border-radius: 10px; background-color: #F8FAFC; cursor: not-allowed;" placeholder="0" readonly required>
-                <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #64748B; font-size: 14px;">FCFA</span>
+                <input type="number" step="1" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 20px; color: #15803D; padding-right: 70px; border-radius: 10px; background-color: #F0FDF4; border: 2px solid #86EFAC;" placeholder="0" readonly required>
+                <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #15803D; font-size: 14px;">FCFA</span>
               </div>
               <div id="montant-max-hint" style="font-size: 11.5px; color: #64748B; margin-top: 4px;">
-                Montant déterminé automatiquement par la tranche sélectionnée.
+                Montant calculé automatiquement.
               </div>
             </div>
 
@@ -1207,6 +1231,9 @@ $(document).ready(function() {
     $('#encaisse-stu-avatar').show().text('ET');
     $('#modal_select_tranche').html('');
     $('#tranche-hint-info').html('');
+    $('#container-frais-annexes').hide();
+    $('#hidden_montant_tranche').val(0);
+    $('#hidden_montant_frais_annexes').val(0);
     $('#encaisse-student-summary-card').hide();
     $('#encaisse-payment-inputs-section').hide();
     currentStudentSummary = null;
@@ -1264,8 +1291,9 @@ $(document).ready(function() {
         if (res.status === 1 && res.data) {
           var d = res.data;
           currentStudentSummary = d;
+          var hasPaidBefore = (d.has_paid_before === true || (d.historique_paiements && d.historique_paiements.length > 0) || (d.total_paye && d.total_paye > 0));
 
-          // Remplir la fiche étudiant
+          // Fiche & photo étudiant et récapitulatif financier (Toujours affichés à la sélection)
           var initials = (d.nom_complet || 'ET').split(' ').filter(function(x){return x;}).map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
           $('#encaisse-stu-avatar').text(initials || 'ET');
           $('#encaisse-stu-nom').text(d.nom_complet);
@@ -1278,7 +1306,7 @@ $(document).ready(function() {
             $('#encaisse-stu-regime-badge').css({'background': '#EFF6FF', 'color': '#1E3A5F', 'border-color': '#BFDBFE'});
           }
 
-          // Affichage dynamique de la photo de l'étudiant
+          // Photo
           if (d.photo_url && d.photo_url.trim() !== '') {
             $('#encaisse-stu-photo')
               .attr('src', d.photo_url)
@@ -1298,31 +1326,53 @@ $(document).ready(function() {
 
           // Compteurs
           $('#encaisse-val-scolarite').text(d.scolarite_due_fmt);
+          
+          var faReste = parseFloat(d.frais_annexes_reste || 0);
+          var faTotal = parseFloat(d.total_frais_annexes || 0);
+          if (hasPaidBefore || faTotal <= 0 || faReste <= 0) {
+            $('#encaisse-card-frais-annexes').hide();
+          } else {
+            $('#encaisse-card-frais-annexes').show();
+            $('#encaisse-val-frais-annexes').text(d.total_frais_annexes_fmt || '0 FCFA');
+            if (d.libelle_frais_annexe) {
+              $('#encaisse-lbl-frais-annexes').text('Frais Annexes (' + d.libelle_frais_annexe + ')');
+            } else {
+              $('#encaisse-lbl-frais-annexes').text('Frais Annexes');
+            }
+          }
+
           $('#encaisse-val-paye').text(d.total_paye_fmt);
           $('#encaisse-val-reste').text(d.solde_restant_fmt);
 
-          // Remplir les tranches
+          $('#encaisse-student-summary-card').stop(true, true).slideDown(200);
+
+          // Remplir les tranches de scolarité
           var trHtml = '';
           if (d.tranches && d.tranches.length > 0) {
             d.tranches.forEach(function(tr) {
-              var suffix = tr.is_soldee ? ' (SOLDÉE)' : '';
-              trHtml += '<option value="' + escapeHtml(tr.code_tranche) + '" data-reste="' + tr.reste_a_payer + '" data-soldee="' + (tr.is_soldee ? '1' : '0') + '" data-limite="' + escapeHtml(tr.date_limite_fmt || '') + '" ' + (tr.is_soldee ? 'style="color:#94A3B8;"' : '') + '>' +
-                        escapeHtml(tr.libelle_tranche) + ' - ' + tr.montant_tranche_fmt + suffix +
+              if (tr.code_tranche === 'FRAIS_ANNEXES') return;
+              var suffix = tr.is_soldee ? ' (SOLDÉ)' : '';
+              var prefix = '📅 ';
+              trHtml += '<option value="' + escapeHtml(tr.code_tranche) + '" data-reste="' + tr.reste_a_payer + '" data-montant="' + tr.montant_tranche + '" data-soldee="' + (tr.is_soldee ? '1' : '0') + '" data-limite="' + escapeHtml(tr.date_limite_fmt || '') + '">' +
+                        prefix + escapeHtml(tr.libelle_tranche) + ' - ' + tr.montant_tranche_fmt + suffix +
                         '</option>';
             });
           }
           $('#modal_select_tranche').html(trHtml);
 
-          if (d.suggested_tranche_code) {
-            $('#modal_select_tranche').val(d.suggested_tranche_code);
-          } else if (d.tranches && d.tranches.length > 0) {
-            // Sélection automatique de la première tranche par ordre de création
-            $('#modal_select_tranche').val(d.tranches[0].code_tranche);
+          var suggestCode = d.suggested_tranche_code;
+          if (suggestCode === 'FRAIS_ANNEXES' && d.tranches) {
+            var firstSco = d.tranches.find(function(t) { return t.code_tranche !== 'FRAIS_ANNEXES' && !t.is_soldee; });
+            if (firstSco) suggestCode = firstSco.code_tranche;
+          }
+
+          if (suggestCode && $('#modal_select_tranche option[value="' + suggestCode + '"]').length > 0) {
+            $('#modal_select_tranche').val(suggestCode);
+          } else if ($('#modal_select_tranche option').length > 0) {
+            $('#modal_select_tranche').val($('#modal_select_tranche option:first').val());
           }
           
           $('#modal_select_tranche').trigger('change');
-
-          $('#encaisse-student-summary-card').stop(true, true).slideDown(200);
           $('#encaisse-payment-inputs-section').stop(true, true).slideDown(200);
 
           if (d.solde_restant <= 0) {
@@ -1343,26 +1393,50 @@ $(document).ready(function() {
     });
   });
 
-  // Verrouillage strict du champ Tranche (Lecture seule, non modifiable)
-  $('#modal_select_tranche').on('mousedown keydown focus click touchstart', function(e) {
-    e.preventDefault();
-    return false;
-  });
-
-  // Changement de tranche (Calcul et verrouillage readonly du montant)
+  // Changement de tranche
   $('#modal_select_tranche').on('change', function() {
     var $opt = $(this).find('option:selected');
-    var reste = parseFloat($opt.data('reste') || 0);
+    if (!$opt.length) return;
+
+    var resteTranche = parseFloat($opt.data('reste') || 0);
+    var montantTranche = parseFloat($opt.data('montant') || resteTranche);
     var isSoldee = $opt.data('soldee') === '1' || $opt.data('soldee') === 1;
     var limite = $opt.data('limite');
 
-    if (isSoldee) {
-      $('#montant-max-hint').html('<span style="color:#DC2626; font-weight:700;">⚠️ Cette tranche est déjà totalement soldée. Aucun versement requis.</span>');
-      $('#input-montant-versement').val(0);
-      $('#btn-submit-encaissement').prop('disabled', true);
+    var hasPaidBefore = (currentStudentSummary && currentStudentSummary.has_paid_before === true);
+    var faAmount = 0;
+
+    if (!hasPaidBefore && currentStudentSummary) {
+      faAmount = parseFloat(currentStudentSummary.frais_annexes_reste || currentStudentSummary.total_frais_annexes || 0);
+    }
+
+    var trancheVal = isSoldee ? 0 : (resteTranche > 0 ? resteTranche : montantTranche);
+
+    $('#hidden_montant_tranche').val(trancheVal);
+    $('#input-montant-tranche-scolarite').val(trancheVal.toLocaleString('fr-FR') + ' FCFA');
+
+    if (!hasPaidBefore && faAmount > 0) {
+      $('#container-frais-annexes').show();
+      $('#hidden_montant_frais_annexes').val(faAmount);
+      $('#input-montant-frais-annexes').val(faAmount.toLocaleString('fr-FR') + ' FCFA');
     } else {
-      $('#montant-max-hint').html('Montant fixé par la tranche : <strong id="lbl-max-autorise" style="color: #15803D;">' + Number(reste).toLocaleString('fr-FR') + ' FCFA</strong>');
-      $('#input-montant-versement').val(reste);
+      $('#container-frais-annexes').hide();
+      $('#hidden_montant_frais_annexes').val(0);
+      $('#input-montant-frais-annexes').val('0 FCFA');
+    }
+
+    var totalVerse = trancheVal + (!hasPaidBefore ? faAmount : 0);
+    $('#input-montant-versement').val(totalVerse);
+
+    if (isSoldee) {
+      $('#montant-max-hint').html('<span style="color:#15803D; font-weight:800;">🎉 Cette tranche est déjà intégralement réglée.</span>');
+      if (totalVerse <= 0) $('#btn-submit-encaissement').prop('disabled', true);
+    } else {
+      if (!hasPaidBefore && faAmount > 0) {
+        $('#montant-max-hint').html('Premier versement (2 opérations séparées générées) : Scolarité (' + trancheVal.toLocaleString('fr-FR') + ' F) + Frais Annexes (' + faAmount.toLocaleString('fr-FR') + ' F) = <strong style="color: #15803D;">' + totalVerse.toLocaleString('fr-FR') + ' FCFA Total</strong>');
+      } else {
+        $('#montant-max-hint').html('Montant à verser fixé pour la tranche : <strong style="color: #15803D;">' + totalVerse.toLocaleString('fr-FR') + ' FCFA</strong>');
+      }
       $('#btn-submit-encaissement').prop('disabled', false);
     }
 
@@ -1371,6 +1445,7 @@ $(document).ready(function() {
     } else {
       $('#tranche-hint-info').html('');
     }
+
     if (window.lucide) lucide.createIcons();
   });
 
@@ -1384,13 +1459,6 @@ $(document).ready(function() {
       return;
     }
 
-    var $opt = $('#modal_select_tranche').find('option:selected');
-    var resteTranche = parseFloat($opt.data('reste') || 0);
-    if (resteTranche > 0 && montant > resteTranche) {
-      alert('Le montant saisi (' + Number(montant).toLocaleString('fr-FR') + ' FCFA) dépasse le solde restant de la tranche (' + Number(resteTranche).toLocaleString('fr-FR') + ' FCFA).');
-      return;
-    }
-
     var $btn = $('#btn-submit-encaissement');
     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right:6px;"></span> Validation en cours...');
 
@@ -1398,6 +1466,7 @@ $(document).ready(function() {
       url: '<?= RACINE ?>paiement/add',
       type: 'POST',
       data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
       dataType: 'json',
       success: function(res) {
         $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
@@ -1425,10 +1494,14 @@ $(document).ready(function() {
         $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
         if (window.lucide) lucide.createIcons();
         var errMsg = 'Une erreur est survenue lors de la communication avec le serveur.';
-        try {
-          var r = JSON.parse(xhr.responseText);
-          if (r && r.message) errMsg = r.message;
-        } catch(e) {}
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          errMsg = xhr.responseJSON.message;
+        } else {
+          try {
+            var r = JSON.parse(xhr.responseText);
+            if (r && r.message) errMsg = r.message;
+          } catch(e) {}
+        }
         alert(errMsg);
       }
     });
