@@ -158,6 +158,70 @@ class EtudiantController extends BaseController
         }
     }
 
+    public function changerClasse()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission('MANAGE_ETUDIANTS');
+
+        $db = $this->model->getCon();
+        $codeInscription = trim($_POST['code_inscription'] ?? '');
+        $codeEtudiant = trim($_POST['code_etudiant'] ?? '');
+        $nouvelleClasse = trim($_POST['classe_code'] ?? ($_POST['nouvelle_classe_code'] ?? ''));
+
+        if (empty($nouvelleClasse)) {
+            $this->error("Veuillez sélectionner une classe valide.");
+            return;
+        }
+
+        // Vérifier l'existence et la validité de la classe cible
+        $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, filiere_code, niveau_code FROM classes WHERE code_classe = ? AND statut_classe = 'actif' LIMIT 1");
+        $stmtCl->execute([$nouvelleClasse]);
+        $classeRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
+
+        if (!$classeRow) {
+            $this->error("La classe sélectionnée est introuvable ou inactive.");
+            return;
+        }
+
+        // Trouver le dossier d'inscription concerné
+        $anneeActive = $this->getActiveAnneeCode();
+        $inscriptionRow = null;
+
+        if (!empty($codeInscription)) {
+            $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE code_inscription = ? LIMIT 1");
+            $stmtIns->execute([$codeInscription]);
+            $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$inscriptionRow && !empty($codeEtudiant)) {
+            $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE etudiant_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_inscription != 'annule' ORDER BY id_inscription DESC LIMIT 1");
+            $stmtIns->execute([$codeEtudiant, $anneeActive]);
+            $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
+
+            if (!$inscriptionRow) {
+                $stmtInsLast = $db->prepare("SELECT * FROM inscriptions WHERE etudiant_code = ? AND statut_inscription != 'annule' ORDER BY id_inscription DESC LIMIT 1");
+                $stmtInsLast->execute([$codeEtudiant]);
+                $inscriptionRow = $stmtInsLast->fetch(PDO::FETCH_ASSOC);
+            }
+        }
+
+        if (!$inscriptionRow) {
+            $this->error("Aucun dossier d'inscription actif n'a été trouvé pour cet étudiant.");
+            return;
+        }
+
+        // Mise à jour de la classe rattachée à l'inscription
+        $stmtUpdate = $db->prepare("UPDATE inscriptions SET classe_code = ? WHERE id_inscription = ?");
+        $ok = $stmtUpdate->execute([$nouvelleClasse, $inscriptionRow['id_inscription']]);
+
+        if ($ok) {
+            $this->success("La classe de l'étudiant a été modifiée avec succès vers " . $classeRow['libelle_classe'] . " !");
+        } else {
+            $this->error("Erreur lors de la mise à jour de la classe de l'étudiant.");
+        }
+    }
+
     public function details($details)
     {
         $this->requireAuth();

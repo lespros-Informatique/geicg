@@ -95,7 +95,9 @@ $anneeActive = $anneeActive ?? '';
 
           <!-- Filtre Filière -->
           <div class="form-group" style="margin: 0;">
-            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Filière</label>
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
+              <i data-lucide="book-open" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Filière
+            </label>
             <select id="filter-filiere" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Toutes les filières --</option>
               <?php foreach ($filieres as $f): ?>
@@ -113,7 +115,9 @@ $anneeActive = $anneeActive ?? '';
 
           <!-- Filtre Niveau -->
           <div class="form-group" style="margin: 0;">
-            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Niveau d'Études</label>
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
+              <i data-lucide="layers" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Niveau d'Études
+            </label>
             <select id="filter-niveau" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Tous les niveaux --</option>
               <?php foreach ($niveaux as $n): ?>
@@ -126,7 +130,9 @@ $anneeActive = $anneeActive ?? '';
 
           <!-- Filtre Classe -->
           <div class="form-group" style="margin: 0;">
-            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Classe Spécifique</label>
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
+              <i data-lucide="graduation-cap" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Classe Spécifique
+            </label>
             <select id="filter-classe" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Toutes les classes --</option>
               <?php foreach ($classes as $c): ?>
@@ -139,15 +145,15 @@ $anneeActive = $anneeActive ?? '';
 
           <!-- Filtre Régime -->
           <div class="form-group" style="margin: 0;">
-            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Régime Étudiant</label>
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
+              <i data-lucide="user-check" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Régime Étudiant
+            </label>
             <select id="filter-regime" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Tous les régimes --</option>
               <option value="affecte">Affecté(e) État</option>
               <option value="non_affecte">Non Affecté(e) / Privé</option>
             </select>
           </div>
-
-
 
         </div>
       </div>
@@ -157,16 +163,16 @@ $anneeActive = $anneeActive ?? '';
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-etudiants" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
-              <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+              <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
                 <th style="padding: 12px; width: 45px;">#</th>
-                <th style="padding: 12px;">Matricule</th>
-                <th style="padding: 12px;">Étudiant (Nom & Prénoms)</th>
-                <th style="padding: 12px;">Sexe</th>
-                <th style="padding: 12px;">Régime</th>
-                <th style="padding: 12px;">Classe</th>
-                <th style="padding: 12px;">Filière</th>
-                <th style="padding: 12px;">Niveau</th>
-                <th style="padding: 12px; text-align: right;">Actions</th>
+                <th style="padding: 12px;"><i data-lucide="qr-code" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Matricule</th>
+                <th style="padding: 12px;"><i data-lucide="user" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Étudiant (Nom & Prénoms)</th>
+                <th style="padding: 12px;"><i data-lucide="venus-mars" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Sexe</th>
+                <th style="padding: 12px;"><i data-lucide="shield-check" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Régime</th>
+                <th style="padding: 12px;"><i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Classe</th>
+                <th style="padding: 12px;"><i data-lucide="book-open" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Filière</th>
+                <th style="padding: 12px;"><i data-lucide="layers" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Niveau</th>
+                <th style="padding: 12px; text-align: right;"><i data-lucide="settings" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -176,6 +182,63 @@ $anneeActive = $anneeActive ?? '';
 
     </div>
   </main>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL SUR MESURE : CHANGEMENT DE CLASSE D'UN ÉTUDIANT                     -->
+<!-- ========================================================================= -->
+<div id="modal-changer-classe" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); overflow: hidden; animation: modalZoomIn 0.2s ease-out;">
+    
+    <!-- En-tête modal -->
+    <div style="background: linear-gradient(135deg, #1E3A5F 0%, #0F233D 100%); color: #FFFFFF; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #F59E0B;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245,158,11,0.2); border: 1.5px solid #FBBF24; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="refresh-cw" style="width: 20px; height: 20px; color: #FBBF24;"></i>
+        </div>
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: #FFFFFF;">Changer la Classe de l'Étudiant</h3>
+          <div style="font-size: 12px; color: #94A3B8; margin-top: 2px;">Affectation académique & Réinscription</div>
+        </div>
+      </div>
+      <button type="button" class="btn-close-modal-change-classe" style="background: transparent; border: none; color: #FFFFFF; font-size: 26px; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
+    </div>
+
+    <!-- Formulaire modal -->
+    <form id="form-changer-classe" style="padding: 22px 24px; margin: 0;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" id="change_classe_inscription_code" name="code_inscription" value="">
+      <input type="hidden" id="change_classe_etudiant_code" name="code_etudiant" value="">
+
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Étudiant Concerné</div>
+        <div id="change_classe_student_name" style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 3px;">Nom Étudiant</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 12.5px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px;">
+          Nouvelle Classe Affectée <span style="color: #EF4444;">*</span>
+        </label>
+        <select id="change_classe_new_code" name="classe_code" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; font-size: 14px; color: #0F172A; background: #FFFFFF;">
+          <option value="">-- Sélectionner la nouvelle classe --</option>
+          <?php foreach ($classes as $c): ?>
+            <option value="<?= htmlspecialchars($c['code_classe']) ?>">
+              <?= htmlspecialchars($c['libelle_classe']) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-change-classe" style="font-weight: 700; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-change-classe" class="btn btn-warning" style="background: #F59E0B; border: none; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 9px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(245,158,11,0.3);">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Valider le Changement
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -264,17 +327,87 @@ $(document).ready(function() {
       }},
 
       // 9. Actions
-      { data: null, width: '240px', orderable: false, render: function(d) {
+      { data: null, width: '310px', orderable: false, render: function(d, type, row) {
         var idCrypte = d.editId || d.id_etudiant;
-        return '<div style="display:inline-flex; align-items:center; gap:5px; justify-content:flex-end;">' +
-               '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer le dossier / carte"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
-               '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="eye" style="width:13px;height:13px;"></i> Dossier</a>' +
-               '  <a href="' + window.RACINE + 'etudiant/edition/' + idCrypte + '" class="btn btn-sm btn-secondary" style="font-weight:600; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="edit" style="width:13px;height:13px;"></i> Éditer</a>' +
+        var nomComplet = (row.nom_etudiant || '').toUpperCase() + ' ' + (row.prenom_etudiant || '');
+        var insCode = row.code_inscription || '';
+        var etuCode = row.code_etudiant || '';
+        var clsCode = row.code_classe || '';
+
+        return '<div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">' +
+               '  <button type="button" class="btn btn-sm btn-warning btn-change-classe" data-id="' + idCrypte + '" data-inscription="' + escapeHtml(insCode) + '" data-etudiant="' + escapeHtml(etuCode) + '" data-nom="' + escapeHtml(nomComplet) + '" data-classe="' + escapeHtml(clsCode) + '" style="font-weight:700; border-radius:6px; padding:4px 8px; display:inline-flex; align-items:center; gap:4px; background:#F59E0B; border:none; color:#FFFFFF;" title="Changer la classe de l\'étudiant"><i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Classe</button>' +
+               '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:4px 8px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer le dossier / carte"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
+               '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; padding:4px 8px; display:inline-flex; align-items:center; gap:3px;" title="Consulter le dossier"><i data-lucide="eye" style="width:13px;height:13px;"></i> Dossier</a>' +
+               '  <a href="' + window.RACINE + 'etudiant/edition/' + idCrypte + '" class="btn btn-sm btn-secondary" style="font-weight:600; border-radius:6px; padding:4px 8px; display:inline-flex; align-items:center; gap:3px;" title="Éditer les informations"><i data-lucide="edit" style="width:13px;height:13px;"></i> Éditer</a>' +
                '</div>';
       }, className: 'text-end' }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Ouverture du modal de changement de classe
+  $(document).on('click', '.btn-change-classe', function() {
+    var inscrCode = $(this).data('inscription') || '';
+    var etuCode = $(this).data('etudiant') || '';
+    var nom = $(this).data('nom') || 'Étudiant';
+    var currentClasse = $(this).data('classe') || '';
+
+    $('#change_classe_inscription_code').val(inscrCode);
+    $('#change_classe_etudiant_code').val(etuCode);
+    $('#change_classe_student_name').text(nom);
+    $('#change_classe_new_code').val(currentClasse);
+
+    $('#modal-changer-classe').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+  });
+
+  $('.btn-close-modal-change-classe').on('click', function() {
+    $('#modal-changer-classe').hide();
+  });
+
+  $('#modal-changer-classe').on('click', function(e) {
+    if ($(e.target).is('#modal-changer-classe')) {
+      $('#modal-changer-classe').hide();
+    }
+  });
+
+  // Soumission AJAX du formulaire de changement de classe
+  $('#form-changer-classe').on('submit', function(e) {
+    e.preventDefault();
+    var $btn = $('#btn-submit-change-classe');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" class="spin"></i> Enregistrement...');
+
+    $.ajax({
+      url: '<?= RACINE ?>etudiant/changerClasse',
+      type: 'POST',
+      data: $(this).serialize(),
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Valider le Changement');
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Classe modifiée avec succès');
+          $('#modal-changer-classe').hide();
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de la modification');
+        }
+      },
+      error: function() {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Valider le Changement');
+        if (window.toastr) toastr.error('Erreur réseau lors de la mise à jour');
+      }
+    });
   });
 
   // Gestion intelligente de la visibilité des colonnes
