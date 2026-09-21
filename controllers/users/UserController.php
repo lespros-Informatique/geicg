@@ -143,6 +143,33 @@ class UserController extends BaseController
                 $this->model->saveUserAnneeAcces($code_user, $_POST['annee_acces']);
             }
 
+            // Envoi automatique de l'e-mail de bienvenue avec les identifiants d'accès si une adresse email est renseignée
+            if (!empty($email)) {
+                $nomComplet = trim($nom . ' ' . $prenom);
+                $libelleFonction = 'Collaborateur / Utilisateur';
+                if (!empty($fonctionCode)) {
+                    $stmtF = $this->model->getCon()->prepare("SELECT libelle_fonction FROM fonctions WHERE code_fonction = ? LIMIT 1");
+                    $stmtF->execute([$fonctionCode]);
+                    $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
+                    if ($fRow && !empty($fRow['libelle_fonction'])) {
+                        $libelleFonction = $fRow['libelle_fonction'];
+                    }
+                }
+
+                MailerService::sendTemplate(
+                    $email,
+                    'Vos Identifiants d\'Accès Officiels - GROUPE EICG',
+                    'welcome_credentials',
+                    [
+                        'userNom'      => $nomComplet,
+                        'userEmail'    => $email,
+                        'userPassword' => $rawPassword,
+                        'userFonction' => $libelleFonction,
+                        'loginUrl'     => RACINE . 'user/connexion'
+                    ]
+                );
+            }
+
             $idDisplay = $email ?: ($telephone ?: $nom);
             $this->success("Utilisateur créé avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
                 'redirect' => RACINE . 'user/list',

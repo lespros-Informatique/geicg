@@ -5,6 +5,7 @@ require_once __DIR__ . '/../config/Database.php';
 require_once __DIR__ . '/../models/Validator.php';
 
 require_once __DIR__ . '/../core/NotificationService.php';
+require_once __DIR__ . '/../core/MailerService.php';
 require_once __DIR__ . '/../core/ForeignKeyValidator.php';
 require_once __DIR__ . '/../core/BaseController.php';
 require_once __DIR__ . '/../core/BaseModel.php';
