@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Offre Académique Officielle - GEICG</title>
+  <title>Offre Académique - GEICG</title>
   <style>
     @page {
       margin-top: 8mm;
@@ -222,16 +222,16 @@
       border: 1px dashed #94A3B8;
       background-color: #F8FAFC;
       padding: 6px 8px;
-      min-height: 50px;
     }
     .sig-title {
       font-weight: bold;
       color: #1E3A5F;
       text-transform: uppercase;
-      margin-bottom: 28px;
+      font-size: 7.5pt;
+      margin-bottom: 20px;
     }
     .sig-footnote {
-      font-size: 7pt;
+      font-size: 6.5pt;
       color: #64748B;
       font-style: italic;
     }
@@ -242,7 +242,7 @@
   <!-- EN-TÊTE FIXE POUR MPDF -->
   <htmlpageheader name="pageHeader">
     <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
-      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Répertoire Officiel de l'Offre Académique &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
+      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Répertoire de l'Offre Académique &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
     </div>
   </htmlpageheader>
   <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
@@ -252,7 +252,7 @@
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document officiel généré par le Système GEICG &bull; <?= date('d/m/Y H:i:s') ?>
+          Document généré par le Système GEICG &bull; <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
@@ -267,37 +267,32 @@
 
   <!-- ENTÊTE DE L'ÉTABLISSEMENT -->
   <?php
-    $logoResolved = null;
-    if (!empty($etablissement['logo_etablissement'])) {
-      $p1 = __DIR__ . '/../../' . ltrim($etablissement['logo_etablissement'], '/');
-      if (file_exists($p1)) $logoResolved = $p1;
-    }
-    if (!$logoResolved) {
-      $p2 = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-      if (file_exists($p2)) $logoResolved = $p2;
+    $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+    if (!file_exists($logoPath)) {
+      $logoPath = '/var/www/html/geicg/public/assets/images/logo/logo_eicg.jpg';
     }
   ?>
   <table class="header-table">
     <tr>
-      <td style="width: 18%; text-align: left;">
-        <?php if ($logoResolved): ?>
-          <img src="<?= $logoResolved ?>" style="max-height: 52px; max-width: 120px;" alt="Logo">
+      <td style="width: 22%; text-align: left;">
+        <?php if (file_exists($logoPath)): ?>
+          <img src="<?= $logoPath ?>" style="max-height: 52px; max-width: 135px;" alt="Logo EICG">
         <?php else: ?>
-          <div style="font-size: 14pt; font-weight: bold; color: #1E3A5F;">EICG</div>
+          <div style="font-size: 14pt; font-weight: bold; color: #1E3A5F;">GROUPE EICG</div>
         <?php endif; ?>
       </td>
-      <td style="width: 82%; text-align: center;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars(!empty($etablissement['numero_autorisation_etablissement']) ? 'AGRÉMENT N° ' . $etablissement['numero_autorisation_etablissement'] : 'ÉTABLISSEMENT D\'ENSEIGNEMENT SUPÉRIEUR AGRÉÉ PAR L\'ÉTAT') ?></div>
+      <td style="width: 78%; text-align: center;">
+        <?php
+          $nomEtab = 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION';
+          if (!empty($etablissement['libelle_etablissement']) && !in_array(strtoupper(trim($etablissement['libelle_etablissement'])), ['GROUPE EICG', 'GEICG', 'ETABLISSEMENT A'], true)) {
+              $nomEtab = $etablissement['libelle_etablissement'];
+          }
+        ?>
+        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars(!empty($etablissement['numero_autorisation_etablissement']) ? 'AGRÉMENT N° ' . $etablissement['numero_autorisation_etablissement'] : 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP') ?></div>
         <div class="inst-contacts">
-          <?= htmlspecialchars($etablissement['adresse_etablissement'] ?? 'Bouaké - Côte d\'Ivoire') ?>
-          <?php if (!empty($etablissement['telephone_etablissement'])): ?>
-            &nbsp;|&nbsp; Tél: <?= htmlspecialchars($etablissement['telephone_etablissement']) ?>
-            <?php if (!empty($etablissement['telephone_etablissement2'])): ?> / <?= htmlspecialchars($etablissement['telephone_etablissement2']) ?><?php endif; ?>
-          <?php endif; ?>
-          <?php if (!empty($etablissement['email_etablissement'])): ?>
-            &nbsp;|&nbsp; Email: <?= htmlspecialchars($etablissement['email_etablissement']) ?>
-          <?php endif; ?>
+          <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : 'Bouaké - Côte d\'Ivoire') ?>
+          &nbsp;|&nbsp; Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99
         </div>
       </td>
     </tr>
@@ -309,7 +304,7 @@
   <table class="banner-table">
     <tr>
       <td>
-        <div class="banner-title">OFFRE ACADÉMIQUE OFFICIELLE</div>
+        <div class="banner-title">OFFRE ACADÉMIQUE</div>
         <div class="banner-sub">RÉPERTOIRE DES CYCLES, FILIÈRES DE FORMATION & NIVEAUX D'ENSEIGNEMENT</div>
       </td>
     </tr>
@@ -384,11 +379,10 @@
     <thead>
       <tr>
         <th style="width: 4%;" class="text-center">#</th>
-        <th style="width: 14%;">Code Parcours</th>
-        <th style="width: 23%;">Cycle d'Études</th>
-        <th style="width: 31%;">Filière de Formation</th>
+        <th style="width: 26%;">Cycle d'Études</th>
+        <th style="width: 38%;">Filière de Formation</th>
         <th style="width: 12%;" class="text-center">Type</th>
-        <th style="width: 16%;">Niveau d'Études</th>
+        <th style="width: 20%;">Niveau d'Études</th>
       </tr>
     </thead>
     <tbody>
@@ -400,9 +394,6 @@
           ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center" style="font-weight: bold; color: #64748B;"><?= $idx + 1 ?></td>
-            <td style="font-family: monospace; font-weight: bold; color: #334155; font-size: 7.5pt;">
-              <?= htmlspecialchars($p['code_filiere_cycle'] ?? '-') ?>
-            </td>
             <td style="font-weight: bold; color: #1E3A5F;">
               <?= htmlspecialchars($p['libelle_cycle'] ?? 'Non assigné') ?>
             </td>
@@ -425,7 +416,7 @@
         <?php endforeach; ?>
       <?php else: ?>
         <tr>
-          <td colspan="6" class="text-center" style="padding: 15px; color: #64748B; font-style: italic;">
+          <td colspan="5" class="text-center" style="padding: 15px; color: #64748B; font-style: italic;">
             Aucun parcours pivot enregistré dans l'offre académique pour cette sélection.
           </td>
         </tr>
@@ -463,9 +454,6 @@
                   <?php foreach ($cGroup['filieres'] as $fil): ?>
                     <li>
                       <strong><?= htmlspecialchars($fil['libelle']) ?></strong>
-                      <?php if (!empty($fil['type'])): ?>
-                        <span style="font-size: 6.5pt; color: #64748B;">(<?= htmlspecialchars($fil['type']) ?>)</span>
-                      <?php endif; ?>
                     </li>
                   <?php endforeach; ?>
                 </ul>
@@ -492,25 +480,29 @@
   <?php endif; ?>
 
   <!-- SIGNATURES ET CERTIFICATION -->
-  <table class="signature-table">
+  <table style="width: 100%; margin-top: 10px; border-collapse: separate; border-spacing: 15px 0;">
     <tr>
-      <td style="padding-right: 10px;">
-        <div class="sig-box">
-          <div class="sig-title">La Direction des Études & de la Pédagogie</div>
-          <div class="sig-footnote">Visa pour conformité académique</div>
+      <td style="width: 50%; border: 1px dashed #94A3B8; background-color: #F8FAFC; padding: 6px 10px; text-align: center; vertical-align: top;">
+        <div style="font-weight: bold; color: #1E3A5F; text-transform: uppercase; font-size: 7.5pt; margin-bottom: 26px;">
+          La Direction des Études & de la Pédagogie
+        </div>
+        <div style="font-size: 6.5pt; color: #64748B; font-style: italic;">
+          Visa pour conformité académique
         </div>
       </td>
-      <td style="padding-left: 10px;">
-        <div class="sig-box">
-          <div class="sig-title">La Direction Générale</div>
-          <div class="sig-footnote">Approbation & Cachet Officiel de l'Établissement</div>
+      <td style="width: 50%; border: 1px dashed #94A3B8; background-color: #F8FAFC; padding: 6px 10px; text-align: center; vertical-align: top;">
+        <div style="font-weight: bold; color: #1E3A5F; text-transform: uppercase; font-size: 7.5pt; margin-bottom: 26px;">
+          La Direction Générale
+        </div>
+        <div style="font-size: 6.5pt; color: #64748B; font-style: italic;">
+          Approbation & Cachet de l'Établissement
         </div>
       </td>
     </tr>
   </table>
 
   <div style="margin-top: 10px; font-size: 7.5pt; color: #94A3B8; text-align: center;">
-    Fait à Bouaké, le <?= date('d/m/Y') ?> &bull; Document officiel à usage pédagogique et administratif interne.
+    Fait à Bouaké, le <?= date('d/m/Y') ?> &bull; Document à usage pédagogique et administratif interne.
   </div>
 
 </body>
