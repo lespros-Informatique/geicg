@@ -117,7 +117,8 @@ $route->addRoute('/filiere_cycle/details/{param}', [$filiereCycleController, 'de
 $route->addRoute('/filiere_cycle/edition/{param}', [$filiereCycleController, 'edition']);
 $route->addRoute('/filiere_cycle/formulaire', [$filiereCycleController, 'formulaire']);
 $route->addRoute('/filiere_cycle/imprimerPdf', [$filiereCycleController, 'imprimerPdf']);
-$route->addRoute('/filiere/imprimerPdf', [$filiereCycleController, 'imprimerPdf']);
+$route->addRoute('/filiere/imprimerPdf', [$filiereController, 'imprimerPdf']);
+$route->addRoute('/filiere/imprimerCataloguePdf', [$filiereController, 'imprimerPdf']);
 
 // Module: niveau (NiveauController)
 $route->addRoute('/niveau/list', [$niveauController, 'list']);
