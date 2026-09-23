@@ -215,4 +215,108 @@ class FiliereCycleController extends BaseController
         $this->requireAuth();
         $this->loadView('../views/filiere_cycles/edit.php', ['item' => []]);
     }
+
+    /**
+     * Impression officielle de l'Offre Académique (Cycles, Filières & Niveaux) via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['PRINT_OFFRE_ACADEMIQUE', 'VIEW_FILIERES', 'VIEW_CYCLES']);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+        require_once __DIR__ . '/../../models/cycles/ModelCycle.php';
+        require_once __DIR__ . '/../../models/filieres/ModelFiliere.php';
+        require_once __DIR__ . '/../../models/niveaux/ModelNiveau.php';
+
+        $cycleModel = new ModelCycle();
+        $filiereModel = new ModelFiliere();
+        $niveauModel = new ModelNiveau();
+
+        $cycles = $cycleModel->getByStatus('actif');
+        $filieres = $filiereModel->getByStatus('actif');
+        $niveaux = $niveauModel->getActifs();
+
+        $selectedCycle = trim($_GET['cycle_code'] ?? '');
+        $allParcours = $this->model->getAll();
+
+        $parcours = [];
+        $filtreCycleLibelle = null;
+
+        foreach ($allParcours as $p) {
+            if (!empty($selectedCycle)) {
+                if (($p['cycle_code'] ?? '') !== $selectedCycle) {
+                    continue;
+                }
+                if ($filtreCycleLibelle === null && !empty($p['libelle_cycle'])) {
+                    $filtreCycleLibelle = $p['libelle_cycle'];
+                }
+            }
+            $parcours[] = $p;
+        }
+
+        // Construire la synthèse par cycle
+        $syntheseCycles = [];
+        foreach ($parcours as $p) {
+            $cCode = $p['cycle_code'] ?? 'AUTRE';
+            if (!isset($syntheseCycles[$cCode])) {
+                $syntheseCycles[$cCode] = [
+                    'code_cycle' => $p['cycle_code'] ?? '',
+                    'libelle_cycle' => $p['libelle_cycle'] ?? 'Cycle non spécifié',
+                    'filieres' => [],
+                    'niveaux' => [],
+                    'parcours_items' => []
+                ];
+            }
+            $syntheseCycles[$cCode]['parcours_items'][] = $p;
+
+            // Ajouter la filière de manière unique
+            $filKey = $p['filiere_code'] ?? ($p['libelle_filiere'] ?? '');
+            if (!empty($filKey) && !isset($syntheseCycles[$cCode]['filieres'][$filKey])) {
+                $syntheseCycles[$cCode]['filieres'][$filKey] = [
+                    'code' => $p['filiere_code'] ?? '',
+                    'libelle' => $p['libelle_filiere'] ?? 'Filière non spécifiée',
+                    'type' => $p['type_filiere'] ?? ''
+                ];
+            }
+
+            // Ajouter le niveau
+            if (!empty($p['libelle_niveau']) && !in_array($p['libelle_niveau'], $syntheseCycles[$cCode]['niveaux'], true)) {
+                $syntheseCycles[$cCode]['niveaux'][] = $p['libelle_niveau'];
+            }
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+
+        $authSession = $_SESSION[USERS_AUTH] ?? [];
+        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Direction des Études & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'cycles' => $cycles,
+            'filieres' => $filieres,
+            'niveaux' => $niveaux,
+            'parcours' => $parcours,
+            'synthese_cycles' => $syntheseCycles,
+            'filtre_cycle_libelle' => $filtreCycleLibelle
+        ];
+
+        $html = PdfService::renderTemplate('offre_academique.php', $data);
+        $filename = 'Offre_Academique_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Offre Académique - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 12
+        ]);
+    }
 }

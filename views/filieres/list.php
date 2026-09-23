@@ -18,6 +18,13 @@ $niveaux = (new ModelNiveau())->getActifs();
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion des Cycles, Filières, Niveaux</p>
         </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <?php if (isset($canAccess) && $canAccess(['PRINT_OFFRE_ACADEMIQUE', 'VIEW_FILIERES', 'VIEW_CYCLES'])): ?>
+            <a href="<?= RACINE ?>filiere_cycle/imprimerPdf" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer l'Offre Académique (PDF)
+            </a>
+          <?php endif; ?>
+        </div>
       </div>
 
       <!-- Barre d'Onglets Structurée -->
@@ -40,9 +47,16 @@ $niveaux = (new ModelNiveau())->getActifs();
       <div id="tab-assignations" class="tab-content" style="display: block;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <h2 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0;">Table des Parcours Pivots (Cycle ↔ Filière ↔ Niveau)</h2>
-          <button type="button" class="btn btn-primary btn-add-assignation" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-            <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Nouveau Parcours Pivot
-          </button>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <?php if (isset($canAccess) && $canAccess(['PRINT_OFFRE_ACADEMIQUE', 'VIEW_FILIERES', 'VIEW_CYCLES'])): ?>
+              <a href="<?= RACINE ?>filiere_cycle/imprimerPdf" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none;">
+                <i data-lucide="printer" style="width: 15px; height: 15px;"></i> Imprimer l'Offre (PDF)
+              </a>
+            <?php endif; ?>
+            <button type="button" class="btn btn-primary btn-add-assignation" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+              <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Nouveau Parcours Pivot
+            </button>
+          </div>
         </div>
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
           <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">

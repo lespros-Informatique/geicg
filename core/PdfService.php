@@ -9,8 +9,21 @@ class PdfService
      */
     public static function renderTemplate(string $templateRelativePath, array $data = []): string
     {
-        $fullPath = __DIR__ . '/../templates/pdf/' . ltrim($templateRelativePath, '/');
-        if (!file_exists($fullPath)) {
+        $relativePath = ltrim($templateRelativePath, '/');
+        $candidatePaths = [
+            __DIR__ . '/../views/templates/pdf/' . $relativePath,
+            __DIR__ . '/../templates/pdf/' . $relativePath
+        ];
+
+        $fullPath = null;
+        foreach ($candidatePaths as $path) {
+            if (file_exists($path)) {
+                $fullPath = $path;
+                break;
+            }
+        }
+
+        if (!$fullPath) {
             throw new Exception("Template PDF introuvable : " . $templateRelativePath);
         }
 
