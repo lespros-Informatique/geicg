@@ -339,8 +339,8 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showClasses): ?>
-                <a href="<?= RACINE ?>classe/list" class="nav-item sub <?= strpos($currentUri, '/classe/') !== false ? 'active' : '' ?>" data-title="Classes & Promotions">
-                    <i data-lucide="graduation-cap"></i> <span>Classes & Promotions</span>
+                <a href="<?= RACINE ?>classe/list" class="nav-item sub <?= strpos($currentUri, '/classe/') !== false ? 'active' : '' ?>" data-title="Classes">
+                    <i data-lucide="graduation-cap"></i> <span>Classes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showUe): ?>
