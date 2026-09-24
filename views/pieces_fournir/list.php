@@ -113,7 +113,26 @@
           white-space: nowrap !important;
           border-bottom: 1px solid #F1F5F9 !important;
         }
-        table.dataTable .cycle-badge,
+        table.dataTable tbody td.col-libelle,
+        table.dataTable td.col-libelle,
+        table.dataTable th.col-libelle {
+          white-space: normal !important;
+          word-break: normal !important;
+          overflow-wrap: break-word !important;
+          line-height: 1.4 !important;
+          min-width: 250px !important;
+          max-width: 420px !important;
+        }
+        table.dataTable tbody td.col-desc,
+        table.dataTable td.col-desc,
+        table.dataTable th.col-desc {
+          white-space: normal !important;
+          word-break: normal !important;
+          overflow-wrap: break-word !important;
+          line-height: 1.4 !important;
+          min-width: 200px !important;
+          max-width: 400px !important;
+        }
         table.dataTable .badge {
           position: static !important;
           top: auto !important;
@@ -129,9 +148,8 @@
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                 <th style="padding: 12px;">Code</th>
-                <th style="padding: 12px;">Libellé de la Pièce</th>
-                <th style="padding: 12px;">Description / Instructions</th>
-                <th class="text-center" style="padding: 12px;">Cycles Assignés</th>
+                <th class="col-libelle" style="padding: 12px; min-width: 250px;">Libellé de la Pièce</th>
+                <th class="col-desc" style="padding: 12px; min-width: 200px;">Description / Instructions</th>
                 <th class="text-end" style="padding: 12px;">Actions</th>
               </tr>
             </thead>
@@ -155,18 +173,11 @@ $(document).ready(function() {
       { data: 'code_piece_fournir', render: function(d) {
         return '<code style="font-weight:700; color:#1E3A5F; font-size:12.5px;">' + (d || '-') + '</code>';
       } },
-      { data: 'libelle_piece', render: function(d) {
-        return '<div style="font-weight:700; color:#0F172A; font-size:13.5px; display:flex; align-items:center; gap:8px;"><i data-lucide="file-text" style="width:16px;height:16px;color:#3B82F6;flex-shrink:0;"></i> ' + (d || '-') + '</div>';
+      { data: 'libelle_piece', className: 'col-libelle', render: function(d) {
+        return '<div style="font-weight:700; color:#0F172A; font-size:13.5px; display:flex; align-items:flex-start; gap:8px; white-space:normal; overflow-wrap:break-word; line-height:1.4;"><i data-lucide="file-text" style="width:16px;height:16px;color:#3B82F6;flex-shrink:0;margin-top:2px;"></i> <span style="white-space:normal; overflow-wrap:break-word;">' + (d || '-') + '</span></div>';
       } },
-      { data: 'description_piece', render: function(d) {
-        return '<span style="color:#64748B; font-size:12.5px;">' + (d || '<em style="color:#94A3B8;">Aucune instruction particulière</em>') + '</span>';
-      } },
-      { data: 'nb_cycles_utilises', className: 'text-center', render: function(d) {
-        var count = parseInt(d) || 0;
-        if (count > 0) {
-          return '<span class="cycle-badge" style="background:#FAF5FF; color:#7E22CE; font-weight:800; padding:5px 10px; border-radius:6px; border:1px solid #E9D5FF; display:inline-block; position:static;">' + count + ' cycle(s)</span>';
-        }
-        return '<span class="cycle-badge" style="background:#F1F5F9; color:#94A3B8; font-weight:600; padding:4px 8px; border-radius:6px; display:inline-block; position:static;">Non assigné</span>';
+      { data: 'description_piece', className: 'col-desc', render: function(d) {
+        return '<span style="color:#64748B; font-size:12.5px; white-space:normal; overflow-wrap:break-word; line-height:1.4;">' + (d || '<em style="color:#94A3B8;">Aucune instruction particulière</em>') + '</span>';
       } },
       { data: null, orderable: false, className: 'text-end', render: function(d) {
         <?php if (isset($canAccess) && $canAccess(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE'])): ?>
