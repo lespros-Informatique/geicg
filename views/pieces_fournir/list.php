@@ -11,7 +11,7 @@
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="file-check" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Pièces & Documents à Fournir
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Répertoire central des pièces administratives et justificatifs demandés aux étudiants (CNI, Acte de naissance, Diplômes...)</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Répertoire central des pièces administratives</p>
         </div>
         <?php if (isset($canAccess) && $canAccess(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE'])): ?>
         <a href="<?= RACINE ?>piece_fournir/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
@@ -20,13 +20,13 @@
         <?php endif; ?>
       </div>
 
-      <!-- Navigation Tabs (Répertoire vs Dossiers par Cycle) -->
+      <!-- Navigation Tabs (Dossiers par Cycle vs Répertoire) -->
       <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
-        <a href="<?= RACINE ?>piece_fournir/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
-          <i data-lucide="file-text" style="width: 17px; height: 17px;"></i> Répertoire des Pièces
-        </a>
         <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="layers" style="width: 17px; height: 17px;"></i> Dossiers Exigés par Cycle
+        </a>
+        <a href="<?= RACINE ?>piece_fournir/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="file-text" style="width: 17px; height: 17px;"></i> Répertoire des Pièces
         </a>
       </div>
 
