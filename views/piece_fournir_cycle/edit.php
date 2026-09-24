@@ -29,8 +29,10 @@
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px; width: 100%;">
               <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle académique *</label>
-                <select name="cycle_code" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Cycle académique <span style="color: #EF4444; font-weight: 800;">*</span>
+                </label>
+                <select name="cycle_code" id="select_edit_cycle" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <?php foreach ($cycles as $cy): ?>
                     <option value="<?= $cy['code_cycle'] ?>" <?= ($item['cycle_code'] ?? '') === $cy['code_cycle'] ? 'selected' : '' ?>>
                       <?= htmlspecialchars($cy['libelle_cycle']) ?>
@@ -40,10 +42,15 @@
               </div>
 
               <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Niveau d'étude</label>
-                <select name="niveau_code" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
-                  <option value="">-- Tous les niveaux du cycle --</option>
-                  <?php foreach (($niveaux ?? []) as $niv): ?>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Niveau d'étude <span style="color: #EF4444; font-weight: 800;">*</span>
+                </label>
+                <select name="niveau_code" id="select_edit_niveau" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
+                  <option value="">-- Sélectionner un niveau d'étude --</option>
+                  <?php 
+                    $editNiveaux = !empty($item['cycle_code']) ? (new ModelNiveau())->getByCycle($item['cycle_code']) : ($niveaux ?? []);
+                    foreach ($editNiveaux as $niv): 
+                  ?>
                     <option value="<?= $niv['code_niveau'] ?>" <?= ($item['niveau_code'] ?? '') === $niv['code_niveau'] ? 'selected' : '' ?>>
                       <?= htmlspecialchars($niv['libelle_niveau']) ?>
                     </option>
@@ -52,7 +59,9 @@
               </div>
 
               <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Document / Pièce administrative *</label>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Document / Pièce administrative <span style="color: #EF4444; font-weight: 800;">*</span>
+                </label>
                 <select name="piece_code" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <?php foreach ($pieces as $p): ?>
                     <option value="<?= $p['code_piece_fournir'] ?>" <?= ($item['piece_code'] ?? '') === $p['code_piece_fournir'] ? 'selected' : '' ?>>
@@ -63,12 +72,16 @@
               </div>
 
               <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nombre d'exemplaires demandés *</label>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Nombre d'exemplaires demandés <span style="color: #EF4444; font-weight: 800;">*</span>
+                </label>
                 <input type="number" min="1" step="1" name="nombre_exemplaires" value="<?= (int)($item['nombre_exemplaires'] ?? 1) ?>" required class="form-control" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
               </div>
 
               <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nature du document *</label>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Nature du document <span style="color: #EF4444; font-weight: 800;">*</span>
+                </label>
                 <select name="nature_document" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600; width: 100%;">
                   <option value="photocopie_simple" <?= ($item['nature_document'] ?? '') === 'photocopie_simple' ? 'selected' : '' ?>>Photocopie Simple</option>
                   <option value="photocopie_legalisee" <?= ($item['nature_document'] ?? '') === 'photocopie_legalisee' ? 'selected' : '' ?>>Photocopie Légalisée / Certifiée conforme</option>
@@ -78,7 +91,9 @@
               </div>
 
               <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Caractère de l'exigence *</label>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Caractère de l'exigence <span style="color: #EF4444; font-weight: 800;">*</span>
+                </label>
                 <select name="est_obligatoire" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600; width: 100%;">
                   <option value="obligatoire" <?= ($item['est_obligatoire'] ?? '') === 'obligatoire' ? 'selected' : '' ?>>Obligatoire (Bloquant)</option>
                   <option value="complementaire" <?= ($item['est_obligatoire'] ?? '') === 'complementaire' ? 'selected' : '' ?>>Complémentaire (Sous réserve)</option>
@@ -115,7 +130,9 @@
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%;">
               <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle ciblé *</label>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Cycle ciblé <span style="color: #EF4444; font-weight: 800;">*</span>
+                </label>
                 <select name="cycle_code" id="select_target_cycle" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <option value="">-- Sélectionner un cycle --</option>
                   <?php foreach ($cycles as $cy): ?>
@@ -128,16 +145,13 @@
               </div>
 
               <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Niveau d'étude</label>
-                <select name="niveau_code" id="select_target_niveau" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
-                  <option value="">-- Tous les niveaux du cycle --</option>
-                  <?php foreach (($niveaux ?? []) as $niv): ?>
-                    <option value="<?= $niv['code_niveau'] ?>">
-                      <?= htmlspecialchars($niv['libelle_niveau']) ?>
-                    </option>
-                  <?php endforeach; ?>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Niveau d'étude <span style="color: #EF4444; font-weight: 800;">*</span> <span id="badge-niveau-state" style="font-weight: 600; font-size: 11px; color: #94A3B8; margin-left: 4px;">(Lecture seule)</span>
+                </label>
+                <select name="niveau_code" id="select_target_niveau" required disabled readonly class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%; background-color: #F8FAFC; color: #94A3B8; cursor: not-allowed;">
+                  <option value="">-- Sélectionnez d'abord un cycle --</option>
                 </select>
-                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Optionnel : restreindre à un niveau précis ou appliquer à tous les niveaux du cycle.</small>
+                <small id="niveau-helper-text" style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Sélectionnez un cycle ciblé pour débloquer et choisir le niveau d'étude.</small>
               </div>
             </div>
           </div>
@@ -167,7 +181,7 @@
               <table class="table" id="table-bulk-cycle-items" style="width: 100%; border-collapse: collapse; margin: 0;">
                 <thead>
                   <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
-                    <th style="padding: 10px 12px; width: 42%;">Pièce / Document à Fournir *</th>
+                    <th style="padding: 10px 12px; width: 42%;">Pièce / Document à Fournir <span style="color: #EF4444; font-weight: 800;">*</span></th>
                     <th style="padding: 10px 12px; width: 12%; text-align: center;">Exemplaires</th>
                     <th style="padding: 10px 12px; width: 22%;">Nature du Document</th>
                     <th style="padding: 10px 12px; width: 18%; text-align: center;">Caractère</th>
@@ -380,10 +394,127 @@ $(document).ready(function() {
     createRow('', 1, 'original', 'obligatoire');
   }
 
-  $('#select_target_cycle, #select_target_niveau').on('change', function() {
+  // Dynamic cycle selection -> reload niveaux & pieces
+  $('#select_target_cycle').on('change', function() {
+    var cycleCode = $(this).val();
+    var $nivSelect = $('#select_target_niveau');
+    var $badge = $('#badge-niveau-state');
+    var $helper = $('#niveau-helper-text');
+
+    if (!cycleCode) {
+      $nivSelect.empty()
+        .append('<option value="">-- Sélectionnez d\'abord un cycle --</option>')
+        .prop('disabled', true)
+        .attr('readonly', 'readonly')
+        .css({
+          'background-color': '#F8FAFC',
+          'color': '#94A3B8',
+          'cursor': 'not-allowed'
+        });
+      $badge.text('(Lecture seule)').css('color', '#94A3B8');
+      $helper.text('Sélectionnez un cycle ciblé pour débloquer et choisir le niveau d\'étude.');
+      alreadyAssignedCodes = [];
+      refreshAllDropdowns();
+      return;
+    }
+
+    // Affichage de chargement
+    $nivSelect.empty()
+      .append('<option value="">Chargement des niveaux d\'études...</option>')
+      .prop('disabled', true)
+      .attr('readonly', 'readonly')
+      .css({
+        'background-color': '#F8FAFC',
+        'color': '#64748B',
+        'cursor': 'wait'
+      });
+    $badge.text('(Chargement...)').css('color', '#3B82F6');
+
+    $.ajax({
+      url: '<?= RACINE ?>piece_fournir_cycle/getByCycleApi',
+      type: 'GET',
+      data: { 
+        cycle_code: cycleCode,
+        niveau_code: ''
+      },
+      dataType: 'json',
+      success: function(res) {
+        alreadyAssignedCodes = res.assignedCodes || [];
+        refreshAllDropdowns();
+
+        // Remplir les niveaux d'études spécifiques à ce cycle
+        $nivSelect.empty();
+        $nivSelect.append('<option value="">-- Sélectionner un niveau d\'étude --</option>');
+        if (res.niveaux && res.niveaux.length > 0) {
+          res.niveaux.forEach(function(niv) {
+            $nivSelect.append('<option value="' + niv.code_niveau + '">' + $('<div>').text(niv.libelle_niveau).html() + '</option>');
+          });
+        }
+
+        // Débloquer le champ niveau d'étude
+        $nivSelect
+          .prop('disabled', false)
+          .removeAttr('readonly')
+          .css({
+            'background-color': '#FFFFFF',
+            'color': '#0F172A',
+            'cursor': 'pointer'
+          });
+        $badge.text('(Obligatoire)').css('color', '#EF4444');
+        $helper.text('');
+
+        if (alreadyAssignedCodes.length > 0) {
+          if (window.toastr) toastr.info(alreadyAssignedCodes.length + ' pièce(s) sont déjà enregistrées pour ce cycle.');
+        }
+      },
+      error: function() {
+        $nivSelect.empty()
+          .append('<option value="">-- Sélectionner un niveau d\'étude --</option>')
+          .prop('disabled', false)
+          .removeAttr('readonly')
+          .css({
+            'background-color': '#FFFFFF',
+            'color': '#0F172A',
+            'cursor': 'pointer'
+          });
+        $badge.text('(Erreur de chargement)').css('color', '#EF4444');
+      }
+    });
+  });
+
+  // Niveau change -> reload assigned pieces for (cycle, niveau)
+  $('#select_target_niveau').on('change', function() {
     var cycle = $('#select_target_cycle').val();
-    var niveau = $('#select_target_niveau').val();
-    loadAssignedPiecesForCycle(cycle, niveau);
+    var niveau = $(this).val();
+    if (cycle) {
+      loadAssignedPiecesForCycle(cycle, niveau);
+    }
+  });
+
+  // Support modification unitaire : mise à jour des niveaux lors du changement de cycle
+  $('#select_edit_cycle').on('change', function() {
+    var cycleCode = $(this).val();
+    var $niv = $('#select_edit_niveau');
+    if (!cycleCode) {
+      $niv.empty().append('<option value="">-- Sélectionner un niveau d\'étude --</option>');
+      return;
+    }
+    $.ajax({
+      url: '<?= RACINE ?>piece_fournir_cycle/getByCycleApi',
+      type: 'GET',
+      data: { cycle_code: cycleCode },
+      dataType: 'json',
+      success: function(res) {
+        var cur = $niv.val();
+        $niv.empty().append('<option value="">-- Sélectionner un niveau d\'étude --</option>');
+        if (res.niveaux && res.niveaux.length > 0) {
+          res.niveaux.forEach(function(n) {
+            var sel = (n.code_niveau === cur) ? 'selected' : '';
+            $niv.append('<option value="' + n.code_niveau + '" ' + sel + '>' + $('<div>').text(n.libelle_niveau).html() + '</option>');
+          });
+        }
+      }
+    });
   });
 
   // Check on piece select change
@@ -440,6 +571,7 @@ $(document).ready(function() {
   });
 
   $('#form-bulk-piece-cycle').on('submit', function(e) {
+    $('#select_target_niveau').prop('disabled', false);
     var cycle = $('#select_target_cycle').val();
     if (!cycle) {
       e.preventDefault();
@@ -447,6 +579,16 @@ $(document).ready(function() {
       if (window.toastr) toastr.error(msg);
       showDuplicateWarning(msg);
       $('#select_target_cycle').focus();
+      return false;
+    }
+
+    var niveau = $('#select_target_niveau').val();
+    if (!niveau) {
+      e.preventDefault();
+      var msg = 'Veuillez sélectionner le niveau d\'étude.';
+      if (window.toastr) toastr.error(msg);
+      showDuplicateWarning(msg);
+      $('#select_target_niveau').focus();
       return false;
     }
 

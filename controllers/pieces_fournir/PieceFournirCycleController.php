@@ -109,10 +109,15 @@ class PieceFournirCycleController extends BaseController
         unset($data['csrf_token']);
 
         $cycleCode = trim($data['cycle_code'] ?? '');
-        $niveauCode = !empty($data['niveau_code']) ? trim($data['niveau_code']) : null;
+        $niveauCode = trim($data['niveau_code'] ?? '');
 
         if (empty($cycleCode)) {
             $this->error("Veuillez sélectionner le cycle académique.");
+            return;
+        }
+
+        if (empty($niveauCode)) {
+            $this->error("Veuillez sélectionner le niveau d'étude.");
             return;
         }
 
@@ -234,10 +239,10 @@ class PieceFournirCycleController extends BaseController
 
         $cycleCode = trim($data['cycle_code'] ?? '');
         $pieceCode = trim($data['piece_code'] ?? '');
-        $niveauCode = !empty($data['niveau_code']) ? trim($data['niveau_code']) : null;
+        $niveauCode = trim($data['niveau_code'] ?? '');
 
-        if (empty($cycleCode) || empty($pieceCode)) {
-            $this->error("Le cycle et la pièce sont obligatoires.");
+        if (empty($cycleCode) || empty($pieceCode) || empty($niveauCode)) {
+            $this->error("Le cycle, le niveau d'étude et la pièce sont obligatoires.");
             return;
         }
 
@@ -321,10 +326,12 @@ class PieceFournirCycleController extends BaseController
         $niveauParam = !empty($niveauCode) ? $niveauCode : null;
         $items = $this->model->getByCycle($cycleCode, $niveauParam);
         $assignedCodes = $this->model->getAssignedPieceCodes($cycleCode, $niveauParam);
+        $niveaux = !empty($cycleCode) ? (new ModelNiveau())->getByCycle($cycleCode) : [];
         $this->json([
             'status' => 1,
             'data' => $items,
-            'assignedCodes' => $assignedCodes
+            'assignedCodes' => $assignedCodes,
+            'niveaux' => $niveaux
         ]);
     }
 }
