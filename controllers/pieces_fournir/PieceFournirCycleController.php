@@ -141,7 +141,7 @@ class PieceFournirCycleController extends BaseController
 
                 $seenInRequest[] = $pieceCode;
                 $nbEx = max(1, (int)($item['nombre_exemplaires'] ?? 1));
-                $nature = in_array($item['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique']) ? $item['nature_document'] : 'photocopie_simple';
+                $nature = in_array($item['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique', 'aucun']) ? $item['nature_document'] : 'photocopie_simple';
                 $exigence = in_array($item['est_obligatoire'] ?? '', ['obligatoire', 'facultatif', 'complementaire']) ? $item['est_obligatoire'] : 'obligatoire';
 
                 $code = $this->validator->generateCode('piece_fournir_cycle', 'code_piece_cycle', 'PFC-', 8);
@@ -196,7 +196,7 @@ class PieceFournirCycleController extends BaseController
         }
 
         $nbEx = max(1, (int)($data['nombre_exemplaires'] ?? 1));
-        $nature = in_array($data['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique']) ? $data['nature_document'] : 'photocopie_simple';
+        $nature = in_array($data['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique', 'aucun']) ? $data['nature_document'] : 'photocopie_simple';
         $exigence = in_array($data['est_obligatoire'] ?? '', ['obligatoire', 'facultatif', 'complementaire']) ? $data['est_obligatoire'] : 'obligatoire';
 
         $code = $this->validator->generateCode('piece_fournir_cycle', 'code_piece_cycle', 'PFC-', 8);
@@ -252,7 +252,7 @@ class PieceFournirCycleController extends BaseController
         }
 
         $nbEx = max(1, (int)($data['nombre_exemplaires'] ?? 1));
-        $nature = in_array($data['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique']) ? $data['nature_document'] : 'photocopie_simple';
+        $nature = in_array($data['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique', 'aucun']) ? $data['nature_document'] : 'photocopie_simple';
         $exigence = in_array($data['est_obligatoire'] ?? '', ['obligatoire', 'facultatif', 'complementaire']) ? $data['est_obligatoire'] : 'obligatoire';
 
         $updateData = [

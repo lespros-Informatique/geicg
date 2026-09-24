@@ -87,6 +87,7 @@
                   <option value="photocopie_legalisee" <?= ($item['nature_document'] ?? '') === 'photocopie_legalisee' ? 'selected' : '' ?>>Photocopie Légalisée / Certifiée conforme</option>
                   <option value="original" <?= ($item['nature_document'] ?? '') === 'original' ? 'selected' : '' ?>>Original Requis</option>
                   <option value="numerique" <?= ($item['nature_document'] ?? '') === 'numerique' ? 'selected' : '' ?>>Fichier Numérique (Scan PDF)</option>
+                  <option value="aucun" <?= ($item['nature_document'] ?? '') === 'aucun' ? 'selected' : '' ?>>Aucun</option>
                 </select>
               </div>
 
@@ -141,17 +142,15 @@
                     </option>
                   <?php endforeach; ?>
                 </select>
-                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cycle académique d'application du dossier administratif.</small>
               </div>
 
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                  Niveau d'étude <span style="color: #EF4444; font-weight: 800;">*</span> <span id="badge-niveau-state" style="font-weight: 600; font-size: 11px; color: #94A3B8; margin-left: 4px;">(Lecture seule)</span>
+                  Niveau d'étude <span style="color: #EF4444; font-weight: 800;">*</span>
                 </label>
                 <select name="niveau_code" id="select_target_niveau" required disabled readonly class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%; background-color: #F8FAFC; color: #94A3B8; cursor: not-allowed;">
                   <option value="">-- Sélectionnez d'abord un cycle --</option>
                 </select>
-                <small id="niveau-helper-text" style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Sélectionnez un cycle ciblé pour débloquer et choisir le niveau d'étude.</small>
               </div>
             </div>
           </div>
@@ -367,6 +366,7 @@ $(document).ready(function() {
           '<option value="photocopie_legalisee" ' + (nature === 'photocopie_legalisee' ? 'selected' : '') + '>Photocopie Légalisée</option>' +
           '<option value="original" ' + (nature === 'original' ? 'selected' : '') + '>Original Requis</option>' +
           '<option value="numerique" ' + (nature === 'numerique' ? 'selected' : '') + '>Fichier Numérique (Scan)</option>' +
+          '<option value="aucun" ' + (nature === 'aucun' ? 'selected' : '') + '>Aucun</option>' +
         '</select>' +
       '</td>' +
       '<td style="padding: 10px 12px; text-align:center;">' +
@@ -398,8 +398,6 @@ $(document).ready(function() {
   $('#select_target_cycle').on('change', function() {
     var cycleCode = $(this).val();
     var $nivSelect = $('#select_target_niveau');
-    var $badge = $('#badge-niveau-state');
-    var $helper = $('#niveau-helper-text');
 
     if (!cycleCode) {
       $nivSelect.empty()
@@ -411,8 +409,6 @@ $(document).ready(function() {
           'color': '#94A3B8',
           'cursor': 'not-allowed'
         });
-      $badge.text('(Lecture seule)').css('color', '#94A3B8');
-      $helper.text('Sélectionnez un cycle ciblé pour débloquer et choisir le niveau d\'étude.');
       alreadyAssignedCodes = [];
       refreshAllDropdowns();
       return;
@@ -428,7 +424,6 @@ $(document).ready(function() {
         'color': '#64748B',
         'cursor': 'wait'
       });
-    $badge.text('(Chargement...)').css('color', '#3B82F6');
 
     $.ajax({
       url: '<?= RACINE ?>piece_fournir_cycle/getByCycleApi',
@@ -460,8 +455,6 @@ $(document).ready(function() {
             'color': '#0F172A',
             'cursor': 'pointer'
           });
-        $badge.text('(Obligatoire)').css('color', '#EF4444');
-        $helper.text('');
 
         if (alreadyAssignedCodes.length > 0) {
           if (window.toastr) toastr.info(alreadyAssignedCodes.length + ' pièce(s) sont déjà enregistrées pour ce cycle.');
@@ -477,7 +470,6 @@ $(document).ready(function() {
             'color': '#0F172A',
             'cursor': 'pointer'
           });
-        $badge.text('(Erreur de chargement)').css('color', '#EF4444');
       }
     });
   });

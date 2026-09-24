@@ -249,7 +249,8 @@ $(document).ready(function() {
           'photocopie_simple': '<span style="color:#334155; font-weight:600;"><i data-lucide="copy" style="width:13px;height:13px;display:inline;"></i> Photocopie Simple</span>',
           'photocopie_legalisee': '<span style="color:#1E3A5F; font-weight:700;"><i data-lucide="stamp" style="width:13px;height:13px;display:inline;"></i> Photocopie Légalisée</span>',
           'original': '<span style="color:#B45309; font-weight:700;"><i data-lucide="award" style="width:13px;height:13px;display:inline;"></i> Original Requis</span>',
-          'numerique': '<span style="color:#2563EB; font-weight:600;"><i data-lucide="upload" style="width:13px;height:13px;display:inline;"></i> Fichier Numérique (PDF)</span>'
+          'numerique': '<span style="color:#2563EB; font-weight:600;"><i data-lucide="upload" style="width:13px;height:13px;display:inline;"></i> Fichier Numérique (PDF)</span>',
+          'aucun': '<span style="color:#64748B; font-weight:600;"><i data-lucide="minus-circle" style="width:13px;height:13px;display:inline;"></i> Aucun</span>'
         };
         return natureLabels[d] || (d || 'Photocopie simple');
       } },
