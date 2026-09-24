@@ -18,6 +18,16 @@
         </a>
       </div>
 
+      <!-- Navigation Tabs (Dossiers par Cycle vs Répertoire) -->
+      <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
+        <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="layers" style="width: 17px; height: 17px;"></i> Dossiers Exigés par Cycle
+        </a>
+        <a href="<?= RACINE ?>piece_fournir/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="file-text" style="width: 17px; height: 17px;"></i> Répertoire des Pièces
+        </a>
+      </div>
+
       <!-- Filtres par Cycle & Niveau Académique -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
         <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
@@ -44,16 +54,6 @@
             </select>
           </div>
         </div>
-      </div>
-
-      <!-- Navigation Tabs (Dossiers par Cycle vs Répertoire) -->
-      <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
-        <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
-          <i data-lucide="layers" style="width: 17px; height: 17px;"></i> Dossiers Exigés par Cycle
-        </a>
-        <a href="<?= RACINE ?>piece_fournir/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
-          <i data-lucide="file-text" style="width: 17px; height: 17px;"></i> Répertoire des Pièces
-        </a>
       </div>
 
 
