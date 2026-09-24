@@ -35,7 +35,7 @@ $statsClasse = $statsClasse ?? [];
             </a>
             <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Procès-Verbal (PV) de Notes de la Classe</h1>
           </div>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Tableau récapitulatif officiel de délibération des notes et classements par classe</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Tableau récapitulatif de délibération des notes et classements par classe</p>
         </div>
         <button onclick="window.print();" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer / Exporter PV
@@ -75,10 +75,10 @@ $statsClasse = $statsClasse ?? [];
         </form>
       </div>
 
-      <!-- PV OFFICIEL ET IMPRIMABLE -->
+      <!-- PV  ET IMPRIMABLE -->
       <div class="card pv-container" style="background: #FFFFFF; border-radius: 12px; padding: 32px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
         
-        <!-- En-tête officiel de l'établissement -->
+        <!-- En-tête  de l'établissement -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1E3A5F; padding-bottom: 16px; margin-bottom: 24px;">
           <div>
             <h2 style="font-size: 18px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">
@@ -124,7 +124,7 @@ $statsClasse = $statsClasse ?? [];
           </div>
         </div>
 
-        <!-- Tableau récapitulatif officiel (PV Matrix) -->
+        <!-- Tableau récapitulatif  (PV Matrix) -->
         <div style="width: 100%; overflow-x: auto;">
           <table class="table display" style="width: 100%; border-collapse: collapse; font-size: 12px;">
             <thead>
@@ -189,7 +189,7 @@ $statsClasse = $statsClasse ?? [];
           </table>
         </div>
 
-        <!-- Bloc de Signatures Officielles (pour Impression) -->
+        <!-- Bloc de Signatures s (pour Impression) -->
         <div style="margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; text-align: center;">
           <div style="border-top: 1px dashed #CBD5E1; padding-top: 10px;">
             <strong style="font-size: 12px; color: #1E3A5F;">Le Chef de Département / Enseignant</strong>

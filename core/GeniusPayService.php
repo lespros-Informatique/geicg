@@ -3,7 +3,7 @@
 class GeniusPayService
 {
     /**
-     * Initie un paiement auprès de l'API officielle GeniusPay
+     * Initie un paiement auprès de l'API GeniusPay
      *
      * @param array $data ['amount', 'order_code', 'provider', 'customer_name', 'customer_phone', 'customer_email', ...]
      * @return array

@@ -53,7 +53,7 @@
         <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
           <h3 style="font-size: 16px; font-weight: 700; color: #1E293B; margin-top: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
             <i data-lucide="truck" style="width: 20px; height: 20px; color: #2563EB;"></i>
-            Tarification Flotte Officielle Lavex
+            Tarification Flotte Lavex
           </h3>
 
           <div class="form-field" style="margin-bottom: 18px;">
@@ -94,7 +94,7 @@
                      placeholder="ex: 24h - 48h" value="<?= htmlspecialchars($settings['delai_livraison_defaut_lavex'] ?? '24h - 48h') ?>" required>
             </div>
             <small style="color: #64748B; font-size: 11.5px; display: block; margin-top: 6px;">
-              Délais moyen de traitement et livraison garanti par la flotte officielle Lavex (ex: 24h - 48h).
+              Délais moyen de traitement et livraison garanti par la flotte Lavex (ex: 24h - 48h).
             </small>
           </div>
         </div>

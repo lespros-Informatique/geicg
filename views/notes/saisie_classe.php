@@ -19,7 +19,7 @@ $compositionsProgrammees = $compositionsProgrammees ?? [];
 $typeEvals = [
   'INTERROGATION' => 'Interrogation',
   'DEVOIR' => 'Devoir Sur Table',
-  'EXAMEN' => 'Examen / Composition Officielle'
+  'EXAMEN' => 'Examen / Composition'
 ];
 ?>
 <style>
@@ -150,7 +150,7 @@ $typeEvals = [
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; align-items: center;">
               <div style="grid-column: 1 / -1;">
                 <label style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="award" style="width: 16px; height: 16px; color: #0284C7;"></i> Épreuve / Composition Officielle Programmée <span style="color:#EF4444;">*</span>
+                  <i data-lucide="award" style="width: 16px; height: 16px; color: #0284C7;"></i> Épreuve / Composition Programmée <span style="color:#EF4444;">*</span>
                 </label>
                 <select name="composition_code" id="sel_composition_code" class="form-control select2" style="width: 100%;">
                   <option value="">-- Sélectionner l'épreuve programmée --</option>

@@ -517,14 +517,14 @@ if (!isset($globalEtablissementLogo)) {
           <div class="no-print" style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px;">
             <i data-lucide="info" style="width: 20px; height: 20px; color: #1D4ED8; flex-shrink: 0; margin-top: 2px;"></i>
             <div style="font-size: 13px; color: #1E3A5F; line-height: 1.45;">
-              <strong>Procédure Services Détachés :</strong> Le dossier administratif est validé. L'étudiant doit maintenant se présenter au <strong>Bureau des Versements (Caisse)</strong> muni de cette <strong>Fiche Navette</strong> pour régler ses droits de réinscription et obtenir son reçu de paiement officiel.
+              <strong>Procédure Services Détachés :</strong> Le dossier administratif est validé. L'étudiant doit maintenant se présenter au <strong>Bureau des Versements (Caisse)</strong> muni de cette <strong>Fiche Navette</strong> pour régler ses droits de réinscription et obtenir son reçu de paiement.
             </div>
           </div>
 
           <!-- FICHE NAVETTE IMPRIMABLE (Zone imprimée) -->
           <div id="printable-voucher-zone" style="background: #FFFFFF; border: 2px dashed #94A3B8; border-radius: 12px; padding: 24px; position: relative;">
             
-            <!-- En-tête officiel du Bon de versement -->
+            <!-- En-tête  du Bon de versement -->
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1E3A5F; padding-bottom: 14px; margin-bottom: 18px;">
               <div style="display: flex; align-items: center; gap: 14px;">
                 <?php if (!empty($globalEtablissementLogo)): ?>
@@ -634,7 +634,7 @@ if (!isset($globalEtablissementLogo)) {
         <!-- Zone Imprimable : Relevé de Compte & Fiche Financière -->
         <div id="printable-financial-zone" style="padding: 28px 32px; overflow-y: auto; background: #FFFFFF; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
           
-          <!-- En-tête Officiel EICG -->
+          <!-- En-tête  EICG -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #1E3A5F; padding-bottom: 16px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 16px;">
               <?php if (!empty($globalEtablissementLogo)): ?>
@@ -729,11 +729,11 @@ if (!isset($globalEtablissementLogo)) {
             </table>
           </div>
 
-          <!-- Signatures & Visas Officiels -->
+          <!-- Signatures & Visas  -->
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding-top: 16px; border-top: 1px solid #CBD5E1; font-size: 11.5px;">
             <div>
               <div style="font-weight: 800; color: #334155; margin-bottom: 40px;">Le Service Scolarité / Comptabilité :</div>
-              <div style="font-size: 10.5px; color: #64748B; font-style: italic;">Signature & Cachet Officiel</div>
+              <div style="font-size: 10.5px; color: #64748B; font-style: italic;">Signature & Cachet</div>
             </div>
             <div style="text-align: right;">
               <div style="font-weight: 800; color: #334155; margin-bottom: 40px;">Émargement Étudiant / Parent :</div>
@@ -1289,7 +1289,7 @@ $(document).ready(function() {
             // Mettre à jour le bouton de passage direct au Bureau des Versements
             $('#btn-goto-caisse').attr('href', '<?= RACINE ?>paiement/formulaire?inscription_code=' + encodeURIComponent(v.code_inscription));
 
-            // Ouvrir le modal officiel de la Fiche Navette
+            // Ouvrir le modal  de la Fiche Navette
             showFicheNavetteModal();
           } else {
             setTimeout(function() {

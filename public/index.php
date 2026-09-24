@@ -140,6 +140,8 @@ $route->addRoute('/salle/changer', [$salleController, 'changer']);
 $route->addRoute('/salle/details/{param}', [$salleController, 'details']);
 $route->addRoute('/salle/edition/{param}', [$salleController, 'edition']);
 $route->addRoute('/salle/formulaire', [$salleController, 'formulaire']);
+$route->addRoute('/salle/imprimerPdf', [$salleController, 'imprimerPdf']);
+
 
 // Module: annee (AnneeController)
 $route->addRoute('/annee/list', [$anneeController, 'list']);

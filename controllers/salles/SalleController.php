@@ -52,6 +52,9 @@ class SalleController extends BaseController
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $libelle = trim($data['libelle_salle'] ?? '');
+        if (isset($data['capacite_salle'])) {
+            $data['capacite_salle'] = ($data['capacite_salle'] !== '' && $data['capacite_salle'] !== null) ? (int)$data['capacite_salle'] : null;
+        }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
             $msg = !empty($libelle) ? "La salle « {$libelle} » a été créée avec succès !" : "Salle de classe créée avec succès !";
@@ -77,6 +80,9 @@ class SalleController extends BaseController
         }
 
         $libelle = trim($data['libelle_salle'] ?? '');
+        if (isset($data['capacite_salle'])) {
+            $data['capacite_salle'] = ($data['capacite_salle'] !== '' && $data['capacite_salle'] !== null) ? (int)$data['capacite_salle'] : null;
+        }
         $cols = $this->model->getCon()->query("DESCRIBE salles")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
@@ -154,5 +160,49 @@ class SalleController extends BaseController
     {
         header('Location: ' . RACINE . 'salle/list');
         exit();
+    }
+
+    /**
+     * Impression du Répertoire des Salles de cours via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['PRINT_SALLES', 'VIEW_SALLES', 'PRINT_OFFRE_ACADEMIQUE']);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+        $sql = "SELECT s.* FROM salles s ORDER BY s.libelle_salle ASC";
+        $stmt = $db->query($sql);
+        $salles = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        $etablissement = $this->getEtablissementConfig();
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+
+        $authSession = $_SESSION[USERS_AUTH] ?? [];
+        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Direction des Études & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'salles' => $salles
+        ];
+
+        $html = PdfService::renderTemplate('repertoire_salles.php', $data);
+        $filename = 'Repertoire_Salles_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Répertoire des Salles de Cours - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 12
+        ]);
     }
 }

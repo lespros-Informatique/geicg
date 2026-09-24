@@ -55,7 +55,7 @@
               <i id="logo-icon-placeholder" data-lucide="school" style="width: 44px; height: 44px; color: #94A3B8; <?= !empty($logoSrc) ? 'display:none;' : '' ?>"></i>
             </div>
             <div style="flex: 1; min-width: 250px;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléverser le Logo Officiel (PNG, JPG, SVG, WEBP)</label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléverser le Logo (PNG, JPG, SVG, WEBP)</label>
               <input type="file" id="logo-file-input" name="logo_file" accept="image/*" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 13px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;">
               <small style="color: #64748B; font-size: 12px; margin-top: 6px; display: block;">Format recommandé : PNG avec fond transparent (max 2 Mo)</small>
             </div>
@@ -83,12 +83,12 @@
           </div>
 
           <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="phone-call" style="width: 16px; height: 16px;"></i> Contacts Officiels
+            <i data-lucide="phone-call" style="width: 16px; height: 16px;"></i> Contacts & Coordonnées
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Email Officiel <span style="color: #EF4444;">*</span></label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Email Institutionnel <span style="color: #EF4444;">*</span></label>
               <input type="email" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="email_etablissement" value="<?= htmlspecialchars($item['email_etablissement'] ?? 'contact@geicg.ci') ?>" placeholder="Ex: contact@geicg.ci" required>
             </div>
 

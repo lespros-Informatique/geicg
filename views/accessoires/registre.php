@@ -202,21 +202,21 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL SUR MESURE : BON DE REMISE OFFICIEL (DÉCHARGE KIT A4)               -->
+<!-- MODAL SUR MESURE : BON DE REMISE  (DÉCHARGE KIT A4)               -->
 <!-- ========================================================================= -->
 <div id="modal-bon-remise" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 10000; justify-content: center; align-items: center; padding: 16px;">
   <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 850px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; animation: slideDown 0.2s ease-out;">
     
     <div style="background: #15803D; color: #FFFFFF; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
       <h3 style="font-size: 15px; font-weight: 800; margin: 0; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Bon de Remise Officiel de Kits & Accessoires
+        <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Bon de Remise de Kits & Accessoires
       </h3>
       <button type="button" class="btn-close-modal-bon" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
 
     <div style="padding: 24px; background: #FFFFFF; overflow-y: auto; flex: 1;" id="printable-bon-remise-area">
       
-      <!-- Document A4 officiel d'impression -->
+      <!-- Document A4  d'impression -->
       <div style="border: 2px solid #15803D; padding: 24px; border-radius: 12px; background: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif;">
         
         <!-- En-tête Récépissé -->
@@ -543,7 +543,7 @@ $(document).ready(function() {
                      '<button type="button" class="btn btn-sm btn-success btn-open-student-kit" style="font-weight: 700; border-radius: 8px; padding: 6px 11px; background: #15803D; border: none;" title="Gérer et émarger les fournitures de cet élève">' +
                        '<i data-lucide="package-check" style="width: 14px; height: 14px; margin-right: 4px;"></i> Émarger' +
                      '</button>' +
-                     '<button type="button" class="btn btn-sm btn-outline-primary btn-print-bon-row" title="Imprimer le Bon de Remise Officiel A4" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
+                     '<button type="button" class="btn btn-sm btn-outline-primary btn-print-bon-row" title="Imprimer le Bon de Remise A4" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
                        '<i data-lucide="printer" style="width: 14px; height: 14px;"></i>' +
                      '</button>' +
                      '<button type="button" class="btn btn-sm btn-outline-success btn-quick-validate-all-kits" title="Tout marquer comme remis en 1 clic" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
@@ -756,7 +756,7 @@ $(document).ready(function() {
     });
   }
 
-  // Chargement et affichage du Bon de Remise Officiel A4
+  // Chargement et affichage du Bon de Remise  A4
   function loadAndOpenBonRemiseModal(inscrCode) {
     $.ajax({
       url: '<?= RACINE ?>accessoire/getBonRemiseData',

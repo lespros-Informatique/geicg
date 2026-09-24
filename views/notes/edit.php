@@ -51,7 +51,7 @@ if (empty($selectedClasseCode) && !empty($selectedInscriptionCode)) {
 $typeEvals = [
   'INTERROGATION' => 'Interrogation',
   'DEVOIR' => 'Devoir / Contrôle Continu',
-  'EXAMEN' => 'Examen / Composition Officielle'
+  'EXAMEN' => 'Examen / Composition'
 ];
 $selectedTypeEval = $item['type_evaluation_code'] ?? 'INTERROGATION';
 if ($selectedTypeEval === 'CC') $selectedTypeEval = 'DEVOIR';

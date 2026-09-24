@@ -8,7 +8,7 @@ class ModelEtudiant extends BaseModel
     protected ?string $createdAtField = 'created_at_etudiant';
 
     /**
-     * Génère automatiquement le matricule officiel de l'étudiant
+     * Génère automatiquement le matricule de l'étudiant
      * Règle : 1ère lettre Nom + 1ère lettre Prénom (Majuscule) - Ordre ID / GEB / 2 1ères lettres Filière + 2 derniers chiffres Année
      * Exemple : MN-123/GEB/ID26 (XX-123/GEB/AA26)
      */

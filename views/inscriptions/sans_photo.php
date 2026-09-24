@@ -17,7 +17,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="camera-off" style="width: 26px; height: 26px; color: #DC2626;"></i> Inscriptions sans Photo d'Identité
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Registre des étudiants régulièrement inscrits dont la photo d'inscription officielle n'a pas encore été renseignée</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Registre des étudiants régulièrement inscrits dont la photo d'inscription n'a pas encore été renseignée</p>
         </div>
       </div>
 

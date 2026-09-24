@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Liste Officielle de Classe & Émargement</title>
+  <title>Liste de Classe & Émargement</title>
   <style>
     @page {
       margin: 8mm 8mm 8mm 8mm;
@@ -117,7 +117,7 @@
 </head>
 <body>
 
-  <!-- EN-TÊTE OFFICIELLE INSTITUTION -->
+  <!-- EN-TÊTE INSTITUTIONNEL -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
   ?>
@@ -139,7 +139,7 @@
   </table>
 
   <!-- BANNIÈRE PRINCIPALE -->
-  <div class="banner-title">LISTE OFFICIELLE DE CLASSE</div>
+  <div class="banner-title">LISTE DE CLASSE</div>
 
   <!-- METADATA DE LA CLASSE -->
   <table class="meta-table">

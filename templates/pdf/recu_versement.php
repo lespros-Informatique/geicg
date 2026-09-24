@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Reçu de Versement Officiel</title>
+  <title>Reçu de Versement</title>
   <style>
     @page {
       margin: 8mm 8mm 8mm 8mm;
@@ -201,7 +201,7 @@
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE OFFICIELLE INSTITUTION -->
+  <!-- EN-TÊTE INSTITUTIONNEL -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
   ?>

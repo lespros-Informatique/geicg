@@ -60,7 +60,7 @@ class PdfService
             'tempDir' => sys_get_temp_dir()
         ]);
 
-        $mpdf->SetTitle($options['title'] ?? 'Document Officiel GEICG');
+        $mpdf->SetTitle($options['title'] ?? 'Document GEICG');
         $mpdf->SetAuthor('GEICG - Système d\'Information');
         $mpdf->showImageErrors = true;
 

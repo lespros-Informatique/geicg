@@ -217,7 +217,7 @@ class FiliereCycleController extends BaseController
     }
 
     /**
-     * Impression officielle de l'Offre Académique (Cycles, Filières & Niveaux) via mPDF
+     * Impression  de l'Offre Académique (Cycles, Filières & Niveaux) via mPDF
      */
     public function imprimerPdf()
     {

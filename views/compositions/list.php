@@ -35,7 +35,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
             <i data-lucide="award" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
             Programmation Compositions & Examens
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Planning et calendrier des épreuves écrites, compositions semestrielles et examens officiels</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Planning et calendrier des épreuves écrites, compositions semestrielles et examens</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
           <a href="<?= RACINE ?>composition/formulaire" id="btn-add-composition" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Catalogue Général des Filières - GEICG</title>
+  <title>Répertoire des Salles de Cours - GEICG</title>
   <style>
     @page {
       margin-top: 8mm;
@@ -114,7 +114,7 @@
       border-radius: 4px;
     }
     .kpi-num {
-      font-size: 10pt;
+      font-size: 10.5pt;
       font-weight: bold;
       color: #1E3A5F;
     }
@@ -130,7 +130,7 @@
     .section-header-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 18px;
+      margin-top: 16px;
       margin-bottom: 6px;
       background-color: #E2E8F0;
       border-left: 3.5px solid #1E3A5F;
@@ -148,7 +148,7 @@
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 28px;
+      margin-bottom: 25px;
     }
     .data-table th {
       background-color: #1E3A5F;
@@ -162,7 +162,7 @@
       text-align: left;
     }
     .data-table td {
-      padding: 3.8px 6px;
+      padding: 4px 6px;
       font-size: 8pt;
       border: 0.5px solid #CBD5E1;
       vertical-align: middle;
@@ -181,50 +181,76 @@
     }
 
     /* Badges */
-    .badge-tertiaire {
-      color: #B45309;
-      font-weight: bold;
-      font-size: 7pt;
-      background-color: #FEF3C7;
-      padding: 1.5px 5px;
-      border-radius: 3px;
-      display: inline-block;
-    }
-    .badge-industrielle {
-      color: #0369A1;
-      font-weight: bold;
-      font-size: 7pt;
-      background-color: #E0F2FE;
-      padding: 1.5px 5px;
-      border-radius: 3px;
-      display: inline-block;
-    }
-    .badge-slug {
+    .badge-code {
       color: #1E3A5F;
       font-weight: bold;
-      font-size: 7pt;
+      font-size: 7.5pt;
       background-color: #EFF6FF;
       border: 0.5px solid #BFDBFE;
-      padding: 1px 5px;
+      padding: 1.5px 6px;
       border-radius: 3px;
       display: inline-block;
       letter-spacing: 0.3px;
     }
-    .badge-cycle {
-      color: #0F172A;
+    .badge-capacite {
+      color: #1E3A5F;
       font-weight: bold;
-      font-size: 7pt;
-      background-color: #F1F5F9;
-      border: 0.5px solid #CBD5E1;
-      padding: 1px 4px;
+      font-size: 7.5pt;
+      background-color: #EFF6FF;
+      border: 0.5px solid #BFDBFE;
+      padding: 1.5px 6px;
       border-radius: 3px;
-      margin-right: 2px;
       display: inline-block;
     }
     .badge-statut-actif {
       color: #15803D;
       font-weight: bold;
+      font-size: 7.5pt;
+      background-color: #DCFCE7;
+      border: 0.5px solid #86EFAC;
+      padding: 1.5px 6px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    .badge-statut-inactif {
+      color: #B91C1C;
+      font-weight: bold;
+      font-size: 7.5pt;
+      background-color: #FEE2E2;
+      border: 0.5px solid #FCA5A5;
+      padding: 1.5px 6px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    /* Bloc de Signature */
+    .signature-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+    }
+    .signature-box {
+      width: 48%;
+      vertical-align: top;
+      border: 0.5px solid #CBD5E1;
+      background-color: #FAFAFA;
+      padding: 6px 10px;
+    }
+    .signature-title {
+      font-size: 8pt;
+      font-weight: bold;
+      color: #1E3A5F;
+      text-transform: uppercase;
+      text-align: center;
+      border-bottom: 0.5px solid #CBD5E1;
+      padding-bottom: 3px;
+      margin-bottom: 24px;
+    }
+    .signature-mention {
       font-size: 7pt;
+      font-style: italic;
+      color: #64748B;
+      text-align: center;
     }
   </style>
 </head>
@@ -233,7 +259,7 @@
   <!-- EN-TÊTE FIXE POUR MPDF -->
   <htmlpageheader name="pageHeader">
     <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
-      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Catalogue des Filières &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
+      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Répertoire des Salles de Cours &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
     </div>
   </htmlpageheader>
   <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
@@ -249,7 +275,7 @@
           Page {PAGENO} / {nbpg}
         </td>
         <td style="width: 40%; text-align: right;">
-          Réf: REF-FIL-<?= date('Ymd-His') ?>
+          Réf: REF-SAL-<?= date('Ymd-His') ?>
         </td>
       </tr>
     </table>
@@ -295,8 +321,8 @@
   <table class="banner-table">
     <tr>
       <td>
-        <div class="banner-title">CATALOGUE GÉNÉRAL DES FILIÈRES</div>
-        <div class="banner-sub">RÉPERTOIRE DES FILIÈRES & SPÉCIALITÉS DE FORMATION ACCRÉDITÉES</div>
+        <div class="banner-title">RÉPERTOIRE GÉNÉRAL DES SALLES DE COURS</div>
+        <div class="banner-sub">INFRASTRUCTURES & ESPACES PÉDAGOGIQUES D'ENSEIGNEMENT</div>
       </td>
     </tr>
   </table>
@@ -318,165 +344,132 @@
       </td>
     </tr>
     <tr>
-      <td style="width: 33%;">
-        <span class="meta-label">Cadre institutionnel :</span> 
-        <span class="meta-value"><?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?></span>
+      <td>
+        <span class="meta-label">Campus / Établissement :</span> 
+        <span class="meta-value"><?= htmlspecialchars($etablissement['nom_court_etablissement'] ?? 'Campus Central') ?></span>
       </td>
-      <td style="width: 34%;">
-        <span class="meta-label">Périmètre :</span> 
-        <span class="meta-value">Ensemble des Spécialités Enseignées</span>
+      <td>
+        <span class="meta-label">Nombre de Salles :</span> 
+        <span class="meta-value" style="color: #1E3A5F; font-size: 9.5pt;"><?= (int)count($salles) ?> salle(s)</span>
       </td>
-      <td style="width: 33%;">
-        <span class="meta-label">Statut du Répertoire :</span> 
-        <span class="meta-value" style="color: #15803D;">HOMOLOGUÉ & EN VIGUEUR</span>
+      <td>
+        <span class="meta-label">Statut du Registre :</span> 
+        <span class="meta-value" style="color: #15803D;">Vérifié & Actif</span>
       </td>
     </tr>
   </table>
 
+  <!-- SYNTHÈSE CHIFFRÉE / KPI -->
   <?php
-    $totalFilieres = count($filieres ?? []);
-    $nbTertiaire = 0;
-    $nbIndustrielle = 0;
-    $allCyclesSet = [];
-
-    foreach ($filieres ?? [] as $f) {
-      $t = strtoupper($f['type_filiere'] ?? '');
-      if ($t === 'TERTIAIRE') $nbTertiaire++;
-      if ($t === 'INDUSTRIELLE') $nbIndustrielle++;
-      if (!empty($f['cycles_codes'])) {
-        $cList = explode(',', $f['cycles_codes']);
-        foreach ($cList as $cl) {
-          $cl = trim($cl);
-          if (!empty($cl)) $allCyclesSet[$cl] = true;
-        }
+    $totalCount = count($salles);
+    $activesCount = 0;
+    $inactivesCount = 0;
+    foreach ($salles as $s) {
+      if (($s['statut_salle'] ?? 'actif') === 'actif') {
+        $activesCount++;
+      } else {
+        $inactivesCount++;
       }
     }
-    $nbCyclesDistincts = count($allCyclesSet);
   ?>
-
-  <!-- RÉSUMÉ STATISTIQUE -->
   <table class="kpi-table">
     <tr>
-      <td style="width: 25%; padding-right: 4px;">
-        <div class="kpi-cell">
-          <div class="kpi-num"><?= $totalFilieres ?></div>
-          <div class="kpi-text">Total Filières</div>
-        </div>
+      <td class="kpi-cell" style="width: 33.3%;">
+        <div class="kpi-num"><?= $totalCount ?></div>
+        <div class="kpi-text">Total Espaces Pédagogiques</div>
       </td>
-      <td style="width: 25%; padding-left: 2px; padding-right: 2px;">
-        <div class="kpi-cell">
-          <div class="kpi-num" style="color: #B45309;"><?= $nbTertiaire ?></div>
-          <div class="kpi-text">Filières Tertiaires</div>
-        </div>
+      <td class="kpi-cell" style="width: 33.3%;">
+        <div class="kpi-num" style="color: #15803D;"><?= $activesCount ?></div>
+        <div class="kpi-text">Salles Opérationnelles (Actives)</div>
       </td>
-      <td style="width: 25%; padding-left: 2px; padding-right: 2px;">
-        <div class="kpi-cell">
-          <div class="kpi-num" style="color: #0369A1;"><?= $nbIndustrielle ?></div>
-          <div class="kpi-text">Filières Industrielles</div>
-        </div>
-      </td>
-      <td style="width: 25%; padding-left: 4px;">
-        <div class="kpi-cell">
-          <div class="kpi-num" style="color: #047857;"><?= $nbCyclesDistincts ?></div>
-          <div class="kpi-text">Cycles Associés</div>
-        </div>
+      <td class="kpi-cell" style="width: 33.3%;">
+        <div class="kpi-num" style="color: <?= $inactivesCount > 0 ? '#B91C1C' : '#64748B' ?>;"><?= $inactivesCount ?></div>
+        <div class="kpi-text">Salles Inactives / Travaux</div>
       </td>
     </tr>
   </table>
 
-  <!-- SECTION 1 : TABLEAU DÉTAILLÉ DES FILIÈRES -->
+  <!-- SECTION : TABLEAU DES SALLES -->
   <table class="section-header-table">
     <tr>
-      <td>1. Nomenclature des Filières & Spécialités</td>
+      <td>1. Nomenclature des Salles & Espaces Pédagogiques</td>
     </tr>
   </table>
 
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 5%;" class="text-center">#</th>
-        <th style="width: 48%;">Nom de la Filière / Spécialité</th>
-        <th style="width: 12%;" class="text-center">Sigle</th>
-        <th style="width: 15%;" class="text-center">Type</th>
-        <th style="width: 20%;">Cycles Associés</th>
+        <th style="width: 6%; text-align: center;">#</th>
+        <th style="width: 22%; text-align: center;">Code Salle</th>
+        <th style="width: 42%;">Nom de la Salle / Espace</th>
+        <th style="width: 16%; text-align: center;">Capacité</th>
+        <th style="width: 14%; text-align: center;">Statut</th>
       </tr>
     </thead>
     <tbody>
-      <?php if (!empty($filieres)): ?>
-        <?php foreach ($filieres as $idx => $f): ?>
-          <?php 
-            $rowClass = ($idx % 2 === 0) ? 'row-even' : 'row-odd';
-            $tFiliere = strtoupper($f['type_filiere'] ?? '');
+      <?php if (!empty($salles)): ?>
+        <?php foreach ($salles as $idx => $salle): ?>
+          <?php
+            $isEven = ($idx % 2 === 0);
+            $libelle = trim($salle['libelle_salle'] ?? '');
+            $capacite = isset($salle['capacite_salle']) && $salle['capacite_salle'] !== '' && $salle['capacite_salle'] !== null 
+                        ? (int)$salle['capacite_salle'] 
+                        : (isset($salle['capacite']) && $salle['capacite'] !== '' && $salle['capacite'] !== null ? (int)$salle['capacite'] : null);
+            $statut = $salle['statut_salle'] ?? 'actif';
+            $isActif = ($statut === 'actif');
           ?>
-          <tr class="<?= $rowClass ?>">
-            <td class="text-center" style="font-weight: bold; color: #64748B;"><?= $idx + 1 ?></td>
-            <td style="font-weight: bold; color: #0F172A;">
-              <?= htmlspecialchars($f['libelle_filiere'] ?? '-') ?>
+          <tr class="<?= $isEven ? 'row-even' : 'row-odd' ?>">
+            <td class="text-center" style="font-weight: bold; color: #64748B;">
+              <?= $idx + 1 ?>
             </td>
             <td class="text-center">
-              <?php if (!empty($f['slug_filiere'])): ?>
-                <span class="badge-slug"><?= htmlspecialchars($f['slug_filiere']) ?></span>
-              <?php else: ?>
-                <span style="color: #94A3B8; font-style: italic;">-</span>
-              <?php endif; ?>
-            </td>
-            <td class="text-center">
-              <?php if ($tFiliere === 'INDUSTRIELLE'): ?>
-                <span class="badge-industrielle">Industrielle</span>
-              <?php elseif ($tFiliere === 'TERTIAIRE'): ?>
-                <span class="badge-tertiaire">Tertiaire</span>
-              <?php else: ?>
-                <span style="color: #94A3B8; font-size: 7pt; font-style: italic;">-</span>
-              <?php endif; ?>
+              <span class="badge-code"><?= htmlspecialchars($salle['code_salle'] ?? '-') ?></span>
             </td>
             <td>
-              <?php if (!empty($f['cycles_libelles'])): ?>
-                <span style="font-size: 7.2pt; color: #1E3A5F; font-weight: bold;">
-                  <?= htmlspecialchars($f['cycles_libelles']) ?>
-                </span>
-              <?php elseif (!empty($f['cycles_codes'])): ?>
-                <span class="badge-cycle"><?= htmlspecialchars($f['cycles_codes']) ?></span>
+              <strong style="color: #0F172A; font-size: 8.5pt;"><?= htmlspecialchars($libelle) ?></strong>
+            </td>
+            <td class="text-center">
+              <?php if ($capacite !== null && $capacite > 0): ?>
+                <span class="badge-capacite"><?= $capacite ?> places</span>
               <?php else: ?>
-                <span style="color: #94A3B8; font-size: 7pt; font-style: italic;">Non assigné</span>
+                <span style="color: #94A3B8; font-weight: bold;">-</span>
+              <?php endif; ?>
+            </td>
+            <td class="text-center">
+              <?php if ($isActif): ?>
+                <span class="badge-statut-actif">Actif</span>
+              <?php else: ?>
+                <span class="badge-statut-inactif">Inactif</span>
               <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>
       <?php else: ?>
         <tr>
-          <td colspan="5" class="text-center" style="padding: 15px; color: #64748B; font-style: italic;">
-            Aucune filière enregistrée dans le catalogue.
+          <td colspan="5" class="text-center" style="padding: 15px; color: #64748B;">
+            Aucune salle de cours enregistrée dans la base de données.
           </td>
         </tr>
       <?php endif; ?>
     </tbody>
   </table>
 
-  <!-- SIGNATURES ET CERTIFICATION -->
-  <table style="width: 100%; margin-top: 10px; border-collapse: separate; border-spacing: 15px 0;">
+  <!-- BLOC DE SIGNATURES -->
+  <table class="signature-table">
     <tr>
-      <td style="width: 50%; border: 1px dashed #94A3B8; background-color: #F8FAFC; padding: 6px 10px; text-align: center; vertical-align: top;">
-        <div style="font-weight: bold; color: #1E3A5F; text-transform: uppercase; font-size: 7.5pt; margin-bottom: 26px;">
-          La Direction des Études & de la Pédagogie
-        </div>
-        <div style="font-size: 6.5pt; color: #64748B; font-style: italic;">
-          Visa pour conformité académique
-        </div>
+      <td class="signature-box">
+        <div class="signature-title">La Direction des Études & Pédagogie</div>
+        <div style="height: 38px;"></div>
+        <div class="signature-mention">Cachet & Signature autorisée</div>
       </td>
-      <td style="width: 50%; border: 1px dashed #94A3B8; background-color: #F8FAFC; padding: 6px 10px; text-align: center; vertical-align: top;">
-        <div style="font-weight: bold; color: #1E3A5F; text-transform: uppercase; font-size: 7.5pt; margin-bottom: 26px;">
-          La Direction Générale
-        </div>
-        <div style="font-size: 6.5pt; color: #64748B; font-style: italic;">
-          Approbation & Cachet de l'Établissement
-        </div>
+      <td style="width: 4%;"></td>
+      <td class="signature-box">
+        <div class="signature-title">La Direction Générale</div>
+        <div style="height: 38px;"></div>
+        <div class="signature-mention">Cachet & Signature autorisée</div>
       </td>
     </tr>
   </table>
-
-  <div style="margin-top: 10px; font-size: 7.5pt; color: #94A3B8; text-align: center;">
-    Fait à Bouaké, le <?= date('d/m/Y') ?> &bull; Document à usage pédagogique et administratif interne.
-  </div>
 
 </body>
 </html>

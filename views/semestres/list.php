@@ -303,7 +303,7 @@ $(document).ready(function() {
           <option value="planifie">🔵 En préparation (Semestre Futur)</option>
           <option value="cloture">⚪ Clôturé (Semestre Passé / Historique)</option>
         </select>
-        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">L'activation officielle du semestre active s'effectue via le bouton « Activer » du tableau.</small>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">L'activation du semestre s'effectue via le bouton « Activer » du tableau.</small>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">

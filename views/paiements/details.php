@@ -34,7 +34,7 @@ $isFAItem = ($trancheCodeItem === 'FRAIS_ANNEXES' || $catItem === 'frais_annexes
 if ($isFirstPayment) {
     $mainRecuTitle = "REÇU D'INSCRIPTION";
     $copieRecuTitle = "COPIE REÇU DE VERSEMENT POUR ARCHIVAGE";
-    $pageTitle = "Reçu d'Inscription Officiel N° " . $numRecu;
+    $pageTitle = "Reçu d'Inscription N° " . $numRecu;
     $typeOp = "INSCRIPTION";
 
     $opScolarite = isset($firstGroupScolarite) ? (float)$firstGroupScolarite : 0;
@@ -69,7 +69,7 @@ if ($isFirstPayment) {
 } else {
     $mainRecuTitle = "REÇU DE VERSEMENT";
     $copieRecuTitle = "COPIE REÇU DU 1er VERSEMENT POUR ARCHIVAGE";
-    $pageTitle = "Reçu de Versement Officiel N° " . $numRecu;
+    $pageTitle = "Reçu de Versement N° " . $numRecu;
     $typeOp = !empty($item['libelle_tranche']) ? $item['libelle_tranche'] : (!empty($item['type_paiement']) ? $item['type_paiement'] : ($isFAItem ? 'Frais Annexes' : 'SCOLARITE'));
 
     $opScolarite = 0;
@@ -173,7 +173,7 @@ if (!function_exists('generateCode128BarcodeSvg')) {
     }
 }
 
-// Logo institutionnel officiel (dynamique depuis la base ou fallback logo_eicg.jpg)
+// Logo institutionnel  (dynamique depuis la base ou fallback logo_eicg.jpg)
 $logoSrc = '';
 try {
     $dbEtab = (new Database())->getCon();
@@ -384,7 +384,7 @@ if (empty($logoSrc)) {
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux paiements
           </a>
           <button onclick="window.print()" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu (Modèle Officiel)
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu
           </button>
         </div>
       </div>

@@ -12,7 +12,7 @@
     <tr>
       <td style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); padding: 36px 32px; text-align: center;">
         <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 8px 18px; border-radius: 20px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.15);">
-          <span style="color: #60A5FA; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">Compte Utilisateur Officiel</span>
+          <span style="color: #60A5FA; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">Compte Utilisateur</span>
         </div>
         <h1 style="color: #FFFFFF; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px;">GROUPE EICG</h1>
         <p style="color: #94A3B8; font-size: 13px; margin: 6px 0 0 0; font-weight: 500;">Portail d'Administration & Gestion Académique</p>

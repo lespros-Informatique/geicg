@@ -150,7 +150,7 @@
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE OFFICIELLE INSTITUTION -->
+  <!-- EN-TÊTE INSTITUTIONNEL -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
   ?>
@@ -308,7 +308,7 @@
 
   <!-- FOOTER HORODATAGE -->
   <div class="footer-line">
-    Document officiel généré par le système informatique GEICG - Édition du <?= date('d/m/Y H:i:s') ?>
+    Document généré par le système informatique GEICG - Édition du <?= date('d/m/Y H:i:s') ?>
   </div>
 
 </div>

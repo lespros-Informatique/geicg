@@ -101,7 +101,7 @@ $nbTranches = count($tranches);
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
           <div>
             <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="calendar" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Échéancier Officiel des Tranches (<?= count($tranches) ?>)
+              <i data-lucide="calendar" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Échéancier des Tranches (<?= count($tranches) ?>)
             </h3>
           </div>
           <a href="<?= RACINE ?>tranche/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">

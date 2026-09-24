@@ -112,10 +112,10 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
     <!-- Body -->
     <div id="printable-schedule-area" style="padding: 24px; background: #F8FAFC; flex: 1; overflow-y: auto;">
       
-      <!-- En-tête officiel visible uniquement à l'impression -->
+      <!-- En-tête  visible uniquement à l'impression -->
       <div class="print-only-header" style="display: none; text-align: center; margin-bottom: 24px; border-bottom: 2px solid #1E3A5F; padding-bottom: 14px;">
         <h2 style="font-size: 20px; font-weight: 800; color: #1E3A5F; margin: 0; text-transform: uppercase;">GROUPE ÉCOLE D'INGÉNIEURS GEICG</h2>
-        <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 6px 0 0 0;">EMPLOI DU TEMPS OFFICIEL : <span id="print-classe-name" style="color: #0284C7;">-</span></h3>
+        <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 6px 0 0 0;">EMPLOI DU TEMPS : <span id="print-classe-name" style="color: #0284C7;">-</span></h3>
         <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0;">Registre Général des Cours • Année Académique Active</p>
       </div>
 

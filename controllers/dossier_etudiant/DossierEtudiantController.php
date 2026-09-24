@@ -243,7 +243,7 @@ class DossierEtudiantController extends BaseController
     }
 
     /**
-     * Génère les données complètes pour l'impression du Récépissé Officiel de Dépôt
+     * Génère les données complètes pour l'impression du Récépissé  de Dépôt
      */
     public function getRecepisseData()
     {

@@ -117,7 +117,7 @@
 
 <div class="content-wrapper">
 
-  <!-- BANNIÈRE D'IMPRESSION OFFICIELLE -->
+  <!-- BANNIÈRE D'IMPRESSION  -->
   <div id="print-header-banner">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 15px;">
       <div>
@@ -386,7 +386,7 @@
       </div>
       <div>
         <p style="font-weight: 800; text-transform: uppercase; margin-bottom: 50px;">Le Directeur Général</p>
-        <p style="border-top: 1px dashed #94A3B8; padding-top: 4px; font-style: italic;">Visa & Cachet Officiel</p>
+        <p style="border-top: 1px dashed #94A3B8; padding-top: 4px; font-style: italic;">Visa & Cachet</p>
       </div>
     </div>
   </div>

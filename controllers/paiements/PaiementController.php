@@ -761,7 +761,7 @@ class PaiementController extends BaseController
         $isAffecte = ($rawAff === 'oui' || $rawAff === 'affecte' || $rawAff === '1');
         $affEtat = $isAffecte ? 'affecte' : 'non_affecte';
 
-        // 1. Recherche du tarif officiel de scolarité pour l'année, la filière / niveau et le régime
+        // 1. Recherche du tarif  de scolarité pour l'année, la filière / niveau et le régime
         $stmtSco = $db->prepare("
             SELECT * FROM scolarites 
             WHERE filiere_code = ? 
@@ -968,8 +968,8 @@ class PaiementController extends BaseController
             array_unshift($tranchesList, [
                 'id_tranche' => 'FA',
                 'code_tranche' => 'FRAIS_ANNEXES',
-                'libelle' => 'Frais Annexes Officiels (' . $libelleFraisAnnexe . ')',
-                'libelle_tranche' => 'Frais Annexes Officiels (' . $libelleFraisAnnexe . ')',
+                'libelle' => 'Frais Annexes (' . $libelleFraisAnnexe . ')',
+                'libelle_tranche' => 'Frais Annexes (' . $libelleFraisAnnexe . ')',
                 'is_frais_annexe' => true,
                 'montant' => $montantFraisAnnexes,
                 'montant_tranche' => $montantFraisAnnexes,
@@ -1326,16 +1326,16 @@ class PaiementController extends BaseController
             $createdCodes = [];
             $lastPaiementId = 0;
 
-            // Opération 1 : Frais Annexes Officiels
+            // Opération 1 : Frais Annexes 
             $codeFA = $this->validator->generateCode('paiements', 'code_paiement', 'PAI-', 8);
             $stmtFA = $db->prepare("
                 INSERT INTO paiements (
                     code_paiement, inscription_code, etablissement_code, annee_code, tranche_code,
                     montant_paiement, mode_paiement, reference_paiement, type_paiement, categorie_paiement, observations,
                     statut_paiement, date_paiement, session_caisse_code, user_code
-                ) VALUES (?, ?, ?, ?, 'FRAIS_ANNEXES', ?, ?, ?, 'Frais Annexes Officiels', 'FRAIS_ANNEXES', ?, 'confirme', ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, 'FRAIS_ANNEXES', ?, ?, ?, 'Frais Annexes', 'FRAIS_ANNEXES', ?, 'confirme', ?, ?, ?)
             ");
-            $obsFA = trim($obs ? ($obs . ' - Frais Annexes') : 'Règlement Frais Annexes Officiels');
+            $obsFA = trim($obs ? ($obs . ' - Frais Annexes') : 'Règlement Frais Annexes');
             $stmtFA->execute([
                 $codeFA, $inscriptionCode, $etabCode, $anneeCode,
                 $montantFA, $mode, $ref, $obsFA, $now, $sessionCode, $userCode

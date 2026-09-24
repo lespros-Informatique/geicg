@@ -158,7 +158,7 @@ class UserController extends BaseController
 
                 MailerService::sendTemplate(
                     $email,
-                    'Vos Identifiants d\'Accès Officiels - GROUPE EICG',
+                    'Vos Identifiants d\'Accès - GROUPE EICG',
                     'welcome_credentials',
                     [
                         'userNom'      => $nomComplet,

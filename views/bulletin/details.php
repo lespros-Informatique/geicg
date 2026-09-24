@@ -243,7 +243,7 @@
               Fait le <?= date('d/m/Y') ?><br>
               Le Directeur des Études / Le Jury
             </div>
-            <div style="font-size: 11px; color: #94A3B8; font-style: italic;">Cachet officiel de l'établissement</div>
+            <div style="font-size: 11px; color: #94A3B8; font-style: italic;">Cachet de l'établissement</div>
           </div>
         </div>
 

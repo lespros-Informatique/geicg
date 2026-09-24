@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Reçu de Règlement Officiel</title>
+  <title>Reçu de Règlement</title>
   <style>
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
@@ -156,7 +156,7 @@
     <?php endif; ?>
   </div>
 
-  <!-- Signatures Officielle & Cachet -->
+  <!-- Signatures & Cachet -->
   <table class="signatures-table">
     <tr>
       <td>

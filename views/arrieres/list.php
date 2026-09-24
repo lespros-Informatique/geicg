@@ -223,7 +223,7 @@ $stats = $stats ?? ['nb_etudiants' => 0, 'total_du' => 0, 'total_recouvre' => 0,
     
     <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
       <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="printer" style="width: 20px; height: 20px;"></i> Reçu Officiel de Règlement d'Arriéré
+        <i data-lucide="printer" style="width: 20px; height: 20px;"></i> Reçu de Règlement d'Arriéré
       </h3>
       <button type="button" class="btn-close-modal-recu" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
@@ -568,7 +568,7 @@ $(document).ready(function() {
 
     var html = '<div style="border: 2px dashed #CBD5E1; padding: 24px; border-radius: 12px; background: #FFFFFF;">' +
                  '<div style="text-align: center; border-bottom: 2px solid #1E3A5F; padding-bottom: 14px; margin-bottom: 18px;">' +
-                   '<h2 style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">REÇU OFFICIEL DE RÈGLEMENT D\'ARRIÉRÉ</h2>' +
+                   '<h2 style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">REÇU DE RÈGLEMENT D\'ARRIÉRÉ</h2>' +
                    '<div style="font-size: 12px; color: #64748B; margin-top: 4px;">Grand Établissement d\'Enseignement Supérieur (GEICG)</div>' +
                    '<div style="font-size: 11px; font-weight: 700; color: #0284C7; margin-top: 4px;">N° REÇU : ' + escapeHtml(codePaiement) + ' | Date : ' + dateFr + '</div>' +
                  '</div>' +

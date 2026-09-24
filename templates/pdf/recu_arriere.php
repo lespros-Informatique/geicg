@@ -153,7 +153,7 @@
 
 <div class="recu-section">
 
-  <!-- EN-TÊTE OFFICIELLE INSTITUTION -->
+  <!-- EN-TÊTE INSTITUTIONNEL -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
   ?>

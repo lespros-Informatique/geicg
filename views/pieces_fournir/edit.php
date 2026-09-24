@@ -68,7 +68,7 @@ $isEdit = !empty($item['id_piece_fournir']);
                        class="form-control" 
                        style="border-radius: 8px; padding: 11px 14px; border: 1px solid #CBD5E1; font-weight: 600; width: 100%;">
                 <span style="font-size: 12px; color: #64748B; margin-top: 4px; display: block;">
-                  Nom officiel et explicite affiché dans les dossiers d'inscription et listes de contrôle.
+                  Nom explicite affiché dans les dossiers d'inscription et listes de contrôle.
                 </span>
               </div>
 
@@ -145,7 +145,7 @@ $isEdit = !empty($item['id_piece_fournir']);
               
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                  Intitulé officiel du document <span style="color: #EF4444;">*</span>
+                  Intitulé du document <span style="color: #EF4444;">*</span>
                 </label>
                 <input type="text" 
                        name="libelle_piece" 

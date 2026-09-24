@@ -290,12 +290,12 @@ $canCloseCaisse = $canCloseCaisse ?? false;
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       
-      <!-- EN-TÊTE D'IMPRESSION OFFICIELLE (VISIBLE UNIQUEMENT À L'IMPRESSION) -->
+      <!-- EN-TÊTE D'IMPRESSION  (VISIBLE UNIQUEMENT À L'IMPRESSION) -->
       <div id="print-header-banner" style="margin-bottom: 16px; border-bottom: 2px solid #1E3A5F; padding-bottom: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
             <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">GEICG - GROUPE ÉCOLE D'INGÉNIEURS ET DE COMMERCE DE GAGNOA</h2>
-            <div style="font-size: 12px; font-weight: 800; color: #0F172A; margin-top: 3px;">JOURNAL OFFICIEL DES ENCAISSEMENTS DE CAISSE & SCOLARITÉ</div>
+            <div style="font-size: 12px; font-weight: 800; color: #0F172A; margin-top: 3px;">JOURNAL DES ENCAISSEMENTS DE CAISSE & SCOLARITÉ</div>
             <div style="font-size: 11px; color: #475569; margin-top: 3px;" id="print-filter-summary-text">
               Année Académique : All &bull; Niveau : Tous &bull; Classe : Toutes
             </div>
@@ -482,10 +482,10 @@ $canCloseCaisse = $canCloseCaisse ?? false;
 
       </div>
 
-      <!-- SECTION 2 : SUIVI & RECOUVREMENT DES FRAIS ANNEXES OFFICIELES (4 CARTES) -->
+      <!-- SECTION 2 : SUIVI & RECOUVREMENT DES FRAIS ANNEXES ES (4 CARTES) -->
       <div class="kpi-section-title" style="margin-bottom: 8px; margin-top: 20px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
-          <i data-lucide="package" style="width: 15px; height: 15px; color: #B45309;"></i> Suivi & Recouvrement des Frais Annexes Officiels
+          <i data-lucide="package" style="width: 15px; height: 15px; color: #B45309;"></i> Suivi & Recouvrement des Frais Annexes
         </h4>
       </div>
 
@@ -916,7 +916,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL SUCCÈS & IMPRESSION DU REÇU OFFICIEL                               -->
+<!-- MODAL SUCCÈS & IMPRESSION DU REÇU                                -->
 <!-- ========================================================================= -->
 <div id="modal-recu-paiement-success" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 16px;">
   <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; text-align: center; padding: 30px 24px;">
@@ -939,7 +939,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
         Fermer
       </button>
       <a id="success-recu-print-link" href="#" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 22px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
-        <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu Officiel
+        <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu
       </a>
     </div>
 
@@ -1100,7 +1100,7 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  // FONCTION DE GESTION IMPRESSION OFFICIELLE DU REGISTRE
+  // FONCTION DE GESTION IMPRESSION  DU REGISTRE
   window.printRegistry = function() {
     var anneeTxt = $('#filter-annee option:selected').text().trim() || 'Toutes';
     var niveauTxt = $('#filter-niveau option:selected').text().trim() || 'Tous';

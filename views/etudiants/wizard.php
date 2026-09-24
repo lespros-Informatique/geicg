@@ -397,7 +397,7 @@ $pieces = (new ModelPieceFournir())->getAll();
               <div id="wiz_frais_annexes_detail_card" style="margin-top: 18px; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 14px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
                   <span style="font-size: 11.5px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="package" style="width: 16px; height: 16px; color: #D97706;"></i> Frais Annexes Officiels (Uniforme, Badge, Assurance...)
+                    <i data-lucide="package" style="width: 16px; height: 16px; color: #D97706;"></i> Frais Annexes (Uniforme, Badge, Assurance...)
                   </span>
                   <div style="font-size: 14px; font-weight: 700; color: #78350F; margin-top: 4px;" id="wiz_frais_annexes_title_text">-</div>
                   <div style="font-size: 12px; color: #92400E; margin-top: 2px;" id="wiz_frais_annexes_cible_desc">-</div>
@@ -617,8 +617,8 @@ $pieces = (new ModelPieceFournir())->getAll();
                 <!-- Synthèse des Chiffres -->
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                   <div style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 8px 14px; border-radius: 8px; text-align: right;">
-                    <div style="font-size: 10.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">Tarif Officiel</div>
-                    <div style="font-size: 16px; font-weight: 900; color: #0F172A;" id="recap_scolarite_officielle">0 FCFA</div>
+                    <div style="font-size: 10.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">Tarif Scolarité</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #0F172A;" id="recap_scolarite_">0 FCFA</div>
                   </div>
                   <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 8px 14px; border-radius: 8px; text-align: right;">
                     <div style="font-size: 10.5px; font-weight: 700; color: #B45309; text-transform: uppercase;">Frais Annexes</div>
@@ -930,7 +930,7 @@ $(document).ready(function() {
 
     $('#recap_classe_title').text(classeText && classeText.indexOf('Choisir') === -1 ? classeText : 'Classe non sélectionnée');
     $('#recap_regime_text').html(isAffecte ? '<span style="color:#1E3A5F; font-weight:800;">● Régime Affecté (Subventionné par l\'État)</span>' : '<span style="color:#475569; font-weight:800;">● Régime Non Affecté (Privé)</span>');
-    $('#recap_scolarite_officielle').text(montant > 0 ? montant.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
+    $('#recap_scolarite_').text(montant > 0 ? montant.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
     $('#recap_frais_annexes_val').text($('#wiz_summary_total_frais_annexes').text() || '0 FCFA');
     $('#recap_remise_val').text(remise > 0 ? remise.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
     $('#recap_net_scolarite').text(net.toLocaleString('fr-FR') + ' FCFA');

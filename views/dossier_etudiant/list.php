@@ -195,21 +195,21 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL INTERACTIF SUR MESURE : IMPRESSION RÉCÉPISSÉ OFFICIEL               -->
+<!-- MODAL INTERACTIF SUR MESURE : IMPRESSION RÉCÉPISSÉ                -->
 <!-- ========================================================================= -->
 <div id="modal-recepisse" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 10000; justify-content: center; align-items: center; padding: 16px;">
   <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 850px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; animation: slideDown 0.2s ease-out;">
     
     <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
       <h3 style="font-size: 15px; font-weight: 800; margin: 0; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Bordereau Officiel de Dépôt de Pièces
+        <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Bordereau de Dépôt de Pièces
       </h3>
       <button type="button" class="btn-close-modal-recepisse" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
 
     <div style="padding: 24px; background: #FFFFFF; overflow-y: auto; flex: 1;" id="printable-recepisse-area">
       
-      <!-- Document A4 officiel d'impression -->
+      <!-- Document A4  d'impression -->
       <div style="border: 2px solid #1E3A5F; padding: 24px; border-radius: 12px; background: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif;">
         
         <!-- En-tête Récépissé -->
@@ -231,7 +231,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
         <!-- Titre du Document -->
         <div style="text-align: center; margin-bottom: 22px;">
           <h3 style="font-size: 18px; font-weight: 900; color: #0F172A; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">RÉCÉPISSÉ DE DÉPÔT DE PIÈCES</h3>
-          <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0;">Bordereau officiel d'émargement du dossier d'inscription</p>
+          <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0;">Bordereau d'émargement du dossier d'inscription</p>
         </div>
 
         <!-- Informations Étudiant -->
@@ -467,7 +467,7 @@ $(document).ready(function() {
                      '<button type="button" class="btn btn-sm btn-primary btn-open-dossier" style="font-weight: 700; border-radius: 8px; padding: 6px 11px;" title="Gérer les pièces et les scans">' +
                        '<i data-lucide="folder-open" style="width: 14px; height: 14px; margin-right: 4px;"></i> Gérer' +
                      '</button>' +
-                     '<button type="button" class="btn btn-sm btn-outline-primary btn-print-recepisse-row" title="Imprimer Récépissé Officiel" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
+                     '<button type="button" class="btn btn-sm btn-outline-primary btn-print-recepisse-row" title="Imprimer le Récépissé" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
                        '<i data-lucide="printer" style="width: 14px; height: 14px;"></i>' +
                      '</button>' +
                      '<button type="button" class="btn btn-sm btn-outline-success btn-quick-validate" title="Tout valider en 1 clic" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
@@ -706,7 +706,7 @@ $(document).ready(function() {
     });
   }
 
-  // Chargement et impression du Bordereau / Récépissé Officiel
+  // Chargement et impression du Bordereau / Récépissé 
   function loadAndOpenRecepisseModal(inscrCode) {
     $.ajax({
       url: '<?= RACINE ?>dossier_etudiant/getRecepisseData',

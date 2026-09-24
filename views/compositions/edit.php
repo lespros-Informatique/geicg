@@ -127,7 +127,7 @@ if (empty($existingNiveaux)) {
               <!-- Intitulé de l'épreuve -->
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                  Intitulé Officiel de l'Épreuve <span style="color: #EF4444;">*</span>
+                  Intitulé de l'Épreuve <span style="color: #EF4444;">*</span>
                 </label>
                 <input type="text" class="form-control" name="libelle_composition" value="<?= htmlspecialchars($item['libelle_composition'] ?? '') ?>" placeholder="Ex: Composition du 1er Semestre - Algo, Examen Blanc BTS 2026..." required style="width: 100%; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; color: #0F172A;">
               </div>

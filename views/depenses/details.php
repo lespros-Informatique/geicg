@@ -76,7 +76,7 @@ $confirmateur = !empty($item['confirmateur_nom_complet']) ? trim($item['confirma
         </div>
       </div>
 
-      <!-- CARD : BON DE DÉCAISSEMENT OFFICIEL -->
+      <!-- CARD : BON DE DÉCAISSEMENT  -->
       <div class="card card-bon" style="background: #FFFFFF; border-radius: 12px; padding: 32px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
         
         <!-- En-tête du Bon -->

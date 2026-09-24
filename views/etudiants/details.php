@@ -48,7 +48,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
       </div>
 
       <!-- ========================================================================= -->
-      <!-- SECTION NOUVELLE : CARTE SCOLAIRE OFFICIELLE & BADGE ÉTUDIANT (RECTO / VERSO) -->
+      <!-- SECTION NOUVELLE : CARTE SCOLAIRE  & BADGE ÉTUDIANT (RECTO / VERSO) -->
       <!-- ========================================================================= -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #EFF6FF; padding-bottom: 12px;">
@@ -151,7 +151,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
 
             <!-- Pied du Recto -->
             <div style="position: absolute; bottom: 8px; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 4px; font-size: 7px; color: #94A3B8;">
-              <span>CARTE D'IDENTITÉ SCOLAIRE OFFICIELLE</span>
+              <span>CARTE D'IDENTITÉ SCOLAIRE</span>
               <span style="color: #FDE68A; font-weight: 700;">VALABLE JUSQU'AU 31/08/2026</span>
             </div>
 

@@ -175,7 +175,7 @@
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE OFFICIELLE INSTITUTION -->
+  <!-- EN-TÊTE INSTITUTIONNEL -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
   ?>
@@ -372,7 +372,7 @@
 
   <!-- FOOTER HORODATAGE -->
   <div class="footer-line">
-    Relevé officiel des versements généré par le système informatique GEICG - Édition du <?= date('d/m/Y H:i:s') ?>
+    Relevé des versements généré par le système informatique GEICG - Édition du <?= date('d/m/Y H:i:s') ?>
   </div>
 
 </div>

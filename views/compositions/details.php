@@ -71,7 +71,7 @@ $encryptedId = $encryptedId ?? '';
             <i data-lucide="award" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
             Fiche Composition : <?= htmlspecialchars($item['libelle_composition'] ?? 'Épreuve') ?>
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails officiels de la programmation, coefficients et classes associées</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails de la programmation, coefficients et classes associées</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
           <a href="<?= RACINE ?>composition/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">

@@ -132,7 +132,7 @@ $isEdit = !empty($item['id_enseignant']);
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro d'Autorisation d'Enseigner</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="numero_autorisation" value="<?= htmlspecialchars($item['numero_autorisation'] ?? '') ?>" placeholder="Ex: AUT-2024-00892">
-              <small style="color: #64748B; font-size: 11px; margin-top: 4px; display: block;">Numéro d'autorisation ministérielle officielle.</small>
+              <small style="color: #64748B; font-size: 11px; margin-top: 4px; display: block;">Numéro d'autorisation ministérielle.</small>
             </div>
 
             <?php if ($isEdit): ?>

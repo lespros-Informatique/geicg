@@ -506,7 +506,7 @@ class InscriptionController extends BaseController
             $dateLimiteTranche = $firstTranche['date_limite_formatee'];
         }
 
-        // 3. Récupérer le tarif officiel des Frais Annexes depuis la table dédiée `frais_annexes` par Type de Filière et Niveau
+        // 3. Récupérer le tarif  des Frais Annexes depuis la table dédiée `frais_annexes` par Type de Filière et Niveau
         $modelFraisAnnexe = new ModelFraisAnnexe();
         $totalFraisAnnexes = $modelFraisAnnexe->getMontantByTypeFiliere($typeFiliere, $activeAnneeCode, $niveauCode);
         $fraisAnnexeDetails = $modelFraisAnnexe->getFraisAnnexeDetails($typeFiliere, $activeAnneeCode, $niveauCode);
@@ -777,7 +777,7 @@ class InscriptionController extends BaseController
             $db->prepare($sqlUpEtu)->execute($paramsEtu);
         }
 
-        // Récupération sécurisée du barème officiel côté backend
+        // Récupération sécurisée du barème  côté backend
         $affectationEtat = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'affecte' : 'non_affecte';
         $data['affectation_etat'] = ($affectationEtat === 'affecte') ? 'oui' : 'non';
 
@@ -843,7 +843,7 @@ class InscriptionController extends BaseController
             }
         }
 
-        // Forcer le montant officiel et la date d'inscription côté backend pour garantir l'intégrité
+        // Forcer le montant  et la date d'inscription côté backend pour garantir l'intégrité
         $data['montant_scolarite_inscription'] = $officialScolarite;
         $data['date_inscription'] = date('Y-m-d');
 
@@ -906,7 +906,7 @@ class InscriptionController extends BaseController
 
         $db = $this->model->getCon();
 
-        // Récupération sécurisée du barème officiel côté backend si la classe ou le statut change
+        // Récupération sécurisée du barème  côté backend si la classe ou le statut change
         if (!empty($data['classe_code'])) {
             $affectationEtat = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'affecte' : 'non_affecte';
             $data['affectation_etat'] = ($affectationEtat === 'affecte') ? 'oui' : 'non';

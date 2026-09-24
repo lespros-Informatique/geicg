@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Rappel de Scolarité Officiel</title>
+  <title>Rappel de Scolarité</title>
   <style>
     @page {
       margin: 10mm 10mm 10mm 10mm;
@@ -145,7 +145,7 @@
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE OFFICIELLE INSTITUTION -->
+  <!-- EN-TÊTE INSTITUTIONNEL -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
   ?>
