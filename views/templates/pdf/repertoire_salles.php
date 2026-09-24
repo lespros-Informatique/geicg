@@ -345,8 +345,8 @@
     </tr>
     <tr>
       <td>
-        <span class="meta-label">Campus / Établissement :</span> 
-        <span class="meta-value"><?= htmlspecialchars($etablissement['nom_court_etablissement'] ?? 'Campus Central') ?></span>
+        <span class="meta-label">Établissement :</span> 
+        <span class="meta-value"><?= htmlspecialchars(!empty($etablissement['sigle_etablissement']) ? $etablissement['sigle_etablissement'] : 'GROUPE EICG') ?></span>
       </td>
       <td>
         <span class="meta-label">Nombre de Salles :</span> 

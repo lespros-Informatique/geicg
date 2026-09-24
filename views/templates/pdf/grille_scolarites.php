@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Grille des Frais de Scolarité & Échéanciers - GEICG</title>
+  <title>Grille des Frais de Scolarité - GEICG</title>
   <style>
     @page {
       margin-top: 8mm;
@@ -107,19 +107,19 @@
       margin-bottom: 6px;
     }
     .kpi-cell {
-      padding: 4px 6px;
+      padding: 5px 8px;
       text-align: center;
       background: #FFFFFF;
       border: 1px solid #CBD5E1;
       border-radius: 4px;
     }
     .kpi-num {
-      font-size: 10.5pt;
+      font-size: 11pt;
       font-weight: bold;
       color: #1E3A5F;
     }
     .kpi-text {
-      font-size: 6.8pt;
+      font-size: 7pt;
       color: #475569;
       text-transform: uppercase;
       font-weight: bold;
@@ -130,13 +130,13 @@
     .section-header-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 12px;
+      margin-top: 10px;
       margin-bottom: 6px;
       background-color: #E2E8F0;
       border-left: 3.5px solid #1E3A5F;
     }
     .section-header-table td {
-      padding: 3.5px 7px;
+      padding: 4px 8px;
       font-size: 8.5pt;
       font-weight: bold;
       color: #1E3A5F;
@@ -148,7 +148,7 @@
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
     .data-table th {
       background-color: #1E3A5F;
@@ -157,12 +157,12 @@
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      padding: 4px 6px;
+      padding: 4.5px 6px;
       border: 0.5px solid #1E3A5F;
       text-align: left;
     }
     .data-table td {
-      padding: 4px 6px;
+      padding: 4.5px 6px;
       font-size: 8pt;
       border: 0.5px solid #CBD5E1;
       vertical-align: middle;
@@ -198,7 +198,7 @@
       font-size: 7pt;
       background-color: #DCFCE7;
       border: 0.5px solid #86EFAC;
-      padding: 1.5px 5px;
+      padding: 1.5px 6px;
       border-radius: 3px;
       display: inline-block;
     }
@@ -208,26 +208,6 @@
       font-size: 7pt;
       background-color: #F1F5F9;
       border: 0.5px solid #CBD5E1;
-      padding: 1.5px 5px;
-      border-radius: 3px;
-      display: inline-block;
-    }
-    .badge-statut-actif {
-      color: #15803D;
-      font-weight: bold;
-      font-size: 7.5pt;
-      background-color: #DCFCE7;
-      border: 0.5px solid #86EFAC;
-      padding: 1.5px 6px;
-      border-radius: 3px;
-      display: inline-block;
-    }
-    .badge-statut-inactif {
-      color: #B91C1C;
-      font-weight: bold;
-      font-size: 7.5pt;
-      background-color: #FEE2E2;
-      border: 0.5px solid #FCA5A5;
       padding: 1.5px 6px;
       border-radius: 3px;
       display: inline-block;
@@ -238,6 +218,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 18px;
+      page-break-inside: avoid;
     }
     .signature-box {
       width: 48%;
@@ -269,7 +250,7 @@
   <!-- EN-TÊTE FIXE POUR MPDF -->
   <htmlpageheader name="pageHeader">
     <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
-      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Grille des Frais de Scolarité & Échéanciers &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
+      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Grille des Frais de Scolarité &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
     </div>
   </htmlpageheader>
   <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
@@ -331,8 +312,8 @@
   <table class="banner-table">
     <tr>
       <td>
-        <div class="banner-title">GRILLE DES FRAIS DE SCOLARITÉ & ÉCHÉANCIERS</div>
-        <div class="banner-sub">BARÈME DES DROITS DE SCOLARITÉ & CALENDRIER DES ÉCHÉANCES DE PAIEMENT</div>
+        <div class="banner-title">GRILLE DES FRAIS DE SCOLARITÉ</div>
+        <div class="banner-sub">BARÈME DES DROITS DE SCOLARITÉ PAR FILIÈRE ET NIVEAU D'ÉTUDES</div>
       </td>
     </tr>
   </table>
@@ -355,8 +336,8 @@
     </tr>
     <tr>
       <td colspan="2">
-        <span class="meta-label">Campus / Établissement :</span> 
-        <span class="meta-value"><?= htmlspecialchars($etablissement['nom_court_etablissement'] ?? 'Campus Central') ?></span>
+        <span class="meta-label">Établissement :</span> 
+        <span class="meta-value"><?= htmlspecialchars(!empty($etablissement['sigle_etablissement']) ? $etablissement['sigle_etablissement'] : 'GROUPE EICG') ?></span>
       </td>
       <td>
         <span class="meta-label">Critères de filtre :</span> 
@@ -366,7 +347,6 @@
             if (!empty($filtres['filiere_code'])) $filtreInfo[] = 'Filière: ' . htmlspecialchars($filtres['filiere_code']);
             if (!empty($filtres['niveau_code'])) $filtreInfo[] = 'Niveau: ' . htmlspecialchars($filtres['niveau_code']);
             if (!empty($filtres['affectation_etat'])) $filtreInfo[] = 'Régime: ' . ($filtres['affectation_etat'] === 'affecte' ? 'Affecté' : 'Privé');
-            if (!empty($filtres['statut_scolarite'])) $filtreInfo[] = 'Statut: ' . ucfirst($filtres['statut_scolarite']);
             echo !empty($filtreInfo) ? implode(' | ', $filtreInfo) : 'Tous les critères';
           ?>
         </span>
@@ -386,52 +366,49 @@
         $nbNonAffectes++;
       }
     }
-    $totalTranches = count($tranches ?? []);
   ?>
-  <table class="kpi-table">
+  <!-- KPI / RÉSUMÉ CHIFFRÉ STYLISÉ -->
+  <table style="width: 100%; border-collapse: separate; border-spacing: 6px 0; margin-bottom: 8px;">
     <tr>
-      <td class="kpi-cell" style="width: 25%;">
-        <div class="kpi-num"><?= $totalGrilles ?></div>
-        <div class="kpi-text">Grilles Tarifaires</div>
+      <td style="width: 33.33%; background-color: #F8FAFC; border: 1px solid #CBD5E1; border-top: 3px solid #1E3A5F; padding: 5px 8px; text-align: center; border-radius: 4px;">
+        <div style="font-size: 13pt; font-weight: bold; color: #1E3A5F; line-height: 1.1;"><?= $totalGrilles ?></div>
+        <div style="font-size: 7.2pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px;">Grilles Tarifaires</div>
+        <div style="font-size: 6.2pt; color: #64748B; margin-top: 1px;">Offre tarifaire globale</div>
       </td>
-      <td class="kpi-cell" style="width: 25%;">
-        <div class="kpi-num" style="color: #15803D;"><?= $nbAffectes ?></div>
-        <div class="kpi-text">Tarifs Affectés (État)</div>
+      <td style="width: 33.33%; background-color: #F0FDF4; border: 1px solid #BBF7D0; border-top: 3px solid #16A34A; padding: 5px 8px; text-align: center; border-radius: 4px;">
+        <div style="font-size: 13pt; font-weight: bold; color: #15803D; line-height: 1.1;"><?= $nbAffectes ?></div>
+        <div style="font-size: 7.2pt; font-weight: bold; color: #15803D; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px;">Tarifs Affectés (État)</div>
+        <div style="font-size: 6.2pt; color: #166534; margin-top: 1px;">Bourse & prise en charge publique</div>
       </td>
-      <td class="kpi-cell" style="width: 25%;">
-        <div class="kpi-num" style="color: #475569;"><?= $nbNonAffectes ?></div>
-        <div class="kpi-text">Tarifs Privés (Non Affectés)</div>
-      </td>
-      <td class="kpi-cell" style="width: 25%;">
-        <div class="kpi-num" style="color: #0369A1;"><?= $totalTranches ?></div>
-        <div class="kpi-text">Tranches d'Échéancier</div>
+      <td style="width: 33.33%; background-color: #F0F9FF; border: 1px solid #BAE6FD; border-top: 3px solid #0284C7; padding: 5px 8px; text-align: center; border-radius: 4px;">
+        <div style="font-size: 13pt; font-weight: bold; color: #0369A1; line-height: 1.1;"><?= $nbNonAffectes ?></div>
+        <div style="font-size: 7.2pt; font-weight: bold; color: #0369A1; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px;">Tarifs Privés (Non Affectés)</div>
+        <div style="font-size: 6.2pt; color: #075985; margin-top: 1px;">Inscriptions directes privées</div>
       </td>
     </tr>
   </table>
 
-  <!-- SECTION 1 : GRILLES TARIFAIRES DES FRAIS DE SCOLARITÉ -->
+  <!-- SECTION : GRILLE TARIFAIRE DES FRAIS DE SCOLARITÉ -->
   <table class="section-header-table">
     <tr>
-      <td>I. GRILLE TARIFAIRE DES FRAIS DE SCOLARITÉ</td>
+      <td>GRILLE TARIFAIRE DES FRAIS DE SCOLARITÉ</td>
     </tr>
   </table>
 
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 5%; text-align: center;">#</th>
-        <th style="width: 12%;">Code</th>
-        <th style="width: 32%;">Filière</th>
-        <th style="width: 14%;">Niveau d'Études</th>
-        <th style="width: 17%; text-align: center;">Régime d'Affectation</th>
-        <th style="width: 12%; text-align: right;">Montant Annuel</th>
-        <th style="width: 8%; text-align: center;">Statut</th>
+        <th style="width: 6%; text-align: center;">#</th>
+        <th style="width: 44%;">Filière</th>
+        <th style="width: 18%;">Niveau d'Études</th>
+        <th style="width: 16%; text-align: center;">Régime d'Affectation</th>
+        <th style="width: 16%; text-align: right;">Montant Annuel</th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($scolarites)): ?>
         <tr>
-          <td colspan="7" class="text-center" style="padding: 12px; color: #64748B; font-style: italic;">
+          <td colspan="5" class="text-center" style="padding: 12px; color: #64748B; font-style: italic;">
             Aucune grille tarifaire de scolarité ne correspond aux critères sélectionnés.
           </td>
         </tr>
@@ -439,11 +416,9 @@
         <?php foreach ($scolarites as $idx => $sc): 
           $rowClass = ($idx % 2 === 0) ? 'row-even' : 'row-odd';
           $isAffecte = (($sc['affectation_etat'] ?? '') === 'affecte');
-          $isActif = (($sc['statut_scolarite'] ?? '') === 'actif');
         ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center" style="font-weight: bold; color: #64748B;"><?= $idx + 1 ?></td>
-            <td><span class="badge-code"><?= htmlspecialchars($sc['code_scolarite'] ?? '-') ?></span></td>
             <td style="font-weight: bold; color: #0F172A;"><?= htmlspecialchars($sc['libelle_filiere'] ?? $sc['filiere_code'] ?? 'Non définie') ?></td>
             <td style="color: #1E3A5F; font-weight: 600;"><?= htmlspecialchars($sc['libelle_niveau'] ?? $sc['niveau_code'] ?? '-') ?></td>
             <td class="text-center">
@@ -455,73 +430,6 @@
             </td>
             <td class="text-end" style="font-weight: bold; color: #0F172A;">
               <?= number_format((float)($sc['montant_scolarite'] ?? 0), 0, ',', ' ') ?> FCFA
-            </td>
-            <td class="text-center">
-              <?php if ($isActif): ?>
-                <span class="badge-statut-actif">Actif</span>
-              <?php else: ?>
-                <span class="badge-statut-inactif">Inactif</span>
-              <?php endif; ?>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-      <?php endif; ?>
-    </tbody>
-  </table>
-
-  <!-- SECTION 2 : CALENDRIER DES ÉCHÉANCIERS DE PAIEMENT -->
-  <table class="section-header-table">
-    <tr>
-      <td>II. CALENDRIER DES ÉCHÉANCIERS DE PAIEMENT (TRANCHES)</td>
-    </tr>
-  </table>
-
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th style="width: 5%; text-align: center;">#</th>
-        <th style="width: 12%;">Code Tranche</th>
-        <th style="width: 32%;">Filière / Niveau Rattaché</th>
-        <th style="width: 18%;">Libellé Tranche</th>
-        <th style="width: 13%; text-align: right;">Montant Tranche</th>
-        <th style="width: 12%; text-align: center;">Date Limite</th>
-        <th style="width: 8%; text-align: center;">Statut</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php if (empty($tranches)): ?>
-        <tr>
-          <td colspan="7" class="text-center" style="padding: 12px; color: #64748B; font-style: italic;">
-            Aucune tranche de scolarité configurée pour cette sélection.
-          </td>
-        </tr>
-      <?php else: ?>
-        <?php foreach ($tranches as $tIdx => $tr): 
-          $rowClass = ($tIdx % 2 === 0) ? 'row-even' : 'row-odd';
-          $isTrActif = (($tr['statut_tranche'] ?? '') === 'actif');
-          $filLib = $tr['libelle_filiere'] ?? $tr['filiere_code'] ?? 'Filière';
-          $nivLib = $tr['libelle_niveau'] ?? $tr['niveau_code'] ?? '';
-          $scolAff = (($tr['affectation_etat'] ?? '') === 'affecte') ? ' (Affecté)' : ((($tr['affectation_etat'] ?? '') === 'non_affecte') ? ' (Privé)' : '');
-          $dateLim = !empty($tr['date_limite']) ? date('d/m/Y', strtotime($tr['date_limite'])) : '-';
-        ?>
-          <tr class="<?= $rowClass ?>">
-            <td class="text-center" style="font-weight: bold; color: #64748B;"><?= $tIdx + 1 ?></td>
-            <td><span class="badge-code"><?= htmlspecialchars($tr['code_tranche'] ?? '-') ?></span></td>
-            <td style="color: #0F172A;">
-              <span style="font-weight: bold;"><?= htmlspecialchars($filLib . ' ' . $nivLib) ?></span>
-              <span style="font-size: 7pt; color: #64748B;"><?= htmlspecialchars($scolAff) ?></span>
-            </td>
-            <td style="font-weight: 600; color: #1E3A5F;"><?= htmlspecialchars($tr['libelle_tranche'] ?? '-') ?></td>
-            <td class="text-end" style="font-weight: bold; color: #0F172A;">
-              <?= number_format((float)($tr['montant_tranche'] ?? 0), 0, ',', ' ') ?> FCFA
-            </td>
-            <td class="text-center" style="color: #475569; font-weight: 600;"><?= htmlspecialchars($dateLim) ?></td>
-            <td class="text-center">
-              <?php if ($isTrActif): ?>
-                <span class="badge-statut-actif">Actif</span>
-              <?php else: ?>
-                <span class="badge-statut-inactif">Inactif</span>
-              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

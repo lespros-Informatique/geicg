@@ -77,43 +77,44 @@
         </div>
       </div>
 
-      <!-- Bandeau Résumé / Indicateurs Clés -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <!-- Bandeau Résumé / Indicateurs Clés Stylisés -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px;">
         
         <!-- Total Grilles -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 46px; height: 46px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="calculator" style="width: 22px; height: 22px;"></i>
+        <div class="card kpi-card" style="background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; border-left: 4px solid #1E3A5F; box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04); display: flex; align-items: center; gap: 16px; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+          <div style="width: 50px; height: 50px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(30, 58, 95, 0.12);">
+            <i data-lucide="calculator" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
             <div style="font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Grilles Tarifaires</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.2;"><?= (int)($totalScolarites ?? 0) ?></div>
+            <div style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1.2;"><?= (int)($totalScolarites ?? 0) ?></div>
+            <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Combinaisons filières & niveaux</div>
           </div>
         </div>
 
         <!-- Régime Affecté (État) -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 46px; height: 46px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="check-circle-2" style="width: 22px; height: 22px;"></i>
+        <div class="card kpi-card" style="background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #DCFCE7; border-left: 4px solid #16A34A; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.05); display: flex; align-items: center; gap: 16px; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+          <div style="width: 50px; height: 50px; border-radius: 12px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(21, 128, 61, 0.12);">
+            <i data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
             <div style="font-size: 11.5px; font-weight: 700; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Tarifs Affectés (État)</div>
-            <div style="font-size: 22px; font-weight: 800; color: #15803D; line-height: 1.2;"><?= (int)($totalAffectes ?? 0) ?></div>
+            <div style="font-size: 24px; font-weight: 800; color: #15803D; line-height: 1.2;"><?= (int)($totalAffectes ?? 0) ?></div>
+            <div style="font-size: 11.5px; color: #166534; margin-top: 2px;">Bourse & prise en charge publique</div>
           </div>
         </div>
 
         <!-- Régime Non Affecté (Privé) -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 46px; height: 46px; border-radius: 10px; background: #F1F5F9; color: #475569; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="user-check" style="width: 22px; height: 22px;"></i>
+        <div class="card kpi-card" style="background: linear-gradient(135deg, #FFFFFF 0%, #F0F9FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #E0F2FE; border-left: 4px solid #0284C7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.05); display: flex; align-items: center; gap: 16px; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+          <div style="width: 50px; height: 50px; border-radius: 12px; background: #E0F2FE; color: #0369A1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(3, 105, 161, 0.12);">
+            <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Tarifs Privés (Non Affectés)</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.2;"><?= (int)($totalNonAffectes ?? 0) ?></div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #0369A1; text-transform: uppercase; letter-spacing: 0.5px;">Tarifs Privés (Non Affectés)</div>
+            <div style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1.2;"><?= (int)($totalNonAffectes ?? 0) ?></div>
+            <div style="font-size: 11.5px; color: #0284C7; margin-top: 2px;">Inscriptions directes autofinancées</div>
           </div>
         </div>
-
-
       </div>
 
       <!-- Nav Tabs -->
@@ -131,6 +132,10 @@
       </ul>
 
       <style>
+        .kpi-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08) !important;
+        }
         .dataTables_wrapper {
           width: 100% !important;
           position: relative !important;
