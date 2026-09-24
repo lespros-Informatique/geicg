@@ -7,15 +7,17 @@ class ModelPieceFournirCycle extends BaseModel
     protected ?string $statusField = 'statut_piece_cycle';
     protected ?string $createdAtField = 'created_at_piece_cycle';
 
-    public function getAll(?string $cycleCode = null): array
+    public function getAll(?string $cycleCode = null, ?string $niveauCode = null): array
     {
         $sql = "
             SELECT pfc.*, 
                    c.libelle_cycle,
+                   n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
             FROM piece_fournir_cycle pfc
             LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
+            LEFT JOIN niveaux n ON n.code_niveau = pfc.niveau_code
             LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
         ";
         $conditions = [];
@@ -23,6 +25,10 @@ class ModelPieceFournirCycle extends BaseModel
         if (!empty($cycleCode)) {
             $conditions[] = "pfc.cycle_code = ?";
             $params[] = $cycleCode;
+        }
+        if (!empty($niveauCode)) {
+            $conditions[] = "(pfc.niveau_code = ? OR pfc.niveau_code IS NULL OR pfc.niveau_code = '')";
+            $params[] = $niveauCode;
         }
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
@@ -43,10 +49,12 @@ class ModelPieceFournirCycle extends BaseModel
         $sql = "
             SELECT pfc.*, 
                    c.libelle_cycle,
+                   n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
             FROM piece_fournir_cycle pfc
             LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
+            LEFT JOIN niveaux n ON n.code_niveau = pfc.niveau_code
             LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
             WHERE pfc.id_piece_cycle = ?
             LIMIT 1
@@ -61,23 +69,30 @@ class ModelPieceFournirCycle extends BaseModel
         }
     }
 
-    public function getByCycle(string $cycleCode): array
+    public function getByCycle(string $cycleCode, ?string $niveauCode = null): array
     {
         $sql = "
             SELECT pfc.*, 
                    c.libelle_cycle,
+                   n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
             FROM piece_fournir_cycle pfc
             LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
+            LEFT JOIN niveaux n ON n.code_niveau = pfc.niveau_code
             LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
             WHERE pfc.statut_piece_cycle = 'actif'
               AND (pfc.cycle_code = ? OR pfc.cycle_code = '' OR pfc.cycle_code IS NULL)
-            ORDER BY pfc.est_obligatoire ASC, pf.libelle_piece ASC
         ";
+        $params = [$cycleCode];
+        if (!empty($niveauCode)) {
+            $sql .= " AND (pfc.niveau_code = ? OR pfc.niveau_code IS NULL OR pfc.niveau_code = '') ";
+            $params[] = $niveauCode;
+        }
+        $sql .= " ORDER BY pfc.est_obligatoire ASC, pf.libelle_piece ASC";
         try {
             $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute([$cycleCode]);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("Get piece_fournir_cycle by cycle: " . $e->getMessage());
@@ -85,10 +100,16 @@ class ModelPieceFournirCycle extends BaseModel
         }
     }
 
-    public function existsForCycle(string $cycleCode, string $pieceCode, ?int $excludeId = null): bool
+    public function existsForCycle(string $cycleCode, string $pieceCode, ?string $niveauCode = null, ?int $excludeId = null): bool
     {
         $sql = "SELECT COUNT(*) FROM piece_fournir_cycle WHERE cycle_code = ? AND piece_code = ?";
         $params = [$cycleCode, $pieceCode];
+        if (!empty($niveauCode)) {
+            $sql .= " AND (niveau_code = ? OR niveau_code IS NULL)";
+            $params[] = $niveauCode;
+        } else {
+            $sql .= " AND (niveau_code IS NULL OR niveau_code = '')";
+        }
         if ($excludeId !== null && $excludeId > 0) {
             $sql .= " AND id_piece_cycle != ?";
             $params[] = $excludeId;
@@ -103,12 +124,17 @@ class ModelPieceFournirCycle extends BaseModel
         }
     }
 
-    public function getAssignedPieceCodes(string $cycleCode): array
+    public function getAssignedPieceCodes(string $cycleCode, ?string $niveauCode = null): array
     {
         $sql = "SELECT piece_code FROM piece_fournir_cycle WHERE cycle_code = ?";
+        $params = [$cycleCode];
+        if (!empty($niveauCode)) {
+            $sql .= " AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '')";
+            $params[] = $niveauCode;
+        }
         try {
             $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute([$cycleCode]);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
         } catch (Exception $e) {
             error_log("getAssignedPieceCodes error: " . $e->getMessage());
@@ -116,7 +142,7 @@ class ModelPieceFournirCycle extends BaseModel
         }
     }
 
-    public function getSummaryCounts(?string $cycleCode = null): array
+    public function getSummaryCounts(?string $cycleCode = null, ?string $niveauCode = null): array
     {
         try {
             $db = $this->getCon();
@@ -125,6 +151,10 @@ class ModelPieceFournirCycle extends BaseModel
             if (!empty($cycleCode)) {
                 $conditions[] = "cycle_code = ?";
                 $params[] = $cycleCode;
+            }
+            if (!empty($niveauCode)) {
+                $conditions[] = "(niveau_code = ? OR niveau_code IS NULL OR niveau_code = '')";
+                $params[] = $niveauCode;
             }
 
             $whereStr = !empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "";

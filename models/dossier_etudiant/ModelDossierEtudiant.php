@@ -28,7 +28,9 @@ class ModelDossierEtudiant extends BaseModel
             JOIN classes cl ON cl.code_classe = i.classe_code
             JOIN niveaux n ON n.code_niveau = cl.niveau_code
             LEFT JOIN filiere_cycles fc ON fc.filiere_code = cl.filiere_code
-            JOIN piece_fournir_cycle pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') AND pfc.statut_piece_cycle = 'actif'
+            JOIN piece_fournir_cycle pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
+                 AND (pfc.niveau_code = cl.niveau_code OR pfc.niveau_code IS NULL OR pfc.niveau_code = '')
+                 AND pfc.statut_piece_cycle = 'actif'
             JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
             LEFT JOIN dossier_etudiant de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
             WHERE i.code_inscription = ?

@@ -40,6 +40,18 @@
               </div>
 
               <div>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Niveau d'étude</label>
+                <select name="niveau_code" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
+                  <option value="">-- Tous les niveaux du cycle --</option>
+                  <?php foreach (($niveaux ?? []) as $niv): ?>
+                    <option value="<?= $niv['code_niveau'] ?>" <?= ($item['niveau_code'] ?? '') === $niv['code_niveau'] ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($niv['libelle_niveau']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Document / Pièce administrative *</label>
                 <select name="piece_code" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <?php foreach ($pieces as $p): ?>
@@ -95,13 +107,13 @@
         <form action="<?= RACINE ?>piece_fournir_cycle/add" method="POST" id="form-bulk-piece-cycle" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
-          <!-- Choix du Cycle & Année -->
+          <!-- Choix du Cycle & Niveau -->
           <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 24px; border: 1px solid #CBD5E1; box-shadow: 0 2px 8px rgba(15,23,42,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
             <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="layers" style="width: 18px; height: 18px;"></i> Cycle Académique de Destination
+              <i data-lucide="layers" style="width: 18px; height: 18px;"></i> Cycle Académique & Niveau de Destination
             </h3>
 
-            <div style="max-width: 600px; width: 100%;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%;">
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle ciblé *</label>
                 <select name="cycle_code" id="select_target_cycle" required class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
@@ -112,7 +124,20 @@
                     </option>
                   <?php endforeach; ?>
                 </select>
-                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Ces pièces constitueront le dossier administratif exigé pour tous les étudiants inscrits dans ce cycle.</small>
+                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cycle académique d'application du dossier administratif.</small>
+              </div>
+
+              <div>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Niveau d'étude</label>
+                <select name="niveau_code" id="select_target_niveau" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
+                  <option value="">-- Tous les niveaux du cycle --</option>
+                  <?php foreach (($niveaux ?? []) as $niv): ?>
+                    <option value="<?= $niv['code_niveau'] ?>">
+                      <?= htmlspecialchars($niv['libelle_niveau']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Optionnel : restreindre à un niveau précis ou appliquer à tous les niveaux du cycle.</small>
               </div>
             </div>
           </div>
@@ -189,7 +214,7 @@ var alreadyAssignedCodes = [];
 $(document).ready(function() {
   var rowIndex = 0;
 
-  function loadAssignedPiecesForCycle(cycleCode) {
+  function loadAssignedPiecesForCycle(cycleCode, niveauCode) {
     if (!cycleCode) {
       alreadyAssignedCodes = [];
       refreshAllDropdowns();
@@ -199,13 +224,16 @@ $(document).ready(function() {
     $.ajax({
       url: '<?= RACINE ?>piece_fournir_cycle/getByCycleApi',
       type: 'GET',
-      data: { cycle_code: cycleCode },
+      data: { 
+        cycle_code: cycleCode,
+        niveau_code: niveauCode || ''
+      },
       dataType: 'json',
       success: function(res) {
         alreadyAssignedCodes = res.assignedCodes || [];
         refreshAllDropdowns();
         if (alreadyAssignedCodes.length > 0) {
-          if (window.toastr) toastr.info(alreadyAssignedCodes.length + ' pièce(s) sont déjà enregistrées pour ce cycle.');
+          if (window.toastr) toastr.info(alreadyAssignedCodes.length + ' pièce(s) sont déjà enregistrées pour cette configuration.');
         }
       }
     });
@@ -352,9 +380,10 @@ $(document).ready(function() {
     createRow('', 1, 'original', 'obligatoire');
   }
 
-  $('#select_target_cycle').on('change', function() {
-    var cycle = $(this).val();
-    loadAssignedPiecesForCycle(cycle);
+  $('#select_target_cycle, #select_target_niveau').on('change', function() {
+    var cycle = $('#select_target_cycle').val();
+    var niveau = $('#select_target_niveau').val();
+    loadAssignedPiecesForCycle(cycle, niveau);
   });
 
   // Check on piece select change

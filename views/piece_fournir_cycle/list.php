@@ -18,18 +18,31 @@
         </a>
       </div>
 
-      <!-- Filtre par Cycle Académique -->
+      <!-- Filtres par Cycle & Niveau Académique -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="max-width: 400px;">
-          <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Cycle Académique</label>
-          <select id="filter-cycle" class="form-control select2" style="width: 100%;">
-            <option value="">-- Tous les cycles --</option>
-            <?php foreach (($cycles ?? []) as $c): ?>
-              <option value="<?= htmlspecialchars($c['code_cycle']) ?>" <?= (($selectedCycleCode ?? '') === $c['code_cycle']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($c['libelle_cycle']) ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+          <div style="flex: 1; min-width: 250px;">
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Cycle Académique</label>
+            <select id="filter-cycle" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les cycles --</option>
+              <?php foreach (($cycles ?? []) as $c): ?>
+                <option value="<?= htmlspecialchars($c['code_cycle']) ?>" <?= (($selectedCycleCode ?? '') === $c['code_cycle']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($c['libelle_cycle']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 250px;">
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Niveau d'étude</label>
+            <select id="filter-niveau" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les niveaux --</option>
+              <?php foreach (($niveaux ?? []) as $niv): ?>
+                <option value="<?= htmlspecialchars($niv['code_niveau']) ?>" <?= (($selectedNiveauCode ?? '') === $niv['code_niveau']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($niv['libelle_niveau']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -154,6 +167,7 @@
               <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
                 <th style="padding: 12px 14px;">Code</th>
                 <th style="padding: 12px 14px;">Cycle Académique</th>
+                <th style="padding: 12px 14px;">Niveau Cible</th>
                 <th style="padding: 12px 14px;">Document / Pièce Administrative</th>
                 <th style="padding: 12px 14px; text-align: center;">Exemplaires</th>
                 <th style="padding: 12px 14px;">Nature Requise</th>
@@ -175,7 +189,7 @@
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-cycle').select2({ width: '100%' });
+    $('#filter-cycle, #filter-niveau').select2({ width: '100%' });
   }
 
   function reloadStats() {
@@ -183,7 +197,8 @@ $(document).ready(function() {
       url: '<?= RACINE ?>piece_fournir_cycle/apiStats',
       type: 'GET',
       data: {
-        cycle_code: $('#filter-cycle').val()
+        cycle_code: $('#filter-cycle').val(),
+        niveau_code: $('#filter-niveau').val()
       },
       dataType: 'json',
       success: function(res) {
@@ -203,6 +218,7 @@ $(document).ready(function() {
       type: 'GET',
       data: function(d) {
         d.cycle_code = $('#filter-cycle').val();
+        d.niveau_code = $('#filter-niveau').val();
       }
     },
     processing: true,
@@ -214,6 +230,12 @@ $(document).ready(function() {
       } },
       { data: 'libelle_cycle', render: function(d) {
         return '<span class="cycle-badge" style="background:#FAF5FF; color:#7E22CE; font-weight:800; font-size:12px; padding:5px 10px; border-radius:6px; border:1px solid #E9D5FF; display:inline-block; position:static;">' + (d || 'Tous cycles') + '</span>';
+      } },
+      { data: 'libelle_niveau', render: function(d) {
+        if (d) {
+          return '<span class="badge" style="background:#E0F2FE; color:#0369A1; font-weight:800; font-size:12px; padding:5px 10px; border-radius:6px; border:1px solid #BAE6FD; display:inline-block; position:static;">' + d + '</span>';
+        }
+        return '<span class="badge" style="background:#F1F5F9; color:#64748B; font-weight:700; font-size:12px; padding:5px 10px; border-radius:6px; display:inline-block; position:static;">Tous niveaux</span>';
       } },
       { data: 'libelle_piece', render: function(d, type, row) {
         var desc = row.description_piece ? '<div style="font-size:11.5px; color:#64748B; margin-top:2px;">' + row.description_piece + '</div>' : '';
@@ -262,7 +284,7 @@ $(document).ready(function() {
 
   reloadStats();
 
-  $('#filter-cycle').on('change', function() {
+  $('#filter-cycle, #filter-niveau').on('change', function() {
     table.ajax.reload();
     reloadStats();
   });

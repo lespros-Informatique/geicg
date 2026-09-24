@@ -179,7 +179,7 @@ class ForeignKeyValidator
         'accessoires' => ['etablissement_code'],
         'dossier_etudiant' => ['inscription_code', 'etudiant_code', 'piece_code', 'etablissement_code'],
         'parents' => ['etablissement_code'],
-        'piece_fournir_cycle' => ['piece_code', 'cycle_code', 'etablissement_code'],
+        'piece_fournir_cycle' => ['piece_code', 'cycle_code', 'etablissement_code', 'niveau_code'],
         'pieces_fournir' => ['etablissement_code'],
         'semestres' => ['annee_code', 'etablissement_code'],
         'documents' => ['etablissement_code'],

@@ -12,14 +12,18 @@ class PieceFournirCycleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $cycles = (new ModelCycle())->getAll();
+        $niveaux = (new ModelNiveau())->getActifs();
         
         $selectedCycleCode = $_GET['cycle_code'] ?? null;
-        $summary = $this->model->getSummaryCounts($selectedCycleCode);
+        $selectedNiveauCode = $_GET['niveau_code'] ?? null;
+        $summary = $this->model->getSummaryCounts($selectedCycleCode, $selectedNiveauCode);
 
         $this->loadView('../views/piece_fournir_cycle/list.php', [
             'summary' => $summary,
             'cycles' => $cycles,
-            'selectedCycleCode' => $selectedCycleCode
+            'niveaux' => $niveaux,
+            'selectedCycleCode' => $selectedCycleCode,
+            'selectedNiveauCode' => $selectedNiveauCode
         ]);
     }
 
@@ -28,7 +32,8 @@ class PieceFournirCycleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
-        $items = $this->model->getAll($cycleCode);
+        $niveauCode = isset($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $items = $this->model->getAll($cycleCode, $niveauCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_piece_cycle'];
@@ -46,7 +51,8 @@ class PieceFournirCycleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
-        $summary = $this->model->getSummaryCounts($cycleCode);
+        $niveauCode = isset($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $summary = $this->model->getSummaryCounts($cycleCode, $niveauCode);
         $this->json(['status' => 1, 'data' => $summary]);
     }
 
@@ -55,10 +61,12 @@ class PieceFournirCycleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
         $cycles = (new ModelCycle())->getAll();
+        $niveaux = (new ModelNiveau())->getActifs();
         $pieces = (new ModelPieceFournir())->getActifs();
 
         $this->loadView('../views/piece_fournir_cycle/edit.php', [
             'cycles' => $cycles,
+            'niveaux' => $niveaux,
             'pieces' => $pieces
         ]);
     }
@@ -79,11 +87,13 @@ class PieceFournirCycleController extends BaseController
         }
 
         $cycles = (new ModelCycle())->getAll();
+        $niveaux = (new ModelNiveau())->getActifs();
         $pieces = (new ModelPieceFournir())->getActifs();
 
         $this->loadView('../views/piece_fournir_cycle/edit.php', [
             'item' => $item,
             'cycles' => $cycles,
+            'niveaux' => $niveaux,
             'pieces' => $pieces
         ]);
     }
@@ -99,13 +109,14 @@ class PieceFournirCycleController extends BaseController
         unset($data['csrf_token']);
 
         $cycleCode = trim($data['cycle_code'] ?? '');
+        $niveauCode = !empty($data['niveau_code']) ? trim($data['niveau_code']) : null;
 
         if (empty($cycleCode)) {
             $this->error("Veuillez sélectionner le cycle académique.");
             return;
         }
 
-        $existingPieces = $this->model->getAssignedPieceCodes($cycleCode);
+        $existingPieces = $this->model->getAssignedPieceCodes($cycleCode, $niveauCode);
 
         // Ajout multiple par lot
         if (isset($data['items']) && is_array($data['items'])) {
@@ -117,7 +128,7 @@ class PieceFournirCycleController extends BaseController
                 $pieceCode = trim($item['piece_code'] ?? '');
                 if (empty($pieceCode)) continue;
 
-                // Vérifier si la pièce existe déjà pour ce cycle dans la BD ou dans la même requête
+                // Vérifier si la pièce existe déjà pour ce cycle/niveau dans la BD ou dans la même requête
                 if (in_array($pieceCode, $existingPieces) || in_array($pieceCode, $seenInRequest)) {
                     $duplicateCount++;
                     continue;
@@ -133,6 +144,7 @@ class PieceFournirCycleController extends BaseController
                 $saveData = [
                     'code_piece_cycle' => $code,
                     'cycle_code' => $cycleCode,
+                    'niveau_code' => $niveauCode,
                     'piece_code' => $pieceCode,
                     'nombre_exemplaires' => $nbEx,
                     'nature_document' => $nature,
@@ -158,7 +170,7 @@ class PieceFournirCycleController extends BaseController
                 exit();
             } else {
                 if ($duplicateCount > 0) {
-                    $this->error("Toutes les pièces sélectionnées existent déjà dans le dossier de ce cycle.");
+                    $this->error("Toutes les pièces sélectionnées existent déjà dans le dossier de ce cycle pour ce niveau.");
                 } else {
                     $this->error("Aucune pièce valide sélectionnée.");
                 }
@@ -173,8 +185,8 @@ class PieceFournirCycleController extends BaseController
             return;
         }
 
-        if ($this->model->existsForCycle($cycleCode, $pieceCode)) {
-            $this->error("Cette pièce est déjà enregistrée dans le dossier de ce cycle.");
+        if ($this->model->existsForCycle($cycleCode, $pieceCode, $niveauCode)) {
+            $this->error("Cette pièce est déjà enregistrée dans le dossier de ce cycle pour ce niveau.");
             return;
         }
 
@@ -187,6 +199,7 @@ class PieceFournirCycleController extends BaseController
         $saveData = [
             'code_piece_cycle' => $code,
             'cycle_code' => $cycleCode,
+            'niveau_code' => $niveauCode,
             'piece_code' => $pieceCode,
             'nombre_exemplaires' => $nbEx,
             'nature_document' => $nature,
@@ -221,14 +234,15 @@ class PieceFournirCycleController extends BaseController
 
         $cycleCode = trim($data['cycle_code'] ?? '');
         $pieceCode = trim($data['piece_code'] ?? '');
+        $niveauCode = !empty($data['niveau_code']) ? trim($data['niveau_code']) : null;
 
         if (empty($cycleCode) || empty($pieceCode)) {
             $this->error("Le cycle et la pièce sont obligatoires.");
             return;
         }
 
-        if ($this->model->existsForCycle($cycleCode, $pieceCode, $id)) {
-            $this->error("Cette pièce est déjà configurée dans le dossier de ce cycle.");
+        if ($this->model->existsForCycle($cycleCode, $pieceCode, $niveauCode, $id)) {
+            $this->error("Cette pièce est déjà configurée dans le dossier de ce cycle pour ce niveau.");
             return;
         }
 
@@ -238,6 +252,7 @@ class PieceFournirCycleController extends BaseController
 
         $updateData = [
             'cycle_code' => $cycleCode,
+            'niveau_code' => $niveauCode,
             'piece_code' => $pieceCode,
             'nombre_exemplaires' => $nbEx,
             'nature_document' => $nature,
@@ -302,8 +317,10 @@ class PieceFournirCycleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
         $cycleCode = trim($_GET['cycle_code'] ?? ($_POST['cycle_code'] ?? ''));
-        $items = $this->model->getByCycle($cycleCode);
-        $assignedCodes = $this->model->getAssignedPieceCodes($cycleCode);
+        $niveauCode = trim($_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''));
+        $niveauParam = !empty($niveauCode) ? $niveauCode : null;
+        $items = $this->model->getByCycle($cycleCode, $niveauParam);
+        $assignedCodes = $this->model->getAssignedPieceCodes($cycleCode, $niveauParam);
         $this->json([
             'status' => 1,
             'data' => $items,
