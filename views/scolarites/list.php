@@ -74,14 +74,6 @@
               <option value="non_affecte">Non Affecté (Privé)</option>
             </select>
           </div>
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Statut</label>
-            <select id="filter-statut" class="form-control select2" style="width: 100%; border-radius: 8px; font-size: 13px;">
-              <option value="">-- Tous les statuts --</option>
-              <option value="actif">Actif</option>
-              <option value="inactif">Inactif</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -246,7 +238,7 @@
 <script>
 $(document).ready(function() {
   if ($.fn.select2) {
-    $('#filter-annee, #filter-filiere, #filter-niveau, #filter-affectation, #filter-statut').select2({ width: '100%' });
+    $('#filter-annee, #filter-filiere, #filter-niveau, #filter-affectation').select2({ width: '100%' });
   }
 
   function updatePrintUrl() {
@@ -254,21 +246,19 @@ $(document).ready(function() {
     var filiere = $('#filter-filiere').val() || '';
     var niveau = $('#filter-niveau').val() || '';
     var affectation = $('#filter-affectation').val() || '';
-    var statut = $('#filter-statut').val() || '';
 
     var params = new URLSearchParams();
     if (annee) params.set('annee_code', annee);
     if (filiere) params.set('filiere_code', filiere);
     if (niveau) params.set('niveau_code', niveau);
     if (affectation) params.set('affectation_etat', affectation);
-    if (statut) params.set('statut', statut);
 
     var qs = params.toString();
     var href = '<?= RACINE ?>scolarite/imprimerPdf' + (qs ? '?' + qs : '');
     $('#btn-print-scolarite').attr('href', href);
   }
 
-  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-affectation, #filter-statut').on('change', function() {
+  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-affectation').on('change', function() {
     tableScolarites.ajax.reload();
     tableTranches.ajax.reload();
     updatePrintUrl();
@@ -280,7 +270,6 @@ $(document).ready(function() {
     $('#filter-filiere').val('').trigger('change.select2');
     $('#filter-niveau').val('').trigger('change.select2');
     $('#filter-affectation').val('').trigger('change.select2');
-    $('#filter-statut').val('').trigger('change.select2');
 
     tableScolarites.ajax.reload();
     tableTranches.ajax.reload();
@@ -297,7 +286,6 @@ $(document).ready(function() {
         d.filiere_code = $('#filter-filiere').val();
         d.niveau_code = $('#filter-niveau').val();
         d.affectation_etat = $('#filter-affectation').val();
-        d.statut_scolarite = $('#filter-statut').val();
       }
     },
     processing: true,
@@ -347,7 +335,6 @@ $(document).ready(function() {
         d.annee_code = $('#filter-annee').val();
         d.filiere_code = $('#filter-filiere').val();
         d.niveau_code = $('#filter-niveau').val();
-        d.statut_tranche = $('#filter-statut').val();
       }
     },
     processing: true,
