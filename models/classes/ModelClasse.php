@@ -27,7 +27,7 @@ class ModelClasse extends BaseModel
             $sqlStrict = "
                 SELECT DISTINCT c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                                 c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
-                                f.libelle_filiere, n.libelle_niveau,
+                                f.libelle_filiere, f.type_filiere, n.libelle_niveau,
                                 s.montant_scolarite, s.code_scolarite, s.affectation_etat
                 FROM classes c
                 INNER JOIN scolarites s ON s.filiere_code = c.filiere_code
@@ -40,7 +40,8 @@ class ModelClasse extends BaseModel
                 WHERE c.statut_classe = 'actif' AND c.annee_code = ?
                 GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                          c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
-                         f.libelle_filiere, n.libelle_niveau
+                         f.libelle_filiere, f.type_filiere, n.libelle_niveau,
+                         s.montant_scolarite, s.code_scolarite, s.affectation_etat
                 ORDER BY c.libelle_classe ASC
             ";
             $stmtStrict = $db->prepare($sqlStrict);
@@ -52,7 +53,7 @@ class ModelClasse extends BaseModel
         $sql = "
             SELECT DISTINCT c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                             c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
-                            f.libelle_filiere, n.libelle_niveau,
+                            f.libelle_filiere, f.type_filiere, n.libelle_niveau,
                             s.montant_scolarite, s.code_scolarite, s.affectation_etat
             FROM classes c
             INNER JOIN scolarites s ON s.filiere_code = c.filiere_code
@@ -64,7 +65,8 @@ class ModelClasse extends BaseModel
             WHERE c.statut_classe = 'actif' AND c.annee_code = ?
             GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                      c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
-                     f.libelle_filiere, n.libelle_niveau
+                     f.libelle_filiere, f.type_filiere, n.libelle_niveau,
+                     s.montant_scolarite, s.code_scolarite, s.affectation_etat
             ORDER BY c.libelle_classe ASC
         ";
 

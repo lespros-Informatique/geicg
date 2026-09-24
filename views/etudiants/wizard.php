@@ -309,7 +309,12 @@ $pieces = (new ModelPieceFournir())->getAll();
                   <?php if (!empty($classes)): ?>
                     <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
                     <?php foreach($classes as $cl): ?>
-                      <option value="<?= htmlspecialchars($cl['code_classe']) ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"><?= htmlspecialchars($cl['libelle_classe']) ?> (<?= htmlspecialchars($cl['code_classe']) ?>)</option>
+                      <option value="<?= htmlspecialchars($cl['code_classe']) ?>" 
+                              data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"
+                              data-type-filiere="<?= htmlspecialchars($cl['type_filiere'] ?? '') ?>"
+                              data-niveau="<?= htmlspecialchars($cl['niveau_code'] ?? '') ?>">
+                        <?= htmlspecialchars($cl['libelle_classe']) ?> (<?= htmlspecialchars($cl['code_classe']) ?>)
+                      </option>
                     <?php endforeach; ?>
                   <?php else: ?>
                     <option value="">-- Aucune classe avec scolarité enregistrée pour cette année --</option>
@@ -393,7 +398,7 @@ $pieces = (new ModelPieceFournir())->getAll();
                     <i data-lucide="bookmark-check" style="width: 16px; height: 16px; color: #D97706;"></i> Frais d'inscription
                   </span>
                   <div style="font-size: 14px; font-weight: 700; color: #78350F; margin-top: 4px;" id="wiz_frais_annexes_title_text">-</div>
-                  <div style="font-size: 12px; color: #92400E; margin-top: 2px;" id="wiz_frais_annexes_cible_desc">-</div>
+                  <div style="font-size: 12px; color: #92400E; margin-top: 2px;" id="wiz_frais_annexes_details_desc">-</div>
                 </div>
                 <div style="background: #FEF3C7; border: 1px solid #FCD34D; padding: 8px 16px; border-radius: 8px; text-align: right;">
                   <div style="font-size: 10.5px; font-weight: 800; color: #92400E; text-transform: uppercase;">Total Frais d'Inscription</div>
@@ -425,14 +430,51 @@ $pieces = (new ModelPieceFournir())->getAll();
                   </button>
                 </div>
               </div>
+              <div id="acc_no_class_msg" style="display: none; padding: 12px 16px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; color: #92400E; font-size: 13px; font-weight: 600; margin-bottom: 14px;">
+                <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px; color: #D97706;"></i>
+                <span>Sélectionnez une classe à l'étape 3 pour filtrer et pré-cocher automatiquement les kits correspondants.</span>
+              </div>
+
               <?php if (!empty($accessoires)): ?>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
-                  <?php foreach($accessoires as $acc): ?>
-                    <label class="acc-checkbox-card" style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
-                      <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
-                      <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 13.5px;"><?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?></span>
+                <div id="acc_cards_container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                  <?php foreach($accessoires as $acc): 
+                    $kitTypeFiliere = $acc['type_filiere_cible'] ?? 'TOUT';
+                    $niveauCode = $acc['niveau_code'] ?? '';
+                    $libelleNiveau = $acc['libelle_niveau'] ?? '';
+                    
+                    $filiereBadgeText = ($kitTypeFiliere === 'INDUSTRIELLE') ? 'Industrielle' : (($kitTypeFiliere === 'TERTIAIRE') ? 'Tertiaire' : 'Toutes filières');
+                    $filiereBadgeBg = ($kitTypeFiliere === 'INDUSTRIELLE') ? '#FEF3C7' : (($kitTypeFiliere === 'TERTIAIRE') ? '#DBEAFE' : '#F1F5F9');
+                    $filiereBadgeColor = ($kitTypeFiliere === 'INDUSTRIELLE') ? '#92400E' : (($kitTypeFiliere === 'TERTIAIRE') ? '#1E40AF' : '#475569');
+
+                    $niveauBadgeText = !empty($libelleNiveau) ? $libelleNiveau : 'Tous niveaux';
+                  ?>
+                    <label class="acc-checkbox-card" 
+                           data-code="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>"
+                           data-type-filiere="<?= htmlspecialchars($kitTypeFiliere) ?>"
+                           data-niveau="<?= htmlspecialchars($niveauCode) ?>"
+                           style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
+                      <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer; margin-top: 2px; flex-shrink: 0;">
+                      <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                          <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 14px; text-transform: capitalize;"><?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?></span>
+                          <span class="acc-match-badge" style="display: none; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #15803D;">Pré-sélectionné</span>
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                          <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: <?= $filiereBadgeBg ?>; color: <?= $filiereBadgeColor ?>;">
+                            <?= htmlspecialchars($filiereBadgeText) ?>
+                          </span>
+                          <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: #F3F4F6; color: #4B5563;">
+                            <?= htmlspecialchars($niveauBadgeText) ?>
+                          </span>
+                        </div>
+                      </div>
                     </label>
                   <?php endforeach; ?>
+                </div>
+
+                <div id="acc_no_match_msg" style="display: none; padding: 20px; background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 10px; color: #64748B; font-size: 13px; text-align: center; font-weight: 600; margin-top: 8px;">
+                  <i data-lucide="package-x" style="width: 28px; height: 28px; display: block; margin: 0 auto 8px auto; color: #94A3B8;"></i>
+                  Aucun kit ou accessoire spécifique n'est configuré pour cette filière et ce niveau.
                 </div>
               <?php else: ?>
                 <div style="padding: 14px; background: #F8FAFC; border-radius: 8px; color: #64748B; font-size: 12.5px; font-weight: 600;">
@@ -815,6 +857,9 @@ $(document).ready(function() {
     if (currentStep >= 3) {
       refreshClassTuition();
     }
+    if (currentStep === 4) {
+      filterAndAutoCheckKits();
+    }
 
     saveFormData();
     if (window.lucide) lucide.createIcons();
@@ -985,13 +1030,85 @@ $(document).ready(function() {
     if (window.lucide) lucide.createIcons();
   }
 
+  // Gestion dynamique du filtrage et pré-cochage des kits (Option 1 : Même filière ou toute filière + Même niveau ou tout niveau)
+  var lastEvaluatedClassForKits = null;
+
+  function filterAndAutoCheckKits(typeFiliere, niveauCode, forceRecheck) {
+    var classeCode = $('#wiz_classe').val();
+    if (!classeCode) {
+      lastEvaluatedClassForKits = null;
+      $('#acc_no_class_msg').slideDown(150);
+      $('#acc_no_match_msg').hide();
+      $('.acc-checkbox-card').hide();
+      $('.chk-accessoire').prop('checked', false).each(function() {
+        updateAccCardStyle($(this));
+      });
+      return;
+    }
+
+    $('#acc_no_class_msg').slideUp(150);
+
+    if (typeof typeFiliere === 'undefined' || typeFiliere === null || typeFiliere === '') {
+      var $selectedOpt = $('#wiz_classe option:selected');
+      typeFiliere = $selectedOpt.attr('data-type-filiere') || '';
+      niveauCode = $selectedOpt.attr('data-niveau') || '';
+    }
+
+    typeFiliere = (typeFiliere || '').trim().toUpperCase();
+    niveauCode = (niveauCode || '').trim();
+
+    var isClassChanged = (classeCode !== lastEvaluatedClassForKits);
+    var shouldAutoCheck = (forceRecheck === true || isClassChanged);
+
+    var visibleCount = 0;
+
+    $('.acc-checkbox-card').each(function() {
+      var $card = $(this);
+      var $chk = $card.find('.chk-accessoire');
+      var kitFiliere = ($card.attr('data-type-filiere') || 'TOUT').trim().toUpperCase();
+      var kitNiveau = ($card.attr('data-niveau') || '').trim();
+
+      // Règle d'attribution Option 1 :
+      // 1. Filière : 'TOUT', vide, ou même type de filière que la classe
+      var matchFiliere = (kitFiliere === 'TOUT' || kitFiliere === '' || (typeFiliere !== '' && kitFiliere === typeFiliere));
+
+      // 2. Niveau : vide, 'TOUT', ou même code niveau que la classe
+      var matchNiveau = (!kitNiveau || kitNiveau === '' || kitNiveau === 'TOUT' || (niveauCode !== '' && kitNiveau === niveauCode));
+
+      if (matchFiliere && matchNiveau) {
+        $card.show();
+        if (shouldAutoCheck) {
+          $chk.prop('checked', true);
+        }
+        updateAccCardStyle($chk);
+        visibleCount++;
+      } else {
+        $card.hide();
+        $chk.prop('checked', false);
+        updateAccCardStyle($chk);
+      }
+    });
+
+    if (visibleCount === 0) {
+      $('#acc_no_match_msg').slideDown(150);
+    } else {
+      $('#acc_no_match_msg').hide();
+    }
+
+    lastEvaluatedClassForKits = classeCode;
+    if (window.lucide) lucide.createIcons();
+  }
+
   // Gestion visuelle et réactive des kits / accessoires
   function updateAccCardStyle($chk) {
     var $card = $chk.closest('.acc-checkbox-card');
+    var $badge = $card.find('.acc-match-badge');
     if ($chk.is(':checked')) {
       $card.css({ 'background': '#EFF6FF', 'border-color': '#93C5FD' });
+      $badge.show();
     } else {
       $card.css({ 'background': '#FFFFFF', 'border-color': '#CBD5E1' });
+      $badge.hide();
     }
   }
 
@@ -1017,14 +1134,14 @@ $(document).ready(function() {
   });
 
   $('#btn-check-all-accessoires').on('click', function() {
-    $('.chk-accessoire').prop('checked', true).each(function() {
+    $('.acc-checkbox-card:visible .chk-accessoire').prop('checked', true).each(function() {
       updateAccCardStyle($(this));
     });
     saveFormData();
   });
 
   $('#btn-uncheck-all-accessoires').on('click', function() {
-    $('.chk-accessoire').prop('checked', false).each(function() {
+    $('.acc-checkbox-card:visible .chk-accessoire').prop('checked', false).each(function() {
       updateAccCardStyle($(this));
     });
     saveFormData();
@@ -1101,7 +1218,7 @@ $(document).ready(function() {
             var isSel = (currentVal && cl.code_classe === currentVal);
             if (isSel) valFound = true;
             var classLabel = escapeHtml(cl.libelle_classe) + (cl.code_classe ? ' (' + escapeHtml(cl.code_classe) + ')' : '');
-            optionsHtml += '<option value="' + escapeHtml(cl.code_classe) + '" data-annee="' + escapeHtml(cl.annee_code || selectedAnnee) + '"' + (isSel ? ' selected' : '') + '>' + classLabel + '</option>';
+            optionsHtml += '<option value="' + escapeHtml(cl.code_classe) + '" data-annee="' + escapeHtml(cl.annee_code || selectedAnnee) + '" data-type-filiere="' + escapeHtml(cl.type_filiere || '') + '" data-niveau="' + escapeHtml(cl.niveau_code || '') + '"' + (isSel ? ' selected' : '') + '>' + classLabel + '</option>';
           });
           if ($emptyMsg.length) $emptyMsg.slideUp(150);
           hideRegimeWarningNotice();
@@ -1143,12 +1260,13 @@ $(document).ready(function() {
     var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
 
     if (!classeCode) {
+      filterAndAutoCheckKits(null, null);
       $('#wiz-class-tuition-box').slideUp(200);
       $('#wiz_montant_scolarite').val(0);
       $('#wiz_summary_total_frais_annexes').text('0 FCFA');
       $('#wiz_frais_annexes_amount_badge').text('0 FCFA');
       $('#wiz_frais_annexes_title_text').text('-');
-      $('#wiz_frais_annexes_cible_desc').text('-');
+      $('#wiz_frais_annexes_details_desc').text('-');
       updateNetScolarite();
       hideRegimeWarningNotice();
       return;
@@ -1166,6 +1284,8 @@ $(document).ready(function() {
       success: function(res) {
         if (res && res.status === 1 && res.data) {
           var d = res.data;
+          filterAndAutoCheckKits(d.type_filiere, d.niveau_code);
+
           var totalScolarite = Number(d.montant_scolarite || 0);
 
           // Calcul dynamique des Frais d'inscription = Montant 1ère Tranche + Frais Annexes (catégorie inscription)
@@ -1179,7 +1299,7 @@ $(document).ready(function() {
           $('#wiz_summary_total_frais_annexes').text(totalFAFormate);
           $('#wiz_frais_annexes_amount_badge').text(totalFraisInscriptionFormate);
           $('#wiz_frais_annexes_title_text').text('1ère Tranche (' + mtPremiereTrancheFormate + ') + Frais Annexes (' + totalFAFormate + ')');
-          $('#wiz_frais_annexes_cible_desc').text('Montant total exigible à l\'inscription : ' + totalFraisInscriptionFormate);
+          $('#wiz_frais_annexes_details_desc').text('Montant total exigible à l\'inscription : ' + totalFraisInscriptionFormate);
 
           if (totalScolarite > 0) {
             $('#wiz_montant_scolarite').val(totalScolarite);
@@ -1309,7 +1429,10 @@ $(document).ready(function() {
     });
   }
 
-  $('#wiz_classe').on('change select2:select', refreshClassTuition);
+  $('#wiz_classe').on('change select2:select', function() {
+    filterAndAutoCheckKits();
+    refreshClassTuition();
+  });
   $('input[name="affectation_etat"]').on('change', function() {
     $('input[name="affectation_etat"]').each(function() {
       var isChecked = $(this).is(':checked');
