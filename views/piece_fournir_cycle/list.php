@@ -149,7 +149,15 @@
           white-space: nowrap !important;
           border-bottom: 1px solid #F1F5F9 !important;
         }
-        table.dataTable .cycle-badge,
+        table.dataTable tbody td.col-piece,
+        table.dataTable td.col-piece,
+        table.dataTable th.col-piece {
+          white-space: normal !important;
+          word-break: normal !important;
+          overflow-wrap: break-word !important;
+          min-width: 220px !important;
+          max-width: 380px !important;
+        }
         table.dataTable .caractere-badge,
         table.dataTable .badge {
           position: static !important;
@@ -168,7 +176,7 @@
                 <th style="padding: 12px 14px;">Code</th>
                 <th style="padding: 12px 14px;">Cycle Académique</th>
                 <th style="padding: 12px 14px;">Niveau Cible</th>
-                <th style="padding: 12px 14px;">Document / Pièce Administrative</th>
+                <th class="col-piece" style="padding: 12px 14px; min-width: 220px;">Document / Pièce Administrative</th>
                 <th style="padding: 12px 14px; text-align: center;">Exemplaires</th>
                 <th style="padding: 12px 14px;">Nature Requise</th>
                 <th style="padding: 12px 14px; text-align: center;">Caractère Exigé</th>
@@ -228,8 +236,9 @@ $(document).ready(function() {
       { data: 'code_piece_cycle', render: function(d) {
         return '<code style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</code>';
       } },
-      { data: 'libelle_cycle', render: function(d) {
-        return '<span class="cycle-badge" style="background:#FAF5FF; color:#7E22CE; font-weight:800; font-size:12px; padding:5px 10px; border-radius:6px; border:1px solid #E9D5FF; display:inline-block; position:static;">' + (d || 'Tous cycles') + '</span>';
+      { data: 'slug_cycle', render: function(d, type, row) {
+        var cycleText = d || row.libelle_cycle || 'Tous cycles';
+        return '<span style="font-weight:700; color:#334155; font-size:13px;">' + cycleText + '</span>';
       } },
       { data: 'libelle_niveau', render: function(d) {
         if (d) {
@@ -237,9 +246,9 @@ $(document).ready(function() {
         }
         return '<span class="badge" style="background:#F1F5F9; color:#64748B; font-weight:700; font-size:12px; padding:5px 10px; border-radius:6px; display:inline-block; position:static;">Tous niveaux</span>';
       } },
-      { data: 'libelle_piece', render: function(d, type, row) {
-        var desc = row.description_piece ? '<div style="font-size:11.5px; color:#64748B; margin-top:2px;">' + row.description_piece + '</div>' : '';
-        return '<div style="font-weight:700; color:#0F172A;">' + (d || '-') + '</div>' + desc;
+      { data: 'libelle_piece', className: 'col-piece', render: function(d, type, row) {
+        var desc = row.description_piece ? '<div style="font-size:11.5px; color:#64748B; margin-top:3px; line-height:1.4; white-space:normal; overflow-wrap:break-word;">' + row.description_piece + '</div>' : '';
+        return '<div style="font-weight:700; color:#0F172A; white-space:normal; overflow-wrap:break-word; line-height:1.4;">' + (d || '-') + '</div>' + desc;
       } },
       { data: 'nombre_exemplaires', className: 'text-center', render: function(d) {
         return '<span style="font-weight:800; color:#0F172A; background:#F1F5F9; padding:4px 10px; border-radius:6px;">' + (d || 1) + ' ex.</span>';

@@ -12,6 +12,7 @@ class ModelPieceFournirCycle extends BaseModel
         $sql = "
             SELECT pfc.*, 
                    c.libelle_cycle,
+                   c.slug_cycle,
                    n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
@@ -49,6 +50,7 @@ class ModelPieceFournirCycle extends BaseModel
         $sql = "
             SELECT pfc.*, 
                    c.libelle_cycle,
+                   c.slug_cycle,
                    n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
@@ -74,6 +76,7 @@ class ModelPieceFournirCycle extends BaseModel
         $sql = "
             SELECT pfc.*, 
                    c.libelle_cycle,
+                   c.slug_cycle,
                    n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
