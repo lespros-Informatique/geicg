@@ -14,10 +14,15 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Classes & Promotions</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre des promotions d'étudiants</p>
+          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Classes</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre des classes d'étudiants</p>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['PRINT_CLASSES', 'VIEW_CLASSES', 'PRINT_OFFRE_ACADEMIQUE']))): ?>
+            <a href="<?= RACINE ?>classe/imprimerPdf" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Répertoire (PDF)
+            </a>
+          <?php endif; ?>
           <button type="button" class="btn btn-secondary btn-reconduire-classes" style="background: #0D9488; border-color: #0D9488; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;" title="Reconduire toutes les classes d'une année vers une autre">
             <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduire les Classes (N-1 &rarr; N)
           </button>
@@ -73,7 +78,6 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
                 <th style="padding: 12px;">Libellé de la Classe</th>
                 <th style="padding: 12px;">Filière</th>
                 <th style="padding: 12px;">Niveau</th>
-                <th style="padding: 12px;">Année</th>
                 <th style="padding: 12px; text-align: center;">Capacité</th>
                 <th style="padding: 12px;" class="text-center">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
@@ -94,7 +98,7 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
   <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 700px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
     <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center;">
       <h3 id="modal-classe-title" style="font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe / Promotion
+        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe
       </h3>
       <button type="button" class="btn-close-modal-classe" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
@@ -200,11 +204,30 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
       </div>
 
       <!-- LIGNE 5 : LIBELLÉ DE LA CLASSE SUR UNE LIGNE DÉDIÉE -->
-      <div class="form-group" style="margin-bottom: 22px;">
+      <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Libellé de la classe / promotion <span style="color: #EF4444;">*</span>
+          Libellé de la classe <span style="color: #EF4444;">*</span>
         </label>
         <input type="text" name="libelle_classe" id="classe_libelle" required placeholder="Ex: IDA - Première année" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 14px;">
+      </div>
+
+      <!-- LIGNE 6 : STATUT DE LA CLASSE (ACTIF PAR DÉFAUT) -->
+      <div class="form-group" style="margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px;">
+        <div>
+          <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin: 0;">
+            Statut de la classe
+          </label>
+          <span style="font-size: 11px; color: #64748B;">Activer cette classe par défaut pour les inscriptions et emplois du temps</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label style="position: relative; display: inline-block; width: 44px; height: 22px; margin: 0; cursor: pointer;">
+            <input type="checkbox" name="statut_classe" id="classe_statut" value="actif" checked style="opacity: 0; width: 0; height: 0;">
+            <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #15803D; transition: .3s; border-radius: 22px;" id="statut_classe_slider">
+              <span style="position: absolute; content: ''; height: 16px; width: 16px; left: 22px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%;" id="statut_classe_knob"></span>
+            </span>
+          </label>
+          <span id="statut_classe_text" style="font-weight: 700; font-size: 13px; color: #15803D; min-width: 48px;">Actif</span>
+        </div>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
@@ -312,10 +335,6 @@ $(document).ready(function() {
         if (type !== 'display') return d || row.niveau_code || '';
         return '<span style="color:#334155; font-weight:500;">' + (d || row.niveau_code || '-') + '</span>';
       }},
-      { data: 'libelle_annee', render: function(d) {
-        if (!d) return '-';
-        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px;">' + d + '</span>';
-      }},
       { data: 'capacite_max_classe', width: '90px', className: 'text-center', render: function(d, type) {
         if (type !== 'display') return d || '';
         return '<span style="font-weight:700; color:#475569;">' + (d ? d + ' places' : '-') + '</span>';
@@ -332,10 +351,9 @@ $(document).ready(function() {
                '</label>' +
                '</div>';
       }},
-      { data: null, width: '230px', orderable: false, render: function(d) {
+      { data: null, width: '160px', orderable: false, render: function(d) {
         var safeLib = d.libelle_classe ? $('<div>').text(d.libelle_classe).html() : '';
-        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-classe" data-id="' + (d.id_classe) + '" data-libelle="' + safeLib + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" data-statut="' + (d.statut_classe || 'actif') + '" style="margin-right:4px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
-               '<button type="button" class="btn btn-sm btn-outline-primary btn-duplicate-classe" data-libelle="' + safeLib + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" style="margin-right:4px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer; color:#1E3A5F; border-color:#CBD5E1;" title="Dupliquer pour créer une nouvelle section"><i data-lucide="copy" style="width:14px;height:14px;"></i> Dupliquer</button>' +
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-classe" data-id="' + (d.id_classe) + '" data-libelle="' + safeLib + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" data-statut="' + (d.statut_classe || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                '<a href="' + window.RACINE + 'classe/details/' + (d.editId || d.id_classe) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
       }, className: 'text-end' }
     ],
@@ -443,7 +461,7 @@ $(document).ready(function() {
     }
     $('#sel_parcours_pivot').val('');
     $('#classe_cycle').val('');
-    $('#modal-classe-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe / Promotion');
+    $('#modal-classe-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe');
     $('#modal-classe').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
     setTimeout(function() { $('#sel_parcours_pivot').focus(); }, 100);
@@ -488,7 +506,7 @@ $(document).ready(function() {
     $('#classe_statut').prop('checked', isActif);
     updateStatutClasseUI(isActif);
 
-    $('#modal-classe-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Classe / Promotion');
+    $('#modal-classe-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la Classe');
     $('#modal-classe').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
     setTimeout(function() { $('#classe_libelle').focus(); }, 100);
@@ -521,7 +539,8 @@ $(document).ready(function() {
       }
     }
     if (!hasStatut) {
-      formData.push({ name: 'statut_classe', value: 'inactif' });
+      var isChecked = $('#classe_statut').length ? $('#classe_statut').is(':checked') : true;
+      formData.push({ name: 'statut_classe', value: isChecked ? 'actif' : 'inactif' });
     }
 
     $.ajax({

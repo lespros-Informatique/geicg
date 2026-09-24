@@ -67,7 +67,7 @@ class SettingController extends BaseController
         $promotions = $promoModel->getAllPromotions();
 
         $data = [
-            'titre' => 'Paramètres Système & Promotions Lavex',
+            'titre' => 'Paramètres Système',
             'settings' => $settings,
             'promotions' => $promotions
         ];

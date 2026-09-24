@@ -150,7 +150,7 @@ class ClasseController extends BaseController
         if (empty($data['code_classe'])) {
             $data['code_classe'] = $this->validator->generateCode('classes', 'code_classe', 'CLA-', 8);
         }
-        $data['statut_classe'] = $data['statut_classe'] ?? 'actif';
+        $data['statut_classe'] = (!empty($data['statut_classe']) && in_array($data['statut_classe'], ['actif', 'inactif'], true)) ? $data['statut_classe'] : 'actif';
         $data['created_at_classe'] = date('Y-m-d H:i:s');
         $cols = $this->model->getCon()->query("DESCRIBE classes")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
@@ -217,6 +217,9 @@ class ClasseController extends BaseController
             ], 'nom de classe', 'id_classe', $id)) return;
         }
 
+        if (isset($data['statut_classe'])) {
+            $data['statut_classe'] = in_array($data['statut_classe'], ['actif', 'inactif'], true) ? $data['statut_classe'] : 'actif';
+        }
         $cols = $this->model->getCon()->query("DESCRIBE classes")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('annee_code', $cols) && !empty($anneeCode)) {
             $data['annee_code'] = $anneeCode;
@@ -389,5 +392,63 @@ class ClasseController extends BaseController
         } else {
             $this->error($res['message']);
         }
+    }
+
+    /**
+     * Impression du Répertoire des Classes via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['PRINT_CLASSES', 'VIEW_CLASSES', 'PRINT_OFFRE_ACADEMIQUE']);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+        $anneeCode = $this->getActiveAnneeCode();
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+
+        $sql = "SELECT c.*, 
+                       f.libelle_filiere, f.slug_filiere,
+                       n.libelle_niveau, n.slug_niveau,
+                       cy.libelle_cycle, cy.slug_cycle,
+                       a.libelle_annee
+                FROM classes c
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN cycles cy ON cy.code_cycle = c.cycle_code
+                LEFT JOIN annees a ON a.code_annee = c.annee_code
+                WHERE (c.annee_code = ? OR ? = '')
+                ORDER BY cy.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC, c.libelle_classe ASC";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$anneeCode, $anneeCode]);
+        $classes = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $authSession = $_SESSION[USERS_AUTH] ?? [];
+        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Direction des Études & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'classes' => $classes
+        ];
+
+        $html = PdfService::renderTemplate('repertoire_classes.php', $data);
+        $filename = 'Repertoire_Classes_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Répertoire des Classes - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 12
+        ]);
     }
 }

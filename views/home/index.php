@@ -343,7 +343,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
           <div class="dash-card">
             <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Classes Ouvertes</span>
             <div style="font-size: 26px; font-weight: 900; color: #047857; margin-top: 6px;"><?= (int)($stats['total_classes'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Promotions actives</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Classes actives</div>
           </div>
 
           <div class="dash-card">
@@ -796,7 +796,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </div>
                   <div>
                     <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Structure Académique & Offre de Formation</h4>
-                    <span style="font-size: 12px; color: #64748B;">Gestion des classes, promotions, filières, cycles d'études et catalogue de matières</span>
+                    <span style="font-size: 12px; color: #64748B;">Gestion des classes, filières, cycles d'études et catalogue de matières</span>
                   </div>
                 </div>
                 <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #334155; padding: 4px 12px; border-radius: 20px;">Domaine Académique</span>
@@ -815,10 +815,10 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                       <div class="dash-module-num" style="color: #047857;">
                         <?= (int)($stats['total_classes'] ?? 0) ?>
                       </div>
-                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Promotions & groupes ouverts</div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Groupes & effectifs ouverts</div>
                     </div>
                     <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                      <strong style="color: #1E3A5F; font-size: 13px;">Classes & Promotions</strong>
+                      <strong style="color: #1E3A5F; font-size: 13px;">Classes</strong>
                       <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
                   </a>

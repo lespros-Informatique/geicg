@@ -48,7 +48,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 
             <!-- Filter Classe -->
             <div style="min-width: 200px; flex: 1;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Classe / Promotion</label>
+              <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Classe</label>
               <select id="filter-classe" class="form-select select2" style="width: 100%;">
                 <option value="">-- Toutes les classes --</option>
                 <?php foreach ($classes as $c): ?>
@@ -246,7 +246,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
             <div><strong>Nom & Prénom :</strong> <span id="bon-student-name" style="color: #0F172A; font-weight: 800;">-</span></div>
             <div><strong>Matricule :</strong> <span id="bon-student-matricule" class="font-monospace" style="font-weight: 700; color: #15803D;">-</span></div>
-            <div><strong>Classe / Promotion :</strong> <span id="bon-student-classe" style="font-weight: 700;">-</span></div>
+            <div><strong>Classe :</strong> <span id="bon-student-classe" style="font-weight: 700;">-</span></div>
             <div><strong>Téléphone :</strong> <span id="bon-student-phone">-</span></div>
           </div>
         </div>

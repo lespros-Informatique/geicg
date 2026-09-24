@@ -50,7 +50,7 @@ $classes = isset($classes) ? $classes : [];
           <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Classes Actives</span>
             <div style="font-size: 22px; font-weight: 800; color: #7E22CE; margin-top: 4px;"><?= count($classes) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Promotions rattachées</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Classes rattachées</div>
           </div>
 
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">

@@ -73,7 +73,7 @@ class PdfService
 
         $mpdf->WriteHTML($html);
 
-        $dest = $download ? \Mpdf\Output\Destination::DOWNLOAD : \Mpdf\Output\Destination::INLINE;
+        $dest = $options['destination'] ?? ($download ? \Mpdf\Output\Destination::DOWNLOAD : \Mpdf\Output\Destination::INLINE);
         $mpdf->Output($filename, $dest);
     }
 

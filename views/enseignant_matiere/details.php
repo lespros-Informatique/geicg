@@ -44,7 +44,7 @@ $nbNotes = $nbNotes ?? 0;
           </div>
 
           <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Classe & Promotion</span>
+            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Classe</span>
             <div style="font-size: 18px; font-weight: 800; color: #7E22CE; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;"><?= htmlspecialchars(($item['libelle_filiere'] ?? '-') . ' / ' . ($item['libelle_niveau'] ?? '-')) ?></div>
           </div>

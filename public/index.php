@@ -164,6 +164,7 @@ $route->addRoute('/classe/changer', [$classeController, 'changer']);
 $route->addRoute('/classe/details/{param}', [$classeController, 'details']);
 $route->addRoute('/classe/edition/{param}', [$classeController, 'edition']);
 $route->addRoute('/classe/formulaire', [$classeController, 'formulaire']);
+$route->addRoute('/classe/imprimerPdf', [$classeController, 'imprimerPdf']);
 $route->addRoute('/classe/getClassesWithScolarite', [$classeController, 'getClassesWithScolarite']);
 $route->addRoute('/etudiant/getClassesWithScolarite', [$classeController, 'getClassesWithScolarite']);
 

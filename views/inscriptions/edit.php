@@ -1025,7 +1025,7 @@ $(document).ready(function() {
       // Si le système a détecté une classe N+1 suggérée, la pré-sélectionner en auto
       if (currentStudentData && currentStudentData.suggested_next_class_code) {
         $('#sel_classe_inscription').val(currentStudentData.suggested_next_class_code).trigger('change');
-        $('#smart_class_suggestion_text').html('Promotion automatique suggérée : <strong>' + (currentStudentData.suggested_next_class_libelle || '-') + '</strong> (Classe supérieure)');
+        $('#smart_class_suggestion_text').html('Classe suggérée : <strong>' + (currentStudentData.suggested_next_class_libelle || '-') + '</strong> (Niveau supérieur)');
         $('#smart_class_suggestion_hint').show();
       } else if (currentStudentData && currentStudentData.has_history) {
         $('#smart_class_suggestion_text').html('Veuillez sélectionner la classe supérieure de la filière <strong>' + (currentStudentData.derniere_filiere || '-') + '</strong>.');

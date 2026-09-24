@@ -28,8 +28,8 @@ $currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
     <div class="content-wrapper" style="padding: 24px;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_classe']) ? 'Éditer ' : 'Ajouter ' ?> Classe / Promotion</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Création intelligente et gestion des classes et promotions</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_classe']) ? 'Éditer ' : 'Ajouter ' ?> Classe</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Création intelligente et gestion des classes</p>
         </div>
         <a href="<?= RACINE ?>classe/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste

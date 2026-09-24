@@ -214,7 +214,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px 18px;">
             <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 8px; text-transform: uppercase;">
-              Statistiques de la Promotion (<?= htmlspecialchars($item['libelle_classe'] ?? 'Classe') ?>)
+              Statistiques de la Classe (<?= htmlspecialchars($item['libelle_classe'] ?? 'Classe') ?>)
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748B; line-height: 1.8;">
               <span>Moyenne de la classe : <strong style="color: #0F172A;"><?= number_format($moyenneMoyClasse, 2, ',', ' ') ?> / 20</strong></span>
