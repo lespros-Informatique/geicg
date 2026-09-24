@@ -7,14 +7,31 @@ class ModelTranche extends BaseModel
     protected ?string $statusField = 'statut_tranche';
     protected ?string $createdAtField = 'created_at_tranche';
 
-    public function getAll(?string $anneeCode = null): array
+    public function getAll(?string $anneeCode = null, ?string $filiereCode = null, ?string $niveauCode = null, ?string $statut = null): array
     {
-        $where = "";
+        $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $where = "WHERE (t.annee_code = ? OR s.annee_code = ?)";
-            $params = [$anneeCode, $anneeCode];
+            $conditions[] = "(t.annee_code = ? OR s.annee_code = ?)";
+            $params[] = $anneeCode;
+            $params[] = $anneeCode;
         }
+        if (!empty($filiereCode)) {
+            $conditions[] = "(s.filiere_code = ? OR t.filiere_code = ?)";
+            $params[] = $filiereCode;
+            $params[] = $filiereCode;
+        }
+        if (!empty($niveauCode)) {
+            $conditions[] = "(s.niveau_code = ? OR t.niveau_code = ?)";
+            $params[] = $niveauCode;
+            $params[] = $niveauCode;
+        }
+        if (!empty($statut)) {
+            $conditions[] = "t.statut_tranche = ?";
+            $params[] = $statut;
+        }
+
+        $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
 
         $sql = "
             SELECT t.*, 
@@ -29,7 +46,7 @@ class ModelTranche extends BaseModel
             LEFT JOIN niveaux n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
             LEFT JOIN annees a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
             {$where}
-            ORDER BY t.id_tranche DESC
+            ORDER BY f.libelle_filiere ASC, n.libelle_niveau ASC, t.date_limite ASC, t.id_tranche ASC
         ";
         $stmt = $this->getCon()->prepare($sql);
         $stmt->execute($params);

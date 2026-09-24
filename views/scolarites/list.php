@@ -9,25 +9,77 @@
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Scolarités & Échéanciers de Paiement</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion centralisée des grilles tarifaires et des tranches de versement</p>
         </div>
-        <div id="btn-container">
-          <a href="<?= RACINE ?>scolarite/formulaire" id="btn-add-action" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <div id="btn-container" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['PRINT_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE', 'MANAGE_FRAIS_SCOLARITE']))): ?>
+            <a href="<?= RACINE ?>scolarite/imprimerPdf" id="btn-print-scolarite" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer la Grille Tarifaire (PDF)
+            </a>
+          <?php endif; ?>
+          <a href="<?= RACINE ?>scolarite/formulaire" id="btn-add-action" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; color: #FFFFFF;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> <span id="btn-add-label">Ajouter Tarif de Scolarité</span>
           </a>
         </div>
       </div>
 
-      <!-- BANDE DE FILTRES DYNAMIQUES -->
+      <!-- BANDE DE FILTRES DYNAMIQUES MULTI-CRITÈRES -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: minmax(260px, 400px); gap: 16px; align-items: center;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid #F1F5F9; padding-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+          <div style="font-size: 13.5px; font-weight: 700; color: #1E3A5F; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="sliders-horizontal" style="width: 16px; height: 16px;"></i>
+            <span>Filtres de Recherche & d'Impression</span>
+          </div>
+          <button type="button" id="btn-reset-filters" class="btn btn-sm btn-link text-decoration-none" style="color: #64748B; font-size: 12.5px; font-weight: 600; padding: 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border: none; background: transparent;">
+            <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Réinitialiser les filtres
+          </button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; align-items: flex-end;">
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Année Académique</label>
-            <select id="filter-annee" class="form-control select2" style="width: 100%;">
+            <select id="filter-annee" class="form-control select2" style="width: 100%; border-radius: 8px; font-size: 13px;">
               <option value="">-- Toutes les années --</option>
               <?php foreach (($annees ?? []) as $a): ?>
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
                   <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
                 </option>
               <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filière</label>
+            <select id="filter-filiere" class="form-control select2" style="width: 100%; border-radius: 8px; font-size: 13px;">
+              <option value="">-- Toutes les filières --</option>
+              <?php foreach (($filieres ?? []) as $f): ?>
+                <option value="<?= htmlspecialchars($f['code_filiere']) ?>">
+                  <?= htmlspecialchars($f['libelle_filiere'] ?? $f['code_filiere']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau d'Études</label>
+            <select id="filter-niveau" class="form-control select2" style="width: 100%; border-radius: 8px; font-size: 13px;">
+              <option value="">-- Tous les niveaux --</option>
+              <?php foreach (($niveaux ?? []) as $n): ?>
+                <option value="<?= htmlspecialchars($n['code_niveau']) ?>">
+                  <?= htmlspecialchars($n['libelle_niveau'] ?? $n['code_niveau']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Régime d'Affectation</label>
+            <select id="filter-affectation" class="form-control select2" style="width: 100%; border-radius: 8px; font-size: 13px;">
+              <option value="">-- Tous les régimes --</option>
+              <option value="affecte">Affecté (État)</option>
+              <option value="non_affecte">Non Affecté (Privé)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Statut</label>
+            <select id="filter-statut" class="form-control select2" style="width: 100%; border-radius: 8px; font-size: 13px;">
+              <option value="">-- Tous les statuts --</option>
+              <option value="actif">Actif</option>
+              <option value="inactif">Inactif</option>
             </select>
           </div>
         </div>
@@ -69,16 +121,6 @@
           </div>
         </div>
 
-        <!-- Échéanciers / Tranches -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 46px; height: 46px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="calendar" style="width: 22px; height: 22px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Tranches Configurées</div>
-            <div style="font-size: 22px; font-weight: 800; color: #7E22CE; line-height: 1.2;"><?= (int)($totalTranches ?? 0) ?></div>
-          </div>
-        </div>
 
       </div>
 
@@ -204,19 +246,58 @@
 <script>
 $(document).ready(function() {
   if ($.fn.select2) {
-    $('#filter-annee').select2({ width: '100%' });
+    $('#filter-annee, #filter-filiere, #filter-niveau, #filter-affectation, #filter-statut').select2({ width: '100%' });
   }
 
-  $('#filter-annee').on('change', function() {
+  function updatePrintUrl() {
+    var annee = $('#filter-annee').val() || '';
+    var filiere = $('#filter-filiere').val() || '';
+    var niveau = $('#filter-niveau').val() || '';
+    var affectation = $('#filter-affectation').val() || '';
+    var statut = $('#filter-statut').val() || '';
+
+    var params = new URLSearchParams();
+    if (annee) params.set('annee_code', annee);
+    if (filiere) params.set('filiere_code', filiere);
+    if (niveau) params.set('niveau_code', niveau);
+    if (affectation) params.set('affectation_etat', affectation);
+    if (statut) params.set('statut', statut);
+
+    var qs = params.toString();
+    var href = '<?= RACINE ?>scolarite/imprimerPdf' + (qs ? '?' + qs : '');
+    $('#btn-print-scolarite').attr('href', href);
+  }
+
+  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-affectation, #filter-statut').on('change', function() {
     tableScolarites.ajax.reload();
     tableTranches.ajax.reload();
+    updatePrintUrl();
   });
+
+  $('#btn-reset-filters').on('click', function(e) {
+    e.preventDefault();
+    $('#filter-annee').val('<?= htmlspecialchars($selectedAnneeCode ?? '') ?>').trigger('change.select2');
+    $('#filter-filiere').val('').trigger('change.select2');
+    $('#filter-niveau').val('').trigger('change.select2');
+    $('#filter-affectation').val('').trigger('change.select2');
+    $('#filter-statut').val('').trigger('change.select2');
+
+    tableScolarites.ajax.reload();
+    tableTranches.ajax.reload();
+    updatePrintUrl();
+  });
+
+  updatePrintUrl();
 
   var tableScolarites = $('#table-scolarites').DataTable({
     ajax: {
       url: '<?= RACINE ?>scolarite/apiList',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
+        d.filiere_code = $('#filter-filiere').val();
+        d.niveau_code = $('#filter-niveau').val();
+        d.affectation_etat = $('#filter-affectation').val();
+        d.statut_scolarite = $('#filter-statut').val();
       }
     },
     processing: true,
@@ -264,6 +345,9 @@ $(document).ready(function() {
       url: '<?= RACINE ?>tranche/apiList',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
+        d.filiere_code = $('#filter-filiere').val();
+        d.niveau_code = $('#filter-niveau').val();
+        d.statut_tranche = $('#filter-statut').val();
       }
     },
     processing: true,

@@ -7,10 +7,10 @@ class ModelScolarite extends BaseModel
     protected ?string $statusField = 'statut_scolarite';
     protected ?string $createdAtField = 'created_at_scolarite';
 
-    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
+    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $filiereCode = null, ?string $affectationEtat = null, ?string $statut = null): array
     {
         $sql = "
-            SELECT s.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+            SELECT s.*, f.libelle_filiere, f.slug_filiere, n.libelle_niveau, n.slug_niveau, a.libelle_annee
             FROM scolarites s
             LEFT JOIN filieres f ON s.filiere_code = f.code_filiere
             LEFT JOIN niveaux n ON s.niveau_code = n.code_niveau
@@ -26,6 +26,18 @@ class ModelScolarite extends BaseModel
             $conditions[] = "s.niveau_code = ?";
             $params[] = $niveauCode;
         }
+        if (!empty($filiereCode)) {
+            $conditions[] = "s.filiere_code = ?";
+            $params[] = $filiereCode;
+        }
+        if (!empty($affectationEtat)) {
+            $conditions[] = "s.affectation_etat = ?";
+            $params[] = $affectationEtat;
+        }
+        if (!empty($statut)) {
+            $conditions[] = "s.statut_scolarite = ?";
+            $params[] = $statut;
+        }
         if (!empty($classeCode)) {
             $sql .= " LEFT JOIN classes cl ON cl.code_classe = ? ";
             $params[] = $classeCode;
@@ -34,7 +46,7 @@ class ModelScolarite extends BaseModel
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
-        $sql .= " ORDER BY s.id_scolarite DESC ";
+        $sql .= " ORDER BY f.libelle_filiere ASC, n.libelle_niveau ASC, s.affectation_etat ASC, s.id_scolarite DESC ";
 
         $stmt = $this->getCon()->prepare($sql);
         $stmt->execute($params);

@@ -29,8 +29,11 @@ class TrancheController extends BaseController
             }
         }
         $anneeCode = $this->getActiveAnneeCode();
+        $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $statut = !empty($_GET['statut_tranche']) ? trim($_GET['statut_tranche']) : (!empty($_GET['statut']) ? trim($_GET['statut']) : null);
 
-        $items = $this->model->getAll($anneeCode);
+        $items = $this->model->getAll($anneeCode, $filiereCode, $niveauCode, $statut);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_tranche'];

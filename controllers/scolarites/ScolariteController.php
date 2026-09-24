@@ -44,6 +44,10 @@ class ScolariteController extends BaseController
 
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
+        $rawFilieres = (new ModelFiliere())->getFilieresAssocieesAuxCycles();
+        $filieres = array_filter($rawFilieres, function($f) {
+            return (($f['statut_filiere'] ?? 'actif') === 'actif');
+        });
 
         $this->loadView('../views/scolarites/list.php', [
             'totalScolarites' => $totalScolarites,
@@ -51,6 +55,7 @@ class ScolariteController extends BaseController
             'totalNonAffectes' => $totalNonAffectes,
             'totalTranches' => $totalTranches,
             'annees' => $annees,
+            'filieres' => $filieres,
             'niveaux' => $niveaux,
             'classes' => $classes,
             'selectedAnneeCode' => $activeYear
@@ -73,9 +78,13 @@ class ScolariteController extends BaseController
         }
 
         $anneeCode = $this->getActiveAnneeCode();
-        $niveauCode = $_GET['niveau_code'] ?? null;
-        $classeCode = $_GET['classe_code'] ?? null;
-        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
+        $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $affectationEtat = !empty($_GET['affectation_etat']) ? trim($_GET['affectation_etat']) : null;
+        $statutScolarite = !empty($_GET['statut_scolarite']) ? trim($_GET['statut_scolarite']) : null;
+        $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
+
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $filiereCode, $affectationEtat, $statutScolarite);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_scolarite'];
@@ -677,6 +686,74 @@ class ScolariteController extends BaseController
             'total_combos' => $totalCombos,
             'all_exist' => $allExist,
             'message' => $msg
+        ]);
+    }
+
+    /**
+     * Impression de la Grille des Frais de Scolarité & Échéanciers via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['PRINT_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE', 'MANAGE_FRAIS_SCOLARITE']);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+        require_once __DIR__ . '/../../models/tranches_scolarite/ModelTranche.php';
+
+        $db = $this->model->getCon();
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : $this->getActiveAnneeCode();
+        $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $affectationEtat = !empty($_GET['affectation_etat']) ? trim($_GET['affectation_etat']) : null;
+        $statutScolarite = !empty($_GET['statut_scolarite']) ? trim($_GET['statut_scolarite']) : (!empty($_GET['statut']) ? trim($_GET['statut']) : null);
+
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if ($anneeCode) {
+            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$anneeCode]);
+            $aName = $stmtA->fetchColumn();
+            if ($aName) $anneeLibelle = $aName;
+        }
+
+        // Récupérer les scolarités
+        $scolarites = $this->model->getAll($anneeCode, $niveauCode, null, $filiereCode, $affectationEtat, $statutScolarite);
+
+        // Récupérer les tranches rattachées
+        $tranchesModel = new ModelTranche();
+        $tranches = $tranchesModel->getAll($anneeCode, $filiereCode, $niveauCode, $statutScolarite);
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $authSession = $_SESSION[USERS_AUTH] ?? [];
+        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Comptabilité & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'scolarites' => $scolarites,
+            'tranches' => $tranches,
+            'filtres' => [
+                'filiere_code' => $filiereCode,
+                'niveau_code' => $niveauCode,
+                'affectation_etat' => $affectationEtat,
+                'statut_scolarite' => $statutScolarite
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('grille_scolarites.php', $data);
+        $filename = 'Grille_Scolarites_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Grille des Frais de Scolarité & Échéanciers - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 12
         ]);
     }
 }

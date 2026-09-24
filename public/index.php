@@ -200,6 +200,7 @@ $route->addRoute('/scolarite/changer', [$scolariteController, 'changer']);
 $route->addRoute('/scolarite/details/{param}', [$scolariteController, 'details']);
 $route->addRoute('/scolarite/edition/{param}', [$scolariteController, 'edition']);
 $route->addRoute('/scolarite/formulaire', [$scolariteController, 'formulaire']);
+$route->addRoute('/scolarite/imprimerPdf', [$scolariteController, 'imprimerPdf']);
 
 // Module: frais_annexe (FraisAnnexeController)
 $route->addRoute('/fraisAnnexe/list', [$fraisAnnexeController, 'list']);
