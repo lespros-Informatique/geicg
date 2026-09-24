@@ -274,18 +274,18 @@ $pieces = (new ModelPieceFournir())->getAll();
                     <input type="radio" name="affectation_etat" value="non_affecte" checked style="accent-color: #2563EB; width: 16px; height: 16px;">
                     <span style="display: flex; align-items: center; gap: 6px;">
                       <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #2563EB;"></span>
-                      Non Affecté (Privé - Régime Bleu)
+                      Non Affecté
                     </span>
                   </label>
                   <label class="label-affectation-choice label-affectation-affecte" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 2px solid #CBD5E1; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #334155; background: #FFFFFF; transition: all 0.2s;">
                     <input type="radio" name="affectation_etat" value="affecte" style="accent-color: #16A34A; width: 16px; height: 16px;">
                     <span style="display: flex; align-items: center; gap: 6px;">
                       <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #16A34A;"></span>
-                      Affecté (Subventionné État - Régime Vert)
+                      Affecté
                     </span>
                   </label>
                 </div>
-                <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi (Vert = Affecté État, Bleu = Non Affecté Privé).</small>
+                <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi (Affecté ou Non Affecté).</small>
               </div>
 
               <!-- ANNÉE ACADÉMIQUE -->
@@ -923,7 +923,7 @@ $(document).ready(function() {
     var net = Math.max(0, montant - remise);
 
     $('#recap_classe_title').text(classeText && classeText.indexOf('Choisir') === -1 ? classeText : 'Classe non sélectionnée');
-    $('#recap_regime_text').html(isAffecte ? '<span style="color:#1E3A5F; font-weight:800;">● Régime Affecté (Subventionné par l\'État)</span>' : '<span style="color:#475569; font-weight:800;">● Régime Non Affecté (Privé)</span>');
+    $('#recap_regime_text').html(isAffecte ? '<span style="color:#1E3A5F; font-weight:800;">● Régime Affecté</span>' : '<span style="color:#475569; font-weight:800;">● Régime Non Affecté</span>');
     $('#recap_scolarite_').text(montant > 0 ? montant.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
     $('#recap_frais_annexes_val').text($('#wiz_summary_total_frais_annexes').text() || '0 FCFA');
     $('#recap_remise_val').text(remise > 0 ? remise.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
@@ -1207,8 +1207,8 @@ $(document).ready(function() {
             });
 
             var regimeBadge = isAffecte 
-              ? ' <span class="badge" style="background:#DCFCE7; color:#15803D; font-size:11.5px; padding:4px 10px; border-radius:6px; border:1.5px solid #86EFAC; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check-circle" style="width:13px; height:13px; color:#16A34A;"></i> Régime Affecté (Subventionné État - Vert)</span>' 
-              : ' <span class="badge" style="background:#DBEAFE; color:#1D4ED8; font-size:11.5px; padding:4px 10px; border-radius:6px; border:1.5px solid #BFDBFE; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="user-check" style="width:13px; height:13px; color:#2563EB;"></i> Régime Non Affecté (Privé - Bleu)</span>';
+              ? ' <span class="badge" style="background:#DCFCE7; color:#15803D; font-size:11.5px; padding:4px 10px; border-radius:6px; border:1.5px solid #86EFAC; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check-circle" style="width:13px; height:13px; color:#16A34A;"></i> Régime Affecté</span>' 
+              : ' <span class="badge" style="background:#DBEAFE; color:#1D4ED8; font-size:11.5px; padding:4px 10px; border-radius:6px; border:1.5px solid #BFDBFE; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="user-check" style="width:13px; height:13px; color:#2563EB;"></i> Régime Non Affecté</span>';
 
             $('#wiz_summary_classe_title').html(d.libelle_classe + regimeBadge);
             $('#wiz_summary_filiere_niveau').text(
