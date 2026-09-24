@@ -7,7 +7,7 @@ class ModelFraisAnnexe extends BaseModel
     protected ?string $statusField = 'statut_frais_annexe';
     protected ?string $createdAtField = 'created_at_frais_annexe';
 
-    public function getAll(?string $anneeCode = null, ?string $typeFiliere = null, ?string $niveauCode = null): array
+    public function getAll(?string $anneeCode = null, ?string $typeFiliere = null, ?string $niveauCode = null, ?string $categorie = null): array
     {
         $sql = "
             SELECT fa.*, a.libelle_annee, n.libelle_niveau
@@ -28,6 +28,10 @@ class ModelFraisAnnexe extends BaseModel
         if (!empty($niveauCode)) {
             $conditions[] = "(fa.niveau_code = ? OR fa.niveau_code IS NULL OR fa.niveau_code = '')";
             $params[] = $niveauCode;
+        }
+        if (!empty($categorie)) {
+            $conditions[] = "fa.categorie_frais_annexe = ?";
+            $params[] = $categorie;
         }
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
@@ -54,7 +58,7 @@ class ModelFraisAnnexe extends BaseModel
         return $row ?: [];
     }
 
-    public function getMontantByTypeFiliere(string $typeFiliere, string $anneeCode, ?string $niveauCode = null): float
+    public function getMontantByTypeFiliere(string $typeFiliere, string $anneeCode, ?string $niveauCode = null, ?string $categorie = null): float
     {
         $sql = "
             SELECT montant_frais_annexe 
@@ -64,6 +68,11 @@ class ModelFraisAnnexe extends BaseModel
               AND annee_code = ?
         ";
         $params = [$typeFiliere, $anneeCode];
+
+        if (!empty($categorie)) {
+            $sql .= " AND categorie_frais_annexe = ? ";
+            $params[] = $categorie;
+        }
 
         if (!empty($niveauCode)) {
             $sql .= " AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '') ";
@@ -87,7 +96,7 @@ class ModelFraisAnnexe extends BaseModel
         return $row ? (float)$row['montant_frais_annexe'] : 0.0;
     }
 
-    public function getFraisAnnexeDetails(string $typeFiliere, string $anneeCode, ?string $niveauCode = null): ?array
+    public function getFraisAnnexeDetails(string $typeFiliere, string $anneeCode, ?string $niveauCode = null, ?string $categorie = null): ?array
     {
         $sql = "
             SELECT * 
@@ -97,6 +106,11 @@ class ModelFraisAnnexe extends BaseModel
               AND annee_code = ?
         ";
         $params = [$typeFiliere, $anneeCode];
+
+        if (!empty($categorie)) {
+            $sql .= " AND categorie_frais_annexe = ? ";
+            $params[] = $categorie;
+        }
 
         if (!empty($niveauCode)) {
             $sql .= " AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '') ";
@@ -120,9 +134,9 @@ class ModelFraisAnnexe extends BaseModel
         return $row ?: null;
     }
 
-    public function checkDuplicate(string $anneeCode, string $typeFiliere, ?string $niveauCode, ?int $excludeId = null): ?array
+    public function checkDuplicate(string $anneeCode, string $typeFiliere, ?string $niveauCode, ?string $categorie = null, ?int $excludeId = null): ?array
     {
-        // Contrôle d'unicité sur la combinaison Cible (type_filiere x niveau_code x annee_code)
+        // Contrôle d'unicité sur la combinaison Cible (type_filiere x niveau_code x categorie_frais_annexe x annee_code)
         $sql = "SELECT * FROM frais_annexes WHERE annee_code = ? AND type_filiere = ?";
         $params = [$anneeCode, $typeFiliere];
         if (empty($niveauCode) || $niveauCode === 'TOUT') {
@@ -130,6 +144,10 @@ class ModelFraisAnnexe extends BaseModel
         } else {
             $sql .= " AND niveau_code = ?";
             $params[] = $niveauCode;
+        }
+        if (!empty($categorie)) {
+            $sql .= " AND categorie_frais_annexe = ?";
+            $params[] = $categorie;
         }
         if ($excludeId) {
             $sql .= " AND id_frais_annexe != ?";

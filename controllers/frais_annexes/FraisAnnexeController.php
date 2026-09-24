@@ -55,8 +55,9 @@ class FraisAnnexeController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $typeFiliere = $_GET['type_filiere'] ?? null;
         $niveauCode = $_GET['niveau_code'] ?? null;
+        $categorie = $_GET['categorie'] ?? null;
 
-        $items = $this->model->getAll($anneeCode, $typeFiliere, $niveauCode);
+        $items = $this->model->getAll($anneeCode, $typeFiliere, $niveauCode, $categorie);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_frais_annexe'];
@@ -82,6 +83,8 @@ class FraisAnnexeController extends BaseController
         $etabCode = $this->getActiveEtablissementCode();
 
         $libelle = trim($data['libelle_frais_annexe'] ?? '');
+        $categorie = in_array($data['categorie_frais_annexe'] ?? '', ['inscription', 'autre'], true) ? $data['categorie_frais_annexe'] : 'autre';
+        $data['categorie_frais_annexe'] = $categorie;
         $typeFiliere = $data['type_filiere'] ?? 'TOUT';
         $niveauCode = (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') ? null : $data['niveau_code'];
 
@@ -89,10 +92,11 @@ class FraisAnnexeController extends BaseController
             $this->error("Le libellé de la tarification est obligatoire.");
             return;
         }
-        // Contrôle Anti-Doublon (Cible Filière x Niveau d'étude pour la même année)
-        $duplicate = $this->model->checkDuplicate($anneeCode, $typeFiliere, $niveauCode);
+        // Contrôle Anti-Doublon (Cible Filière x Niveau d'étude x Catégorie pour la même année)
+        $duplicate = $this->model->checkDuplicate($anneeCode, $typeFiliere, $niveauCode, $categorie);
         if ($duplicate) {
-            $cibleStr = "Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
+            $catLabel = ($categorie === 'inscription') ? 'Inscription' : 'Autre';
+            $cibleStr = "Catégorie : " . htmlspecialchars($catLabel) . " | Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
             $this->error("Création impossible : Un tarif de frais annexes est déjà configuré pour la cible [{$cibleStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
             return;
         }
@@ -138,6 +142,8 @@ class FraisAnnexeController extends BaseController
         unset($data['csrf_token']);
 
         $libelle = trim($data['libelle_frais_annexe'] ?? '');
+        $categorie = in_array($data['categorie_frais_annexe'] ?? '', ['inscription', 'autre'], true) ? $data['categorie_frais_annexe'] : 'autre';
+        $data['categorie_frais_annexe'] = $categorie;
         $typeFiliere = $data['type_filiere'] ?? 'TOUT';
         $niveauCode = (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') ? null : $data['niveau_code'];
 
@@ -154,9 +160,10 @@ class FraisAnnexeController extends BaseController
         $itemAnneeCode = $existingItem['annee_code'] ?? $this->getActiveAnneeCode();
 
         // Contrôle Anti-Doublon sur la combinaison cible
-        $duplicate = $this->model->checkDuplicate($itemAnneeCode, $typeFiliere, $niveauCode, $id);
+        $duplicate = $this->model->checkDuplicate($itemAnneeCode, $typeFiliere, $niveauCode, $categorie, $id);
         if ($duplicate) {
-            $cibleStr = "Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
+            $catLabel = ($categorie === 'inscription') ? 'Inscription' : 'Autre';
+            $cibleStr = "Catégorie : " . htmlspecialchars($catLabel) . " | Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
             $this->error("Modification impossible : Un autre tarif de frais annexes est déjà configuré pour la cible [{$cibleStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
             return;
         }

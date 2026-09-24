@@ -18,7 +18,7 @@
 
       <!-- BANDE DE FILTRES DYNAMIQUES -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: center;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: center;">
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Année Académique</label>
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
@@ -28,6 +28,14 @@
                   <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
                 </option>
               <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Catégorie</label>
+            <select id="filter-categorie" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les catégories --</option>
+              <option value="inscription">Inscription</option>
+              <option value="autre">Autre</option>
             </select>
           </div>
           <div>
@@ -62,6 +70,7 @@
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Libellé de la Tarification</th>
+                <th style="padding: 12px;">Catégorie</th>
                 <th style="padding: 12px;">Cible (Filière)</th>
                 <th style="padding: 12px;">Niveau Cible</th>
                 <th style="padding: 12px;">Montant Frais Annexes</th>
@@ -98,6 +107,16 @@
           Libellé du Tarif <span style="color: #EF4444;">*</span>
         </label>
         <input type="text" name="libelle_frais_annexe" id="frais_libelle" required placeholder="Ex: Pack Frais Annexes Filière Industrielle" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Catégorie <span style="color: #EF4444;">*</span>
+        </label>
+        <select name="categorie_frais_annexe" id="frais_categorie" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="inscription">Inscription</option>
+          <option value="autre">Autre</option>
+        </select>
       </div>
 
       <div class="form-group" style="margin-bottom: 18px;">
@@ -162,6 +181,7 @@ $(document).ready(function() {
       type: 'GET',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
+        d.categorie = $('#filter-categorie').val();
         d.type_filiere = $('#filter-type-filiere').val();
         d.niveau_code = $('#filter-niveau').val();
       }
@@ -179,14 +199,19 @@ $(document).ready(function() {
       { data: 'libelle_frais_annexe', render: function(d) {
         return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
       }},
+      { data: 'categorie_frais_annexe', render: function(d) {
+        if (!d) return '-';
+        var label = (d === 'inscription') ? 'Inscription' : 'Autre';
+        return '<span style="font-weight:600; color:#334155;">' + label + '</span>';
+      }},
       { data: 'type_filiere', render: function(d) {
         if (d === 'INDUSTRIELLE') return '<span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Industrielle</span>';
         if (d === 'TERTIAIRE') return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tertiaire</span>';
         return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Toutes Filières</span>';
       }},
       { data: 'libelle_niveau', render: function(d) {
-        if (!d) return '<span class="badge" style="background:#F8FAFC; color:#64748B; border:1px dashed #CBD5E1; padding:3px 8px; border-radius:6px; font-weight:600; font-size:11px;">Tous les Niveaux</span>';
-        return '<span class="badge" style="background:#F0FDF4; color:#166534; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">' + d + '</span>';
+        if (!d) return '<span style="color:#94A3B8;">Tous les Niveaux</span>';
+        return '<span style="font-weight:600; color:#334155;">' + d + '</span>';
       }},
       { data: 'montant_frais_annexe', render: function(d) {
         var val = parseFloat(d || 0);
@@ -210,6 +235,7 @@ $(document).ready(function() {
         return '<button type="button" class="btn btn-sm btn-secondary btn-edit-frais" ' +
                'data-id="' + fid + '" ' +
                'data-libelle="' + safeLib + '" ' +
+               'data-categorie="' + (d.categorie_frais_annexe || 'autre') + '" ' +
                'data-type-filiere="' + (d.type_filiere || 'TOUT') + '" ' +
                'data-niveau-code="' + (d.niveau_code || 'TOUT') + '" ' +
                'data-montant="' + (d.montant_frais_annexe || '0') + '" ' +
@@ -222,7 +248,7 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  $('#filter-annee, #filter-type-filiere, #filter-niveau').on('change', function() {
+  $('#filter-annee, #filter-categorie, #filter-type-filiere, #filter-niveau').on('change', function() {
     tableFrais.ajax.reload();
   });
 
@@ -230,6 +256,7 @@ $(document).ready(function() {
   $('.btn-add-frais').on('click', function() {
     $('#form-frais-annexe')[0].reset();
     $('#frais_annexe_id').val('');
+    $('#frais_categorie').val('inscription');
     $('#frais_type_filiere').val('INDUSTRIELLE');
     $('#frais_niveau_code').val('TOUT');
     $('#modal-frais-annexe-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Tarification de Frais Annexes');
@@ -242,6 +269,7 @@ $(document).ready(function() {
     var $btn = $(this);
     var id = $btn.attr('data-id') || $btn.data('id');
     var libelle = $btn.attr('data-libelle') || $btn.data('libelle');
+    var categorie = $btn.attr('data-categorie') || $btn.data('categorie') || 'autre';
     var typeFiliere = $btn.attr('data-type-filiere') || $btn.data('typeFiliere') || $btn.data('type-filiere');
     var niveauCode = $btn.attr('data-niveau-code') || $btn.data('niveauCode') || $btn.data('niveau-code');
     var montant = $btn.attr('data-montant') || $btn.data('montant');
@@ -251,6 +279,7 @@ $(document).ready(function() {
 
     $('#frais_annexe_id').val(id);
     $('#frais_libelle').val(decLib || libelle);
+    $('#frais_categorie').val(categorie);
     $('#frais_type_filiere').val(typeFiliere || 'TOUT');
     $('#frais_niveau_code').val(niveauCode || 'TOUT');
     $('#frais_montant').val(montant);
