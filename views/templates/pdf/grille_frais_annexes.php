@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Grille des Frais Annexes - GEICG</title>
+  <style>
+    @page {
+      margin-top: 8mm;
+      margin-bottom: 10mm;
+      margin-left: 8mm;
+      margin-right: 8mm;
+    }
+    body {
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-size: 8.5pt;
+      color: #1E293B;
+      line-height: 1.25;
+    }
+
+    /* En-tête Institutionnel */
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 3px;
+    }
+    .header-table td {
+      vertical-align: middle;
+    }
+    .inst-title {
+      font-size: 11.5pt;
+      font-weight: bold;
+      color: #990000;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.15;
+    }
+    .inst-subtitle {
+      font-size: 8.5pt;
+      font-weight: bold;
+      color: #0369A1;
+      margin-top: 1px;
+    }
+    .inst-contacts {
+      font-size: 7.5pt;
+      color: #64748B;
+      margin-top: 1px;
+    }
+
+    .divider-line {
+      height: 1.5px;
+      background-color: #1E3A5F;
+      margin-top: 3px;
+      margin-bottom: 5px;
+    }
+
+    /* Bannière Titre */
+    .banner-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 5px;
+      background-color: #1E3A5F;
+    }
+    .banner-table td {
+      padding: 5px 8px;
+      text-align: center;
+      color: #FFFFFF;
+    }
+    .banner-title {
+      font-size: 11pt;
+      font-weight: bold;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .banner-sub {
+      font-size: 7.5pt;
+      color: #E2E8F0;
+      margin-top: 1px;
+    }
+
+    /* Cartouche Métadonnées */
+    .meta-box-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+      border: 1px solid #CBD5E1;
+      background-color: #F8FAFC;
+    }
+    .meta-box-table td {
+      padding: 3.5px 6px;
+      font-size: 8pt;
+      vertical-align: middle;
+      border: 0.5px solid #E2E8F0;
+    }
+    .meta-label {
+      font-weight: bold;
+      color: #475569;
+    }
+    .meta-value {
+      font-weight: bold;
+      color: #0F172A;
+    }
+
+    /* Résumé Chiffré / KPI */
+    .kpi-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+    .kpi-cell {
+      padding: 5px 8px;
+      text-align: center;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+    }
+    .kpi-num {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #1E3A5F;
+    }
+    .kpi-text {
+      font-size: 7pt;
+      color: #475569;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+
+    /* Titres de Sections */
+    .section-header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      margin-bottom: 5px;
+      background-color: #E2E8F0;
+      border-left: 3.5px solid #1E3A5F;
+    }
+    .section-header-table td {
+      padding: 4px 8px;
+      font-size: 8.5pt;
+      font-weight: bold;
+      color: #1E3A5F;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* Tableaux de Données */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 14px;
+    }
+    .data-table th {
+      background-color: #1E3A5F;
+      color: #FFFFFF;
+      font-size: 7.5pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 4.5px 6px;
+      border: 0.5px solid #1E3A5F;
+      text-align: left;
+    }
+    .data-table td {
+      padding: 4.5px 6px;
+      font-size: 8pt;
+      border: 0.5px solid #CBD5E1;
+      vertical-align: middle;
+    }
+    .row-even {
+      background-color: #FFFFFF;
+    }
+    .row-odd {
+      background-color: #F8FAFC;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .text-end {
+      text-align: right;
+    }
+
+    /* Badges */
+    .badge-code {
+      color: #1E3A5F;
+      font-weight: bold;
+      font-size: 7.5pt;
+      background-color: #EFF6FF;
+      border: 0.5px solid #BFDBFE;
+      padding: 1.5px 5px;
+      border-radius: 3px;
+      display: inline-block;
+      letter-spacing: 0.3px;
+    }
+    .badge-filiere {
+      font-weight: bold;
+      font-size: 7pt;
+      padding: 1.5px 6px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    .badge-statut-actif {
+      color: #15803D;
+      font-weight: bold;
+      font-size: 7pt;
+    }
+    .badge-statut-inactif {
+      color: #94A3B8;
+      font-style: italic;
+      font-size: 7pt;
+    }
+
+    /* Bloc de Signature */
+    .signature-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+      page-break-inside: avoid;
+    }
+    .signature-box {
+      width: 48%;
+      vertical-align: top;
+      border: 0.5px solid #CBD5E1;
+      background-color: #FAFAFA;
+      padding: 6px 10px;
+    }
+    .signature-title {
+      font-size: 8pt;
+      font-weight: bold;
+      color: #1E3A5F;
+      text-transform: uppercase;
+      text-align: center;
+      border-bottom: 0.5px solid #CBD5E1;
+      padding-bottom: 3px;
+      margin-bottom: 24px;
+    }
+    .signature-mention {
+      font-size: 7pt;
+      font-style: italic;
+      color: #64748B;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- EN-TÊTE FIXE POUR MPDF -->
+  <htmlpageheader name="pageHeader">
+    <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
+      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Grille des Frais Annexes &bull; <?= htmlspecialchars($annee_libelle ?? 'Session Active') ?>
+    </div>
+  </htmlpageheader>
+  <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
+
+  <!-- PIED DE PAGE FIXE POUR MPDF -->
+  <htmlpagefooter name="pageFooter">
+    <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
+      <tr>
+        <td style="width: 40%; text-align: left;">
+          Document généré par le Système GEICG &bull; <?= date('d/m/Y H:i:s') ?>
+        </td>
+        <td style="width: 20%; text-align: center; font-weight: bold;">
+          Page {PAGENO} / {nbpg}
+        </td>
+        <td style="width: 40%; text-align: right;">
+          Réf: REF-FRAIS-ANN-<?= date('Ymd-His') ?>
+        </td>
+      </tr>
+    </table>
+  </htmlpagefooter>
+  <sethtmlpagefooter name="pageFooter" value="on" />
+
+  <!-- ENTÊTE DE L'ÉTABLISSEMENT -->
+  <?php
+    $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+    if (!file_exists($logoPath)) {
+      $logoPath = '/var/www/html/geicg/public/assets/images/logo/logo_eicg.jpg';
+    }
+  ?>
+  <table class="header-table">
+    <tr>
+      <td style="width: 22%; text-align: left;">
+        <?php if (file_exists($logoPath)): ?>
+          <img src="<?= $logoPath ?>" style="max-height: 52px; max-width: 135px;" alt="Logo EICG">
+        <?php else: ?>
+          <div style="font-size: 14pt; font-weight: bold; color: #1E3A5F;">GROUPE EICG</div>
+        <?php endif; ?>
+      </td>
+      <td style="width: 78%; text-align: center;">
+        <?php
+          $nomEtab = 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION';
+          if (!empty($etablissement['libelle_etablissement']) && !in_array(strtoupper(trim($etablissement['libelle_etablissement'])), ['GROUPE EICG', 'GEICG', 'ETABLISSEMENT A'], true)) {
+              $nomEtab = $etablissement['libelle_etablissement'];
+          }
+        ?>
+        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars(!empty($etablissement['numero_autorisation_etablissement']) ? 'AGRÉMENT N° ' . $etablissement['numero_autorisation_etablissement'] : 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP') ?></div>
+        <div class="inst-contacts">
+          <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : 'Bouaké - Côte d\'Ivoire') ?>
+          &nbsp;|&nbsp; Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="divider-line"></div>
+
+  <!-- BANNIÈRE DE TITRE -->
+  <table class="banner-table">
+    <tr>
+      <td>
+        <div class="banner-title">GRILLE DES FRAIS ANNEXES</div>
+        <div class="banner-sub">BARÈME DES DROITS ET FRAIS ANNEXES PAR TYPE DE FILIÈRE ET NIVEAU D'ÉTUDE</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- CARTOUCHE DE MÉTADONNÉES -->
+  <table class="meta-box-table">
+    <tr>
+      <td style="width: 33%;">
+        <span class="meta-label">Année Académique :</span> 
+        <span class="meta-value" style="color: #0369A1; font-size: 9pt;"><?= htmlspecialchars($annee_libelle ?? 'Active') ?></span>
+      </td>
+      <td style="width: 34%;">
+        <span class="meta-label">Date d'édition :</span> 
+        <span class="meta-value"><?= date('d/m/Y à H:i') ?></span>
+      </td>
+      <td style="width: 33%;">
+        <span class="meta-label">Édité par :</span> 
+        <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? 'Service Comptabilité') ?></span>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <span class="meta-label">Établissement :</span> 
+        <span class="meta-value"><?= htmlspecialchars(!empty($etablissement['sigle_etablissement']) ? $etablissement['sigle_etablissement'] : 'GROUPE EICG') ?></span>
+      </td>
+      <td>
+        <span class="meta-label">Critères de filtre :</span> 
+        <span class="meta-value" style="font-size: 7.5pt; color: #475569;">
+          <?php
+            $filtreInfo = [];
+            if (!empty($filtres['categorie'])) $filtreInfo[] = 'Catégorie: ' . ucfirst(htmlspecialchars($filtres['categorie']));
+            if (!empty($filtres['type_filiere'])) $filtreInfo[] = 'Type: ' . htmlspecialchars($filtres['type_filiere']);
+            if (!empty($filtres['niveau_code'])) $filtreInfo[] = 'Niveau: ' . htmlspecialchars($filtres['niveau_code']);
+            echo !empty($filtreInfo) ? implode(' | ', $filtreInfo) : 'Tous les critères';
+          ?>
+        </span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- RÉSUMÉ STATISTIQUE DYNAMIQUE (KPIS) -->
+  <?php
+    $totalLignes = count($frais_annexes ?? []);
+    $nbInscription = 0;
+    $nbAutre = 0;
+    $nbIndustrielle = 0;
+    $nbTertiaire = 0;
+    $nbToutes = 0;
+    $cumulMontantsActifs = 0;
+    $nbActifs = 0;
+
+    foreach (($frais_annexes ?? []) as $fa) {
+      if (($fa['categorie_frais_annexe'] ?? '') === 'inscription') {
+        $nbInscription++;
+      } else {
+        $nbAutre++;
+      }
+
+      $tf = $fa['type_filiere'] ?? '';
+      if ($tf === 'INDUSTRIELLE') $nbIndustrielle++;
+      elseif ($tf === 'TERTIAIRE') $nbTertiaire++;
+      else $nbToutes++;
+
+      if (($fa['statut_frais_annexe'] ?? '') === 'actif') {
+        $cumulMontantsActifs += (float)($fa['montant_frais_annexe'] ?? 0);
+        $nbActifs++;
+      }
+    }
+  ?>
+  <table class="kpi-table">
+    <tr>
+      <td class="kpi-cell" style="width: 20%;">
+        <div class="kpi-num"><?= $totalLignes ?></div>
+        <div class="kpi-text">Total Barèmes</div>
+      </td>
+      <td class="kpi-cell" style="width: 20%;">
+        <div class="kpi-num" style="color: #15803D;"><?= $nbInscription ?></div>
+        <div class="kpi-text">Cat. Inscription</div>
+      </td>
+      <td class="kpi-cell" style="width: 20%;">
+        <div class="kpi-num" style="color: #475569;"><?= $nbAutre ?></div>
+        <div class="kpi-text">Cat. Autre</div>
+      </td>
+      <td class="kpi-cell" style="width: 20%;">
+        <div class="kpi-num" style="color: #0369A1;"><?= $nbIndustrielle ?> / <?= $nbTertiaire ?></div>
+        <div class="kpi-text">Indus. / Tertiaire</div>
+      </td>
+      <td class="kpi-cell" style="width: 20%;">
+        <div class="kpi-num" style="color: #0F172A;"><?= $nbActifs ?></div>
+        <div class="kpi-text">Tarifs Actifs</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- TABLEAU RÉCAPITULATIF DES BARÈMES -->
+  <table class="section-header-table">
+    <tr>
+      <td>Répertoire des Tarifications de Frais Annexes</td>
+    </tr>
+  </table>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 24px;" class="text-center">#</th>
+        <th style="width: 95px;">Code Réf.</th>
+        <th>Libellé de la Tarification</th>
+        <th style="width: 75px;">Catégorie</th>
+        <th style="width: 95px;">Cible (Filière)</th>
+        <th style="width: 85px;">Niveau Cible</th>
+        <th style="width: 90px;" class="text-end">Montant (FCFA)</th>
+        <th style="width: 45px;" class="text-center">Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php if (!empty($frais_annexes)): ?>
+        <?php foreach ($frais_annexes as $idx => $fa): ?>
+          <?php
+            $rowClass = ($idx % 2 === 0) ? 'row-even' : 'row-odd';
+            $catLabel = (($fa['categorie_frais_annexe'] ?? '') === 'inscription') ? 'Inscription' : 'Autre';
+            $tfLabel = 'Toutes';
+            $tfStyle = 'background: #F1F5F9; color: #475569;';
+            if (($fa['type_filiere'] ?? '') === 'INDUSTRIELLE') {
+              $tfLabel = 'Industrielle';
+              $tfStyle = 'background: #E0F2FE; color: #0369A1;';
+            } elseif (($fa['type_filiere'] ?? '') === 'TERTIAIRE') {
+              $tfLabel = 'Tertiaire';
+              $tfStyle = 'background: #FEF3C7; color: #B45309;';
+            }
+            $nivLabel = !empty($fa['libelle_niveau']) ? htmlspecialchars($fa['libelle_niveau']) : 'Tous Niveaux';
+            $montant = (float)($fa['montant_frais_annexe'] ?? 0);
+            $isActif = (($fa['statut_frais_annexe'] ?? '') === 'actif');
+          ?>
+          <tr class="<?= $rowClass ?>">
+            <td class="text-center" style="color: #64748B; font-weight: bold;"><?= $idx + 1 ?></td>
+            <td>
+              <span class="badge-code"><?= htmlspecialchars($fa['code_frais_annexe'] ?? '-') ?></span>
+            </td>
+            <td>
+              <strong style="color: #0F172A;"><?= htmlspecialchars($fa['libelle_frais_annexe'] ?? '-') ?></strong>
+            </td>
+            <td style="font-weight: 600; color: #334155;">
+              <?= htmlspecialchars($catLabel) ?>
+            </td>
+            <td>
+              <span class="badge-filiere" style="<?= $tfStyle ?>"><?= htmlspecialchars($tfLabel) ?></span>
+            </td>
+            <td style="color: #334155;">
+              <?= $nivLabel ?>
+            </td>
+            <td class="text-end" style="font-weight: bold; color: #15803D;">
+              <?= number_format($montant, 0, ',', ' ') ?>
+            </td>
+            <td class="text-center">
+              <?php if ($isActif): ?>
+                <span class="badge-statut-actif">Actif</span>
+              <?php else: ?>
+                <span class="badge-statut-inactif">Inactif</span>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <tr>
+          <td colspan="8" class="text-center" style="padding: 16px; color: #64748B; font-style: italic;">
+            Aucun tarif de frais annexes trouvé pour les critères sélectionnés.
+          </td>
+        </tr>
+      <?php endif; ?>
+    </tbody>
+  </table>
+
+  <!-- BLOC DE SIGNATURE ET VISA -->
+  <table class="signature-table">
+    <tr>
+      <td class="signature-box">
+        <div class="signature-title">Le Service Comptabilité & Caisse</div>
+        <div style="height: 38px;"></div>
+        <div class="signature-mention">Date, Cachet & Signature</div>
+      </td>
+      <td style="width: 4%;"></td>
+      <td class="signature-box">
+        <div class="signature-title">La Direction des Études & Scolarité</div>
+        <div style="height: 38px;"></div>
+        <div class="signature-mention">Visa & Approbation</div>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

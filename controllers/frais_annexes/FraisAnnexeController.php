@@ -208,4 +208,64 @@ class FraisAnnexeController extends BaseController
             $this->error("Erreur lors du changement de statut.");
         }
     }
+
+    /**
+     * Impression de la Grille des Frais Annexes via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['PRINT_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_ANNEXES', 'PRINT_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : $this->getActiveAnneeCode();
+        $categorie = !empty($_GET['categorie']) ? trim($_GET['categorie']) : null;
+        $typeFiliere = !empty($_GET['type_filiere']) ? trim($_GET['type_filiere']) : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if ($anneeCode) {
+            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$anneeCode]);
+            $aName = $stmtA->fetchColumn();
+            if ($aName) $anneeLibelle = $aName;
+        }
+
+        $fraisAnnexes = $this->model->getAll($anneeCode, $typeFiliere, $niveauCode, $categorie);
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $authSession = $_SESSION[USERS_AUTH] ?? [];
+        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Comptabilité & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'frais_annexes' => $fraisAnnexes,
+            'filtres' => [
+                'annee_code' => $anneeCode,
+                'categorie' => $categorie,
+                'type_filiere' => $typeFiliere,
+                'niveau_code' => $niveauCode
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('grille_frais_annexes.php', $data);
+        $filename = 'Grille_Frais_Annexes_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Grille des Frais Annexes - ' . ($etablissement['libelle_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 12
+        ]);
+    }
 }
