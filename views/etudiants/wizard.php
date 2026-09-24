@@ -349,7 +349,7 @@ $pieces = (new ModelPieceFournir())->getAll();
                     <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 2px;" id="wiz_summary_total_scolarite">0 FCFA</div>
                   </div>
                   <div id="wiz_summary_frais_annexes_box" style="background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 10px 18px; border-radius: 10px; text-align: right; transition: all 0.3s;">
-                    <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase;">Frais Annexes Cibles (Inscription)</div>
+                    <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase;">Frais Annexes</div>
                     <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 2px;" id="wiz_summary_total_frais_annexes">0 FCFA</div>
                   </div>
                   <div id="wiz_summary_net_box" style="display: none; background: #F0FDF4; border: 1.5px solid #86EFAC; padding: 10px 18px; border-radius: 10px; text-align: right;">
@@ -384,12 +384,6 @@ $pieces = (new ModelPieceFournir())->getAll();
                   <tbody id="wiz_tranches_table_body">
                     <!-- Rempli dynamiquement en JS avec toutes les tranches -->
                   </tbody>
-                  <tfoot>
-                    <tr style="background: #F8FAFC; font-weight: 800; font-size: 13px; color: #0F172A; border-top: 2px solid #CBD5E1;">
-                      <td colspan="4" style="padding: 12px 16px; text-align: right; text-transform: uppercase;">Total Général Échéancier :</td>
-                      <td style="padding: 12px 16px; text-align: right; color: #1E3A5F; font-size: 15px; font-weight: 900;" id="wiz_tranches_total_sum">0 FCFA</td>
-                    </tr>
-                  </tfoot>
                 </table>
               </div>
 
@@ -397,13 +391,13 @@ $pieces = (new ModelPieceFournir())->getAll();
               <div id="wiz_frais_annexes_detail_card" style="margin-top: 18px; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 14px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
                   <span style="font-size: 11.5px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="package" style="width: 16px; height: 16px; color: #D97706;"></i> Frais Annexes Cibles (Catégorie : Inscription)
+                    <i data-lucide="package" style="width: 16px; height: 16px; color: #D97706;"></i> Frais Annexes (Uniforme, Badge, Assurance...)
                   </span>
                   <div style="font-size: 14px; font-weight: 700; color: #78350F; margin-top: 4px;" id="wiz_frais_annexes_title_text">-</div>
                   <div style="font-size: 12px; color: #92400E; margin-top: 2px;" id="wiz_frais_annexes_cible_desc">-</div>
                 </div>
                 <div style="background: #FEF3C7; border: 1px solid #FCD34D; padding: 8px 16px; border-radius: 8px; text-align: right;">
-                  <div style="font-size: 10.5px; font-weight: 800; color: #92400E; text-transform: uppercase;">Tarif Forfaitaire (Inscription)</div>
+                  <div style="font-size: 10.5px; font-weight: 800; color: #92400E; text-transform: uppercase;">Tarif Forfaitaire</div>
                   <div style="font-size: 17px; font-weight: 900; color: #B45309;" id="wiz_frais_annexes_amount_badge">0 FCFA</div>
                 </div>
               </div>
