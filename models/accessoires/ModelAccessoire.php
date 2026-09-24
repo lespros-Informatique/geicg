@@ -9,7 +9,14 @@ class ModelAccessoire extends BaseModel
 
     public function getAll(?string $anneeCode = null): array
     {
-        $sql = "SELECT * FROM accessoires ORDER BY id_accessoire DESC";
+        $sql = "
+            SELECT a.*,
+                   n.libelle_niveau,
+                   n.slug_niveau
+            FROM accessoires a
+            LEFT JOIN niveaux n ON n.code_niveau = a.niveau_code
+            ORDER BY a.id_accessoire DESC
+        ";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute();

@@ -147,6 +147,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Désignation du Kit / Article</th>
                 <th style="padding: 12px;">Cible Filière</th>
+                <th style="padding: 12px;">Niveau Cible</th>
                 <th style="padding: 12px;" class="text-center">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
@@ -296,6 +297,18 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <option value="TOUT">Toutes les Filières (Général)</option>
           <option value="INDUSTRIELLE">Filière Industrielle uniquement (Ex: IDA, RIT...)</option>
           <option value="TERTIAIRE">Filière Tertiaire uniquement (Ex: RHCOM, GEC...)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Niveau d'étude cible
+        </label>
+        <select name="niveau_code" id="acc_type_niveau_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="">Tous les niveaux</option>
+          <?php foreach (($niveaux ?? []) as $niv): ?>
+            <option value="<?= htmlspecialchars($niv['code_niveau']) ?>"><?= htmlspecialchars($niv['libelle_niveau']) ?></option>
+          <?php endforeach; ?>
         </select>
       </div>
 
@@ -478,6 +491,10 @@ $(document).ready(function() {
             if (d === 'TERTIAIRE') return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tertiaire</span>';
             return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Toutes Filières</span>';
           }},
+          { data: 'libelle_niveau', render: function(d) {
+            if (d) return '<span class="badge" style="background:#F0FDF4; color:#15803D; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">' + d + '</span>';
+            return '<span class="badge" style="background:#F1F5F9; color:#64748B; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tous niveaux</span>';
+          }},
           { data: 'statut_accessoire', width: '80px', className: 'text-center', render: function(d, type, row) {
             var isActif = (d === 'actif');
             var checkedAttr = isActif ? 'checked' : '';
@@ -492,7 +509,7 @@ $(document).ready(function() {
           }},
           { data: null, width: '160px', orderable: false, render: function(d) {
             var safeLibelle = $('<div>').text(d.libelle_accessoire || '').html();
-            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-filiere-cible="' + (d.type_filiere_cible || 'TOUT') + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
+            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-filiere-cible="' + (d.type_filiere_cible || 'TOUT') + '" data-niveau-code="' + (d.niveau_code || '') + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
                    '<a href="' + window.RACINE + 'accessoire/details/' + (d.editId || d.id_accessoire) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
           }, className: 'text-end' }
         ],
@@ -512,6 +529,7 @@ $(document).ready(function() {
     $('#form-accessoire-type')[0].reset();
     $('#acc_type_id').val('');
     $('#acc_type_filiere_cible').val('TOUT');
+    $('#acc_type_niveau_code').val('');
     $('#modal-accessoire-type-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Type de Kit / Article');
     $('#modal-accessoire-type').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
@@ -523,11 +541,13 @@ $(document).ready(function() {
     var id = $(this).data('id');
     var libelle = $(this).data('libelle');
     var filiereCible = $(this).data('filiere-cible');
+    var niveauCode = $(this).data('niveau-code');
     var statut = $(this).data('statut');
 
     $('#acc_type_id').val(id);
     $('#acc_type_libelle').val(libelle);
     $('#acc_type_filiere_cible').val(filiereCible || 'TOUT');
+    $('#acc_type_niveau_code').val(niveauCode || '');
     $('#acc_type_statut').val(statut || 'actif');
     $('#modal-accessoire-type-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le Type de Kit');
     $('#modal-accessoire-type').css('display', 'flex');

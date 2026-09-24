@@ -27,10 +27,12 @@ class AccessoireController extends BaseController
         }
 
         $stats = $this->model->getStats($selectedAnneeCode);
+        $niveaux = (new ModelNiveau())->getActifs();
 
         $this->loadView('../views/accessoires/list.php', [
             'stats' => $stats,
             'annees' => $annees,
+            'niveaux' => $niveaux,
             'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
@@ -108,8 +110,10 @@ class AccessoireController extends BaseController
         $cols = $this->model->getCon()->query("DESCRIBE accessoires")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $libelle = trim($data['libelle_accessoire'] ?? '');
+        if (isset($data['niveau_code']) && empty(trim($data['niveau_code']))) {
+            $data['niveau_code'] = null;
+        }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été créé avec succès !" : "Accessoire créé avec succès !";
@@ -136,6 +140,9 @@ class AccessoireController extends BaseController
 
         $libelle = trim($data['libelle_accessoire'] ?? '');
         $cols = $this->model->getCon()->query("DESCRIBE accessoires")->fetchAll(PDO::FETCH_COLUMN);
+        if (isset($data['niveau_code']) && empty(trim($data['niveau_code']))) {
+            $data['niveau_code'] = null;
+        }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été modifié avec succès !" : "Accessoire modifié avec succès !";
