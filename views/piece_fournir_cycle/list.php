@@ -56,42 +56,7 @@
         </a>
       </div>
 
-      <!-- KPI Summary Cards -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
-        
-        <!-- Total Pièces Assignées -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="folder-check" style="width: 24px; height: 24px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Pièces Assignées</div>
-            <div id="kpi-total" style="font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.2;"><?= (int)($summary['total'] ?? 0) ?></div>
-          </div>
-        </div>
 
-        <!-- Pièces Actives -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Pièces Actives</div>
-            <div id="kpi-actifs" style="font-size: 22px; font-weight: 800; color: #15803D; line-height: 1.2;"><?= (int)($summary['actifs'] ?? 0) ?></div>
-          </div>
-        </div>
-
-        <!-- Cycles Configurés -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="layers" style="width: 24px; height: 24px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Cycles Configurés</div>
-            <div id="kpi-cycles" style="font-size: 22px; font-weight: 800; color: #7E22CE; line-height: 1.2;"><?= (int)($summary['cycles_configures'] ?? 0) ?></div>
-          </div>
-        </div>
-      </div>
       
       <style>
         .dataTables_wrapper {
@@ -187,24 +152,7 @@ $(document).ready(function() {
     $('#filter-cycle, #filter-niveau').select2({ width: '100%' });
   }
 
-  function reloadStats() {
-    $.ajax({
-      url: '<?= RACINE ?>piece_fournir_cycle/apiStats',
-      type: 'GET',
-      data: {
-        cycle_code: $('#filter-cycle').val(),
-        niveau_code: $('#filter-niveau').val()
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res && res.data) {
-          $('#kpi-total').text(res.data.total || 0);
-          $('#kpi-actifs').text(res.data.actifs || 0);
-          $('#kpi-cycles').text(res.data.cycles_configures || 0);
-        }
-      }
-    });
-  }
+
 
   var table = $('#table-pieces-cycle').DataTable({
     ajax: {
@@ -270,11 +218,8 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  reloadStats();
-
   $('#filter-cycle, #filter-niveau').on('change', function() {
     table.ajax.reload();
-    reloadStats();
   });
 
   // AJAX Status Change
