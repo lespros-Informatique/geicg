@@ -91,16 +91,7 @@
                 </select>
               </div>
 
-              <div>
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                  Caractère de l'exigence <span style="color: #EF4444; font-weight: 800;">*</span>
-                </label>
-                <select name="est_obligatoire" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600; width: 100%;">
-                  <option value="obligatoire" <?= ($item['est_obligatoire'] ?? '') === 'obligatoire' ? 'selected' : '' ?>>Obligatoire (Bloquant)</option>
-                  <option value="complementaire" <?= ($item['est_obligatoire'] ?? '') === 'complementaire' ? 'selected' : '' ?>>Complémentaire (Sous réserve)</option>
-                  <option value="facultatif" <?= ($item['est_obligatoire'] ?? '') === 'facultatif' ? 'selected' : '' ?>>Facultatif</option>
-                </select>
-              </div>
+
 
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
@@ -180,10 +171,9 @@
               <table class="table" id="table-bulk-cycle-items" style="width: 100%; border-collapse: collapse; margin: 0;">
                 <thead>
                   <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
-                    <th style="padding: 10px 12px; width: 42%;">Pièce / Document à Fournir <span style="color: #EF4444; font-weight: 800;">*</span></th>
-                    <th style="padding: 10px 12px; width: 12%; text-align: center;">Exemplaires</th>
-                    <th style="padding: 10px 12px; width: 22%;">Nature du Document</th>
-                    <th style="padding: 10px 12px; width: 18%; text-align: center;">Caractère</th>
+                    <th style="padding: 10px 12px; width: 50%;">Pièce / Document à Fournir <span style="color: #EF4444; font-weight: 800;">*</span></th>
+                    <th style="padding: 10px 12px; width: 15%; text-align: center;">Exemplaires</th>
+                    <th style="padding: 10px 12px; width: 29%;">Nature du Document</th>
                     <th style="padding: 10px 12px; width: 6%; text-align: center;"></th>
                   </tr>
                 </thead>
@@ -336,11 +326,10 @@ $(document).ready(function() {
     });
   }
 
-  function createRow(selectedCode, nbEx, nature, exigence) {
+  function createRow(selectedCode, nbEx, nature) {
     selectedCode = selectedCode || '';
     nbEx = nbEx || 1;
     nature = nature || 'photocopie_simple';
-    exigence = exigence || 'obligatoire';
 
     var optHtml = '<option value="">-- Choisir une pièce à fournir --</option>';
     pieceOptions.forEach(function(item) {
@@ -370,13 +359,6 @@ $(document).ready(function() {
         '</select>' +
       '</td>' +
       '<td style="padding: 10px 12px; text-align:center;">' +
-        '<select name="items[' + rowIndex + '][est_obligatoire]" class="form-select" style="border-radius:6px; font-weight:700; font-size:12px; padding:6px 10px; width:100%; box-sizing:border-box;">' +
-          '<option value="obligatoire" ' + (exigence === 'obligatoire' ? 'selected' : '') + '>Obligatoire</option>' +
-          '<option value="complementaire" ' + (exigence === 'complementaire' ? 'selected' : '') + '>Complémentaire</option>' +
-          '<option value="facultatif" ' + (exigence === 'facultatif' ? 'selected' : '') + '>Facultatif</option>' +
-        '</select>' +
-      '</td>' +
-      '<td style="padding: 10px 12px; text-align:center;">' +
         '<button type="button" class="btn btn-sm btn-delete-row-cycle" style="background:#FEE2E2; color:#B91C1C; border:none; border-radius:6px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;" title="Supprimer la ligne">' +
           '✕' +
         '</button>' +
@@ -390,8 +372,8 @@ $(document).ready(function() {
 
   // Prepopulate initial empty lines
   if ($('#bulk-rows-cycle-container').length && $('#bulk-rows-cycle-container tr').length === 0) {
-    createRow('', 1, 'photocopie_simple', 'obligatoire');
-    createRow('', 1, 'original', 'obligatoire');
+    createRow('', 1, 'photocopie_simple');
+    createRow('', 1, 'original');
   }
 
   // Dynamic cycle selection -> reload niveaux & pieces

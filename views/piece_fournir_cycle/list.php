@@ -57,7 +57,7 @@
       </div>
 
       <!-- KPI Summary Cards -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
         
         <!-- Total Pièces Assignées -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
@@ -70,25 +70,14 @@
           </div>
         </div>
 
-        <!-- Pièces Obligatoires -->
+        <!-- Pièces Actives -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
           <div style="width: 48px; height: 48px; border-radius: 12px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="check-square" style="width: 24px; height: 24px;"></i>
+            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Obligatoires</div>
-            <div id="kpi-obligatoires" style="font-size: 22px; font-weight: 800; color: #15803D; line-height: 1.2;"><?= (int)($summary['obligatoires'] ?? 0) ?></div>
-          </div>
-        </div>
-
-        <!-- Facultatives / Complémentaires -->
-        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
-            <i data-lucide="help-circle" style="width: 24px; height: 24px;"></i>
-          </div>
-          <div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Complémentaires</div>
-            <div id="kpi-facultatifs" style="font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.2;"><?= (int)($summary['facultatifs'] ?? 0) ?></div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Pièces Actives</div>
+            <div id="kpi-actifs" style="font-size: 22px; font-weight: 800; color: #15803D; line-height: 1.2;"><?= (int)($summary['actifs'] ?? 0) ?></div>
           </div>
         </div>
 
@@ -158,7 +147,6 @@
           min-width: 220px !important;
           max-width: 380px !important;
         }
-        table.dataTable .caractere-badge,
         table.dataTable .badge {
           position: static !important;
           top: auto !important;
@@ -179,7 +167,6 @@
                 <th class="col-piece" style="padding: 12px 14px; min-width: 220px;">Document / Pièce Administrative</th>
                 <th style="padding: 12px 14px; text-align: center;">Exemplaires</th>
                 <th style="padding: 12px 14px;">Nature Requise</th>
-                <th style="padding: 12px 14px; text-align: center;">Caractère Exigé</th>
                 <th style="padding: 12px 14px; text-align: center;">Statut</th>
                 <th style="padding: 12px 14px; text-align: right;">Actions</th>
               </tr>
@@ -212,8 +199,7 @@ $(document).ready(function() {
       success: function(res) {
         if (res && res.data) {
           $('#kpi-total').text(res.data.total || 0);
-          $('#kpi-obligatoires').text(res.data.obligatoires || 0);
-          $('#kpi-facultatifs').text(res.data.facultatifs || 0);
+          $('#kpi-actifs').text(res.data.actifs || 0);
           $('#kpi-cycles').text(res.data.cycles_configures || 0);
         }
       }
@@ -262,14 +248,6 @@ $(document).ready(function() {
           'aucun': '<span style="color:#64748B; font-weight:600;"><i data-lucide="minus-circle" style="width:13px;height:13px;display:inline;"></i> Aucun</span>'
         };
         return natureLabels[d] || (d || 'Photocopie simple');
-      } },
-      { data: 'est_obligatoire', className: 'text-center', render: function(d) {
-        if (d === 'obligatoire') {
-          return '<span class="caractere-badge" style="background:#DCFCE7; color:#15803D; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-block; position:static;">Obligatoire</span>';
-        } else if (d === 'complementaire') {
-          return '<span class="caractere-badge" style="background:#FEF3C7; color:#B45309; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-block; position:static;">Complémentaire</span>';
-        }
-        return '<span class="caractere-badge" style="background:#F1F5F9; color:#475569; font-weight:700; padding:4px 10px; border-radius:6px; display:inline-block; position:static;">Facultatif</span>';
       } },
       { data: 'statut_piece_cycle', className: 'text-center', render: function(d, type, row) {
         var val = d || 'actif';

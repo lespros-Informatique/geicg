@@ -92,7 +92,7 @@ class ModelPieceFournirCycle extends BaseModel
             $sql .= " AND (pfc.niveau_code = ? OR pfc.niveau_code IS NULL OR pfc.niveau_code = '') ";
             $params[] = $niveauCode;
         }
-        $sql .= " ORDER BY pfc.est_obligatoire ASC, pf.libelle_piece ASC";
+        $sql .= " ORDER BY pf.libelle_piece ASC";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
@@ -166,15 +166,10 @@ class ModelPieceFournirCycle extends BaseModel
             $stmtTot->execute($params);
             $total = (int)$stmtTot->fetchColumn();
 
-            $condObl = array_merge($conditions, ["est_obligatoire = 'obligatoire'"]);
-            $stmtObl = $db->prepare("SELECT COUNT(*) FROM piece_fournir_cycle WHERE " . implode(" AND ", $condObl));
-            $stmtObl->execute($params);
-            $obligatoires = (int)$stmtObl->fetchColumn();
-
-            $condFac = array_merge($conditions, ["est_obligatoire != 'obligatoire'"]);
-            $stmtFac = $db->prepare("SELECT COUNT(*) FROM piece_fournir_cycle WHERE " . implode(" AND ", $condFac));
-            $stmtFac->execute($params);
-            $facultatifs = (int)$stmtFac->fetchColumn();
+            $condAct = array_merge($conditions, ["statut_piece_cycle = 'actif'"]);
+            $stmtAct = $db->prepare("SELECT COUNT(*) FROM piece_fournir_cycle WHERE " . implode(" AND ", $condAct));
+            $stmtAct->execute($params);
+            $actifs = (int)$stmtAct->fetchColumn();
 
             $condCyc = array_merge($conditions, ["statut_piece_cycle = 'actif'"]);
             $stmtCyc = $db->prepare("SELECT COUNT(DISTINCT cycle_code) FROM piece_fournir_cycle WHERE " . implode(" AND ", $condCyc));
@@ -183,8 +178,7 @@ class ModelPieceFournirCycle extends BaseModel
 
             return [
                 'total' => $total,
-                'obligatoires' => $obligatoires,
-                'facultatifs' => $facultatifs,
+                'actifs' => $actifs,
                 'cycles_configures' => $cyclesConfigures
             ];
         } catch (Exception $e) {
