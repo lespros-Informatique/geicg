@@ -506,10 +506,10 @@ class InscriptionController extends BaseController
             $dateLimiteTranche = $firstTranche['date_limite_formatee'];
         }
 
-        // 3. Récupérer le tarif  des Frais Annexes depuis la table dédiée `frais_annexes` par Type de Filière et Niveau
+        // 3. Récupérer le tarif des Frais Annexes depuis la table dédiée `frais_annexes` par Type de Filière et Niveau (Filtre strict sur la catégorie 'inscription')
         $modelFraisAnnexe = new ModelFraisAnnexe();
-        $totalFraisAnnexes = $modelFraisAnnexe->getMontantByTypeFiliere($typeFiliere, $activeAnneeCode, $niveauCode);
-        $fraisAnnexeDetails = $modelFraisAnnexe->getFraisAnnexeDetails($typeFiliere, $activeAnneeCode, $niveauCode);
+        $totalFraisAnnexes = $modelFraisAnnexe->getMontantByTypeFiliere($typeFiliere, $activeAnneeCode, $niveauCode, 'inscription');
+        $fraisAnnexeDetails = $modelFraisAnnexe->getFraisAnnexeDetails($typeFiliere, $activeAnneeCode, $niveauCode, 'inscription');
 
         $this->json([
             'status' => 1,
@@ -536,7 +536,9 @@ class InscriptionController extends BaseController
                 'total_frais_annexes' => $totalFraisAnnexes,
                 'total_frais_annexes_formate' => number_format($totalFraisAnnexes, 0, ',', ' ') . ' FCFA',
                 'libelle_frais_annexe' => $fraisAnnexeDetails['libelle_frais_annexe'] ?? '',
-                'code_frais_annexe' => $fraisAnnexeDetails['code_frais_annexe'] ?? ''
+                'code_frais_annexe' => $fraisAnnexeDetails['code_frais_annexe'] ?? '',
+                'categorie_frais_annexe' => $fraisAnnexeDetails['categorie_frais_annexe'] ?? 'inscription',
+                'libelle_categorie_frais_annexe' => 'Inscription'
             ]
         ]);
     }

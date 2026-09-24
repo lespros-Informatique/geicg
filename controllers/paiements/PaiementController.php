@@ -282,7 +282,7 @@ class PaiementController extends BaseController
                 $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
             }
 
-            $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $nCode);
+            $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $nCode, 'inscription');
             $totalAttendu = $scolariteDue + $fraisAnnexesDus;
             $totalEncaisse = $paymentsGrouped[$codeIns] ?? 0;
             $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
@@ -446,7 +446,7 @@ class PaiementController extends BaseController
             $tf = $ins['type_filiere'] ?? 'TERTIAIRE';
             $ac = !empty($ins['annee_code']) ? $ins['annee_code'] : $anneeCode;
             $nc = $ins['niveau_code'] ?? '';
-            $faAmt = (float)$modelFA->getMontantByTypeFiliere($tf, $ac, $nc);
+            $faAmt = (float)$modelFA->getMontantByTypeFiliere($tf, $ac, $nc, 'inscription');
             $totalFraisAnnexesAttendus += $faAmt;
 
             $inscrMap[$codeInscr] = [
@@ -788,8 +788,8 @@ class PaiementController extends BaseController
         require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
         $modelFA = new ModelFraisAnnexe();
         $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
-        $montantFraisAnnexes = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $niveauCode);
-        $faDetails = $modelFA->getFraisAnnexeDetails($typeFiliere, $anneeCode, $niveauCode);
+        $montantFraisAnnexes = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $niveauCode, 'inscription');
+        $faDetails = $modelFA->getFraisAnnexeDetails($typeFiliere, $anneeCode, $niveauCode, 'inscription');
         $libelleFraisAnnexe = $faDetails['libelle_frais_annexe'] ?? 'Frais Annexes';
 
         // Récupération de tous les paiements existants pour cette inscription
