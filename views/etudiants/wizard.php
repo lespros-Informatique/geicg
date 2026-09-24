@@ -340,7 +340,6 @@ $pieces = (new ModelPieceFournir())->getAll();
                     <i data-lucide="graduation-cap" style="width: 16px; height: 16px; color: #D97706;"></i> Grille Tarifaire & Échéancier de Scolarité
                   </div>
                   <div style="font-size: 17px; font-weight: 900; color: #0F172A; margin-top: 4px;" id="wiz_summary_classe_title">-</div>
-                  <div style="font-size: 13px; color: #64748B; margin-top: 2px;" id="wiz_summary_filiere_niveau">-</div>
                 </div>
 
                 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
@@ -387,17 +386,17 @@ $pieces = (new ModelPieceFournir())->getAll();
                 </table>
               </div>
 
-              <!-- 4. Carte détaillée des Frais Annexes cibles (Type de Filière x Niveau - Catégorie Inscription) -->
+              <!-- 4. Carte détaillée des Frais d'inscription (1ère Tranche + Frais Annexes Catégorie Inscription) -->
               <div id="wiz_frais_annexes_detail_card" style="margin-top: 18px; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 14px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
                   <span style="font-size: 11.5px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="package" style="width: 16px; height: 16px; color: #D97706;"></i> Frais Annexes (Uniforme, Badge, Assurance...)
+                    <i data-lucide="bookmark-check" style="width: 16px; height: 16px; color: #D97706;"></i> Frais d'inscription
                   </span>
                   <div style="font-size: 14px; font-weight: 700; color: #78350F; margin-top: 4px;" id="wiz_frais_annexes_title_text">-</div>
                   <div style="font-size: 12px; color: #92400E; margin-top: 2px;" id="wiz_frais_annexes_cible_desc">-</div>
                 </div>
                 <div style="background: #FEF3C7; border: 1px solid #FCD34D; padding: 8px 16px; border-radius: 8px; text-align: right;">
-                  <div style="font-size: 10.5px; font-weight: 800; color: #92400E; text-transform: uppercase;">Tarif Forfaitaire</div>
+                  <div style="font-size: 10.5px; font-weight: 800; color: #92400E; text-transform: uppercase;">Total Frais d'Inscription</div>
                   <div style="font-size: 17px; font-weight: 900; color: #B45309;" id="wiz_frais_annexes_amount_badge">0 FCFA</div>
                 </div>
               </div>
@@ -1169,18 +1168,18 @@ $(document).ready(function() {
           var d = res.data;
           var totalScolarite = Number(d.montant_scolarite || 0);
 
-          // Mis à jour des Frais Annexes dynamiques (Niveau x Type Filière - Catégorie Inscription)
+          // Calcul dynamique des Frais d'inscription = Montant 1ère Tranche + Frais Annexes (catégorie inscription)
           var totalFA = Number(d.total_frais_annexes || 0);
           var totalFAFormate = d.total_frais_annexes_formate || (totalFA.toLocaleString('fr-FR') + ' FCFA');
-          var libelleFA = d.libelle_frais_annexe || 'Frais Annexes Inscription';
-          var targetDescFA = (d.libelle_type_filiere ? d.libelle_type_filiere : '') + 
-                              (d.libelle_niveau ? (d.libelle_type_filiere ? ' • ' : '') + d.libelle_niveau : '') +
-                              ' • Catégorie : Inscription';
+          var mtPremiereTranche = Number(d.frais_inscription || 0);
+          var mtPremiereTrancheFormate = d.frais_inscription_formate || (mtPremiereTranche.toLocaleString('fr-FR') + ' FCFA');
+          var totalFraisInscription = Number(d.total_frais_inscription || (mtPremiereTranche + totalFA));
+          var totalFraisInscriptionFormate = d.total_frais_inscription_formate || (totalFraisInscription.toLocaleString('fr-FR') + ' FCFA');
 
           $('#wiz_summary_total_frais_annexes').text(totalFAFormate);
-          $('#wiz_frais_annexes_amount_badge').text(totalFAFormate);
-          $('#wiz_frais_annexes_title_text').text(libelleFA);
-          $('#wiz_frais_annexes_cible_desc').text(targetDescFA ? ('Cible : ' + targetDescFA) : 'Frais annexes d\'inscription');
+          $('#wiz_frais_annexes_amount_badge').text(totalFraisInscriptionFormate);
+          $('#wiz_frais_annexes_title_text').text('1ère Tranche (' + mtPremiereTrancheFormate + ') + Frais Annexes (' + totalFAFormate + ')');
+          $('#wiz_frais_annexes_cible_desc').text('Montant total exigible à l\'inscription : ' + totalFraisInscriptionFormate);
 
           if (totalScolarite > 0) {
             $('#wiz_montant_scolarite').val(totalScolarite);
@@ -1211,11 +1210,6 @@ $(document).ready(function() {
               : ' <span class="badge" style="background:#DBEAFE; color:#1D4ED8; font-size:11.5px; padding:4px 10px; border-radius:6px; border:1.5px solid #BFDBFE; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="user-check" style="width:13px; height:13px; color:#2563EB;"></i> Régime Non Affecté</span>';
 
             $('#wiz_summary_classe_title').html(d.libelle_classe + regimeBadge);
-            $('#wiz_summary_filiere_niveau').text(
-              (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + 
-              (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau + ' • ' : '') + 
-              (d.libelle_annee ? 'Année : ' + d.libelle_annee : '')
-            );
 
             // Styling du bloc Total Scolarité selon le régime
             $('#wiz_summary_total_scolarite_box').css({

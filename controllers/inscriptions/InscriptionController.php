@@ -538,7 +538,9 @@ class InscriptionController extends BaseController
                 'libelle_frais_annexe' => $fraisAnnexeDetails['libelle_frais_annexe'] ?? '',
                 'code_frais_annexe' => $fraisAnnexeDetails['code_frais_annexe'] ?? '',
                 'categorie_frais_annexe' => $fraisAnnexeDetails['categorie_frais_annexe'] ?? 'inscription',
-                'libelle_categorie_frais_annexe' => 'Inscription'
+                'libelle_categorie_frais_annexe' => 'Inscription',
+                'total_frais_inscription' => $fraisInscription + $totalFraisAnnexes,
+                'total_frais_inscription_formate' => number_format($fraisInscription + $totalFraisAnnexes, 0, ',', ' ') . ' FCFA'
             ]
         ]);
     }
