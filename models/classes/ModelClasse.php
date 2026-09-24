@@ -74,7 +74,7 @@ class ModelClasse extends BaseModel
     }
 
     /**
-     * Reconduit toutes les classes actives d'une année source vers une année cible.
+     * Reconduit toutes les classes actives d'une année source vers une année de destination.
      */
     public function reconduireClassesAnnee(string $anneeSourceCode, string $anneeCibleCode, ?string $etabCode = null, ?string $userCode = null): array
     {
@@ -98,7 +98,7 @@ class ModelClasse extends BaseModel
         $skippedCount = 0;
 
         foreach ($classesSource as $cls) {
-            // Vérifier si la classe existe déjà dans l'année cible
+            // Vérifier si la classe existe déjà dans l'année de destination
             $stmtCheck = $db->prepare("SELECT id_classe FROM classes WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
             $stmtCheck->execute([$cls['libelle_classe'], $anneeCibleCode]);
             if ($stmtCheck->fetch()) {

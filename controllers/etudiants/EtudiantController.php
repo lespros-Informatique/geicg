@@ -174,7 +174,7 @@ class EtudiantController extends BaseController
             return;
         }
 
-        // Vérifier l'existence et la validité de la classe cible
+        // Vérifier l'existence et la validité de la nouvelle classe
         $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, filiere_code, niveau_code FROM classes WHERE code_classe = ? AND statut_classe = 'actif' LIMIT 1");
         $stmtCl->execute([$nouvelleClasse]);
         $classeRow = $stmtCl->fetch(PDO::FETCH_ASSOC);

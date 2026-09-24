@@ -17,7 +17,7 @@
       line-height: 1.25;
     }
 
-    /* En-tête Institutionnel */
+    /* En-tête */
     .header-table {
       width: 100%;
       border-collapse: collapse;
@@ -418,8 +418,8 @@
         <th style="width: 95px;">Code Réf.</th>
         <th>Libellé de la Tarification</th>
         <th style="width: 75px;">Catégorie</th>
-        <th style="width: 95px;">Cible (Filière)</th>
-        <th style="width: 85px;">Niveau Cible</th>
+        <th style="width: 95px;">Filière</th>
+        <th style="width: 85px;">Niveau</th>
         <th style="width: 90px;" class="text-end">Montant (FCFA)</th>
         <th style="width: 45px;" class="text-center">Statut</th>
       </tr>

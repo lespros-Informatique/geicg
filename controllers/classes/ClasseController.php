@@ -373,12 +373,12 @@ class ClasseController extends BaseController
         $anneeCibleCode = trim($_POST['annee_cible_code'] ?? '');
 
         if (empty($anneeSourceCode) || empty($anneeCibleCode)) {
-            $this->error("Veuillez sélectionner l'année source et l'année cible.");
+            $this->error("Veuillez sélectionner l'année source et l'année de destination.");
             return;
         }
 
         if ($anneeSourceCode === $anneeCibleCode) {
-            $this->error("L'année source et l'année cible doivent être différentes.");
+            $this->error("L'année source et l'année de destination doivent être différentes.");
             return;
         }
 

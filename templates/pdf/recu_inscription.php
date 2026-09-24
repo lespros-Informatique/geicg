@@ -201,7 +201,7 @@
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE INSTITUTIONNEL -->
+  <!-- EN-TÊTE -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
   ?>

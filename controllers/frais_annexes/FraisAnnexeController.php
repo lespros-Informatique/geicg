@@ -92,12 +92,12 @@ class FraisAnnexeController extends BaseController
             $this->error("Le libellé de la tarification est obligatoire.");
             return;
         }
-        // Contrôle Anti-Doublon (Cible Filière x Niveau d'étude x Catégorie pour la même année)
+        // Contrôle Anti-Doublon (Filière x Niveau d'étude x Catégorie pour la même année)
         $duplicate = $this->model->checkDuplicate($anneeCode, $typeFiliere, $niveauCode, $categorie);
         if ($duplicate) {
             $catLabel = ($categorie === 'inscription') ? 'Inscription' : 'Autre';
-            $cibleStr = "Catégorie : " . htmlspecialchars($catLabel) . " | Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
-            $this->error("Création impossible : Un tarif de frais annexes est déjà configuré pour la cible [{$cibleStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
+            $configStr = "Catégorie : " . htmlspecialchars($catLabel) . " | Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
+            $this->error("Création impossible : Un tarif de frais annexes est déjà configuré pour [{$configStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
             return;
         }
 
@@ -159,12 +159,12 @@ class FraisAnnexeController extends BaseController
         }
         $itemAnneeCode = $existingItem['annee_code'] ?? $this->getActiveAnneeCode();
 
-        // Contrôle Anti-Doublon sur la combinaison cible
+        // Contrôle Anti-Doublon sur la combinaison
         $duplicate = $this->model->checkDuplicate($itemAnneeCode, $typeFiliere, $niveauCode, $categorie, $id);
         if ($duplicate) {
             $catLabel = ($categorie === 'inscription') ? 'Inscription' : 'Autre';
-            $cibleStr = "Catégorie : " . htmlspecialchars($catLabel) . " | Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
-            $this->error("Modification impossible : Un autre tarif de frais annexes est déjà configuré pour la cible [{$cibleStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
+            $configStr = "Catégorie : " . htmlspecialchars($catLabel) . " | Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
+            $this->error("Modification impossible : Un autre tarif de frais annexes est déjà configuré pour [{$configStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
             return;
         }
 

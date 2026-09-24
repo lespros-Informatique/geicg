@@ -173,7 +173,7 @@ if (!function_exists('generateCode128BarcodeSvg')) {
     }
 }
 
-// Logo institutionnel  (dynamique depuis la base ou fallback logo_eicg.jpg)
+// Logo (dynamique depuis la base ou fallback logo_eicg.jpg)
 $logoSrc = '';
 try {
     $dbEtab = (new Database())->getCon();
@@ -377,7 +377,7 @@ if (empty($logoSrc)) {
       <div class="page-header no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= htmlspecialchars($pageTitle) ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Étudiant : <strong><?= htmlspecialchars($nomComplet) ?></strong> &bull; Impression conforme au modèle institutionnel</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Étudiant : <strong><?= htmlspecialchars($nomComplet) ?></strong> &bull; Impression conforme au modèle standard</p>
         </div>
         <div style="display: flex; gap: 12px;">
           <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
@@ -396,7 +396,7 @@ if (empty($logoSrc)) {
         <!-- PARTIE 1 : REÇU D'INSCRIPTION OU DE VERSEMENT                            -->
         <!-- ========================================================================= -->
         
-        <!-- En-tête Institutionnel -->
+        <!-- En-tête -->
         <table class="receipt-header-table">
           <tr>
             <td style="width: 155px; vertical-align: middle; padding-right: 14px;">

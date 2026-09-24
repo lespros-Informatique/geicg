@@ -17,7 +17,7 @@
       line-height: 1.25;
     }
 
-    /* En-tête Institutionnel */
+    /* En-tête */
     .header-table {
       width: 100%;
       border-collapse: collapse;

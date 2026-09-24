@@ -8,7 +8,7 @@
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; margin: 0; padding: 24px 12px; color: #1E293B;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 620px; margin: 0 auto; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01); border: 1px solid #E2E8F0;">
     
-    <!-- En-tête Institutionnel -->
+    <!-- En-tête -->
     <tr>
       <td style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); padding: 36px 32px; text-align: center;">
         <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 8px 18px; border-radius: 20px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.15);">
@@ -97,7 +97,7 @@
     <!-- Pied de page -->
     <tr>
       <td style="background-color: #F8FAFC; padding: 24px 32px; text-align: center; border-top: 1px solid #E2E8F0; font-size: 12px; color: #94A3B8; line-height: 1.5;">
-        Cet e-mail institutionnel vous a été adressé automatiquement par le système GROUPE EICG.<br>
+        Cet e-mail vous a été adressé automatiquement par le système GROUPE EICG.<br>
         &copy; <?= date('Y') ?> GROUPE EICG - Grande École d'Ingénieurs et de Gestion &bull; Tous droits réservés.
       </td>
     </tr>

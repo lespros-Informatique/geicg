@@ -14,7 +14,7 @@
       line-height: 1.25;
     }
 
-    /* Header Institutionnel */
+    /* Header */
     .header-table {
       width: 100%;
       border-collapse: collapse;
@@ -136,7 +136,7 @@
 </head>
 <body>
 
-  <!-- EN-TÊTE INSTITUTIONNEL -->
+  <!-- EN-TÊTE -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
   ?>

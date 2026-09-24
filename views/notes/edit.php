@@ -145,7 +145,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
           <div>
             <label style="display: block; font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 6px;">
               <i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #64748B; display: inline-block; vertical-align: text-bottom;"></i>
-              Classe Cible <span style="color: #EF4444;">*</span>
+              Classe <span style="color: #EF4444;">*</span>
             </label>
             <select class="form-control select2" id="sel_classe_no" name="classe_code" style="width: 100%;" required>
               <option value="">-- Sélectionner une classe --</option>

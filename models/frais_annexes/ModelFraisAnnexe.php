@@ -136,7 +136,7 @@ class ModelFraisAnnexe extends BaseModel
 
     public function checkDuplicate(string $anneeCode, string $typeFiliere, ?string $niveauCode, ?string $categorie = null, ?int $excludeId = null): ?array
     {
-        // Contrôle d'unicité sur la combinaison Cible (type_filiere x niveau_code x categorie_frais_annexe x annee_code)
+        // Contrôle d'unicité sur la combinaison (type_filiere x niveau_code x categorie_frais_annexe x annee_code)
         $sql = "SELECT * FROM frais_annexes WHERE annee_code = ? AND type_filiere = ?";
         $params = [$anneeCode, $typeFiliere];
         if (empty($niveauCode) || $niveauCode === 'TOUT') {

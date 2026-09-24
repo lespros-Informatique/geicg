@@ -258,7 +258,7 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       
       <p style="font-size: 13px; color: #475569; margin-top: 0; margin-bottom: 16px; line-height: 1.5;">
-        Cet outil va copier automatiquement toutes les classes actives de l'<strong>Année Source</strong> vers l'<strong>Année Cible</strong> sans dupliquer les classes déjà existantes.
+        Cet outil va copier automatiquement toutes les classes actives de l'<strong>Année Source</strong> vers l'<strong>Année de Destination</strong> sans dupliquer les classes déjà existantes.
       </p>
       
       <div class="form-group" style="margin-bottom: 16px;">
@@ -274,9 +274,9 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
       </div>
 
       <div class="form-group" style="margin-bottom: 20px;">
-        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Année Cible (Destination) <span style="color: #EF4444;">*</span></label>
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Année de Destination <span style="color: #EF4444;">*</span></label>
         <select name="annee_cible_code" id="reconduire_annee_cible" required class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #CBD5E1;">
-          <option value="">-- Sélectionner l'année cible --</option>
+          <option value="">-- Sélectionner l'année de destination --</option>
           <?php foreach (($annees ?? []) as $a): ?>
             <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
               <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>

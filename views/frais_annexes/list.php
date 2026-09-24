@@ -76,8 +76,8 @@
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Libellé de la Tarification</th>
                 <th style="padding: 12px;">Catégorie</th>
-                <th style="padding: 12px;">Cible (Filière)</th>
-                <th style="padding: 12px;">Niveau Cible</th>
+                <th style="padding: 12px;">Type de Filière</th>
+                <th style="padding: 12px;">Niveau</th>
                 <th style="padding: 12px;">Montant Frais Annexes</th>
                 <th style="padding: 12px;" class="text-center">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
@@ -126,7 +126,7 @@
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 18px;">
         <div class="form-group">
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-            Type de Filières Cible <span style="color: #EF4444;">*</span>
+            Type de Filière <span style="color: #EF4444;">*</span>
           </label>
           <select name="type_filiere" id="frais_type_filiere" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
             <option value="INDUSTRIELLE">Filière Industrielle (Ex: IDA, RIT...)</option>
@@ -137,7 +137,7 @@
 
         <div class="form-group">
           <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-            Niveau d'Étude Cible
+            Niveau d'Étude
           </label>
           <select name="niveau_code" id="frais_niveau_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
             <option value="TOUT">-- Tous les niveaux --</option>

@@ -128,7 +128,7 @@
               <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
                 <th style="padding: 12px 14px;">Code</th>
                 <th style="padding: 12px 14px;">Cycle Académique</th>
-                <th style="padding: 12px 14px;">Niveau Cible</th>
+                <th style="padding: 12px 14px;">Niveau</th>
                 <th class="col-piece" style="padding: 12px 14px; min-width: 220px;">Document / Pièce Administrative</th>
                 <th style="padding: 12px 14px; text-align: center;">Exemplaires</th>
                 <th style="padding: 12px 14px;">Nature Requise</th>

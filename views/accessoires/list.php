@@ -146,8 +146,8 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Désignation du Kit / Article</th>
-                <th style="padding: 12px;">Cible Filière</th>
-                <th style="padding: 12px;">Niveau Cible</th>
+                <th style="padding: 12px;">Filière</th>
+                <th style="padding: 12px;">Niveau</th>
                 <th style="padding: 12px;" class="text-center">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
@@ -291,7 +291,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Public Cible (Type de Filière) <span style="color: #EF4444;">*</span>
+          Type de Filière <span style="color: #EF4444;">*</span>
         </label>
         <select name="type_filiere_cible" id="acc_type_filiere_cible" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
           <option value="TOUT">Toutes les Filières (Général)</option>
@@ -302,7 +302,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Niveau d'étude cible
+          Niveau d'étude
         </label>
         <select name="niveau_code" id="acc_type_niveau_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
           <option value="">Tous les niveaux</option>

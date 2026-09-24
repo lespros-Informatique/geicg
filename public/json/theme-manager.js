@@ -1,6 +1,6 @@
 /**
  * GEICG - Theme, Color, Typography & Layout Manager
- * Gestion interactive des thèmes, polices, tailles et couleurs institutionnelles
+ * Gestion interactive des thèmes, polices, tailles et couleurs principales
  */
 (function() {
     const ZONES = ['primary', 'font', 'fontsize', 'radius', 'topbar', 'sidebar', 'content'];

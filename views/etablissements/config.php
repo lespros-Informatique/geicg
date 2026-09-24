@@ -26,7 +26,7 @@
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="building" style="color: #1E3A5F; width: 24px; height: 24px;"></i> Configuration de l'Établissement
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Paramètres généraux et identité institutionnelle de la Grande École GEICG</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Paramètres généraux et identité de l'établissement GEICG</p>
         </div>
         <span class="badge" style="background: #DCFCE7; color: #15803D; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
           <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Établissement Actif
@@ -39,7 +39,7 @@
           <input type="hidden" name="id_etablissement" value="<?= htmlspecialchars($item['id_etablissement'] ?? 1) ?>">
           
           <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="image" style="width: 16px; height: 16px;"></i> Logo Institutionnel & Emblème
+            <i data-lucide="image" style="width: 16px; height: 16px;"></i> Logo & Emblème
           </div>
 
           <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; background: #F8FAFC; padding: 20px; border-radius: 10px; border: 1px solid #E2E8F0;">
@@ -62,7 +62,7 @@
           </div>
 
           <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="info" style="width: 16px; height: 16px;"></i> Identité Institutionnelle
+            <i data-lucide="info" style="width: 16px; height: 16px;"></i> Identité de l'Établissement
           </div>
           
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
@@ -77,7 +77,7 @@
             </div>
             
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Slogan Institutionnel</label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Slogan</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="slogan_etablissement" value="<?= htmlspecialchars($item['slogan_etablissement'] ?? '') ?>" placeholder="Ex: L'Excellence au Service de l'Avenir">
             </div>
           </div>
@@ -88,7 +88,7 @@
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Email Institutionnel <span style="color: #EF4444;">*</span></label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Email de l'Établissement <span style="color: #EF4444;">*</span></label>
               <input type="email" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="email_etablissement" value="<?= htmlspecialchars($item['email_etablissement'] ?? 'contact@geicg.ci') ?>" placeholder="Ex: contact@geicg.ci" required>
             </div>
 

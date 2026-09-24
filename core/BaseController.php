@@ -672,7 +672,7 @@ abstract class BaseController
             }
         }
 
-        // 2. Si une table cible est définie, lancer la validation globale
+        // 2. Si une table est définie, lancer la validation globale
         if (!empty($table)) {
             $err = ForeignKeyValidator::validate($db, $table, $data);
             if ($err !== null) {

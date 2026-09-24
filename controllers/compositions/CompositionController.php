@@ -141,7 +141,7 @@ class CompositionController extends BaseController
         }
 
         if (empty($targetItems)) {
-            $this->error('Veuillez sélectionner au moins un niveau et une filière cible.');
+            $this->error('Veuillez sélectionner au moins un niveau et une filière.');
             return;
         }
 
@@ -336,7 +336,7 @@ class CompositionController extends BaseController
 
         $db = $this->model->getCon();
 
-        // Chercher les matières déjà enregistrées pour cette cible dans composition_matieres
+        // Chercher les matières déjà enregistrées dans composition_matieres
         $savedCodes = [];
         if (!empty($compositionCode) && !empty($compositionNiveauFiliereCode)) {
             $saved = $this->model->getCompositionMatieres($compositionCode, $compositionNiveauFiliereCode);
@@ -403,7 +403,7 @@ class CompositionController extends BaseController
         }
 
         if (empty($compositionCode) || empty($compositionNiveauFiliereCode)) {
-            $this->json(['status' => 0, 'message' => 'Composition et cible sont obligatoires']);
+            $this->json(['status' => 0, 'message' => 'Composition et filière sont obligatoires']);
             return;
         }
 

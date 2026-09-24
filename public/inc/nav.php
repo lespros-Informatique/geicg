@@ -227,7 +227,7 @@
                     <!-- Thème Principal / Accents École -->
                     <div style="background: var(--bg-secondary, #F8FAFC); border: 1px solid var(--border-color, #E2E8F0); border-radius: 12px; padding: 14px;">
                         <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary, #64748B); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="award" style="width: 14px; height: 14px; color: var(--primary-color);"></i> Couleur Institutionnelle
+                            <i data-lucide="award" style="width: 14px; height: 14px; color: var(--primary-color);"></i> Couleur Principale
                         </div>
                         <div class="theme-options" id="primaryOptions" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
                             <div class="theme-option active" data-category="primary" data-value="navy" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; cursor: pointer; border: 1.5px solid #CBD5E1; background: #FFFFFF;">

@@ -17,7 +17,7 @@
       line-height: 1.25;
     }
 
-    /* En-tête Institutionnel */
+    /* En-tête */
     .header-table {
       width: 100%;
       border-collapse: collapse;
@@ -328,7 +328,7 @@
     </tr>
     <tr>
       <td>
-        <span class="meta-label">Cadre institutionnel :</span> 
+        <span class="meta-label">Établissement :</span> 
         <span class="meta-value"><?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?></span>
       </td>
       <td>

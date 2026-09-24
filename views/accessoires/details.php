@@ -37,7 +37,7 @@ $item = isset($item) ? $item : [];
           </div>
 
           <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Public Cible (Filières)</span>
+            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Type de Filière</span>
             <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-top: 6px;">
               <?php 
                 $tf = $item['type_filiere_cible'] ?? 'TOUT';

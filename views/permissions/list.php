@@ -21,7 +21,7 @@
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code Permission</th>
                 <th style="padding: 12px;">Nom de la Permission</th>
-                <th style="padding: 12px;">Module Cible</th>
+                <th style="padding: 12px;">Module</th>
                 <th style="padding: 12px;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>

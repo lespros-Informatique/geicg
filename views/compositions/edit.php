@@ -140,12 +140,12 @@ if (empty($existingNiveaux)) {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
               <div>
                 <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
-                  <i data-lucide="layers" style="width: 18px; height: 18px;"></i> 2. Niveaux & Filières Cibles
+                  <i data-lucide="layers" style="width: 18px; height: 18px;"></i> 2. Niveaux & Filières
                 </h3>
                 <p style="color: #64748B; font-size: 12px; margin: 2px 0 0 0;">Sélectionnez un ou plusieurs niveaux et leurs filières d'études rattachées.</p>
               </div>
               <button type="button" id="btn-add-niveau-row" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
-                <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter un Niveau Cible
+                <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter un Niveau
               </button>
             </div>
 
@@ -209,7 +209,7 @@ if (empty($existingNiveaux)) {
 
                   <!-- Dynamic Classes Impacted Preview -->
                   <div class="classes-preview-box" style="margin-top: 12px; font-size: 12px; color: #475569; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
-                    <span style="font-weight: 700; color: #0F172A;"><i data-lucide="check-circle" style="width: 14px; height: 14px; color: #16A34A; vertical-align: text-bottom;"></i> Classes cibles :</span>
+                    <span style="font-weight: 700; color: #0F172A;"><i data-lucide="check-circle" style="width: 14px; height: 14px; color: #16A34A; vertical-align: text-bottom;"></i> Classes concernées :</span>
                     <span class="preview-badges-list" style="font-style: italic; color: #94A3B8;">Sélectionnez un niveau pour voir les classes impactées.</span>
                   </div>
                 </div>
@@ -458,7 +458,7 @@ $(document).ready(function() {
         </div>
 
         <div class="classes-preview-box" style="margin-top: 12px; font-size: 12px; color: #475569; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
-          <span style="font-weight: 700; color: #0F172A;"><i data-lucide="check-circle" style="width: 14px; height: 14px; color: #16A34A; vertical-align: text-bottom;"></i> Classes cibles :</span>
+          <span style="font-weight: 700; color: #0F172A;"><i data-lucide="check-circle" style="width: 14px; height: 14px; color: #16A34A; vertical-align: text-bottom;"></i> Classes concernées :</span>
           <span class="preview-badges-list" style="font-style: italic; color: #94A3B8;">Sélectionnez un niveau pour voir les classes impactées.</span>
         </div>
       </div>
