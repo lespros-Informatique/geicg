@@ -4,15 +4,15 @@
  * Emplacement : /views/templates/pdf/recu_inscription.php
  */
 
-// Générateur de code-barres professionnel via la librairie Picqer Barcode Generator
+// Générateur de code-barres compact et proportionnel via Picqer Barcode Generator
 if (!function_exists('generatePicqerBarcodeHtml')) {
-    function generatePicqerBarcodeHtml($code, $height = 30, $widthFactor = 1.35) {
+    function generatePicqerBarcodeHtml($code, $height = 24) {
         $code = (string)$code;
         if (empty($code)) $code = 'GE-25260276';
         try {
             $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
-            $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, $widthFactor, $height);
-            return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; max-width:100%;">';
+            $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, 1, $height);
+            return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; width:auto; max-width:140px;">';
         } catch (\Throwable $e) {
             return '<div style="font-family:monospace; font-weight:bold; font-size:10px;">' . htmlspecialchars($code) . '</div>';
         }
