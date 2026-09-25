@@ -1,14 +1,69 @@
 <?php
 /**
- * Template de Fiche d'Inscription / Reçu d'Inscription Officiel (Format UVCI)
+ * Template Officiel de Fiche d'Inscription / Reçu d'Inscription (Adapté GROUPE EICG)
  * Emplacement : /views/templates/pdf/fiche_inscription.php
  */
 
-// Données dynamiques avec fallbacks conformes au modèle officiel
+// Générateur vectoriel SVG Code 128 (Subset B) natif pour l'affichage/impression web
+if (!function_exists('generateCode128BarcodeSvg')) {
+    function generateCode128BarcodeSvg($code, $height = 36, $scale = 1.2) {
+        $patterns = [
+            '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
+            '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
+            '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
+            '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
+            '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
+            '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
+            '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
+            '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
+            '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
+            '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
+            '114131','311141','411131','211412','211214','211232','2331112'
+        ];
+        $code = (string)$code;
+        if ($code === '') $code = 'EICG-REC';
+        $startB = 104;
+        $checksum = $startB;
+        $sequence = [$patterns[$startB]];
+        $len = strlen($code);
+        for ($i = 0; $i < $len; $i++) {
+            $charVal = ord($code[$i]) - 32;
+            if ($charVal < 0 || $charVal > 95) $charVal = 0;
+            $checksum += $charVal * ($i + 1);
+            $sequence[] = $patterns[$charVal];
+        }
+        $checkVal = $checksum % 103;
+        $sequence[] = $patterns[$checkVal];
+        $sequence[] = $patterns[106];
+        
+        $totalModules = 0;
+        foreach ($sequence as $p) {
+            for ($j = 0; $j < strlen($p); $j++) {
+                $totalModules += (int)$p[$j];
+            }
+        }
+        $totalWidth = round($totalModules * $scale, 1);
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' . $totalWidth . '" height="' . $height . '" viewBox="0 0 ' . $totalWidth . ' ' . $height . '" style="display:block; margin:0 auto; max-width:100%; height:' . $height . 'px;">';
+        $x = 0;
+        foreach ($sequence as $p) {
+            for ($j = 0; $j < strlen($p); $j++) {
+                $w = (int)$p[$j] * $scale;
+                if ($j % 2 == 0) {
+                    $svg .= '<rect x="' . round($x, 2) . '" y="0" width="' . round($w, 2) . '" height="' . $height . '" fill="#000000" />';
+                }
+                $x += $w;
+            }
+        }
+        $svg .= '</svg>';
+        return $svg;
+    }
+}
+
+// Données dynamiques avec adaptabilités pour GROUPE EICG
 $ministere = $ministere ?? "MINISTERE DE L'ENSEIGNEMENT SUPERIEUR\nET DE LA RECHERCHE SCIENTIFIQUE";
 $pays = $pays ?? "REPUBLIQUE DE CÔTE D'IVOIRE";
 $devise_pays = $devise_pays ?? "Union - Discipline - Travail";
-$universite = $universite ?? "UNIVERSITE VIRTUELLE DE CÔTE D'IVOIRE";
+$universite = $universite ?? ($etablissement['nom_etablissement'] ?? "GROUPE EICG - ÉCOLE INTERNATIONALE DE COMMERCE ET DE GESTION");
 
 $annee_universitaire = $annee_universitaire ?? "2022 - 2023";
 
@@ -28,6 +83,7 @@ $type_formation = $type_formation ?? "FORMATION INITIALE";
 $session_semestrielle = $session_semestrielle ?? "Rentree de septembre " . $annee_universitaire;
 $semestre_libelle = $semestre_libelle ?? $niveau;
 $code_paiement = $code_paiement ?? ($paiement['code_paiement'] ?? "IDK23633D9A81957EE");
+$code_barre_val = $code_barre_val ?? ($inscription['code_inscription'] ?? $code_paiement);
 $montant_paiement = $montant_paiement ?? (isset($paiement['montant_paiement']) ? number_format((float)$paiement['montant_paiement'], 0, ',', '.') . " F" : "60.000 F");
 $date_paiement = $date_paiement ?? (isset($paiement['created_at_paiement']) ? date('d-m-Y', strtotime($paiement['created_at_paiement'])) : "26-10-2022");
 
@@ -35,7 +91,7 @@ $lieu_date_delivrance = $lieu_date_delivrance ?? ("Fait Abidjan le " . ($date_fi
 $titre_signataire = $titre_signataire ?? "La Sous-Directrice de la Scolarité,\ndes Services Juridiques et de la Communication";
 $nom_signataire = $nom_signataire ?? "Mme KADIO Julie Epse ASSALE";
 
-$qr_data = $qr_data ?? ("UVCI-INSCRIPTION-" . $matricule_mesrs . "-" . $code_paiement);
+$qr_data = $qr_data ?? ("EICG-INSCRIPTION-" . $matricule_mesrs . "-" . $code_paiement);
 $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=" . urlencode($qr_data));
 ?>
 <!DOCTYPE html>
@@ -59,7 +115,7 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       padding: 0;
     }
 
-    /* FILIGRANE DE FOND UVCI (WATERMARK) */
+    /* FILIGRANE DE FOND GROUPE EICG */
     .watermark-bg {
       position: absolute;
       top: 32%;
@@ -109,11 +165,11 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
 
     .top-divider {
       border: none;
-      border-top: 1px solid #000000;
+      border-top: 1.5px solid #1E3A5F;
       margin: 6px 0 14px 0;
     }
 
-    /* Etablissement Logo & Title */
+    /* GROUPE EICG Brand & Title */
     .univ-brand-container {
       text-align: center;
       margin-bottom: 12px;
@@ -128,7 +184,7 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       font-family: "Times New Roman", Times, Georgia, serif;
       font-size: 17.5pt;
       font-weight: bold;
-      color: #1E293B;
+      color: #1E3A5F;
       letter-spacing: 0.5px;
       text-transform: uppercase;
       margin: 0;
@@ -205,7 +261,7 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       width: 100%;
       border-collapse: collapse;
       margin-top: 14px;
-      margin-bottom: 30px;
+      margin-bottom: 24px;
     }
     .payment-table th {
       background-color: #FDE047;
@@ -225,26 +281,45 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     .text-center { text-align: center; }
     .text-bold { font-weight: bold; }
 
-    /* ZONE DE SIGNATURE ET CACHET */
-    .signature-area {
+    /* ZONE DE BAS DE PAGE : CODE-BARRES, SIGNATURE ET CACHET */
+    .footer-section-area {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 25px;
+      margin-top: 20px;
     }
-    .signature-area td {
+    .footer-section-area td {
       vertical-align: top;
     }
 
     .qr-container {
-      width: 140px;
+      width: 130px;
       text-align: left;
     }
     .qr-code-img {
-      width: 115px;
-      height: 115px;
+      width: 110px;
+      height: 110px;
       border: 1px solid #CBD5E1;
       padding: 3px;
       background: #FFFFFF;
+      border-radius: 4px;
+    }
+
+    /* ZONE CENTRE : CODE-BARRES */
+    .barcode-center-container {
+      text-align: center;
+      padding: 0 10px;
+    }
+    .barcode-wrapper {
+      margin: 10px auto 4px auto;
+      text-align: center;
+    }
+    .barcode-text-code {
+      font-family: monospace;
+      font-size: 9pt;
+      font-weight: bold;
+      color: #0F172A;
+      letter-spacing: 1px;
+      margin-top: 3px;
     }
 
     .signatory-container {
@@ -253,29 +328,29 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     .date-delivrance {
       font-size: 9.5pt;
       color: #000000;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .signatory-title {
       font-size: 9.5pt;
       font-weight: bold;
       color: #000000;
       line-height: 1.3;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
-    /* CACHET ROND DE L'UNIVERSITÉ EN SVG / STYLED HTML */
+    /* CACHET ROND OFFICIEL GROUPE EICG */
     .stamp-box {
       display: inline-block;
       position: relative;
-      width: 170px;
-      height: 110px;
-      margin-top: 4px;
-      margin-bottom: 6px;
+      width: 160px;
+      height: 105px;
+      margin-top: 2px;
+      margin-bottom: 4px;
     }
     
     .stamp-svg {
-      width: 140px;
-      height: 140px;
+      width: 135px;
+      height: 135px;
       position: absolute;
       right: 10px;
       top: -15px;
@@ -286,7 +361,7 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       font-size: 10pt;
       font-weight: bold;
       color: #000000;
-      margin-top: 8px;
+      margin-top: 6px;
       display: block;
     }
 
@@ -303,14 +378,13 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
 </head>
 <body>
 
-  <!-- FILIGRANE DE FOND (SUBTLE BACKGROUND WATERMARK) -->
+  <!-- FILIGRANE DE FOND GROUPE EICG (WATERMARK) -->
   <div class="watermark-bg">
     <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="100" cy="100" r="90" fill="none" stroke="#166534" stroke-width="4"/>
-      <circle cx="100" cy="100" r="78" fill="none" stroke="#166534" stroke-width="1.5" stroke-dasharray="4 2"/>
-      <path d="M65,115 C65,70 135,70 135,115 C135,145 65,145 65,115 Z" fill="none" stroke="#7E22CE" stroke-width="6"/>
-      <circle cx="100" cy="75" r="8" fill="#166534"/>
-      <text x="100" y="170" font-size="14" font-family="Arial" font-weight="bold" fill="#166534" text-anchor="middle">UVCI</text>
+      <circle cx="100" cy="100" r="90" fill="none" stroke="#1E3A5F" stroke-width="4"/>
+      <circle cx="100" cy="100" r="78" fill="none" stroke="#1E3A5F" stroke-width="1.5" stroke-dasharray="4 2"/>
+      <text x="100" y="112" font-size="28" font-family="Arial" font-weight="900" fill="#1E3A5F" text-anchor="middle" letter-spacing="2">EICG</text>
+      <text x="100" y="165" font-size="12" font-family="Arial" font-weight="bold" fill="#1E3A5F" text-anchor="middle">GROUPE EICG</text>
     </svg>
   </div>
 
@@ -318,7 +392,7 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
   <div class="no-print" style="background: #1E3A5F; color: #FFFFFF; padding: 10px 16px; margin-bottom: 20px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
     <div style="font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 8px;">
       <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #22C55E;"></span>
-      Aperçu Officiel — Fiche d'Inscription Universitaire (Modèle Référence)
+      Fiche d'Inscription Officielle — GROUPE EICG
     </div>
     <button onclick="window.print();" style="background: #2563EB; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 6px;">
       🖨️ Imprimer / Exporter PDF
@@ -340,14 +414,13 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
 
   <hr class="top-divider">
 
-  <!-- 2. IDENTIFICATION DE L'ÉTABLISSEMENT / UNIVERSITÉ -->
+  <!-- 2. IDENTIFICATION DE L'ÉTABLISSEMENT / GROUPE EICG -->
   <div class="univ-brand-container">
     <div class="univ-logo-row">
-      <!-- LOGO STYLISÉ UVCI -->
-      <svg width="46" height="34" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 20 C20 65 50 75 60 75 C70 75 100 65 100 20" stroke="#7E22CE" stroke-width="12" stroke-linecap="round" fill="none"/>
-        <path d="M38 18 C38 52 56 60 60 60 C64 60 82 52 82 18" stroke="#166534" stroke-width="8" stroke-linecap="round" fill="none"/>
-        <circle cx="60" cy="18" r="6" fill="#166534"/>
+      <!-- LOGO STYLISÉ GROUPE EICG -->
+      <svg width="48" height="36" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="10" width="100" height="70" rx="8" fill="#1E3A5F"/>
+        <text x="60" y="55" font-size="32" font-family="Arial" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">EICG</text>
       </svg>
       <h1 class="univ-title"><?= htmlspecialchars($universite) ?></h1>
     </div>
@@ -434,15 +507,34 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     </tbody>
   </table>
 
-  <!-- 8. PIED DE PAGE : QR CODE, LIEU, CACHET ET SIGNATURE -->
-  <table class="signature-area">
+  <!-- 8. PIED DE PAGE COMPLET : QR CODE, CODE-BARRES CODE 128 ET SIGNATURE -->
+  <table class="footer-section-area">
     <tr>
       <!-- COLONNE GAUCHE : QR CODE DE VÉRIFICATION -->
       <td class="qr-container">
         <img src="<?= htmlspecialchars($qr_code_url) ?>" alt="QR Code" class="qr-code-img">
+        <div style="font-size: 7.5pt; color: #64748B; text-align: center; margin-top: 4px; width: 110px;">
+          Contrôle d'authenticité
+        </div>
       </td>
 
-      <!-- COLONNE DROITE : DATE, QUALITÉ SIGNATAIRE, CACHET & NOM -->
+      <!-- COLONNE CENTRE : CODE-BARRES CODE 128 DU BAS -->
+      <td class="barcode-center-container">
+        <div style="font-size: 8pt; font-weight: bold; color: #334155; text-transform: uppercase; margin-bottom: 6px;">
+          Code d'Inscription / Sécurité
+        </div>
+        <div class="barcode-wrapper">
+          <!-- Balise mPDF native pour les exports PDF -->
+          <?php if (class_exists('\Mpdf\Mpdf')): ?>
+            <barcode code="<?= htmlspecialchars($code_barre_val) ?>" type="C128A" size="0.7" height="0.7" />
+          <?php endif; ?>
+          <!-- Générateur SVG natif pour l'affichage / impression navigateurs web -->
+          <?= generateCode128BarcodeSvg($code_barre_val, 38, 1.25) ?>
+        </div>
+        <div class="barcode-text-code">* <?= htmlspecialchars($code_barre_val) ?> *</div>
+      </td>
+
+      <!-- COLONNE DROITE : DATE, CACHET OFFICIEL GEICG ET SIGNATURE -->
       <td class="signatory-container">
         <div class="date-delivrance"><?= htmlspecialchars($lieu_date_delivrance) ?></div>
         
@@ -450,42 +542,42 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
           <?= nl2br(htmlspecialchars($titre_signataire)) ?>
         </div>
 
-        <!-- REPRÉSENTATION DU CACHET OFFICIEL ET DE LA SIGNATURE -->
+        <!-- REPRÉSENTATION DU CACHET OFFICIEL GROUPE EICG ET DE LA SIGNATURE -->
         <div class="stamp-box">
           <svg class="stamp-svg" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-            <!-- Cercle extérieur bleu -->
-            <circle cx="80" cy="80" r="74" fill="none" stroke="#1D4ED8" stroke-width="3"/>
+            <!-- Cercle extérieur bleu marine EICG -->
+            <circle cx="80" cy="80" r="74" fill="none" stroke="#1E3A5F" stroke-width="3"/>
             <!-- Cercle intérieur pointillé -->
-            <circle cx="80" cy="80" r="65" fill="none" stroke="#1D4ED8" stroke-width="1.5" stroke-dasharray="4 2"/>
+            <circle cx="80" cy="80" r="65" fill="none" stroke="#1E3A5F" stroke-width="1.5" stroke-dasharray="4 2"/>
             
             <!-- Texte circulaire supérieur -->
             <path id="circlePathTop" d="M 22 80 A 58 58 0 0 1 138 80" fill="none"/>
-            <text font-size="9" font-family="Arial" font-weight="bold" fill="#1D4ED8" text-anchor="middle">
+            <text font-size="8.5" font-family="Arial" font-weight="bold" fill="#1E3A5F" text-anchor="middle">
               <textPath href="#circlePathTop" startOffset="50%">
-                Université Virtuelle de Côte d'Ivoire
+                GROUPE EICG - SCOLARITE
               </textPath>
             </text>
 
             <!-- Texte central dans cartouche -->
-            <rect x="35" y="68" width="90" height="24" rx="4" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1.5"/>
-            <text x="80" y="84" font-size="11" font-family="Arial" font-weight="900" fill="#1D4ED8" text-anchor="middle" letter-spacing="1">
-              SCOLARITE
+            <rect x="35" y="68" width="90" height="24" rx="4" fill="#EFF6FF" stroke="#1E3A5F" stroke-width="1.5"/>
+            <text x="80" y="84" font-size="11" font-family="Arial" font-weight="900" fill="#1E3A5F" text-anchor="middle" letter-spacing="1">
+              GROUPE EICG
             </text>
 
             <!-- Étoiles décoratives -->
-            <text x="26" y="98" font-size="10" fill="#1D4ED8">*</text>
-            <text x="130" y="98" font-size="10" fill="#1D4ED8">*</text>
+            <text x="26" y="98" font-size="10" fill="#1E3A5F">*</text>
+            <text x="130" y="98" font-size="10" fill="#1E3A5F">*</text>
 
             <!-- Texte inférieur -->
             <path id="circlePathBottom" d="M 138 80 A 58 58 0 0 1 22 80" fill="none"/>
-            <text font-size="9" font-family="Arial" font-weight="bold" fill="#1D4ED8" text-anchor="middle">
+            <text font-size="8.5" font-family="Arial" font-weight="bold" fill="#1E3A5F" text-anchor="middle">
               <textPath href="#circlePathBottom" startOffset="50%">
-                ★ UVCI ★
+                ★ DIRECTION ACADÉMIQUE ★
               </textPath>
             </text>
 
-            <!-- Signature manuscrite stylisée en bleu marine superposée -->
-            <path d="M 30 95 C 45 60 70 110 85 70 C 95 50 110 90 140 75 M 60 85 L 125 80" fill="none" stroke="#1E3A5F" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Signature manuscrite stylisée superposée -->
+            <path d="M 30 95 C 45 60 70 110 85 70 C 95 50 110 90 140 75 M 60 85 L 125 80" fill="none" stroke="#0F233D" stroke-width="2.5" stroke-linecap="round"/>
           </svg>
         </div>
 
