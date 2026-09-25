@@ -192,7 +192,7 @@ if ($montant_operation != 105000) {
     .annee-subbanner {
       text-align: center;
       font-weight: bold;
-      font-size: 9.5pt;
+      font-size: 10.5pt;
       margin-bottom: 4px;
       color: #000000;
     }
@@ -213,24 +213,25 @@ if ($montant_operation != 105000) {
       width: 18%;
     }
     .photo-box {
-      width: 70px;
-      height: 86px;
+      width: 85px;
+      height: 105px;
       border: 1px solid #000000;
       object-fit: cover;
       display: inline-block;
+      box-sizing: border-box;
     }
     .photo-placeholder {
-      width: 70px;
-      height: 86px;
-      border: 1.5pt solid #1E3A5F;
+      width: 85px;
+      height: 105px;
+      border: 1px solid #000000;
       display: inline-block;
       background: #F1F5F9;
-      line-height: 86px;
+      line-height: 103px;
       text-align: center;
-      font-weight: 800;
-      font-size: 20pt;
-      color: #1E3A5F;
-      border-radius: 4px;
+      font-weight: bold;
+      font-size: 22pt;
+      color: #000000;
+      box-sizing: border-box;
     }
 
     .student-info-grid {
