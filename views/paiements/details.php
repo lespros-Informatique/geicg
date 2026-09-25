@@ -119,57 +119,17 @@ if (empty($studentPhotoUrl) && !empty($item['nom_etudiant'])) {
 }
 
 // Générateur vectoriel SVG Code 128 (Subset B) natif, net et conforme pour impression et lecture scanner
-if (!function_exists('generateCode128BarcodeSvg')) {
-    function generateCode128BarcodeSvg($code, $height = 34, $scale = 1.2) {
-        $patterns = [
-            '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
-            '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
-            '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
-            '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
-            '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
-            '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
-            '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
-            '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
-            '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
-            '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
-            '114131','311141','411131','211412','211214','211232','2331112'
-        ];
+if (!function_exists('generatePicqerBarcodeHtml')) {
+    function generatePicqerBarcodeHtml($code, $height = 32, $widthFactor = 1.35) {
         $code = (string)$code;
-        if ($code === '') $code = 'GEICG-REC';
-        $startB = 104;
-        $checksum = $startB;
-        $sequence = [$patterns[$startB]];
-        $len = strlen($code);
-        for ($i = 0; $i < $len; $i++) {
-            $charVal = ord($code[$i]) - 32;
-            if ($charVal < 0 || $charVal > 95) $charVal = 0;
-            $checksum += $charVal * ($i + 1);
-            $sequence[] = $patterns[$charVal];
+        if (empty($code)) $code = 'GE-25260276';
+        try {
+            $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+            $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, $widthFactor, $height);
+            return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; max-width:100%;">';
+        } catch (\Throwable $e) {
+            return '<div style="font-family:monospace; font-weight:bold; font-size:10px;">' . htmlspecialchars($code) . '</div>';
         }
-        $checkVal = $checksum % 103;
-        $sequence[] = $patterns[$checkVal];
-        $sequence[] = $patterns[106];
-        
-        $totalModules = 0;
-        foreach ($sequence as $p) {
-            for ($j = 0; $j < strlen($p); $j++) {
-                $totalModules += (int)$p[$j];
-            }
-        }
-        $totalWidth = round($totalModules * $scale, 1);
-        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' . $totalWidth . '" height="' . $height . '" viewBox="0 0 ' . $totalWidth . ' ' . $height . '" style="display:block; margin:0 auto; max-width:100%; height:' . $height . 'px;">';
-        $x = 0;
-        foreach ($sequence as $p) {
-            for ($j = 0; $j < strlen($p); $j++) {
-                $w = (int)$p[$j] * $scale;
-                if ($j % 2 == 0) {
-                    $svg .= '<rect x="' . round($x, 2) . '" y="0" width="' . round($w, 2) . '" height="' . $height . '" fill="#000000" />';
-                }
-                $x += $w;
-            }
-        }
-        $svg .= '</svg>';
-        return $svg;
     }
 }
 
@@ -546,7 +506,7 @@ if (empty($logoSrc)) {
             <td style="text-align: right; vertical-align: top;">
               <div style="display: inline-block; text-align: center; margin-bottom: 3px;">
                 <div style="line-height: 1;">
-                  <?= generateCode128BarcodeSvg($barcodeCode, 32, 1.15) ?>
+                  <?= generatePicqerBarcodeHtml($barcodeCode, 32, 1.35) ?>
                 </div>
                 <div style="font-size: 10px; font-family: 'Courier New', Courier, monospace; font-weight: 700; letter-spacing: 1px; margin-top: 2px; color: #000000;">
                   * <?= htmlspecialchars($barcodeCode) ?> *
@@ -649,7 +609,7 @@ if (empty($logoSrc)) {
             <td style="text-align: right; vertical-align: top;">
               <div style="display: inline-block; text-align: center; margin-bottom: 3px;">
                 <div style="line-height: 1;">
-                  <?= generateCode128BarcodeSvg($barcodeCode, 32, 1.15) ?>
+                  <?= generatePicqerBarcodeHtml($barcodeCode, 32, 1.35) ?>
                 </div>
                 <div style="font-size: 10px; font-family: 'Courier New', Courier, monospace; font-weight: 700; letter-spacing: 1px; margin-top: 2px; color: #000000;">
                   * <?= htmlspecialchars($barcodeCode) ?> *
