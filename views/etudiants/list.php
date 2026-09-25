@@ -228,6 +228,7 @@ $anneeActive = $anneeActive ?? '';
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
                 <th style="padding: 12px; width: 45px;">#</th>
+                <th style="padding: 12px;"><i data-lucide="calendar" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Date Inscription</th>
                 <th style="padding: 12px;"><i data-lucide="qr-code" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Matricule</th>
                 <th style="padding: 12px;"><i data-lucide="user" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Étudiant (Nom & Prénoms)</th>
                 <th style="padding: 12px;"><i data-lucide="venus-mars" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Sexe</th>
@@ -330,7 +331,19 @@ $(document).ready(function() {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
 
-      // 1. Matricule
+      // 1. Date Inscription
+      { data: 'created_at_inscription', defaultContent: '', width: '110px', render: function(d, type, row) {
+        var rawDate = d || row.created_at_etudiant || '';
+        if (!rawDate || rawDate === '0000-00-00 00:00:00' || rawDate === '0000-00-00') return '<span style="color:#94A3B8;">-</span>';
+        var parts = rawDate.split(' ');
+        var dateParts = parts[0].split('-');
+        if (dateParts.length === 3) {
+          return '<span style="font-weight:700; color:#334155; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="calendar" style="width:13px;height:13px;color:#1E3A5F;"></i> ' + dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0] + '</span>';
+        }
+        return '<span style="font-weight:700; color:#334155; font-size:12px;">' + rawDate + '</span>';
+      }},
+
+      // 2. Matricule
       { data: 'matricule_etudiant', width: '110px', render: function(d) {
         if (!d) return '-';
         return '<code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + d + '</code>';
@@ -479,14 +492,14 @@ $(document).ready(function() {
     var selNiv = $('#filter-niveau').val();
     var selCls = $('#filter-classe').val();
 
-    // Colonne 5 : Classe -> masquée si une classe spécifique est sélectionnée
-    table.column(5).visible(selCls === 'ALL' || !selCls);
+    // Colonne 6 : Classe -> masquée si une classe spécifique est sélectionnée
+    table.column(6).visible(selCls === 'ALL' || !selCls);
 
-    // Colonne 6 : Filière -> masquée si une filière spécifique est sélectionnée
-    table.column(6).visible(selFil === 'ALL' || !selFil);
+    // Colonne 7 : Filière -> masquée si une filière spécifique est sélectionnée
+    table.column(7).visible(selFil === 'ALL' || !selFil);
 
-    // Colonne 7 : Niveau -> masquée si un niveau spécifique est sélectionné
-    table.column(7).visible(selNiv === 'ALL' || !selNiv);
+    // Colonne 8 : Niveau -> masquée si un niveau spécifique est sélectionné
+    table.column(8).visible(selNiv === 'ALL' || !selNiv);
   }
 
   // Initialisation de Select2 sur les filtres

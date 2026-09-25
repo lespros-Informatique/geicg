@@ -148,6 +148,7 @@ class ModelEtudiant extends BaseModel
                 e.email_etudiant,
                 e.photo_etudiant,
                 e.statut_etudiant,
+                e.created_at_etudiant,
                 i.affectation_etat,
                 i.id_inscription,
                 i.code_inscription,
