@@ -1,12 +1,12 @@
 <?php
 /**
- * Template Officiel de Fiche d'Inscription / Reçu d'Inscription (Modèle Référence GEICG)
+ * Template Officiel du Reçu d'Inscription (Modèle GROUPE EICG 100% Conforme)
  * Emplacement : /views/templates/pdf/fiche_inscription.php
  */
 
-// Générateur vectoriel SVG Code 128 (Subset B) natif pour l'affichage web
+// Générateur vectoriel SVG Code 128 (Subset B) natif pour l'affichage web/pdf
 if (!function_exists('generateCode128BarcodeSvg')) {
-    function generateCode128BarcodeSvg($code, $height = 36, $scale = 1.25) {
+    function generateCode128BarcodeSvg($code, $height = 28, $scale = 1.05) {
         $patterns = [
             '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
             '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
@@ -21,7 +21,7 @@ if (!function_exists('generateCode128BarcodeSvg')) {
             '311141','411131','211412','211214','211232','2331112'
         ];
         $code = (string)$code;
-        if ($code === '') $code = 'EICG-REC';
+        if ($code === '') $code = 'GE-25260276';
         $startB = 104;
         $checksum = $startB;
         $sequence = [$patterns[$startB]];
@@ -34,7 +34,7 @@ if (!function_exists('generateCode128BarcodeSvg')) {
         }
         $checkVal = $checksum % 103;
         $sequence[] = $patterns[$checkVal];
-        $sequence[] = $patterns[106];
+        $sequence[] = $patterns[106] ?? '2331112';
         
         $totalModules = 0;
         foreach ($sequence as $p) {
@@ -43,7 +43,7 @@ if (!function_exists('generateCode128BarcodeSvg')) {
             }
         }
         $totalWidth = round($totalModules * $scale, 1);
-        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' . $totalWidth . '" height="' . $height . '" viewBox="0 0 ' . $totalWidth . ' ' . $height . '" style="display:block; margin:0 auto; max-width:100%; height:' . $height . 'px;">';
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' . $totalWidth . '" height="' . $height . '" viewBox="0 0 ' . $totalWidth . ' ' . $height . '" style="display:block; margin:0 0 0 auto; max-width:100%; height:' . $height . 'px;">';
         $x = 0;
         foreach ($sequence as $p) {
             for ($j = 0; $j < strlen($p); $j++) {
@@ -59,12 +59,6 @@ if (!function_exists('generateCode128BarcodeSvg')) {
     }
 }
 
-// Données dynamiques avec adaptabilités pour GROUPE EICG
-$ministere = $ministere ?? "MINISTERE DE L'ENSEIGNEMENT SUPERIEUR\nET DE LA RECHERCHE SCIENTIFIQUE";
-$pays = $pays ?? "REPUBLIQUE DE CÔTE D'IVOIRE";
-$devise_pays = $devise_pays ?? "Union - Discipline - Travail";
-$universite = $universite ?? ($etablissement['nom_etablissement'] ?? "GROUPE EICG - ÉCOLE INTERNATIONALE DE COMMERCE ET DE GESTION");
-
 // Chargement du logo officiel Groupe EICG (public/assets/images/logo/logo_eicg.jpg)
 $logoEicgFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
 $logoSrc = defined('RACINE') ? RACINE . 'assets/images/logo/logo_eicg.jpg' : '/geicg/public/assets/images/logo/logo_eicg.jpg';
@@ -72,318 +66,291 @@ if (file_exists($logoEicgFile)) {
     $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
 }
 
+// Données dynamiques
 $annee_universitaire = $annee_universitaire ?? "2025-2026";
+$numero_recu = $numero_recu ?? "GE-25260276";
+$date_operation = $date_operation ?? "14/10/2025 10:33:33";
+$matricule = $matricule ?? "AA-914/GEB/GEC25";
+$nom_prenoms = $nom_prenoms ?? "ABOZAN AMON AMBROISINE";
+$filiere_niveau = $filiere_niveau ?? "GEC_2A";
+$statut_etudiant = $statut_etudiant ?? "AFFECTE";
+$type_operation = $type_operation ?? "SCOLARITE";
+$montant_operation = $montant_operation ?? 105000;
+$montant_operation_formatted = $montant_operation_formatted ?? "105 000CFA";
+$montant_en_lettres = $montant_en_lettres ?? "Cent cinq mille francs CFA";
+$scolarite_total = $scolarite_total ?? 105000;
+$total_verse = $total_verse ?? 105000;
+$reste_a_payer = $reste_a_payer ?? 0;
+$caissier_nom = $caissier_nom ?? "Mlle KONE N'diatty A. Mariam";
+$date_impression = $date_impression ?? date('d/m/Y H:i:s');
+$code_barre_val = $code_barre_val ?? "GE-25260276ScoFOF45944,4399676042ScaisKON";
 
-$matricule_mesrs = $matricule_mesrs ?? ($item['matricule_mesrs'] ?? ($item['matricule_etudiant'] ?? "SEDJ1406010001"));
-$nom = $nom ?? ($item['nom_etudiant'] ?? "SEDEGNON");
-$prenoms = $prenoms ?? ($item['prenom_etudiant'] ?? "JOSUE GUY-ARNAUD");
-$date_naissance = $date_naissance ?? ($item['date_naissance_etudiant'] ?? "14-06-2001");
-$lieu_naissance = $lieu_naissance ?? ($item['lieu_naissance_etudiant'] ?? "ABOBO");
-$date_lieu_naissance = $date_lieu_naissance ?? ($date_naissance . " à " . $lieu_naissance);
-$nationalite = $nationalite ?? ($item['nationalite_etudiant'] ?? "IVOIRIENNE");
+// Montants lignes du tableau
+$scolarite_op_jour = 25000;
+$scolarite_tot_payer = $scolarite_total;
+$scolarite_tot_verse = 25000;
+$scolarite_reste = 0;
 
-$filiere = $filiere ?? ($inscription['libelle_filiere'] ?? "INFORMATIQUE ET SCIENCES DU NUMERIQUE");
-$niveau = $niveau ?? ($inscription['libelle_niveau'] ?? "MASTER 1 - SEMESTRE 1 & 2");
-$specialite = $specialite ?? ($inscription['libelle_specialite'] ?? "CYBERSECURITE ET INTERNET DES OBJETS (CIO)");
-$type_formation = $type_formation ?? "FORMATION INITIALE";
+$droit_op_jour = 80000;
+$droit_tot_verse = 80000;
 
-$session_semestrielle = $session_semestrielle ?? "Rentree de septembre " . $annee_universitaire;
-$semestre_libelle = $semestre_libelle ?? $niveau;
-$code_paiement = $code_paiement ?? ($paiement['code_paiement'] ?? "IDK23633D9A81957EE");
-$code_barre_val = $code_barre_val ?? ($inscription['code_inscription'] ?? $code_paiement);
-$montant_paiement = $montant_paiement ?? (isset($paiement['montant_paiement']) ? number_format((float)$paiement['montant_paiement'], 0, ',', '.') . " F" : "60.000 F");
-$date_paiement = $date_paiement ?? (isset($paiement['created_at_paiement']) ? date('d-m-Y', strtotime($paiement['created_at_paiement'])) : (isset($paiement['date_paiement']) ? date('d-m-Y', strtotime($paiement['date_paiement'])) : "26-10-2022"));
-
-$lieu_date_delivrance = $lieu_date_delivrance ?? ("Fait Abidjan le " . ($date_fiche ?? "12 Janvier 2023"));
-$titre_signataire = $titre_signataire ?? "La Sous-Directrice de la Scolarité,\ndes Services Juridiques et de la Communication";
-$nom_signataire = $nom_signataire ?? "Mme KADIO Julie Epse ASSALE";
-
-$qr_data = $qr_data ?? ("EICG-INSCRIPTION-" . $matricule_mesrs . "-" . $code_paiement);
-$qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=" . urlencode($qr_data));
+if ($montant_operation != 105000) {
+    $scolarite_op_jour = $montant_operation;
+    $scolarite_tot_verse = $total_verse;
+    $scolarite_reste = $reste_a_payer;
+    $droit_op_jour = 0;
+    $droit_tot_verse = 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Fiche d'Inscription - <?= htmlspecialchars($nom . ' ' . $prenoms) ?></title>
+  <title>Reçu d'Inscription - <?= htmlspecialchars($nom_prenoms) ?></title>
   <style>
     @page {
-      margin: 8mm 10mm 8mm 10mm;
+      margin: 6mm 10mm 6mm 10mm;
     }
-    
     body {
       font-family: Arial, Helvetica, sans-serif;
-      font-size: 9.5pt;
+      font-size: 8.5pt;
       color: #000000;
-      line-height: 1.35;
+      line-height: 1.25;
       background-color: #FFFFFF;
-      margin: 0;
+      margin: 0 auto;
       padding: 0;
     }
 
-    /* EN-TÊTE OFFICIEL DU MINISTÈRE & PAYS */
+    .main-wrapper {
+      border: 1.5px solid #800000;
+      padding: 6px 10px;
+      box-sizing: border-box;
+      background: #FFFFFF;
+      margin: 0 auto;
+    }
+
+    /* EN-TÊTE ÉTABLISSEMENT */
     .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2px;
+    }
+    .header-logo-cell {
+      width: 95px;
+      vertical-align: top;
+    }
+    .header-logo-img {
+      max-height: 48px;
+      width: auto;
+      max-width: 90px;
+    }
+    .header-text-cell {
+      text-align: center;
+      vertical-align: top;
+    }
+    .header-title {
+      color: #800000;
+      font-family: Arial, sans-serif;
+      font-weight: 900;
+      font-size: 11.5pt;
+      text-transform: uppercase;
+      margin: 0;
+      text-decoration: underline;
+      letter-spacing: 0.2px;
+    }
+    .header-subtitle-1 {
+      font-weight: bold;
+      font-style: italic;
+      font-size: 8.5pt;
+      margin-top: 1px;
+      color: #000000;
+    }
+    .header-subtitle-2 {
+      font-weight: bold;
+      font-style: italic;
+      font-size: 8pt;
+      margin-top: 1px;
+      color: #000000;
+    }
+
+    /* BANNIÈRES GRISES DE TITRE */
+    .banner-title-box {
+      background-color: #999999;
+      color: #000000;
+      text-align: center;
+      padding: 4px 0;
+      margin: 4px 0 3px 0;
+      font-weight: 900;
+      font-size: 14pt;
+      font-family: Arial, sans-serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .annee-subbanner {
+      text-align: center;
+      font-weight: bold;
+      font-size: 9.5pt;
+      margin-bottom: 4px;
+      color: #000000;
+    }
+
+    /* FORMULAIRE DONNÉES ÉTUDIANT & PHOTO */
+    .info-photo-table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 4px;
     }
-    .header-table td {
+    .info-left-cell {
       vertical-align: top;
+      width: 82%;
     }
-    .header-left {
-      font-size: 7.5pt;
-      font-weight: bold;
-      text-transform: uppercase;
-      color: #000000;
-      line-height: 1.25;
-      width: 55%;
-    }
-    .header-right {
-      font-size: 7.5pt;
-      font-weight: bold;
+    .photo-right-cell {
+      vertical-align: top;
       text-align: right;
-      text-transform: uppercase;
-      color: #000000;
-      line-height: 1.25;
-      width: 45%;
+      width: 18%;
     }
-    .header-motto {
-      font-size: 7.5pt;
-      font-weight: normal;
-      text-transform: none;
-      color: #222222;
-      margin-top: 2px;
+    .photo-box {
+      width: 70px;
+      height: 86px;
+      border: 1px solid #000000;
+      object-fit: cover;
+      display: inline-block;
+    }
+    .photo-placeholder {
+      width: 70px;
+      height: 86px;
+      border: 1.5pt solid #1E3A5F;
+      display: inline-block;
+      background: #F1F5F9;
+      line-height: 86px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 20pt;
+      color: #1E3A5F;
+      border-radius: 4px;
     }
 
-    .top-divider {
-      border: none;
-      border-top: 1.2px solid #000000;
-      margin: 4px 0 8px 0;
-    }
-
-    /* IDENTIFICATION ÉTABLISSEMENT / GROUPE EICG (LOGO À GAUCHE, NOM À DROITE) */
-    .brand-table {
+    .student-info-grid {
       width: 100%;
       border-collapse: collapse;
-      margin: 4px 0 4px 0;
+      font-size: 8.5pt;
+      line-height: 1.5;
     }
-    .brand-logo-cell {
-      width: 140px;
-      text-align: right;
-      vertical-align: middle;
-      padding-right: 12px;
+    .student-info-grid td {
+      padding: 0.5px 0;
+      vertical-align: top;
     }
-    .brand-logo-img {
-      max-height: 48px;
-      width: auto;
-      max-width: 130px;
-      display: inline-block;
-      vertical-align: middle;
-    }
-    .brand-title-cell {
-      text-align: left;
-      vertical-align: middle;
-    }
-    .brand-title {
-      font-family: "Times New Roman", Times, Georgia, serif;
-      font-size: 15.5pt;
+    .val-bold {
       font-weight: bold;
-      color: #1E3A5F;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin: 0;
-      line-height: 1.25;
-    }
-
-    .brand-dashed-line {
-      text-align: center;
-      font-weight: bold;
-      letter-spacing: 2px;
       color: #000000;
-      margin: 6px 0 10px 0;
-      font-size: 9pt;
+    }
+    .amount-words-blue {
+      color: #0000FF;
+      font-weight: bold;
+      font-size: 9.5pt;
     }
 
-    /* CADRE DU TITRE PRINCIPAL */
-    .title-box-wrapper {
-      text-align: center;
-      margin: 8px 0 10px 0;
+    /* TABLEAU FINANCIER DES RÈGLEMENTS */
+    .grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 3px;
+      margin-bottom: 4px;
     }
-    .title-box {
-      display: inline-block;
-      border: 1.5px solid #000000;
-      border-radius: 4px;
-      padding: 6px 40px;
-      width: 82%;
-      box-sizing: border-box;
+    .grid-table th {
+      border: 1px solid #000000;
+      font-size: 8pt;
+      font-weight: bold;
+      color: #000000;
+      padding: 3px 4px;
+      text-align: center;
       background: #FFFFFF;
     }
-    .title-box-text {
-      font-family: "Times New Roman", Times, Georgia, serif;
-      font-size: 16pt;
+    .grid-table td {
+      border: 1px solid #000000;
+      font-size: 8pt;
+      padding: 2.5px 4px;
+      color: #000000;
+    }
+    .row-total td {
+      background-color: #999999;
       font-weight: 900;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: #000000;
-      margin: 0;
+      font-size: 8.5pt;
     }
-
-    .annee-subtitle {
-      font-size: 10.5pt;
-      font-weight: bold;
-      color: #000000;
-      margin: 10px 0 12px 0;
-    }
-
-    /* SECTIONS IDENTITÉ & INSCRIPTION */
-    .section-block {
-      margin-bottom: 12px;
-    }
-    .section-header {
-      font-size: 11pt;
-      font-weight: bold;
-      text-transform: uppercase;
-      color: #000000;
-      margin-bottom: 6px;
-      letter-spacing: 0.5px;
-    }
-
-    .info-grid-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 9.5pt;
-      line-height: 1.6;
-    }
-    .info-grid-table td {
-      padding: 2px 0;
-      vertical-align: top;
-    }
-    .lbl {
-      font-weight: bold;
-      color: #000000;
-      white-space: nowrap;
-    }
-    .val {
-      color: #000000;
-      font-weight: normal;
-    }
-
-    /* TABLEAU DES RÈGLEMENTS DE SCOLARITÉ */
-    .payment-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 14px;
-      margin-bottom: 16px;
-    }
-    .payment-table th {
-      background-color: #FDE047;
-      border: 1px solid #CA8A04;
-      font-size: 9pt;
-      font-weight: bold;
-      color: #000000;
-      padding: 6px 8px;
-      text-align: center;
-    }
-    .payment-table td {
-      border: 1px solid #CBD5E1;
-      font-size: 9pt;
-      padding: 6px 8px;
-      color: #000000;
+    .cell-black {
+      background-color: #000000;
     }
     .text-center { text-align: center; }
     .text-bold { font-weight: bold; }
 
-    /* ZONE DE VALIDATION (QR CODE & CACHET & SIGNATURE) */
-    .validation-area {
+    /* ZONE SOLDE & CODE-BARRES / CAISSIER */
+    .bottom-status-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 12px;
-      margin-bottom: 12px;
+      margin-top: 3px;
+      margin-bottom: 4px;
     }
-    .validation-area td {
+    .bottom-status-table td {
       vertical-align: top;
     }
-
-    .qr-container {
-      width: 130px;
-      text-align: left;
-    }
-    .qr-code-img {
-      width: 105px;
-      height: 105px;
-      border: none;
-      display: block;
-    }
-    .qr-caption {
-      font-size: 7.5pt;
-      color: #64748B;
-      text-align: center;
-      margin-top: 4px;
-      width: 105px;
-    }
-
-    .signatory-container {
-      text-align: right;
-    }
-    .date-delivrance {
-      font-size: 9.5pt;
-      color: #000000;
-      margin-bottom: 4px;
-    }
-    .signatory-title {
-      font-size: 9.5pt;
-      font-weight: bold;
-      color: #000000;
-      line-height: 1.25;
-      margin-bottom: 4px;
-    }
-
-    /* CACHET ROND OFFICIEL GROUPE EICG ET SIGNATURE */
-    .stamp-box {
+    .solde-badge {
+      background-color: #999999;
+      color: #DC2626;
+      font-weight: 900;
+      font-size: 11pt;
+      padding: 2px 20px;
       display: inline-block;
-      position: relative;
-      width: 150px;
-      height: 95px;
-      margin-top: 2px;
+      letter-spacing: 1px;
+    }
+
+    .caissier-title {
+      font-weight: bold;
+      text-decoration: underline;
+      font-size: 8.5pt;
+      margin-top: 1px;
+    }
+    .caissier-name {
+      font-size: 8pt;
+      color: #000000;
+      margin-top: 1px;
+    }
+
+    /* ENCADRÉ JAUNE ATTENTION */
+    .nb-yellow-box {
+      background-color: #FFFF00;
+      border: 1px solid #000000;
+      padding: 3px 6px;
+      font-weight: bold;
+      font-size: 7.5pt;
+      font-style: italic;
+      color: #000000;
+      margin: 4px 0 3px 0;
+    }
+
+    .notice-row-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.5pt;
+      color: #000000;
+      font-style: italic;
+      margin-bottom: 4px;
+    }
+
+    /* DIVISEUR POINTILLÉ ENTRE LES DEUX PARTIES */
+    .dashed-divider-zone {
+      text-align: center;
+      margin: 4px 0 4px 0;
+    }
+    .dashed-line {
+      border-top: 1px dashed #000000;
       margin-bottom: 2px;
     }
-    
-    .stamp-svg {
-      width: 125px;
-      height: 125px;
-      position: absolute;
-      right: 10px;
-      top: -15px;
-      opacity: 0.88;
-    }
-
-    .signatory-name {
-      font-size: 9.5pt;
+    .ref-caiss-text {
+      font-size: 7.5pt;
+      font-family: monospace;
       font-weight: bold;
       color: #000000;
-      margin-top: 2px;
-      display: block;
-    }
-
-    /* BANDEAU DE PIED DE PAGE : CODE-BARRES DU BAS */
-    .page-footer-barcode-band {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px dashed #94A3B8;
-      text-align: center;
-      width: 100%;
-    }
-    .barcode-wrapper {
-      margin: 4px auto 2px auto;
-      text-align: center;
-    }
-    .barcode-text-code {
-      font-family: monospace;
-      font-size: 9pt;
-      font-weight: bold;
-      color: #0F172A;
-      letter-spacing: 1.5px;
-      margin-top: 2px;
     }
 
     @media print {
@@ -391,204 +358,250 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      .no-print {
-        display: none !important;
-      }
+      .no-print { display: none !important; }
     }
   </style>
 </head>
 <body>
 
   <?php if (empty($is_pdf) && empty($_GET['pdf'])): ?>
-  <!-- BARRE D'IMPRESSION (UNIQUEMENT VISIBLE DANS LE NAVIGATEUR, EXCLUE DU PDF GENERÉ) -->
-  <div class="no-print" style="background: #1E3A5F; color: #FFFFFF; padding: 10px 16px; margin-bottom: 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
-    <div style="font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-      <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #22C55E;"></span>
-      Fiche d'Inscription Officielle — GROUPE EICG
-    </div>
-    <button onclick="window.print();" style="background: #2563EB; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 6px;">
-      🖨️ Imprimer / Exporter PDF
-    </button>
+  <!-- BARRE D'IMPRESSION EN NAVIGATEUR -->
+  <div class="no-print" style="background: #1E3A5F; color: #FFFFFF; padding: 8px 14px; margin-bottom: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="font-weight: bold; font-size: 13px;">Reçu d'Inscription Officiel — GROUPE EICG</div>
+    <button onclick="window.print();" style="background: #2563EB; color: #FFFFFF; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Imprimer / Exporter PDF</button>
   </div>
   <?php endif; ?>
 
-  <!-- 1. EN-TÊTE OFFICIEL DU MINISTÈRE & PAYS -->
-  <table class="header-table">
-    <tr>
-      <td class="header-left">
-        <?= nl2br(htmlspecialchars($ministere)) ?>
-      </td>
-      <td class="header-right">
-        <?= htmlspecialchars($pays) ?><br>
-        <div class="header-motto"><?= htmlspecialchars($devise_pays) ?></div>
-      </td>
-    </tr>
-  </table>
+  <?php
+  $initsPDF = '?';
+  if (!empty($nom_prenoms)) {
+      $pParts = array_values(array_filter(explode(' ', trim($nom_prenoms))));
+      if (count($pParts) >= 2) {
+          $initsPDF = strtoupper(substr($pParts[0], 0, 1) . substr($pParts[1], 0, 1));
+      } else if (!empty($pParts)) {
+          $initsPDF = strtoupper(substr($pParts[0], 0, 2));
+      }
+  }
+  ?>
+  <div class="main-wrapper">
 
-  <hr class="top-divider">
+    <!-- ========================================================================= -->
+    <!-- 1. PARTIE SUPERIEURE : REÇU D'INSCRIPTION ETUDIANT -->
+    <!-- ========================================================================= -->
 
-  <!-- 2. IDENTIFICATION DE L'ÉTABLISSEMENT (LOGO À GAUCHE & TITRE À DROITE) -->
-  <table class="brand-table">
-    <tr>
-      <td class="brand-logo-cell">
-        <img src="<?= $logoSrc ?>" alt="Logo EICG" class="brand-logo-img">
-      </td>
-      <td class="brand-title-cell">
-        <h1 class="brand-title"><?= htmlspecialchars($universite) ?></h1>
-      </td>
-    </tr>
-  </table>
-  <div class="brand-dashed-line">----------------------------------------------------------------------------------------------------</div>
-
-  <!-- 3. TITRE ENCADRÉ -->
-  <div class="title-box-wrapper">
-    <div class="title-box">
-      <h2 class="title-box-text">FICHE D'INSCRIPTION</h2>
-    </div>
-  </div>
-
-  <!-- 4. ANNÉE UNIVERSITAIRE -->
-  <div class="annee-subtitle">
-    ANNÉE UNIVERSITAIRE : &nbsp; <?= htmlspecialchars($annee_universitaire) ?>
-  </div>
-
-  <!-- 5. SECTION IDENTITÉ -->
-  <div class="section-block">
-    <div class="section-header">IDENTITE</div>
-    <table class="info-grid-table">
+    <!-- EN-TÊTE ÉTABLISSEMENT -->
+    <table class="header-table">
       <tr>
-        <td class="lbl" style="width: 175px;">Matricule MESRS :</td>
-        <td class="val" colspan="3"><?= htmlspecialchars($matricule_mesrs) ?></td>
-      </tr>
-      <tr>
-        <td class="lbl">Nom :</td>
-        <td class="val" style="width: 230px;"><?= htmlspecialchars($nom) ?></td>
-        <td class="lbl" style="width: 85px;">Prénoms :</td>
-        <td class="val"><?= htmlspecialchars($prenoms) ?></td>
-      </tr>
-      <tr>
-        <td class="lbl">Date et lieu de naissance :</td>
-        <td class="val"><?= htmlspecialchars($date_lieu_naissance) ?></td>
-        <td class="lbl">Nationalité :</td>
-        <td class="val"><?= htmlspecialchars($nationalite) ?></td>
+        <td class="header-logo-cell">
+          <img src="<?= $logoSrc ?>" alt="Logo EICG" class="header-logo-img">
+        </td>
+        <td class="header-text-cell">
+          <h1 class="header-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>
+          <div class="header-subtitle-1">Agréé par l'Etat et le FDFP</div>
+          <div class="header-subtitle-2">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
+        </td>
       </tr>
     </table>
-  </div>
 
-  <!-- 6. SECTION INSCRIPTION -->
-  <div class="section-block">
-    <div class="section-header">INSCRIPTION</div>
-    <table class="info-grid-table">
+    <!-- BANNIÈRE PRINCIPALE ET ANNÉE -->
+    <div class="banner-title-box">REÇU D'INSCRIPTION</div>
+    <div class="annee-subbanner">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_universitaire) ?></div>
+
+    <!-- DONNÉES ÉTUDIANT & PHOTO -->
+    <table class="info-photo-table">
       <tr>
-        <td class="lbl" style="width: 175px;">Filière :</td>
-        <td class="val" colspan="3"><?= htmlspecialchars($filiere) ?></td>
-      </tr>
-      <tr>
-        <td class="lbl">Niveau :</td>
-        <td class="val" colspan="3">
-          <?= htmlspecialchars($niveau) ?>
-          <?php if (!empty($specialite)): ?>
-            &nbsp;|&nbsp; <span class="lbl">Spécialité:</span> <?= htmlspecialchars($specialite) ?>
+        <td class="info-left-cell">
+          <table class="student-info-grid">
+            <tr>
+              <td style="width: 50%;">N° &nbsp;<span class="val-bold"><?= htmlspecialchars($numero_recu) ?></span></td>
+              <td style="text-align: right; padding-right: 15px;"><span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
+            </tr>
+            <tr>
+              <td>Numéro réf étudiant( e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
+              <td>Filière_Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
+            </tr>
+            <tr>
+              <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
+            </tr>
+            <tr>
+              <td>Type d'Opération</td>
+              <td>Statut : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="val-bold"><?= htmlspecialchars($statut_etudiant) ?></span></td>
+            </tr>
+            <tr>
+              <td>Montant de l'Opération : &nbsp;<span class="val-bold"><?= htmlspecialchars($montant_operation_formatted) ?></span></td>
+              <td><span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
+            </tr>
+          </table>
+        </td>
+        <td class="photo-right-cell">
+          <?php if (!empty($photo_src)): ?>
+            <img src="<?= $photo_src ?>" alt="Photo Étudiant" class="photo-box">
+          <?php else: ?>
+            <div class="photo-placeholder"><?= htmlspecialchars($initsPDF) ?></div>
           <?php endif; ?>
         </td>
       </tr>
+    </table>
+
+    <!-- TABLEAU FINANCIER DES RÈGLEMENTS -->
+    <table class="grid-table">
+      <thead>
+        <tr>
+          <th style="width: 25%;"></th>
+          <th style="width: 18%;">OP. DU JOUR</th>
+          <th style="width: 20%;">Total à payer</th>
+          <th style="width: 18%;">Total Versé</th>
+          <th style="width: 19%;">Reste à Payer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-bold">SCOLARITE</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_op_jour, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_tot_payer, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_tot_verse, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_reste, 0, ',', ' ') ?>CFA</td>
+        </tr>
+        <tr>
+          <td class="text-bold">Droit d'Inscription</td>
+          <td class="text-center text-bold"><?= number_format($droit_op_jour, 0, ',', ' ') ?>CFA</td>
+          <td></td>
+          <td class="text-center text-bold"><?= number_format($droit_tot_verse, 0, ',', ' ') ?>CFA</td>
+          <td class="cell-black"></td>
+        </tr>
+        <tr>
+          <td class="text-bold">AUTRES FRAIS</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr class="row-total">
+          <td class="text-bold">TOTAL</td>
+          <td class="text-center text-bold"><?= number_format($montant_operation, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_total, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($total_verse, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($reste_a_payer, 0, ',', ' ') ?>CFA</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ZONE SOLDE & CODE-BARRES / CAISSIER -->
+    <table class="bottom-status-table">
       <tr>
-        <td class="lbl">Type formation :</td>
-        <td class="val" colspan="3"><?= htmlspecialchars($type_formation) ?></td>
+        <td style="width: 55%;">
+          Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="solde-badge"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE: ' . number_format($reste_a_payer, 0, ',', ' ') . 'CFA') ?></span>
+        </td>
+        <td style="width: 45%; text-align: right;">
+          <div style="display: inline-block; text-align: right;">
+            <?php if (!empty($is_pdf) || !empty($_GET['pdf'])): ?>
+              <barcode code="<?= htmlspecialchars($code_barre_val) ?>" type="C128B" size="0.65" height="0.65" />
+            <?php else: ?>
+              <?= generateCode128BarcodeSvg($code_barre_val, 26, 0.9) ?>
+            <?php endif; ?>
+            <div class="caissier-title">CAISSIER(RE)</div>
+            <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
+          </div>
+        </td>
       </tr>
     </table>
-  </div>
 
-  <!-- 7. TABLEAU DES RÈGLEMENTS DE SCOLARITÉ -->
-  <table class="payment-table">
-    <thead>
-      <tr>
-        <th style="width: 28%;">Session semestrielle</th>
-        <th style="width: 25%;">Semestre</th>
-        <th style="width: 22%;">Code de paiement</th>
-        <th style="width: 13%;">Montant</th>
-        <th style="width: 12%;">Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><?= htmlspecialchars($session_semestrielle) ?></td>
-        <td><?= htmlspecialchars($semestre_libelle) ?></td>
-        <td class="text-center text-bold"><?= htmlspecialchars($code_paiement) ?></td>
-        <td class="text-center text-bold"><?= htmlspecialchars($montant_paiement) ?></td>
-        <td class="text-center"><?= htmlspecialchars($date_paiement) ?></td>
-      </tr>
-    </tbody>
-  </table>
-
-  <!-- 8. ZONE DE VALIDATION (QR CODE A GAUCHE, CACHET ET SIGNATURE A DROITE) -->
-  <table class="validation-area">
-    <tr>
-      <!-- COLONNE GAUCHE : QR CODE DE VÉRIFICATION -->
-      <td class="qr-container">
-        <img src="<?= htmlspecialchars($qr_code_url) ?>" alt="QR Code" class="qr-code-img">
-        <div class="qr-caption">
-          Contrôle d'authenticité
-        </div>
-      </td>
-
-      <!-- COLONNE DROITE : DATE, CACHET OFFICIEL GEICG ET SIGNATURE -->
-      <td class="signatory-container">
-        <div class="date-delivrance"><?= htmlspecialchars($lieu_date_delivrance) ?></div>
-        
-        <div class="signatory-title">
-          <?= nl2br(htmlspecialchars($titre_signataire)) ?>
-        </div>
-
-        <!-- REPRÉSENTATION DU CACHET OFFICIEL GROUPE EICG ET DE LA SIGNATURE -->
-        <div class="stamp-box">
-          <svg class="stamp-svg" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-            <!-- Cercle extérieur bleu EICG -->
-            <circle cx="80" cy="80" r="74" fill="none" stroke="#1E3A5F" stroke-width="2.5"/>
-            <!-- Cercle intérieur pointillé -->
-            <circle cx="80" cy="80" r="66" fill="none" stroke="#1E3A5F" stroke-width="1.2" stroke-dasharray="3 2"/>
-            
-            <!-- Texte circulaire supérieur -->
-            <path id="cPathTop" d="M 22 80 A 58 58 0 0 1 138 80" fill="none"/>
-            <text font-size="8" font-family="Arial" font-weight="bold" fill="#1E3A5F" text-anchor="middle">
-              <textPath href="#cPathTop" startOffset="50%">GROUPE EICG - SCOLARITE</textPath>
-            </text>
-
-            <!-- Texte central dans cartouche -->
-            <rect x="35" y="68" width="90" height="24" rx="4" fill="#FFFFFF" stroke="#1E3A5F" stroke-width="1.2"/>
-            <text x="80" y="84" font-size="10" font-family="Arial" font-weight="bold" fill="#1E3A5F" text-anchor="middle" letter-spacing="1">
-              GROUPE EICG
-            </text>
-
-            <!-- Texte inférieur -->
-            <path id="cPathBot" d="M 138 80 A 58 58 0 0 1 22 80" fill="none"/>
-            <text font-size="8" font-family="Arial" font-weight="bold" fill="#1E3A5F" text-anchor="middle">
-              <textPath href="#cPathBot" startOffset="50%">★ DIRECTION ACADÉMIQUE ★</textPath>
-            </text>
-
-            <!-- Signature manuscrite stylisée superposée -->
-            <path d="M 25 90 C 45 55 70 115 85 65 C 95 45 115 95 145 70 M 55 80 L 130 75" fill="none" stroke="#0F233D" stroke-width="2.2" stroke-linecap="round"/>
-          </svg>
-        </div>
-
-        <div class="signatory-name"><?= htmlspecialchars($nom_signataire) ?></div>
-      </td>
-    </tr>
-  </table>
-
-  <!-- 9. PIED DE PAGE EXTRÊME : CODE-BARRES CENTRÉ TOUT EN BAS DU DOCUMENT -->
-  <div class="page-footer-barcode-band">
-    <div style="font-size: 7.5pt; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
-      CODE D'IDENTIFICATION & DE SÉCURITÉ NUMÉRIQUE
+    <!-- ENCADRÉ JAUNE N.B & AVIS DE CONSERVATION -->
+    <div class="nb-yellow-box">
+      N.B: - Aucun remboursement n'est admis après l'inscription.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Les paiements se font uniquement chez la caissière
     </div>
-    <div class="barcode-wrapper">
-      <?php if (!empty($is_pdf) || !empty($_GET['pdf'])): ?>
-        <barcode code="<?= htmlspecialchars($code_barre_val) ?>" type="C128A" size="0.75" height="0.75" />
-      <?php else: ?>
-        <?= generateCode128BarcodeSvg($code_barre_val, 38, 1.3) ?>
-      <?php endif; ?>
+
+    <table class="notice-row-table">
+      <tr>
+        <td style="font-weight: bold;">Ce reçu est à conserver. Pour toute réclamation il doit être présenté.</td>
+        <td style="text-align: right; font-weight: bold;"><?= htmlspecialchars($date_impression) ?></td>
+      </tr>
+    </table>
+
+    <!-- DIVISEUR POINTILLÉ ENTRE LES DEUX PARTIES -->
+    <div class="dashed-divider-zone">
+      <div class="dashed-line"></div>
+      <div class="ref-caiss-text">Réf_caiss <?= htmlspecialchars($code_barre_val) ?></div>
     </div>
-    <div class="barcode-text-code">* <?= htmlspecialchars($code_barre_val) ?> *</div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. PARTIE INFERIEURE : COPIE REÇU DE VERSEMENT POUR ARCHIVAGE -->
+    <!-- ========================================================================= -->
+
+    <!-- BANNIÈRE COPIE ARCHIVAGE -->
+    <div class="banner-title-box" style="font-size: 12pt;">COPIE REÇU DE VERSEMENT POUR ARCHIVAGE</div>
+    <div class="annee-subbanner">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_universitaire) ?></div>
+
+    <!-- DONNÉES ÉTUDIANT & PHOTO COPIE -->
+    <table class="info-photo-table">
+      <tr>
+        <td class="info-left-cell">
+          <table class="student-info-grid">
+            <tr>
+              <td style="width: 50%;">N° &nbsp;<span class="val-bold"><?= htmlspecialchars($numero_recu) ?></span></td>
+              <td style="text-align: right; padding-right: 15px;"><span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
+            </tr>
+            <tr>
+              <td>Numéro réf étudiant( e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
+              <td>Filière_Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
+            </tr>
+            <tr>
+              <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
+            </tr>
+            <tr>
+              <td>Type d'Opération &nbsp;&nbsp;&nbsp;&nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;"><?= htmlspecialchars($type_operation) ?></span></td>
+              <td>Banque : &nbsp;&nbsp;&nbsp;&nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;">--</span> &nbsp;&nbsp;&nbsp;&nbsp; Reste à Payer &nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;"><?= number_format($reste_a_payer, 0, ',', ' ') ?>CFA</span></td>
+            </tr>
+            <tr>
+              <td>Montant de l'Opération : &nbsp;<span class="val-bold"><?= htmlspecialchars($montant_operation_formatted) ?></span></td>
+              <td><span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
+            </tr>
+          </table>
+        </td>
+        <td class="photo-right-cell">
+          <?php if (!empty($photo_src)): ?>
+            <img src="<?= $photo_src ?>" alt="Photo Étudiant" class="photo-box">
+          <?php else: ?>
+            <div class="photo-placeholder"><?= htmlspecialchars($initsPDF) ?></div>
+          <?php endif; ?>
+        </td>
+      </tr>
+    </table>
+
+    <!-- ZONE SOLDE & CODE-BARRES COPIE -->
+    <table class="bottom-status-table" style="margin-top: 6px;">
+      <tr>
+        <td style="width: 55%; vertical-align: top;">
+          Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="solde-badge"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE: ' . number_format($reste_a_payer, 0, ',', ' ') . 'CFA') ?></span>
+        </td>
+        <td style="width: 45%; text-align: right; vertical-align: top;">
+          <div style="display: inline-block; text-align: right;">
+            <?php if (!empty($is_pdf) || !empty($_GET['pdf'])): ?>
+              <barcode code="<?= htmlspecialchars($code_barre_val) ?>" type="C128B" size="0.65" height="0.65" />
+            <?php else: ?>
+              <?= generateCode128BarcodeSvg($code_barre_val, 26, 0.9) ?>
+            <?php endif; ?>
+            <div class="caissier-title">CAISSIER(RE)</div>
+            <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <table class="notice-row-table" style="margin-top: 8px; margin-bottom: 0;">
+      <tr>
+        <td style="font-family: monospace; font-weight: bold; font-size: 8pt; font-style: normal;">
+          <?= htmlspecialchars($code_barre_val) ?>
+        </td>
+        <td style="text-align: right; font-weight: bold; font-size: 8pt; font-style: normal;">
+          <?= htmlspecialchars($date_impression) ?>
+        </td>
+      </tr>
+    </table>
+
   </div>
 
 </body>

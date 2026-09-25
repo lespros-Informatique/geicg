@@ -155,6 +155,7 @@ class ModelEtudiant extends BaseModel
                 i.statut_inscription,
                 i.montant_scolarite_inscription,
                 i.created_at_inscription,
+                (SELECT COUNT(*) FROM paiements p WHERE p.inscription_code = i.code_inscription AND p.statut_paiement != 'annule') AS total_paiements_count,
                 a.code_annee,
                 a.libelle_annee,
                 cl.code_classe,

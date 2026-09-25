@@ -169,6 +169,33 @@ $(document).ready(function() {
     }
   }
 
+  function getStudentInitials(fullName) {
+    if (!fullName || typeof fullName !== 'string') return '?';
+    var parts = fullName.trim().split(/\s+/).filter(function(p) { return p.length > 0; });
+    if (parts.length === 0) return '?';
+    var inits = parts[0][0];
+    if (parts.length > 1) {
+      inits += parts[1][0];
+    }
+    return inits.toUpperCase();
+  }
+
+  function renderFramedAvatar(photoPath, fullName, size) {
+    size = size || 38;
+    var inits = getStudentInitials(fullName);
+    var fontSize = Math.round(size * 0.42);
+    var escapedName = $('<div>').text(fullName || '').html();
+    var avatarBadgeHtml = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color:#FFFFFF; font-weight:800; font-size:' + fontSize + 'px; border:2px solid #3B82F6; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.12); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;" title="' + escapedName + '">' + inits + '</div>';
+
+    if (photoPath && photoPath.trim() !== '') {
+      var cleanRel = photoPath.trim().replace(/^\/+/, '');
+      var fullUrl = '<?= RACINE ?>' + cleanRel;
+      var escapedFallback = avatarBadgeHtml.replace(/'/g, "\\'");
+      return '<img src="' + fullUrl + '" style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; object-fit:cover; border:2px solid #10B981; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Photo de ' + escapedName + '" onerror="this.onerror=null; this.outerHTML=\'' + escapedFallback + '\';">';
+    }
+    return avatarBadgeHtml;
+  }
+
   var table = $('#table-sans-photo').DataTable({
     ajax: {
       url: '<?= RACINE ?>inscription/apiSansPhoto',
@@ -185,11 +212,8 @@ $(document).ready(function() {
       { data: null, width: '50px', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
-      { data: 'photo_inscription', width: '60px', className: 'text-center', render: function(d) {
-        if (d && d.trim() !== '') {
-          return '<img src="<?= RACINE ?>' + d + '" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid #10B981;">';
-        }
-        return '<div style="width:38px; height:38px; border-radius:50%; background:#FEE2E2; color:#DC2626; display:inline-flex; align-items:center; justify-content:center;" title="Photo manquante"><i data-lucide="camera-off" style="width:18px;height:18px;"></i></div>';
+      { data: 'photo_inscription', width: '60px', className: 'text-center', render: function(d, type, row) {
+        return renderFramedAvatar(d, row.nom_complet, 38);
       }},
       { data: 'matricule_etudiant', render: function(d) {
         return '<code style="font-weight:800; color:#1E3A5F; background:#F1F5F9; padding:4px 8px; border-radius:6px;">' + (d || '-') + '</code>';

@@ -17,7 +17,7 @@ $controller = new InscriptionController();
 $validator = new Validator();
 
 $db = (new Database())->getCon();
-$etu = $db->query("SELECT id_etudiant, code_etudiant FROM etudiants LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+$etu = $db->query("SELECT e.id_etudiant, e.code_etudiant FROM etudiants e JOIN inscriptions i ON i.etudiant_code = e.code_etudiant JOIN paiements p ON p.inscription_code = i.code_inscription WHERE p.statut_paiement != 'annule' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 
 if ($etu) {
     $encrypted = $validator->crypter($etu['id_etudiant']);
@@ -35,5 +35,5 @@ if ($etu) {
         echo "ERROR: " . $t->getMessage() . "\n" . $t->getTraceAsString() . "\n";
     }
 } else {
-    echo "No student found in DB\n";
+    echo "No student with payment found in DB\n";
 }

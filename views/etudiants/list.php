@@ -357,10 +357,15 @@ $(document).ready(function() {
         var insCode = row.code_inscription || '';
         var etuCode = row.code_etudiant || '';
         var clsCode = row.code_classe || '';
+        var hasPaiement = parseInt(row.total_paiements_count || 0, 10) > 0;
+
+        var printBtn = hasPaiement 
+          ? '  <a href="' + window.RACINE + 'inscription/fiche/' + idCrypte + '?pdf=1" target="_blank" class="btn-action-icon btn-action-print" title="Télécharger la fiche d\'inscription (PDF)"><i data-lucide="printer"></i></a>'
+          : '';
 
         return '<div style="display:inline-flex; align-items:center; gap:5px; justify-content:center;">' +
                '  <a href="' + window.RACINE + 'etudiant/changerClasse/' + idCrypte + '" class="btn-action-icon btn-action-classe" title="Changer la classe de l\'étudiant"><i data-lucide="refresh-cw"></i></a>' +
-               '  <a href="' + window.RACINE + 'inscription/fiche/' + idCrypte + '?pdf=1" target="_blank" class="btn-action-icon btn-action-print" title="Télécharger la fiche d\'inscription (PDF)"><i data-lucide="printer"></i></a>' +
+               printBtn +
                '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '" class="btn-action-icon btn-action-dossier" title="Consulter le dossier complet"><i data-lucide="eye"></i></a>' +
                '  <a href="' + window.RACINE + 'etudiant/edition/' + idCrypte + '" class="btn-action-icon btn-action-edit" title="Modifier la fiche étudiant"><i data-lucide="edit"></i></a>' +
                '</div>';

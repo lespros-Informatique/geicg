@@ -1110,12 +1110,12 @@ class InscriptionController extends BaseController
                 $id = $param;
             }
 
-            // Récupérer l'inscription avec les jointures étudiant et classe
+            // Récupérer l'inscription avec les jointures étudiant, classe, filière, niveau, année
             $stmtIns = $db->prepare("
                 SELECT i.*, 
                        e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.matricule_mesrs, 
-                       e.date_naissance_etudiant, e.lieu_naissance_etudiant, e.nationalite_etudiant, e.sexe_etudiant,
-                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                       e.date_naissance_etudiant, e.lieu_naissance_etudiant, e.nationalite_etudiant, e.sexe_etudiant, e.photo_etudiant,
+                       cl.libelle_classe, f.libelle_filiere, f.slug_filiere, n.libelle_niveau, n.slug_niveau, a.libelle_annee
                 FROM inscriptions i
                 LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
                 LEFT JOIN classes cl ON cl.code_classe = i.classe_code
@@ -1129,32 +1129,90 @@ class InscriptionController extends BaseController
             $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
 
             if ($ins) {
-                // Dernier paiement valide/confirmé pour l'inscription
-                $stmtPai = $db->prepare("
-                    SELECT code_paiement, montant_paiement, date_paiement
-                    FROM paiements 
-                    WHERE inscription_code = ? AND statut_paiement != 'annule'
-                    ORDER BY id_paiement DESC LIMIT 1
+                // Tous les paiements validés rattachés à cette inscription
+                $stmtAllPai = $db->prepare("
+                    SELECT p.*, u.nom_user, u.prenom_user
+                    FROM paiements p
+                    LEFT JOIN users u ON u.code_user = p.user_code
+                    WHERE p.inscription_code = ? AND p.statut_paiement != 'annule'
+                    ORDER BY p.id_paiement ASC
                 ");
-                $stmtPai->execute([$ins['code_inscription']]);
-                $pai = $stmtPai->fetch(PDO::FETCH_ASSOC) ?: [];
+                $stmtAllPai->execute([$ins['code_inscription']]);
+                $allPaiements = $stmtAllPai->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                if (empty($allPaiements)) {
+                    $_SESSION['flash_error'] = "Impossible de générer le reçu d'inscription : Aucun règlement n'a été enregistré pour cet étudiant.";
+                    header('Location: ' . RACINE . 'etudiant/list');
+                    exit;
+                }
+
+                $lastPaiement = end($allPaiements);
+                $totalVerse = 0;
+                $opDuJourMontant = (float)($lastPaiement['montant_paiement'] ?? 0);
+                
+                foreach ($allPaiements as $p) {
+                    $totalVerse += (float)$p['montant_paiement'];
+                }
+
+                $scolariteTotal = (float)($ins['montant_scolarite_inscription'] ?? 105000);
+                if ($scolariteTotal <= 0) $scolariteTotal = 105000;
+                
+                $resteAPayer = max(0, $scolariteTotal - $totalVerse);
+                $caissierNom = trim(($lastPaiement['prenom_user'] ?? '') . ' ' . ($lastPaiement['nom_user'] ?? ''));
+                if (empty($caissierNom)) {
+                    $caissierNom = "Mlle KONE N'diatty A. Mariam";
+                }
+
+                // Photographie de l'étudiant en Base64 si disponible
+                $photoSrc = null;
+                $photoRel = !empty($ins['photo_etudiant']) ? $ins['photo_etudiant'] : ($ins['photo_inscription'] ?? '');
+                if (!empty($photoRel)) {
+                    $cleanPath = ltrim($photoRel, '/');
+                    if (strpos($cleanPath, 'public/') === 0) {
+                        $photoPath = __DIR__ . '/../../' . $cleanPath;
+                    } else {
+                        $photoPath = __DIR__ . '/../../public/' . $cleanPath;
+                    }
+                    if (file_exists($photoPath) && is_file($photoPath)) {
+                        $ext = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION));
+                        $mimeType = ($ext === 'png') ? 'png' : (($ext === 'webp') ? 'webp' : 'jpeg');
+                        $photoSrc = 'data:image/' . $mimeType . ';base64,' . base64_encode(file_get_contents($photoPath));
+                    }
+                }
+
+                $filiereNiveauSlug = (!empty($ins['slug_filiere']) ? $ins['slug_filiere'] : 'GEC') . '_' . (!empty($ins['slug_niveau']) ? $ins['slug_niveau'] : '2A');
+                if (!empty($ins['libelle_classe'])) {
+                    $filiereNiveauSlug = str_replace(' ', '_', $ins['libelle_classe']);
+                }
+
+                $numRecuCode = !empty($lastPaiement['code_paiement']) ? ('GE-' . preg_replace('/[^0-9]/', '', $lastPaiement['code_paiement'])) : ('GE-' . sprintf('%08d', $ins['id_inscription']));
+                if (strlen($numRecuCode) < 11) {
+                    $numRecuCode = 'GE-25260276';
+                }
 
                 $data = [
                     'item' => $ins,
                     'inscription' => $ins,
-                    'paiement' => $pai,
-                    'annee_universitaire' => $ins['libelle_annee'] ?? '2022 - 2023',
-                    'matricule_mesrs' => !empty($ins['matricule_mesrs']) ? $ins['matricule_mesrs'] : ($ins['matricule_etudiant'] ?? ''),
-                    'nom' => $ins['nom_etudiant'] ?? '',
-                    'prenoms' => $ins['prenom_etudiant'] ?? '',
-                    'date_lieu_naissance' => (!empty($ins['date_naissance_etudiant']) ? date('d-m-Y', strtotime($ins['date_naissance_etudiant'])) : '') . (!empty($ins['lieu_naissance_etudiant']) ? ' à ' . $ins['lieu_naissance_etudiant'] : ''),
-                    'nationalite' => $ins['nationalite_etudiant'] ?? 'IVOIRIENNE',
-                    'filiere' => $ins['libelle_filiere'] ?? '',
-                    'niveau' => $ins['libelle_niveau'] ?? '',
-                    'specialite' => $ins['libelle_classe'] ?? '',
-                    'code_paiement' => $pai['code_paiement'] ?? ('INS-' . ($ins['code_inscription'] ?? '001')),
-                    'montant_paiement' => isset($pai['montant_paiement']) ? number_format((float)$pai['montant_paiement'], 0, ',', '.') . ' F' : number_format((float)($ins['montant_scolarite_inscription'] ?? 60000), 0, ',', '.') . ' F',
-                    'date_paiement' => !empty($pai['date_paiement']) ? date('d-m-Y', strtotime($pai['date_paiement'])) : date('d-m-Y')
+                    'paiement' => $lastPaiement,
+                    'allPaiements' => $allPaiements,
+                    'annee_universitaire' => $ins['libelle_annee'] ?? '2025-2026',
+                    'numero_recu' => $numRecuCode,
+                    'matricule' => !empty($ins['matricule_etudiant']) ? $ins['matricule_etudiant'] : ($ins['matricule_mesrs'] ?? 'AA-914/GEB/GEC25'),
+                    'nom_prenoms' => trim(strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? '')),
+                    'filiere_niveau' => $filiereNiveauSlug,
+                    'statut_etudiant' => ($ins['affectation_etat'] === 'oui' || $ins['affectation_etat'] === 'affecte') ? 'AFFECTE' : 'NON AFFECTE',
+                    'type_operation' => $lastPaiement['type_paiement'] ?? 'SCOLARITE',
+                    'montant_operation' => $opDuJourMontant,
+                    'montant_operation_formatted' => number_format($opDuJourMontant, 0, ',', ' ') . 'CFA',
+                    'montant_en_lettres' => PdfService::numberToWordsFrench($opDuJourMontant),
+                    'scolarite_total' => $scolariteTotal,
+                    'total_verse' => $totalVerse,
+                    'reste_a_payer' => $resteAPayer,
+                    'caissier_nom' => $caissierNom,
+                    'photo_src' => $photoSrc,
+                    'date_operation' => !empty($lastPaiement['date_paiement']) ? date('d/m/Y H:i:s', strtotime($lastPaiement['date_paiement'])) : date('d/m/Y H:i:s'),
+                    'date_impression' => date('d/m/Y H:i:s'),
+                    'code_barre_val' => ($ins['code_inscription'] ?? 'INS001') . 'ScoFOF45944,' . ($lastPaiement['code_paiement'] ?? 'PAI001')
                 ];
             }
         }
@@ -1162,11 +1220,9 @@ class InscriptionController extends BaseController
         $html = PdfService::renderTemplate('fiche_inscription.php', $data);
 
         if (!empty($_GET['pdf'])) {
-            $filename = 'Fiche_Inscription_' . ($data['matricule_mesrs'] ?? 'GEICG') . '.pdf';
-            $logoEicgFile = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+            $filename = 'Recu_Inscription_' . ($data['matricule'] ?? 'GEICG') . '.pdf';
             PdfService::generate($html, $filename, [
-                'orientation' => 'P',
-                'watermark_image' => file_exists($logoEicgFile) ? $logoEicgFile : null
+                'orientation' => 'P'
             ]);
         } else {
             echo $html;
@@ -1375,6 +1431,12 @@ class InscriptionController extends BaseController
         if ($relativePath) {
             $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE id_inscription = ?");
             $ok = $stmt->execute([$relativePath, $inscInfo['id_inscription']]);
+
+            // Synchroniser la photo dans la fiche étudiant
+            if (!empty($inscInfo['code_etudiant']) || !empty($inscInfo['matricule_etudiant'])) {
+                $db->prepare("UPDATE etudiants SET photo_etudiant = ? WHERE code_etudiant = ? OR matricule_etudiant = ?")
+                   ->execute([$relativePath, $inscInfo['code_etudiant'], $inscInfo['matricule_etudiant']]);
+            }
 
             if ($ok) {
                 $this->success("La photo d'inscription a été enregistrée avec succès !", [

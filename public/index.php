@@ -266,6 +266,7 @@ $route->addRoute('/inscription/sans_photo', [$inscriptionController, 'priseDeVue
 $route->addRoute('/inscription/prise_de_vue', [$inscriptionController, 'priseDeVue']);
 $route->addRoute('/inscription/apiSansPhoto', [$inscriptionController, 'apiPriseDeVue']);
 $route->addRoute('/inscription/apiPriseDeVue', [$inscriptionController, 'apiPriseDeVue']);
+$route->addRoute('/inscription/uploadPhoto', [$inscriptionController, 'uploadPhoto']);
 $route->addRoute('/inscription/fiche', [$inscriptionController, 'imprimerFiche']);
 $route->addRoute('/inscription/fiche/{param}', [$inscriptionController, 'imprimerFiche']);
 $route->addRoute('/reinscription/formulaire', [$inscriptionController, 'formulaire']);
