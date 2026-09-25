@@ -59,11 +59,17 @@ if (!function_exists('generateCode128BarcodeSvg')) {
     }
 }
 
-// Données dynamiques avec adaptabilités pour GROUPE EICG
 $ministere = $ministere ?? "MINISTERE DE L'ENSEIGNEMENT SUPERIEUR\nET DE LA RECHERCHE SCIENTIFIQUE";
 $pays = $pays ?? "REPUBLIQUE DE CÔTE D'IVOIRE";
 $devise_pays = $devise_pays ?? "Union - Discipline - Travail";
 $universite = $universite ?? ($etablissement['nom_etablissement'] ?? "GROUPE EICG - ÉCOLE INTERNATIONALE DE COMMERCE ET DE GESTION");
+
+// Chargement du logo officiel Groupe EICG (public/assets/images/logo/logo_eicg.jpg)
+$logoEicgFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+$logoSrc = RACINE . 'assets/images/logo/logo_eicg.jpg';
+if (file_exists($logoEicgFile)) {
+    $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
+}
 
 $annee_universitaire = $annee_universitaire ?? "2022 - 2023";
 
@@ -421,11 +427,8 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
   <!-- 2. IDENTIFICATION DE L'ÉTABLISSEMENT / GROUPE EICG -->
   <div class="univ-brand-container">
     <div class="univ-logo-row">
-      <!-- LOGO STYLISÉ GROUPE EICG -->
-      <svg width="48" height="36" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="10" y="10" width="100" height="70" rx="8" fill="#1E3A5F"/>
-        <text x="60" y="55" font-size="32" font-family="Arial" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">EICG</text>
-      </svg>
+      <!-- LOGO OFFICIEL GROUPE EICG -->
+      <img src="<?= $logoSrc ?>" alt="Logo GROUPE EICG" style="height: 52px; width: auto; max-width: 150px; object-fit: contain; vertical-align: middle;">
       <h1 class="univ-title"><?= htmlspecialchars($universite) ?></h1>
     </div>
     <div class="brand-dashed-line">---------------------------------------------------------------------------------------------------------</div>
