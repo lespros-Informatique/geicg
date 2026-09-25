@@ -353,8 +353,7 @@ class EtudiantController extends BaseController
         ]);
 
         if ($ok) {
-            $encryptedId = !empty($_POST['encrypted_id']) ? $_POST['encrypted_id'] : '';
-            $redirectUrl = !empty($encryptedId) ? RACINE . 'etudiant/details/' . $encryptedId : RACINE . 'etudiant/list';
+            $redirectUrl = RACINE . 'etudiant/list';
             $this->success("La classe et le régime de l'étudiant ont été modifiés avec succès vers " . $classeRow['libelle_classe'] . " !", [
                 'redirect' => $redirectUrl
             ]);

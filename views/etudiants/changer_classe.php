@@ -500,7 +500,7 @@ $(document).ready(function() {
           } else if (window.toastr) {
             toastr.success(res.message || 'La classe de l\'étudiant a été modifiée avec succès !');
           }
-          var targetUrl = res.redirect || '<?= !empty($encryptedId) ? (RACINE . "etudiant/details/" . $encryptedId) : (RACINE . "etudiant/list") ?>';
+          var targetUrl = res.redirect || '<?= RACINE ?>etudiant/list';
           setTimeout(function() {
             window.location.href = targetUrl;
           }, 600);
