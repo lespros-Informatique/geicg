@@ -369,7 +369,7 @@ if ($montant_operation != 105000) {
   <?php if (empty($is_pdf) && empty($_GET['pdf'])): ?>
   <!-- BARRE D'IMPRESSION EN NAVIGATEUR -->
   <div class="no-print" style="background: #1E3A5F; color: #FFFFFF; padding: 8px 14px; margin-bottom: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-    <div style="font-weight: bold; font-size: 13px;">Reçu d'Inscription Officiel — GROUPE EICG</div>
+    <div style="font-weight: bold; font-size: 13px;">Reçu d'Inscription  — GROUPE EICG</div>
     <button onclick="window.print();" style="background: #2563EB; color: #FFFFFF; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Imprimer / Exporter PDF</button>
   </div>
   <?php endif; ?>
@@ -401,6 +401,7 @@ if ($montant_operation != 105000) {
           <h1 class="header-title" style="color: #700303ff; font-weight: bold;">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>
           <div class="header-subtitle-1">Agréé par l'Etat et le FDFP</div>
           <div class="header-subtitle-2">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
+          <div class="header-subtitle-2">Site web : www.groupe-eicg.net</div>
         </td>
       </tr>
     </table>
