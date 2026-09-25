@@ -607,8 +607,18 @@ class EtudiantController extends BaseController
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
 
+                $piecesReqMap = [];
+                try {
+                    $pfcList = $db->query("SELECT piece_code, nombre_exemplaires FROM piece_fournir_cycle WHERE statut_piece_cycle = 'actif'")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+                    $piecesReqMap = $pfcList;
+                } catch (Exception $e) {}
+
                 foreach ($allPieces as $pCode) {
                     $isDepose = in_array($pCode, $piecesFournies);
+                    $nbEx = !empty($piecesReqMap[$pCode]) ? max(1, (int)$piecesReqMap[$pCode]) : 1;
+                    $obsText = $isDepose 
+                        ? ("Pièce déposée ({$nbEx} exemplaire" . ($nbEx > 1 ? "s" : "") . ") lors de l'inscription initiale")
+                        : ("En attente de transmission ({$nbEx} exemplaire" . ($nbEx > 1 ? "s requis" : " requis") . ")");
 
                     $fkErrDos = ForeignKeyValidator::validate($db, 'dossier_etudiant', [
                         'inscription_code' => $codeInscription,
@@ -630,7 +640,7 @@ class EtudiantController extends BaseController
                         $pCode,
                         $isDepose ? 'depose' : 'en_attente',
                         $isDepose ? date('Y-m-d H:i:s') : null,
-                        $isDepose ? 'Pièce déposée lors de l\'inscription initiale' : 'En attente de transmission',
+                        $obsText,
                         $userCode,
                         $etabCode
                     ]);

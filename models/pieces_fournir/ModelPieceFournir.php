@@ -108,5 +108,42 @@ class ModelPieceFournir extends BaseModel
         $item = $this->getByLibelle($libelle, $excludeId);
         return !empty($item);
     }
+
+    /**
+     * Récupère toutes les pièces actives avec leur nombre d'exemplaires requis et nature
+     */
+    public function getPiecesWithRequirements(?string $cycleCode = null, ?string $niveauCode = null): array
+    {
+        $sql = "
+            SELECT pf.*,
+                   COALESCE(pfc.nombre_exemplaires, 1) AS nombre_exemplaires,
+                   pfc.nature_document
+            FROM pieces_fournir pf
+            LEFT JOIN piece_fournir_cycle pfc ON pfc.piece_code = pf.code_piece_fournir 
+                                            AND pfc.statut_piece_cycle = 'actif'
+        ";
+        $params = [];
+        $where = ["pf.statut_piece = 'actif'"];
+        if (!empty($cycleCode)) {
+            $where[] = "(pfc.cycle_code = ? OR pfc.cycle_code IS NULL OR pfc.cycle_code = '')";
+            $params[] = $cycleCode;
+        }
+        if (!empty($niveauCode)) {
+            $where[] = "(pfc.niveau_code = ? OR pfc.niveau_code IS NULL OR pfc.niveau_code = '')";
+            $params[] = $niveauCode;
+        }
+        $sql .= " WHERE " . implode(" AND ", $where);
+        $sql .= " GROUP BY pf.id_piece_fournir, pf.code_piece_fournir, pf.libelle_piece, pf.description_piece, pf.etablissement_code, pf.user_code, pf.statut_piece, pf.created_at_piece, pf.updated_at_piece, pfc.nombre_exemplaires, pfc.nature_document
+                  ORDER BY pf.id_piece_fournir ASC";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("getPiecesWithRequirements: " . $e->getMessage());
+            return $this->getActifs();
+        }
+    }
 }
+
 

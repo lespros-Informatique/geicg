@@ -17,7 +17,7 @@ if (empty($activeAnneeCode)) {
 }
 $classes = (new ModelClasse())->getClassesWithScolarite($activeAnneeCode, 'non_affecte');
 $accessoires = (new ModelAccessoire())->getAll();
-$pieces = (new ModelPieceFournir())->getAll();
+$pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
 ?>
 <style>
   .wizard-stepper {
@@ -503,23 +503,48 @@ $pieces = (new ModelPieceFournir())->getAll();
               </div>
 
               <?php if (!empty($pieces)): ?>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
-                  <?php foreach($pieces as $p): ?>
-                    <label class="piece-checkbox-card" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1.5px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
-                      <input type="checkbox" name="pieces_fournies[]" class="chk-piece" value="<?= htmlspecialchars($p['code_piece_fournir'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #15803D; margin-top: 2px; flex-shrink: 0;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+                  <?php foreach($pieces as $p): 
+                    $nbExemplaires = max(1, (int)($p['nombre_exemplaires'] ?? 1));
+                    $natureDoc = $p['nature_document'] ?? '';
+                    $natureLabel = '';
+                    if ($natureDoc === 'photocopie_simple') $natureLabel = 'Photocopie simple';
+                    elseif ($natureDoc === 'photocopie_legalisee') $natureLabel = 'Photocopie légalisée';
+                    elseif ($natureDoc === 'original') $natureLabel = 'Original requis';
+                    elseif ($natureDoc === 'numerique') $natureLabel = 'Scan numérique';
+                  ?>
+                    <label class="piece-checkbox-card" 
+                           data-nb-exemplaires="<?= $nbExemplaires ?>"
+                           style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #E2E8F0; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                      <input type="checkbox" name="pieces_fournies[]" class="chk-piece" value="<?= htmlspecialchars($p['code_piece_fournir'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #15803D; margin-top: 2px; flex-shrink: 0; cursor: pointer;">
                       <div style="flex: 1;">
-                        <div style="font-weight: 700; color: #0F172A; font-size: 12.5px; line-height: 1.35;">
+                        <div class="piece-title" style="font-weight: 700; color: #0F172A; font-size: 13.5px; line-height: 1.35;">
                           <?= htmlspecialchars($p['libelle_piece'] ?? '') ?>
                         </div>
                         <?php if (!empty($p['description_piece'])): ?>
-                          <div style="font-size: 11px; color: #64748B; margin-top: 2px; line-height: 1.3;">
+                          <div style="font-size: 11.5px; color: #64748B; margin-top: 2px; line-height: 1.3;">
                             <?= htmlspecialchars($p['description_piece']) ?>
                           </div>
                         <?php endif; ?>
-                        <div style="margin-top: 5px;">
-                          <span class="piece-status-badge" style="background: #F1F5F9; color: #64748B; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">
-                            En attente de dépôt
-                          </span>
+                        
+                        <!-- Badges indicatifs : Nombre d'exemplaires & Nature & Statut -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #E2E8F0;">
+                          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span class="badge-nb-exemplaires" style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px;">
+                              <i data-lucide="copy" style="width: 12px; height: 12px; color: #D97706;"></i>
+                              <?= $nbExemplaires ?> exemplaire<?= $nbExemplaires > 1 ? 's' : '' ?> requis
+                            </span>
+                            <?php if (!empty($natureLabel)): ?>
+                              <span style="background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 5px;">
+                                <?= htmlspecialchars($natureLabel) ?>
+                              </span>
+                            <?php endif; ?>
+                          </div>
+                          <div>
+                            <span class="piece-status-badge" style="background: #F1F5F9; color: #64748B; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;">
+                              En attente de dépôt
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </label>
@@ -656,7 +681,7 @@ $pieces = (new ModelPieceFournir())->getAll();
                     <div style="font-size: 16px; font-weight: 900; color: #0F172A;" id="recap_scolarite_">0 FCFA</div>
                   </div>
                   <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 8px 14px; border-radius: 8px; text-align: right;">
-                    <div style="font-size: 10.5px; font-weight: 700; color: #B45309; text-transform: uppercase;">Frais Annexes (Inscription)</div>
+                    <div style="font-size: 10.5px; font-weight: 700; color: #B45309; text-transform: uppercase;">Frais Annexes</div>
                     <div style="font-size: 16px; font-weight: 900; color: #B45309;" id="recap_frais_annexes_val">0 FCFA</div>
                   </div>
                   <div style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 8px 14px; border-radius: 8px; text-align: right;">
@@ -994,9 +1019,12 @@ $(document).ready(function() {
     var piecesHtml = '';
     $('.chk-piece').each(function() {
       var isChk = $(this).is(':checked');
-      var label = $(this).closest('.piece-checkbox-card').find('div > div:first-child').text().trim();
+      var $card = $(this).closest('.piece-checkbox-card');
+      var label = $card.find('.piece-title').text().trim() || $card.find('div > div:first-child').text().trim();
+      var nbExText = $card.find('.badge-nb-exemplaires').text().trim();
+      var exSuffix = nbExText ? (' (' + nbExText + ')') : '';
       piecesHtml += '<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:6px; background:' + (isChk ? '#F0FDF4' : '#F8FAFC') + '; border:1px solid ' + (isChk ? '#BBF7D0' : '#E2E8F0') + ';">';
-      piecesHtml += '  <span style="color:#0F172A; font-weight:600;">' + label + '</span>';
+      piecesHtml += '  <span style="color:#0F172A; font-weight:600;">' + label + '<span style="font-size:11px; font-weight:700; color:#1E3A5F; margin-left:6px;">' + exSuffix + '</span></span>';
       piecesHtml += isChk ? '  <span style="color:#166534; font-weight:800; font-size:11px;"><i data-lucide="check" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> Déposée</span>' : '  <span style="color:#64748B; font-weight:600; font-size:11px;">En attente</span>';
       piecesHtml += '</div>';
     });
@@ -1120,6 +1148,7 @@ $(document).ready(function() {
   function updatePieceCardStyle($chk) {
     var $card = $chk.closest('.piece-checkbox-card');
     var $badge = $card.find('.piece-status-badge');
+
     if ($chk.is(':checked')) {
       $card.css({ 'background': '#F0FDF4', 'border-color': '#86EFAC' });
       $badge.css({ 'background': '#DCFCE7', 'color': '#15803D' }).text('✓ Pièce Déposée');
