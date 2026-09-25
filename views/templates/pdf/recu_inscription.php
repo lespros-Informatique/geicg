@@ -7,8 +7,8 @@
 // Générateur de code-barres compact et haut via Picqer Barcode Generator
 if (!function_exists('generatePicqerBarcodeHtml')) {
     function generatePicqerBarcodeHtml($code, $height = 42) {
-        $code = (string)$code;
-        if (empty($code)) $code = 'GE-25260276';
+        $code = (string)($code ?? '');
+        if (empty($code)) return '';
         try {
             $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
             $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, 1, $height);
@@ -27,40 +27,32 @@ if (file_exists($logoEicgFile)) {
 }
 
 // Données dynamiques
-$annee_universitaire = $annee_universitaire ?? "2025-2026";
-$numero_recu = $numero_recu ?? "GE-25260276";
-$date_operation = $date_operation ?? "14/10/2025 10:33:33";
-$matricule = $matricule ?? "AA-914/GEB/GEC25";
-$nom_prenoms = $nom_prenoms ?? "ABOZAN AMON AMBROISINE";
-$filiere_niveau = $filiere_niveau ?? "GEC_2A";
-$statut_etudiant = $statut_etudiant ?? "AFFECTE";
-$type_operation = $type_operation ?? "SCOLARITE";
-$montant_operation = $montant_operation ?? 105000;
-$montant_operation_formatted = $montant_operation_formatted ?? "105 000CFA";
-$montant_en_lettres = $montant_en_lettres ?? "Cent cinq mille francs CFA";
-$scolarite_total = $scolarite_total ?? 105000;
-$total_verse = $total_verse ?? 105000;
-$reste_a_payer = $reste_a_payer ?? 0;
-$caissier_nom = $caissier_nom ?? "Mlle KONE N'diatty A. Mariam";
+$annee_universitaire = $annee_universitaire ?? '';
+$numero_recu = $numero_recu ?? '';
+$date_operation = $date_operation ?? '';
+$matricule = $matricule ?? '';
+$nom_prenoms = $nom_prenoms ?? '';
+$filiere_niveau = $filiere_niveau ?? '';
+$statut_etudiant = $statut_etudiant ?? '';
+$type_operation = $type_operation ?? '';
+$montant_operation = (float)($montant_operation ?? 0);
+$montant_operation_formatted = $montant_operation_formatted ?? ($montant_operation > 0 ? number_format($montant_operation, 0, ',', ' ') . 'CFA' : '0CFA');
+$montant_en_lettres = $montant_en_lettres ?? '';
+$scolarite_total = (float)($scolarite_total ?? 0);
+$total_verse = (float)($total_verse ?? 0);
+$reste_a_payer = (float)($reste_a_payer ?? 0);
+$caissier_nom = $caissier_nom ?? '';
 $date_impression = $date_impression ?? date('d/m/Y H:i:s');
-$code_barre_val = $code_barre_val ?? "GE-25260276ScoFOF45944,4399676042ScaisKON";
+$code_barre_val = $code_barre_val ?? $numero_recu;
 
 // Montants lignes du tableau
-$scolarite_op_jour = 25000;
-$scolarite_tot_payer = $scolarite_total;
-$scolarite_tot_verse = 25000;
-$scolarite_reste = 0;
+$scolarite_op_jour = $scolarite_op_jour ?? $montant_operation;
+$scolarite_tot_payer = $scolarite_tot_payer ?? $scolarite_total;
+$scolarite_tot_verse = $scolarite_tot_verse ?? $total_verse;
+$scolarite_reste = $scolarite_reste ?? $reste_a_payer;
 
-$droit_op_jour = 80000;
-$droit_tot_verse = 80000;
-
-if ($montant_operation != 105000) {
-    $scolarite_op_jour = $montant_operation;
-    $scolarite_tot_verse = $total_verse;
-    $scolarite_reste = $reste_a_payer;
-    $droit_op_jour = 0;
-    $droit_tot_verse = 0;
-}
+$droit_op_jour = $droit_op_jour ?? 0;
+$droit_tot_verse = $droit_tot_verse ?? 0;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -203,7 +195,7 @@ if ($montant_operation != 105000) {
     .student-info-grid {
       width: 100%;
       border-collapse: collapse;
-      font-size: 8.5pt;
+      font-size: 8.8pt;
       line-height: 1.5;
     }
     .student-info-grid td {

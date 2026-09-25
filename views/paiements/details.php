@@ -7,7 +7,7 @@ $scolarite = (float)($scolarite ?? ($item['montant_scolarite_inscription'] ?? 0)
 $totalPayeCumul = (float)($totalPayeCumul ?? 0);
 $soldeRestant = (float)($soldeRestant ?? 0);
 
-$numRecu = !empty($item['recu_numero_paiement']) ? $item['recu_numero_paiement'] : (!empty($item['code_paiement']) ? $item['code_paiement'] : 'GE-25260276');
+$numRecu = !empty($item['recu_numero_paiement']) ? $item['recu_numero_paiement'] : (!empty($item['code_paiement']) ? $item['code_paiement'] : '');
 $datePaiement = !empty($item['date_paiement']) ? date('d/m/Y H:i:s', strtotime($item['date_paiement'])) : date('d/m/Y H:i:s');
 $datePrint = date('d/m/Y H:i:s');
 
@@ -16,12 +16,11 @@ $nomComplet = strtoupper(trim(($item['nom_etudiant'] ?? '') . ' ' . ($item['pren
 
 $filiereLib = $item['libelle_filiere'] ?? '';
 $niveauLib = $item['libelle_niveau'] ?? '';
-$filiereNiveau = (!empty($filiereLib) && !empty($niveauLib)) ? ($filiereLib . '_' . $niveauLib) : ($item['libelle_classe'] ?? 'GEC_2A');
+$filiereNiveau = (!empty($filiereLib) && !empty($niveauLib)) ? ($filiereLib . '_' . $niveauLib) : ($item['libelle_classe'] ?? '');
 
-$statutAffectation = strtoupper(!empty($item['affectation_etat']) ? $item['affectation_etat'] : 'AFFECTE');
-$anneeLibelle = $item['libelle_annee'] ?? '2025-2026';
-$caissierNom = trim(($item['prenom_caissier'] ?? '') . ' ' . ($item['nom_caissier'] ?? 'Mlle KONE N\'diatty A. Mariam'));
-if (empty($caissierNom)) $caissierNom = 'Mlle KONE N\'diatty A. Mariam';
+$statutAffectation = strtoupper(!empty($item['affectation_etat']) ? $item['affectation_etat'] : '');
+$anneeLibelle = $item['libelle_annee'] ?? '';
+$caissierNom = trim(($item['prenom_caissier'] ?? '') . ' ' . ($item['nom_caissier'] ?? ''));
 
 $isFirstPayment = isset($isFirstPayment) ? (bool)$isFirstPayment : true;
 $totalScolariteCumul = (float)($totalScolariteCumul ?? $totalPayeCumul);
@@ -122,8 +121,8 @@ if (empty($studentPhotoUrl) && !empty($item['nom_etudiant'])) {
 // Générateur de code-barres compact et haut via Picqer Barcode Generator
 if (!function_exists('generatePicqerBarcodeHtml')) {
     function generatePicqerBarcodeHtml($code, $height = 42) {
-        $code = (string)$code;
-        if (empty($code)) $code = 'GE-25260276';
+        $code = (string)($code ?? '');
+        if (empty($code)) return '';
         try {
             $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
             $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, 1, $height);

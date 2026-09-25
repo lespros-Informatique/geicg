@@ -1186,18 +1186,15 @@ class InscriptionController extends BaseController
                 }
 
                 $numRecuCode = !empty($lastPaiement['code_paiement']) ? ('GE-' . preg_replace('/[^0-9]/', '', $lastPaiement['code_paiement'])) : ('GE-' . sprintf('%08d', $ins['id_inscription']));
-                if (strlen($numRecuCode) < 11) {
-                    $numRecuCode = 'GE-25260276';
-                }
 
                 $data = [
                     'item' => $ins,
                     'inscription' => $ins,
                     'paiement' => $lastPaiement,
                     'allPaiements' => $allPaiements,
-                    'annee_universitaire' => $ins['libelle_annee'] ?? '2025-2026',
+                    'annee_universitaire' => $ins['libelle_annee'] ?? '',
                     'numero_recu' => $numRecuCode,
-                    'matricule' => !empty($ins['matricule_etudiant']) ? $ins['matricule_etudiant'] : ($ins['matricule_mesrs'] ?? 'AA-914/GEB/GEC25'),
+                    'matricule' => !empty($ins['matricule_etudiant']) ? $ins['matricule_etudiant'] : ($ins['matricule_mesrs'] ?? ''),
                     'nom_prenoms' => trim(strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ($ins['prenom_etudiant'] ?? '')),
                     'filiere_niveau' => $filiereNiveauSlug,
                     'statut_etudiant' => ($ins['affectation_etat'] === 'oui' || $ins['affectation_etat'] === 'affecte') ? 'AFFECTE' : 'NON AFFECTE',
@@ -1212,7 +1209,7 @@ class InscriptionController extends BaseController
                     'photo_src' => $photoSrc,
                     'date_operation' => !empty($lastPaiement['date_paiement']) ? date('d/m/Y H:i:s', strtotime($lastPaiement['date_paiement'])) : date('d/m/Y H:i:s'),
                     'date_impression' => date('d/m/Y H:i:s'),
-                    'code_barre_val' => ($ins['code_inscription'] ?? 'INS001') . 'ScoFOF45944,' . ($lastPaiement['code_paiement'] ?? 'PAI001')
+                    'code_barre_val' => ($ins['code_inscription'] ?? '') . ',' . ($lastPaiement['code_paiement'] ?? '')
                 ];
             }
         }
