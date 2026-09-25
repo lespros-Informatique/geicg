@@ -7,6 +7,69 @@ $classes = $classes ?? [];
 $anneeActive = $anneeActive ?? '';
 ?>
 <style>
+.btn-action-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+.btn-action-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.btn-action-icon i, .btn-action-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+}
+.btn-action-classe {
+  background: #FFFBEB;
+  border: 1px solid #FCD34D;
+  color: #D97706;
+}
+.btn-action-classe:hover {
+  background: #F59E0B;
+  border-color: #F59E0B;
+  color: #FFFFFF;
+}
+.btn-action-print {
+  background: #F0FDF4;
+  border: 1px solid #86EFAC;
+  color: #166534;
+}
+.btn-action-print:hover {
+  background: #16A34A;
+  border-color: #16A34A;
+  color: #FFFFFF;
+}
+.btn-action-dossier {
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1D4ED8;
+}
+.btn-action-dossier:hover {
+  background: #1E3A5F;
+  border-color: #1E3A5F;
+  color: #FFFFFF;
+}
+.btn-action-edit {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+}
+.btn-action-edit:hover {
+  background: #475569;
+  border-color: #475569;
+  color: #FFFFFF;
+}
 @media print {
   .sidebar, .main-nav, nav, .no-print, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate, button, a.btn {
     display: none !important;
@@ -172,7 +235,7 @@ $anneeActive = $anneeActive ?? '';
                 <th style="padding: 12px;"><i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Classe</th>
                 <th style="padding: 12px;"><i data-lucide="book-open" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Filière</th>
                 <th style="padding: 12px;"><i data-lucide="layers" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Niveau</th>
-                <th style="padding: 12px; text-align: right;"><i data-lucide="settings" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Actions</th>
+                <th style="padding: 12px; text-align: center; width: 160px;"><i data-lucide="settings" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -327,20 +390,20 @@ $(document).ready(function() {
       }},
 
       // 9. Actions
-      { data: null, width: '310px', orderable: false, render: function(d, type, row) {
+      { data: null, width: '160px', orderable: false, render: function(d, type, row) {
         var idCrypte = d.editId || d.id_etudiant;
         var nomComplet = (row.nom_etudiant || '').toUpperCase() + ' ' + (row.prenom_etudiant || '');
         var insCode = row.code_inscription || '';
         var etuCode = row.code_etudiant || '';
         var clsCode = row.code_classe || '';
 
-        return '<div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">' +
-               '  <button type="button" class="btn btn-sm btn-warning btn-change-classe" data-id="' + idCrypte + '" data-inscription="' + escapeHtml(insCode) + '" data-etudiant="' + escapeHtml(etuCode) + '" data-nom="' + escapeHtml(nomComplet) + '" data-classe="' + escapeHtml(clsCode) + '" style="font-weight:700; border-radius:6px; padding:4px 8px; display:inline-flex; align-items:center; gap:4px; background:#F59E0B; border:none; color:#FFFFFF;" title="Changer la classe de l\'étudiant"><i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Classe</button>' +
-               '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:4px 8px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer le dossier / carte"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
-               '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; padding:4px 8px; display:inline-flex; align-items:center; gap:3px;" title="Consulter le dossier"><i data-lucide="eye" style="width:13px;height:13px;"></i> Dossier</a>' +
-               '  <a href="' + window.RACINE + 'etudiant/edition/' + idCrypte + '" class="btn btn-sm btn-secondary" style="font-weight:600; border-radius:6px; padding:4px 8px; display:inline-flex; align-items:center; gap:3px;" title="Éditer les informations"><i data-lucide="edit" style="width:13px;height:13px;"></i> Éditer</a>' +
+        return '<div style="display:inline-flex; align-items:center; gap:5px; justify-content:center;">' +
+               '  <button type="button" class="btn-action-icon btn-action-classe btn-change-classe" data-id="' + idCrypte + '" data-inscription="' + escapeHtml(insCode) + '" data-etudiant="' + escapeHtml(etuCode) + '" data-nom="' + escapeHtml(nomComplet) + '" data-classe="' + escapeHtml(clsCode) + '" title="Changer la classe de l\'étudiant"><i data-lucide="refresh-cw"></i></button>' +
+               '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '?print=1" target="_blank" class="btn-action-icon btn-action-print" title="Imprimer le dossier / fiche"><i data-lucide="printer"></i></a>' +
+               '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '" class="btn-action-icon btn-action-dossier" title="Consulter le dossier complet"><i data-lucide="eye"></i></a>' +
+               '  <a href="' + window.RACINE + 'etudiant/edition/' + idCrypte + '" class="btn-action-icon btn-action-edit" title="Modifier la fiche étudiant"><i data-lucide="edit"></i></a>' +
                '</div>';
-      }, className: 'text-end' }
+      }, className: 'text-center' }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
