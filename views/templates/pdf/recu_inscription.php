@@ -44,7 +44,7 @@ $filiere_niveau = $filiere_niveau ?? '';
 $statut_etudiant = $statut_etudiant ?? '';
 $type_operation = $type_operation ?? '';
 $montant_operation = (float)($montant_operation ?? 0);
-$montant_operation_formatted = $montant_operation_formatted ?? ($montant_operation > 0 ? number_format($montant_operation, 0, ',', ' ') . 'CFA' : '0CFA');
+$montant_operation_formatted = $montant_operation_formatted ?? ($montant_operation > 0 ? number_format($montant_operation, 0, ',', ' ') . '  FCFA' : '0 FCFA');
 $montant_en_lettres = $montant_en_lettres ?? '';
 $scolarite_total = (float)($scolarite_total ?? 0);
 $total_verse = (float)($total_verse ?? 0);
@@ -175,7 +175,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     .photo-frame {
       width: 90px;
       height: 110px;
-      border: 2px solid #000000;
+     /* border: 2px solid #000000;*/
       background: #F1F5F9;
       display: inline-block;
       box-sizing: border-box;
@@ -187,6 +187,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     .photo-img {
       width: 90px;
       height: 110px;
+      border: 1px solid #000000;
       object-fit: cover;
       display: block;
     }
@@ -227,11 +228,13 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
       border-collapse: collapse;
       margin-top: 3px;
       margin-bottom: 4px;
+      font-size: 9.2pt;
+
     }
     .grid-table th {
       border: 1px solid #000000;
-      font-size: 8pt;
-      font-weight: bold;
+      /* font-size: 8pt;*/
+      /* font-weight: bold; */
       color: #000000;
       padding: 3px 4px;
       text-align: center;
@@ -239,14 +242,16 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     }
     .grid-table td {
       border: 1px solid #000000;
-      font-size: 8pt;
+      /* font-size: 8pt; */
       padding: 2.5px 4px;
       color: #000000;
     }
     .row-total td {
+      font-family: 'arial bold';
       background-color: #999999;
-      font-weight: 900;
-      font-size: 8.5pt;
+      color: #000000;
+      font-weight: bold;
+      font-size: 9.5pt;
     }
     .cell-black {
       background-color: #000000;
@@ -264,15 +269,19 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     .bottom-status-table td {
       vertical-align: top;
     }
+
+
     .solde-badge {
+      height: 40px;
       background-color: #999999;
-      color: #DC2626;
+      color: #ea0a0aff;
       font-weight: 900;
       font-size: 11pt;
-      padding: 2px 20px;
+      padding: 5px 20px;
       display: inline-block;
       letter-spacing: 1px;
     }
+
 
     .caissier-title {
       font-weight: bold;
@@ -289,23 +298,23 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
 
     /* ENCADRÉ JAUNE ATTENTION */
     .nb-yellow-box {
-      background-color: #FFFF00;
+      background-color: #e4e42cff;
       border: 1px solid #000000;
       padding: 3px 6px;
       font-weight: bold;
-      font-size: 7.5pt;
+      font-size: 8.5pt;
       font-style: italic;
       color: #000000;
-      margin: 4px 0 3px 0;
+      margin: 8px 0 8px 0;
     }
 
     .notice-row-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 7.5pt;
+      font-size: 8.5pt;
       color: #000000;
       font-style: italic;
-      margin-bottom: 4px;
+      margin-bottom: 20px;
     }
 
     /* DIVISEUR POINTILLÉ ENTRE LES DEUX PARTIES */
@@ -315,7 +324,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     }
     .dashed-line {
       border-top: 1px dashed #000000;
-      margin-bottom: 2px;
+      margin-bottom: 35px;
     }
     .ref-caiss-text {
       font-size: 7.5pt;
@@ -368,6 +377,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
         </td>
         <td class="header-text-cell">
           <h1 class="header-title" style="color: #700303ff; font-weight: bold;">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>
+          <br>
           <div class="header-subtitle-1">Agréé par l'Etat et le FDFP</div>
           <div class="header-subtitle-2">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
           <div class="header-subtitle-2">Site web : www.groupe-eicg.net</div>
@@ -396,11 +406,11 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
               <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
             </tr>
             <tr>
-              <td>Type d'Opération</td>
+              <td>Type d'Opération : Frais d'inscription</td>
               <td>Statut : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="val-bold"><?= htmlspecialchars($statut_etudiant) ?></span></td>
             </tr>
             <tr>
-              <td>Montant de l'Opération : &nbsp;<span class="val-bold"><?= htmlspecialchars($montant_operation_formatted) ?></span></td>
+              <td>Montant de l'Opération : &nbsp;<span class="val-bold">(<?= htmlspecialchars($montant_operation_formatted) ?>)</span></td>
               <td><span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
             </tr>
           </table>
@@ -416,7 +426,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
         </td>
       </tr>
     </table>
-
+<br>
     <!-- TABLEAU FINANCIER DES RÈGLEMENTS -->
     <table class="grid-table">
       <thead>
@@ -430,21 +440,21 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
       </thead>
       <tbody>
         <tr>
-          <td class="text-bold">SCOLARITE</td>
+          <td class="">SCOLARITE</td>
           <td class="text-center text-bold"><?= number_format($scolarite_op_jour, 0, ',', ' ') ?>CFA</td>
           <td class="text-center text-bold"><?= number_format($scolarite_tot_payer, 0, ',', ' ') ?>CFA</td>
           <td class="text-center text-bold"><?= number_format($scolarite_tot_verse, 0, ',', ' ') ?>CFA</td>
           <td class="text-center text-bold"><?= number_format($scolarite_reste, 0, ',', ' ') ?>CFA</td>
         </tr>
         <tr>
-          <td class="text-bold">Droit d'Inscription</td>
+          <td class="">Droit d'Inscription</td>
           <td class="text-center text-bold"><?= number_format($droit_op_jour, 0, ',', ' ') ?>CFA</td>
           <td></td>
           <td class="text-center text-bold"><?= number_format($droit_tot_verse, 0, ',', ' ') ?>CFA</td>
           <td class="cell-black"></td>
         </tr>
         <tr>
-          <td class="text-bold">AUTRES FRAIS</td>
+          <td class="">FRAIS ANNEXES</td>
           <td></td>
           <td></td>
           <td></td>
@@ -472,6 +482,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
             <div style="margin-bottom: 8px;">
               <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
             </div>
+            <br>
             <div class="caissier-title">CAISSIER(RE)</div>
             <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
           </div>
@@ -547,7 +558,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     <!-- ZONE SOLDE & CODE-BARRES COPIE -->
     <table class="bottom-status-table" style="margin-top: 16px;">
       <tr>
-        <td style="width: 55%; vertical-align: top;">
+        <td style="width: 55%;">
           Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <span class="solde-badge"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE: ' . number_format($reste_a_payer, 0, ',', ' ') . 'CFA') ?></span>
         </td>
@@ -556,6 +567,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
             <div style="margin-bottom: 8px;">
               <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
             </div>
+            <br>
             <div class="caissier-title">CAISSIER(RE)</div>
             <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
           </div>
