@@ -187,15 +187,15 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Date de naissance</label>
-                <input type="date" class="form-control" name="date_naissance_etudiant" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="date" class="form-control" id="wiz_date_naissance" name="date_naissance_etudiant" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Lieu de naissance</label>
-                <input type="text" class="form-control" name="lieu_naissance_etudiant" placeholder="Ex: Abidjan Treichville" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="text" class="form-control" id="wiz_lieu_naissance" name="lieu_naissance_etudiant" placeholder="Ex: Abidjan Treichville" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nationalité</label>
-                <input type="text" class="form-control" name="nationalite_etudiant" value="Ivoirienne" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="text" class="form-control" id="wiz_nationalite" name="nationalite_etudiant" value="Ivoirienne" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone étudiant <span style="color: #EF4444;">*</span></label>
@@ -203,11 +203,11 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Email étudiant</label>
-                <input type="email" class="form-control" name="email_etudiant" placeholder="Ex: jean.kouassi@etudiant.geicg.ci" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="email" class="form-control" id="wiz_email" name="email_etudiant" placeholder="Ex: jean.kouassi@etudiant.geicg.ci" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse de résidence</label>
-                <textarea class="form-control" name="lieu_residence_etudiant" rows="2" placeholder="Ex: Cocody Riviera 3, Abidjan" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;"></textarea>
+                <textarea class="form-control" id="wiz_residence" name="lieu_residence_etudiant" rows="2" placeholder="Ex: Cocody Riviera 3, Abidjan" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;"></textarea>
               </div>
             </div>
           </div>
@@ -610,10 +610,22 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
               </div>
 
               <!-- Grille des Coordonnées et État Civil -->
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; font-size: 13px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 13px;">
                 <div>
-                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Date & Lieu de Naissance</span>
-                  <div style="color: #0F172A; font-weight: 700;" id="recap_naissance_lieu">-</div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Date de naissance</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_date_naissance">-</div>
+                </div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Lieu de naissance</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_lieu_naissance">-</div>
+                </div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Nationalité</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_nationalite">Ivoirienne</div>
+                </div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Adresse de résidence</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_residence">Non renseignée</div>
                 </div>
                 <div>
                   <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Téléphone Principal</span>
@@ -622,10 +634,6 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
                 <div>
                   <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Email Étudiant</span>
                   <div style="color: #0F172A; font-weight: 700;" id="recap_email">Non renseigné</div>
-                </div>
-                <div>
-                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Lieu de Résidence</span>
-                  <div style="color: #0F172A; font-weight: 700;" id="recap_residence">Non renseigné</div>
                 </div>
               </div>
             </div>
@@ -812,6 +820,12 @@ $(document).ready(function() {
         $.each(formData, function(name, val) {
           if (name === 'montant_scolarite_inscription') return;
           var $field = $('#form-wizard-etudiant').find('[name="' + name + '"]');
+          if (!$field.length) {
+            if (name === 'date_naissance') $field = $('#form-wizard-etudiant').find('[name="date_naissance_etudiant"]');
+            if (name === 'lieu_naissance') $field = $('#form-wizard-etudiant').find('[name="lieu_naissance_etudiant"]');
+            if (name === 'nationalite') $field = $('#form-wizard-etudiant').find('[name="nationalite_etudiant"]');
+            if (name === 'adresse_etudiant') $field = $('#form-wizard-etudiant').find('[name="lieu_residence_etudiant"]');
+          }
           if ($field.length) {
             if ($field.attr('type') === 'checkbox') {
               if (Array.isArray(val)) {
@@ -935,12 +949,26 @@ $(document).ready(function() {
     var prenom = getFormVal('#wiz_prenom') || getFormVal('[name="prenom_etudiant"]');
     var tel = getFormVal('#wiz_tel') || getFormVal('[name="telephone_etudiant"]');
     var email = getFormVal('[name="email_etudiant"]');
-    var residence = getFormVal('[name="lieu_residence_etudiant"]');
-    var dateNais = getFormVal('[name="date_naissance_etudiant"]');
-    var lieuNais = getFormVal('[name="lieu_naissance_etudiant"]');
-    var nat = getFormVal('[name="nationalite_etudiant"]') || 'Ivoirienne';
+    var residence = getFormVal('#wiz_residence') || getFormVal('[name="lieu_residence_etudiant"]') || getFormVal('[name="adresse_etudiant"]');
+    var dateNais = getFormVal('#wiz_date_naissance') || getFormVal('[name="date_naissance_etudiant"]') || getFormVal('[name="date_naissance"]');
+    var lieuNais = getFormVal('#wiz_lieu_naissance') || getFormVal('[name="lieu_naissance_etudiant"]') || getFormVal('[name="lieu_naissance"]');
+    var nat = getFormVal('#wiz_nationalite') || getFormVal('[name="nationalite_etudiant"]') || getFormVal('[name="nationalite"]') || 'Ivoirienne';
     var sexeVal = getFormVal('[name="sexe_etudiant"]');
     var sexe = (sexeVal === 'F') ? 'Féminin' : 'Masculin';
+
+    var formattedDateNais = '-';
+    if (dateNais) {
+      if (dateNais.indexOf('-') !== -1) {
+        var dParts = dateNais.split('-');
+        if (dParts.length === 3) {
+          formattedDateNais = dParts[2] + '/' + dParts[1] + '/' + dParts[0];
+        } else {
+          formattedDateNais = dateNais;
+        }
+      } else {
+        formattedDateNais = dateNais;
+      }
+    }
 
     var matMenet = getFormVal('[name="matricule_menet"]');
     var matMesrs = getFormVal('[name="matricule_mesrs"]');
@@ -953,13 +981,12 @@ $(document).ready(function() {
     $('#recap_sexe_badge').text(sexe);
     $('#recap_nationalite_badge').text(nat);
 
-    var naisParts = [];
-    if (dateNais) naisParts.push('Né(e) le ' + dateNais);
-    if (lieuNais) naisParts.push('à ' + lieuNais);
-    $('#recap_naissance_lieu').text(naisParts.length ? naisParts.join(' ') : 'Date non renseignée');
+    $('#recap_date_naissance').text(formattedDateNais);
+    $('#recap_lieu_naissance').text(lieuNais || '-');
+    $('#recap_nationalite').text(nat || 'Ivoirienne');
+    $('#recap_residence').text(residence || 'Non renseignée');
     $('#recap_tel').text(tel || '-');
     $('#recap_email').text(email || 'Non renseigné');
-    $('#recap_residence').text(residence || 'Non renseigné');
 
     $('#recap_mat_menet').text(matMenet || 'Non renseigné');
     $('#recap_mat_mesrs').text(matMesrs || 'Non renseigné');

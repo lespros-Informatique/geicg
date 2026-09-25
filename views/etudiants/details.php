@@ -262,14 +262,42 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
 
         </div>
 
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #F1F5F9; font-size: 13px; margin-top: 16px;">
-          <div><strong style="color: #64748B;">Date de Naissance :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_naissance_etudiant']) ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : '-' ?></span> <?= !empty($item['lieu_naissance_etudiant']) ? 'à ' . htmlspecialchars($item['lieu_naissance_etudiant']) : '' ?></div>
-          <div><strong style="color: #64748B;">Lieu de Résidence :</strong> <span style="color: #0F172A;"><?= htmlspecialchars($item['lieu_residence_etudiant'] ?? 'Non renseigné') ?></span></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding-top: 16px; border-top: 1px solid #F1F5F9; font-size: 13px; margin-top: 16px;">
+          <div>
+            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Date de naissance</strong>
+            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
+              <?= (!empty($item['date_naissance_etudiant']) && $item['date_naissance_etudiant'] !== '0000-00-00') ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : ((!empty($item['date_naissance']) && $item['date_naissance'] !== '0000-00-00') ? date('d/m/Y', strtotime($item['date_naissance'])) : 'Non renseignée') ?>
+            </span>
+          </div>
+          <div>
+            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Lieu de naissance</strong>
+            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
+              <?= htmlspecialchars($item['lieu_naissance_etudiant'] ?? $item['lieu_naissance'] ?? 'Non renseigné') ?>
+            </span>
+          </div>
+          <div>
+            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Nationalité</strong>
+            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
+              <?= htmlspecialchars($item['nationalite_etudiant'] ?? $item['nationalite'] ?? 'Ivoirienne') ?>
+            </span>
+          </div>
+          <div>
+            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Adresse de résidence</strong>
+            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
+              <?= htmlspecialchars($item['lieu_residence_etudiant'] ?? $item['adresse_etudiant'] ?? 'Non renseignée') ?>
+            </span>
+          </div>
           <?php if (!empty($item['matricule_menet'])): ?>
-            <div><strong style="color: #64748B;">Matricule MENET-FP :</strong> <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px;"><?= htmlspecialchars($item['matricule_menet']) ?></code></div>
+            <div>
+              <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Matricule MENET-FP</strong>
+              <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px; font-size: 13px;"><?= htmlspecialchars($item['matricule_menet']) ?></code>
+            </div>
           <?php endif; ?>
           <?php if (!empty($item['matricule_mesrs'])): ?>
-            <div><strong style="color: #64748B;">Matricule MESRS :</strong> <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px;"><?= htmlspecialchars($item['matricule_mesrs']) ?></code></div>
+            <div>
+              <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Matricule MESRS</strong>
+              <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px; font-size: 13px;"><?= htmlspecialchars($item['matricule_mesrs']) ?></code>
+            </div>
           <?php endif; ?>
         </div>
       </div>

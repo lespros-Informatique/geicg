@@ -76,6 +76,20 @@ class EtudiantController extends BaseController
         unset($data['csrf_token']);
         $this->cleanPhoneFields($data);
 
+        // Aliases de compatibilité des champs du formulaire
+        if (isset($data['date_naissance']) && !isset($data['date_naissance_etudiant'])) {
+            $data['date_naissance_etudiant'] = $data['date_naissance'];
+        }
+        if (isset($data['lieu_naissance']) && !isset($data['lieu_naissance_etudiant'])) {
+            $data['lieu_naissance_etudiant'] = $data['lieu_naissance'];
+        }
+        if (isset($data['nationalite']) && !isset($data['nationalite_etudiant'])) {
+            $data['nationalite_etudiant'] = $data['nationalite'];
+        }
+        if (isset($data['adresse_etudiant']) && !isset($data['lieu_residence_etudiant'])) {
+            $data['lieu_residence_etudiant'] = $data['adresse_etudiant'];
+        }
+
         if (!empty($data['matricule_etudiant'])) {
             if (!$this->checkUnique('etudiants', 'matricule_etudiant', $data['matricule_etudiant'], 'Matricule etudiant')) return;
         }
@@ -88,6 +102,7 @@ class EtudiantController extends BaseController
 
         $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
         $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
         $nomEtudiant = trim($data['nom_etudiant'] ?? '');
         $prenomEtudiant = trim($data['prenom_etudiant'] ?? '');
 
@@ -122,6 +137,20 @@ class EtudiantController extends BaseController
         unset($data['csrf_token']);
         $this->cleanPhoneFields($data);
 
+        // Aliases de compatibilité des champs du formulaire
+        if (isset($data['date_naissance']) && !isset($data['date_naissance_etudiant'])) {
+            $data['date_naissance_etudiant'] = $data['date_naissance'];
+        }
+        if (isset($data['lieu_naissance']) && !isset($data['lieu_naissance_etudiant'])) {
+            $data['lieu_naissance_etudiant'] = $data['lieu_naissance'];
+        }
+        if (isset($data['nationalite']) && !isset($data['nationalite_etudiant'])) {
+            $data['nationalite_etudiant'] = $data['nationalite'];
+        }
+        if (isset($data['adresse_etudiant']) && !isset($data['lieu_residence_etudiant'])) {
+            $data['lieu_residence_etudiant'] = $data['adresse_etudiant'];
+        }
+
         if (!empty($data['matricule_etudiant'])) {
             if (!$this->checkUnique('etudiants', 'matricule_etudiant', $data['matricule_etudiant'], 'Matricule etudiant', 'id_etudiant', $id)) return;
         }
@@ -134,10 +163,27 @@ class EtudiantController extends BaseController
 
         $cols = $this->model->getCon()->query("DESCRIBE etudiants")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
+        $encryptedId = $this->validator->crypter($id);
+        $redirectUrl = RACINE . 'etudiant/details/' . $encryptedId;
+
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+                $_SESSION['flash_success'] = "Fiche de l'étudiant modifiée avec succès !";
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+            $this->success("Fiche de l'étudiant modifiée avec succès !", [
+                'redirect' => $redirectUrl,
+                'encryptedId' => $encryptedId
+            ]);
         } else {
-            $this->error('Erreur lors de la modification');
+            $err = $this->model->getLastError() ?: 'Erreur lors de la modification de la fiche étudiant.';
+            if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+                $_SESSION['flash_error'] = $err;
+                header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? $redirectUrl));
+                exit;
+            }
+            $this->error($err);
         }
     }
 
