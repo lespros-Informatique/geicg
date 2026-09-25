@@ -212,39 +212,29 @@ if ($montant_operation != 105000) {
       text-align: right;
       width: 20%;
     }
-    .photo-frame-fixed {
-      width: 80px;
-      height: 100px;
-      border: 1px solid #000000;
-      box-sizing: border-box;
-      display: inline-block;
-      overflow: hidden;
-      background: #F1F5F9;
-      text-align: center;
-      vertical-align: top;
-      margin: 0;
-      padding: 0;
-    }
     .photo-box {
       width: 80px;
       height: 100px;
+      border: 1.5px solid #000000;
       object-fit: cover;
-      display: block;
-      border: none;
-      margin: 0;
-      padding: 0;
+      display: inline-block;
+      box-sizing: border-box;
+      vertical-align: top;
+      background: #F1F5F9;
     }
     .photo-placeholder {
       width: 80px;
       height: 100px;
-      display: block;
-      line-height: 98px;
+      border: 1.5px solid #000000;
+      display: inline-block;
+      background: #F1F5F9;
+      line-height: 96px;
       text-align: center;
       font-weight: bold;
       font-size: 22pt;
       color: #000000;
-      margin: 0;
-      padding: 0;
+      box-sizing: border-box;
+      vertical-align: top;
     }
 
     .student-info-grid {
@@ -451,13 +441,11 @@ if ($montant_operation != 105000) {
           </table>
         </td>
         <td class="photo-right-cell">
-          <div class="photo-frame-fixed">
-            <?php if (!empty($photo_src)): ?>
-              <img src="<?= $photo_src ?>" alt="Photo Étudiant" class="photo-box" width="80" height="100">
-            <?php else: ?>
-              <div class="photo-placeholder"><?= htmlspecialchars($initsPDF) ?></div>
-            <?php endif; ?>
-          </div>
+          <?php if (!empty($photo_src)): ?>
+            <img src="<?= $photo_src ?>" alt="Photo Étudiant" class="photo-box">
+          <?php else: ?>
+            <div class="photo-placeholder"><?= htmlspecialchars($initsPDF) ?></div>
+          <?php endif; ?>
         </td>
       </tr>
     </table>
@@ -580,13 +568,11 @@ if ($montant_operation != 105000) {
           </table>
         </td>
         <td class="photo-right-cell">
-          <div class="photo-frame-fixed">
-            <?php if (!empty($photo_src)): ?>
-              <img src="<?= $photo_src ?>" alt="Photo Étudiant" class="photo-box" width="80" height="100">
-            <?php else: ?>
-              <div class="photo-placeholder"><?= htmlspecialchars($initsPDF) ?></div>
-            <?php endif; ?>
-          </div>
+          <?php if (!empty($photo_src)): ?>
+            <img src="<?= $photo_src ?>" alt="Photo Étudiant" class="photo-box">
+          <?php else: ?>
+            <div class="photo-placeholder"><?= htmlspecialchars($initsPDF) ?></div>
+          <?php endif; ?>
         </td>
       </tr>
     </table>
