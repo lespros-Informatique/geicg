@@ -1122,10 +1122,10 @@ class InscriptionController extends BaseController
                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
                 LEFT JOIN annees a ON a.code_annee = i.annee_code
-                WHERE i.id_inscription = ? OR i.code_inscription = ? OR e.code_etudiant = ? OR e.matricule_etudiant = ?
+                WHERE i.id_inscription = ? OR i.code_inscription = ? OR e.code_etudiant = ? OR e.matricule_etudiant = ? OR e.id_etudiant = ?
                 LIMIT 1
             ");
-            $stmtIns->execute([$id, $id, $id, $id]);
+            $stmtIns->execute([$id, $id, $id, $id, $id]);
             $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
 
             if ($ins) {
