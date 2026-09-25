@@ -107,15 +107,14 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
   <title>Fiche d'Inscription - <?= htmlspecialchars($nom . ' ' . $prenoms) ?></title>
   <style>
     @page {
-      size: A4 portrait;
-      margin: 10mm 12mm 10mm 12mm;
+      margin: 8mm 10mm 8mm 10mm;
     }
     
     body {
       font-family: Arial, Helvetica, sans-serif;
       font-size: 9.5pt;
       color: #000000;
-      line-height: 1.35;
+      line-height: 1.3;
       background-color: #FFFFFF;
       margin: 0;
       padding: 0;
@@ -141,7 +140,7 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     .header-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .header-table td {
       vertical-align: top;
@@ -172,13 +171,13 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     .top-divider {
       border: none;
       border-top: 1.5px solid #1E3A5F;
-      margin: 6px 0 14px 0;
+      margin: 4px 0 10px 0;
     }
 
     /* GROUPE EICG Brand & Title */
     .univ-brand-container {
       text-align: center;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .univ-logo-row {
       display: inline-flex;
@@ -201,27 +200,27 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       font-weight: bold;
       letter-spacing: 2px;
       color: #334155;
-      margin: 10px 0 16px 0;
+      margin: 4px 0 8px 0;
       font-size: 10pt;
     }
 
     /* CADRE DU TITRE PRINCIPAL */
     .title-box-wrapper {
       text-align: center;
-      margin: 14px 0 20px 0;
+      margin: 8px 0 10px 0;
     }
     .title-box {
       display: inline-block;
       border: 2px solid #000000;
       border-radius: 4px;
-      padding: 7px 42px;
+      padding: 6px 42px;
       width: 78%;
       box-sizing: border-box;
       background: #FFFFFF;
     }
     .title-box-text {
       font-family: "Times New Roman", Times, Georgia, serif;
-      font-size: 17pt;
+      font-size: 16.5pt;
       font-weight: 900;
       letter-spacing: 1.5px;
       text-transform: uppercase;
@@ -230,27 +229,27 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     }
 
     .annee-subtitle {
-      font-size: 11.5pt;
+      font-size: 11pt;
       font-weight: bold;
       color: #000000;
-      margin: 16px 0 22px 0;
+      margin: 8px 0 12px 0;
     }
 
     /* SECTIONS DE FICHE */
     .section-block {
-      margin-bottom: 18px;
+      margin-bottom: 12px;
     }
     .section-header {
-      font-size: 11pt;
+      font-size: 10.5pt;
       font-weight: bold;
       text-transform: uppercase;
       color: #000000;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       letter-spacing: 0.5px;
     }
 
     .field-row {
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       font-size: 9.5pt;
     }
     .field-label {
@@ -266,8 +265,8 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     .payment-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 14px;
-      margin-bottom: 24px;
+      margin-top: 10px;
+      margin-bottom: 12px;
     }
     .payment-table th {
       background-color: #FDE047;
@@ -275,13 +274,13 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       font-size: 9pt;
       font-weight: bold;
       color: #000000;
-      padding: 7px 8px;
+      padding: 6px 8px;
       text-align: center;
     }
     .payment-table td {
       border: 1px solid #CBD5E1;
       font-size: 9pt;
-      padding: 8px 10px;
+      padding: 6px 10px;
       color: #000000;
     }
     .text-center { text-align: center; }
@@ -291,20 +290,20 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     .validation-area {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
-      margin-bottom: 25px;
+      margin-top: 10px;
+      margin-bottom: 12px;
     }
     .validation-area td {
       vertical-align: top;
     }
 
     .qr-container {
-      width: 140px;
+      width: 130px;
       text-align: left;
     }
     .qr-code-img {
-      width: 115px;
-      height: 115px;
+      width: 105px;
+      height: 105px;
       border: 1px solid #CBD5E1;
       padding: 3px;
       background: #FFFFFF;
@@ -317,29 +316,29 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     .date-delivrance {
       font-size: 9.5pt;
       color: #000000;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .signatory-title {
       font-size: 9.5pt;
       font-weight: bold;
       color: #000000;
-      line-height: 1.3;
-      margin-bottom: 6px;
+      line-height: 1.25;
+      margin-bottom: 4px;
     }
 
     /* CACHET ROND OFFICIEL GROUPE EICG */
     .stamp-box {
       display: inline-block;
       position: relative;
-      width: 160px;
-      height: 105px;
+      width: 150px;
+      height: 95px;
       margin-top: 2px;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     
     .stamp-svg {
-      width: 135px;
-      height: 135px;
+      width: 125px;
+      height: 125px;
       position: absolute;
       right: 10px;
       top: -15px;
@@ -347,32 +346,32 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     }
 
     .signatory-name {
-      font-size: 10pt;
+      font-size: 9.5pt;
       font-weight: bold;
       color: #000000;
-      margin-top: 6px;
+      margin-top: 4px;
       display: block;
     }
 
     /* BANDEAU DE PIED DE PAGE : CODE-BARRES DU BAS */
     .page-footer-barcode-band {
-      margin-top: 25px;
-      padding-top: 14px;
+      margin-top: 10px;
+      padding-top: 8px;
       border-top: 1px dashed #94A3B8;
       text-align: center;
       width: 100%;
     }
     .barcode-wrapper {
-      margin: 6px auto 4px auto;
+      margin: 4px auto 2px auto;
       text-align: center;
     }
     .barcode-text-code {
       font-family: monospace;
-      font-size: 9.5pt;
+      font-size: 9pt;
       font-weight: bold;
       color: #0F172A;
       letter-spacing: 1.5px;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     @media print {
@@ -583,12 +582,11 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       Code d'Identification & de Sécurité Numérique
     </div>
     <div class="barcode-wrapper">
-      <!-- Balise mPDF native pour les exports PDF -->
-      <?php if (class_exists('\Mpdf\Mpdf')): ?>
+      <?php if (!empty($is_pdf) || !empty($_GET['pdf'])): ?>
         <barcode code="<?= htmlspecialchars($code_barre_val) ?>" type="C128A" size="0.75" height="0.75" />
+      <?php else: ?>
+        <?= generateCode128BarcodeSvg($code_barre_val, 38, 1.3) ?>
       <?php endif; ?>
-      <!-- Générateur SVG natif pour l'affichage / impression navigateurs web -->
-      <?= generateCode128BarcodeSvg($code_barre_val, 38, 1.3) ?>
     </div>
     <div class="barcode-text-code">* <?= htmlspecialchars($code_barre_val) ?> *</div>
   </div>
