@@ -278,7 +278,8 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
       font-weight: bold;
       text-decoration: underline;
       font-size: 8.5pt;
-      margin-top: 7px;
+      margin-top: 8px;
+      display: block;
     }
     .caissier-name {
       font-size: 8pt;
@@ -468,7 +469,9 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
         </td>
         <td style="width: 45%; text-align: right;">
           <div style="display: inline-block; text-align: right;">
-            <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+            <div style="margin-bottom: 8px;">
+              <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+            </div>
             <div class="caissier-title">CAISSIER(RE)</div>
             <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
           </div>
@@ -550,7 +553,9 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
         </td>
         <td style="width: 45%; text-align: right; vertical-align: top;">
           <div style="display: inline-block; text-align: right;">
-            <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+            <div style="margin-bottom: 8px;">
+              <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+            </div>
             <div class="caissier-title">CAISSIER(RE)</div>
             <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
           </div>
