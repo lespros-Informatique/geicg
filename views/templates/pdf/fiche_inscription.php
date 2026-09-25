@@ -122,8 +122,8 @@ if ($montant_operation != 105000) {
     }
 
     .main-wrapper {
-      border: 1.5px solid #800000;
-      padding: 6px 10px;
+      border: 1.5px solid #400303ff;
+      padding: 6px 25px;
       box-sizing: border-box;
       background: #FFFFFF;
       margin: 0 auto;
@@ -180,12 +180,12 @@ if ($montant_operation != 105000) {
       background-color: #999999;
       color: #000000;
       text-align: center;
-      padding: 5px 0;
+      padding: 6px 0;
       margin: 10px 0 4px 0;
-      font-weight: 900;
-      font-size: 17.5pt;
-      font-family: Arial, sans-serif;
-      letter-spacing: 1.5px;
+      font-weight: bold;
+      font-size: 15.5pt;
+      font-family: 'arial bold';
+      letter-spacing: 1.2px;
       text-transform: uppercase;
     }
 
