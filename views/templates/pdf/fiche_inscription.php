@@ -151,10 +151,10 @@ if ($montant_operation != 105000) {
     .header-title {
       color: #800000;
       font-family: Arial, sans-serif;
-      font-weight: 900;
+      font-weight: bold;
       font-size: 11.5pt;
       text-transform: uppercase;
-      margin: 0;
+      margin: 0 0 5px 0;
       text-decoration: underline;
       letter-spacing: 0.2px;
     }
@@ -162,14 +162,16 @@ if ($montant_operation != 105000) {
       font-weight: bold;
       font-style: italic;
       font-size: 8.5pt;
-      margin-top: 1px;
+      margin-top: 5px;
+      margin-bottom: 5px;
       color: #000000;
     }
     .header-subtitle-2 {
       font-weight: bold;
       font-style: italic;
-      font-size: 8pt;
-      margin-top: 1px;
+      font-size: 8.5pt;
+      margin-top: 5px;
+      margin-bottom: 3px;
       color: #000000;
     }
 
@@ -396,7 +398,7 @@ if ($montant_operation != 105000) {
           <img src="<?= $logoSrc ?>" alt="Logo EICG" class="header-logo-img">
         </td>
         <td class="header-text-cell">
-          <h1 class="header-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>
+          <h1 class="header-title" style="color: #800000; font-weight: bold;">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>
           <div class="header-subtitle-1">Agréé par l'Etat et le FDFP</div>
           <div class="header-subtitle-2">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
         </td>
