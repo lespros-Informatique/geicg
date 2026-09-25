@@ -1217,7 +1217,7 @@ class InscriptionController extends BaseController
             }
         }
 
-        $html = PdfService::renderTemplate('fiche_inscription.php', $data);
+        $html = PdfService::renderTemplate('recu_inscription.php', $data);
 
         if (!empty($_GET['pdf'])) {
             $filename = 'Recu_Inscription_' . ($data['matricule'] ?? 'GEICG') . '.pdf';
