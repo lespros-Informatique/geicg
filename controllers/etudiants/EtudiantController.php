@@ -204,6 +204,72 @@ class EtudiantController extends BaseController
         }
     }
 
+    public function changerClassePage($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission('MANAGE_ETUDIANTS');
+
+        try {
+            $id = $this->validator->decrypter($details);
+            if (empty($id)) {
+                $id = $details;
+            }
+
+            $item = $this->model->getById($id);
+            if (!$item) {
+                $_SESSION['flash_error'] = "Étudiant introuvable.";
+                header('Location: ' . RACINE . 'etudiant/list');
+                exit;
+            }
+
+            $db = $this->model->getCon();
+            $anneeActive = $this->getActiveAnneeCode();
+
+            // Récupérer l'inscription active ou la plus récente
+            $stmtIns = $db->prepare("
+                SELECT i.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau
+                FROM inscriptions i
+                LEFT JOIN classes cl ON cl.code_classe = i.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                WHERE i.etudiant_code = ? AND i.statut_inscription != 'annule'
+                ORDER BY (i.annee_code = ?) DESC, i.id_inscription DESC
+                LIMIT 1
+            ");
+            $stmtIns->execute([$item['code_etudiant'], $anneeActive]);
+            $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            // Récupérer toutes les classes actives
+            $stmtCl = $db->query("
+                SELECT code_classe, libelle_classe, filiere_code, niveau_code, annee_code
+                FROM classes 
+                WHERE statut_classe = 'actif'
+                ORDER BY libelle_classe ASC
+            ");
+            $classes = $stmtCl->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            // Récupérer les années académiques
+            $stmtAnn = $db->query("SELECT * FROM annees ORDER BY id_annee DESC");
+            $annees = $stmtAnn->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $encryptedId = $this->validator->crypter($item['id_etudiant']);
+
+            $this->render('views/etudiants/changer_classe.php', [
+                'item' => $item,
+                'inscription' => $inscription,
+                'classes' => $classes,
+                'annees' => $annees,
+                'encryptedId' => $encryptedId,
+                'activeAnneeCode' => !empty($inscription['annee_code']) ? $inscription['annee_code'] : $anneeActive
+            ]);
+
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = "Erreur : " . $e->getMessage();
+            header('Location: ' . RACINE . 'etudiant/list');
+            exit;
+        }
+    }
+
     public function changerClasse()
     {
         $this->requirePost(false);
@@ -214,6 +280,10 @@ class EtudiantController extends BaseController
         $codeInscription = trim($_POST['code_inscription'] ?? '');
         $codeEtudiant = trim($_POST['code_etudiant'] ?? '');
         $nouvelleClasse = trim($_POST['classe_code'] ?? ($_POST['nouvelle_classe_code'] ?? ''));
+        $affectationInput = trim($_POST['affectation_etat'] ?? 'non_affecte');
+        $affectationEtat = ($affectationInput === 'affecte' || $affectationInput === 'oui') ? 'oui' : 'non';
+        $anneeCode = trim($_POST['annee_code'] ?? '');
+        $montantScolarite = isset($_POST['montant_scolarite_inscription']) ? (float)$_POST['montant_scolarite_inscription'] : null;
 
         if (empty($nouvelleClasse)) {
             $this->error("Veuillez sélectionner une classe valide.");
@@ -231,7 +301,7 @@ class EtudiantController extends BaseController
         }
 
         // Trouver le dossier d'inscription concerné
-        $anneeActive = $this->getActiveAnneeCode();
+        $anneeActive = !empty($anneeCode) ? $anneeCode : $this->getActiveAnneeCode();
         $inscriptionRow = null;
 
         if (!empty($codeInscription)) {
@@ -241,15 +311,9 @@ class EtudiantController extends BaseController
         }
 
         if (!$inscriptionRow && !empty($codeEtudiant)) {
-            $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE etudiant_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_inscription != 'annule' ORDER BY id_inscription DESC LIMIT 1");
+            $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE etudiant_code = ? AND statut_inscription != 'annule' ORDER BY (annee_code = ?) DESC, id_inscription DESC LIMIT 1");
             $stmtIns->execute([$codeEtudiant, $anneeActive]);
             $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
-
-            if (!$inscriptionRow) {
-                $stmtInsLast = $db->prepare("SELECT * FROM inscriptions WHERE etudiant_code = ? AND statut_inscription != 'annule' ORDER BY id_inscription DESC LIMIT 1");
-                $stmtInsLast->execute([$codeEtudiant]);
-                $inscriptionRow = $stmtInsLast->fetch(PDO::FETCH_ASSOC);
-            }
         }
 
         if (!$inscriptionRow) {
@@ -257,12 +321,43 @@ class EtudiantController extends BaseController
             return;
         }
 
-        // Mise à jour de la classe rattachée à l'inscription
-        $stmtUpdate = $db->prepare("UPDATE inscriptions SET classe_code = ? WHERE id_inscription = ?");
-        $ok = $stmtUpdate->execute([$nouvelleClasse, $inscriptionRow['id_inscription']]);
+        // Si le montant de la scolarité n'a pas été fourni par le formulaire, le dériver
+        if ($montantScolarite === null || $montantScolarite <= 0) {
+            $regimeScol = ($affectationEtat === 'oui') ? 'affecte' : 'non_affecte';
+            $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND affectation_etat = ? AND statut_scolarite = 'actif' ORDER BY id_scolarite DESC LIMIT 1");
+            $stmtSco->execute([$classeRow['filiere_code'], $classeRow['niveau_code'], $anneeActive, $regimeScol]);
+            $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
+            if ($sco) {
+                $montantScolarite = (float)$sco['montant_scolarite'];
+            } else {
+                $montantScolarite = (float)($inscriptionRow['montant_scolarite_inscription'] ?? 0);
+            }
+        }
+
+        // Mise à jour de la classe, régime et scolarité rattachés à l'inscription
+        $stmtUpdate = $db->prepare("
+            UPDATE inscriptions 
+            SET classe_code = ?,
+                affectation_etat = ?,
+                montant_scolarite_inscription = ?,
+                annee_code = COALESCE(NULLIF(?, ''), annee_code),
+                updated_at_inscription = NOW()
+            WHERE id_inscription = ?
+        ");
+        $ok = $stmtUpdate->execute([
+            $nouvelleClasse,
+            $affectationEtat,
+            $montantScolarite,
+            $anneeCode,
+            $inscriptionRow['id_inscription']
+        ]);
 
         if ($ok) {
-            $this->success("La classe de l'étudiant a été modifiée avec succès vers " . $classeRow['libelle_classe'] . " !");
+            $encryptedId = !empty($_POST['encrypted_id']) ? $_POST['encrypted_id'] : '';
+            $redirectUrl = !empty($encryptedId) ? RACINE . 'etudiant/details/' . $encryptedId : RACINE . 'etudiant/list';
+            $this->success("La classe et le régime de l'étudiant ont été modifiés avec succès vers " . $classeRow['libelle_classe'] . " !", [
+                'redirect' => $redirectUrl
+            ]);
         } else {
             $this->error("Erreur lors de la mise à jour de la classe de l'étudiant.");
         }
