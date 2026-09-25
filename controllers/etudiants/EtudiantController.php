@@ -254,7 +254,7 @@ class EtudiantController extends BaseController
 
             $encryptedId = $this->validator->crypter($item['id_etudiant']);
 
-            $this->render('views/etudiants/changer_classe.php', [
+            $this->loadView('../views/etudiants/changer_classe.php', [
                 'item' => $item,
                 'inscription' => $inscription,
                 'classes' => $classes,
