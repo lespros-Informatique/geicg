@@ -278,7 +278,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
       font-weight: bold;
       text-decoration: underline;
       font-size: 8.5pt;
-      margin-top: 1px;
+      margin-top: 7px;
     }
     .caissier-name {
       font-size: 8pt;
@@ -460,7 +460,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     </table>
 
     <!-- ZONE SOLDE & CODE-BARRES / CAISSIER -->
-    <table class="bottom-status-table">
+    <table class="bottom-status-table" style="margin-top: 14px;">
       <tr>
         <td style="width: 55%;">
           Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
