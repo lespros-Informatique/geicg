@@ -110,10 +110,17 @@ if (!empty($rawPhoto)) {
 
 if (empty($studentPhotoUrl) && !empty($item['nom_etudiant'])) {
     $slugNom = preg_replace('/[^a-zA-Z0-9_]/', '_', $item['nom_etudiant']);
-    $anneeFolder = !empty($anneeLibelle) ? $anneeLibelle : '2025-2026';
+    $anneeFolder = !empty($anneeLibelle) ? $anneeLibelle : '';
     $potentialPath = 'public/uploads/photos_inscriptions/' . $anneeFolder . '/' . $slugNom . '.png';
     if (file_exists(__DIR__ . '/../../' . $potentialPath)) {
         $studentPhotoUrl = RACINE . $potentialPath;
+    }
+}
+
+if (empty($studentPhotoUrl)) {
+    $placeholderRel = 'assets/images/placeholders/etudiant.png';
+    if (file_exists(__DIR__ . '/../../public/' . $placeholderRel)) {
+        $studentPhotoUrl = RACINE . 'assets/images/placeholders/etudiant.png';
     }
 }
 

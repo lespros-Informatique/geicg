@@ -1179,6 +1179,12 @@ class InscriptionController extends BaseController
                         $photoSrc = 'data:image/' . $mimeType . ';base64,' . base64_encode(file_get_contents($photoPath));
                     }
                 }
+                if (empty($photoSrc)) {
+                    $placeholderPath = __DIR__ . '/../../public/assets/images/placeholders/etudiant.png';
+                    if (file_exists($placeholderPath) && is_file($placeholderPath)) {
+                        $photoSrc = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderPath));
+                    }
+                }
 
                 $filiereNiveauSlug = (!empty($ins['slug_filiere']) ? $ins['slug_filiere'] : 'GEC') . '_' . (!empty($ins['slug_niveau']) ? $ins['slug_niveau'] : '2A');
                 if (!empty($ins['libelle_classe'])) {

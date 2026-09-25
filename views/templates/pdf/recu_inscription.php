@@ -26,6 +26,14 @@ if (file_exists($logoEicgFile)) {
     $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
 }
 
+// Chargement de la photo placeholder si l'étudiant n'a pas d'image (public/assets/images/placeholders/etudiant.png)
+if (empty($photo_src)) {
+    $placeholderPhotoFile = __DIR__ . '/../../../public/assets/images/placeholders/etudiant.png';
+    if (file_exists($placeholderPhotoFile)) {
+        $photo_src = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderPhotoFile));
+    }
+}
+
 // Données dynamiques
 $annee_universitaire = $annee_universitaire ?? '';
 $numero_recu = $numero_recu ?? '';
@@ -153,7 +161,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     .info-photo-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 4px;
+      margin-bottom: 12px;
     }
     .info-left-cell {
       vertical-align: top;
@@ -174,6 +182,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
       vertical-align: top;
       text-align: center;
       overflow: hidden;
+      margin-bottom: 8px;
     }
     .photo-img {
       width: 90px;
@@ -533,7 +542,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
     </table>
 
     <!-- ZONE SOLDE & CODE-BARRES COPIE -->
-    <table class="bottom-status-table" style="margin-top: 6px;">
+    <table class="bottom-status-table" style="margin-top: 16px;">
       <tr>
         <td style="width: 55%; vertical-align: top;">
           Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
