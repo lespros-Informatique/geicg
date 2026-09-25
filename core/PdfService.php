@@ -64,7 +64,10 @@ class PdfService
         $mpdf->SetAuthor('GEICG - Système d\'Information');
         $mpdf->showImageErrors = true;
 
-        if ($watermark) {
+        if (!empty($options['watermark_image']) && file_exists($options['watermark_image'])) {
+            $mpdf->SetWatermarkImage($options['watermark_image'], 0.04, [110, 110], 'F');
+            $mpdf->showWatermarkImage = true;
+        } elseif ($watermark) {
             $mpdf->SetWatermarkText($watermark);
             $mpdf->showWatermarkText = true;
             $mpdf->watermark_font = 'DejaVuSans';

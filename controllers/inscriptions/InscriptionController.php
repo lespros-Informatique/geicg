@@ -1162,8 +1162,12 @@ class InscriptionController extends BaseController
         $html = PdfService::renderTemplate('fiche_inscription.php', $data);
 
         if (!empty($_GET['pdf'])) {
-            $filename = 'Fiche_Inscription_' . ($data['matricule_mesrs'] ?? 'UVCI') . '.pdf';
-            PdfService::generate($html, $filename, ['orientation' => 'P']);
+            $filename = 'Fiche_Inscription_' . ($data['matricule_mesrs'] ?? 'GEICG') . '.pdf';
+            $logoEicgFile = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+            PdfService::generate($html, $filename, [
+                'orientation' => 'P',
+                'watermark_image' => file_exists($logoEicgFile) ? $logoEicgFile : null
+            ]);
         } else {
             echo $html;
         }
