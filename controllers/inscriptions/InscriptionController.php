@@ -1191,7 +1191,7 @@ class InscriptionController extends BaseController
                     $filiereNiveauSlug = str_replace(' ', '_', $ins['libelle_classe']);
                 }
 
-                $numRecuCode = !empty($lastPaiement['code_paiement']) ? ('GE-' . preg_replace('/[^0-9]/', '', $lastPaiement['code_paiement'])) : ('GE-' . sprintf('%08d', $ins['id_inscription']));
+                $numRecuCode = !empty($lastPaiement['recu_numero_paiement']) ? $lastPaiement['recu_numero_paiement'] : (!empty($lastPaiement['code_paiement']) ? $lastPaiement['code_paiement'] : ('GE-' . sprintf('%08d', $ins['id_inscription'])));
 
                 $data = [
                     'item' => $ins,
