@@ -161,7 +161,7 @@ $anneeActive = $anneeActive ?? '';
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
               <i data-lucide="book-open" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Filière
             </label>
-            <select id="filter-filiere" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+            <select id="filter-filiere" class="form-control select2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Toutes les filières --</option>
               <?php foreach ($filieres as $f): ?>
                 <?php 
@@ -181,7 +181,7 @@ $anneeActive = $anneeActive ?? '';
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
               <i data-lucide="layers" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Niveau d'Études
             </label>
-            <select id="filter-niveau" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+            <select id="filter-niveau" class="form-control select2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Tous les niveaux --</option>
               <?php foreach ($niveaux as $n): ?>
                 <option value="<?= htmlspecialchars($n['code_niveau']) ?>">
@@ -196,7 +196,7 @@ $anneeActive = $anneeActive ?? '';
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
               <i data-lucide="graduation-cap" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Classe Spécifique
             </label>
-            <select id="filter-classe" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+            <select id="filter-classe" class="form-control select2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Toutes les classes --</option>
               <?php foreach ($classes as $c): ?>
                 <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-filiere="<?= htmlspecialchars($c['filiere_code'] ?? '') ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>" data-annee="<?= htmlspecialchars($c['annee_code'] ?? '') ?>">
@@ -489,6 +489,13 @@ $(document).ready(function() {
     table.column(7).visible(selNiv === 'ALL' || !selNiv);
   }
 
+  // Initialisation de Select2 sur les filtres
+  if ($.fn.select2) {
+    $('#filter-filiere, #filter-niveau, #filter-classe').select2({
+      width: '100%'
+    });
+  }
+
   // Déclenchement automatique du rechargement et des colonnes intelligentes
   $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe, #filter-regime').on('change', function() {
     filterClassDropdown();
@@ -501,6 +508,8 @@ $(document).ready(function() {
     var selFil = $('#filter-filiere').val();
     var selNiv = $('#filter-niveau').val();
     var selAnn = $('#filter-annee').val();
+    var currentClasseVal = $('#filter-classe').val();
+    var isCurrentValValid = false;
 
     $('#filter-classe option').each(function() {
       var optVal = $(this).val();
@@ -515,22 +524,28 @@ $(document).ready(function() {
       var matchAnn = (selAnn === 'ALL' || !selAnn || optAnn === selAnn);
 
       if (matchFil && matchNiv && matchAnn) {
-        $(this).show();
-      } else {
-        $(this).hide();
-        if ($('#filter-classe').val() === optVal) {
-          $('#filter-classe').val('ALL');
+        $(this).show().prop('disabled', false);
+        if (optVal === currentClasseVal) {
+          isCurrentValValid = true;
         }
+      } else {
+        $(this).hide().prop('disabled', true);
       }
     });
+
+    if (!isCurrentValValid && currentClasseVal !== 'ALL') {
+      $('#filter-classe').val('ALL').trigger('change.select2');
+    } else if ($.fn.select2 && $('#filter-classe').hasClass('select2-hidden-accessible')) {
+      $('#filter-classe').trigger('change.select2');
+    }
   }
 
   // Réinitialisation des filtres
   $('#btn-reset-filters').on('click', function() {
     $('#filter-annee').val('<?= $anneeActive ?>');
-    $('#filter-filiere').val('ALL');
-    $('#filter-niveau').val('ALL');
-    $('#filter-classe').val('ALL');
+    $('#filter-filiere').val('ALL').trigger('change.select2');
+    $('#filter-niveau').val('ALL').trigger('change.select2');
+    $('#filter-classe').val('ALL').trigger('change.select2');
     $('#filter-regime').val('ALL');
     filterClassDropdown();
     updateSmartColumns();
