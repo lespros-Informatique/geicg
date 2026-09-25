@@ -4,15 +4,15 @@
  * Emplacement : /views/templates/pdf/recu_inscription.php
  */
 
-// Générateur de code-barres compact et proportionnel via Picqer Barcode Generator
+// Générateur de code-barres compact et haut via Picqer Barcode Generator
 if (!function_exists('generatePicqerBarcodeHtml')) {
-    function generatePicqerBarcodeHtml($code, $height = 24) {
+    function generatePicqerBarcodeHtml($code, $height = 42) {
         $code = (string)$code;
         if (empty($code)) $code = 'GE-25260276';
         try {
             $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
             $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, 1, $height);
-            return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; width:auto; max-width:140px;">';
+            return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; width:auto; max-width:150px;">';
         } catch (\Throwable $e) {
             return '<div style="font-family:monospace; font-weight:bold; font-size:10px;">' . htmlspecialchars($code) . '</div>';
         }
@@ -114,7 +114,7 @@ if ($montant_operation != 105000) {
       font-weight: bold;
       font-size: 11.5pt;
       text-transform: uppercase;
-      margin: 0 0 5px 0;
+      margin: 0 0 8px 0;
       text-decoration: underline;
       letter-spacing: 0.2px;
     }
@@ -122,7 +122,7 @@ if ($montant_operation != 105000) {
       font-weight: bold;
       font-style: italic;
       font-size: 8.5pt;
-      margin-top: 5px;
+      margin-top: 8px;
       margin-bottom: 5px;
       color: #000000;
     }
@@ -215,7 +215,7 @@ if ($montant_operation != 105000) {
       color: #000000;
     }
     .amount-words-blue {
-      color: #0000FF;
+      color: #172f43ff;
       font-weight: bold;
       font-size: 9.5pt;
     }
