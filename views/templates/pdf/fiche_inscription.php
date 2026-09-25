@@ -205,31 +205,31 @@ if ($montant_operation != 105000) {
     }
     .info-left-cell {
       vertical-align: top;
-      width: 82%;
+      width: 80%;
     }
     .photo-right-cell {
       vertical-align: top;
       text-align: right;
-      width: 18%;
+      width: 20%;
     }
     .photo-box {
-      width: 85px;
-      height: 105px;
+      width: 125px;
+      height: 155px;
       border: 1px solid #000000;
       object-fit: cover;
       display: inline-block;
       box-sizing: border-box;
     }
     .photo-placeholder {
-      width: 85px;
-      height: 105px;
+      width: 125px;
+      height: 155px;
       border: 1px solid #000000;
       display: inline-block;
       background: #F1F5F9;
-      line-height: 103px;
+      line-height: 153px;
       text-align: center;
       font-weight: bold;
-      font-size: 22pt;
+      font-size: 32pt;
       color: #000000;
       box-sizing: border-box;
     }
