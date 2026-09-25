@@ -1129,11 +1129,11 @@ class InscriptionController extends BaseController
             $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
 
             if ($ins) {
-                // Dernier paiement validé pour l'inscription
+                // Dernier paiement valide/confirmé pour l'inscription
                 $stmtPai = $db->prepare("
-                    SELECT code_paiement, montant_paiement, created_at_paiement
+                    SELECT code_paiement, montant_paiement, date_paiement
                     FROM paiements 
-                    WHERE inscription_code = ? AND statut_paiement = 'valide'
+                    WHERE inscription_code = ? AND statut_paiement != 'annule'
                     ORDER BY id_paiement DESC LIMIT 1
                 ");
                 $stmtPai->execute([$ins['code_inscription']]);
@@ -1154,7 +1154,7 @@ class InscriptionController extends BaseController
                     'specialite' => $ins['libelle_classe'] ?? '',
                     'code_paiement' => $pai['code_paiement'] ?? ('INS-' . ($ins['code_inscription'] ?? '001')),
                     'montant_paiement' => isset($pai['montant_paiement']) ? number_format((float)$pai['montant_paiement'], 0, ',', '.') . ' F' : number_format((float)($ins['montant_scolarite_inscription'] ?? 60000), 0, ',', '.') . ' F',
-                    'date_paiement' => !empty($pai['created_at_paiement']) ? date('d-m-Y', strtotime($pai['created_at_paiement'])) : date('d-m-Y')
+                    'date_paiement' => !empty($pai['date_paiement']) ? date('d-m-Y', strtotime($pai['date_paiement'])) : date('d-m-Y')
                 ];
             }
         }
