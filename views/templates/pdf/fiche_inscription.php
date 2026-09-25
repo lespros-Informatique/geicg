@@ -6,7 +6,7 @@
 
 // Générateur vectoriel SVG Code 128 (Subset B) natif pour l'affichage/impression web
 if (!function_exists('generateCode128BarcodeSvg')) {
-    function generateCode128BarcodeSvg($code, $height = 36, $scale = 1.2) {
+    function generateCode128BarcodeSvg($code, $height = 38, $scale = 1.3) {
         $patterns = [
             '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
             '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
@@ -281,45 +281,28 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     .text-center { text-align: center; }
     .text-bold { font-weight: bold; }
 
-    /* ZONE DE BAS DE PAGE : CODE-BARRES, SIGNATURE ET CACHET */
-    .footer-section-area {
+    /* ZONE DE VALIDATION (QR CODE & CACHET) */
+    .validation-area {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
+      margin-bottom: 25px;
     }
-    .footer-section-area td {
+    .validation-area td {
       vertical-align: top;
     }
 
     .qr-container {
-      width: 130px;
+      width: 140px;
       text-align: left;
     }
     .qr-code-img {
-      width: 110px;
-      height: 110px;
+      width: 115px;
+      height: 115px;
       border: 1px solid #CBD5E1;
       padding: 3px;
       background: #FFFFFF;
       border-radius: 4px;
-    }
-
-    /* ZONE CENTRE : CODE-BARRES */
-    .barcode-center-container {
-      text-align: center;
-      padding: 0 10px;
-    }
-    .barcode-wrapper {
-      margin: 10px auto 4px auto;
-      text-align: center;
-    }
-    .barcode-text-code {
-      font-family: monospace;
-      font-size: 9pt;
-      font-weight: bold;
-      color: #0F172A;
-      letter-spacing: 1px;
-      margin-top: 3px;
     }
 
     .signatory-container {
@@ -363,6 +346,27 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       color: #000000;
       margin-top: 6px;
       display: block;
+    }
+
+    /* BANDEAU DE PIED DE PAGE : CODE-BARRES DU BAS */
+    .page-footer-barcode-band {
+      margin-top: 25px;
+      padding-top: 14px;
+      border-top: 1px dashed #94A3B8;
+      text-align: center;
+      width: 100%;
+    }
+    .barcode-wrapper {
+      margin: 6px auto 4px auto;
+      text-align: center;
+    }
+    .barcode-text-code {
+      font-family: monospace;
+      font-size: 9.5pt;
+      font-weight: bold;
+      color: #0F172A;
+      letter-spacing: 1.5px;
+      margin-top: 4px;
     }
 
     @media print {
@@ -507,31 +511,15 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
     </tbody>
   </table>
 
-  <!-- 8. PIED DE PAGE COMPLET : QR CODE, CODE-BARRES CODE 128 ET SIGNATURE -->
-  <table class="footer-section-area">
+  <!-- 8. ZONE DE VALIDATION (QR CODE A GAUCHE, CACHET ET SIGNATURE A DROITE) -->
+  <table class="validation-area">
     <tr>
       <!-- COLONNE GAUCHE : QR CODE DE VÉRIFICATION -->
       <td class="qr-container">
         <img src="<?= htmlspecialchars($qr_code_url) ?>" alt="QR Code" class="qr-code-img">
-        <div style="font-size: 7.5pt; color: #64748B; text-align: center; margin-top: 4px; width: 110px;">
+        <div style="font-size: 7.5pt; color: #64748B; text-align: center; margin-top: 4px; width: 115px;">
           Contrôle d'authenticité
         </div>
-      </td>
-
-      <!-- COLONNE CENTRE : CODE-BARRES CODE 128 DU BAS -->
-      <td class="barcode-center-container">
-        <div style="font-size: 8pt; font-weight: bold; color: #334155; text-transform: uppercase; margin-bottom: 6px;">
-          Code d'Inscription / Sécurité
-        </div>
-        <div class="barcode-wrapper">
-          <!-- Balise mPDF native pour les exports PDF -->
-          <?php if (class_exists('\Mpdf\Mpdf')): ?>
-            <barcode code="<?= htmlspecialchars($code_barre_val) ?>" type="C128A" size="0.7" height="0.7" />
-          <?php endif; ?>
-          <!-- Générateur SVG natif pour l'affichage / impression navigateurs web -->
-          <?= generateCode128BarcodeSvg($code_barre_val, 38, 1.25) ?>
-        </div>
-        <div class="barcode-text-code">* <?= htmlspecialchars($code_barre_val) ?> *</div>
       </td>
 
       <!-- COLONNE DROITE : DATE, CACHET OFFICIEL GEICG ET SIGNATURE -->
@@ -585,6 +573,22 @@ $qr_code_url = $qr_code_url ?? ("https://api.qrserver.com/v1/create-qr-code/?siz
       </td>
     </tr>
   </table>
+
+  <!-- 9. PIED DE PAGE EXTRÊME : CODE-BARRES CENTRÉ TOUT EN BAS DU DOCUMENT -->
+  <div class="page-footer-barcode-band">
+    <div style="font-size: 7.5pt; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+      Code d'Identification & de Sécurité Numérique
+    </div>
+    <div class="barcode-wrapper">
+      <!-- Balise mPDF native pour les exports PDF -->
+      <?php if (class_exists('\Mpdf\Mpdf')): ?>
+        <barcode code="<?= htmlspecialchars($code_barre_val) ?>" type="C128A" size="0.75" height="0.75" />
+      <?php endif; ?>
+      <!-- Générateur SVG natif pour l'affichage / impression navigateurs web -->
+      <?= generateCode128BarcodeSvg($code_barre_val, 38, 1.3) ?>
+    </div>
+    <div class="barcode-text-code">* <?= htmlspecialchars($code_barre_val) ?> *</div>
+  </div>
 
 </body>
 </html>
