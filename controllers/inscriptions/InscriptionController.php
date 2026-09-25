@@ -1095,6 +1095,80 @@ class InscriptionController extends BaseController
         ]);
     }
 
+    public function imprimerFiche($param = null)
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_INSCRIPTIONS', 'MANAGE_INSCRIPTIONS']);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+        $data = [];
+
+        if (!empty($param)) {
+            $id = $this->validator->decrypter($param);
+            if (empty($id)) {
+                $id = $param;
+            }
+
+            // Récupérer l'inscription avec les jointures étudiant et classe
+            $stmtIns = $db->prepare("
+                SELECT i.*, 
+                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.matricule_mesrs, 
+                       e.date_naissance_etudiant, e.lieu_naissance_etudiant, e.nationalite_etudiant, e.sexe_etudiant,
+                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                FROM inscriptions i
+                LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+                LEFT JOIN classes cl ON cl.code_classe = i.classe_code
+                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
+                WHERE i.id_inscription = ? OR i.code_inscription = ? OR e.code_etudiant = ? OR e.matricule_etudiant = ?
+                LIMIT 1
+            ");
+            $stmtIns->execute([$id, $id, $id, $id]);
+            $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
+
+            if ($ins) {
+                // Dernier paiement validé pour l'inscription
+                $stmtPai = $db->prepare("
+                    SELECT code_paiement, montant_paiement, created_at_paiement
+                    FROM paiements 
+                    WHERE inscription_code = ? AND statut_paiement = 'valide'
+                    ORDER BY id_paiement DESC LIMIT 1
+                ");
+                $stmtPai->execute([$ins['code_inscription']]);
+                $pai = $stmtPai->fetch(PDO::FETCH_ASSOC) ?: [];
+
+                $data = [
+                    'item' => $ins,
+                    'inscription' => $ins,
+                    'paiement' => $pai,
+                    'annee_universitaire' => $ins['libelle_annee'] ?? '2022 - 2023',
+                    'matricule_mesrs' => !empty($ins['matricule_mesrs']) ? $ins['matricule_mesrs'] : ($ins['matricule_etudiant'] ?? ''),
+                    'nom' => $ins['nom_etudiant'] ?? '',
+                    'prenoms' => $ins['prenom_etudiant'] ?? '',
+                    'date_lieu_naissance' => (!empty($ins['date_naissance_etudiant']) ? date('d-m-Y', strtotime($ins['date_naissance_etudiant'])) : '') . (!empty($ins['lieu_naissance_etudiant']) ? ' à ' . $ins['lieu_naissance_etudiant'] : ''),
+                    'nationalite' => $ins['nationalite_etudiant'] ?? 'IVOIRIENNE',
+                    'filiere' => $ins['libelle_filiere'] ?? '',
+                    'niveau' => $ins['libelle_niveau'] ?? '',
+                    'specialite' => $ins['libelle_classe'] ?? '',
+                    'code_paiement' => $pai['code_paiement'] ?? ('INS-' . ($ins['code_inscription'] ?? '001')),
+                    'montant_paiement' => isset($pai['montant_paiement']) ? number_format((float)$pai['montant_paiement'], 0, ',', '.') . ' F' : number_format((float)($ins['montant_scolarite_inscription'] ?? 60000), 0, ',', '.') . ' F',
+                    'date_paiement' => !empty($pai['created_at_paiement']) ? date('d-m-Y', strtotime($pai['created_at_paiement'])) : date('d-m-Y')
+                ];
+            }
+        }
+
+        $html = PdfService::renderTemplate('fiche_inscription.php', $data);
+
+        if (!empty($_GET['pdf'])) {
+            $filename = 'Fiche_Inscription_' . ($data['matricule_mesrs'] ?? 'UVCI') . '.pdf';
+            PdfService::generate($html, $filename, ['orientation' => 'P']);
+        } else {
+            echo $html;
+        }
+    }
+
     public function apiSansPhoto()
     {
         $this->apiPriseDeVue();
