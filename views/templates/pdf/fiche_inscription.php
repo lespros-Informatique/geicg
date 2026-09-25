@@ -180,12 +180,12 @@ if ($montant_operation != 105000) {
       background-color: #999999;
       color: #000000;
       text-align: center;
-      padding: 4px 0;
-      margin: 4px 0 3px 0;
+      padding: 5px 0;
+      margin: 10px 0 4px 0;
       font-weight: 900;
-      font-size: 14pt;
+      font-size: 17.5pt;
       font-family: Arial, sans-serif;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
     }
 
