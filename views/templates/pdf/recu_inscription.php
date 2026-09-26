@@ -54,13 +54,17 @@ $date_impression = $date_impression ?? date('d/m/Y H:i:s');
 $code_barre_val = $code_barre_val ?? $numero_recu;
 
 // Montants lignes du tableau
-$scolarite_op_jour = $scolarite_op_jour ?? $montant_operation;
-$scolarite_tot_payer = $scolarite_tot_payer ?? $scolarite_total;
-$scolarite_tot_verse = $scolarite_tot_verse ?? $total_verse;
-$scolarite_reste = $scolarite_reste ?? $reste_a_payer;
+$premiere_tranche = (float)($premiere_tranche ?? 0);
+$frais_annexes_inscription = (float)($frais_annexes_inscription ?? 0);
+$droit_tot_payer = (float)($droit_tot_payer ?? ($premiere_tranche + $frais_annexes_inscription));
 
-$droit_op_jour = $droit_op_jour ?? 0;
-$droit_tot_verse = $droit_tot_verse ?? 0;
+$droit_op_jour = (float)($droit_op_jour ?? 0);
+$droit_tot_verse = (float)($droit_tot_verse ?? 0);
+
+$scolarite_op_jour = (float)($scolarite_op_jour ?? max(0, $montant_operation - $droit_op_jour));
+$scolarite_tot_payer = (float)($scolarite_tot_payer ?? $scolarite_total);
+$scolarite_tot_verse = (float)($scolarite_tot_verse ?? max(0, $total_verse - $droit_tot_verse));
+$scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $scolarite_tot_verse));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -449,7 +453,7 @@ $droit_tot_verse = $droit_tot_verse ?? 0;
         <tr>
           <td class="">Droit d'Inscription</td>
           <td class="text-center text-bold"><?= number_format($droit_op_jour, 0, ',', ' ') ?>CFA</td>
-          <td></td>
+          <td class="text-center text-bold"><?= number_format($droit_tot_payer, 0, ',', ' ') ?>CFA</td>
           <td class="text-center text-bold"><?= number_format($droit_tot_verse, 0, ',', ' ') ?>CFA</td>
           <td class="cell-black"></td>
         </tr>

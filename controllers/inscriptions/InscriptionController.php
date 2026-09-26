@@ -1186,6 +1186,47 @@ class InscriptionController extends BaseController
                     }
                 }
 
+                // Calculs dynamiques BDD pour Droit d'Inscription (1ère tranche + Frais annexes type inscription)
+                $filiereCode = !empty($ins['filiere_code']) ? $ins['filiere_code'] : ($ins['code_filiere'] ?? '');
+                $niveauCode = !empty($ins['niveau_code']) ? $ins['niveau_code'] : ($ins['code_niveau'] ?? '');
+                $anneeCode = !empty($ins['annee_code']) ? $ins['annee_code'] : '';
+
+                $premiereTrancheMontant = 0;
+                if (!empty($filiereCode) && !empty($niveauCode) && !empty($anneeCode)) {
+                    $stmtTranche = $db->prepare("
+                        SELECT montant_tranche FROM tranches_scolarite
+                        WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_tranche = 'actif'
+                        ORDER BY id_tranche ASC LIMIT 1
+                    ");
+                    $stmtTranche->execute([$filiereCode, $niveauCode, $anneeCode]);
+                    $trancheRow = $stmtTranche->fetch(PDO::FETCH_ASSOC);
+                    if ($trancheRow) {
+                        $premiereTrancheMontant = (float)$trancheRow['montant_tranche'];
+                    }
+                }
+
+                $typeFiliere = !empty($ins['type_filiere']) ? $ins['type_filiere'] : 'TOUT';
+                if (empty($ins['type_filiere']) && !empty($filiereCode)) {
+                    $stmtFil = $db->prepare("SELECT type_filiere FROM filieres WHERE code_filiere = ? LIMIT 1");
+                    $stmtFil->execute([$filiereCode]);
+                    $filRow = $stmtFil->fetch(PDO::FETCH_ASSOC);
+                    if ($filRow && !empty($filRow['type_filiere'])) {
+                        $typeFiliere = $filRow['type_filiere'];
+                    }
+                }
+                require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
+                $modelFA = new ModelFraisAnnexe();
+                $fraisAnnexesInscription = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $niveauCode, 'inscription');
+
+                $droitTotPayer = $premiereTrancheMontant + $fraisAnnexesInscription;
+                $droitTotVerse = min($totalVerse, $droitTotPayer);
+                $droitOpJour = min($opDuJourMontant, $droitTotPayer);
+
+                $scolariteOpJour = max(0, $opDuJourMontant - $droitOpJour);
+                $scolariteTotPayer = $scolariteTotal;
+                $scolariteTotVerse = max(0, $totalVerse - $droitTotVerse);
+                $scolariteReste = max(0, $scolariteTotPayer - $scolariteTotVerse);
+
                 $filiereNiveauSlug = (!empty($ins['slug_filiere']) ? $ins['slug_filiere'] : 'GEC') . '_' . (!empty($ins['slug_niveau']) ? $ins['slug_niveau'] : '2A');
                 if (!empty($ins['libelle_classe'])) {
                     $filiereNiveauSlug = str_replace(' ', '_', $ins['libelle_classe']);
@@ -1215,7 +1256,16 @@ class InscriptionController extends BaseController
                     'photo_src' => $photoSrc,
                     'date_operation' => !empty($lastPaiement['date_paiement']) ? date('d/m/Y H:i:s', strtotime($lastPaiement['date_paiement'])) : date('d/m/Y H:i:s'),
                     'date_impression' => date('d/m/Y H:i:s'),
-                    'code_barre_val' => ($ins['code_inscription'] ?? '') . ',' . ($lastPaiement['code_paiement'] ?? '')
+                    'code_barre_val' => ($ins['code_inscription'] ?? '') . ',' . ($lastPaiement['code_paiement'] ?? ''),
+                    'premiere_tranche' => $premiereTrancheMontant,
+                    'frais_annexes_inscription' => $fraisAnnexesInscription,
+                    'droit_tot_payer' => $droitTotPayer,
+                    'droit_op_jour' => $droitOpJour,
+                    'droit_tot_verse' => $droitTotVerse,
+                    'scolarite_op_jour' => $scolariteOpJour,
+                    'scolarite_tot_payer' => $scolariteTotPayer,
+                    'scolarite_tot_verse' => $scolariteTotVerse,
+                    'scolarite_reste' => $scolariteReste
                 ];
             }
         }
