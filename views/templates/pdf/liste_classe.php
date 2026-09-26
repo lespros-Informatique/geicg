@@ -220,7 +220,7 @@
   <!-- CARTOUCHE METADATA CLASSE -->
   <table class="meta-box-table">
     <tr>
-      <td style="width: 33%;"><span class="meta-label">Classe / Groupement :</span> <span class="meta-value"><?= htmlspecialchars($classe_libelle ?? ($classe['libelle_classe'] ?? '')) ?></span></td>
+      <td style="width: 33%;"><span class="meta-label">Classe :</span> <span class="meta-value"><?= htmlspecialchars($classe_libelle ?? ($classe['libelle_classe'] ?? '')) ?></span></td>
       <td style="width: 34%;"><span class="meta-label">Filière :</span> <span class="meta-value"><?= htmlspecialchars($filiere_libelle ?? ($classe['libelle_filiere'] ?? '-')) ?></span></td>
       <td style="width: 33%;"><span class="meta-label">Niveau d'Études :</span> <span class="meta-value"><?= htmlspecialchars($niveau_libelle ?? ($classe['libelle_niveau'] ?? '-')) ?></span></td>
     </tr>
@@ -285,6 +285,7 @@
     </tbody>
   </table>
 
+  <br>
   <!-- BAS DE PAGE ET SIGNATURES -->
   <table class="footer-summary">
     <tr>
