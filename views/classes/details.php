@@ -70,16 +70,8 @@ $tauxRemplissage = ($capacite > 0) ? min(100, round(($nbInscrits / $capacite) * 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
           <div>
             <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="user-check" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Registre des Étudiants Inscrits (<?= $nbInscrits ?>)
+              <i data-lucide="user-check" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Registre des Étudiants (<?= $nbInscrits ?>)
             </h3>
-          </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['annee_code'] ?? '') ?>&classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF;" title="Imprimer la liste nominative de cette classe">
-              <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Imprimer Liste
-            </a>
-            <a href="<?= RACINE ?>inscription/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-              + Inscrire un étudiant
-            </a>
           </div>
         </div>
 
@@ -93,25 +85,36 @@ $tauxRemplissage = ($capacite > 0) ? min(100, round(($nbInscrits / $capacite) * 
                   <th style="padding: 10px;">Matricule</th>
                   <th style="padding: 10px;">Nom & Prénoms</th>
                   <th style="padding: 10px; text-align: center;">Sexe</th>
-                  <th style="padding: 10px;">Contact Téléphone</th>
-                  <th style="padding: 10px;">Email</th>
+                  <th style="padding: 10px; text-align: center;">Date de Naissance</th>
+                  <th style="padding: 10px; text-align: center;">Régime</th>
+                  <th style="padding: 10px;">Contact</th>
                   <th style="padding: 10px; text-align: right;">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <?php foreach ($etudiants as $e): ?>
+                  <?php 
+                    $dob = $e['date_naissance_etudiant'] ?? '';
+                    $dobFormatted = (!empty($dob) && $dob !== '0000-00-00') ? date('d/m/Y', strtotime($dob)) : '-';
+                    $isAffecte = (($e['affectation_etat'] ?? '') === 'affecte' || ($e['affectation_etat'] ?? '') === 'oui');
+                  ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-family: monospace; font-weight: 700; color: #1E3A5F;">
                       <?= htmlspecialchars($e['matricule_etudiant'] ?? $e['code_etudiant']) ?>
                     </td>
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;">
-                      <a href="<?= RACINE ?>etudiant/details/<?= $this->validator->crypter($e['id_etudiant']) ?>" style="color: #1E3A5F; text-decoration: underline;">
-                        <?= htmlspecialchars($e['nom_etudiant'] . ' ' . $e['prenom_etudiant']) ?>
-                      </a>
+                      <?= htmlspecialchars(($e['nom_etudiant'] ?? '') . ' ' . ($e['prenom_etudiant'] ?? '')) ?>
                     </td>
-                    <td style="padding: 10px; text-align: center; color: #64748B;"><?= htmlspecialchars($e['sexe_etudiant'] ?? '-') ?></td>
+                    <td style="padding: 10px; text-align: center; color: #64748B; font-weight: 600;"><?= htmlspecialchars($e['sexe_etudiant'] ?? '-') ?></td>
+                    <td style="padding: 10px; text-align: center; color: #334155; font-weight: 600;"><?= htmlspecialchars($dobFormatted) ?></td>
+                    <td style="padding: 10px; text-align: center;">
+                      <?php if ($isAffecte): ?>
+                        <span style="background: #DCFCE7; color: #15803D; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block;">Affecté(e) État</span>
+                      <?php else: ?>
+                        <span style="background: #E0F2FE; color: #0369A1; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block;">Non Affecté(e)</span>
+                      <?php endif; ?>
+                    </td>
                     <td style="padding: 10px; color: #334155;"><?= htmlspecialchars($e['telephone_etudiant'] ?? '-') ?></td>
-                    <td style="padding: 10px; color: #334155;"><?= htmlspecialchars($e['email_etudiant'] ?? '-') ?></td>
                     <td style="padding: 10px; text-align: right;">
                       <a href="<?= RACINE ?>etudiant/details/<?= $this->validator->crypter($e['id_etudiant']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
                         Fiche élève

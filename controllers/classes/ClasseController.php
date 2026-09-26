@@ -278,7 +278,7 @@ class ClasseController extends BaseController
 
             // Liste des étudiants inscrits dans cette classe
             $stmtEtu = $this->model->getCon()->prepare("
-                SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription
+                SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription, ins.affectation_etat
                 FROM etudiants e
                 INNER JOIN inscriptions ins ON ins.etudiant_code = e.code_etudiant
                 WHERE ins.classe_code = ? AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)

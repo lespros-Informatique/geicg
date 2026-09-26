@@ -237,10 +237,10 @@ class AnneeController extends BaseController
             // Statistiques
             $stmtStats = $this->model->getCon()->prepare("
                 SELECT 
-                    (SELECT COUNT(*) FROM inscriptions WHERE annee_code = ? AND statut_inscription = 'actif') as total_etudiants,
-                    (SELECT COUNT(*) FROM classes WHERE annee_code = ? AND statut_classe = 'actif') as total_classes,
-                    (SELECT COUNT(*) FROM semestres WHERE annee_code = ? AND statut_semestre = 'actif') as total_semestres,
-                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM paiements WHERE annee_code = ? AND statut_paiement != 'annule') as total_recouvrement
+                    (SELECT COUNT(*) FROM inscriptions WHERE annee_code = ? AND (statut_inscription != 'annule' OR statut_inscription IS NULL)) as total_etudiants,
+                    (SELECT COUNT(*) FROM classes WHERE annee_code = ? AND (statut_classe = 'actif' OR statut_classe IS NULL)) as total_classes,
+                    (SELECT COUNT(*) FROM semestres WHERE annee_code = ? AND (statut_semestre = 'actif' OR statut_semestre IS NULL)) as total_semestres,
+                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM paiements WHERE annee_code = ? AND (statut_paiement != 'annule' OR statut_paiement IS NULL)) as total_recouvrement
             ");
             $stmtStats->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode]);
             $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [
@@ -250,7 +250,7 @@ class AnneeController extends BaseController
             // Liste des classes de cette année
             $stmtCls = $this->model->getCon()->prepare("
                 SELECT cl.*, f.libelle_filiere, n.libelle_niveau,
-                       (SELECT COUNT(*) FROM inscriptions ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription = 'actif') as nb_eleves
+                       (SELECT COUNT(*) FROM inscriptions ins WHERE ins.classe_code = cl.code_classe AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)) as nb_eleves
                 FROM classes cl
                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
