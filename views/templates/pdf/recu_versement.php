@@ -258,8 +258,8 @@
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photo_etudiant) && file_exists(__DIR__ . '/../../public/' . ltrim($photo_etudiant, '/'))): ?>
-          <img src="<?= __DIR__ . '/../../public/' . ltrim($photo_etudiant, '/') ?>" class="photo-box">
+        <?php if (!empty($photo_etudiant)): ?>
+          <img src="<?= $photo_etudiant ?>" class="photo-box">
         <?php else: ?>
           <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 90px; color: #94A3B8; font-size: 9px;">PHOTO</div>
         <?php endif; ?>
@@ -288,10 +288,10 @@
       </tr>
       <tr>
         <td class="col-label">Droit d'Inscription</td>
-        <td class="col-num"></td>
-        <td class="col-num"></td>
-        <td class="col-num"></td>
-        <td class="col-num"></td>
+        <td class="col-num"><?= isset($droit_op_du_jour) && $droit_op_du_jour > 0 ? number_format($droit_op_du_jour, 0, ',', ' ') . 'CFA' : '' ?></td>
+        <td class="col-num"><?= isset($droit_total_payer) && $droit_total_payer > 0 ? number_format($droit_total_payer, 0, ',', ' ') . 'CFA' : '' ?></td>
+        <td class="col-num"><?= isset($droit_total_verse) && $droit_total_verse > 0 ? number_format($droit_total_verse, 0, ',', ' ') . 'CFA' : '' ?></td>
+        <td class="col-num"><?= isset($droit_reste_payer) && $droit_reste_payer > 0 ? number_format($droit_reste_payer, 0, ',', ' ') . 'CFA' : '' ?></td>
       </tr>
       <tr>
         <td class="col-label">Versement</td>
@@ -389,8 +389,8 @@
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photo_etudiant) && file_exists(__DIR__ . '/../../public/' . ltrim($photo_etudiant, '/'))): ?>
-          <img src="<?= __DIR__ . '/../../public/' . ltrim($photo_etudiant, '/') ?>" class="photo-box" style="height: 75px;">
+        <?php if (!empty($photo_etudiant)): ?>
+          <img src="<?= $photo_etudiant ?>" class="photo-box" style="height: 75px;">
         <?php else: ?>
           <div class="photo-box" style="height: 75px; background: #F1F5F9; text-align: center; line-height: 75px; color: #94A3B8; font-size: 8.5px;">PHOTO</div>
         <?php endif; ?>

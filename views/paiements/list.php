@@ -1091,7 +1091,7 @@ $(document).ready(function() {
       { data: null, width: '90px', orderable: false, className: 'text-center', render: function(d) {
         var idCrypte = d.editId || d.id_paiement;
         return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">' +
-               '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:1.5px solid #1E3A5F; color:#1E3A5F; background:#FFFFFF;" title="Imprimer le reçu (PDF)"><i data-lucide="printer" style="width:16px;height:16px;"></i></a>' +
+               '  <a href="' + window.RACINE + 'paiement/imprimerPdf/' + idCrypte + '" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:1.5px solid #1E3A5F; color:#1E3A5F; background:#FFFFFF;" title="Imprimer le reçu de versement (PDF)"><i data-lucide="printer" style="width:16px;height:16px;"></i></a>' +
                '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#1E3A5F; border-color:#1E3A5F; color:#FFFFFF;" title="Détails du paiement"><i data-lucide="eye" style="width:16px;height:16px;"></i></a>' +
                '</div>';
       } }
@@ -1549,7 +1549,7 @@ $(document).ready(function() {
           var idCrypte = res.encrypted_id || res.id_paiement;
           $('#success-recu-num').text(codePaiement);
           $('#success-recu-montant').text(Number(montant).toLocaleString('fr-FR') + ' FCFA Encaissé');
-          $('#success-recu-print-link').attr('href', window.RACINE + 'paiement/details/' + idCrypte + '?print=1');
+          $('#success-recu-print-link').attr('href', window.RACINE + 'paiement/imprimerPdf/' + idCrypte);
           $('#modal-recu-paiement-success').css('display', 'flex');
 
           if (window.lucide) lucide.createIcons();

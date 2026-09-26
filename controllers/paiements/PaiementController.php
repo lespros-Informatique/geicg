@@ -1649,4 +1649,186 @@ class PaiementController extends BaseController
         header('Location: ' . RACINE . 'paiement/list' . $query);
         exit();
     }
+
+    /**
+     * Génération du PDF Officiel "Reçu de Versement" via mPDF / PdfService (template recu_versement.php)
+     */
+    public function imprimerPdf($details = null)
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_PAIEMENTS', 'VIEW_ETUDIANTS', 'VIEW_INSCRIPTIONS']);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+
+        if (empty($details) && !empty($_GET['id'])) {
+            $details = $_GET['id'];
+        }
+
+        if (empty($details)) {
+            $this->renderNotFound("Règlement non spécifié.");
+            return;
+        }
+
+        $id = null;
+        if (is_numeric($details)) {
+            $id = (int)$details;
+        } else {
+            $decrypted = $this->validator->decrypter($details);
+            if (is_numeric($decrypted) && (int)$decrypted > 0) {
+                $id = (int)$decrypted;
+            } else {
+                $id = $details;
+            }
+        }
+
+        // Récupérer les données complètes du paiement et de l'étudiant/inscription
+        $stmtPai = $db->prepare("
+            SELECT p.*,
+                   i.code_inscription, i.statut_inscription, i.montant_scolarite_inscription, i.affectation_etat,
+                   e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.photo_etudiant,
+                   cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee,
+                   u.nom_user as nom_caissier, u.prenom_user as prenom_caissier
+            FROM paiements p
+            LEFT JOIN inscriptions i ON i.code_inscription = p.inscription_code
+            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN classes cl ON cl.code_classe = i.classe_code
+            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN annees a ON a.code_annee = p.annee_code
+            LEFT JOIN users u ON u.code_user = p.user_code
+            WHERE p.id_paiement = ? OR p.code_paiement = ?
+            LIMIT 1
+        ");
+        $stmtPai->execute([$id, $id]);
+        $pRow = $stmtPai->fetch(PDO::FETCH_ASSOC);
+
+        if (!$pRow) {
+            $this->renderNotFound("Le reçu de versement demandé est introuvable.");
+            return;
+        }
+
+        $inscriptionCode = $pRow['code_inscription'] ?? '';
+
+        // Tous les paiements validés pour cette inscription
+        $stmtAll = $db->prepare("
+            SELECT * FROM paiements 
+            WHERE inscription_code = ? AND statut_paiement != 'annule'
+            ORDER BY date_paiement ASC, id_paiement ASC
+        ");
+        $stmtAll->execute([$inscriptionCode]);
+        $allPaiements = $stmtAll->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Calculs des montants cumulés et rang du versement
+        $scolariteVerse = 0;
+        $fraisAnnexesVerse = 0;
+        $numVersement = 1;
+        $count = 0;
+
+        foreach ($allPaiements as $pItem) {
+            $count++;
+            $m = (float)$pItem['montant_paiement'];
+            $isFA = (($pItem['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($pItem['categorie_paiement'] ?? '')) === 'frais_annexes');
+            if ($isFA) {
+                $fraisAnnexesVerse += $m;
+            } else {
+                $scolariteVerse += $m;
+            }
+
+            if ((int)$pItem['id_paiement'] === (int)$pRow['id_paiement'] || $pItem['code_paiement'] === $pRow['code_paiement']) {
+                $numVersement = $count;
+            }
+        }
+
+        $montantOp = (float)$pRow['montant_paiement'];
+        $isFAOp = (($pRow['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($pRow['categorie_paiement'] ?? '')) === 'frais_annexes');
+
+        $scolariteTotPayer = (float)($pRow['montant_scolarite_inscription'] ?? 0);
+        $scolariteTotVerse = $scolariteVerse;
+        $scolariteReste = max(0, $scolariteTotPayer - $scolariteTotVerse);
+
+        $scolariteOpJour = $isFAOp ? 0 : $montantOp;
+        $versementOpJour = $montantOp;
+        $totalOpJour = $montantOp;
+        $totalPayer = $scolariteTotPayer;
+        $totalVerse = $scolariteVerse + $fraisAnnexesVerse;
+        $totalRestePayer = $scolariteReste;
+
+        $nomComplet = trim(strtoupper($pRow['nom_etudiant'] ?? '') . ' ' . ($pRow['prenom_etudiant'] ?? ''));
+        $caissierNom = trim(($pRow['prenom_caissier'] ?? '') . ' ' . ($pRow['nom_caissier'] ?? ''));
+        if (empty($caissierNom)) {
+            $caissierNom = "Mlle KONE N'diatty A. Mariam";
+        }
+
+        // Photographie
+        $photoSrc = null;
+        $rawPhoto = !empty($pRow['photo_etudiant']) ? $pRow['photo_etudiant'] : '';
+        if (!empty($rawPhoto)) {
+            $cleanPhotoPath = ltrim($rawPhoto, '/');
+            $photoPath = (strpos($cleanPhotoPath, 'public/') === 0) ? (__DIR__ . '/../../' . $cleanPhotoPath) : (__DIR__ . '/../../public/' . $cleanPhotoPath);
+            if (file_exists($photoPath) && is_file($photoPath)) {
+                $ext = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION));
+                $mimeType = ($ext === 'png') ? 'png' : 'jpeg';
+                $photoSrc = 'data:image/' . $mimeType . ';base64,' . base64_encode(file_get_contents($photoPath));
+            }
+        }
+
+        $numRecuCode = !empty($pRow['recu_numero_paiement']) ? $pRow['recu_numero_paiement'] : (!empty($pRow['code_paiement']) ? $pRow['code_paiement'] : 'GE-' . sprintf('%08d', $pRow['id_paiement']));
+
+        $refSeed = !empty($pRow['code_paiement']) ? $pRow['code_paiement'] : $numRecuCode;
+        $refCaissHash1 = sprintf("%05d", abs(crc32($refSeed . '_sco')) % 90000 + 10000);
+        $refCaissHash2 = sprintf("%010d", abs(crc32($refSeed . '_cais')) % 9000000000 + 1000000000);
+        $refCaiss = !empty($pRow['reference_paiement']) ? $pRow['reference_paiement'] : ($numRecuCode . 'ScoFOF' . $refCaissHash1 . ',' . $refCaissHash2 . 'ScaisKON');
+
+        $filiereNiveau = (!empty($pRow['libelle_filiere']) && !empty($pRow['libelle_niveau'])) 
+            ? ($pRow['libelle_filiere'] . ' - ' . $pRow['libelle_niveau']) 
+            : ($pRow['libelle_classe'] ?? '-');
+
+        $data = [
+            'annee_libelle' => $pRow['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
+            'code_paiement' => $numRecuCode,
+            'code_inscription' => $inscriptionCode,
+            'date_operation' => !empty($pRow['date_paiement']) ? date('d/m/Y H:i:s', strtotime($pRow['date_paiement'])) : date('d/m/Y H:i:s'),
+            'matricule_etudiant' => !empty($pRow['matricule_etudiant']) ? $pRow['matricule_etudiant'] : ($pRow['code_etudiant'] ?? '-'),
+            'filiere_niveau' => $filiereNiveau,
+            'nom_prenom_etudiant' => $nomComplet,
+            'type_operation' => strtoupper($isFAOp ? 'FRAIS ANNEXES' : ($pRow['libelle_tranche'] ?? ($pRow['type_paiement'] ?? 'SCOLARITÉ'))),
+            'statut_affectation' => (($pRow['affectation_etat'] ?? '') === 'affecte' || ($pRow['affectation_etat'] ?? '') === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
+            'montant_operation' => $montantOp,
+            'montant_operation_lettres' => PdfService::numberToWordsFrench($montantOp),
+            'photo_etudiant' => $photoSrc,
+            'scolarite_op_du_jour' => $scolariteOpJour,
+            'scolarite_total_payer' => $scolariteTotPayer,
+            'scolarite_total_verse' => $scolariteTotVerse,
+            'scolarite_reste_payer' => $scolariteReste,
+            'versement_op_du_jour' => $versementOpJour,
+            'total_op_du_jour' => $totalOpJour,
+            'total_payer' => $totalPayer,
+            'total_verse' => $totalVerse,
+            'total_reste_payer' => $totalRestePayer,
+            'date_prochain_paiement' => ($scolariteReste <= 0) ? 'SOLDÉ' : date('d/m/Y', strtotime('+30 days', strtotime($pRow['date_paiement'] ?? 'now'))),
+            'caissier_nom' => $caissierNom,
+            'date_impression' => date('d/m/Y H:i:s'),
+            'ref_caiss' => $refCaiss,
+            'num_versement' => $numVersement
+        ];
+
+        $html = PdfService::renderTemplate('recu_versement.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Recu_Versement_' . $numRecuCode . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Reçu de Versement N° ' . $numRecuCode,
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
 }

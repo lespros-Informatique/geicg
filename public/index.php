@@ -332,6 +332,8 @@ $route->addRoute('/paiement/add', [$paiementController, 'add']);
 $route->addRoute('/paiement/edit', [$paiementController, 'edit']);
 $route->addRoute('/paiement/changer', [$paiementController, 'changer']);
 $route->addRoute('/paiement/details/{param}', [$paiementController, 'details']);
+$route->addRoute('/paiement/imprimerPdf/{param}', [$paiementController, 'imprimerPdf']);
+$route->addRoute('/paiement/imprimerPdf', [$paiementController, 'imprimerPdf']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);
 $route->addRoute('/paiement/formulaire', [$paiementController, 'formulaire']);
 

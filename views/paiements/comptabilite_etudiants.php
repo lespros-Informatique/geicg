@@ -886,7 +886,7 @@ function openStudentFinancialSummaryModal(inscriptionCode) {
                         <td class="text-uppercase">${modePaiement}</td>
                         <td style="text-align: right;" class="fw-bold text-success">${formatFCFA(p.montant_paiement)}</td>
                         <td style="text-align: center;">
-                            <a href="<?= RACINE ?>paiement/details/${encId}" target="_blank" class="btn btn-sm btn-outline-primary" style="padding: 2px 6px; font-size: 11px;">
+                            <a href="<?= RACINE ?>paiement/imprimerPdf/${encId}" target="_blank" class="btn btn-sm btn-outline-primary" style="padding: 2px 6px; font-size: 11px;" title="Imprimer le reçu de versement (PDF)">
                                 Reçu <i data-lucide="printer" style="width: 12px; height: 12px;"></i>
                             </a>
                         </td>

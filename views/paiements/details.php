@@ -350,9 +350,9 @@ if (empty($logoSrc)) {
           <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux paiements
           </a>
-          <button onclick="window.print()" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu
-          </button>
+          <a href="<?= RACINE ?>paiement/imprimerPdf/<?= $encryptedId ?>" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu (PDF)
+          </a>
         </div>
       </div>
 
