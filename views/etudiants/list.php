@@ -114,9 +114,9 @@ $anneeActive = $anneeActive ?? '';
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Consultation du registre et enregistrement des nouveaux dossiers étudiants</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-          <button onclick="window.print()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste des étudiants">
+          <a href="<?= RACINE ?>etudiant/imprimerPdf" id="btn-print-etudiants" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer la liste des étudiants en PDF">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
-          </button>
+          </a>
           <a href="<?= RACINE ?>etudiant/wizard" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Dossier Étudiant
           </a>
@@ -507,12 +507,28 @@ $(document).ready(function() {
     });
   }
 
+  // Mise à jour dynamique de l'URL d'impression PDF selon les filtres actifs
+  function updatePrintPdfUrl() {
+    var params = {
+      annee_code: $('#filter-annee').val() || '',
+      filiere_code: $('#filter-filiere').val() || '',
+      niveau_code: $('#filter-niveau').val() || '',
+      classe_code: $('#filter-classe').val() || '',
+      affectation_etat: $('#filter-regime').val() || ''
+    };
+    var qs = $.param(params);
+    $('#btn-print-etudiants').attr('href', '<?= RACINE ?>etudiant/imprimerPdf?' + qs);
+  }
+
   // Déclenchement automatique du rechargement et des colonnes intelligentes
   $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe, #filter-regime').on('change', function() {
     filterClassDropdown();
     updateSmartColumns();
+    updatePrintPdfUrl();
     table.ajax.reload();
   });
+
+  updatePrintPdfUrl();
 
   // Filtrage en cascade du menu des classes selon la filière et le niveau choisis
   function filterClassDropdown() {
@@ -560,6 +576,7 @@ $(document).ready(function() {
     $('#filter-regime').val('ALL');
     filterClassDropdown();
     updateSmartColumns();
+    updatePrintPdfUrl();
     table.ajax.reload();
   });
 

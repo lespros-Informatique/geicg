@@ -797,4 +797,135 @@ class EtudiantController extends BaseController
             $this->error('Erreur lors de la création du dossier: ' . $e->getMessage());
         }
     }
+
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_ETUDIANTS', 'MANAGE_ETUDIANTS']);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+
+        $anneeCode = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
+        if ($anneeCode === '' || $anneeCode === null || $anneeCode === 'ALL') {
+            $anneeCode = $this->getActiveAnneeCode();
+        }
+
+        $filters = [
+            'annee_code' => $anneeCode,
+            'niveau_code' => $_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''),
+            'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
+            'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),
+            'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? ''),
+            'affectation_etat' => $_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? '')
+        ];
+
+        $etudiants = $this->model->getFilteredRegistry($filters);
+
+        // Intitulés lisibles des filtres
+        $filtresLabels = [
+            'filiere' => 'Toutes les filières',
+            'niveau' => 'Tous les niveaux',
+            'classe' => 'Toutes les classes',
+            'regime' => 'Tous les régimes'
+        ];
+
+        if (!empty($filters['filiere_code']) && $filters['filiere_code'] !== 'ALL') {
+            $stmt = $db->prepare("SELECT libelle_filiere FROM filieres WHERE code_filiere = ? LIMIT 1");
+            $stmt->execute([$filters['filiere_code']]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) $filtresLabels['filiere'] = $row['libelle_filiere'];
+        }
+
+        if (!empty($filters['niveau_code']) && $filters['niveau_code'] !== 'ALL') {
+            $stmt = $db->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ? LIMIT 1");
+            $stmt->execute([$filters['niveau_code']]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) $filtresLabels['niveau'] = $row['libelle_niveau'];
+        }
+
+        if (!empty($filters['classe_code']) && $filters['classe_code'] !== 'ALL') {
+            $stmt = $db->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmt->execute([$filters['classe_code']]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) $filtresLabels['classe'] = $row['libelle_classe'];
+        }
+
+        if (!empty($filters['affectation_etat']) && $filters['affectation_etat'] !== 'ALL') {
+            $filtresLabels['regime'] = ($filters['affectation_etat'] === 'affecte') ? 'Affectés (État)' : 'Non Affectés (Privé)';
+        }
+
+        // Année académique libellé
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$anneeCode]);
+            $aName = $stmtA->fetchColumn();
+            if ($aName) $anneeLibelle = $aName;
+        }
+
+        // KPIs de synthèse
+        $total = count($etudiants);
+        $affectes = 0;
+        $nonAffectes = 0;
+        $hommes = 0;
+        $femmes = 0;
+
+        foreach ($etudiants as $e) {
+            $aff = $e['affectation_etat'] ?? '';
+            if ($aff === 'affecte' || $aff === 'oui') {
+                $affectes++;
+            } else {
+                $nonAffectes++;
+            }
+
+            $sexe = strtoupper(trim($e['sexe_etudiant'] ?? ''));
+            if (strpos($sexe, 'F') !== false) {
+                $femmes++;
+            } else {
+                $hommes++;
+            }
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $authSession = $_SESSION[USERS_AUTH] ?? [];
+        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Inscription & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'etudiants' => $etudiants,
+            'filtres_labels' => $filtresLabels,
+            'kpis' => [
+                'total' => $total,
+                'affectes' => $affectes,
+                'non_affectes' => $nonAffectes,
+                'hommes' => $hommes,
+                'femmes' => $femmes
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('liste_etudiants.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Liste_Etudiants_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre Nominatif des Étudiants - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
 }

@@ -230,6 +230,7 @@ $route->addRoute('/tranche/formulaire', [$trancheController, 'formulaire']);
 // Module: etudiant (EtudiantController)
 $route->addRoute('/etudiant/list', [$etudiantController, 'list']);
 $route->addRoute('/etudiant/apiList', [$etudiantController, 'apiList']);
+$route->addRoute('/etudiant/imprimerPdf', [$etudiantController, 'imprimerPdf']);
 $route->addRoute('/etudiant/add', [$etudiantController, 'add']);
 $route->addRoute('/etudiant/addWizard', [$etudiantController, 'addWizard']);
 $route->addRoute('/etudiant/changer', [$etudiantController, 'changer']);
