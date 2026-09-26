@@ -2,15 +2,18 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Liste de Classe & Émargement</title>
+  <title>Liste de Classe & Fiche d'Émargement - GROUPE EICG</title>
   <style>
     @page {
-      margin: 8mm 8mm 8mm 8mm;
+      margin-top: 8mm;
+      margin-bottom: 8mm;
+      margin-left: 8mm;
+      margin-right: 8mm;
     }
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
-      font-size: 10px;
-      color: #000000;
+      font-size: 8.5pt;
+      color: #0F172A;
       line-height: 1.25;
     }
 
@@ -18,83 +21,136 @@
     .header-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
+    }
+    .header-table td {
+      vertical-align: middle;
     }
     .inst-title {
-      font-size: 13px;
+      font-size: 11.5pt;
       font-weight: bold;
       color: #990000;
-      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.15;
     }
     .inst-subtitle {
-      font-size: 11px;
+      font-size: 8.5pt;
       font-weight: bold;
-      text-align: center;
-      color: #004080;
+      color: #0369A1;
       margin-top: 1px;
     }
     .inst-contacts {
-      font-size: 9px;
-      font-style: italic;
-      text-align: center;
+      font-size: 7.5pt;
+      color: #64748B;
       margin-top: 1px;
     }
 
-    /* Bannières Titres */
-    .banner-title {
-      background: #800000;
-      color: #FFFFFF;
-      font-size: 15px;
-      font-weight: bold;
-      text-align: center;
-      padding: 5px;
-      margin-top: 4px;
-      margin-bottom: 4px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .divider-line {
+      height: 1.5px;
+      background-color: #1E3A5F;
+      margin-top: 3px;
+      margin-bottom: 5px;
     }
 
-    /* Fiche Informations Classe */
-    .meta-table {
+    /* Bannière Titre */
+    .banner-table {
       width: 100%;
       border-collapse: collapse;
-      border: 1.5px solid #000000;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
+      background-color: #1E3A5F;
     }
-    .meta-table td {
+    .banner-table td {
+      padding: 5px 8px;
+      text-align: center;
+      color: #FFFFFF;
+    }
+    .banner-title {
+      font-size: 11.5pt;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .banner-sub {
+      font-size: 8pt;
+      color: #E2E8F0;
+      margin-top: 1px;
+    }
+
+    /* Cartouche Métadonnées & KPIs */
+    .meta-box-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+      border: 1px solid #CBD5E1;
+      background-color: #F8FAFC;
+    }
+    .meta-box-table td {
       padding: 4px 6px;
+      font-size: 8pt;
       vertical-align: middle;
-      font-size: 10px;
+      border: 0.5px solid #E2E8F0;
+    }
+    .meta-label {
+      font-weight: bold;
+      color: #475569;
+    }
+    .meta-value {
+      font-weight: bold;
+      color: #0F172A;
+    }
+
+    /* Summary Indicators Bar */
+    .kpi-summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+    }
+    .kpi-summary-table td {
+      padding: 4px 6px;
+      font-size: 8pt;
+      font-weight: bold;
+      text-align: center;
       border: 1px solid #CBD5E1;
     }
-    .val-bold {
-      font-weight: bold;
-    }
+    .kpi-total { background-color: #EFF6FF; color: #1E3A5F; }
+    .kpi-affecte { background-color: #F0FDF4; color: #15803D; }
+    .kpi-prive { background-color: #F0F9FF; color: #0369A1; }
+    .kpi-genre { background-color: #FDF4FF; color: #7E22CE; }
 
-    /* Tableau Liste des Étudiants */
-    .students-table {
+    /* Tableau Nominatif */
+    .data-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 4px;
     }
-    .students-table th {
-      background: #1E293B;
+    .data-table th {
+      background-color: #1E293B;
       color: #FFFFFF;
       border: 1px solid #000000;
-      padding: 4.5px 4px;
-      font-size: 9.5px;
+      padding: 5px 5px;
+      font-size: 8.5pt;
       font-weight: bold;
       text-align: center;
+      text-transform: uppercase;
     }
-    .students-table td {
+    .data-table td {
       border: 1px solid #000000;
-      padding: 3.5px 4px;
-      font-size: 9.5px;
+      padding: 4px 5px;
+      font-size: 8.5pt;
       vertical-align: middle;
     }
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .text-bold { font-weight: bold; }
 
-    .val-center {
-      text-align: center;
+    .badge-affecte {
+      color: #15803D;
+      font-weight: bold;
+    }
+    .badge-prive {
+      color: #1D4ED8;
+      font-weight: bold;
     }
 
     /* Footer & Signatures */
@@ -102,13 +158,13 @@
       width: 100%;
       margin-top: 10px;
       border-top: 1px solid #000000;
-      padding-top: 6px;
-      font-size: 9px;
+      padding-top: 5px;
+      font-size: 8pt;
     }
     .signature-grid {
       width: 100%;
-      margin-top: 15px;
-      font-size: 9.5px;
+      margin-top: 12px;
+      font-size: 8.5pt;
     }
     .signature-grid td {
       vertical-align: top;
@@ -117,107 +173,116 @@
 </head>
 <body>
 
-  <!-- EN-TÊTE -->
+  <!-- EN-TÊTE ÉTABLISSEMENT -->
   <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+    $candidateLogos = [
+        __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg',
+        __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg',
+        '/var/www/html/geicg/public/assets/images/logo/logo_eicg.jpg'
+    ];
+    $logoSrc = null;
+    foreach ($candidateLogos as $lPath) {
+        if (file_exists($lPath) && is_file($lPath)) {
+            $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($lPath));
+            break;
+        }
+    }
   ?>
   <table class="header-table">
     <tr>
-      <td style="width: 20%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 48px; max-width: 125px;">
+      <td style="width: 20%;">
+        <?php if ($logoSrc): ?>
+          <img src="<?= $logoSrc ?>" style="max-height: 48px; max-width: 130px;">
         <?php else: ?>
-          <div style="font-weight:bold; color:#990000; font-size:13px;">GROUPE EICG</div>
+          <div style="font-weight: bold; color: #990000; font-size: 12pt;">GROUPE EICG</div>
         <?php endif; ?>
       </td>
-      <td style="width: 80%; text-align: center; vertical-align: middle;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
-        <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
+      <td style="width: 80%; text-align: center;">
+        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['sous_titre'] ?? 'AGREE PAR L\'ETAT ET LE FDFP') ?></div>
+        <div class="inst-contacts">Contacts : <?= htmlspecialchars($etablissement['telephone'] ?? '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99') ?> — Site Web : www.groupe-eicg.net</div>
       </td>
     </tr>
   </table>
 
-  <!-- BANNIÈRE PRINCIPALE -->
-  <div class="banner-title">LISTE DE CLASSE</div>
+  <div class="divider-line"></div>
 
-  <!-- METADATA DE LA CLASSE -->
-  <table class="meta-table">
+  <!-- BANNIÈRE PRINCIPALE -->
+  <table class="banner-table">
     <tr>
-      <td style="width: 33%;">Année Académique : <span class="val-bold" style="font-size: 11px; color: #800000;"><?= htmlspecialchars($annee_libelle ?? '2025-2026') ?></span></td>
-      <td style="width: 34%;">Filière : <span class="val-bold"><?= htmlspecialchars($filiere_libelle ?? 'Ressources Humaines et Communication') ?></span></td>
-      <td style="width: 33%;">Niveau : <span class="val-bold"><?= htmlspecialchars($niveau_libelle ?? 'Première Année') ?></span></td>
-    </tr>
-    <tr>
-      <td>Classe / Groupement : <span class="val-bold" style="font-size: 11px;"><?= htmlspecialchars($classe_libelle ?? 'GBAT 1A') ?></span></td>
-      <td>Salle de cours : <span class="val-bold"><?= htmlspecialchars($salle_libelle ?? 'Salle S6') ?></span></td>
-      <td>Date d'édition : <span class="val-bold"><?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></span></td>
-    </tr>
-    <tr>
-      <td>Effectif Total : <span class="val-bold"><?= htmlspecialchars($effectif_total ?? count($etudiants ?? [])) ?> Étudiants</span></td>
-      <td>Affectés (État) : <span class="val-bold"><?= htmlspecialchars($nb_affectes ?? '-') ?></span></td>
-      <td>Non Affectés (Privés) : <span class="val-bold"><?= htmlspecialchars($nb_prives ?? '-') ?></span></td>
+      <td>
+        <div class="banner-title">LISTE DE CLASSE & FICHE D'ÉMARGEMENT</div>
+        <div class="banner-sub">ANNÉE ACADÉMIQUE : <?= htmlspecialchars($annee_libelle) ?></div>
+      </td>
     </tr>
   </table>
 
-  <!-- TABLEAU NOMINATIF DE CLASSE -->
-  <table class="students-table">
+  <!-- CARTOUCHE METADATA CLASSE -->
+  <table class="meta-box-table">
+    <tr>
+      <td style="width: 33%;"><span class="meta-label">Classe / Groupement :</span> <span class="meta-value"><?= htmlspecialchars($classe_libelle ?? ($classe['libelle_classe'] ?? '')) ?></span></td>
+      <td style="width: 34%;"><span class="meta-label">Filière :</span> <span class="meta-value"><?= htmlspecialchars($filiere_libelle ?? ($classe['libelle_filiere'] ?? '-')) ?></span></td>
+      <td style="width: 33%;"><span class="meta-label">Niveau d'Études :</span> <span class="meta-value"><?= htmlspecialchars($niveau_libelle ?? ($classe['libelle_niveau'] ?? '-')) ?></span></td>
+    </tr>
+    <tr>
+      <td><span class="meta-label">Effectif Inscrit :</span> <span class="meta-value"><?= count($etudiants ?? []) ?> Étudiant(s)</span></td>
+      <td><span class="meta-label">Éditeur / Agent :</span> <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? 'Service Scolarité') ?></span></td>
+      <td><span class="meta-label">Date d'Édition :</span> <span class="meta-value"><?= date('d/m/Y H:i') ?></span></td>
+    </tr>
+  </table>
+
+  <!-- SUMMARY KPIS -->
+  <table class="kpi-summary-table">
+    <tr>
+      <td class="kpi-total" style="width: 25%;">EFFECTIF TOTAL : <?= $kpis['total'] ?? count($etudiants ?? []) ?></td>
+      <td class="kpi-affecte" style="width: 25%;">AFFECTÉS (ÉTAT) : <?= $kpis['affectes'] ?? 0 ?></td>
+      <td class="kpi-prive" style="width: 25%;">NON AFFECTÉS (PRIVÉ) : <?= $kpis['non_affectes'] ?? 0 ?></td>
+      <td class="kpi-genre" style="width: 25%;">GENRE : <?= $kpis['hommes'] ?? 0 ?> H / <?= $kpis['femmes'] ?? 0 ?> F</td>
+    </tr>
+  </table>
+
+  <!-- TABLEAU NOMINATIF ÉMARGEMENT -->
+  <table class="data-table">
     <thead>
       <tr>
         <th style="width: 4%;">N°</th>
-        <th style="width: 14%;">MATRICULE</th>
-        <th style="width: 38%; text-align: left;">NOM & PRÉNOM(S)</th>
+        <th style="width: 15%;">MATRICULE</th>
+        <th style="width: 35%; text-align: left;">NOM & PRÉNOM(S)</th>
         <th style="width: 6%;">SEXE</th>
-        <th style="width: 11%;">STATUT</th>
-        <th style="width: 11%;">CONTACT</th>
-        <th style="width: 16%;">ÉMARGEMENT / OBS</th>
+        <th style="width: 14%;">STATUT / RÉGIME</th>
+        <th style="width: 12%;">CONTACT</th>
+        <th style="width: 14%;">ÉMARGEMENT / OBS</th>
       </tr>
     </thead>
     <tbody>
-      <?php if (!empty($etudiants) && is_array($etudiants)): ?>
+      <?php if (!empty($etudiants)): ?>
         <?php foreach ($etudiants as $i => $e): ?>
+          <?php 
+            $isAffecte = ($e['affectation_etat'] === 'affecte' || $e['affectation_etat'] === 'oui');
+            $nomComplet = mb_strtoupper($e['nom_etudiant'] ?? '') . ' ' . ($e['prenom_etudiant'] ?? '');
+          ?>
           <tr>
-            <td class="val-center"><?= $i + 1 ?></td>
-            <td class="val-center" style="font-weight: bold;"><?= htmlspecialchars($e['matricule_etudiant'] ?? $e['num_gpeicg'] ?? '-') ?></td>
-            <td style="font-weight: bold;"><?= htmlspecialchars(mb_strtoupper($e['nom_prenoms'] ?? ($e['nom_etudiant'] . ' ' . $e['prenom_etudiant']))) ?></td>
-            <td class="val-center"><?= htmlspecialchars($e['sexe'] ?? '-') ?></td>
-            <td class="val-center"><?= htmlspecialchars($e['statut'] ?? $e['statut_affectation_etudiant'] ?? 'AFFECTE') ?></td>
-            <td class="val-center"><?= htmlspecialchars($e['contact'] ?? $e['telephone_etudiant'] ?? '-') ?></td>
-            <td class="val-center" style="height: 18px;"></td>
+            <td class="text-center text-bold"><?= $i + 1 ?></td>
+            <td class="text-center text-bold" style="font-family: monospace; color: #1E3A5F;"><?= htmlspecialchars($e['matricule_etudiant'] ?? $e['code_etudiant']) ?></td>
+            <td class="text-left text-bold"><?= htmlspecialchars($nomComplet) ?></td>
+            <td class="text-center text-bold"><?= htmlspecialchars($e['sexe_etudiant'] ?? 'M') ?></td>
+            <td class="text-center">
+              <?php if ($isAffecte): ?>
+                <span class="badge-affecte">Affecté(e) État</span>
+              <?php else: ?>
+                <span class="badge-prive">Non Affecté(e)</span>
+              <?php endif; ?>
+            </td>
+            <td class="text-center"><?= htmlspecialchars($e['telephone_etudiant'] ?? '-') ?></td>
+            <td class="text-center" style="height: 18px;"></td>
           </tr>
         <?php endforeach; ?>
       <?php else: ?>
-        <?php 
-          // Default mock demonstration rows
-          $mockClassList = [
-            ['mat' => 'YAYD0207010001', 'nom' => 'OUATTARA APATCHO ANDREA TISSEN', 'sexe' => 'F', 'statut' => 'AFFECTE', 'contact' => '0708091011'],
-            ['mat' => 'LAGY1508020002', 'nom' => 'LAGOU YAO JEAN ROMARIC', 'sexe' => 'M', 'statut' => 'AFFECTE', 'contact' => '0102030405'],
-            ['mat' => 'AKPW1203010003', 'nom' => 'AKPOUE KOUAKOU WILFRIED', 'sexe' => 'M', 'statut' => 'AFFECTE', 'contact' => '0506070809'],
-            ['mat' => 'TOUR1011040004', 'nom' => 'TOURE NANDIEKPO JEAN-REGIS', 'sexe' => 'M', 'statut' => 'AFFECTE', 'contact' => '0711223344'],
-            ['mat' => 'TANR1809050005', 'nom' => 'TANOU ROKIA', 'sexe' => 'F', 'statut' => 'AFFECTE', 'contact' => '0566778899'],
-            ['mat' => 'KOFP2204060006', 'nom' => 'KOFFI AMOIN PRISCILLE', 'sexe' => 'F', 'statut' => 'AFFECTE', 'contact' => '0144556677'],
-            ['mat' => 'KOFS2901070007', 'nom' => 'KOFFI KOUASSI SALOMON', 'sexe' => 'M', 'statut' => 'AFFECTE', 'contact' => '0788990011'],
-            ['mat' => 'KOFN0406080008', 'nom' => 'KOFFI CHRIS RASSOU USHER NATHAN', 'sexe' => 'M', 'statut' => 'AFFECTE', 'contact' => '0522334455'],
-            ['mat' => 'KOUA1907090009', 'nom' => 'KOUADIO AHOU ANGE', 'sexe' => 'F', 'statut' => 'AFFECTE', 'contact' => '0199887766'],
-            ['mat' => 'CAML0102100010', 'nom' => 'CAMARA N\'GANLO LOSSA', 'sexe' => 'M', 'statut' => 'AFFECTE', 'contact' => '0733445566'],
-            ['mat' => 'DOUM1205110011', 'nom' => 'DOUKOURE MATENIN', 'sexe' => 'F', 'statut' => 'AFFECTE', 'contact' => '0511223344'],
-            ['mat' => 'DIAA2408120012', 'nom' => 'DIARRA ADJARATOU', 'sexe' => 'F', 'statut' => 'AFFECTE', 'contact' => '0744556677'],
-            ['mat' => 'TRAM0901130013', 'nom' => 'TRAORE MAIMOUNA', 'sexe' => 'F', 'statut' => 'AFFECTE', 'contact' => '0155667788'],
-            ['mat' => 'OUAM1803140014', 'nom' => 'OUATTARA MATAGARI', 'sexe' => 'F', 'statut' => 'AFFECTE', 'contact' => '0588990011'],
-            ['mat' => 'SEKN2704150015', 'nom' => 'SEKONGO NAMARALA', 'sexe' => 'M', 'statut' => 'AFFECTE', 'contact' => '0722334455'],
-          ];
-        ?>
-        <?php foreach ($mockClassList as $i => $e): ?>
-          <tr>
-            <td class="val-center"><?= $i + 1 ?></td>
-            <td class="val-center" style="font-weight: bold;"><?= htmlspecialchars($e['mat']) ?></td>
-            <td style="font-weight: bold;"><?= htmlspecialchars($e['nom']) ?></td>
-            <td class="val-center"><?= htmlspecialchars($e['sexe']) ?></td>
-            <td class="val-center"><?= htmlspecialchars($e['statut']) ?></td>
-            <td class="val-center"><?= htmlspecialchars($e['contact']) ?></td>
-            <td class="val-center" style="height: 18px;"></td>
-          </tr>
-        <?php endforeach; ?>
+        <tr>
+          <td colspan="7" class="text-center" style="padding: 20px; color: #64748B; font-style: italic;">
+            Aucun étudiant n'est actuellement inscrit dans cette classe.
+          </td>
+        </tr>
       <?php endif; ?>
     </tbody>
   </table>
@@ -225,10 +290,10 @@
   <!-- BAS DE PAGE ET SIGNATURES -->
   <table class="footer-summary">
     <tr>
-      <td style="width: 50%;">
-        Bilan des Présences du jour : &nbsp;&nbsp;&nbsp;&nbsp; Présents : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ] &nbsp;&nbsp;&nbsp;&nbsp; Absents : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]
+      <td style="width: 55%;">
+        Bilan des Présences : &nbsp;&nbsp;&nbsp;&nbsp; Présents : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ] &nbsp;&nbsp;&nbsp;&nbsp; Absents : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ] &nbsp;&nbsp;&nbsp;&nbsp; Retards : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]
       </td>
-      <td style="width: 50%; text-align: right;">
+      <td style="width: 45%; text-align: right;">
         Fait à Bouaké, le <?= date('d/m/Y') ?>
       </td>
     </tr>
@@ -236,11 +301,14 @@
 
   <table class="signature-grid">
     <tr>
-      <td style="width: 50%;">
+      <td style="width: 33%;">
         <div style="font-weight: bold; text-decoration: underline;">Le Délégué de Classe</div>
       </td>
-      <td style="width: 50%; text-align: right;">
-        <div style="font-weight: bold; text-decoration: underline;">Le Professeur / L'Administration</div>
+      <td style="width: 34%; text-align: center;">
+        <div style="font-weight: bold; text-decoration: underline;">Le Enseignant / Surveillant</div>
+      </td>
+      <td style="width: 33%; text-align: right;">
+        <div style="font-weight: bold; text-decoration: underline;">La Direction des Études</div>
       </td>
     </tr>
   </table>

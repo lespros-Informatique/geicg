@@ -19,9 +19,12 @@ $tauxRemplissage = ($capacite > 0) ? min(100, round(($nbInscrits / $capacite) * 
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Classe : <?= htmlspecialchars($item['libelle_classe'] ?? 'Classe') ?></h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong> &bull; Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong> &bull; Année : <strong><?= htmlspecialchars($item['libelle_annee'] ?? 'En cours') ?></strong></p>
         </div>
-        <div style="display: flex; gap: 12px;">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <a href="<?= RACINE ?>classe/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux classes
+          </a>
+          <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['annee_code'] ?? '') ?>&classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste nominative des étudiants de cette classe">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Liste de la Classe
           </a>
           <a href="<?= RACINE ?>classe/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la classe
@@ -70,9 +73,14 @@ $tauxRemplissage = ($capacite > 0) ? min(100, round(($nbInscrits / $capacite) * 
               <i data-lucide="user-check" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Registre des Étudiants Inscrits (<?= $nbInscrits ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>inscription/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Inscrire un étudiant
-          </a>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['annee_code'] ?? '') ?>&classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF;" title="Imprimer la liste nominative de cette classe">
+              <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Imprimer Liste
+            </a>
+            <a href="<?= RACINE ?>inscription/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+              + Inscrire un étudiant
+            </a>
+          </div>
         </div>
 
         <?php if (empty($etudiants)): ?>

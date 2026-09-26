@@ -158,7 +158,7 @@ class ClasseController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Classe créée avec succès!');
+            $this->success('Classe créée avec succès!', ['redirect' => RACINE . 'classe/list']);
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de la création de la classe.';
             $this->error($err);
@@ -226,7 +226,7 @@ class ClasseController extends BaseController
         }
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Classe modifiée avec succès!');
+            $this->success('Classe modifiée avec succès!', ['redirect' => RACINE . 'classe/list']);
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de la modification de la classe.';
             $this->error($err);
@@ -450,5 +450,27 @@ class ClasseController extends BaseController
             'margin_top' => 10,
             'margin_bottom' => 12
         ]);
+    }
+
+    public function imprimerListe($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission(['PRINT_CLASSES', 'VIEW_CLASSES', 'VIEW_ETUDIANTS', 'MANAGE_CLASSES']);
+        try {
+            $id = $this->validator->decrypter($details);
+            if (empty($id)) $id = $details;
+            $item = $this->model->getById($id);
+            if (!$item) {
+                $this->renderNotFound("Classe introuvable.");
+                return;
+            }
+            $classeCode = $item['code_classe'] ?? '';
+            $anneeCode = $item['annee_code'] ?? $this->getActiveAnneeCode();
+
+            header('Location: ' . RACINE . 'etudiant/imprimerPdf?annee_code=' . urlencode($anneeCode) . '&classe_code=' . urlencode($classeCode));
+            exit;
+        } catch (Exception $e) {
+            $this->renderNotFound("Erreur lors de l'accès à la classe.");
+        }
     }
 }
