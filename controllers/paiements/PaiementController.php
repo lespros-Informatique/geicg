@@ -1685,7 +1685,7 @@ class PaiementController extends BaseController
         // Récupérer les données complètes du paiement et de l'étudiant/inscription
         $stmtPai = $db->prepare("
             SELECT p.*,
-                   i.code_inscription, i.statut_inscription, i.montant_scolarite_inscription, i.affectation_etat,
+                   i.code_inscription, i.statut_inscription, i.montant_scolarite_inscription, i.affectation_etat, i.photo_inscription,
                    e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.photo_etudiant,
                    cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee,
                    u.nom_user as nom_caissier, u.prenom_user as prenom_caissier
@@ -1760,18 +1760,46 @@ class PaiementController extends BaseController
             $caissierNom = "Mlle KONE N'diatty A. Mariam";
         }
 
-        // Photographie
-        $photoSrc = null;
-        $rawPhoto = !empty($pRow['photo_etudiant']) ? $pRow['photo_etudiant'] : '';
-        if (!empty($rawPhoto)) {
-            $cleanPhotoPath = ltrim($rawPhoto, '/');
-            $photoPath = (strpos($cleanPhotoPath, 'public/') === 0) ? (__DIR__ . '/../../' . $cleanPhotoPath) : (__DIR__ . '/../../public/' . $cleanPhotoPath);
-            if (file_exists($photoPath) && is_file($photoPath)) {
-                $ext = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION));
-                $mimeType = ($ext === 'png') ? 'png' : 'jpeg';
-                $photoSrc = 'data:image/' . $mimeType . ';base64,' . base64_encode(file_get_contents($photoPath));
+        // Helper générique de conversion d'image en Base64
+        $toBase64 = function($paths) {
+            foreach ((array)$paths as $p) {
+                if (empty($p)) continue;
+                $clean = ltrim($p, '/');
+                $candidates = [
+                    $p,
+                    __DIR__ . '/../../' . $clean,
+                    __DIR__ . '/../../public/' . $clean,
+                    '/var/www/html/geicg/' . $clean,
+                    '/var/www/html/geicg/public/' . $clean
+                ];
+                foreach ($candidates as $cand) {
+                    if (!empty($cand) && file_exists($cand) && is_file($cand)) {
+                        $ext = strtolower(pathinfo($cand, PATHINFO_EXTENSION));
+                        $mime = ($ext === 'png') ? 'png' : (($ext === 'gif') ? 'gif' : 'jpeg');
+                        $content = file_get_contents($cand);
+                        if (!empty($content)) {
+                            return 'data:image/' . $mime . ';base64,' . base64_encode($content);
+                        }
+                    }
+                }
             }
-        }
+            return null;
+        };
+
+        // Encodage du Logo en Base64
+        $logoSrc = $toBase64([
+            'public/assets/images/logo/logo_eicg.jpg',
+            'assets/images/logo/logo_eicg.jpg',
+            'public/uploads/logos/logo_1787358264.jpg'
+        ]);
+
+        // Encodage de la Photo de l'étudiant / Inscription / Image par défaut
+        $photoSrc = $toBase64([
+            $pRow['photo_etudiant'] ?? '',
+            $pRow['photo_inscription'] ?? '',
+            'public/assets/images/placeholders/etudiant.png',
+            'assets/images/placeholders/etudiant.png'
+        ]);
 
         $numRecuCode = !empty($pRow['recu_numero_paiement']) ? $pRow['recu_numero_paiement'] : (!empty($pRow['code_paiement']) ? $pRow['code_paiement'] : 'GE-' . sprintf('%08d', $pRow['id_paiement']));
 
@@ -1796,6 +1824,7 @@ class PaiementController extends BaseController
             'statut_affectation' => (($pRow['affectation_etat'] ?? '') === 'affecte' || ($pRow['affectation_etat'] ?? '') === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
             'montant_operation' => $montantOp,
             'montant_operation_lettres' => PdfService::numberToWordsFrench($montantOp),
+            'logo_src' => $logoSrc,
             'photo_etudiant' => $photoSrc,
             'scolarite_op_du_jour' => $scolariteOpJour,
             'scolarite_total_payer' => $scolariteTotPayer,

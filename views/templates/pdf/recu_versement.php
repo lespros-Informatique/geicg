@@ -11,7 +11,7 @@
       font-family: 'Helvetica', 'Arial', sans-serif;
       font-size: 11px;
       color: #000000;
-      line-height: 1.25;
+      line-height: 1.2;
     }
     .page-frame {
       border: 2px solid #800000;
@@ -60,7 +60,7 @@
 
     /* Bannières Titres */
     .banner-title {
-      background: #808080;
+      background: #A6A6A6;
       color: #000000;
       font-size: 15px;
       font-weight: bold;
@@ -71,7 +71,7 @@
       text-transform: uppercase;
     }
     .banner-copy {
-      background: #808080;
+      background: #A6A6A6;
       color: #000000;
       font-size: 13.5px;
       font-weight: bold;
@@ -140,20 +140,32 @@
       font-weight: bold;
       width: 18.75%;
     }
+    .fin-table td.cell-black {
+      background: #000000;
+    }
     .fin-table tr.total-row td {
-      background: #808080;
-      color: #FFFFFF;
+      background: #A6A6A6;
+      color: #000000;
       font-weight: bold;
       font-size: 11px;
     }
 
     /* Badges & Warning */
-    .badge-solde {
+    .badge-solde-red {
       background: #FF0000;
       color: #FFFFFF;
       font-size: 13px;
       font-weight: bold;
-      padding: 3px 14px;
+      padding: 3px 18px;
+      display: inline-block;
+      text-align: center;
+    }
+    .badge-solde-gray {
+      background: #A6A6A6;
+      color: #000000;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 3px 18px;
       display: inline-block;
       text-align: center;
     }
@@ -167,6 +179,18 @@
       margin-bottom: 6px;
     }
 
+    /* Gray boxes for copy section */
+    .gray-inline-box {
+      background: #A6A6A6;
+      display: inline-block;
+      min-width: 60px;
+      height: 14px;
+      vertical-align: middle;
+      padding: 1px 6px;
+      color: #000000;
+      font-weight: bold;
+    }
+
     /* Footer & Signatures */
     .footer-note {
       font-size: 9.5px;
@@ -174,7 +198,6 @@
     }
     .signature-area {
       text-align: right;
-      margin-top: -20px;
     }
     .signature-title {
       font-weight: bold;
@@ -201,15 +224,12 @@
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE -->
-  <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-  ?>
+  <!-- EN-TÊTE INSTITUTION -->
   <table class="header-table">
     <tr>
       <td style="width: 15%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 48px; max-width: 110px;">
+        <?php if (!empty($logo_src)): ?>
+          <img src="<?= $logo_src ?>" style="max-height: 48px; max-width: 110px;">
         <?php else: ?>
           <div class="logo-box">GROUPE<br>EICG</div>
         <?php endif; ?>
@@ -226,7 +246,7 @@
   <div class="banner-title">REÇU DE VERSEMENT</div>
   <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '2025-2026') ?></div>
 
-  <!-- INFOS ÉTUDIANT ORIGINAL -->
+  <!-- INFOS ÉTUDIANT (REÇU ORIGINAL) -->
   <table class="info-table">
     <tr>
       <td style="width: 78%;">
@@ -234,11 +254,8 @@
           <tr>
             <td style="width: 50%;">
               N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? 'GE-25260178') ?></span>
-              <div style="margin-top: 2px;">
-                <barcode code="<?= htmlspecialchars($code_paiement ?? $code_inscription ?? 'GE-25260178') ?>" type="C128A" size="0.6" height="0.6" />
-              </div>
             </td>
-            <td style="width: 50%;"><?= htmlspecialchars($date_operation ?? date('d/m/Y')) ?></td>
+            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(date('d/m/Y', strtotime($date_operation ?? 'now'))) ?></td>
           </tr>
           <tr>
             <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
@@ -267,7 +284,7 @@
     </tr>
   </table>
 
-  <!-- TABLEAU FINANCIER DÉTAILLÉ DE VERSEMENT -->
+  <!-- TABLEAU FINANCIER DÉTAILLÉ -->
   <table class="fin-table">
     <thead>
       <tr>
@@ -289,9 +306,15 @@
       <tr>
         <td class="col-label">Droit d'Inscription</td>
         <td class="col-num"><?= isset($droit_op_du_jour) && $droit_op_du_jour > 0 ? number_format($droit_op_du_jour, 0, ',', ' ') . 'CFA' : '' ?></td>
-        <td class="col-num"><?= isset($droit_total_payer) && $droit_total_payer > 0 ? number_format($droit_total_payer, 0, ',', ' ') . 'CFA' : '' ?></td>
-        <td class="col-num"><?= isset($droit_total_verse) && $droit_total_verse > 0 ? number_format($droit_total_verse, 0, ',', ' ') . 'CFA' : '' ?></td>
-        <td class="col-num"><?= isset($droit_reste_payer) && $droit_reste_payer > 0 ? number_format($droit_reste_payer, 0, ',', ' ') . 'CFA' : '' ?></td>
+        <?php if (isset($droit_total_payer) && $droit_total_payer > 0): ?>
+          <td class="col-num"><?= number_format($droit_total_payer, 0, ',', ' ') ?>CFA</td>
+          <td class="col-num"><?= number_format($droit_total_verse ?? 0, 0, ',', ' ') ?>CFA</td>
+          <td class="col-num"><?= number_format($droit_reste_payer ?? 0, 0, ',', ' ') ?>CFA</td>
+        <?php else: ?>
+          <td class="col-num cell-black"></td>
+          <td class="col-num cell-black"></td>
+          <td class="col-num cell-black"></td>
+        <?php endif; ?>
       </tr>
       <tr>
         <td class="col-label">Versement</td>
@@ -301,11 +324,11 @@
         <td class="col-num"></td>
       </tr>
       <tr class="total-row">
-        <td class="col-label" style="background: #808080;">TOTAL</td>
-        <td class="col-num" style="background: #808080;"><?= number_format($total_op_du_jour ?? $montant_operation ?? 0, 0, ',', ' ') ?>CFA</td>
-        <td class="col-num" style="background: #808080;"><?= number_format($total_payer ?? 0, 0, ',', ' ') ?>CFA</td>
-        <td class="col-num" style="background: #808080;"><?= number_format($total_verse ?? 0, 0, ',', ' ') ?>CFA</td>
-        <td class="col-num" style="background: #808080;"><?= number_format($total_reste_payer ?? 0, 0, ',', ' ') ?>CFA</td>
+        <td class="col-label">TOTAL</td>
+        <td class="col-num"><?= number_format($total_op_du_jour ?? $montant_operation ?? 0, 0, ',', ' ') ?>CFA</td>
+        <td class="col-num"><?= number_format($total_payer ?? 0, 0, ',', ' ') ?>CFA</td>
+        <td class="col-num"><?= number_format($total_verse ?? 0, 0, ',', ' ') ?>CFA</td>
+        <td class="col-num"><?= number_format($total_reste_payer ?? 0, 0, ',', ' ') ?>CFA</td>
       </tr>
     </tbody>
   </table>
@@ -317,9 +340,13 @@
         Date du Prochain Payement : 
         <?php 
           $badgeText = htmlspecialchars($date_prochain_paiement ?? 'SOLDÉ');
-          $badgeBg = ($badgeText === 'SOLDÉ') ? '#FF0000' : '#808080';
+          $isSolde = ($badgeText === 'SOLDÉ');
         ?>
-        <span class="badge-solde" style="background: <?= $badgeBg ?>;"><?= $badgeText ?></span>
+        <?php if ($isSolde): ?>
+          <span class="badge-solde-red">SOLDÉ</span>
+        <?php else: ?>
+          <span class="badge-solde-red" style="background: #A6A6A6; color: #000;"><?= $badgeText ?></span>
+        <?php endif; ?>
       </td>
       <td style="width: 40%; text-align: right;">
         <div class="signature-title">CAISSIER(RE)</div>
@@ -330,7 +357,7 @@
 
   <!-- AVERTISSEMENT N.B -->
   <div class="warning-box">
-    N.B: - Aucun remboursement n'est admis après l'inscription.<br>
+    <span style="text-decoration: underline;">N.B:</span> - Aucun remboursement n'est admis après l'inscription.<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Les paiements se font uniquement chez la caissière
   </div>
 
@@ -345,7 +372,7 @@
   <div class="ref-caiss">Réf_caiss <?= htmlspecialchars($ref_caiss ?? 'GE-25260178ScoFOF45999ScaisKON') ?></div>
 
   <!-- ========================================================================= -->
-  <!-- BANNIÈRE 2 : COPIE REÇU DU VERSEMENT POUR ARCHIVAGE                         -->
+  <!-- BANNIÈRE 2 : COPIE REÇU POUR ARCHIVAGE                                      -->
   <!-- ========================================================================= -->
   <?php 
     $numVersementText = isset($num_versement) ? ($num_versement . ($num_versement == 1 ? 'er' : 'ème')) : '1er';
@@ -360,11 +387,8 @@
           <tr>
             <td style="width: 50%;">
               N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? 'GE-25260178') ?></span>
-              <div style="margin-top: 2px;">
-                <barcode code="<?= htmlspecialchars($code_paiement ?? $code_inscription ?? 'GE-25260178') ?>" type="C128A" size="0.6" height="0.6" />
-              </div>
             </td>
-            <td style="width: 50%; color: #94A3B8;"><?= htmlspecialchars($date_operation ?? date('08/12/2025')) ?></td>
+            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(date('d/m/Y', strtotime($date_operation ?? 'now'))) ?></td>
           </tr>
           <tr>
             <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
@@ -374,25 +398,26 @@
             <td colspan="2">Nom_Prénom(s) : <span class="val-bold"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>Type d'Opération : <span class="val-bold"><?= htmlspecialchars($type_operation ?? '-') ?></span></td>
-            <td>Banque : </td>
+            <td>
+              Type d'Opération <span class="gray-inline-box" style="width: 70px;">&nbsp;</span>
+            </td>
+            <td>
+              Banque : <span class="gray-inline-box" style="width: 70px;">&nbsp;</span>
+              &nbsp;&nbsp;
+              Reste à Payer <span class="gray-inline-box"><?= number_format($total_reste_payer ?? 0, 0, ',', ' ') ?>CFA</span>
+            </td>
           </tr>
           <tr>
             <td>Montant de l'Opération : <span class="val-bold"><?= number_format($montant_operation ?? 0, 0, ',', ' ') ?>CFA</span></td>
             <td class="text-blue"><?= htmlspecialchars($montant_operation_lettres ?? '') ?></td>
           </tr>
-          <tr>
-            <td colspan="2">
-              Reste à Payer : <span class="val-bold" style="background: #D1D5DB; padding: 2px 8px;"><?= number_format($total_reste_payer ?? 0, 0, ',', ' ') ?>CFA</span>
-            </td>
-          </tr>
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
         <?php if (!empty($photo_etudiant)): ?>
-          <img src="<?= $photo_etudiant ?>" class="photo-box" style="height: 75px;">
+          <img src="<?= $photo_etudiant ?>" class="photo-box" style="height: 80px;">
         <?php else: ?>
-          <div class="photo-box" style="height: 75px; background: #F1F5F9; text-align: center; line-height: 75px; color: #94A3B8; font-size: 8.5px;">PHOTO</div>
+          <div class="photo-box" style="height: 80px; background: #F1F5F9; text-align: center; line-height: 80px; color: #94A3B8; font-size: 8.5px;">PHOTO</div>
         <?php endif; ?>
       </td>
     </tr>
@@ -403,7 +428,7 @@
     <tr>
       <td style="width: 60%;">
         Date du Prochain Payement : 
-        <span class="badge-solde" style="padding: 2px 10px; background: <?= $badgeBg ?>;"><?= $badgeText ?></span>
+        <span class="badge-solde-gray"><?= $badgeText ?></span>
       </td>
       <td style="width: 40%; text-align: right;">
         <div class="signature-title">CAISSIER(RE)</div>
@@ -412,7 +437,7 @@
     </tr>
   </table>
 
-  <table style="width: 100%; font-size: 9px; margin-top: 6px;">
+  <table style="width: 100%; font-size: 9px; margin-top: 10px;">
     <tr>
       <td style="width: 70%; font-style: italic;"><?= htmlspecialchars($ref_caiss ?? 'GE-25260178ScoFOF45999ScaisKON') ?></td>
       <td style="width: 30%; text-align: right;"><?= htmlspecialchars($date_impression ?? date('26/08/2026 13:16:25')) ?></td>
@@ -423,3 +448,4 @@
 
 </body>
 </html>
+
