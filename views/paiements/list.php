@@ -687,7 +687,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
                 <th style="padding: 12px; width: 110px;">Classe</th>
                 <th style="padding: 12px;">Type Transaction</th>
                 <th style="padding: 12px; width: 150px; text-align: right;">Montant Versé</th>
-                <th style="padding: 12px; width: 220px; text-align: right;">Actions</th>
+                <th style="padding: 12px; width: 90px; text-align: center;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -1088,11 +1088,11 @@ $(document).ready(function() {
       { data: 'montant_paiement', width: '150px', className: 'text-end', render: function(d) {
         return d ? '<strong style="color:#15803D; font-size:14px;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
       } },
-      { data: null, width: '160px', orderable: false, className: 'text-end', render: function(d) {
+      { data: null, width: '90px', orderable: false, className: 'text-center', render: function(d) {
         var idCrypte = d.editId || d.id_paiement;
-        return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
-               '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer le reçu"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
-               '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="eye" style="width:13px;height:13px;"></i> Détails</a>' +
+        return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">' +
+               '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '?print=1" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:1.5px solid #1E3A5F; color:#1E3A5F; background:#FFFFFF;" title="Imprimer le reçu (PDF)"><i data-lucide="printer" style="width:16px;height:16px;"></i></a>' +
+               '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#1E3A5F; border-color:#1E3A5F; color:#FFFFFF;" title="Détails du paiement"><i data-lucide="eye" style="width:16px;height:16px;"></i></a>' +
                '</div>';
       } }
     ],
