@@ -7,6 +7,10 @@ $classes = $classes ?? [];
 $anneeActive = $anneeActive ?? '';
 ?>
 <style>
+.kpi-card-clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08) !important;
+}
 .btn-action-icon {
   width: 32px;
   height: 32px;
@@ -221,6 +225,59 @@ $anneeActive = $anneeActive ?? '';
         </div>
       </div>
 
+      <!-- CARTE KPI / INDICATEURS CLÉS DU REGISTRE ÉTUDIANT -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;" class="no-print">
+        
+        <!-- Total Étudiants -->
+        <div class="card kpi-card-clickable" data-regime="ALL" style="background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; border-left: 4px solid #1E3A5F; box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour afficher tous les étudiants">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(30, 58, 95, 0.12);">
+            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Étudiants</div>
+            <div style="font-size: 24px; font-weight: 900; color: #0F172A; line-height: 1.2;" id="kpi-total-etudiants">0</div>
+            <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Dossiers inscrits filtrés</div>
+          </div>
+        </div>
+
+        <!-- Régime Affecté (État) -->
+        <div class="card kpi-card-clickable" data-regime="affecte" style="background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #DCFCE7; border-left: 4px solid #16A34A; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.05); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour filtrer les étudiants affectés par l'État">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(21, 128, 61, 0.12);">
+            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Affectés (État)</div>
+            <div style="font-size: 24px; font-weight: 900; color: #15803D; line-height: 1.2;" id="kpi-affectes">0</div>
+            <div style="font-size: 11.5px; color: #166534; margin-top: 2px;">Boursiers & orientations d'État</div>
+          </div>
+        </div>
+
+        <!-- Régime Non Affecté (Privé) -->
+        <div class="card kpi-card-clickable" data-regime="non_affecte" style="background: linear-gradient(135deg, #FFFFFF 0%, #EFF6FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #BFDBFE; border-left: 4px solid #2563EB; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour filtrer les étudiants non affectés / privé">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #DBEAFE; color: #1D4ED8; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(29, 78, 216, 0.12);">
+            <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #1D4ED8; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés / Privé</div>
+            <div style="font-size: 24px; font-weight: 900; color: #1E40AF; line-height: 1.2;" id="kpi-non-affectes">0</div>
+            <div style="font-size: 11.5px; color: #1D4ED8; margin-top: 2px;">Inscriptions directes autofinancées</div>
+          </div>
+        </div>
+
+        <!-- Répartition Genre (Hommes / Femmes) -->
+        <div class="card kpi-card-clickable" style="background: linear-gradient(135deg, #FFFFFF 0%, #FDF4FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #F5D0FE; border-left: 4px solid #A855F7; box-shadow: 0 2px 4px rgba(168, 85, 247, 0.05); display: flex; align-items: center; gap: 16px; transition: all 0.2s ease;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(126, 34, 206, 0.12);">
+            <i data-lucide="venus-mars" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Répartition Genre</div>
+            <div style="font-size: 20px; font-weight: 900; color: #581C87; line-height: 1.2;" id="kpi-genre">0 H / 0 F</div>
+            <div style="font-size: 11.5px; color: #7E22CE; margin-top: 2px;">Hommes & Femmes inscrit(e)s</div>
+          </div>
+        </div>
+
+      </div>
+
       <!-- TABLEAU DU REGISTRE DES ÉTUDIANTS (Colonnes intelligentes) -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -372,7 +429,47 @@ $(document).ready(function() {
       }, className: 'text-center' }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
-    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+    drawCallback: function() {
+      if (window.lucide) lucide.createIcons();
+
+      var api = this.api();
+      var rows = api.rows({ filter: 'applied' }).data().toArray();
+
+      var total = rows.length;
+      var affectes = 0;
+      var nonAffectes = 0;
+      var hommes = 0;
+      var femmes = 0;
+
+      rows.forEach(function(row) {
+        var aff = row.affectation_etat || '';
+        if (aff === 'affecte' || aff === 'oui') {
+          affectes++;
+        } else {
+          nonAffectes++;
+        }
+
+        var sexe = (row.sexe_etudiant || '').toUpperCase();
+        if (sexe.indexOf('F') !== -1) {
+          femmes++;
+        } else {
+          hommes++;
+        }
+      });
+
+      $('#kpi-total-etudiants').text(total);
+      $('#kpi-affectes').text(affectes);
+      $('#kpi-non-affectes').text(nonAffectes);
+      $('#kpi-genre').text(hommes + ' H / ' + femmes + ' F');
+    }
+  });
+
+  // Filtre rapide via clic sur les cartes KPI
+  $('.kpi-card-clickable').on('click', function() {
+    var regime = $(this).data('regime');
+    if (regime !== undefined) {
+      $('#filter-regime').val(regime).trigger('change');
+    }
   });
 
   function escapeHtml(text) {
