@@ -458,11 +458,16 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
           <td class="cell-black"></td>
         </tr>
         <tr>
-          <td class="">FRAIS ANNEXES</td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
+          <td class="">AUTRES FRAIS</td>
+          <td ></td>
+          <td ></td>
+          <td ></td>
+          <td ></td>
+
+           <!-- <td class="text-center text-bold"><?= number_format($frais_annexes_op_jour, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($frais_annexes_tot_payer, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($frais_annexes_tot_verse, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($frais_annexes_reste, 0, ',', ' ') ?>CFA</td> -->
         </tr>
         <tr class="row-total">
           <td class="text-bold">TOTAL</td>

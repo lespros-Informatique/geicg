@@ -1147,17 +1147,63 @@ class InscriptionController extends BaseController
                 }
 
                 $lastPaiement = end($allPaiements);
-                $totalVerse = 0;
-                $opDuJourMontant = (float)($lastPaiement['montant_paiement'] ?? 0);
-                
-                foreach ($allPaiements as $p) {
-                    $totalVerse += (float)$p['montant_paiement'];
+
+                // Récupérer la date ou le timestamp du dernier paiement pour grouper l'opération du jour
+                $lastDate = $lastPaiement['date_paiement'] ?? '';
+                $opPayments = array_filter($allPaiements, function($p) use ($lastDate) {
+                    if (empty($lastDate)) return true;
+                    return ($p['date_paiement'] === $lastDate) || (abs(strtotime($p['date_paiement'] ?? '') - strtotime($lastDate)) <= 10);
+                });
+
+                // Calculs des montants de l'opération du jour par catégorie de paiement
+                $faOpJour = 0;
+                $scolOpJour = 0;
+                foreach ($opPayments as $pOp) {
+                    $catOp = strtoupper(trim($pOp['categorie_paiement'] ?? ''));
+                    $trancheOp = strtoupper(trim($pOp['tranche_code'] ?? ''));
+                    if ($catOp === 'FRAIS_ANNEXES' || $trancheOp === 'FRAIS_ANNEXES') {
+                        $faOpJour += (float)$pOp['montant_paiement'];
+                    } else {
+                        $scolOpJour += (float)$pOp['montant_paiement'];
+                    }
                 }
 
-                $scolariteTotal = (float)($ins['montant_scolarite_inscription'] ?? 105000);
-                if ($scolariteTotal <= 0) $scolariteTotal = 105000;
-                
-                $resteAPayer = max(0, $scolariteTotal - $totalVerse);
+                // 1. Droit d'Inscription OP. DU JOUR = Categorie FRAIS_ANNEXES + SCOLARITE pour l'opération du jour
+                $droitOpJour = $faOpJour + $scolOpJour;
+
+                // 2. SCOLARITE OP. DU JOUR = Categorie SCOLARITE pour l'opération du jour
+                $scolariteOpJour = $scolOpJour;
+
+                // 3. FRAIS ANNEXES OP. DU JOUR = Categorie FRAIS_ANNEXES pour l'opération du jour
+                $fraisAnnexesOpJour = $faOpJour;
+
+                // Montant global de l'opération du jour
+                $opDuJourMontant = $faOpJour + $scolOpJour;
+                if ($opDuJourMontant <= 0) {
+                    $opDuJourMontant = (float)($lastPaiement['montant_paiement'] ?? 0);
+                    $droitOpJour = $opDuJourMontant;
+                    $scolariteOpJour = $opDuJourMontant;
+                }
+
+                // Cumuls de tous les règlements validés pour cette inscription
+                $fraisAnnexesVerse = 0;
+                $scolariteVerse = 0;
+                foreach ($allPaiements as $p) {
+                    $cat = strtoupper(trim($p['categorie_paiement'] ?? ''));
+                    $tranche = strtoupper(trim($p['tranche_code'] ?? ''));
+                    if ($cat === 'FRAIS_ANNEXES' || $tranche === 'FRAIS_ANNEXES') {
+                        $fraisAnnexesVerse += (float)$p['montant_paiement'];
+                    } else {
+                        $scolariteVerse += (float)$p['montant_paiement'];
+                    }
+                }
+                $totalVerse = $fraisAnnexesVerse + $scolariteVerse;
+
+                // 3. SCOLARITE Total à payer = table inscriptions.montant_scolarite_inscription
+                $scolariteTotPayer = (float)($ins['montant_scolarite_inscription'] ?? 0);
+                $scolariteTotVerse = $scolariteVerse;
+                $scolariteReste = max(0, $scolariteTotPayer - $scolariteTotVerse);
+
                 $caissierNom = trim(($lastPaiement['prenom_user'] ?? '') . ' ' . ($lastPaiement['nom_user'] ?? ''));
                 if (empty($caissierNom)) {
                     $caissierNom = "Mlle KONE N'diatty A. Mariam";
@@ -1186,7 +1232,7 @@ class InscriptionController extends BaseController
                     }
                 }
 
-                // Calculs dynamiques BDD pour Droit d'Inscription (1ère tranche + Frais annexes type inscription)
+                // Détermination dynamique 1ère tranche & frais annexes
                 $filiereCode = !empty($ins['filiere_code']) ? $ins['filiere_code'] : ($ins['code_filiere'] ?? '');
                 $niveauCode = !empty($ins['niveau_code']) ? $ins['niveau_code'] : ($ins['code_niveau'] ?? '');
                 $anneeCode = !empty($ins['annee_code']) ? $ins['annee_code'] : '';
@@ -1219,13 +1265,14 @@ class InscriptionController extends BaseController
                 $fraisAnnexesInscription = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $niveauCode, 'inscription');
 
                 $droitTotPayer = $premiereTrancheMontant + $fraisAnnexesInscription;
-                $droitTotVerse = min($totalVerse, $droitTotPayer);
-                $droitOpJour = min($opDuJourMontant, $droitTotPayer);
+                $droitTotVerse = $fraisAnnexesVerse + min($scolariteVerse, $premiereTrancheMontant);
 
-                $scolariteOpJour = max(0, $opDuJourMontant - $droitOpJour);
-                $scolariteTotPayer = $scolariteTotal;
-                $scolariteTotVerse = max(0, $totalVerse - $droitTotVerse);
-                $scolariteReste = max(0, $scolariteTotPayer - $scolariteTotVerse);
+                $fraisAnnexesTotPayer = $fraisAnnexesInscription;
+                $fraisAnnexesTotVerse = $fraisAnnexesVerse;
+                $fraisAnnexesReste = max(0, $fraisAnnexesTotPayer - $fraisAnnexesTotVerse);
+
+                $scolariteTotal = $scolariteTotPayer;
+                $resteAPayer = $scolariteReste;
 
                 $filiereNiveauSlug = (!empty($ins['slug_filiere']) ? $ins['slug_filiere'] : 'GEC') . '_' . (!empty($ins['slug_niveau']) ? $ins['slug_niveau'] : '2A');
                 if (!empty($ins['libelle_classe'])) {
@@ -1262,6 +1309,10 @@ class InscriptionController extends BaseController
                     'droit_tot_payer' => $droitTotPayer,
                     'droit_op_jour' => $droitOpJour,
                     'droit_tot_verse' => $droitTotVerse,
+                    'frais_annexes_tot_payer' => $fraisAnnexesTotPayer,
+                    'frais_annexes_op_jour' => $fraisAnnexesOpJour,
+                    'frais_annexes_tot_verse' => $fraisAnnexesTotVerse,
+                    'frais_annexes_reste' => $fraisAnnexesReste,
                     'scolarite_op_jour' => $scolariteOpJour,
                     'scolarite_tot_payer' => $scolariteTotPayer,
                     'scolarite_tot_verse' => $scolariteTotVerse,
