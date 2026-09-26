@@ -853,10 +853,24 @@ class EtudiantController extends BaseController
         }
 
         if (!empty($filters['classe_code']) && $filters['classe_code'] !== 'ALL') {
-            $stmt = $db->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmt = $db->prepare("
+                SELECT c.*, f.libelle_filiere, n.libelle_niveau 
+                FROM classes c 
+                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code 
+                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code 
+                WHERE c.code_classe = ? LIMIT 1
+            ");
             $stmt->execute([$filters['classe_code']]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) $filtresLabels['classe'] = $row['libelle_classe'];
+            if ($row) {
+                $filtresLabels['classe'] = $row['libelle_classe'];
+                if (empty($filters['filiere_code']) || $filters['filiere_code'] === 'ALL') {
+                    $filtresLabels['filiere'] = $row['libelle_filiere'] ?? '-';
+                }
+                if (empty($filters['niveau_code']) || $filters['niveau_code'] === 'ALL') {
+                    $filtresLabels['niveau'] = $row['libelle_niveau'] ?? '-';
+                }
+            }
         }
 
         if (!empty($filters['affectation_etat']) && $filters['affectation_etat'] !== 'ALL') {
@@ -902,12 +916,17 @@ class EtudiantController extends BaseController
             $editeurNom = 'Service Inscription & Scolarité';
         }
 
+        $isClassList = (!empty($filters['classe_code']) && $filters['classe_code'] !== 'ALL');
+
         $data = [
             'etablissement' => $etablissement,
             'annee_libelle' => $anneeLibelle,
             'editeur_nom' => $editeurNom,
             'etudiants' => $etudiants,
             'filtres_labels' => $filtresLabels,
+            'classe_libelle' => $filtresLabels['classe'] ?? '',
+            'filiere_libelle' => $filtresLabels['filiere'] ?? '',
+            'niveau_libelle' => $filtresLabels['niveau'] ?? '',
             'kpis' => [
                 'total' => $total,
                 'affectes' => $affectes,
@@ -917,18 +936,22 @@ class EtudiantController extends BaseController
             ]
         ];
 
-        $html = PdfService::renderTemplate('liste_etudiants.php', $data);
+        $template = $isClassList ? 'liste_classe.php' : 'liste_etudiants.php';
+        $orientation = $isClassList ? 'P' : 'L';
+        $docTitle = $isClassList ? ('Liste_Classe_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $filtresLabels['classe'] ?? 'Classe')) : 'Liste_Etudiants';
+
+        $html = PdfService::renderTemplate($template, $data);
 
         if (isset($_GET['html'])) {
             echo $html;
             return;
         }
 
-        $filename = 'Liste_Etudiants_' . date('Ymd_His') . '.pdf';
+        $filename = $docTitle . '_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
-            'orientation' => 'L',
+            'orientation' => $orientation,
             'format' => 'A4',
-            'title' => 'Registre Nominatif des Étudiants - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'title' => ($isClassList ? 'Liste de Classe & Émargement - ' : 'Registre Nominatif des Étudiants - ') . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,

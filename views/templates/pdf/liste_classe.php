@@ -245,13 +245,12 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 4%;">N°</th>
-        <th style="width: 15%;">MATRICULE</th>
-        <th style="width: 35%; text-align: left;">NOM & PRÉNOM(S)</th>
-        <th style="width: 6%;">SEXE</th>
-        <th style="width: 14%;">STATUT / RÉGIME</th>
-        <th style="width: 12%;">CONTACT</th>
-        <th style="width: 14%;">ÉMARGEMENT / OBS</th>
+        <th style="width: 5%;">N°</th>
+        <th style="width: 16%;">MATRICULE</th>
+        <th style="width: 40%; text-align: left;">NOM & PRÉNOM(S)</th>
+        <th style="width: 7%;">SEXE</th>
+        <th style="width: 16%;">STATUT / RÉGIME</th>
+        <th style="width: 16%;">ÉMARGEMENT / OBS</th>
       </tr>
     </thead>
     <tbody>
@@ -273,13 +272,12 @@
                 <span class="badge-prive">Non Affecté(e)</span>
               <?php endif; ?>
             </td>
-            <td class="text-center"><?= htmlspecialchars($e['telephone_etudiant'] ?? '-') ?></td>
             <td class="text-center" style="height: 18px;"></td>
           </tr>
         <?php endforeach; ?>
       <?php else: ?>
         <tr>
-          <td colspan="7" class="text-center" style="padding: 20px; color: #64748B; font-style: italic;">
+          <td colspan="6" class="text-center" style="padding: 20px; color: #64748B; font-style: italic;">
             Aucun étudiant n'est actuellement inscrit dans cette classe.
           </td>
         </tr>
