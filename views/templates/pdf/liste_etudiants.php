@@ -116,7 +116,7 @@
     .kpi-total { background-color: #EFF6FF; color: #1E3A5F; }
     .kpi-affecte { background-color: #F0FDF4; color: #15803D; }
     .kpi-prive { background-color: #F0F9FF; color: #0369A1; }
-    .kpi-genre { background-color: #FDF4FF; color: #7E22CE; }
+    .kpi-genre { background-color: #FDF4FF; color: #ce2225ff; }
 
     /* Tableau Nominatif */
     .data-table {

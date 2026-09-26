@@ -823,6 +823,13 @@ class EtudiantController extends BaseController
 
         $etudiants = $this->model->getFilteredRegistry($filters);
 
+        // Tri par ordre alphabétique (Nom et Prénoms)
+        usort($etudiants, function ($a, $b) {
+            $nomA = mb_strtolower(trim(($a['nom_etudiant'] ?? '') . ' ' . ($a['prenom_etudiant'] ?? '')), 'UTF-8');
+            $nomB = mb_strtolower(trim(($b['nom_etudiant'] ?? '') . ' ' . ($b['prenom_etudiant'] ?? '')), 'UTF-8');
+            return strnatcmp($nomA, $nomB);
+        });
+
         // Intitulés lisibles des filtres
         $filtresLabels = [
             'filiere' => 'Toutes les filières',

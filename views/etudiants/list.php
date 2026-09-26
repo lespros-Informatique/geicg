@@ -265,14 +265,14 @@ $anneeActive = $anneeActive ?? '';
         </div>
 
         <!-- Répartition Genre (Hommes / Femmes) -->
-        <div class="card kpi-card-clickable" style="background: linear-gradient(135deg, #FFFFFF 0%, #FDF4FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #F5D0FE; border-left: 4px solid #A855F7; box-shadow: 0 2px 4px rgba(168, 85, 247, 0.05); display: flex; align-items: center; gap: 16px; transition: all 0.2s ease;">
-          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(126, 34, 206, 0.12);">
-            <i data-lucide="venus-mars" style="width: 24px; height: 24px;"></i>
+        <div class="card kpi-card-clickable" style="background: linear-gradient(135deg, #FFFFFF 0%, #FDF4FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #f15f81ff; border-left: 4px solid #ef6373ff; box-shadow: 0 2px 4px rgba(168, 85, 247, 0.05); display: flex; align-items: center; gap: 16px; transition: all 0.2s ease;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #F3E8FF; color: #ef2424ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(126, 34, 206, 0.12);">
+            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Répartition Genre</div>
-            <div style="font-size: 20px; font-weight: 900; color: #581C87; line-height: 1.2;" id="kpi-genre">0 H / 0 F</div>
-            <div style="font-size: 11.5px; color: #7E22CE; margin-top: 2px;">Hommes & Femmes inscrit(e)s</div>
+            <div style="font-size: 11px; font-weight: 800; color: #e72525ff; text-transform: uppercase; letter-spacing: 0.5px;">Répartition Genre</div>
+            <div style="font-size: 20px; font-weight: 900; color: #ba292bff; line-height: 1.2;" id="kpi-genre">0 H / 0 F</div>
+            <div style="font-size: 11.5px; color: #e33549ff; margin-top: 2px;">Hommes & Femmes inscrit(e)s</div>
           </div>
         </div>
 
