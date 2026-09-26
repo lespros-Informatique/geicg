@@ -4,6 +4,7 @@ $item = isset($item) ? $item : [];
 $stats = isset($stats) ? $stats : [];
 $classes = isset($classes) ? $classes : [];
 $semestres = isset($semestres) ? $semestres : [];
+$stAnnee = $item['statut_annee'] ?? 'planifie';
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -17,16 +18,15 @@ $semestres = isset($semestres) ? $semestres : [];
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Année Académique : <?= htmlspecialchars($item['libelle_annee'] ?? 'Année') ?></h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Bilan académique, effectifs d'étudiants, classes et semestres</p>
         </div>
-        <div style="display: flex; gap: 12px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <a href="<?= RACINE ?>annee/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <?php if (($item['statut_annee'] ?? '') === 'actif'): ?>
-            <button class="btn btn-primary" style="background: #94A3B8; border-color: #94A3B8; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; opacity: 0.6; cursor: not-allowed;" disabled title="Impossible de modifier une année académique active">
-              <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l'année
-            </button>
-          <?php else: ?>
-            <a href="<?= RACINE ?>annee/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['code_annee'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre nominatif des étudiants de cette année">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Registre Annuel
+          </a>
+          <?php if ($stAnnee === 'planifie'): ?>
+            <a href="<?= RACINE ?>annee/list" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
               <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l'année
             </a>
           <?php endif; ?>
@@ -58,21 +58,18 @@ $semestres = isset($semestres) ? $semestres : [];
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Groupes pédagogiques</div>
           </div>
 
-          <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Recouvrement Réalisé</span>
-            <div style="font-size: 20px; font-weight: 800; color: #7E22CE; margin-top: 4px;"><?= number_format((float)($stats['total_recouvrement'] ?? 0), 0, ',', ' ') ?> F</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Total paiements validés</div>
-          </div>
         </div>
 
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #F1F5F9; font-size: 13px;">
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #F1F5F9; font-size: 13px;">
           <div><strong style="color: #64748B;">Date de Début :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_debut_annee']) ? date('d/m/Y', strtotime($item['date_debut_annee'])) : 'Non définie' ?></span></div>
           <div><strong style="color: #64748B;">Date de Fin :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_fin_annee']) ? date('d/m/Y', strtotime($item['date_fin_annee'])) : 'Non définie' ?></span></div>
           <div><strong style="color: #64748B;">Statut :</strong> 
-            <?php if (($item['statut_annee'] ?? '') === 'actif'): ?>
-              <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px; border-radius:10px; font-weight:700;">Actif</span>
+            <?php if ($stAnnee === 'actif'): ?>
+              <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:10px; font-weight:700;">Actif</span>
+            <?php elseif ($stAnnee === 'planifie'): ?>
+              <span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:10px; font-weight:700;">En préparation (Planifiée)</span>
             <?php else: ?>
-              <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px; border-radius:10px; font-weight:700;">Clôturé</span>
+              <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 10px; border-radius:10px; font-weight:700;">Clôturé</span>
             <?php endif; ?>
           </div>
         </div>
@@ -86,9 +83,6 @@ $semestres = isset($semestres) ? $semestres : [];
               <i data-lucide="layers" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Classes & Groupes Pédagogiques (<?= count($classes) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>classe/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Ouvrir une classe
-          </a>
         </div>
 
         <?php if (empty($classes)): ?>
@@ -104,26 +98,43 @@ $semestres = isset($semestres) ? $semestres : [];
                   <th style="padding: 10px; text-align: center;">Capacité</th>
                   <th style="padding: 10px; text-align: center;">Inscrits</th>
                   <th style="padding: 10px; text-align: center;">Statut</th>
+                  <th style="padding: 10px; text-align: right;">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <?php foreach ($classes as $cl): ?>
+                  <?php 
+                    $clIdCrypte = $this->validator->crypter($cl['id_classe']); 
+                    $isClActif = ($cl['statut_classe'] ?? 'actif') === 'actif';
+                  ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" style="color: #1E3A5F; text-decoration: underline;">
+                      <a href="<?= RACINE ?>classe/details/<?= $clIdCrypte ?>" style="color: #1E3A5F; text-decoration: underline;">
                         <?= htmlspecialchars($cl['libelle_classe']) ?>
                       </a>
                     </td>
                     <td style="padding: 10px; color: #334155;"><?= htmlspecialchars($cl['libelle_filiere'] ?? '-') ?></td>
                     <td style="padding: 10px; color: #334155;"><?= htmlspecialchars($cl['libelle_niveau'] ?? '-') ?></td>
-                    <td style="padding: 10px; text-align: center; color: #64748B;"><?= (int)($cl['capacite_max_classe'] ?? 0) ?></td>
+                    <td style="padding: 10px; text-align: center; color: #64748B; font-weight: 600;"><?= (int)($cl['capacite_max_classe'] ?? 0) ?></td>
                     <td style="padding: 10px; text-align: center;">
-                      <span style="background: #EFF6FF; color: #1E3A5F; font-weight: 800; padding: 2px 10px; border-radius: 8px; font-size: 12px;">
+                      <span style="background: #EFF6FF; color: #1E3A5F; font-weight: 800; padding: 3px 10px; border-radius: 8px; font-size: 12px;">
                         <?= (int)($cl['nb_eleves'] ?? 0) ?>
                       </span>
                     </td>
                     <td style="padding: 10px; text-align: center;">
-                      <span class="badge" style="background:#DCFCE7; color:#15803D; padding:2px 8px; border-radius:8px; font-weight:700; font-size:11px;">Actif</span>
+                      <?php if ($isClActif): ?>
+                        <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 8px; border-radius:8px; font-weight:700; font-size:11px;">Actif</span>
+                      <?php else: ?>
+                        <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 8px; border-radius:8px; font-weight:700; font-size:11px;">Inactif</span>
+                      <?php endif; ?>
+                    </td>
+                    <td style="padding: 10px; text-align: right; white-space: nowrap;">
+                      <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['code_annee'] ?? '') ?>&classe_code=<?= urlencode($cl['code_classe'] ?? '') ?>" target="_blank" class="btn btn-sm btn-outline-secondary" style="border: 1px solid #CBD5E1; color: #1E3A5F; background: #FFFFFF; font-weight: 600; border-radius: 6px; font-size: 11px; padding: 4px 8px; margin-right: 4px;" title="Imprimer la liste de cette classe">
+                        <i data-lucide="printer" style="width: 12px; height: 12px;"></i> Imprimer
+                      </a>
+                      <a href="<?= RACINE ?>classe/details/<?= $clIdCrypte ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 11px; padding: 4px 8px;">
+                        Détails
+                      </a>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -141,9 +152,6 @@ $semestres = isset($semestres) ? $semestres : [];
               <i data-lucide="clock" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Découpage Semestriel (<?= count($semestres) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>semestre/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Ajouter un semestre
-          </a>
         </div>
 
         <?php if (empty($semestres)): ?>
@@ -151,11 +159,16 @@ $semestres = isset($semestres) ? $semestres : [];
         <?php else: ?>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
             <?php foreach ($semestres as $s): ?>
+              <?php $isSemActif = ($s['statut_semestre'] ?? 'actif') === 'actif'; ?>
               <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px;">
                 <div style="font-size: 14px; font-weight: 800; color: #0F172A; margin-bottom: 4px;"><?= htmlspecialchars($s['libelle_semestre']) ?></div>
                 <div style="font-size: 12px; color: #64748B;">Code : <code><?= htmlspecialchars($s['code_semestre']) ?></code></div>
                 <div style="margin-top: 8px;">
-                  <span class="badge" style="background:#DCFCE7; color:#15803D; padding:2px 8px; border-radius:8px; font-weight:700; font-size:11px;">Actif</span>
+                  <?php if ($isSemActif): ?>
+                    <span class="badge" style="background:#DCFCE7; color:#15803D; padding:2px 8px; border-radius:8px; font-weight:700; font-size:11px;">Actif</span>
+                  <?php else: ?>
+                    <span class="badge" style="background:#F3F4F6; color:#6B7280; padding:2px 8px; border-radius:8px; font-weight:700; font-size:11px;">Inactif</span>
+                  <?php endif; ?>
                 </div>
               </div>
             <?php endforeach; ?>
