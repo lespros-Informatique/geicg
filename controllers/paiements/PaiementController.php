@@ -2238,10 +2238,92 @@ class PaiementController extends BaseController
 
         $nomComplet = trim(strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')));
 
-        // Calcul des tranches exigibles
-        $t1Exigible = round(($totalScolariteFixe + $fraisInscription) * 0.5);
-        $t2Exigible = round(($totalScolariteFixe + $fraisInscription) * 0.25);
-        $t3Exigible = ($totalScolariteFixe + $fraisInscription) - ($t1Exigible + $t2Exigible);
+        // Calcul des tranches exigibles et statut du règlement
+        $stmtTr = $db->prepare("
+            SELECT code_tranche, libelle_tranche, montant_tranche, date_limite 
+            FROM tranches_scolarite 
+            WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL) AND statut_tranche = 'actif'
+            ORDER BY id_tranche ASC
+        ");
+        $stmtTr->execute([$filiereCode, $nCode, $anneeCode]);
+        $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $echeancier = [];
+        if (!empty($dbTranches)) {
+            $cumulAttenduTranche = 0;
+            $cumulPrecedant = 0;
+            foreach ($dbTranches as $tr) {
+                $lib = $tr['libelle_tranche'];
+                $mt = (float)$tr['montant_tranche'];
+                $dt = !empty($tr['date_limite']) ? date('d/m/Y', strtotime($tr['date_limite'])) : 'À l\'échéance';
+
+                $cumulAttenduTranche += $mt;
+
+                $statutHtml = '';
+                if ($montantPaye >= $cumulAttenduTranche) {
+                    $statutHtml = '<span style="color: #166534; font-weight: bold;">✔ RÉGLÉ (100%)</span>';
+                } elseif ($montantPaye > $cumulPrecedant) {
+                    $payeSurTranche = $montantPaye - $cumulPrecedant;
+                    $pct = ($mt > 0) ? min(100, round(($payeSurTranche / $mt) * 100)) : 0;
+                    $resteTranche = max(0, $mt - $payeSurTranche);
+                    $statutHtml = '<span style="color: #B45309; font-weight: bold;">⏳ PARTIEL (' . $pct . '%) - Reste: ' . number_format($resteTranche, 0, ',', ' ') . ' FCFA</span>';
+                } else {
+                    $statutHtml = '<span style="color: #B91C1C; font-weight: bold;">✖ NON RÉGLÉ (0%)</span>';
+                }
+
+                $echeancier[] = [
+                    'libelle' => $lib,
+                    'date_limite' => $dt,
+                    'montant' => $mt,
+                    'statut_html' => $statutHtml
+                ];
+
+                $cumulPrecedant = $cumulAttenduTranche;
+            }
+        } else {
+            // Tranches par défaut basées sur la scolarité + frais annexes
+            $totDû = $totalScolariteFixe + $fraisInscription;
+            $t1Mt = round($totDû * 0.50);
+            $t2Mt = round($totDû * 0.25);
+            $t3Mt = max(0, $totDû - ($t1Mt + $t2Mt));
+
+            $defTranches = [
+                ['libelle' => '1ère Tranche (Inscription & Acompte)', 'date_limite' => 'À l\'inscription', 'montant' => $t1Mt],
+                ['libelle' => '2ème Tranche (Novembre)', 'date_limite' => '30/11/2025', 'montant' => $t2Mt],
+                ['libelle' => '3ème Tranche (Février)', 'date_limite' => '28/02/2026', 'montant' => $t3Mt],
+            ];
+
+            $cumulAttenduTranche = 0;
+            $cumulPrecedant = 0;
+            foreach ($defTranches as $tr) {
+                $lib = $tr['libelle'];
+                $mt = (float)$tr['montant'];
+                $dt = $tr['date_limite'];
+
+                $cumulAttenduTranche += $mt;
+
+                $statutHtml = '';
+                if ($montantPaye >= $cumulAttenduTranche) {
+                    $statutHtml = '<span style="color: #166534; font-weight: bold;">✔ RÉGLÉ (100%)</span>';
+                } elseif ($montantPaye > $cumulPrecedant) {
+                    $payeSurTranche = $montantPaye - $cumulPrecedant;
+                    $pct = ($mt > 0) ? min(100, round(($payeSurTranche / $mt) * 100)) : 0;
+                    $resteTranche = max(0, $mt - $payeSurTranche);
+                    $statutHtml = '<span style="color: #B45309; font-weight: bold;">⏳ PARTIEL (' . $pct . '%) - Reste: ' . number_format($resteTranche, 0, ',', ' ') . ' FCFA</span>';
+                } else {
+                    $statutHtml = '<span style="color: #B91C1C; font-weight: bold;">✖ NON RÉGLÉ (0%)</span>';
+                }
+
+                $echeancier[] = [
+                    'libelle' => $lib,
+                    'date_limite' => $dt,
+                    'montant' => $mt,
+                    'statut_html' => $statutHtml
+                ];
+
+                $cumulPrecedant = $cumulAttenduTranche;
+            }
+        }
 
         $dateInscription = !empty($ins['created_at_inscription']) ? date('d/m/Y', strtotime($ins['created_at_inscription'])) : '-';
 
@@ -2263,9 +2345,7 @@ class PaiementController extends BaseController
             'montant_paye' => $montantPaye,
             'reste_payer' => $restePayer,
             'paiements' => $paiements,
-            't1_exigible' => $t1Exigible,
-            't2_exigible' => $t2Exigible,
-            't3_exigible' => $t3Exigible,
+            'echeancier' => $echeancier,
             'agent_caisse_nom' => trim(($_SESSION['nom_user'] ?? '') . ' ' . ($_SESSION['prenom_user'] ?? '')) ?: 'Caisse Principale GEICG'
         ];
 

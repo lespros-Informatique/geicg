@@ -285,12 +285,12 @@
     <thead>
       <tr>
         <th style="width: 4%;">N°</th>
-        <th style="width: 14%;">DATE & HEURE</th>
-        <th style="width: 16%;">CODE REÇU</th>
-        <th style="width: 24%; text-align: left;">LIBELLÉ / OPÉRATION</th>
-        <th style="width: 14%;">MODE PAIEMENT</th>
-        <th style="width: 14%;">RÉF TRANSACTION</th>
-        <th style="width: 14%;">MONTANT VERSÉ</th>
+        <th style="width: 15%;">DATE & HEURE</th>
+        <th style="width: 17%;">CODE REÇU</th>
+        <th style="width: 25%; text-align: left;">LIBELLÉ / OPÉRATION</th>
+        <th style="width: 13%;">MODE PAIEMENT</th>
+        <th style="width: 13%;">RÉF TRANSACTION</th>
+        <th style="width: 13%;">MONTANT VERSÉ</th>
       </tr>
     </thead>
     <tbody>
@@ -300,41 +300,21 @@
           <?php $cumulPaiements += (float)($p['montant_paiement'] ?? 0); ?>
           <tr>
             <td style="text-align: center;"><?= $index + 1 ?></td>
-            <td style="text-align: center;"><?= date('d/m/Y H:i', strtotime($p['created_at'] ?? 'now')) ?></td>
+            <td style="text-align: center;"><?= date('d/m/Y H:i', strtotime($p['date_paiement'] ?? ($p['created_at_paiement'] ?? 'now'))) ?></td>
             <td style="text-align: center; font-weight: bold;"><?= htmlspecialchars($p['code_paiement'] ?? '-') ?></td>
             <td><?= htmlspecialchars($p['type_paiement'] ?? 'Versement Scolarité') ?></td>
             <td style="text-align: center;"><?= htmlspecialchars($p['mode_paiement'] ?? 'Espèces') ?></td>
             <td style="text-align: center;"><?= htmlspecialchars($p['reference_paiement'] ?? '-') ?></td>
-            <td style="text-align: right; font-weight: bold; color: #000000ff;"><?= number_format($p['montant_paiement'] ?? 0, 0, ',', ' ') ?> FCFA</td>
+            <td style="text-align: right; font-weight: bold; color: #000000;"><?= number_format($p['montant_paiement'] ?? 0, 0, ',', ' ') ?> FCFA</td>
           </tr>
         <?php endforeach; ?>
         <tr class="total-row">
           <td colspan="6" style="text-align: right;">CUMUL TOTAL DES VERSEMENTS EFFECTUÉS :</td>
-          <td style="text-align: right; font-size: 10px; color: #000000ff;"><?= number_format($cumulPaiements, 0, ',', ' ') ?> FCFA</td>
+          <td style="text-align: right; font-size: 10px; color: #000000; font-weight: bold;"><?= number_format($cumulPaiements, 0, ',', ' ') ?> FCFA</td>
         </tr>
       <?php else: ?>
-        <?php 
-          // Default mock demo payments matching reference student
-          $mockPaiements = [
-            ['date' => '26/08/2026 13:16', 'code' => 'PAI-2026-0089', 'type' => 'Droit d\'Inscription & Scolarité', 'mode' => 'Espèces', 'ref' => 'Acompte Caissier', 'montant' => 65000],
-            ['date' => '10/09/2026 10:45', 'code' => 'PAI-2026-0142', 'type' => '2ème Versement Scolarité', 'mode' => 'Mobile Money', 'ref' => 'OM-88776655', 'montant' => 50000],
-          ];
-          $totMock = 115000;
-        ?>
-        <?php foreach ($mockPaiements as $i => $mp): ?>
-          <tr>
-            <td style="text-align: center;"><?= $i + 1 ?></td>
-            <td style="text-align: center;"><?= htmlspecialchars($mp['date']) ?></td>
-            <td style="text-align: center; font-weight: bold;"><?= htmlspecialchars($mp['code']) ?></td>
-            <td><?= htmlspecialchars($mp['type']) ?></td>
-            <td style="text-align: center;"><?= htmlspecialchars($mp['mode']) ?></td>
-            <td style="text-align: center;"><?= htmlspecialchars($mp['ref']) ?></td>
-            <td style="text-align: right; font-weight: bold; color: #166534;"><?= number_format($mp['montant'], 0, ',', ' ') ?> FCFA</td>
-          </tr>
-        <?php endforeach; ?>
-        <tr class="total-row">
-          <td colspan="6" style="text-align: right;">CUMUL TOTAL DES VERSEMENTS EFFECTUÉS :</td>
-          <td style="text-align: right; font-size: 10px; color: #000000ff;"><?= number_format($totMock, 0, ',', ' ') ?> FCFA</td>
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 10px; color: #64748B;">Aucun versement enregistré en caisse pour cette inscription.</td>
         </tr>
       <?php endif; ?>
     </tbody>
@@ -346,31 +326,27 @@
   <table class="grid-table">
     <thead>
       <tr>
-        <th style="width: 25%;">TRANCHE / ÉCHÉANCE</th>
-        <th style="width: 25%;">DATE DE RIGUEUR</th>
-        <th style="width: 25%;">MONTANT EXIGIBLE</th>
-        <th style="width: 25%;">STATUT DU RÈGLEMENT</th>
+        <th style="width: 30%;">TRANCHE / ÉCHÉANCE</th>
+        <th style="width: 20%;">DATE DE RIGUEUR</th>
+        <th style="width: 20%;">MONTANT EXIGIBLE</th>
+        <th style="width: 30%;">STATUT DU RÈGLEMENT</th>
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td style="font-weight: bold;">1ère Tranche (Inscription)</td>
-        <td style="text-align: center;">À l'inscription</td>
-        <td style="text-align: right; font-weight: bold;"><?= number_format($t1_exigible ?? 65000, 0, ',', ' ') ?> FCFA</td>
-        <td style="text-align: center; font-weight: bold; color: #166534;">✔ REGLE (100%)</td>
-      </tr>
-      <tr>
-        <td style="font-weight: bold;">2ème Tranche (Novembre)</td>
-        <td style="text-align: center;">30/11/2025</td>
-        <td style="text-align: right; font-weight: bold;"><?= number_format($t2_exigible ?? 25000, 0, ',', ' ') ?> FCFA</td>
-        <td style="text-align: center; font-weight: bold; color: #166534;">✔ REGLE (100%)</td>
-      </tr>
-      <tr>
-        <td style="font-weight: bold;">3ème Tranche (Février)</td>
-        <td style="text-align: center;">05/02/2026</td>
-        <td style="text-align: right; font-weight: bold;"><?= number_format($t3_exigible ?? 25000, 0, ',', ' ') ?> FCFA</td>
-        <td style="text-align: center; font-weight: bold; color: #166534;">✔ REGLE (100%)</td>
-      </tr>
+      <?php if (!empty($echeancier) && is_array($echeancier)): ?>
+        <?php foreach ($echeancier as $ech): ?>
+          <tr>
+            <td style="font-weight: bold;"><?= htmlspecialchars($ech['libelle']) ?></td>
+            <td style="text-align: center;"><?= htmlspecialchars($ech['date_limite']) ?></td>
+            <td style="text-align: right; font-weight: bold;"><?= number_format($ech['montant'], 0, ',', ' ') ?> FCFA</td>
+            <td style="text-align: center; font-weight: bold;"><?= $ech['statut_html'] ?></td>
+          </tr>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 10px; color: #64748B;">Aucun échéancier défini pour cette filière.</td>
+        </tr>
+      <?php endif; ?>
     </tbody>
   </table>
 
