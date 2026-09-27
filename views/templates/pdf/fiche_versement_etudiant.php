@@ -201,11 +201,13 @@
       </td>
       <td style="width: 82%; text-align: center; vertical-align: middle;">
         <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
+        <br>
         <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
         <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
       </td>
     </tr>
   </table>
+  <br>
 
   <!-- BANNIÈRE PRINCIPALE -->
   <div class="banner-title">
@@ -250,6 +252,7 @@
     </tr>
   </table>
 
+  <br>
   <!-- SECTION 2 : SITUATION FINANCIÈRE GLOBALE -->
   <div class="section-title">2. SITUATION FINANCIÈRE GLOBALE DE LA SCOLARITÉ</div>
   <div class="fin-summary-box">
@@ -273,6 +276,7 @@
     </table>
   </div>
 
+  <br>
   <!-- SECTION 3 : HISTORIQUE CHRONOLOGIQUE DES ENCAISSEMENTS -->
   <div class="section-title">3. HISTORIQUE CHRONOLOGIQUE DES VERSEMENTS EN CAISSE</div>
   <table class="grid-table">
@@ -334,6 +338,7 @@
     </tbody>
   </table>
 
+  <br>
   <!-- SECTION 4 : ÉCHÉANCIER DE EXIGIBILITÉ DES TRANCHES -->
   <div class="section-title">4. ÉCHÉANCIER ET RÉPARTITION DES TRANCHES DE SCOLARITÉ</div>
   <table class="grid-table">
@@ -367,6 +372,8 @@
     </tbody>
   </table>
 
+  <br>
+  <br>
   <!-- SIGNATURES -->
   <table class="signature-grid">
     <tr>
