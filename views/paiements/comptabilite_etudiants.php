@@ -160,7 +160,7 @@
         </div>
       </div>
 
-      <button type="button" onclick="window.print()" class="btn btn-outline-secondary" style="border-radius: 10px; font-weight: 700; font-size: 13px; padding: 9px 16px; border: 1px solid #CBD5E1; background: #FFF; color: #334155; display: inline-flex; align-items: center; gap: 8px;">
+      <button type="button" onclick="printEtatComptabilite()" class="btn btn-outline-secondary" style="border-radius: 10px; font-weight: 700; font-size: 13px; padding: 9px 16px; border: 1px solid #CBD5E1; background: #FFF; color: #334155; display: inline-flex; align-items: center; gap: 8px;" title="Imprimer l'état comptable filtré en PDF">
         <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer l'État
       </button>
 
@@ -742,7 +742,7 @@ function initDataTableCompta() {
                     `<a href="${window.RACINE}inscription/details/${d.encrypted_inscription_id || d.encrypted_inscription_code}" target="_blank" 
                         class="btn btn-sm btn-info" 
                         style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #0EA5E9; border-color: #0EA5E9; color: #FFF; box-shadow: 0 2px 4px rgba(14,165,233,0.25);" 
-                        title="Imprimer le reçu / fiche d'inscription">
+                        title="Imprimer bilan financier de l'étudiant">
                         <i data-lucide="printer" style="width: 15px; height: 15px;"></i>
                      </a>` : '';
 
@@ -817,6 +817,17 @@ function resetComptaFilters() {
     document.getElementById('filter_regime').value = 'ALL';
     document.getElementById('filter_statut_paiement').value = 'ALL';
     loadComptaData();
+}
+
+function printEtatComptabilite() {
+    const anneeCode = document.getElementById('filter_annee_code') ? document.getElementById('filter_annee_code').value : '';
+    const niveauCode = document.getElementById('filter_niveau_code') ? document.getElementById('filter_niveau_code').value : 'ALL';
+    const classeCode = document.getElementById('filter_classe_code') ? document.getElementById('filter_classe_code').value : 'ALL';
+    const regime = document.getElementById('filter_regime') ? document.getElementById('filter_regime').value : 'ALL';
+    const statutPaiement = document.getElementById('filter_statut_paiement') ? document.getElementById('filter_statut_paiement').value : 'ALL';
+
+    const url = `<?= RACINE ?>paiement/imprimerComptabiliteEtudiants?annee_code=${encodeURIComponent(anneeCode)}&niveau_code=${encodeURIComponent(niveauCode)}&classe_code=${encodeURIComponent(classeCode)}&regime=${encodeURIComponent(regime)}&statut_paiement=${encodeURIComponent(statutPaiement)}`;
+    window.open(url, '_blank');
 }
 
 function formatFCFA(amount) {
