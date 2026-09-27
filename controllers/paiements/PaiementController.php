@@ -208,6 +208,7 @@ class PaiementController extends BaseController
         $sql = "
             SELECT 
                 i.code_inscription,
+                i.statut_inscription,
                 i.affectation_etat,
                 i.montant_scolarite_inscription,
                 i.photo_inscription,
@@ -288,8 +289,9 @@ class PaiementController extends BaseController
             $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
             $taux = ($totalAttendu > 0) ? min(100, round(($totalEncaisse / $totalAttendu) * 100, 1)) : 0;
 
+            $statutInscription = $ins['statut_inscription'] ?? 'valide';
             $statusCode = 'non_paye';
-            if ($totalEncaisse >= $totalAttendu && $totalAttendu > 0) {
+            if ($statutInscription === 'solde' || ($scolariteDue > 0 && $totalEncaisse >= $scolariteDue) || ($totalAttendu > 0 && $totalEncaisse >= $totalAttendu)) {
                 $statusCode = 'solde';
             } elseif ($totalEncaisse > 0) {
                 $statusCode = 'partiel';
