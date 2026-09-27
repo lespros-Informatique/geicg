@@ -19,15 +19,21 @@ if (!function_exists('generatePicqerBarcodeHtml')) {
     }
 }
 
-// Chargement du logo officiel Groupe EICG (public/assets/images/logo/logo_eicg.jpg)
-$logoEicgFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-$logoSrc = defined('RACINE') ? RACINE . 'assets/images/logo/logo_eicg.jpg' : '/geicg/public/assets/images/logo/logo_eicg.jpg';
-if (file_exists($logoEicgFile)) {
-    $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
+// Chargement du logo officiel Groupe EICG
+if (!empty($logo_src)) {
+    $logoSrc = $logo_src;
+} else {
+    $logoEicgFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+    $logoSrc = defined('RACINE') ? RACINE . 'assets/images/logo/logo_eicg.jpg' : '/geicg/public/assets/images/logo/logo_eicg.jpg';
+    if (file_exists($logoEicgFile)) {
+        $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
+    }
 }
 
-// Chargement de la photo placeholder si l'étudiant n'a pas d'image (public/assets/images/placeholders/etudiant.png)
-if (empty($photo_src)) {
+// Chargement de la photo étudiant ou placeholder par défaut
+if (!empty($photo_etudiant)) {
+    $photo_src = $photo_etudiant;
+} else if (empty($photo_src)) {
     $placeholderPhotoFile = __DIR__ . '/../../../public/assets/images/placeholders/etudiant.png';
     if (file_exists($placeholderPhotoFile)) {
         $photo_src = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderPhotoFile));

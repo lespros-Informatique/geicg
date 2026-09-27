@@ -1719,11 +1719,13 @@ class PaiementController extends BaseController
         $stmtAll->execute([$inscriptionCode]);
         $allPaiements = $stmtAll->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // Calculs des montants cumulés et rang du versement
+        // Calculs des montants cumulés et rang du versement (général et spécifique SCOLARITÉ)
         $scolariteVerse = 0;
         $fraisAnnexesVerse = 0;
         $numVersement = 1;
+        $numVersementScolarite = 0;
         $count = 0;
+        $countScolarite = 0;
 
         foreach ($allPaiements as $pItem) {
             $count++;
@@ -1733,10 +1735,12 @@ class PaiementController extends BaseController
                 $fraisAnnexesVerse += $m;
             } else {
                 $scolariteVerse += $m;
+                $countScolarite++;
             }
 
             if ((int)$pItem['id_paiement'] === (int)$pRow['id_paiement'] || $pItem['code_paiement'] === $pRow['code_paiement']) {
                 $numVersement = $count;
+                $numVersementScolarite = $isFA ? 0 : $countScolarite;
             }
         }
 
@@ -1814,46 +1818,68 @@ class PaiementController extends BaseController
 
         $data = [
             'annee_libelle' => $pRow['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
+            'annee_universitaire' => $pRow['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
             'code_paiement' => $numRecuCode,
+            'numero_recu' => $numRecuCode,
             'code_inscription' => $inscriptionCode,
             'date_operation' => !empty($pRow['date_paiement']) ? date('d/m/Y H:i:s', strtotime($pRow['date_paiement'])) : date('d/m/Y H:i:s'),
             'matricule_etudiant' => !empty($pRow['matricule_etudiant']) ? $pRow['matricule_etudiant'] : ($pRow['code_etudiant'] ?? '-'),
+            'matricule' => !empty($pRow['matricule_etudiant']) ? $pRow['matricule_etudiant'] : ($pRow['code_etudiant'] ?? '-'),
             'filiere_niveau' => $filiereNiveau,
             'nom_prenom_etudiant' => $nomComplet,
+            'nom_prenoms' => $nomComplet,
             'type_operation' => strtoupper($isFAOp ? 'FRAIS ANNEXES' : ($pRow['libelle_tranche'] ?? ($pRow['type_paiement'] ?? 'SCOLARITÉ'))),
             'statut_affectation' => (($pRow['affectation_etat'] ?? '') === 'affecte' || ($pRow['affectation_etat'] ?? '') === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
+            'statut_etudiant' => (($pRow['affectation_etat'] ?? '') === 'affecte' || ($pRow['affectation_etat'] ?? '') === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
             'montant_operation' => $montantOp,
+            'montant_operation_formatted' => number_format($montantOp, 0, ',', ' ') . ' FCFA',
             'montant_operation_lettres' => PdfService::numberToWordsFrench($montantOp),
+            'montant_en_lettres' => PdfService::numberToWordsFrench($montantOp),
             'logo_src' => $logoSrc,
             'photo_etudiant' => $photoSrc,
+            'photo_src' => $photoSrc,
             'scolarite_op_du_jour' => $scolariteOpJour,
             'scolarite_total_payer' => $scolariteTotPayer,
             'scolarite_total_verse' => $scolariteTotVerse,
             'scolarite_reste_payer' => $scolariteReste,
+            'scolarite_op_jour' => $scolariteOpJour,
+            'scolarite_tot_payer' => $scolariteTotPayer,
+            'scolarite_tot_verse' => $scolariteTotVerse,
+            'scolarite_reste' => $scolariteReste,
             'versement_op_du_jour' => $versementOpJour,
             'total_op_du_jour' => $totalOpJour,
             'total_payer' => $totalPayer,
             'total_verse' => $totalVerse,
+            'scolarite_total' => $scolariteTotPayer,
             'total_reste_payer' => $totalRestePayer,
+            'reste_a_payer' => $totalRestePayer,
+            'droit_op_jour' => 0,
+            'droit_tot_payer' => 0,
+            'droit_tot_verse' => 0,
             'date_prochain_paiement' => ($scolariteReste <= 0) ? 'SOLDÉ' : date('d/m/Y', strtotime('+30 days', strtotime($pRow['date_paiement'] ?? 'now'))),
             'caissier_nom' => $caissierNom,
             'date_impression' => date('d/m/Y H:i:s'),
             'ref_caiss' => $refCaiss,
-            'num_versement' => $numVersement
+            'code_barre_val' => $refCaiss,
+            'num_versement' => $numVersement,
+            'num_versement_scolarite' => $numVersementScolarite
         ];
 
-        $html = PdfService::renderTemplate('recu_versement.php', $data);
+        // Rectification : recu_inscription.php si numVersement pour la catégorie SCOLARITE == 1
+        $isFirstScolarite = (!$isFAOp && $numVersementScolarite == 1);
+        $templateName = $isFirstScolarite ? 'recu_inscription.php' : 'recu_versement.php';
+        $html = PdfService::renderTemplate($templateName, $data);
 
         if (isset($_GET['html'])) {
             echo $html;
             return;
         }
 
-        $filename = 'Recu_Versement_' . $numRecuCode . '.pdf';
+        $filename = ($isFirstScolarite ? 'Recu_Inscription_' : 'Recu_Versement_') . $numRecuCode . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
             'format' => 'A4',
-            'title' => 'Reçu de Versement N° ' . $numRecuCode,
+            'title' => ($isFirstScolarite ? 'Reçu d\'Inscription N° ' : 'Reçu de Versement N° ') . $numRecuCode,
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
