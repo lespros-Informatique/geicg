@@ -2142,7 +2142,7 @@ class PaiementController extends BaseController
         // Récupération de l'inscription et de l'étudiant
         $stmtInscr = $db->prepare("
             SELECT 
-                i.id_inscription, i.code_inscription, i.statut_inscription, i.montant_scolarite_inscription, i.affectation_etat, i.photo_inscription, i.annee_code,
+                i.id_inscription, i.code_inscription, i.statut_inscription, i.montant_scolarite_inscription, i.affectation_etat, i.photo_inscription, i.annee_code, i.created_at_inscription,
                 e.code_etudiant, e.id_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, e.photo_etudiant,
                 cl.code_classe, cl.libelle_classe, f.code_filiere, f.libelle_filiere, f.type_filiere, n.code_niveau, n.libelle_niveau, a.libelle_annee
             FROM inscriptions i
@@ -2247,6 +2247,8 @@ class PaiementController extends BaseController
         $t2Exigible = round(($totalScolariteFixe + $fraisInscription) * 0.25);
         $t3Exigible = ($totalScolariteFixe + $fraisInscription) - ($t1Exigible + $t2Exigible);
 
+        $dateInscription = !empty($ins['created_at_inscription']) ? date('d/m/Y', strtotime($ins['created_at_inscription'])) : '-';
+
         $dataView = [
             'logo_src' => $logoSrc,
             'photo_etudiant' => $photoSrc,
@@ -2259,6 +2261,7 @@ class PaiementController extends BaseController
             'niveau_libelle' => $ins['libelle_niveau'] ?? '-',
             'classe_libelle' => $ins['libelle_classe'] ?? '-',
             'contact_etudiant' => $ins['telephone_etudiant'] ?? '-',
+            'date_inscription' => $dateInscription,
             'total_scolarite' => $totalScolariteFixe,
             'frais_inscription' => $fraisInscription,
             'montant_paye' => $montantPaye,

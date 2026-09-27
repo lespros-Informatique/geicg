@@ -234,8 +234,9 @@
             <td>Niveau : <span class="val-bold"><?= htmlspecialchars($niveau_libelle ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>Classe : <span class="val-bold"><?= htmlspecialchars($classe_libelle ?? '-') ?></span></td>
-            <td colspan="2">Contact Téléphonique : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
+            <td style="width: 33%;">Classe : <span class="val-bold"><?= htmlspecialchars($classe_libelle ?? '-') ?></span></td>
+            <td style="width: 33%;">Contact Téléphonique : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
+            <td style="width: 34%;">Date Inscription : <span class="val-bold"><?= htmlspecialchars($date_inscription ?? '-') ?></span></td>
           </tr>
         </table>
       </td>
