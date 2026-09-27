@@ -35,15 +35,16 @@
       text-align: center;
     }
     .inst-subtitle {
-      font-size: 10.5px;
+      font-size: 11.5px;
       font-weight: bold;
       text-align: center;
       color: #000000;
       margin-top: 1px;
     }
     .inst-contacts {
-      font-size: 8.5px;
+      font-size: 10.5px;
       font-style: italic;
+      font-weight: bold;
       text-align: center;
       margin-top: 1px;
     }
@@ -65,7 +66,7 @@
     .section-title {
       background: #F1F5F9;
       color: #800000;
-      font-size: 10.5px;
+      font-size: 11.5px;
       font-weight: bold;
       padding: 3px 6px;
       border-left: 4px solid #800000;
@@ -81,9 +82,9 @@
       margin-bottom: 4px;
     }
     .data-table td {
-      padding: 2.5px 4px;
+      padding: 2px 3px;
       vertical-align: top;
-      font-size: 9.5px;
+      font-size: 9.9px;
     }
     .val-bold {
       font-weight: bold;
@@ -115,15 +116,15 @@
       background: #1E293B;
       color: #FFFFFF;
       border: 1px solid #000000;
-      padding: 4px;
-      font-size: 9px;
+      padding: 7px 4px;
+      font-size: 9.5px;
       font-weight: bold;
       text-align: center;
     }
     .grid-table td {
       border: 1px solid #000000;
-      padding: 3.5px 4px;
-      font-size: 9px;
+      padding: 5.5px 4px;
+      font-size: 9.9px;
     }
 
     .total-row td {
@@ -139,7 +140,7 @@
       font-weight: bold;
       font-size: 10px;
       color: #FFFFFF;
-      background: #166534;
+      background: #000000ff;
       border-radius: 3px;
     }
     .badge-partiel {
@@ -163,7 +164,7 @@
     }
 
     .footer-line {
-      font-size: 8px;
+      font-size: 10px;
       color: #64748B;
       text-align: right;
       margin-top: 6px;
@@ -204,6 +205,7 @@
         <br>
         <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
         <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
+        <div class="inst-contacts">Site web : www.geicg.org</div>
       </td>
     </tr>
   </table>
@@ -237,7 +239,7 @@
           </tr>
           <tr>
             <td style="width: 33%;">Classe : <span class="val-bold"><?= htmlspecialchars($classe_libelle ?? '-') ?></span></td>
-            <td style="width: 33%;">Contact Téléphonique : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
+            <td style="width: 33%;">Contact : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
             <td style="width: 34%;">Date Inscription : <span class="val-bold"><?= htmlspecialchars($date_inscription ?? '-') ?></span></td>
           </tr>
         </table>
@@ -303,12 +305,12 @@
             <td><?= htmlspecialchars($p['type_paiement'] ?? 'Versement Scolarité') ?></td>
             <td style="text-align: center;"><?= htmlspecialchars($p['mode_paiement'] ?? 'Espèces') ?></td>
             <td style="text-align: center;"><?= htmlspecialchars($p['reference_paiement'] ?? '-') ?></td>
-            <td style="text-align: right; font-weight: bold; color: #166534;"><?= number_format($p['montant_paiement'] ?? 0, 0, ',', ' ') ?> FCFA</td>
+            <td style="text-align: right; font-weight: bold; color: #000000ff;"><?= number_format($p['montant_paiement'] ?? 0, 0, ',', ' ') ?> FCFA</td>
           </tr>
         <?php endforeach; ?>
         <tr class="total-row">
           <td colspan="6" style="text-align: right;">CUMUL TOTAL DES VERSEMENTS EFFECTUÉS :</td>
-          <td style="text-align: right; font-size: 10px; color: #166534;"><?= number_format($cumulPaiements, 0, ',', ' ') ?> FCFA</td>
+          <td style="text-align: right; font-size: 10px; color: #000000ff;"><?= number_format($cumulPaiements, 0, ',', ' ') ?> FCFA</td>
         </tr>
       <?php else: ?>
         <?php 
@@ -332,7 +334,7 @@
         <?php endforeach; ?>
         <tr class="total-row">
           <td colspan="6" style="text-align: right;">CUMUL TOTAL DES VERSEMENTS EFFECTUÉS :</td>
-          <td style="text-align: right; font-size: 10px; color: #166534;"><?= number_format($totMock, 0, ',', ' ') ?> FCFA</td>
+          <td style="text-align: right; font-size: 10px; color: #000000ff;"><?= number_format($totMock, 0, ',', ' ') ?> FCFA</td>
         </tr>
       <?php endif; ?>
     </tbody>

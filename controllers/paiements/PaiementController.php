@@ -2127,15 +2127,11 @@ class PaiementController extends BaseController
             return;
         }
 
-        $id = null;
-        if (is_numeric($details)) {
-            $id = (int)$details;
-        } else {
+        $id = $details;
+        if (!empty($details)) {
             $decrypted = $this->validator->decrypter($details);
-            if (is_numeric($decrypted) && (int)$decrypted > 0) {
-                $id = (int)$decrypted;
-            } else {
-                $id = $details;
+            if (!empty($decrypted)) {
+                $id = $decrypted;
             }
         }
 
