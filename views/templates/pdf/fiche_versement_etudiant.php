@@ -177,13 +177,24 @@
 
   <!-- EN-TÊTE -->
   <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+    if (empty($logo_src)) {
+        $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+        if (file_exists($logoPath)) {
+            $logo_src = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+    }
+    if (empty($photo_etudiant)) {
+        $placeholderFile = __DIR__ . '/../../public/assets/images/placeholders/etudiant.png';
+        if (file_exists($placeholderFile)) {
+            $photo_etudiant = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderFile));
+        }
+    }
   ?>
   <table class="header-table">
     <tr>
       <td style="width: 18%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 44px; max-width: 115px;">
+        <?php if (!empty($logo_src)): ?>
+          <img src="<?= $logo_src ?>" style="max-height: 44px; max-width: 115px;">
         <?php else: ?>
           <div style="font-weight:bold; color:#800000; font-size:13px;">GROUPE EICG</div>
         <?php endif; ?>
@@ -211,26 +222,26 @@
       <td style="width: 78%;">
         <table style="width: 100%;">
           <tr>
-            <td style="width: 33%;">Matricule MESRS : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? 'YAYD0207010001') ?></span></td>
-            <td style="width: 33%;">Code Inscription : <span class="val-bold"><?= htmlspecialchars($code_inscription ?? 'GE-25260129') ?></span></td>
+            <td style="width: 33%;">Matricule MESRS : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
+            <td style="width: 33%;">Code Inscription : <span class="val-bold"><?= htmlspecialchars($code_inscription ?? '-') ?></span></td>
             <td style="width: 34%;">Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? 'AFFECTE') ?></span></td>
           </tr>
           <tr>
-            <td colspan="3">Nom & Prénom(s) : <span class="val-bold" style="font-size: 11px; color:#800000;"><?= htmlspecialchars(mb_strtoupper($nom_prenom_etudiant ?? 'YAYO DJEDJESS TRIJI JEAN JAURES')) ?></span></td>
+            <td colspan="3">Nom & Prénom(s) : <span class="val-bold" style="font-size: 11px; color:#800000;"><?= htmlspecialchars(mb_strtoupper($nom_prenom_etudiant ?? '-')) ?></span></td>
           </tr>
           <tr>
-            <td colspan="2">Filière d'études : <span class="val-bold"><?= htmlspecialchars($filiere_libelle ?? 'Ressources Humaines et Communication') ?></span></td>
-            <td>Niveau : <span class="val-bold"><?= htmlspecialchars($niveau_libelle ?? 'Première Année') ?></span></td>
+            <td colspan="2">Filière d'études : <span class="val-bold"><?= htmlspecialchars($filiere_libelle ?? '-') ?></span></td>
+            <td>Niveau : <span class="val-bold"><?= htmlspecialchars($niveau_libelle ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>Classe : <span class="val-bold"><?= htmlspecialchars($classe_libelle ?? 'GBAT 1A') ?></span></td>
-            <td colspan="2">Contact Téléphonique : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '07 10 53 81 08') ?></span></td>
+            <td>Classe : <span class="val-bold"><?= htmlspecialchars($classe_libelle ?? '-') ?></span></td>
+            <td colspan="2">Contact Téléphonique : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
           </tr>
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photo_etudiant) && file_exists(__DIR__ . '/../../public/' . ltrim($photo_etudiant, '/'))): ?>
-          <img src="<?= __DIR__ . '/../../public/' . ltrim($photo_etudiant, '/') ?>" class="photo-box">
+        <?php if (!empty($photo_etudiant)): ?>
+          <img src="<?= $photo_etudiant ?>" class="photo-box">
         <?php else: ?>
           <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 96px; color: #94A3B8; font-size: 8px;">PHOTO ÉTUDIANT</div>
         <?php endif; ?>

@@ -2109,4 +2109,183 @@ class PaiementController extends BaseController
             'margin_bottom' => 6
         ]);
     }
+
+    public function imprimerBilanFinancier($details = null)
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_COMPTABILITE_ETUDIANTS', 'VIEW_PAIEMENTS', 'VIEW_INSCRIPTIONS', 'VIEW_ETUDIANTS']);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+
+        if (empty($details) && !empty($_GET['id'])) {
+            $details = $_GET['id'];
+        }
+
+        if (empty($details)) {
+            $this->renderNotFound("Inscription / Étudiant non spécifié.");
+            return;
+        }
+
+        $id = null;
+        if (is_numeric($details)) {
+            $id = (int)$details;
+        } else {
+            $decrypted = $this->validator->decrypter($details);
+            if (is_numeric($decrypted) && (int)$decrypted > 0) {
+                $id = (int)$decrypted;
+            } else {
+                $id = $details;
+            }
+        }
+
+        // Récupération de l'inscription et de l'étudiant
+        $stmtInscr = $db->prepare("
+            SELECT 
+                i.id_inscription, i.code_inscription, i.statut_inscription, i.montant_scolarite_inscription, i.affectation_etat, i.photo_inscription, i.annee_code,
+                e.code_etudiant, e.id_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, e.photo_etudiant,
+                cl.code_classe, cl.libelle_classe, f.code_filiere, f.libelle_filiere, f.type_filiere, n.code_niveau, n.libelle_niveau, a.libelle_annee
+            FROM inscriptions i
+            JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN classes cl ON cl.code_classe = i.classe_code
+            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN annees a ON a.code_annee = i.annee_code
+            WHERE i.id_inscription = ? OR i.code_inscription = ? OR e.code_etudiant = ? OR e.id_etudiant = ?
+            LIMIT 1
+        ");
+        $stmtInscr->execute([$id, $id, $id, $id]);
+        $ins = $stmtInscr->fetch(PDO::FETCH_ASSOC);
+
+        if (!$ins) {
+            $this->renderNotFound("Le dossier financier de l'étudiant est introuvable.");
+            return;
+        }
+
+        $inscriptionCode = $ins['code_inscription'] ?? '';
+        $anneeCode = $ins['annee_code'] ?? $this->getActiveAnneeCode();
+
+        // Récupérer la grille de scolarité fixée
+        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
+        $modelFA = new ModelFraisAnnexe();
+
+        $filiereCode = $ins['filiere_code'] ?? '';
+        $nCode = $ins['niveau_code'] ?? '';
+        $affRaw = $ins['affectation_etat'] ?? 'non';
+        $isAffecte = ($affRaw === 'affecte' || $affRaw === 'oui');
+        $targetAff = $isAffecte ? 'affecte' : 'non_affecte';
+        $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
+
+        $scolariteDue = 0;
+        $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND (affectation_etat = ? OR affectation_etat = ?) AND statut_scolarite = 'actif' LIMIT 1");
+        $stmtSco->execute([$filiereCode, $nCode, $affRaw, $targetAff]);
+        $scolariteDue = (float)($stmtSco->fetchColumn() ?: 0);
+        if ($scolariteDue <= 0) {
+            $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+        }
+
+        $fraisInscription = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $nCode, 'inscription');
+        $totalScolariteFixe = $scolariteDue;
+
+        // Récupérer tous les versements effectués
+        $stmtPaiements = $db->prepare("
+            SELECT * FROM paiements
+            WHERE inscription_code = ? AND statut_paiement != 'annule'
+            ORDER BY date_paiement ASC, id_paiement ASC
+        ");
+        $stmtPaiements->execute([$inscriptionCode]);
+        $paiements = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $montantPaye = 0;
+        foreach ($paiements as $p) {
+            $montantPaye += (float)$p['montant_paiement'];
+        }
+
+        $restePayer = max(0, ($totalScolariteFixe + $fraisInscription) - $montantPaye);
+
+        // Helper Base64 Images
+        $toBase64 = function($paths) {
+            foreach ((array)$paths as $p) {
+                if (empty($p)) continue;
+                $clean = ltrim($p, '/');
+                $candidates = [
+                    $p,
+                    __DIR__ . '/../../' . $clean,
+                    __DIR__ . '/../../public/' . $clean,
+                    '/var/www/html/geicg/' . $clean,
+                    '/var/www/html/geicg/public/' . $clean
+                ];
+                foreach ($candidates as $cand) {
+                    if (!empty($cand) && file_exists($cand) && is_file($cand)) {
+                        $ext = strtolower(pathinfo($cand, PATHINFO_EXTENSION));
+                        $mime = ($ext === 'png') ? 'png' : (($ext === 'gif') ? 'gif' : 'jpeg');
+                        $content = file_get_contents($cand);
+                        if (!empty($content)) {
+                            return 'data:image/' . $mime . ';base64,' . base64_encode($content);
+                        }
+                    }
+                }
+            }
+            return null;
+        };
+
+        $logoSrc = $toBase64([
+            'public/assets/images/logo/logo_eicg.jpg',
+            'assets/images/logo/logo_eicg.jpg'
+        ]);
+
+        $photoSrc = $toBase64([
+            $ins['photo_etudiant'] ?? '',
+            $ins['photo_inscription'] ?? '',
+            'public/assets/images/placeholders/etudiant.png'
+        ]);
+
+        $nomComplet = trim(strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')));
+
+        // Calcul des tranches exigibles
+        $t1Exigible = round(($totalScolariteFixe + $fraisInscription) * 0.5);
+        $t2Exigible = round(($totalScolariteFixe + $fraisInscription) * 0.25);
+        $t3Exigible = ($totalScolariteFixe + $fraisInscription) - ($t1Exigible + $t2Exigible);
+
+        $dataView = [
+            'logo_src' => $logoSrc,
+            'photo_etudiant' => $photoSrc,
+            'annee_libelle' => $ins['libelle_annee'] ?? '2025 - 2026',
+            'matricule_etudiant' => $ins['matricule_etudiant'] ?? ($ins['code_etudiant'] ?? '-'),
+            'code_inscription' => $inscriptionCode,
+            'statut_affectation' => $isAffecte ? 'AFFECTÉ DE L\'ÉTAT' : 'PRIVÉ / NON-AFFECTÉ',
+            'nom_prenom_etudiant' => $nomComplet,
+            'filiere_libelle' => $ins['libelle_filiere'] ?? '-',
+            'niveau_libelle' => $ins['libelle_niveau'] ?? '-',
+            'classe_libelle' => $ins['libelle_classe'] ?? '-',
+            'contact_etudiant' => $ins['telephone_etudiant'] ?? '-',
+            'total_scolarite' => $totalScolariteFixe,
+            'frais_inscription' => $fraisInscription,
+            'montant_paye' => $montantPaye,
+            'reste_payer' => $restePayer,
+            'paiements' => $paiements,
+            't1_exigible' => $t1Exigible,
+            't2_exigible' => $t2Exigible,
+            't3_exigible' => $t3Exigible,
+            'agent_caisse_nom' => trim(($_SESSION['nom_user'] ?? '') . ' ' . ($_SESSION['prenom_user'] ?? '')) ?: 'Caisse Principale GEICG'
+        ];
+
+        $html = PdfService::renderTemplate('fiche_versement_etudiant.php', $dataView);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Bilan_Financier_' . ($ins['matricule_etudiant'] ?? $inscriptionCode) . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Bilan Financier de l\'Étudiant - ' . $nomComplet,
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
 }

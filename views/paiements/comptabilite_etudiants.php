@@ -739,7 +739,7 @@ function initDataTableCompta() {
                                </button>`;
 
                 let btnRecuInscription = (d.encrypted_inscription_id || d.encrypted_inscription_code) ? 
-                    `<a href="${window.RACINE}inscription/details/${d.encrypted_inscription_id || d.encrypted_inscription_code}" target="_blank" 
+                    `<a href="${window.RACINE}paiement/imprimerBilanFinancier/${d.encrypted_inscription_id || d.encrypted_inscription_code}" target="_blank" 
                         class="btn btn-sm btn-info" 
                         style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #0EA5E9; border-color: #0EA5E9; color: #FFF; box-shadow: 0 2px 4px rgba(14,165,233,0.25);" 
                         title="Imprimer bilan financier de l'étudiant">
