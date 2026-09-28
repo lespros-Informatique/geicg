@@ -1100,37 +1100,19 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
-  // FONCTION DE GESTION IMPRESSION  DU REGISTRE
+  // FONCTION DE GESTION IMPRESSION DU REGISTRE ENCAISSEMENTS (PDF mPDF)
   window.printRegistry = function() {
-    var anneeTxt = $('#filter-annee option:selected').text().trim() || 'Toutes';
-    var niveauTxt = $('#filter-niveau option:selected').text().trim() || 'Tous';
-    var classeTxt = $('#filter-classe option:selected').text().trim() || 'Toutes';
-    var dtDeb = $('#filter-date-debut').val();
-    var dtFin = $('#filter-date-fin').val();
-    var periodTxt = '';
-    if (dtDeb || dtFin) {
-      periodTxt = ' &bull; Période : <strong>' + (dtDeb ? 'Du ' + dtDeb.split('-').reverse().join('/') : '') + (dtFin ? ' Au ' + dtFin.split('-').reverse().join('/') : '') + '</strong>';
-    }
-
-    $('#print-filter-summary-text').html(
-      'Année Académique : <strong>' + escapeHtml(anneeTxt) + '</strong> &bull; Niveau : <strong>' + escapeHtml(niveauTxt) + '</strong> &bull; Classe : <strong>' + escapeHtml(classeTxt) + '</strong>' + periodTxt
-    );
-
-    $('#print-kpi-total').text($('#kpi-total-encaisse').text() + ' FCFA');
-    $('#print-kpi-especes').text($('#kpi-encaisse-especes').text() + ' FCFA');
-    $('#print-kpi-frais-annexes').text($('#kpi-encaisse-frais-annexes').text() + ' FCFA');
-    $('#print-kpi-affectes').text($('#kpi-encaisse-affectes').text() + ' FCFA');
-    $('#print-kpi-prives').text($('#kpi-encaisse-prives').text() + ' FCFA');
-
-    var currentLen = table.page.len();
-    table.page.len(-1).draw();
-
-    setTimeout(function() {
-      window.print();
-      setTimeout(function() {
-        table.page.len(currentLen).draw();
-      }, 400);
-    }, 300);
+    var params = {
+      annee_code: $('#filter-annee').val() || '',
+      niveau_code: $('#filter-niveau').val() || '',
+      classe_code: $('#filter-classe').val() || '',
+      mode_paiement: $('#filter-mode').val() || '',
+      categorie_paiement: $('#filter-categorie').val() || '',
+      date_debut: $('#filter-date-debut').val() || '',
+      date_fin: $('#filter-date-fin').val() || ''
+    };
+    var url = '<?= RACINE ?>paiement/imprimerRegistre?' + $.param(params);
+    window.open(url, '_blank');
   };
 
   // Fonction de rafraîchissement AJAX des statistiques KPI

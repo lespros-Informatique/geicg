@@ -336,6 +336,8 @@ $route->addRoute('/paiement/imprimerPdf/{param}', [$paiementController, 'imprime
 $route->addRoute('/paiement/imprimerPdf', [$paiementController, 'imprimerPdf']);
 $route->addRoute('/paiement/imprimerComptabiliteEtudiants', [$paiementController, 'imprimerComptabiliteEtudiants']);
 $route->addRoute('/paiement/imprimerComptaPdf', [$paiementController, 'imprimerComptabiliteEtudiants']);
+$route->addRoute('/paiement/imprimerRegistre', [$paiementController, 'imprimerRegistreEncaissements']);
+$route->addRoute('/paiement/imprimerRegistreEncaissements', [$paiementController, 'imprimerRegistreEncaissements']);
 $route->addRoute('/paiement/imprimerBilanFinancier/{param}', [$paiementController, 'imprimerBilanFinancier']);
 $route->addRoute('/paiement/imprimerBilanFinancier', [$paiementController, 'imprimerBilanFinancier']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);

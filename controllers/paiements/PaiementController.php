@@ -2102,6 +2102,165 @@ class PaiementController extends BaseController
         ]);
     }
 
+    /**
+     * Génère l'état PDF officiel du Registre Chronologique des Encaissements en Caisse
+     */
+    public function imprimerRegistreEncaissements()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_PAIEMENTS', 'VIEW_COMPTABILITE_ETUDIANTS', 'MANAGE_PAIEMENTS']);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+
+        $anneeCode = $_GET['annee_code'] ?? '';
+        $niveauCode = $_GET['niveau_code'] ?? 'ALL';
+        $classeCode = $_GET['classe_code'] ?? 'ALL';
+        $modePaiement = $_GET['mode_paiement'] ?? 'ALL';
+        $categoriePaiement = $_GET['categorie_paiement'] ?? 'ALL';
+        $dateDebut = $_GET['date_debut'] ?? '';
+        $dateFin = $_GET['date_fin'] ?? '';
+
+        $where = "WHERE p.statut_paiement != 'annule'";
+        $params = [];
+
+        if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+            $where .= " AND (p.annee_code = ? OR i.annee_code = ?)";
+            $params[] = $anneeCode;
+            $params[] = $anneeCode;
+        }
+
+        if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+            $where .= " AND cl.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+
+        if (!empty($classeCode) && $classeCode !== 'ALL') {
+            $where .= " AND i.classe_code = ?";
+            $params[] = $classeCode;
+        }
+
+        if (!empty($modePaiement) && $modePaiement !== 'ALL') {
+            $where .= " AND p.mode_paiement = ?";
+            $params[] = $modePaiement;
+        }
+
+        if (!empty($categoriePaiement) && $categoriePaiement !== 'ALL') {
+            $where .= " AND p.categorie_paiement = ?";
+            $params[] = $categoriePaiement;
+        }
+
+        if (!empty($dateDebut)) {
+            $where .= " AND DATE(p.date_paiement) >= ?";
+            $params[] = $dateDebut;
+        }
+
+        if (!empty($dateFin)) {
+            $where .= " AND DATE(p.date_paiement) <= ?";
+            $params[] = $dateFin;
+        }
+
+        $sql = "
+            SELECT 
+                p.id_paiement, p.code_paiement, p.montant_paiement, p.date_paiement, p.statut_paiement,
+                p.reference_paiement, p.type_paiement, p.categorie_paiement, p.mode_paiement, p.tranche_code,
+                i.code_inscription, i.affectation_etat,
+                e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant,
+                cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+            FROM paiements p
+            LEFT JOIN inscriptions i ON i.code_inscription = p.inscription_code
+            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN classes cl ON cl.code_classe = i.classe_code
+            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN annees a ON a.code_annee = p.annee_code OR a.code_annee = i.annee_code
+            {$where}
+            ORDER BY p.date_paiement DESC, p.id_paiement DESC
+        ";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $paiements = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Traitement des statistiques et KPIs du registre
+        $totalGeneral = 0;
+        $totalScolarite = 0;
+        $totalFraisAnnexes = 0;
+        $totalEspeces = 0;
+        $totalMobileMoney = 0;
+        $totalBanque = 0;
+
+        foreach ($paiements as $p) {
+            $mt = (float)$p['montant_paiement'];
+            $totalGeneral += $mt;
+
+            $cat = strtoupper($p['categorie_paiement'] ?? 'SCOLARITE');
+            if ($cat === 'FRAIS_ANNEXES') {
+                $totalFraisAnnexes += $mt;
+            } else {
+                $totalScolarite += $mt;
+            }
+
+            $mode = strtolower($p['mode_paiement'] ?? '');
+            if (strpos($mode, 'espece') !== false || strpos($mode, 'espèces') !== false || strpos($mode, 'cash') !== false) {
+                $totalEspeces += $mt;
+            } elseif (strpos($mode, 'mobile') !== false || strpos($mode, 'wave') !== false || strpos($mode, 'orange') !== false || strpos($mode, 'mtn') !== false || strpos($mode, 'moov') !== false) {
+                $totalMobileMoney += $mt;
+            } else {
+                $totalBanque += $mt;
+            }
+        }
+
+        // Base64 Logo
+        $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+        $logoSrc = null;
+        if (file_exists($logoPath)) {
+            $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        // Intitulé Année
+        $anneeLibelle = '-';
+        if (!empty($anneeCode)) {
+            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA->execute([$anneeCode]);
+            $anneeLibelle = $stmtA->fetchColumn() ?: '-';
+        }
+
+        $dataView = [
+            'logo_src' => $logoSrc,
+            'annee_libelle' => $anneeLibelle,
+            'paiements' => $paiements,
+            'total_general' => $totalGeneral,
+            'total_scolarite' => $totalScolarite,
+            'total_frais_annexes' => $totalFraisAnnexes,
+            'total_especes' => $totalEspeces,
+            'total_mobile_money' => $totalMobileMoney,
+            'total_banque' => $totalBanque,
+            'count_paiements' => count($paiements),
+            'date_impression' => date('d/m/Y H:i:s'),
+            'date_debut' => $dateDebut ? date('d/m/Y', strtotime($dateDebut)) : '-',
+            'date_fin' => $dateFin ? date('d/m/Y', strtotime($dateFin)) : '-',
+            'agent_nom' => trim(($_SESSION['nom_user'] ?? '') . ' ' . ($_SESSION['prenom_user'] ?? '')) ?: 'Service Caisse GEICG'
+        ];
+
+        $html = PdfService::renderTemplate('registre_encaissements.php', $dataView);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Encaissements_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre des Encaissements - GEICG',
+            'margin_left' => 6,
+            'margin_right' => 6,
+            'margin_top' => 6,
+            'margin_bottom' => 6
+        ]);
+    }
+
     public function imprimerBilanFinancier($details = null)
     {
         $this->requireAuth();
