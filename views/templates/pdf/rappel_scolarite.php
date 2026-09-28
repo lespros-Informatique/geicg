@@ -168,7 +168,7 @@
 
   <!-- BANNIÈRE TITRE -->
   <div class="banner-title">RAPPEL SCOLARITE</div>
-  <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '2025-2026') ?></div>
+  <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
 
   <!-- INFOS ÉTUDIANT -->
   <table class="info-table">
@@ -176,8 +176,8 @@
       <td style="width: 78%;">
         <table style="width: 100%;">
           <tr>
-            <td style="width: 48%;">N° <span class="val-bold"><?= htmlspecialchars($code_rappel ?? $code_inscription ?? 'GE-25260129') ?></span></td>
-            <td style="width: 52%;">Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? 'AFFECTE') ?></span></td>
+            <td style="width: 48%;">N° <span class="val-bold"><?= htmlspecialchars($code_rappel ?? ($code_inscription ?? '-')) ?></span></td>
+            <td style="width: 52%;">Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
           </tr>
           <tr>
             <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
@@ -225,12 +225,12 @@
       Montant à payer : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
       <strong style="font-size: 13px;"><?= number_format($montant_exigible_du ?? $reste_payer ?? 0, 0, ',', ' ') ?>CFA</strong>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <span style="font-size: 11.5px;"><?= htmlspecialchars($montant_exigible_lettres ?? 'Zéro franc CFA') ?></span>
+      <span style="font-size: 11.5px;"><?= htmlspecialchars($montant_exigible_lettres ?? '') ?></span>
     </div>
     
     <div class="exigible-row" style="margin-top: 8px;">
       Délai de rigueur : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <strong style="font-size: 13px;"><?= htmlspecialchars($delai_rigueur ?? '5 Février 2026; 18h00min') ?></strong>
+      <strong style="font-size: 13px;"><?= htmlspecialchars($delai_rigueur ?? '-') ?></strong>
     </div>
   </div>
 
@@ -240,7 +240,7 @@
       <td></td>
       <td style="width: 50%; text-align: right;">
         <div style="font-weight: bold; text-decoration: underline; font-size: 11px;">CAISSIER(RE)</div>
-        <div style="font-size: 11px; margin-top: 3px; font-weight: bold;"><?= htmlspecialchars($caissier_nom ?? 'Mlle KONE N\'diatty A. Mariam') ?></div>
+        <div style="font-size: 11px; margin-top: 3px; font-weight: bold;"><?= htmlspecialchars($caissier_nom ?? '-') ?></div>
       </td>
     </tr>
   </table>
@@ -254,7 +254,7 @@
   <!-- PIED DE PAGE RÉFÉRENCE & DATE -->
   <table class="footer-table">
     <tr>
-      <td style="width: 70%; font-style: italic; font-size: 8.5px;"><?= htmlspecialchars($ref_caiss ?? 'GM-833/GEB/GBAT250819GE-25260129ScaisKON') ?></td>
+      <td style="width: 70%; font-style: italic; font-size: 8.5px;"><?= htmlspecialchars($ref_caiss ?? '-') ?></td>
       <td style="width: 30%; text-align: right; font-size: 8.5px;"><?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></td>
     </tr>
   </table>

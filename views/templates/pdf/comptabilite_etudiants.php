@@ -186,7 +186,7 @@
     <tr>
       <td>
         <div class="banner-title">ÉTAT DE SYNTHÈSE COMPTABLE & SUIVI FINANCIER DES ÉTUDIANTS</div>
-        <div class="banner-sub">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '2025-2026') ?></div>
+        <div class="banner-sub">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
       </td>
     </tr>
   </table>

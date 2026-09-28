@@ -19,8 +19,9 @@ Avant d'exécuter toute tâche, génération d'interface ou modification de code
 2. **Inspection systématique de l'environnement** :
    - Lire le fichier d'environnement `.env` actif et les fichiers de configuration (`config/Database.php`, `config/const.php`) pour valider les paramètres cibles avant toute action.
 
-3. **Interdiction Stricte des Valeurs Hard-Codées (No Hardcoding Rule)** :
-   - Ne JAMAIS inscrire de valeurs hard-codées (montants, compteurs, données statiques de repli, rôles ou identifiants en dur) dans les contrôleurs, modèles ou vues.
+3. **Interdiction Absolue des Valeurs Statiques & Fallbacks Hard-Codés (Zero Hardcoding & Zero Fallback Rule)** :
+   - Ne JAMAIS inscrire de valeurs hard-codées ni de valeurs de repli arbitraires (*fallbacks* comme `?? 115000`, `?? 15000`, `?? '2025 - 2026'`, `?? 'AFFECTE'`, tranches fictives 50%/25%/25%) dans les contrôleurs, modèles, services ou vues/templates PDF.
+   - Si une donnée n'est pas présente, utiliser une valeur vide neutre (`''` ou `'-'`) ou gérer l'absence d'information dynamiquement.
    - Tous les calculs (totaux, soldes restants, durées, taux de progression, statistiques, KPIs) et états doivent TOUJOURS être évalués et dérivés dynamiquement en temps réel à partir des données réelles de la base de données.
 
 ---

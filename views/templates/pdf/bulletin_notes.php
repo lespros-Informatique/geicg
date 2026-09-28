@@ -198,7 +198,7 @@
       <td style="width: 80%; text-align: center; vertical-align: middle;">
         <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
         <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
-        <div class="annee-header">Année Académique : <?= htmlspecialchars($annee_libelle ?? '2025 - 2026') ?></div>
+        <div class="annee-header">Année Académique : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
       </td>
     </tr>
   </table>

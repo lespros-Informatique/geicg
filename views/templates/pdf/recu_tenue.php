@@ -162,7 +162,7 @@
 
   <!-- BANNIÈRE TITRE -->
   <div class="banner-title">Reçu de Paiement des frais de tenue</div>
-  <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '2025-2026') ?></div>
+  <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
 
   <!-- INFOS ÉTUDIANT -->
   <table class="info-table">

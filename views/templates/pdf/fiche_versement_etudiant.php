@@ -215,7 +215,7 @@
   <div class="banner-title">
     FICHE INDIVIDUELLE DES VERSEMENTS DE SCOLARITÉ
     <span style="font-size: 10px; font-weight: normal; float: right;">
-      ANNÉE ACADÉMIQUE : <?= htmlspecialchars($annee_libelle ?? '2025 - 2026') ?>
+      ANNÉE ACADÉMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?>
     </span>
   </div>
 
@@ -228,7 +228,7 @@
           <tr>
             <td style="width: 33%;">Matricule MESRS : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
             <td style="width: 33%;">Code Inscription : <span class="val-bold"><?= htmlspecialchars($code_inscription ?? '-') ?></span></td>
-            <td style="width: 34%;">Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? 'AFFECTE') ?></span></td>
+            <td style="width: 34%;">Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
           </tr>
           <tr>
             <td colspan="3">Nom & Prénom(s) : <span class="val-bold" style="font-size: 11px; color:#800000;"><?= htmlspecialchars(mb_strtoupper($nom_prenom_etudiant ?? '-')) ?></span></td>

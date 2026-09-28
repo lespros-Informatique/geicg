@@ -195,7 +195,7 @@
     </tr>
     <tr>
       <td>Matricule Élève : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
-      <td style="text-align: right;">Année d'origine de l'arriéré : <span class="val-bold" style="color:#800000; font-size:10.5px;"><?= htmlspecialchars($annee_origine ?? '2024-2025') ?></span></td>
+      <td style="text-align: right;">Année d'origine de l'arriéré : <span class="val-bold" style="color:#800000; font-size:10.5px;"><?= htmlspecialchars($annee_origine ?? '-') ?></span></td>
     </tr>
     <tr>
       <td colspan="2">Nom_Prénom(s) : <span class="val-bold" style="font-size: 11px;"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>

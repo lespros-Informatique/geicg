@@ -175,7 +175,7 @@
   <div class="banner-title">
     FICHE D'IDENTIFICATION DE L'ÉTUDIANT
     <span style="font-size: 10px; font-weight: normal; float: right;">
-      ANNÉE ACADÉMIQUE : <?= htmlspecialchars($annee_libelle ?? '2025 - 2026') ?>
+      ANNÉE ACADÉMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?>
     </span>
   </div>
 
@@ -234,11 +234,11 @@
       <td>Redoublant(e) : <span class="val-bold"><?= htmlspecialchars($est_redoublant ?? 'NON') ?></span></td>
     </tr>
     <tr>
-      <td>Dernier diplôme obtenu : <span class="val-bold"><?= htmlspecialchars($dernier_diplome ?? 'BAC A2') ?></span></td>
-      <td>Année du diplôme : <span class="val-bold"><?= htmlspecialchars($annee_diplome ?? '2024') ?></span></td>
+      <td>Dernier diplôme obtenu : <span class="val-bold"><?= htmlspecialchars($dernier_diplome ?? '-') ?></span></td>
+      <td>Année du diplôme : <span class="val-bold"><?= htmlspecialchars($annee_diplome ?? '-') ?></span></td>
     </tr>
     <tr>
-      <td colspan="2">Établissement d'origine : <span class="val-bold"><?= htmlspecialchars($etablissement_origine ?? 'Lycée Classique de Bouaké') ?></span></td>
+      <td colspan="2">Établissement d'origine : <span class="val-bold"><?= htmlspecialchars($etablissement_origine ?? '-') ?></span></td>
     </tr>
   </table>
 

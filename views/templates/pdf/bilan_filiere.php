@@ -168,7 +168,7 @@
       <td style="width: 32%; padding-right: 8px;">
         <div class="left-info-box">
           <div class="action-title">ACTION CAISSE</div>
-          <div class="annee-title"><?= htmlspecialchars($annee_libelle ?? '2025-2026') ?></div>
+          <div class="annee-title"><?= htmlspecialchars($annee_libelle ?? '-') ?></div>
         </div>
         
         <div class="filiere-box">

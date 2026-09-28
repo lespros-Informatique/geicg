@@ -244,7 +244,7 @@
 
   <!-- BANNIÈRE 1 : REÇU DE VERSEMENT -->
   <div class="banner-title">REÇU DE VERSEMENT</div>
-  <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '2025-2026') ?></div>
+  <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
 
   <!-- INFOS ÉTUDIANT (REÇU ORIGINAL) -->
   <table class="info-table">
@@ -378,7 +378,7 @@
     $numVersementText = isset($num_versement) ? ($num_versement . ($num_versement == 1 ? 'er' : 'ème')) : '1er';
   ?>
   <div class="banner-copy">COPIE REÇU DU <?= htmlspecialchars($numVersementText) ?> VERSEMENT POUR ARCHIVAGE</div>
-  <div class="annee-header" style="font-size: 11.5px; margin-bottom: 4px;">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '2025-2026') ?></div>
+  <div class="annee-header" style="font-size: 11.5px; margin-bottom: 4px;">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
 
   <table class="info-table">
     <tr>

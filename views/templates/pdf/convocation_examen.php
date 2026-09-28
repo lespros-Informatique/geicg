@@ -158,7 +158,7 @@
 
   <!-- TITRE DE LA CONVOCATION -->
   <div class="convocation-box">CONVOCATION</div>
-  <div class="session-title"><?= htmlspecialchars($session_titre ?? 'EXAMEN DE FIN D\'ANNÉE BTS 1A - SESSION JUIN 2026') ?></div>
+  <div class="session-title"><?= htmlspecialchars($session_titre ?? '-') ?></div>
 
   <!-- INFOS ÉTUDIANT -->
   <table class="student-table">
@@ -167,30 +167,30 @@
         <table style="width: 100%;">
           <tr>
             <td style="width: 22%;">Filière :</td>
-            <td style="width: 78%;"><span class="val-bold"><?= htmlspecialchars($filiere_libelle ?? 'RESSOURCES HUMAINES ET COMMUNICATION') ?></span></td>
+            <td style="width: 78%;"><span class="val-bold"><?= htmlspecialchars($filiere_libelle ?? '-') ?></span></td>
           </tr>
           <tr>
             <td>M .(Mme, Mlle) :</td>
-            <td><span class="val-bold" style="font-size: 12px;"><?= htmlspecialchars($nom_prenom_etudiant ?? 'TRAORE FATOUMATA') ?></span></td>
+            <td><span class="val-bold" style="font-size: 12px;"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
             <td>Date et lieu naissance :</td>
-            <td><span class="val-bold"><?= htmlspecialchars($date_naissance ?? '17/02/2004') ?></span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="val-bold"><?= htmlspecialchars($lieu_naissance ?? 'BOUAKE') ?></span></td>
+            <td><span class="val-bold"><?= htmlspecialchars($date_naissance ?? '-') ?></span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="val-bold"><?= htmlspecialchars($lieu_naissance ?? '-') ?></span></td>
           </tr>
           <tr>
             <td>Identifiant Permanent :</td>
-            <td><span class="val-bold"><?= htmlspecialchars($identifiant_permanent ?? 'TRAF1710040002') ?></span></td>
+            <td><span class="val-bold"><?= htmlspecialchars($identifiant_permanent ?? '-') ?></span></td>
           </tr>
           <tr>
             <td colspan="2" style="height: 6px;"></td>
           </tr>
           <tr>
             <td><strong style="font-size: 11.5px;">NUMGPEICG :</strong></td>
-            <td><span class="val-bold" style="font-size: 12px;"><?= htmlspecialchars($num_gpeicg ?? 'TF-797/GEB/RHC25') ?></span></td>
+            <td><span class="val-bold" style="font-size: 12px;"><?= htmlspecialchars($num_gpeicg ?? '-') ?></span></td>
           </tr>
           <tr>
             <td>Salle de composition :</td>
-            <td><span class="val-bold" style="font-size: 13px;"><?= htmlspecialchars($salle_composition ?? 'S6') ?></span></td>
+            <td><span class="val-bold" style="font-size: 13px;"><?= htmlspecialchars($salle_composition ?? '-') ?></span></td>
           </tr>
         </table>
       </td>
