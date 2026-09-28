@@ -291,7 +291,7 @@ class PaiementController extends BaseController
 
             $statutInscription = $ins['statut_inscription'] ?? 'valide';
             $statusCode = 'non_paye';
-            if ($statutInscription === 'solde' || ($scolariteDue > 0 && $totalEncaisse >= $scolariteDue) || ($totalAttendu > 0 && $totalEncaisse >= $totalAttendu)) {
+            if ($statutInscription === 'solde' || ($totalAttendu > 0 && $totalEncaisse >= $totalAttendu) || ($soldeRestant <= 0 && $totalAttendu > 0)) {
                 $statusCode = 'solde';
             } elseif ($totalEncaisse > 0) {
                 $statusCode = 'partiel';
@@ -1907,9 +1907,7 @@ class PaiementController extends BaseController
             'num_versement_scolarite' => $numVersementScolarite
         ];
 
-        // Rectification : recu_inscription.php si numVersement pour la catégorie SCOLARITE == 1
-        $isFirstScolarite = (!$isFAOp && $numVersementScolarite == 1);
-        $templateName = $isFirstScolarite ? 'recu_inscription.php' : 'recu_versement.php';
+        $templateName = 'recu_versement.php';
         $html = PdfService::renderTemplate($templateName, $data);
 
         if (isset($_GET['html'])) {
@@ -1917,11 +1915,11 @@ class PaiementController extends BaseController
             return;
         }
 
-        $filename = ($isFirstScolarite ? 'Recu_Inscription_' : 'Recu_Versement_') . $numRecuCode . '.pdf';
+        $filename = 'Recu_Versement_' . $numRecuCode . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
             'format' => 'A4',
-            'title' => ($isFirstScolarite ? 'Reçu d\'Inscription N° ' : 'Reçu de Versement N° ') . $numRecuCode,
+            'title' => 'Reçu de Versement N° ' . $numRecuCode,
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
@@ -2050,7 +2048,7 @@ class PaiementController extends BaseController
 
             $statutInscription = $ins['statut_inscription'] ?? 'valide';
             $statusCode = 'non_paye';
-            if ($statutInscription === 'solde' || ($scolariteDue > 0 && $totalEncaisse >= $scolariteDue) || ($totalAttendu > 0 && $totalEncaisse >= $totalAttendu)) {
+            if ($statutInscription === 'solde' || ($totalAttendu > 0 && $totalEncaisse >= $totalAttendu) || ($soldeRestant <= 0 && $totalAttendu > 0)) {
                 $statusCode = 'solde';
             } elseif ($totalEncaisse > 0) {
                 $statusCode = 'partiel';
