@@ -375,6 +375,7 @@ $route->addRoute('/impayes/details/{param}', [$impayesController, 'details']);
 $route->addRoute('/impayes/edition/{param}', [$impayesController, 'edition']);
 $route->addRoute('/impayes/formulaire', [$impayesController, 'formulaire']);
 $route->addRoute('/impayes/imprimerRappelPdf/{param}', [$impayesController, 'imprimerRappelPdf']);
+$route->addRoute('/impayes/imprimerRappelsMasse', [$impayesController, 'imprimerRappelsMasse']);
 $route->addRoute('/impayes/imprimerListeImpayes', [$impayesController, 'imprimerListeImpayes']);
 
 // Module: arriere (ArriereController)

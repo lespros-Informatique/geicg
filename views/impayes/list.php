@@ -30,6 +30,14 @@ $canRecordPayment = $canRecordPayment ?? true;
             <i data-lucide="message-square" style="width: 18px; height: 18px;"></i> Notification par SMS
           </button>
 
+          <button type="button" id="btn-open-group-whatsapp-modal" class="btn" style="background: #16A34A; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(22,163,74,0.25); cursor: pointer;">
+            <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i> Notification WhatsApp
+          </button>
+
+          <button type="button" id="btn-imprimer-en-masse" class="btn" style="background: #2ba3dfff; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(58, 165, 237, 0.25); cursor: pointer;">
+            <i data-lucide="files" style="width: 18px; height: 18px;"></i> Imprimer en Masse
+          </button>
+
           <a id="btn-print-impayes-list" href="<?= RACINE ?>impayes/imprimerListeImpayes" target="_blank" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(30,58,95,0.25); text-decoration: none;">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Liste
           </a>
@@ -586,6 +594,60 @@ $(document).ready(function() {
 
     updateGroupSMSTemplate();
     $('#modalRelanceGroupSMS').css('display', 'flex');
+  });
+
+  // LOGIQUE RELANCE GROUPÉE PAR WHATSAPP
+  $('#btn-open-group-whatsapp-modal').on('click', function() {
+    selectedRowsData = [];
+    var totalAmount = 0;
+
+    $('.check-impaye-row:checked').each(function() {
+      var etudiantCode = $(this).data('etudiant-code');
+      var inscriptionCode = $(this).data('inscription-code');
+      var studentName = $(this).data('student-name');
+      var classe = $(this).data('classe');
+      var phone = $(this).data('phone');
+      var montantEchu = parseFloat($(this).data('montant-echu')) || 0;
+
+      totalAmount += montantEchu;
+      selectedRowsData.push({
+        etudiant_code: etudiantCode,
+        inscription_code: inscriptionCode,
+        student_name: studentName,
+        classe: classe,
+        phone: phone,
+        montant_echu: montantEchu
+      });
+    });
+
+    if (selectedRowsData.length === 0) {
+      if (window.toastr) toastr.warning('Veuillez cocher au moins un étudiant dans la liste pour envoyer les relances WhatsApp.');
+      return;
+    }
+
+    $('#group_sms_count').text(selectedRowsData.length + ' Étudiant(s) Sélectionné(s)');
+    $('#group_sms_total_amount').text(formatFCFA(totalAmount));
+    $('#group_canal_relance').val('whatsapp');
+
+    updateGroupSMSTemplate();
+    $('#modalRelanceGroupSMS').css('display', 'flex');
+  });
+
+  // LOGIQUE IMPRESSION EN MASSE
+  $('#btn-imprimer-en-masse').on('click', function() {
+    var selectedIds = [];
+    $('.check-impaye-row:checked').each(function() {
+      var id = $(this).data('id') || $(this).data('inscription-code');
+      if (id) selectedIds.push(id);
+    });
+
+    if (selectedIds.length === 0) {
+      if (window.toastr) toastr.warning('Veuillez cocher au moins un étudiant dans la liste pour l\'impression en masse des relances.');
+      return;
+    }
+
+    var url = '<?= RACINE ?>impayes/imprimerRappelsMasse?ids=' + encodeURIComponent(selectedIds.join(','));
+    window.open(url, '_blank');
   });
 
   $(document).on('click', '.btn-close-modal-group-sms', function() {

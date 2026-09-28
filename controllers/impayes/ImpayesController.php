@@ -345,5 +345,139 @@ class ImpayesController extends BaseController
             'title' => 'Rappel de Scolarité - ' . $dataView['nom_prenom_etudiant']
         ]);
     }
+
+    public function imprimerRappelsMasse()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_IMPAYES', 'MANAGE_IMPAYES', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        require_once __DIR__ . '/../../core/PdfService.php';
+        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
+
+        $rawIds = $_GET['ids'] ?? '';
+        if (empty($rawIds)) {
+            $this->error('Aucun étudiant sélectionné pour l\'impression en masse.');
+            return;
+        }
+
+        $ids = array_filter(array_map('trim', explode(',', $rawIds)));
+        if (empty($ids)) {
+            $this->error('Aucun identifiant valide fourni.');
+            return;
+        }
+
+        $db = $this->model->getCon();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        $stmt = $db->prepare("
+            SELECT 
+                i.id_inscription,
+                i.code_inscription,
+                i.montant_scolarite_inscription,
+                i.affectation_etat,
+                i.annee_code,
+                e.code_etudiant,
+                e.matricule_etudiant,
+                e.nom_etudiant,
+                e.prenom_etudiant,
+                e.telephone_etudiant,
+                e.photo_etudiant,
+                c.libelle_classe,
+                c.filiere_code,
+                c.niveau_code,
+                f.libelle_filiere,
+                f.type_filiere,
+                n.libelle_niveau,
+                a.libelle_annee,
+                p.nom_pere, p.telephone_pere,
+                p.nom_mere, p.telephone_mere,
+                p.nom_tuteur, p.telephone_tuteur
+            FROM inscriptions i
+            JOIN etudiants e ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN classes c ON i.classe_code = c.code_classe
+            LEFT JOIN filieres f ON c.filiere_code = f.code_filiere
+            LEFT JOIN niveaux n ON c.niveau_code = n.code_niveau
+            LEFT JOIN annees a ON a.code_annee = i.annee_code
+            LEFT JOIN parents p ON p.etudiant_code = e.code_etudiant
+            WHERE i.id_inscription IN ({$placeholders}) OR i.code_inscription IN ({$placeholders})
+            ORDER BY e.nom_etudiant ASC
+        ");
+
+        $execParams = array_merge($ids, $ids);
+        $stmt->execute($execParams);
+        $inscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($inscriptions)) {
+            $this->error('Aucune inscription trouvée pour ces identifiants.');
+            return;
+        }
+
+        $modelFA = new ModelFraisAnnexe();
+        $userNom = $_SESSION[USERS_AUTH]['nom_user'] ?? 'La Caissière';
+        $userPrenom = $_SESSION[USERS_AUTH]['prenom_user'] ?? '';
+        $caissierNom = trim($userNom . ' ' . $userPrenom);
+
+        $htmlPages = [];
+
+        foreach ($inscriptions as $ins) {
+            $stmtPay = $db->prepare("SELECT SUM(montant_paiement) as total_paye FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+            $stmtPay->execute([$ins['code_inscription']]);
+            $totalPaye = (float)($stmtPay->fetchColumn() ?: 0);
+
+            $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
+            $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $ins['annee_code'], $ins['niveau_code'], 'inscription');
+
+            $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = 'actif' LIMIT 1");
+            $stmtSco->execute([$ins['filiere_code'], $ins['niveau_code'], $ins['annee_code']]);
+            $scolariteDue = (float)($stmtSco->fetchColumn() ?: $ins['montant_scolarite_inscription']);
+
+            $totalAttendu = $scolariteDue + $fraisAnnexesDus;
+            $restePayer = max(0, $totalAttendu - $totalPaye);
+            $isAffecte = ($ins['affectation_etat'] === 'affecte' || $ins['affectation_etat'] === 'oui');
+
+            $nomParent = '-';
+            $contactParent = $ins['telephone_etudiant'] ?? '-';
+            if (!empty($ins['nom_tuteur'])) {
+                $nomParent = trim($ins['nom_tuteur']) . ' (Tuteur)';
+                if (!empty($ins['telephone_tuteur'])) $contactParent = $ins['telephone_tuteur'];
+            } elseif (!empty($ins['nom_pere'])) {
+                $nomParent = trim($ins['nom_pere']) . ' (Père)';
+                if (!empty($ins['telephone_pere'])) $contactParent = $ins['telephone_pere'];
+            } elseif (!empty($ins['nom_mere'])) {
+                $nomParent = trim($ins['nom_mere']) . ' (Mère)';
+                if (!empty($ins['telephone_mere'])) $contactParent = $ins['telephone_mere'];
+            }
+
+            $dataView = [
+                'annee_libelle' => $ins['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
+                'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
+                'code_inscription' => $ins['code_inscription'],
+                'statut_affectation' => $isAffecte ? 'AFFECTE' : 'NON AFFECTE',
+                'matricule_etudiant' => $ins['matricule_etudiant'] ?? 'N/A',
+                'filiere_niveau' => ($ins['libelle_filiere'] ?? '') . ' - ' . ($ins['libelle_niveau'] ?? ''),
+                'nom_prenom_etudiant' => strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
+                'contact_etudiant' => $contactParent,
+                'photo_etudiant' => $ins['photo_etudiant'] ?? $ins['photo_inscription'] ?? '',
+                'total_scolarite' => $totalAttendu,
+                'montant_paye' => $totalPaye,
+                'reste_payer' => $restePayer,
+                'montant_exigible_du' => $restePayer,
+                'montant_exigible_lettres' => '',
+                'delai_rigueur' => date('d/m/Y', strtotime('+7 days')),
+                'caissier_nom' => $caissierNom,
+                'ref_caiss' => 'REF-' . date('YmdHis'),
+                'date_impression' => date('d/m/Y H:i:s')
+            ];
+
+            $htmlPages[] = PdfService::renderTemplate('rappel_scolarite.php', $dataView);
+        }
+
+        $fullHtml = implode('<div style="page-break-after: always;"></div>', $htmlPages);
+        $filename = 'Rappels_Scolarite_Masse_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($fullHtml, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Rappels de Scolarité en Masse (' . count($inscriptions) . ')'
+        ]);
+    }
 }
 
