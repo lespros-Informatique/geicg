@@ -170,37 +170,40 @@
       }
     }
   ?>
+  <!-- EN-TÊTE INSTITUTION (Inspiré de recu_versement.php) -->
   <table class="header-table">
     <tr>
-      <td style="width: 20%; vertical-align: middle;">
-        <?php if (!empty($logoSrc)): ?>
-          <img src="<?= $logoSrc ?>" style="max-height: 48px; max-width: 130px;">
-        <?php elseif (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 48px; max-width: 130px;">
+      <td style="width: 15%; vertical-align: middle;">
+        <?php if (!empty($logo_src)): ?>
+          <img src="<?= $logo_src ?>" style="max-height: 48px; max-width: 110px;">
+        <?php elseif (!empty($logoSrc)): ?>
+          <img src="<?= $logoSrc ?>" style="max-height: 48px; max-width: 110px;">
         <?php else: ?>
-          <div style="font-weight:bold; color:#990000; font-size:14px;">GROUPE EICG</div>
+          <div class="logo-box">GROUPE<br>EICG</div>
         <?php endif; ?>
       </td>
-      <td style="width: 80%; text-align: center; vertical-align: middle;">
+      <td style="width: 85%; text-align: center;">
         <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
+        <div class="inst-subtitle">Agréé par l'Etat et le FDFP</div>
+        <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
       </td>
     </tr>
   </table>
-  <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
 
   <!-- BANNIÈRE TITRE -->
-  <div class="banner-title">RAPPEL SCOLARITE</div>
+  <div class="banner-title">RAPPEL DE SCOLARITÉ</div>
   <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
 
-  <!-- INFOS ÉTUDIANT -->
+  <!-- INFOS ÉTUDIANT & PHOTO -->
   <table class="info-table">
     <tr>
       <td style="width: 78%;">
         <table style="width: 100%;">
           <tr>
-            <td style="width: 48%;">N° <span class="val-bold"><?= htmlspecialchars($code_rappel ?? ($code_inscription ?? '-')) ?></span></td>
-            <td style="width: 52%;">Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
+            <td style="width: 50%;">
+              N° <span class="val-bold"><?= htmlspecialchars($code_rappel ?? ($code_inscription ?? '-')) ?></span>
+            </td>
+            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(date('d/m/Y')) ?></td>
           </tr>
           <tr>
             <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
@@ -210,15 +213,18 @@
             <td colspan="2">Nom_Prénom(s) : <span class="val-bold"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td colspan="2">Contact : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
+            <td>Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? 'AFFECTE') ?></span></td>
+            <td>Contact : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
           </tr>
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photoSrc)): ?>
+        <?php if (!empty($photo_src)): ?>
+          <img src="<?= $photo_src ?>" class="photo-box">
+        <?php elseif (!empty($photoSrc)): ?>
           <img src="<?= $photoSrc ?>" class="photo-box">
         <?php else: ?>
-          <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 98px; color: #94A3B8; font-size: 9px;">PHOTO</div>
+          <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 90px; color: #94A3B8; font-size: 9px;">PHOTO</div>
         <?php endif; ?>
       </td>
     </tr>

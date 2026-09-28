@@ -316,6 +316,39 @@ class ImpayesController extends BaseController
         $userPrenom = $_SESSION[USERS_AUTH]['prenom_user'] ?? '';
         $caissierNom = trim($userNom . ' ' . $userPrenom);
 
+        $toBase64 = function($paths) {
+            foreach ($paths as $p) {
+                if (empty($p)) continue;
+                $pClean = ltrim($p, '/');
+                $candidates = [
+                    $pClean,
+                    __DIR__ . '/../../' . $pClean,
+                    __DIR__ . '/../../public/' . $pClean
+                ];
+                foreach ($candidates as $cand) {
+                    if (file_exists($cand) && is_file($cand)) {
+                        $ext = pathinfo($cand, PATHINFO_EXTENSION);
+                        $mime = ($ext === 'png') ? 'image/png' : (($ext === 'svg') ? 'image/svg+xml' : 'image/jpeg');
+                        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($cand));
+                    }
+                }
+            }
+            return '';
+        };
+
+        $logoSrc = $toBase64([
+            'public/assets/images/logo/logo_eicg.jpg',
+            'assets/images/logo/logo_eicg.jpg',
+            'public/uploads/logos/logo_1787358264.jpg'
+        ]);
+
+        $photoSrc = $toBase64([
+            $ins['photo_etudiant'] ?? '',
+            $ins['photo_inscription'] ?? '',
+            'public/assets/images/placeholders/etudiant.png',
+            'assets/images/placeholders/etudiant.png'
+        ]);
+
         $dataView = [
             'annee_libelle' => $ins['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
             'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
@@ -326,6 +359,8 @@ class ImpayesController extends BaseController
             'nom_prenom_etudiant' => strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
             'contact_etudiant' => $contactParent,
             'photo_etudiant' => $ins['photo_etudiant'] ?? $ins['photo_inscription'] ?? '',
+            'photo_src' => $photoSrc,
+            'logo_src' => $logoSrc,
             'total_scolarite' => $totalAttendu,
             'montant_paye' => $totalPaye,
             'reste_payer' => $restePayer,
@@ -447,6 +482,13 @@ class ImpayesController extends BaseController
                 if (!empty($ins['telephone_mere'])) $contactParent = $ins['telephone_mere'];
             }
 
+            $photoSrc = $toBase64([
+                $ins['photo_etudiant'] ?? '',
+                $ins['photo_inscription'] ?? '',
+                'public/assets/images/placeholders/etudiant.png',
+                'assets/images/placeholders/etudiant.png'
+            ]);
+
             $dataView = [
                 'annee_libelle' => $ins['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
                 'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
@@ -457,6 +499,8 @@ class ImpayesController extends BaseController
                 'nom_prenom_etudiant' => strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
                 'contact_etudiant' => $contactParent,
                 'photo_etudiant' => $ins['photo_etudiant'] ?? $ins['photo_inscription'] ?? '',
+                'photo_src' => $photoSrc,
+                'logo_src' => $logoSrc,
                 'total_scolarite' => $totalAttendu,
                 'montant_paye' => $totalPaye,
                 'reste_payer' => $restePayer,
