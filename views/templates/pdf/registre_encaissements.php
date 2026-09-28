@@ -89,7 +89,18 @@
       padding: 4px 6px;
       font-size: 7.5pt;
       vertical-align: middle;
-      border: 0.5px solid #E2E8F0;
+      border: 0.5px solid #CBD5E1;
+    }
+    .meta-label {
+      font-size: 7pt;
+      font-weight: bold;
+      color: #475569;
+      text-transform: uppercase;
+    }
+    .meta-value {
+      font-size: 8pt;
+      font-weight: bold;
+      color: #0F172A;
     }
 
     /* Synthèse KPIs */
@@ -189,6 +200,32 @@
       <td>
         <div class="banner-title">REGISTRE CHRONOLOGIQUE DES ENCAISSEMENTS EN CAISSE</div>
         <div class="banner-sub">ANNÉE ACADÉMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?> &bull; Édité le <?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- SECTION DES FILTRES APPLIQUÉS -->
+  <table class="meta-box-table">
+    <tr>
+      <td style="width: 20%;">
+        <span class="meta-label">Année Académique :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($annee_libelle ?? 'Toutes les années') ?></span>
+      </td>
+      <td style="width: 20%;">
+        <span class="meta-label">Niveau d'Étude :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($niveau_libelle ?? 'Tous les niveaux') ?></span>
+      </td>
+      <td style="width: 20%;">
+        <span class="meta-label">Classe / Groupe :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($classe_libelle ?? 'Toutes les classes') ?></span>
+      </td>
+      <td style="width: 20%;">
+        <span class="meta-label">Mode & Catégorie :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($mode_libelle ?? 'Tous') ?> (<?= htmlspecialchars($categorie_libelle ?? 'Toutes') ?>)</span>
+      </td>
+      <td style="width: 20%;">
+        <span class="meta-label">Période du Registre :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($periode_libelle ?? 'Toute la période') ?></span>
       </td>
     </tr>
   </table>

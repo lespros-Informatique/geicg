@@ -2218,16 +2218,59 @@ class PaiementController extends BaseController
         }
 
         // Intitulé Année
-        $anneeLibelle = '-';
+        $anneeLibelle = 'Toutes les années';
         if (!empty($anneeCode)) {
             $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
             $stmtA->execute([$anneeCode]);
-            $anneeLibelle = $stmtA->fetchColumn() ?: '-';
+            $anneeLibelle = $stmtA->fetchColumn() ?: $anneeCode;
+        }
+
+        // Intitulé Niveau
+        $niveauLibelle = 'Tous les niveaux';
+        if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+            $stmtN = $db->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ? LIMIT 1");
+            $stmtN->execute([$niveauCode]);
+            $niveauLibelle = $stmtN->fetchColumn() ?: $niveauCode;
+        }
+
+        // Intitulé Classe
+        $classeLibelle = 'Toutes les classes';
+        if (!empty($classeCode) && $classeCode !== 'ALL') {
+            $stmtC = $db->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
+            $stmtC->execute([$classeCode]);
+            $classeLibelle = $stmtC->fetchColumn() ?: $classeCode;
+        }
+
+        // Intitulé Mode
+        $modeLibelle = 'Tous les modes';
+        if (!empty($modePaiement) && $modePaiement !== 'ALL') {
+            $modeLibelle = ucfirst($modePaiement);
+        }
+
+        // Intitulé Catégorie
+        $categorieLibelle = 'Toutes les catégories';
+        if (!empty($categoriePaiement) && $categoriePaiement !== 'ALL') {
+            $categorieLibelle = ($categoriePaiement === 'FRAIS_ANNEXES') ? 'Frais Annexes' : 'Scolarité';
+        }
+
+        // Intitulé Période
+        $periodeLibelle = 'Toute la période';
+        if (!empty($dateDebut) && !empty($dateFin)) {
+            $periodeLibelle = 'Du ' . date('d/m/Y', strtotime($dateDebut)) . ' au ' . date('d/m/Y', strtotime($dateFin));
+        } elseif (!empty($dateDebut)) {
+            $periodeLibelle = 'Du ' . date('d/m/Y', strtotime($dateDebut));
+        } elseif (!empty($dateFin)) {
+            $periodeLibelle = 'Jusqu\'au ' . date('d/m/Y', strtotime($dateFin));
         }
 
         $dataView = [
             'logo_src' => $logoSrc,
             'annee_libelle' => $anneeLibelle,
+            'niveau_libelle' => $niveauLibelle,
+            'classe_libelle' => $classeLibelle,
+            'mode_libelle' => $modeLibelle,
+            'categorie_libelle' => $categorieLibelle,
+            'periode_libelle' => $periodeLibelle,
             'paiements' => $paiements,
             'total_general' => $totalGeneral,
             'total_scolarite' => $totalScolarite,
