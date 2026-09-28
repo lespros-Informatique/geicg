@@ -1512,20 +1512,16 @@ class PaiementController extends BaseController
         $this->requireAuth();
         $this->requirePermission('VIEW_PAIEMENTS');
         try {
-            $id = null;
-            if (is_numeric($details)) {
-                $id = (int)$details;
-            } else {
+            $id = $details;
+            if (!empty($details)) {
                 $decrypted = $this->validator->decrypter($details);
-                if (is_numeric($decrypted) && (int)$decrypted > 0) {
-                    $id = (int)$decrypted;
+                if (!empty($decrypted) && $decrypted !== 0 && $decrypted !== '0') {
+                    $id = $decrypted;
                 } elseif ($decrypted === 0 || $decrypted === '0' || $details === 'n1nHcR2TY0ZaPDzcrgHMkcrf0fkBgSnVjs4a6G4A1JLY8DMM1sVUpU1fWy-9OSYOvUCvj_5uGGAavdbJm6AOIQ') {
                     // Rattrapage automatique pour le jeton ayant produit l'ID 0 (associe au paiement le plus récent)
                     $stmtLast = $this->model->getCon()->prepare("SELECT id_paiement FROM paiements ORDER BY id_paiement DESC LIMIT 1");
                     $stmtLast->execute();
                     $id = (int)$stmtLast->fetchColumn();
-                } else {
-                    $id = $details;
                 }
             }
 
@@ -1672,15 +1668,11 @@ class PaiementController extends BaseController
             return;
         }
 
-        $id = null;
-        if (is_numeric($details)) {
-            $id = (int)$details;
-        } else {
+        $id = $details;
+        if (!empty($details)) {
             $decrypted = $this->validator->decrypter($details);
-            if (is_numeric($decrypted) && (int)$decrypted > 0) {
-                $id = (int)$decrypted;
-            } else {
-                $id = $details;
+            if (!empty($decrypted)) {
+                $id = $decrypted;
             }
         }
 
