@@ -248,20 +248,32 @@
     </tbody>
   </table>
 
-  <!-- DÉLAIS & MONTANT A PAYER -->
-  <div class="exigible-box">
-    <div class="exigible-row">
-      Montant à payer : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <strong style="font-size: 13px;"><?= number_format($montant_exigible_du ?? $reste_payer ?? 0, 0, ',', ' ') ?>CFA</strong>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <span style="font-size: 11.5px;"><?= htmlspecialchars($montant_exigible_lettres ?? '') ?></span>
-    </div>
-    
-    <div class="exigible-row" style="margin-top: 8px;">
-      Délai de rigueur : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <strong style="font-size: 13px;"><?= htmlspecialchars($delai_rigueur ?? '-') ?></strong>
-    </div>
-  </div>
+  <!-- DÉLAIS & MONTANT A PAYER AVEC CODE-BARRES -->
+  <table style="width: 100%; margin-top: 8px; margin-bottom: 12px; border-collapse: collapse;">
+    <tr>
+      <td style="width: 72%; vertical-align: middle;">
+        <div class="exigible-box" style="margin: 0;">
+          <div class="exigible-row">
+            Montant à payer : &nbsp;&nbsp;&nbsp;&nbsp;
+            <strong style="font-size: 13px; color: #800000;"><?= number_format($montant_exigible_du ?? $reste_payer ?? 0, 0, ',', ' ') ?> CFA</strong>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <span style="font-size: 10.5px; font-weight: bold; font-style: italic; color: #000000;"><?= htmlspecialchars($montant_exigible_lettres ?? '') ?></span>
+          </div>
+          
+          <div class="exigible-row" style="margin-top: 8px;">
+            Délai de rigueur : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <strong style="font-size: 13px; color: #000000;"><?= htmlspecialchars($delai_rigueur ?? '-') ?></strong>
+          </div>
+        </div>
+      </td>
+      <td style="width: 28%; text-align: right; vertical-align: middle;">
+        <div style="text-align: center; display: inline-block;">
+          <barcode code="<?= htmlspecialchars($code_barre_val ?? $code_rappel ?? ($code_inscription ?? 'RAP-2026-001')) ?>" type="C128A" size="0.65" height="0.6" />
+          <div style="font-size: 8px; font-family: monospace; font-weight: bold; margin-top: 2px;">* <?= htmlspecialchars($code_barre_val ?? $code_rappel ?? ($code_inscription ?? 'RAP-2026-001')) ?> *</div>
+        </div>
+      </td>
+    </tr>
+  </table>
 
   <!-- CAISSIER SIGNATURE -->
   <table style="width: 100%; margin-top: 10px;">

@@ -352,6 +352,7 @@ class ImpayesController extends BaseController
         $dataView = [
             'annee_libelle' => $ins['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
             'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
+            'code_barre_val' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
             'code_inscription' => $ins['code_inscription'],
             'statut_affectation' => $isAffecte ? 'AFFECTE' : 'NON AFFECTE',
             'matricule_etudiant' => $ins['matricule_etudiant'] ?? 'N/A',
@@ -492,6 +493,7 @@ class ImpayesController extends BaseController
             $dataView = [
                 'annee_libelle' => $ins['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
                 'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
+            'code_barre_val' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
                 'code_inscription' => $ins['code_inscription'],
                 'statut_affectation' => $isAffecte ? 'AFFECTE' : 'NON AFFECTE',
                 'matricule_etudiant' => $ins['matricule_etudiant'] ?? 'N/A',
