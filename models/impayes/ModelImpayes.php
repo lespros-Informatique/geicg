@@ -130,6 +130,8 @@ class ModelImpayes extends BaseModel
             $results = [];
             $kpiTotalImpayesEchus = 0;
             $kpiTotalEtudiantsRetard = 0;
+            $kpiTotalAffectes = 0;
+            $kpiTotalNonAffectes = 0;
             $totalJoursAccumules = 0;
 
             foreach ($inscriptions as $ins) {
@@ -260,6 +262,11 @@ class ModelImpayes extends BaseModel
 
                 $kpiTotalImpayesEchus += $montantEchu;
                 $kpiTotalEtudiantsRetard++;
+                if ($isAffecte) {
+                    $kpiTotalAffectes++;
+                } else {
+                    $kpiTotalNonAffectes++;
+                }
                 $totalJoursAccumules += $retardJoursMax;
 
                 $results[] = [
@@ -306,6 +313,8 @@ class ModelImpayes extends BaseModel
                 'kpis' => [
                     'total_impayes_echus' => $kpiTotalImpayesEchus,
                     'total_etudiants_retard' => $kpiTotalEtudiantsRetard,
+                    'total_affectes' => $kpiTotalAffectes,
+                    'total_non_affectes' => $kpiTotalNonAffectes,
                     'retard_moyen_jours' => $moyenneJoursRetard,
                     'total_relances_mois' => $relancesMois
                 ]
@@ -317,6 +326,8 @@ class ModelImpayes extends BaseModel
                 'kpis' => [
                     'total_impayes_echus' => 0,
                     'total_etudiants_retard' => 0,
+                    'total_affectes' => 0,
+                    'total_non_affectes' => 0,
                     'retard_moyen_jours' => 0,
                     'total_relances_mois' => 0
                 ]

@@ -180,9 +180,10 @@
   <?php $k = $kpis ?? []; ?>
   <table class="kpi-table">
     <tr>
-      <td class="kpi-count" style="width: 33.33%;">EFFECTIF EN RETARD<br><span style="font-size: 10pt;"><?= number_format($k['total_etudiants_retard'] ?? 0, 0, ',', ' ') ?> Étudiant(s)</span></td>
-      <td class="kpi-total" style="width: 33.33%;">TOTAL IMPAYÉS ÉCHUS<br><span style="font-size: 10pt;"><?= number_format($k['total_impayes_echus'] ?? 0, 0, ',', ' ') ?> FCFA</span></td>
-      <td class="kpi-delay" style="width: 33.34%;">RETARD MOYEN<br><span style="font-size: 10pt;"><?= number_format($k['retard_moyen_jours'] ?? 0, 0, ',', ' ') ?> jour(s)</span></td>
+      <td class="kpi-count" style="width: 25%;">EFFECTIF EN RETARD<br><span style="font-size: 10pt;"><?= number_format($k['total_etudiants_retard'] ?? 0, 0, ',', ' ') ?> Étudiant(s)</span></td>
+      <td class="kpi-delay" style="width: 25%;">AFFECTÉS (ÉTAT)<br><span style="font-size: 10pt;"><?= number_format($k['total_affectes'] ?? 0, 0, ',', ' ') ?></span></td>
+      <td class="kpi-delay" style="width: 25%; background: #F3E8FF; color: #6B21A8;">NON AFFECTÉS (PRIVÉS)<br><span style="font-size: 10pt;"><?= number_format($k['total_non_affectes'] ?? 0, 0, ',', ' ') ?></span></td>
+      <td class="kpi-total" style="width: 25%;">TOTAL IMPAYÉS ÉCHUS<br><span style="font-size: 10pt;"><?= number_format($k['total_impayes_echus'] ?? 0, 0, ',', ' ') ?> FCFA</span></td>
     </tr>
   </table>
 

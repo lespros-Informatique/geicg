@@ -37,7 +37,7 @@ $canRecordPayment = $canRecordPayment ?? true;
       </div>
 
       <!-- BANDEAU DE CARTES SYNTHÈSE KPIS -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
         <!-- Card 1: Total Impayés Échus -->
         <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #DC2626;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -53,7 +53,7 @@ $canRecordPayment = $canRecordPayment ?? true;
         <!-- Card 2: Étudiants en Retard -->
         <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #EA580C;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants en Retard</span>
+            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total en Retard</span>
             <div style="width: 34px; height: 34px; border-radius: 8px; background: #FFEDD5; color: #EA580C; display: flex; align-items: center; justify-content: center;">
               <i data-lucide="users" style="width: 18px; height: 18px;"></i>
             </div>
@@ -62,23 +62,35 @@ $canRecordPayment = $canRecordPayment ?? true;
           <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Dossiers avec solde échu</div>
         </div>
 
-        <!-- Card 3: Durée Retard Moyenne -->
-        <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #D97706;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Retard Moyen</span>
-            <div style="width: 34px; height: 34px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="clock" style="width: 18px; height: 18px;"></i>
-            </div>
-          </div>
-          <div id="kpi-retard-moyen" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 10px;">0 jour(s)</div>
-          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Dépassement d'échéance moyen</div>
-        </div>
-
-        <!-- Card 4: Relances Effectuées Ce Mois -->
+        <!-- Card 3: Nombre d'Affectés -->
         <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #2563EB;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Relances Ce Mois</span>
+            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Affectés</span>
             <div style="width: 34px; height: 34px; border-radius: 8px; background: #DBEAFE; color: #2563EB; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
+            </div>
+          </div>
+          <div id="kpi-total-affectes" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 10px;">0</div>
+          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Bénéficiaires État / Affectés</div>
+        </div>
+
+        <!-- Card 4: Nombre de Non Affectés -->
+        <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #9333EA;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés (Privés)</span>
+            <div style="width: 34px; height: 34px; border-radius: 8px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="user-x" style="width: 18px; height: 18px;"></i>
+            </div>
+          </div>
+          <div id="kpi-total-non-affectes" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 10px;">0</div>
+          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Régulier / Direct privé</div>
+        </div>
+
+        <!-- Card 5: Relances Effectuées Ce Mois -->
+        <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #059669;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Relances Ce Mois</span>
+            <div style="width: 34px; height: 34px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center;">
               <i data-lucide="send" style="width: 18px; height: 18px;"></i>
             </div>
           </div>
@@ -353,7 +365,8 @@ $(document).ready(function() {
         if (json.kpis) {
           $('#kpi-total-impayes').text(formatFCFA(json.kpis.total_impayes_echus));
           $('#kpi-total-etudiants').text(json.kpis.total_etudiants_retard || 0);
-          $('#kpi-retard-moyen').text((json.kpis.retard_moyen_jours || 0) + ' jour(s)');
+          $('#kpi-total-affectes').text(json.kpis.total_affectes || 0);
+          $('#kpi-total-non-affectes').text(json.kpis.total_non_affectes || 0);
           $('#kpi-relances-mois').text(json.kpis.total_relances_mois || 0);
         }
         $('#check-all-impayes').prop('checked', false);
