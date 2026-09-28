@@ -191,7 +191,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
             <a href="<?= RACINE ?>dossier_etudiant/list" class="dash-card" style="text-decoration: none; border-left: 4px solid #EA580C; background: #FFF7ED; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: #FFEDD5; color: #C2410C; display: flex; align-items: center; justify-content: center;">
-                  <i data-lucide="folder-alert" style="width: 20px; height: 20px;"></i>
+                  <i data-lucide="folder-x" style="width: 20px; height: 20px;"></i>
                 </div>
                 <div>
                   <div style="font-size: 13px; font-weight: 800; color: #9A3412;"><?= $guichetAlerts['dossiers_incomplets'] ?> Dossier(s) Incomplet(s)</div>
