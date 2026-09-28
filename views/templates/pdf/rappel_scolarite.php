@@ -148,11 +148,34 @@
   <!-- EN-TÊTE -->
   <?php 
     $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+    $logoSrc = '';
+    if (file_exists($logoPath)) {
+      $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+    }
+
+    $photoSrc = '';
+    if (!empty($photo_etudiant)) {
+      $cleanP = ltrim($photo_etudiant, '/');
+      $candidateP = __DIR__ . '/../../public/' . $cleanP;
+      if (file_exists($candidateP)) {
+        $ext = pathinfo($candidateP, PATHINFO_EXTENSION);
+        $mime = ($ext === 'png') ? 'image/png' : 'image/jpeg';
+        $photoSrc = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($candidateP));
+      }
+    }
+    if (empty($photoSrc)) {
+      $defaultPlaceholder = __DIR__ . '/../../public/assets/images/placeholders/etudiant.png';
+      if (file_exists($defaultPlaceholder)) {
+        $photoSrc = 'data:image/png;base64,' . base64_encode(file_get_contents($defaultPlaceholder));
+      }
+    }
   ?>
   <table class="header-table">
     <tr>
       <td style="width: 20%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
+        <?php if (!empty($logoSrc)): ?>
+          <img src="<?= $logoSrc ?>" style="max-height: 48px; max-width: 130px;">
+        <?php elseif (file_exists($logoPath)): ?>
           <img src="<?= $logoPath ?>" style="max-height: 48px; max-width: 130px;">
         <?php else: ?>
           <div style="font-weight:bold; color:#990000; font-size:14px;">GROUPE EICG</div>
@@ -192,8 +215,8 @@
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photo_etudiant) && file_exists(__DIR__ . '/../../public/' . ltrim($photo_etudiant, '/'))): ?>
-          <img src="<?= __DIR__ . '/../../public/' . ltrim($photo_etudiant, '/') ?>" class="photo-box">
+        <?php if (!empty($photoSrc)): ?>
+          <img src="<?= $photoSrc ?>" class="photo-box">
         <?php else: ?>
           <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 98px; color: #94A3B8; font-size: 9px;">PHOTO</div>
         <?php endif; ?>
