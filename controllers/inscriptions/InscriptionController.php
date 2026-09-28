@@ -1443,13 +1443,15 @@ class InscriptionController extends BaseController
             SELECT 
                 i.id_inscription,
                 i.code_inscription,
+                i.etudiant_code,
                 i.annee_code,
                 i.photo_inscription,
                 e.matricule_etudiant,
                 e.code_etudiant,
+                e.photo_etudiant,
                 a.libelle_annee
             FROM inscriptions i
-            JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
             LEFT JOIN annees a ON a.code_annee = i.annee_code
             WHERE " . ($idInscription ? "i.id_inscription = ?" : "i.code_inscription = ?") . "
             LIMIT 1
@@ -1480,7 +1482,7 @@ class InscriptionController extends BaseController
         }
 
         // Supprimer l'ancienne photo si elle existe sur le disque
-        $oldPhotoPath = !empty($inscInfo['photo_inscription']) ? trim($inscInfo['photo_inscription']) : '';
+        $oldPhotoPath = !empty($inscInfo['photo_inscription']) ? trim($inscInfo['photo_inscription']) : (!empty($inscInfo['photo_etudiant']) ? trim($inscInfo['photo_etudiant']) : '');
         if (!empty($oldPhotoPath)) {
             $oldFullPath = __DIR__ . '/../../' . ltrim($oldPhotoPath, '/');
             if (file_exists($oldFullPath) && is_file($oldFullPath)) {
@@ -1533,13 +1535,17 @@ class InscriptionController extends BaseController
         }
 
         if ($relativePath) {
+            // Mettre à jour l'inscription
             $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE id_inscription = ?");
             $ok = $stmt->execute([$relativePath, $inscInfo['id_inscription']]);
 
-            // Synchroniser la photo dans la fiche étudiant
-            if (!empty($inscInfo['code_etudiant']) || !empty($inscInfo['matricule_etudiant'])) {
-                $db->prepare("UPDATE etudiants SET photo_etudiant = ? WHERE code_etudiant = ? OR matricule_etudiant = ?")
-                   ->execute([$relativePath, $inscInfo['code_etudiant'], $inscInfo['matricule_etudiant']]);
+            // Mettre à jour et enregistrer systématiquement le lien de la photo dans la table etudiants (champ photo_etudiant)
+            $codeEtu = !empty($inscInfo['code_etudiant']) ? $inscInfo['code_etudiant'] : ($inscInfo['etudiant_code'] ?? '');
+            $matEtu = !empty($inscInfo['matricule_etudiant']) ? $inscInfo['matricule_etudiant'] : '';
+
+            if (!empty($codeEtu) || !empty($matEtu)) {
+                $db->prepare("UPDATE etudiants SET photo_etudiant = ?, updated_at_etudiant = NOW() WHERE code_etudiant = ? OR (matricule_etudiant = ? AND matricule_etudiant != '') OR code_etudiant = ?")
+                   ->execute([$relativePath, $codeEtu, $matEtu, $codeEtu]);
             }
 
             if ($ok) {
