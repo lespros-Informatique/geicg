@@ -1098,7 +1098,7 @@ class InscriptionController extends BaseController
     public function imprimerFiche($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_ETUDIANTS', 'MANAGE_ETUDIANTS', 'VIEW_INSCRIPTIONS', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission(['VIEW_ETUDIANTS', 'MANAGE_ETUDIANTS', 'VIEW_INSCRIPTIONS', 'MANAGE_INSCRIPTIONS', 'RECORD_PAIEMENTS', 'MANAGE_PAYMENTS', 'MANAGE_PAIEMENTS']);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $db = $this->model->getCon();
