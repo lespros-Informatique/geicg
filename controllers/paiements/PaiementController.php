@@ -2140,7 +2140,7 @@ class PaiementController extends BaseController
             SELECT 
                 i.id_inscription, i.code_inscription, i.statut_inscription, i.montant_scolarite_inscription, i.affectation_etat, i.photo_inscription, i.annee_code, i.created_at_inscription,
                 e.code_etudiant, e.id_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, e.photo_etudiant,
-                cl.code_classe, cl.libelle_classe, f.code_filiere, f.libelle_filiere, f.type_filiere, n.code_niveau, n.libelle_niveau, a.libelle_annee
+                cl.code_classe, cl.libelle_classe, cl.filiere_code, cl.niveau_code, f.libelle_filiere, f.type_filiere, n.libelle_niveau, a.libelle_annee
             FROM inscriptions i
             JOIN etudiants e ON e.code_etudiant = i.etudiant_code
             LEFT JOIN classes cl ON cl.code_classe = i.classe_code
@@ -2257,6 +2257,7 @@ class PaiementController extends BaseController
         $nomComplet = trim(strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')));
 
         // Calcul des tranches exigibles et statut du règlement
+        $dbTranches = [];
         if (!empty($codeScolarite)) {
             $stmtTr = $db->prepare("
                 SELECT code_tranche, libelle_tranche, montant_tranche, date_limite 
@@ -2265,7 +2266,10 @@ class PaiementController extends BaseController
                 ORDER BY id_tranche ASC
             ");
             $stmtTr->execute([$codeScolarite]);
-        } else {
+            $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        if (empty($dbTranches)) {
             $stmtTr = $db->prepare("
                 SELECT code_tranche, libelle_tranche, montant_tranche, date_limite 
                 FROM tranches_scolarite 
@@ -2273,8 +2277,8 @@ class PaiementController extends BaseController
                 ORDER BY id_tranche ASC
             ");
             $stmtTr->execute([$filiereCode, $nCode, $anneeCode]);
+            $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC) ?: [];
         }
-        $dbTranches = $stmtTr->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $echeancier = [];
         if (!empty($dbTranches)) {
