@@ -156,8 +156,8 @@ $canRecordPayment = $canRecordPayment ?? true;
                 <th style="padding: 12px;">Élève / Étudiant</th>
                 <th style="padding: 12px;">Parent / Contact</th>
                 <th style="padding: 12px;">Classe & Régime</th>
-                <th style="padding: 12px;">Échéance Échue</th>
-                <th style="padding: 12px;" class="text-center">Retard</th>
+                <th style="padding: 12px;">Libellé Tranche</th>
+                <th style="padding: 12px;" class="text-center">Date d'Échéance</th>
                 <th style="padding: 12px;" class="text-end">Total Versé</th>
                 <th style="padding: 12px;" class="text-end">Reste à Payer</th>
                 <th style="padding: 12px; text-align: center; width: 140px;">Actions</th>
@@ -399,9 +399,17 @@ $(document).ready(function() {
       { 
         data: null,
         render: function(d) {
-          let photoHtml = d.photo 
-            ? `<img src="${d.photo}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid #E2E8F0;">`
-            : `<div style="width: 36px; height: 36px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center;">${d.initiales}</div>`;
+          let photoPath = d.photo ? String(d.photo).trim() : '';
+          if (photoPath && !photoPath.startsWith('http') && !photoPath.startsWith('data:') && !photoPath.startsWith('/')) {
+            photoPath = '<?= RACINE ?>' + photoPath;
+          }
+
+          let photoHtml = photoPath 
+            ? `<div style="position: relative; width: 38px; height: 38px; flex-shrink: 0; display: inline-flex;">
+                <img src="${photoPath}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid #CBD5E1;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display: none; width: 38px; height: 38px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-weight: 800; font-size: 13px; align-items: center; justify-content: center;">${d.initiales}</div>
+               </div>`
+            : `<div style="width: 38px; height: 38px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">${d.initiales}</div>`;
 
           return `<div style="display: flex; align-items: center; gap: 10px;">
                     ${photoHtml}
@@ -432,35 +440,21 @@ $(document).ready(function() {
         }
       },
       { 
-        data: null,
-        render: function(d) {
-          return `<div>
-                    <div style="font-weight: 800; color: #DC2626; font-size: 12px;">${d.echeance_libelle}</div>
-                    <div style="font-size: 11px; color: #64748B;">Limite : ${d.echeance_date}</div>
-                  </div>`;
+        data: 'echeance_libelle',
+        render: function(v) {
+          return `<div style="font-weight: 800; color: #0F172A; font-size: 12.5px;">${v || '-'}</div>`;
         }
       },
       { 
-        data: null, className: 'text-center',
-        render: function(d) {
-          let bStyle = 'background: #FEF3C7; color: #D97706; border: 1px solid #FCD34D;';
-          if (d.severite_code === 'critique') {
-            bStyle = 'background: #FEE2E2; color: #DC2626; border: 1px solid #FCA5A5;';
-          } else if (d.severite_code === 'modere') {
-            bStyle = 'background: #FFEDD5; color: #EA580C; border: 1px solid #FDBA74;';
-          }
-          return `<span style="${bStyle} font-weight: 800; font-size: 11px; padding: 4px 8px; border-radius: 6px; display: inline-block;">
-                    +${d.retard_jours} j (${d.severite_libelle})
-                  </span>`;
+        data: 'echeance_date', className: 'text-center',
+        render: function(v) {
+          return `<span style="font-weight: 800; color: #1E293B; font-size: 12.5px;">${v || '-'}</span>`;
         }
       },
       { 
-        data: null, className: 'text-end font-monospace',
-        render: function(d) {
-          return `<div>
-                    <div style="font-size: 12.5px; font-weight: 700; color: #16A34A;">${formatFCFA(d.total_paye)}</div>
-                    <div style="font-size: 11px; color: #64748B;">Attendu: ${formatFCFA(d.total_attendu)}</div>
-                  </div>`;
+        data: 'total_paye', className: 'text-end font-monospace',
+        render: function(v) {
+          return `<div style="font-size: 12.5px; font-weight: 700; color: #16A34A;">${formatFCFA(v)}</div>`;
         }
       },
       { 

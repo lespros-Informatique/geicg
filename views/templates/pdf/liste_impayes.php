@@ -196,8 +196,8 @@
         <th style="width: 20%;">Nom & Prénom(s)</th>
         <th style="width: 17%;">Tuteur / Contact</th>
         <th style="width: 10%;">Classe</th>
-        <th style="width: 13%;">Échéance Échue</th>
-        <th style="width: 8%;">Retard</th>
+        <th style="width: 13%;">Libellé Tranche</th>
+        <th style="width: 10%;">Date d'Échéance</th>
         <th style="width: 9%;">Total Versé</th>
         <th style="width: 9%;">Impayé Échu</th>
       </tr>
@@ -214,19 +214,8 @@
               <span style="font-family: monospace; font-size: 7pt; color: #1D4ED8;"><?= htmlspecialchars($e['telephone_parent']) ?></span>
             </td>
             <td class="text-center"><?= htmlspecialchars($e['classe']) ?></td>
-            <td class="text-center">
-              <span style="color: #991B1B; font-weight: bold;"><?= htmlspecialchars($e['echeance_libelle']) ?></span><br>
-              <span style="font-size: 6.5pt; color: #475569;"><?= htmlspecialchars($e['echeance_date']) ?></span>
-            </td>
-            <td class="text-center">
-              <?php if ($e['severite_code'] === 'critique'): ?>
-                <span class="status-critique">+<?= $e['retard_jours'] ?>j</span>
-              <?php elseif ($e['severite_code'] === 'modere'): ?>
-                <span class="status-modere">+<?= $e['retard_jours'] ?>j</span>
-              <?php else: ?>
-                <span class="status-leger">+<?= $e['retard_jours'] ?>j</span>
-              <?php endif; ?>
-            </td>
+            <td class="text-center text-bold" style="color: #0F172A;"><?= htmlspecialchars($e['echeance_libelle']) ?></td>
+            <td class="text-center text-bold" style="color: #1E293B;"><?= htmlspecialchars($e['echeance_date']) ?></td>
             <td class="text-right" style="color: #166534; font-weight: bold;"><?= number_format($e['total_paye'], 0, ',', ' ') ?></td>
             <td class="text-right text-bold" style="color: #B91C1C; background: #FEF2F2;"><?= number_format($e['montant_echu'], 0, ',', ' ') ?></td>
           </tr>

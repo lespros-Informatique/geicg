@@ -269,6 +269,32 @@ class ModelImpayes extends BaseModel
                 }
                 $totalJoursAccumules += $retardJoursMax;
 
+                $photoRaw = !empty($ins['photo_etudiant']) ? trim($ins['photo_etudiant']) : (!empty($ins['photo_inscription']) ? trim($ins['photo_inscription']) : '');
+                $photoUrl = '';
+                if (!empty($photoRaw)) {
+                    if (str_starts_with($photoRaw, 'http') || str_starts_with($photoRaw, 'data:')) {
+                        $photoUrl = $photoRaw;
+                    } else {
+                        $photoUrl = RACINE . ltrim($photoRaw, '/');
+                    }
+                }
+
+                $displayTrancheLibelle = 'Scolarité';
+                $displayTrancheDate = '-';
+
+                if ($echeanceOverdue && !empty($echeanceOverdue['libelle_tranche'])) {
+                    $displayTrancheLibelle = $echeanceOverdue['libelle_tranche'];
+                    $displayTrancheDate = !empty($echeanceOverdue['date_limite']) ? date('d/m/Y', strtotime($echeanceOverdue['date_limite'])) : '-';
+                } elseif (!empty($studentTranches)) {
+                    $firstT = reset($studentTranches);
+                    if (!empty($firstT['libelle_tranche'])) {
+                        $displayTrancheLibelle = $firstT['libelle_tranche'];
+                    }
+                    if (!empty($firstT['date_limite'])) {
+                        $displayTrancheDate = date('d/m/Y', strtotime($firstT['date_limite']));
+                    }
+                }
+
                 $results[] = [
                     'id_inscription' => (int)$ins['id_inscription'],
                     'code_inscription' => $codeIns,
@@ -279,7 +305,7 @@ class ModelImpayes extends BaseModel
                     'nom_complet' => strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
                     'telephone_etudiant' => $ins['telephone_etudiant'] ?? 'N/A',
                     'initiales' => !empty($initiales) ? $initiales : 'E',
-                    'photo' => !empty($ins['photo_etudiant']) ? $ins['photo_etudiant'] : (!empty($ins['photo_inscription']) ? $ins['photo_inscription'] : ''),
+                    'photo' => $photoUrl,
                     'classe' => $ins['libelle_classe'] ?? 'N/A',
                     'niveau' => $ins['libelle_niveau'] ?? 'N/A',
                     'filiere' => $ins['libelle_filiere'] ?? 'N/A',
@@ -292,8 +318,8 @@ class ModelImpayes extends BaseModel
                     'total_paye' => $totalEncaisse,
                     'solde_restant' => $soldeRestant,
                     'montant_echu' => $montantEchu,
-                    'echeance_libelle' => $echeanceOverdue ? $echeanceOverdue['libelle_tranche'] : 'Reliquat Échu',
-                    'echeance_date' => $echeanceOverdue ? date('d/m/Y', strtotime($echeanceOverdue['date_limite'])) : '-',
+                    'echeance_libelle' => $displayTrancheLibelle,
+                    'echeance_date' => $displayTrancheDate,
                     'retard_jours' => $retardJoursMax,
                     'severite_code' => $severiteCode,
                     'severite_libelle' => $severiteLibelle,
