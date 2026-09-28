@@ -107,6 +107,125 @@ class ImpayesController extends BaseController
         }
     }
 
+    public function addGrouped()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(['SEND_RELANCES', 'MANAGE_IMPAYES']);
+
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
+
+        $itemsJson = $_POST['items'] ?? '[]';
+        $items = json_decode($itemsJson, true);
+        if (!is_array($items) || empty($items)) {
+            $this->error('Aucun étudiant sélectionné pour la relance.');
+            return;
+        }
+
+        $niveauRelance = $_POST['niveau_relance'] ?? 'rappel_amiable';
+        $canalRelance = $_POST['canal_relance'] ?? 'sms';
+        $messageTemplate = $_POST['message_relance'] ?? '';
+
+        $cols = $this->model->getCon()->query("DESCRIBE relances_impayes")->fetchAll(PDO::FETCH_COLUMN);
+        $colsFlip = array_flip($cols);
+
+        $savedCount = 0;
+        foreach ($items as $item) {
+            $codeRelance = $this->validator->generateCode('relances_impayes', 'code_relance', 'REL-', 8);
+            
+            $msg = $messageTemplate;
+            $msg = str_replace('{NOM_ETUDIANT}', $item['student_name'] ?? '', $msg);
+            $msg = str_replace('{MONTANT_ECHU}', number_format((float)($item['montant_echu'] ?? 0), 0, ',', ' ') . ' FCFA', $msg);
+            $msg = str_replace('{CLASSE}', $item['classe'] ?? '', $msg);
+
+            $data = [
+                'code_relance' => $codeRelance,
+                'etudiant_code' => $item['etudiant_code'] ?? '',
+                'inscription_code' => $item['inscription_code'] ?? '',
+                'niveau_relance' => $niveauRelance,
+                'canal_relance' => $canalRelance,
+                'montant_impaye' => (float)($item['montant_echu'] ?? 0),
+                'telephone_destinataire' => $item['phone'] ?? '',
+                'message_relance' => $msg,
+                'statut_relance' => 'envoye',
+                'user_code' => $userCode,
+                'annee_code' => $anneeCode,
+                'etablissement_code' => $etabCode,
+                'created_at_relance' => date('Y-m-d H:i:s')
+            ];
+
+            $filteredData = array_intersect_key($data, $colsFlip);
+            if ($this->model->create($filteredData)) {
+                $savedCount++;
+            }
+        }
+
+        if ($savedCount > 0) {
+            $this->success("Relance groupée transmise et journalisée avec succès pour {$savedCount} destinataire(s)!");
+        } else {
+            $this->error("Erreur lors de l'enregistrement de la relance groupée");
+        }
+    }
+
+    public function imprimerListeImpayes()
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_IMPAYES', 'MANAGE_IMPAYES', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $niveauCode = $_GET['niveau_code'] ?? 'ALL';
+        $classeCode = $_GET['classe_code'] ?? 'ALL';
+        $severite = $_GET['severite'] ?? 'ALL';
+
+        $result = $this->model->getOverdueStudentsDetailed($anneeCode, $niveauCode, $classeCode, $severite);
+
+        $anneeLibelle = 'Toutes';
+        if (!empty($anneeCode)) {
+            $stmt = $this->model->getCon()->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ?");
+            $stmt->execute([$anneeCode]);
+            $anneeLibelle = $stmt->fetchColumn() ?: $anneeCode;
+        }
+
+        $niveauLibelle = 'Tous';
+        if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+            $stmt = $this->model->getCon()->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ?");
+            $stmt->execute([$niveauCode]);
+            $niveauLibelle = $stmt->fetchColumn() ?: $niveauCode;
+        }
+
+        $classeLibelle = 'Toutes';
+        if (!empty($classeCode) && $classeCode !== 'ALL') {
+            $stmt = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ?");
+            $stmt->execute([$classeCode]);
+            $classeLibelle = $stmt->fetchColumn() ?: $classeCode;
+        }
+
+        $severiteLibelle = 'Tous les retards';
+        if ($severite === 'leger') $severiteLibelle = 'Retard Léger (1-15j)';
+        elseif ($severite === 'modere') $severiteLibelle = 'Retard Modéré (16-30j)';
+        elseif ($severite === 'critique') $severiteLibelle = 'Retard Critique (>30j)';
+
+        $dataView = [
+            'list' => $result['list'] ?? [],
+            'kpis' => $result['kpis'] ?? [],
+            'annee_libelle' => $anneeLibelle,
+            'niveau_libelle' => $niveauLibelle,
+            'classe_libelle' => $classeLibelle,
+            'severite_libelle' => $severiteLibelle
+        ];
+
+        $html = PdfService::renderTemplate('liste_impayes.php', $dataView);
+        $filename = 'Liste_Impayes_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Liste des Impayés & Retards de Versements'
+        ]);
+    }
+
     public function imprimerRappelPdf($param)
     {
         $this->requireAuth();

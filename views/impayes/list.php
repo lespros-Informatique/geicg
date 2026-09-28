@@ -13,7 +13,7 @@ $canRecordPayment = $canRecordPayment ?? true;
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       
-      <!-- EN-TÊTE PAGE -->
+      <!-- EN-TÊTE PAGE ET BOUTONS D'ACTIONS HAUTS -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
@@ -23,6 +23,16 @@ $canRecordPayment = $canRecordPayment ?? true;
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">
             Détection automatique des échéances de scolarité échues et relances multi-canaux des parents/tuteurs
           </p>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <button type="button" id="btn-open-group-sms-modal" class="btn" style="background: #EA580C; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(234,88,12,0.25); cursor: pointer;">
+            <i data-lucide="message-square" style="width: 18px; height: 18px;"></i> Notification par SMS
+          </button>
+
+          <a id="btn-print-impayes-list" href="<?= RACINE ?>impayes/imprimerListeImpayes" target="_blank" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(30,58,95,0.25); text-decoration: none;">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Liste
+          </a>
         </div>
       </div>
 
@@ -127,6 +137,9 @@ $canRecordPayment = $canRecordPayment ?? true;
           <table id="table-impayes" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px;">
+                <th style="padding: 12px; width: 36px;" class="text-center">
+                  <input type="checkbox" id="check-all-impayes" style="width: 17px; height: 17px; cursor: pointer; vertical-align: middle;">
+                </th>
                 <th style="padding: 12px; width: 40px;" class="text-center">#</th>
                 <th style="padding: 12px;">Élève / Étudiant</th>
                 <th style="padding: 12px;">Parent / Contact</th>
@@ -147,12 +160,12 @@ $canRecordPayment = $canRecordPayment ?? true;
   </main>
 </div>
 
-<!-- MODAL D'ÉMISSION DE RELANCE UNIFIÉ (Style GEICG) -->
+<!-- MODAL D'ÉMISSION DE RELANCE INDIVIDUELLE (Style GEICG) -->
 <div id="modalRelanceImpaye" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box;">
   <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); overflow: hidden; animation: modalZoomIn 0.25s ease-out;">
     <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
       <h5 style="font-weight: 800; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="send" style="width: 20px; height: 20px;"></i> Émettre une Relance aux Tuteurs
+        <i data-lucide="send" style="width: 20px; height: 20px;"></i> Émettre une Relance Individuelle
       </h5>
       <button type="button" class="btn-close-modal-relance" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
@@ -214,9 +227,71 @@ $canRecordPayment = $canRecordPayment ?? true;
   </div>
 </div>
 
+<!-- MODAL DE RELANCE GROUPÉE PAR SMS -->
+<div id="modalRelanceGroupSMS" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 10001; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 580px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); overflow: hidden; animation: modalZoomIn 0.25s ease-out;">
+    <div style="background: #EA580C; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h5 style="font-weight: 800; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="message-square" style="width: 20px; height: 20px;"></i> Notification par SMS (Relance Groupée)
+      </h5>
+      <button type="button" class="btn-close-modal-group-sms" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+    
+    <form id="formRelanceGroupSMS">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+
+      <div style="padding: 20px;">
+        <!-- Résumé de la sélection -->
+        <div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #C2410C; text-transform: uppercase;">Sélection Active</div>
+            <div id="group_sms_count" style="font-size: 15px; font-weight: 900; color: #9A3412; margin-top: 2px;">0 Étudiant(s) Sélectionné(s)</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 11px; font-weight: 800; color: #C2410C; text-transform: uppercase;">Cumul Impayés Échus</div>
+            <div id="group_sms_total_amount" style="font-size: 15px; font-weight: 900; color: #DC2626; margin-top: 2px;">0 FCFA</div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau de Relance</label>
+          <select name="niveau_relance" id="group_niveau_relance" class="form-control" style="border-radius: 8px; font-weight: 600;" onchange="updateGroupSMSTemplate()">
+            <option value="rappel_amiable">Rappel Amiable (1er Rappel)</option>
+            <option value="relance_ferme">Relance Ferme (Délai 48h)</option>
+            <option value="mise_en_demeure">Mise en Demeure Officielle</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Canal d'Expédition</label>
+          <select name="canal_relance" id="group_canal_relance" class="form-control" style="border-radius: 8px; font-weight: 600;">
+            <option value="sms">SMS Direct (Téléphones Tuteurs)</option>
+            <option value="whatsapp">WhatsApp Officiel</option>
+            <option value="email">Courrier Électronique (Email)</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin: 0;">Message Modèle Révisable</label>
+            <span style="font-size: 10.5px; color: #64748B;">Balises : <code>{NOM_ETUDIANT}</code>, <code>{MONTANT_ECHU}</code>, <code>{CLASSE}</code></span>
+          </div>
+          <textarea name="message_relance" id="group_message_relance" rows="5" class="form-control" style="border-radius: 8px; font-size: 12.5px;" required></textarea>
+        </div>
+      </div>
+
+      <div style="background: #F8FAFC; padding: 14px 20px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-group-sms" style="font-weight: 700; border-radius: 8px; background: #E2E8F0; color: #475569; border: none; padding: 8px 16px;">Annuler</button>
+        <button type="submit" class="btn" style="background: #EA580C; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer;">
+          <i data-lucide="send" style="width: 16px; height: 16px;"></i> Confirmer & Envoyer la Relance Groupée
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 $(document).ready(function() {
-  $('#modalRelanceImpaye').appendTo('body');
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
     $('#filter-annee, #filter-niveau, #filter-classe, #filter-severite').select2({ width: '100%' });
@@ -224,6 +299,15 @@ $(document).ready(function() {
 
   function formatFCFA(val) {
     return Number(val || 0).toLocaleString('fr-FR') + ' FCFA';
+  }
+
+  function updatePrintUrl() {
+    var url = '<?= RACINE ?>impayes/imprimerListeImpayes' +
+      '?annee_code=' + encodeURIComponent($('#filter-annee').val() || '') +
+      '&niveau_code=' + encodeURIComponent($('#filter-niveau').val() || 'ALL') +
+      '&classe_code=' + encodeURIComponent($('#filter-classe').val() || 'ALL') +
+      '&severite=' + encodeURIComponent($('#filter-severite').val() || 'ALL');
+    $('#btn-print-impayes-list').attr('href', url);
   }
 
   // Filtrage en cascade Niveau -> Classe
@@ -242,12 +326,18 @@ $(document).ready(function() {
     } else {
       $('#filter-classe').select2({ width: '100%' });
     }
+    updatePrintUrl();
     table.ajax.reload();
   });
 
   $('#filter-classe, #filter-annee, #filter-severite').on('change', function() {
+    updatePrintUrl();
     table.ajax.reload();
   });
+
+  updatePrintUrl();
+
+  var selectedRowsData = [];
 
   var table = $('#table-impayes').DataTable({
     ajax: {
@@ -266,12 +356,30 @@ $(document).ready(function() {
           $('#kpi-retard-moyen').text((json.kpis.retard_moyen_jours || 0) + ' jour(s)');
           $('#kpi-relances-mois').text(json.kpis.total_relances_mois || 0);
         }
+        $('#check-all-impayes').prop('checked', false);
         return json.data || [];
       }
     },
     processing: true,
     autoWidth: false,
     columns: [
+      { 
+        data: null, 
+        orderable: false, 
+        className: 'text-center', 
+        width: '36px', 
+        render: function(d) {
+          return `<input type="checkbox" class="check-impaye-row" 
+                    data-id="${d.id_inscription}" 
+                    data-etudiant-code="${d.code_etudiant}" 
+                    data-inscription-code="${d.code_inscription}" 
+                    data-phone="${(d.telephone_parent || '').replace(/"/g, '&quot;')}" 
+                    data-montant-echu="${d.montant_echu}" 
+                    data-student-name="${(d.nom_complet || '').replace(/"/g, '&quot;')}" 
+                    data-classe="${(d.classe || '').replace(/"/g, '&quot;')}" 
+                    style="width: 17px; height: 17px; cursor: pointer; vertical-align: middle;">`;
+        }
+      },
       { data: null, className: 'text-center', width: '40px', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
@@ -359,9 +467,9 @@ $(document).ready(function() {
           let btnRelancer = `<button type="button" class="btn btn-sm btn-relancer-impaye" 
                               data-etudiant-code="${d.code_etudiant}"
                               data-inscription-code="${d.code_inscription}"
-                              data-student-name="${d.nom_complet.replace(/"/g, '&quot;')}"
-                              data-classe="${d.classe.replace(/"/g, '&quot;')}"
-                              data-phone="${d.telephone_parent.replace(/"/g, '&quot;')}"
+                              data-student-name="${(d.nom_complet || '').replace(/"/g, '&quot;')}"
+                              data-classe="${(d.classe || '').replace(/"/g, '&quot;')}"
+                              data-phone="${(d.telephone_parent || '').replace(/"/g, '&quot;')}"
                               data-montant-echu="${d.montant_echu}"
                               style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #EA580C; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Émettre une Relance (SMS / WhatsApp / Email)">
                               <i data-lucide="send" style="width: 16px; height: 16px;"></i>
@@ -386,6 +494,12 @@ $(document).ready(function() {
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
   });
 
+  // Check all / Check row events
+  $(document).on('change', '#check-all-impayes', function() {
+    $('.check-impaye-row').prop('checked', $(this).prop('checked'));
+  });
+
+  // Ouvre le modal de relance individuelle
   $(document).on('click', '.btn-relancer-impaye', function() {
     var etudiantCode = $(this).data('etudiant-code');
     var inscriptionCode = $(this).data('inscription-code');
@@ -431,6 +545,67 @@ $(document).ready(function() {
     $('#relance_message_relance').val(msg);
   };
 
+  // LOGIQUE RELANCE GROUPÉE PAR SMS
+  $('#btn-open-group-sms-modal').on('click', function() {
+    selectedRowsData = [];
+    var totalAmount = 0;
+
+    $('.check-impaye-row:checked').each(function() {
+      var etudiantCode = $(this).data('etudiant-code');
+      var inscriptionCode = $(this).data('inscription-code');
+      var studentName = $(this).data('student-name');
+      var classe = $(this).data('classe');
+      var phone = $(this).data('phone');
+      var montantEchu = parseFloat($(this).data('montant-echu')) || 0;
+
+      totalAmount += montantEchu;
+      selectedRowsData.push({
+        etudiant_code: etudiantCode,
+        inscription_code: inscriptionCode,
+        student_name: studentName,
+        classe: classe,
+        phone: phone,
+        montant_echu: montantEchu
+      });
+    });
+
+    if (selectedRowsData.length === 0) {
+      if (window.toastr) toastr.warning('Veuillez cocher au moins un étudiant dans la liste pour envoyer la relance SMS groupée.');
+      return;
+    }
+
+    $('#group_sms_count').text(selectedRowsData.length + ' Étudiant(s) Sélectionné(s)');
+    $('#group_sms_total_amount').text(formatFCFA(totalAmount));
+
+    updateGroupSMSTemplate();
+    $('#modalRelanceGroupSMS').css('display', 'flex');
+  });
+
+  $(document).on('click', '.btn-close-modal-group-sms', function() {
+    $('#modalRelanceGroupSMS').hide();
+  });
+
+  $('#modalRelanceGroupSMS').on('click', function(e) {
+    if ($(e.target).is('#modalRelanceGroupSMS')) {
+      $('#modalRelanceGroupSMS').hide();
+    }
+  });
+
+  window.updateGroupSMSTemplate = function() {
+    var type = $('#group_niveau_relance').val();
+    var msg = "";
+
+    if (type === 'rappel_amiable') {
+      msg = "GROUPE EICG - Rappel Amiable : Cher parent, nous vous rappelons que la tranche de scolarité de {NOM_ETUDIANT} s'élevant à {MONTANT_ECHU} est arrivée à échéance. Merci de régulariser à la caisse de l'établissement.";
+    } else if (type === 'relance_ferme') {
+      msg = "GROUPE EICG - Relance de Scolarité : Cher parent, sauf erreur de notre part, le montant de {MONTANT_ECHU} concernant l'élève {NOM_ETUDIANT} ({CLASSE}) demeure impayé. Veuillez régulariser sous 48h afin d'éviter l'interruption des cours.";
+    } else {
+      msg = "GROUPE EICG - MISE EN DEMEURE : M./Mme le Tuteur de {NOM_ETUDIANT}, un reliquat impayé de {MONTANT_ECHU} est échu. Nous vous prions de vous présenter d'urgence à la caisse de l'école.";
+    }
+    $('#group_message_relance').val(msg);
+  };
+
+  // Soumission Relance Individuelle
   $('#formRelanceImpaye').on('submit', function(e) {
     e.preventDefault();
     var formData = $(this).serialize();
@@ -452,6 +627,47 @@ $(document).ready(function() {
       },
       error: function() {
         if (window.toastr) toastr.error('Erreur réseau lors de l\'envoi');
+      }
+    });
+  });
+
+  // Soumission Relance Groupée
+  $('#formRelanceGroupSMS').on('submit', function(e) {
+    e.preventDefault();
+    if (selectedRowsData.length === 0) {
+      if (window.toastr) toastr.warning('Aucun étudiant sélectionné.');
+      return;
+    }
+
+    var niveauRelance = $('#group_niveau_relance').val();
+    var canalRelance = $('#group_canal_relance').val();
+    var messageTemplate = $('#group_message_relance').val();
+    var csrfToken = $('input[name="csrf_token"]', this).val();
+
+    $.ajax({
+      url: '<?= RACINE ?>impayes/addGrouped',
+      type: 'POST',
+      data: {
+        csrf_token: csrfToken,
+        niveau_relance: niveauRelance,
+        canal_relance: canalRelance,
+        message_relance: messageTemplate,
+        items: JSON.stringify(selectedRowsData)
+      },
+      dataType: 'json',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Relances groupées transmises avec succès!');
+          $('#modalRelanceGroupSMS').hide();
+          $('#check-all-impayes').prop('checked', false);
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'envoi des relances groupées');
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau lors de l\'envoi groupé');
       }
     });
   });

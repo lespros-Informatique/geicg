@@ -368,12 +368,14 @@ $route->addRoute('/cloture_caisse/formulaire', [$sessionCaisseController, 'clotu
 $route->addRoute('/impayes/list', [$impayesController, 'list']);
 $route->addRoute('/impayes/apiList', [$impayesController, 'apiList']);
 $route->addRoute('/impayes/add', [$impayesController, 'add']);
+$route->addRoute('/impayes/addGrouped', [$impayesController, 'addGrouped']);
 $route->addRoute('/impayes/edit', [$impayesController, 'edit']);
 $route->addRoute('/impayes/changer', [$impayesController, 'changer']);
 $route->addRoute('/impayes/details/{param}', [$impayesController, 'details']);
 $route->addRoute('/impayes/edition/{param}', [$impayesController, 'edition']);
 $route->addRoute('/impayes/formulaire', [$impayesController, 'formulaire']);
 $route->addRoute('/impayes/imprimerRappelPdf/{param}', [$impayesController, 'imprimerRappelPdf']);
+$route->addRoute('/impayes/imprimerListeImpayes', [$impayesController, 'imprimerListeImpayes']);
 
 // Module: arriere (ArriereController)
 $route->addRoute('/arriere/list', [$arriereController, 'list']);
