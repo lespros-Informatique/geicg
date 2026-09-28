@@ -308,8 +308,33 @@ class PaiementController extends BaseController
             $kpiTotalEncaisse += $totalEncaisse;
             $kpiResteARecouvrer += $soldeRestant;
 
+            $nomStr = trim($ins['nom_etudiant'] ?? '');
+            $prenomStr = trim($ins['prenom_etudiant'] ?? '');
+            $iNom = !empty($nomStr) ? mb_substr($nomStr, 0, 1, 'UTF-8') : '';
+            $iPrenom = !empty($prenomStr) ? mb_substr($prenomStr, 0, 1, 'UTF-8') : '';
+            $initiales = strtoupper($iNom . $iPrenom);
+            if (empty($initiales)) {
+                $initiales = 'E';
+            }
+
             $photoRel = !empty($ins['photo_etudiant']) ? trim($ins['photo_etudiant']) : (!empty($ins['photo_inscription']) ? trim($ins['photo_inscription']) : '');
-            $photoUrl = !empty($photoRel) ? (RACINE . ltrim($photoRel, '/')) : (RACINE . 'public/assets/images/default-avatar.png');
+            $hasPhoto = false;
+            $photoUrl = '';
+
+            if (!empty($photoRel)) {
+                $cleanRel = ltrim($photoRel, '/');
+                $fullPathDisk = __DIR__ . '/../../' . $cleanRel;
+                if (file_exists($fullPathDisk) && is_file($fullPathDisk)) {
+                    $hasPhoto = true;
+                    $photoUrl = RACINE . $cleanRel;
+                } else {
+                    $fullPathPublic = __DIR__ . '/../../public/' . $cleanRel;
+                    if (file_exists($fullPathPublic) && is_file($fullPathPublic)) {
+                        $hasPhoto = true;
+                        $photoUrl = RACINE . 'public/' . $cleanRel;
+                    }
+                }
+            }
 
             $idInscr = (int)($ins['id_inscription'] ?? 0);
             $data[] = [
@@ -323,6 +348,8 @@ class PaiementController extends BaseController
                 'nom' => strtoupper($ins['nom_etudiant'] ?? ''),
                 'prenom' => ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
                 'nom_complet' => strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
+                'has_photo' => $hasPhoto,
+                'initiales' => $initiales,
                 'photo' => $photoUrl,
                 'telephone' => $ins['telephone_etudiant'] ?? 'N/A',
                 'classe' => $ins['libelle_classe'] ?? 'N/A',

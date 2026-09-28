@@ -113,6 +113,22 @@
   object-fit: cover;
   border: 2px solid #E2E8F0;
 }
+.student-avatar-initials {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(15,23,42,0.15);
+  border: 1.5px solid #CBD5E1;
+}
 </style>
 
 <div class="content-wrapper">
@@ -675,9 +691,16 @@ function initDataTableCompta() {
         dom: '<"row no-print"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row no-print"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
         columns: [
             { data: null, render: function(d) {
-                const defaultAvatar = window.RACINE + 'public/assets/images/default-avatar.png';
+                const initStr = d.initiales || 'E';
+                let avatarHtml = '';
+                if (d.has_photo && d.photo) {
+                    avatarHtml = `<img src="${d.photo}" class="student-avatar" alt="Photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">` +
+                                 `<div class="student-avatar-initials" style="display:none;">${initStr}</div>`;
+                } else {
+                    avatarHtml = `<div class="student-avatar-initials">${initStr}</div>`;
+                }
                 return `<div style="display: flex; align-items: center; gap: 10px;">
-                            <img src="${d.photo}" class="student-avatar" alt="Photo" onerror="this.onerror=null; this.src='${defaultAvatar}';">
+                            ${avatarHtml}
                             <div>
                                 <div style="font-weight: 800; color: #0F172A;">${d.nom_complet}</div>
                                 <div style="font-size: 11.5px; color: #64748B;">Matricule: <strong style="color: #1E3A5F;">${d.matricule}</strong></div>
