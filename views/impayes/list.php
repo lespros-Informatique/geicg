@@ -147,71 +147,70 @@ $canRecordPayment = $canRecordPayment ?? true;
   </main>
 </div>
 
-<!-- MODAL D'ÉMISSION DE RELANCE UNIFIÉ -->
-<div class="modal fade" id="modalRelanceImpaye" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
-  <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
-    <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-      <div class="modal-header" style="background: #1E3A5F; color: #FFFFFF; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 16px 20px;">
-        <h5 class="modal-title" style="font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="send" style="width: 20px; height: 20px;"></i> Émettre une Relance aux Tuteurs
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-      </div>
-      <form id="formRelanceImpaye">
-        <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
-        <input type="hidden" id="relance_etudiant_code" name="etudiant_code" value="">
-        <input type="hidden" id="relance_inscription_code" name="inscription_code" value="">
-
-        <div class="modal-body" style="padding: 20px;">
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Étudiant Destinataire</div>
-            <div id="relance_student_name" style="font-size: 14px; font-weight: 800; color: #0F172A; margin-top: 2px;">-</div>
-            <div id="relance_student_meta" style="font-size: 12px; color: #64748B; margin-top: 1px;">-</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #0F172A;">Niveau de Relance</label>
-            <select name="niveau_relance" id="relance_niveau_relance" class="form-select" style="border-radius: 8px; font-weight: 600;" onchange="updateRelanceTemplate()">
-              <option value="rappel_amiable">Rappel Amiable (1er Rappel)</option>
-              <option value="relance_ferme">Relance Ferme (Délai 48h)</option>
-              <option value="mise_en_demeure">Mise en Demeure Officielle</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #0F172A;">Canal d'Expédition</label>
-            <select name="canal_relance" id="relance_canal_relance" class="form-select" style="border-radius: 8px; font-weight: 600;">
-              <option value="sms">SMS Direct (Téléphone Tuteur)</option>
-              <option value="whatsapp">WhatsApp Officiel</option>
-              <option value="email">Courrier Électronique (Email)</option>
-              <option value="appel">Appel Téléphonique (Enregistré)</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #0F172A;">Téléphone / Contact Destinataire</label>
-            <input type="text" name="telephone_destinataire" id="relance_telephone_destinataire" class="form-control" style="border-radius: 8px; font-weight: 700; font-family: monospace;" required>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #0F172A;">Montant Impayé Échu (FCFA)</label>
-            <input type="number" name="montant_impaye" id="relance_montant_impaye" class="form-control" style="border-radius: 8px; font-weight: 800; color: #DC2626;" required readonly>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #0F172A;">Message du Rappel</label>
-            <textarea name="message_relance" id="relance_message_relance" rows="4" class="form-control" style="border-radius: 8px; font-size: 12.5px;" required></textarea>
-          </div>
-        </div>
-
-        <div class="modal-footer" style="background: #F8FAFC; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; padding: 12px 20px;">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight: 700; border-radius: 8px;">Annuler</button>
-          <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-            <i data-lucide="send" style="width: 16px; height: 16px;"></i> Confirmer & Journaliser la Relance
-          </button>
-        </div>
-      </form>
+<!-- MODAL D'ÉMISSION DE RELANCE UNIFIÉ (Style GEICG) -->
+<div id="modalRelanceImpaye" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); overflow: hidden; animation: modalZoomIn 0.25s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h5 style="font-weight: 800; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="send" style="width: 20px; height: 20px;"></i> Émettre une Relance aux Tuteurs
+      </h5>
+      <button type="button" class="btn-close-modal-relance" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
+    
+    <form id="formRelanceImpaye">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" id="relance_etudiant_code" name="etudiant_code" value="">
+      <input type="hidden" id="relance_inscription_code" name="inscription_code" value="">
+
+      <div style="padding: 20px;">
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Étudiant Destinataire</div>
+          <div id="relance_student_name" style="font-size: 14px; font-weight: 800; color: #0F172A; margin-top: 2px;">-</div>
+          <div id="relance_student_meta" style="font-size: 12px; color: #64748B; margin-top: 1px;">-</div>
+        </div>
+
+        <div class="mb-3">
+          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau de Relance</label>
+          <select name="niveau_relance" id="relance_niveau_relance" class="form-control" style="border-radius: 8px; font-weight: 600;" onchange="updateRelanceTemplate()">
+            <option value="rappel_amiable">Rappel Amiable (1er Rappel)</option>
+            <option value="relance_ferme">Relance Ferme (Délai 48h)</option>
+            <option value="mise_en_demeure">Mise en Demeure Officielle</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Canal d'Expédition</label>
+          <select name="canal_relance" id="relance_canal_relance" class="form-control" style="border-radius: 8px; font-weight: 600;">
+            <option value="sms">SMS Direct (Téléphone Tuteur)</option>
+            <option value="whatsapp">WhatsApp Officiel</option>
+            <option value="email">Courrier Électronique (Email)</option>
+            <option value="appel">Appel Téléphonique (Enregistré)</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Téléphone / Contact Destinataire</label>
+          <input type="text" name="telephone_destinataire" id="relance_telephone_destinataire" class="form-control" style="border-radius: 8px; font-weight: 700; font-family: monospace;" required>
+        </div>
+
+        <div class="mb-3">
+          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Montant Impayé Échu (FCFA)</label>
+          <input type="number" name="montant_impaye" id="relance_montant_impaye" class="form-control" style="border-radius: 8px; font-weight: 800; color: #DC2626; background: #F8FAFC;" required readonly>
+        </div>
+
+        <div class="mb-3">
+          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Message du Rappel</label>
+          <textarea name="message_relance" id="relance_message_relance" rows="4" class="form-control" style="border-radius: 8px; font-size: 12.5px;" required></textarea>
+        </div>
+      </div>
+
+      <div style="background: #F8FAFC; padding: 14px 20px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-relance" style="font-weight: 700; border-radius: 8px; background: #E2E8F0; color: #475569; border: none; padding: 8px 16px;">Annuler</button>
+        <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="send" style="width: 16px; height: 16px;"></i> Confirmer & Journaliser la Relance
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -403,7 +402,17 @@ $(document).ready(function() {
     $('#relance_montant_impaye').val(montantEchu || 0);
 
     updateRelanceTemplate();
-    $('#modalRelanceImpaye').modal('show');
+    $('#modalRelanceImpaye').css('display', 'flex');
+  });
+
+  $(document).on('click', '.btn-close-modal-relance', function() {
+    $('#modalRelanceImpaye').hide();
+  });
+
+  $('#modalRelanceImpaye').on('click', function(e) {
+    if ($(e.target).is('#modalRelanceImpaye')) {
+      $('#modalRelanceImpaye').hide();
+    }
   });
 
   window.updateRelanceTemplate = function() {
@@ -435,7 +444,7 @@ $(document).ready(function() {
       success: function(res) {
         if (res.status === 1 || res.success) {
           if (window.toastr) toastr.success(res.message || 'Relance enregistrée avec succès!');
-          $('#modalRelanceImpaye').modal('hide');
+          $('#modalRelanceImpaye').hide();
           table.ajax.reload(null, false);
         } else {
           if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
