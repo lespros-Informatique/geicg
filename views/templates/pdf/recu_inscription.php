@@ -354,13 +354,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
 </head>
 <body>
 
-  <?php if (empty($is_pdf) && empty($_GET['pdf'])): ?>
-  <!-- BARRE D'IMPRESSION EN NAVIGATEUR -->
-  <div class="no-print" style="background: #1E3A5F; color: #FFFFFF; padding: 8px 14px; margin-bottom: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-    <div style="font-weight: bold; font-size: 13px;">Reçu d'Inscription  — GROUPE EICG</div>
-    <button onclick="window.print();" style="background: #2563EB; color: #FFFFFF; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Imprimer / Exporter PDF</button>
-  </div>
-  <?php endif; ?>
+
 
   <?php
   $initsPDF = '?';
