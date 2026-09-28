@@ -1404,13 +1404,24 @@ class PaiementController extends BaseController
                 }
             }
 
+            $stmtCountVersem = $db->prepare("SELECT COUNT(*) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+            $stmtCountVersem->execute([$inscriptionCode]);
+            $countVersements = (int)($stmtCountVersem->fetchColumn() ?: 0);
+
+            $stmtInscrId = $db->prepare("SELECT id_inscription FROM inscriptions WHERE code_inscription = ? LIMIT 1");
+            $stmtInscrId->execute([$inscriptionCode]);
+            $inscrId = (int)($stmtInscrId->fetchColumn() ?: 0);
+            $encryptedInscriptionId = $this->validator->crypter($inscrId > 0 ? $inscrId : $inscriptionCode);
+
             $encryptedId = $this->validator->crypter($lastPaiementId);
             $this->success('Encaissements enregistrés avec succès ! (' . count($createdCodes) . ' opérations générées)', [
                 'reload' => true,
                 'id_paiement' => $lastPaiementId,
                 'encrypted_id' => $encryptedId,
                 'code_paiement' => implode(' & ', $createdCodes),
-                'montant' => $montantFA + $montantTranche
+                'montant' => $montantFA + $montantTranche,
+                'count_versements' => $countVersements,
+                'encrypted_inscription_id' => $encryptedInscriptionId
             ]);
             return;
         }
@@ -1418,6 +1429,7 @@ class PaiementController extends BaseController
         if (empty($data['code_paiement'])) {
             $data['code_paiement'] = $this->validator->generateCode('paiements', 'code_paiement', 'PAI-', 8);
         }
+
         $data['statut_paiement'] = $data['statut_paiement'] ?? 'confirme';
         $data['date_paiement'] = date('Y-m-d H:i:s');
         if (empty($data['type_paiement'])) {
@@ -1477,13 +1489,23 @@ class PaiementController extends BaseController
                 }
             }
 
-            $encryptedId = $this->validator->crypter($lastId);
+            $stmtCountVersem = $db->prepare("SELECT COUNT(*) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+            $stmtCountVersem->execute([$inscriptionCode]);
+            $countVersements = (int)($stmtCountVersem->fetchColumn() ?: 0);
+
+            $stmtInscrId = $db->prepare("SELECT id_inscription FROM inscriptions WHERE code_inscription = ? LIMIT 1");
+            $stmtInscrId->execute([$inscriptionCode]);
+            $inscrId = (int)($stmtInscrId->fetchColumn() ?: 0);
+            $encryptedInscriptionId = $this->validator->crypter($inscrId > 0 ? $inscrId : $inscriptionCode);
+
             $this->success('Règlement de caisse enregistré avec succès!', [
                 'reload' => true,
                 'id_paiement' => $lastId,
                 'encrypted_id' => $encryptedId,
                 'code_paiement' => $data['code_paiement'],
-                'montant' => $montantPaiement
+                'montant' => $montantPaiement,
+                'count_versements' => $countVersements,
+                'encrypted_inscription_id' => $encryptedInscriptionId
             ]);
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de l\'enregistrement du paiement';

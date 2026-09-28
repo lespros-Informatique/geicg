@@ -931,7 +931,6 @@ $canCloseCaisse = $canCloseCaisse ?? false;
     <div style="background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 10px; padding: 14px; margin-bottom: 22px;">
       <div style="font-size: 11.5px; color: #64748B; font-weight: 700; text-transform: uppercase;">N° Quittance / Reçu</div>
       <div id="success-recu-num" style="font-size: 20px; font-weight: 900; color: #1E3A5F; font-family: monospace; margin: 4px 0;">PAI-XXXXXXXX</div>
-      <div id="success-recu-montant" style="font-size: 14px; font-weight: 800; color: #15803D;">0 FCFA</div>
     </div>
 
     <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
@@ -1529,9 +1528,17 @@ $(document).ready(function() {
           // Afficher le modal de confirmation & impression
           var codePaiement = res.code_paiement || 'PAI-CONFIRME';
           var idCrypte = res.encrypted_id || res.id_paiement;
+          var encInscrId = res.encrypted_inscription_id || '';
+          var countVersements = parseInt(res.count_versements || 0, 10);
+
           $('#success-recu-num').text(codePaiement);
-          $('#success-recu-montant').text(Number(montant).toLocaleString('fr-FR') + ' FCFA Encaissé');
-          $('#success-recu-print-link').attr('href', window.RACINE + 'paiement/imprimerPdf/' + idCrypte);
+
+          if (countVersements === 2 && encInscrId) {
+            $('#success-recu-print-link').attr('href', window.RACINE + 'inscription/fiche/' + encInscrId + '?pdf=1');
+          } else {
+            $('#success-recu-print-link').attr('href', window.RACINE + 'paiement/imprimerPdf/' + idCrypte);
+          }
+
           $('#modal-recu-paiement-success').css('display', 'flex');
 
           if (window.lucide) lucide.createIcons();
