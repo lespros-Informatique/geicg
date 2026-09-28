@@ -675,8 +675,9 @@ function initDataTableCompta() {
         dom: '<"row no-print"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row no-print"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
         columns: [
             { data: null, render: function(d) {
+                const defaultAvatar = window.RACINE + 'public/assets/images/default-avatar.png';
                 return `<div style="display: flex; align-items: center; gap: 10px;">
-                            <img src="${d.photo}" class="student-avatar" alt="Photo">
+                            <img src="${d.photo}" class="student-avatar" alt="Photo" onerror="this.onerror=null; this.src='${defaultAvatar}';">
                             <div>
                                 <div style="font-weight: 800; color: #0F172A;">${d.nom_complet}</div>
                                 <div style="font-size: 11.5px; color: #64748B;">Matricule: <strong style="color: #1E3A5F;">${d.matricule}</strong></div>

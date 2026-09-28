@@ -308,9 +308,8 @@ class PaiementController extends BaseController
             $kpiTotalEncaisse += $totalEncaisse;
             $kpiResteARecouvrer += $soldeRestant;
 
-            $photoUrl = !empty($ins['photo_etudiant']) 
-                ? RACINE . 'public/uploads/etudiants/' . $ins['photo_etudiant']
-                : (!empty($ins['photo_inscription']) ? RACINE . 'public/uploads/inscriptions/' . $ins['photo_inscription'] : RACINE . 'public/assets/images/default-avatar.png');
+            $photoRel = !empty($ins['photo_etudiant']) ? trim($ins['photo_etudiant']) : (!empty($ins['photo_inscription']) ? trim($ins['photo_inscription']) : '');
+            $photoUrl = !empty($photoRel) ? (RACINE . ltrim($photoRel, '/')) : (RACINE . 'public/assets/images/default-avatar.png');
 
             $idInscr = (int)($ins['id_inscription'] ?? 0);
             $data[] = [
