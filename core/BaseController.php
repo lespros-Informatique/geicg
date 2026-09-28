@@ -223,6 +223,18 @@ abstract class BaseController
         }
     }
 
+    protected function requireGuest(): void
+    {
+        if (isset($_SESSION[USERS_AUTH]['id_user']) || isset($_SESSION[USERS_AUTH]['code_user'])) {
+            if ($this->isAjax()) {
+                $this->json(['status' => 0, 'message' => 'Vous êtes déjà connecté.'], 200);
+            } else {
+                header('Location: ' . RACINE);
+                exit();
+            }
+        }
+    }
+
     /**
      * Affiche la page complète d'erreur 403 (Accès Refusé / Privilèges Insuffisants)
      */

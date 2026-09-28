@@ -396,6 +396,8 @@ class UserController extends BaseController
 
     public function connexion()
     {
+        $this->requireGuest();
+
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $this->loadView('../views/users/connexion.php');
             return;
