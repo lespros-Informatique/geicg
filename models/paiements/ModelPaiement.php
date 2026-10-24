@@ -9,7 +9,7 @@ class ModelPaiement extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $dateDebut = null, ?string $dateFin = null): array
     {
-        $where = "WHERE 1=1";
+        $where = "WHERE (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES') AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')";
         $params = [];
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
             $where .= " AND (p.annee_code = ? OR ins.annee_code = ?)";

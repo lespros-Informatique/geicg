@@ -310,7 +310,6 @@ $canCloseCaisse = $canCloseCaisse ?? false;
         <div style="margin-top: 10px; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #0F172A;">
           <span>Total Encaissé : <strong style="color: #15803D;" id="print-kpi-total">0 FCFA</strong></span>
           <span>Espèces : <strong id="print-kpi-especes">0 FCFA</strong></span>
-          <span>Frais Annexes : <strong style="color: #B45309;" id="print-kpi-frais-annexes">0 FCFA</strong></span>
           <span>Affectés (État) : <strong id="print-kpi-affectes">0 FCFA</strong></span>
           <span>Non Affectés (Privés) : <strong id="print-kpi-prives">0 FCFA</strong></span>
         </div>
@@ -482,63 +481,8 @@ $canCloseCaisse = $canCloseCaisse ?? false;
 
       </div>
 
-      <!-- SECTION 2 : SUIVI & RECOUVREMENT DES FRAIS ANNEXES ES (4 CARTES) -->
+      <!-- SECTION 2 : RÉPARTITION PAR RÉGIME & PÉRIODE (4 CARTES) -->
       <div class="kpi-section-title" style="margin-bottom: 8px; margin-top: 20px;">
-        <h4 style="font-size: 12px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
-          <i data-lucide="package" style="width: 15px; height: 15px; color: #B45309;"></i> Suivi & Recouvrement des Frais Annexes
-        </h4>
-      </div>
-
-      <div class="card-kpi-container">
-        
-        <!-- Frais Annexes Encaissés -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FDE68A; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Frais Annexes Encaissés</div>
-            <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
-              <span id="kpi-encaisse-frais-annexes"><?= number_format((float)($stats['encaisse_frais_annexes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              Taux : <strong style="color: #B45309;"><span id="kpi-taux-recouvrement-fa"><?= number_format((float)($stats['taux_recouvrement_fa'] ?? 0), 1, ',', ' ') ?></span>%</strong>
-            </div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="package-check" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- Frais Annexes Reste Dû -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FED7AA; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #C2410C; text-transform: uppercase; letter-spacing: 0.5px;">Frais Annexes Reste Dû</div>
-            <div style="font-size: 18px; font-weight: 900; color: #C2410C; margin-top: 3px;">
-              <span id="kpi-attente-frais-annexes"><?= number_format((float)($stats['attente_frais_annexes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Non encore encaissés</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FFEDD5; color: #C2410C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- Total Frais Annexes Attendus -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #78350F; text-transform: uppercase; letter-spacing: 0.5px;">Total Frais Annexes Attendus</div>
-            <div style="font-size: 18px; font-weight: 900; color: #78350F; margin-top: 3px;">
-              <span id="kpi-total-frais-annexes-attendus"><?= number_format((float)($stats['total_frais_annexes_attendus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Budget exigible effectif</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FFFBEB; color: #78350F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- SECTION 3 : RÉPARTITION PAR RÉGIME & PÉRIODE (4 CARTES) -->
-      <div class="kpi-section-title" style="margin-bottom: 8px;">
         <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="pie-chart" style="width: 15px; height: 15px; color: #0284C7;"></i> Répartition par Régime & Période
         </h4>
@@ -803,15 +747,11 @@ $canCloseCaisse = $canCloseCaisse ?? false;
             </div>
           </div>
 
-          <!-- 4 Compteurs Financiers -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 14px;">
+          <!-- 3 Compteurs Financiers -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px;">
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px;">
               <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Scolarité Nette</div>
               <div id="encaisse-val-scolarite" style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin-top: 2px;">0 FCFA</div>
-            </div>
-            <div id="encaisse-card-frais-annexes" style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 10px 14px;">
-              <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;" id="encaisse-lbl-frais-annexes">Frais Annexes</div>
-              <div id="encaisse-val-frais-annexes" style="font-size: 16px; font-weight: 900; color: #B45309; margin-top: 2px;">0 FCFA</div>
             </div>
             <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 10px 14px;">
               <div style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Total Déjà Payé</div>
@@ -825,9 +765,8 @@ $canCloseCaisse = $canCloseCaisse ?? false;
 
         </div>
 
-        <!-- Hidden inputs for payment breakdown -->
+        <!-- Hidden input for payment tranche -->
         <input type="hidden" id="hidden_montant_tranche" name="montant_tranche" value="0">
-        <input type="hidden" id="hidden_montant_frais_annexes" name="montant_frais_annexes" value="0">
 
         <!-- 3. Sélection de la tranche & Paramètres du versement -->
         <div id="encaisse-payment-inputs-section" style="display: none; background: #FFFFFF; border-radius: 12px; padding: 18px; border: 1px solid #E2E8F0;">
@@ -851,15 +790,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
               </div>
             </div>
 
-            <!-- Champ Montant des frais d'annexe (Masqué si déjà payé / a déjà effectué versement) -->
-            <div id="container-frais-annexes" style="display: none; grid-column: span 2;">
-              <label style="font-size: 11.5px; font-weight: 700; color: #B45309; margin-bottom: 4px; display: block;">Montant des Frais d'Annexe </label>
-              <div style="position: relative;">
-                <input type="text" id="input-montant-frais-annexes" class="form-control" style="font-weight: 800; font-size: 14px; color: #B45309; background: #FFFBEB; border: 1.5px solid #FDE68A;" value="0 FCFA" readonly>
-              </div>
-            </div>
-
-            <!-- Montant Total versé (Readonly, Somme Scolarité + Frais Annexes si 1er versement) -->
+            <!-- Montant Total versé -->
             <div style="grid-column: span 2;">
               <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 6px; display: block; text-transform: uppercase;">
                 3. Montant Total Versé (FCFA) <span class="text-danger">*</span>
@@ -1077,10 +1008,6 @@ $(document).ready(function() {
         return '<span style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + escapeHtml(d || '-') + '</span>';
       } },
       { data: 'libelle_tranche', render: function(d, type, row) {
-        var isFA = (row.tranche_code === 'FRAIS_ANNEXES' || (row.categorie_paiement && row.categorie_paiement.toUpperCase() === 'FRAIS_ANNEXES'));
-        if (isFA) {
-          return '<span style="font-weight:700; color:#B45309; background:#FEF3C7; border:1px solid #FDE68A; padding:4px 10px; border-radius:6px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="package" style="width:13px;height:13px;"></i> Frais Annexes</span>';
-        }
         var libelle = (d && d.trim() !== '') ? 'Scolarité (' + escapeHtml(d) + ')' : 'Frais de Scolarité';
         return '<span style="font-weight:700; color:#15803D; background:#DCFCE7; border:1px solid #86EFAC; padding:4px 10px; border-radius:6px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="graduation-cap" style="width:13px;height:13px;"></i> ' + libelle + '</span>';
       } },
@@ -1164,7 +1091,7 @@ $(document).ready(function() {
       var $el = $(this);
       var raw = $el.text().replace(/\s/g, '').replace(/,/g, '.');
       var val = parseFloat(raw) || 0;
-      var isFloat = ($el.attr('id') === 'kpi-taux-recouvrement' || $el.attr('id') === 'kpi-taux-recouvrement-fa');
+      var isFloat = ($el.attr('id') === 'kpi-taux-recouvrement');
       $el.data('current-val', 0);
       $el.text(isFloat ? '0,0' : '0');
       animateCounter($el, val, isFloat, 750);
@@ -1193,11 +1120,6 @@ $(document).ready(function() {
           animateCounter($('#kpi-encaisse-especes'), Number(s.encaisse_especes || 0), false);
           animateCounter($('#kpi-montant-en-attente'), Number(s.montant_en_attente || 0), false);
           
-          animateCounter($('#kpi-encaisse-frais-annexes'), Number(s.encaisse_frais_annexes || 0), false);
-          animateCounter($('#kpi-taux-recouvrement-fa'), Number(s.taux_recouvrement_fa || 0), true);
-          animateCounter($('#kpi-attente-frais-annexes'), Number(s.attente_frais_annexes || 0), false);
-          animateCounter($('#kpi-total-frais-annexes-attendus'), Number(s.total_frais_annexes_attendus || 0), false);
-
           animateCounter($('#kpi-encaisse-affectes'), Number(s.encaisse_affectes || 0), false);
           animateCounter($('#kpi-encaisse-prives'), Number(s.encaisse_prives || 0), false);
           animateCounter($('#kpi-encaisse-mois'), Number(s.encaisse_mois || 0), false);
@@ -1279,9 +1201,7 @@ $(document).ready(function() {
     $('#encaisse-stu-avatar').show().text('ET');
     $('#modal_select_tranche').html('');
     $('#tranche-hint-info').html('');
-    $('#container-frais-annexes').hide();
     $('#hidden_montant_tranche').val(0);
-    $('#hidden_montant_frais_annexes').val(0);
     $('#encaisse-student-summary-card').hide();
     $('#encaisse-payment-inputs-section').hide();
     currentStudentSummary = null;
@@ -1374,21 +1294,6 @@ $(document).ready(function() {
 
           // Compteurs
           $('#encaisse-val-scolarite').text(d.scolarite_due_fmt);
-          
-          var faReste = parseFloat(d.frais_annexes_reste || 0);
-          var faTotal = parseFloat(d.total_frais_annexes || 0);
-          if (hasPaidBefore || faTotal <= 0 || faReste <= 0) {
-            $('#encaisse-card-frais-annexes').hide();
-          } else {
-            $('#encaisse-card-frais-annexes').show();
-            $('#encaisse-val-frais-annexes').text(d.total_frais_annexes_fmt || '0 FCFA');
-            if (d.libelle_frais_annexe) {
-              $('#encaisse-lbl-frais-annexes').text('Frais Annexes (' + d.libelle_frais_annexe + ')');
-            } else {
-              $('#encaisse-lbl-frais-annexes').text('Frais Annexes');
-            }
-          }
-
           $('#encaisse-val-paye').text(d.total_paye_fmt);
           $('#encaisse-val-reste').text(d.solde_restant_fmt);
 
@@ -1451,40 +1356,17 @@ $(document).ready(function() {
     var isSoldee = $opt.data('soldee') === '1' || $opt.data('soldee') === 1;
     var limite = $opt.data('limite');
 
-    var hasPaidBefore = (currentStudentSummary && currentStudentSummary.has_paid_before === true);
-    var faAmount = 0;
-
-    if (!hasPaidBefore && currentStudentSummary) {
-      faAmount = parseFloat(currentStudentSummary.frais_annexes_reste || currentStudentSummary.total_frais_annexes || 0);
-    }
-
     var trancheVal = isSoldee ? 0 : (resteTranche > 0 ? resteTranche : montantTranche);
 
     $('#hidden_montant_tranche').val(trancheVal);
     $('#input-montant-tranche-scolarite').val(trancheVal.toLocaleString('fr-FR') + ' FCFA');
-
-    if (!hasPaidBefore && faAmount > 0) {
-      $('#container-frais-annexes').show();
-      $('#hidden_montant_frais_annexes').val(faAmount);
-      $('#input-montant-frais-annexes').val(faAmount.toLocaleString('fr-FR') + ' FCFA');
-    } else {
-      $('#container-frais-annexes').hide();
-      $('#hidden_montant_frais_annexes').val(0);
-      $('#input-montant-frais-annexes').val('0 FCFA');
-    }
-
-    var totalVerse = trancheVal + (!hasPaidBefore ? faAmount : 0);
-    $('#input-montant-versement').val(totalVerse);
+    $('#input-montant-versement').val(trancheVal);
 
     if (isSoldee) {
       $('#montant-max-hint').html('<span style="color:#15803D; font-weight:800;">🎉 Cette tranche est déjà intégralement réglée.</span>');
-      if (totalVerse <= 0) $('#btn-submit-encaissement').prop('disabled', true);
+      $('#btn-submit-encaissement').prop('disabled', true);
     } else {
-      if (!hasPaidBefore && faAmount > 0) {
-        $('#montant-max-hint').html('Premier versement (2 opérations séparées générées) : Scolarité (' + trancheVal.toLocaleString('fr-FR') + ' F) + Frais Annexes (' + faAmount.toLocaleString('fr-FR') + ' F) = <strong style="color: #15803D;">' + totalVerse.toLocaleString('fr-FR') + ' FCFA Total</strong>');
-      } else {
-        $('#montant-max-hint').html('Montant à verser fixé pour la tranche : <strong style="color: #15803D;">' + totalVerse.toLocaleString('fr-FR') + ' FCFA</strong>');
-      }
+      $('#montant-max-hint').html('Montant fixé pour la tranche : <strong style="color: #15803D;">' + trancheVal.toLocaleString('fr-FR') + ' FCFA</strong>');
       $('#btn-submit-encaissement').prop('disabled', false);
     }
 
