@@ -39,6 +39,7 @@ require_once __DIR__ . '/../models/sessions_caisse/ModelSessionCaisse.php';
 require_once __DIR__ . '/../models/arrieres/ModelArriere.php';
 require_once __DIR__ . '/../models/type_depenses/ModelTypeDepense.php';
 require_once __DIR__ . '/../models/depenses/ModelDepense.php';
+require_once __DIR__ . '/../models/caisse_annexe/ModelCaisseAnnexe.php';
 
 // Admissions, Élèves & Parents Models
 require_once __DIR__ . '/../models/etudiants/ModelEtudiant.php';
@@ -91,6 +92,7 @@ require_once __DIR__ . '/../controllers/sessions_caisse/SessionCaisseController.
 require_once __DIR__ . '/../controllers/arrieres/ArriereController.php';
 require_once __DIR__ . '/../controllers/type_depenses/TypeDepenseController.php';
 require_once __DIR__ . '/../controllers/depenses/DepenseController.php';
+require_once __DIR__ . '/../controllers/caisse_annexe/CaisseAnnexeController.php';
 
 // Admissions, Élèves & Parents Controllers
 require_once __DIR__ . '/../controllers/etudiants/EtudiantController.php';

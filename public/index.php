@@ -26,6 +26,7 @@ $pieceFournirController = new PieceFournirController();
 $pieceFournirCycleController = new PieceFournirCycleController();
 $dossierEtudiantController = new DossierEtudiantController();
 $paiementController = new PaiementController();
+$caisseAnnexeController = new CaisseAnnexeController();
 $sessionCaisseController = new SessionCaisseController();
 $impayesController = new ImpayesController();
 $arriereController = new ArriereController();
@@ -342,6 +343,15 @@ $route->addRoute('/paiement/imprimerBilanFinancier/{param}', [$paiementControlle
 $route->addRoute('/paiement/imprimerBilanFinancier', [$paiementController, 'imprimerBilanFinancier']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);
 $route->addRoute('/paiement/formulaire', [$paiementController, 'formulaire']);
+
+// Module: caisse_annexe (CaisseAnnexeController)
+$route->addRoute('/caisse_annexe', [$caisseAnnexeController, 'list']);
+$route->addRoute('/caisse_annexe/list', [$caisseAnnexeController, 'list']);
+$route->addRoute('/caisse_annexe/apiList', [$caisseAnnexeController, 'apiList']);
+$route->addRoute('/caisse_annexe/apiStats', [$caisseAnnexeController, 'apiStats']);
+$route->addRoute('/caisse_annexe/getStudentAnnexesSummary', [$caisseAnnexeController, 'getStudentAnnexesSummary']);
+$route->addRoute('/caisse_annexe/encaisser', [$caisseAnnexeController, 'encaisser']);
+$route->addRoute('/caisse_annexe/imprimerRegistre', [$caisseAnnexeController, 'imprimerRegistre']);
 
 // Module: session_caisse (SessionCaisseController)
 $route->addRoute('/session_caisse/list', [$sessionCaisseController, 'list']);
