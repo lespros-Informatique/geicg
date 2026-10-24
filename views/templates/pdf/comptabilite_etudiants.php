@@ -208,12 +208,11 @@
   <?php $k = $kpis ?? []; ?>
   <table class="kpi-summary-table">
     <tr>
-      <td class="kpi-total" style="width: 15%;">EFFECTIF<br><span style="font-size: 9pt;"><?= number_format($k['total_etudiants'] ?? 0, 0, ',', ' ') ?> Étudiant(s)</span></td>
-      <td class="kpi-scolarite" style="width: 17%;">SCOLARITÉ DUE<br><span style="font-size: 9pt;"><?= number_format($k['scolarite_due_total'] ?? 0, 0, ',', ' ') ?> CFA</span></td>
-      <td class="kpi-frais" style="width: 17%;">FRAIS ANNEXES<br><span style="font-size: 9pt;"><?= number_format($k['frais_annexes_due_total'] ?? 0, 0, ',', ' ') ?> CFA</span></td>
-      <td class="kpi-attendu" style="width: 17%;">TOTAL ATTENDU<br><span style="font-size: 9pt;"><?= number_format($k['total_attendu'] ?? 0, 0, ',', ' ') ?> CFA</span></td>
-      <td class="kpi-encaisse" style="width: 17%;">TOTAL ENCAISSÉ<br><span style="font-size: 9pt;"><?= number_format($k['total_encaisse'] ?? 0, 0, ',', ' ') ?> CFA</span></td>
-      <td class="kpi-reste" style="width: 17%;">RESTE À RECOUVRER<br><span style="font-size: 9pt;"><?= number_format($k['reste_a_recouvrer'] ?? 0, 0, ',', ' ') ?> CFA</span></td>
+      <td class="kpi-total" style="width: 20%;">EFFECTIF<br><span style="font-size: 9pt;"><?= number_format($k['total_etudiants'] ?? 0, 0, ',', ' ') ?> Étudiant(s)</span></td>
+      <td class="kpi-scolarite" style="width: 20%;">SCOLARITÉ DUE<br><span style="font-size: 9pt;"><?= number_format($k['scolarite_due_total'] ?? 0, 0, ',', ' ') ?> CFA</span></td>
+      <td class="kpi-encaisse" style="width: 20%;">TOTAL ENCAISSÉ<br><span style="font-size: 9pt;"><?= number_format($k['total_encaisse'] ?? 0, 0, ',', ' ') ?> CFA</span></td>
+      <td class="kpi-reste" style="width: 20%;">RESTE À RECOUVRER<br><span style="font-size: 9pt;"><?= number_format($k['reste_a_recouvrer'] ?? 0, 0, ',', ' ') ?> CFA</span></td>
+      <td class="kpi-attendu" style="width: 20%;">TAUX GLOBAL<br><span style="font-size: 9pt;"><?= (($k['scolarite_due_total'] ?? 0) > 0) ? min(100, round((($k['total_encaisse'] ?? 0) / $k['scolarite_due_total']) * 100, 1)) : 0 ?> %</span></td>
     </tr>
   </table>
 
@@ -221,17 +220,15 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 3%;">#</th>
-        <th style="width: 11%;">Matricule</th>
-        <th style="width: 22%;">Nom & Prénom(s)</th>
-        <th style="width: 10%;">Classe</th>
-        <th style="width: 8%;">Régime</th>
-        <th style="width: 9%;">Scolarité Due</th>
-        <th style="width: 8%;">Frais Ann.</th>
-        <th style="width: 10%;">Total Attendu</th>
-        <th style="width: 10%;">Total Encaissé</th>
-        <th style="width: 9%;">Reste à Payer</th>
-        <th style="width: 8%;">Statut</th>
+        <th style="width: 4%;">#</th>
+        <th style="width: 13%;">Matricule</th>
+        <th style="width: 27%;">Nom & Prénom(s)</th>
+        <th style="width: 14%;">Classe</th>
+        <th style="width: 10%;">Régime</th>
+        <th style="width: 11%;">Scolarité Due</th>
+        <th style="width: 11%;">Total Encaissé</th>
+        <th style="width: 10%;">Reste à Payer</th>
+        <th style="width: 10%;">Statut</th>
       </tr>
     </thead>
     <tbody>
@@ -244,8 +241,6 @@
             <td class="text-center"><?= htmlspecialchars($e['classe']) ?></td>
             <td class="text-center"><?= htmlspecialchars($e['regime']) ?></td>
             <td class="text-right"><?= number_format($e['scolarite_due'], 0, ',', ' ') ?></td>
-            <td class="text-right"><?= number_format($e['frais_annexes_dus'], 0, ',', ' ') ?></td>
-            <td class="text-right text-bold"><?= number_format($e['total_attendu'], 0, ',', ' ') ?></td>
             <td class="text-right text-bold" style="color: #166534;"><?= number_format($e['total_encaisse'], 0, ',', ' ') ?></td>
             <td class="text-right text-bold" style="color: <?= $e['solde_restant'] > 0 ? '#B91C1C' : '#15803D' ?>;"><?= number_format($e['solde_restant'], 0, ',', ' ') ?></td>
             <td class="text-center">
@@ -262,15 +257,13 @@
         <tr class="total-row">
           <td colspan="5" class="text-bold text-center">TOTAL GÉNÉRAL (<?= $num ?> ÉTUDIANT(S))</td>
           <td class="text-right"><?= number_format($k['scolarite_due_total'] ?? 0, 0, ',', ' ') ?></td>
-          <td class="text-right"><?= number_format($k['frais_annexes_due_total'] ?? 0, 0, ',', ' ') ?></td>
-          <td class="text-right"><?= number_format($k['total_attendu'] ?? 0, 0, ',', ' ') ?></td>
           <td class="text-right"><?= number_format($k['total_encaisse'] ?? 0, 0, ',', ' ') ?></td>
           <td class="text-right"><?= number_format($k['reste_a_recouvrer'] ?? 0, 0, ',', ' ') ?></td>
           <td class="text-center">-</td>
         </tr>
       <?php else: ?>
         <tr>
-          <td colspan="11" class="text-center" style="padding: 12px; color: #64748B;">Aucun étudiant trouvé pour les critères de filtrage sélectionnés.</td>
+          <td colspan="9" class="text-center" style="padding: 12px; color: #64748B;">Aucun étudiant trouvé pour les critères de filtrage sélectionnés.</td>
         </tr>
       <?php endif; ?>
     </tbody>

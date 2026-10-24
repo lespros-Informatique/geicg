@@ -183,8 +183,6 @@ class PaiementController extends BaseController
         $regime = $_GET['regime'] ?? 'ALL';
         $statutPaiement = $_GET['statut_paiement'] ?? 'ALL';
 
-        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
-        $modelFA = new ModelFraisAnnexe();
 
         $where = "WHERE i.statut_inscription != 'annule' AND i.annee_code = ?";
         $params = [$anneeCode];
@@ -241,6 +239,8 @@ class PaiementController extends BaseController
             SELECT inscription_code, SUM(montant_paiement) as total_paye
             FROM paiements
             WHERE statut_paiement != 'annule'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
               AND (annee_code = ? OR inscription_code IN (SELECT code_inscription FROM inscriptions WHERE annee_code = ?))
             GROUP BY inscription_code
         ");
@@ -257,7 +257,6 @@ class PaiementController extends BaseController
         $data = [];
         $kpiCount = 0;
         $kpiScolariteDueTotal = 0;
-        $kpiFraisAnnexesDueTotal = 0;
         $kpiTotalAttendu = 0;
         $kpiTotalEncaisse = 0;
         $kpiResteARecouvrer = 0;
@@ -283,8 +282,7 @@ class PaiementController extends BaseController
                 $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
             }
 
-            $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $nCode, 'inscription');
-            $totalAttendu = $scolariteDue + $fraisAnnexesDus;
+            $totalAttendu = $scolariteDue;
             $totalEncaisse = $paymentsGrouped[$codeIns] ?? 0;
             $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
             $taux = ($totalAttendu > 0) ? min(100, round(($totalEncaisse / $totalAttendu) * 100, 1)) : 0;
@@ -303,7 +301,6 @@ class PaiementController extends BaseController
 
             $kpiCount++;
             $kpiScolariteDueTotal += $scolariteDue;
-            $kpiFraisAnnexesDueTotal += $fraisAnnexesDus;
             $kpiTotalAttendu += $totalAttendu;
             $kpiTotalEncaisse += $totalEncaisse;
             $kpiResteARecouvrer += $soldeRestant;
@@ -357,7 +354,6 @@ class PaiementController extends BaseController
                 'regime' => $isAffecte ? 'Affecté' : 'Privé',
                 'regime_code' => $targetAff,
                 'scolarite_due' => $scolariteDue,
-                'frais_annexes_dus' => $fraisAnnexesDus,
                 'total_attendu' => $totalAttendu,
                 'total_encaisse' => $totalEncaisse,
                 'solde_restant' => $soldeRestant,
@@ -377,7 +373,6 @@ class PaiementController extends BaseController
             'kpis' => [
                 'total_etudiants' => $kpiCount,
                 'total_scolarites' => $kpiScolariteDueTotal,
-                'total_frais_annexes' => $kpiFraisAnnexesDueTotal,
                 'total_attendu' => $kpiTotalAttendu,
                 'total_encaisse' => $kpiTotalEncaisse,
                 'reste_a_recouvrer' => $kpiResteARecouvrer,
@@ -791,16 +786,15 @@ class PaiementController extends BaseController
             $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
         }
 
-        // Récupération des frais annexes applicables (Type de Filière x Niveau)
-        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
-        $modelFA = new ModelFraisAnnexe();
-        $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
-        $montantFraisAnnexes = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $niveauCode, 'inscription');
-        $faDetails = $modelFA->getFraisAnnexeDetails($typeFiliere, $anneeCode, $niveauCode, 'inscription');
-        $libelleFraisAnnexe = $faDetails['libelle_frais_annexe'] ?? 'Frais Annexes';
-
-        // Récupération de tous les paiements existants pour cette inscription
-        $stmtPay = $db->prepare("SELECT * FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule' ORDER BY date_paiement ASC, id_paiement ASC");
+        // Récupération de tous les paiements existants pour cette inscription (scolarité uniquement)
+        $stmtPay = $db->prepare("
+            SELECT * FROM paiements 
+            WHERE inscription_code = ? 
+              AND statut_paiement != 'annule'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+            ORDER BY date_paiement ASC, id_paiement ASC
+        ");
         $stmtPay->execute([$codeInscription]);
         $allPayments = $stmtPay->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1879,8 +1873,6 @@ class PaiementController extends BaseController
         $regime = $_GET['regime'] ?? 'ALL';
         $statutPaiement = $_GET['statut_paiement'] ?? 'ALL';
 
-        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
-        $modelFA = new ModelFraisAnnexe();
 
         $where = "WHERE i.statut_inscription != 'annule' AND i.annee_code = ?";
         $params = [$anneeCode];
@@ -1937,6 +1929,8 @@ class PaiementController extends BaseController
             SELECT inscription_code, SUM(montant_paiement) as total_paye
             FROM paiements
             WHERE statut_paiement != 'annule'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
               AND (annee_code = ? OR inscription_code IN (SELECT code_inscription FROM inscriptions WHERE annee_code = ?))
             GROUP BY inscription_code
         ");
@@ -1953,7 +1947,6 @@ class PaiementController extends BaseController
         $dataEtudiants = [];
         $kpiCount = 0;
         $kpiScolariteDueTotal = 0;
-        $kpiFraisAnnexesDueTotal = 0;
         $kpiTotalAttendu = 0;
         $kpiTotalEncaisse = 0;
         $kpiResteARecouvrer = 0;
@@ -1979,8 +1972,7 @@ class PaiementController extends BaseController
                 $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
             }
 
-            $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $nCode, 'inscription');
-            $totalAttendu = $scolariteDue + $fraisAnnexesDus;
+            $totalAttendu = $scolariteDue;
             $totalEncaisse = $paymentsGrouped[$codeIns] ?? 0;
             $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
 
@@ -1998,7 +1990,6 @@ class PaiementController extends BaseController
 
             $kpiCount++;
             $kpiScolariteDueTotal += $scolariteDue;
-            $kpiFraisAnnexesDueTotal += $fraisAnnexesDus;
             $kpiTotalAttendu += $totalAttendu;
             $kpiTotalEncaisse += $totalEncaisse;
             $kpiResteARecouvrer += $soldeRestant;
@@ -2009,7 +2000,6 @@ class PaiementController extends BaseController
                 'classe' => $ins['libelle_classe'] ?? 'N/A',
                 'regime' => $isAffecte ? 'Affecté' : 'Privé',
                 'scolarite_due' => $scolariteDue,
-                'frais_annexes_dus' => $fraisAnnexesDus,
                 'total_attendu' => $totalAttendu,
                 'total_encaisse' => $totalEncaisse,
                 'solde_restant' => $soldeRestant,
@@ -2057,7 +2047,6 @@ class PaiementController extends BaseController
             'kpis' => [
                 'total_etudiants' => $kpiCount,
                 'scolarite_due_total' => $kpiScolariteDueTotal,
-                'frais_annexes_due_total' => $kpiFraisAnnexesDueTotal,
                 'total_attendu' => $kpiTotalAttendu,
                 'total_encaisse' => $kpiTotalEncaisse,
                 'reste_a_recouvrer' => $kpiResteARecouvrer

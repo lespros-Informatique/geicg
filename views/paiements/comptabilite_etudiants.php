@@ -157,7 +157,7 @@
         </div>
         <div>
           <h1 style="font-size: 22px; font-weight: 900; color: #0F172A; margin: 0; letter-spacing: -0.5px;">Comptabilité & Suivi Financier des Étudiants</h1>
-          <p style="font-size: 13px; color: #64748B; margin: 0;">Registre comptable détaillé, suivi des créances, scolarités et frais annexes par étudiant.</p>
+          <p style="font-size: 13px; color: #64748B; margin: 0;">Registre comptable détaillé, suivi des créances et scolarités par étudiant.</p>
         </div>
       </div>
     </div>
@@ -290,32 +290,18 @@
         <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Total scolarités théoriques</div>
       </div>
 
-      <!-- KPI 3 : Total Frais Annexes Dus -->
-      <div class="kpi-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Frais Annexes Dus</div>
-            <div id="kpi-total-frais-annexes" style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 4px;">0 FCFA</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #FEF3C7; display: flex; align-items: center; justify-content: center; color: #D97706;">
-            <i data-lucide="package-check" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Kits & Uniformes obligatoires</div>
-      </div>
-
-      <!-- KPI 4 : Total Attendu (Scolarités + Annexes) -->
+      <!-- KPI 3 : Taux de Recouvrement Global -->
       <div class="kpi-card" style="border-left: 4px solid #3B82F6;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Total Général Attendu</div>
-            <div id="kpi-total-attendu" style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 FCFA</div>
+            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Taux de Recouvrement</div>
+            <div id="kpi-taux-recouvrement" style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 %</div>
           </div>
           <div style="width: 38px; height: 38px; border-radius: 10px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; color: #2563EB;">
-            <i data-lucide="calculator" style="width: 20px; height: 20px;"></i>
+            <i data-lucide="percent" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Scolarité + Frais Annexes</div>
+        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Progression des encaissements</div>
       </div>
 
       <!-- KPI 5 : Total Encaissé -->
@@ -372,8 +358,6 @@
             <th style="padding: 12px; font-weight: 800;">Classe / Niveau</th>
             <th style="padding: 12px; font-weight: 800; text-align: center;">Régime</th>
             <th style="padding: 12px; font-weight: 800; text-align: right;">Scolarité Due</th>
-            <th style="padding: 12px; font-weight: 800; text-align: right;">Frais Annexes</th>
-            <th style="padding: 12px; font-weight: 800; text-align: right;">Total Attendu</th>
             <th style="padding: 12px; font-weight: 800; text-align: right;">Total Encaissé</th>
             <th style="padding: 12px; font-weight: 800; text-align: right;">Solde Dû</th>
             <th style="padding: 12px; font-weight: 800; text-align: center;">Taux %</th>
@@ -429,14 +413,10 @@
     <div style="padding: 24px; overflow-y: auto; flex: 1;">
       
       <!-- Cartes synthétiques -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
         <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 10px; text-align: center;">
           <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Scolarité Due</div>
           <div id="sum-val-scolarite" style="font-size: 15px; font-weight: 900; color: #1E3A5F; margin-top: 2px;">0 FCFA</div>
-        </div>
-        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 12px; border-radius: 10px; text-align: center;">
-          <div style="font-size: 10.5px; font-weight: 800; color: #B45309; text-transform: uppercase;">Frais Annexes</div>
-          <div id="sum-val-frais-annexes" style="font-size: 15px; font-weight: 900; color: #B45309; margin-top: 2px;">0 FCFA</div>
         </div>
         <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 12px; border-radius: 10px; text-align: center;">
           <div style="font-size: 10.5px; font-weight: 800; color: #15803D; text-transform: uppercase;">Total Encaissé</div>
@@ -527,14 +507,10 @@
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
             <div style="background: #FFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px;">
               <div style="font-size: 10px; font-weight: 700; color: #64748B;">Scolarité Due</div>
               <div id="encaisse-val-scolarite" style="font-size: 14px; font-weight: 900; color: #1E3A5F;">0 FCFA</div>
-            </div>
-            <div id="encaisse-card-frais-annexes" style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 8px;">
-              <div style="font-size: 10px; font-weight: 700; color: #B45309;" id="encaisse-lbl-frais-annexes">Frais Annexes</div>
-              <div id="encaisse-val-frais-annexes" style="font-size: 14px; font-weight: 900; color: #B45309;">0 FCFA</div>
             </div>
             <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 8px;">
               <div style="font-size: 10px; font-weight: 700; color: #15803D;">Total Payé</div>
@@ -548,7 +524,6 @@
         </div>
 
         <input type="hidden" id="hidden_montant_tranche" name="montant_tranche" value="0">
-        <input type="hidden" id="hidden_montant_frais_annexes" name="montant_frais_annexes" value="0">
 
         <div id="encaisse-payment-inputs-section" style="display: none; background: #FFFFFF; border-radius: 12px; padding: 16px; border: 1px solid #E2E8F0;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
@@ -560,11 +535,6 @@
                 </select>
               </div>
               <div id="tranche-hint-info" style="font-size: 11px; color: #64748B; margin-top: 3px;"></div>
-            </div>
-
-            <div id="container-frais-annexes" style="display: none; grid-column: span 2;">
-              <label style="font-size: 11px; font-weight: 700; color: #B45309; margin-bottom: 4px; display: block;">Frais d'Annexe Exigibles</label>
-              <input type="text" id="input-montant-frais-annexes" class="form-control" style="font-weight: 800; font-size: 13px; color: #B45309; background: #FFFBEB;" value="0 FCFA" readonly>
             </div>
 
             <div style="grid-column: span 2;">
@@ -670,8 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedOpt) {
                 const mTranche = parseFloat(selectedOpt.dataset.montantTranche || 0);
                 document.getElementById('hidden_montant_tranche').value = mTranche;
-                const mFA = parseFloat(document.getElementById('hidden_montant_frais_annexes').value || 0);
-                document.getElementById('input-montant-versement').value = mTranche + mFA;
+                document.getElementById('input-montant-versement').value = mTranche;
             }
         });
     }
@@ -718,8 +687,6 @@ function initDataTableCompta() {
                 return `<span class="badge-status ${bCls}">${d.regime}</span>`;
             }},
             { data: 'scolarite_due', className: 'text-end font-monospace', render: function(v) { return formatFCFA(v); }},
-            { data: 'frais_annexes_dus', className: 'text-end font-monospace', render: function(v) { return formatFCFA(v); }},
-            { data: 'total_attendu', className: 'text-end font-monospace fw-bold', render: function(v) { return formatFCFA(v); }},
             { data: 'total_encaisse', className: 'text-end font-monospace text-success fw-bold', render: function(v) { return formatFCFA(v); }},
             { data: 'solde_restant', className: 'text-end font-monospace text-danger fw-bold', render: function(v) { return formatFCFA(v); }},
             { data: null, className: 'text-center', render: function(d) {
@@ -815,10 +782,11 @@ function loadComptaData() {
             // Update KPIs
             document.getElementById('kpi-total-etudiants').innerText = res.kpis.total_etudiants;
             document.getElementById('kpi-total-scolarites').innerText = formatFCFA(res.kpis.total_scolarites);
-            document.getElementById('kpi-total-frais-annexes').innerText = formatFCFA(res.kpis.total_frais_annexes);
-            document.getElementById('kpi-total-attendu').innerText = formatFCFA(res.kpis.total_attendu);
             document.getElementById('kpi-total-encaisse').innerText = formatFCFA(res.kpis.total_encaisse);
             document.getElementById('kpi-reste-recouvrer').innerText = formatFCFA(res.kpis.reste_a_recouvrer);
+            if (document.getElementById('kpi-taux-recouvrement')) {
+                document.getElementById('kpi-taux-recouvrement').innerText = (res.kpis.taux_recouvrement || 0) + ' %';
+            }
 
             document.getElementById('compta-records-count').innerText = `${res.data.length} Étudiants enregistrés`;
 
@@ -875,7 +843,6 @@ function openStudentFinancialSummaryModal(inscriptionCode) {
             document.getElementById('sum-student-photo').src = data.photo || data.photo_url || '<?= RACINE ?>public/assets/images/default-avatar.png';
 
             document.getElementById('sum-val-scolarite').innerText = formatFCFA(data.scolarite_due);
-            document.getElementById('sum-val-frais-annexes').innerText = formatFCFA(data.montant_frais_annexes || data.total_frais_annexes || 0);
             document.getElementById('sum-val-paye').innerText = formatFCFA(data.total_paye);
             document.getElementById('sum-val-reste').innerText = formatFCFA(data.solde_restant);
 
@@ -994,15 +961,6 @@ function onInscriptionSelected(inscriptionCode) {
             document.getElementById('encaisse-val-paye').innerText = formatFCFA(data.total_paye);
             document.getElementById('encaisse-val-reste').innerText = formatFCFA(data.solde_restant);
 
-            const montantFA = parseFloat(data.montant_frais_annexes || data.total_frais_annexes || 0);
-            const cardFA = document.getElementById('encaisse-card-frais-annexes');
-            if (montantFA > 0 && !data.has_paid_before) {
-                if (cardFA) cardFA.style.display = 'block';
-                document.getElementById('encaisse-val-frais-annexes').innerText = formatFCFA(montantFA);
-            } else {
-                if (cardFA) cardFA.style.display = 'none';
-            }
-
             // Populate tranches
             const selTr = document.getElementById('modal_select_tranche');
             selTr.innerHTML = '';
@@ -1029,19 +987,7 @@ function onInscriptionSelected(inscriptionCode) {
             const selectedOpt = selTr.options[selTr.selectedIndex];
             const currentTrancheMontant = selectedOpt ? parseFloat(selectedOpt.dataset.montantTranche || 0) : parseFloat(data.suggested_tranche_reste || 0);
             document.getElementById('hidden_montant_tranche').value = currentTrancheMontant;
-
-            let totalPaiementAuto = currentTrancheMontant;
-            if (!data.has_paid_before && montantFA > 0) {
-                document.getElementById('container-frais-annexes').style.display = 'block';
-                document.getElementById('input-montant-frais-annexes').value = formatFCFA(montantFA);
-                document.getElementById('hidden_montant_frais_annexes').value = montantFA;
-                totalPaiementAuto += montantFA;
-            } else {
-                document.getElementById('container-frais-annexes').style.display = 'none';
-                document.getElementById('hidden_montant_frais_annexes').value = 0;
-            }
-
-            document.getElementById('input-montant-versement').value = totalPaiementAuto;
+            document.getElementById('input-montant-versement').value = currentTrancheMontant;
 
             document.getElementById('encaisse-student-summary-card').style.display = 'block';
             document.getElementById('encaisse-payment-inputs-section').style.display = 'block';
