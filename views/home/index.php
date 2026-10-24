@@ -265,23 +265,6 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
             </div>
           </div>
 
-          <!-- Caisse Annexe -->
-          <a href="<?= RACINE ?>caisse_annexe/list" class="dash-card" style="text-decoration: none; display: block; border-left: 4px solid #0D9488;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Caisse Annexe</span>
-              <div style="width: 38px; height: 38px; border-radius: 10px; background: #CCFBF1; color: #0F766E; display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="archive" style="width: 20px; height: 20px;"></i>
-              </div>
-            </div>
-            <div style="font-size: 22px; font-weight: 900; color: #0F766E; line-height: 1;">
-              <?= number_format($stats['ca_encaisse_annexes'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 11px;">FCFA</span>
-            </div>
-            <div style="font-size: 12px; color: #0D9488; margin-top: 8px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
-              <span>Frais annexes & kits</span>
-              <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
-            </div>
-          </a>
-
           <!-- Reliquat Scolarité -->
           <a href="<?= RACINE ?>impayes/list" class="dash-card" style="text-decoration: none; display: block; border-left: 4px solid #DC2626;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -341,12 +324,6 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
             <div style="font-size: 24px; font-weight: 900; color: #047857; margin-top: 8px;"><?= number_format($stats['ca_encaisse_scolarite'] ?? $stats['ca_encaisse'] ?? 0, 0, ',', ' ') ?> FCFA</div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Règlements scolarité</div>
           </div>
-
-          <a href="<?= RACINE ?>caisse_annexe/list" class="dash-card" style="text-decoration: none; display: block; border-left: 4px solid #0D9488;">
-            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Caisse Annexe</span>
-            <div style="font-size: 24px; font-weight: 900; color: #0F766E; margin-top: 8px;"><?= number_format($stats['ca_encaisse_annexes'] ?? 0, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #0D9488; margin-top: 4px; font-weight: 600;">Frais annexes & kits &rarr;</div>
-          </a>
 
           <div class="dash-card">
             <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Scolarité Attendue</span>
@@ -477,7 +454,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
       <?php if ($canViewActions): ?>
         <?php
           $canGroup1 = $hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS') || $hasPerm('MANAGE_DEPOT_DOSSIERS') || $hasPerm('VIEW_DEPOT_DOSSIERS') || $hasPerm('MANAGE_REMISE_KITS') || $hasPerm('VIEW_REMISE_KITS') || $hasPerm('MANAGE_ACCESSOIRES') || $hasPerm('VIEW_ETUDIANTS') || $hasPerm('MANAGE_ETUDIANTS');
-          $canGroup2 = $hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS') || $hasPerm('VIEW_CAISSE_ANNEXE') || $hasPerm('OUVERTURE_CAISSE') || $hasPerm('CLOTURE_CAISSE') || $hasPerm('MANAGE_CAISSE') || $hasPerm('MANAGE_IMPAYES') || $hasPerm('VIEW_IMPAYES') || $hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES');
+          $canGroup2 = $hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS') || $hasPerm('OUVERTURE_CAISSE') || $hasPerm('CLOTURE_CAISSE') || $hasPerm('MANAGE_CAISSE') || $hasPerm('MANAGE_IMPAYES') || $hasPerm('VIEW_IMPAYES') || $hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES');
           $canGroup3 = $hasPerm('VIEW_NOTES') || $hasPerm('ENTER_NOTES') || $hasPerm('VIEW_BULLETINS') || $hasPerm('GENERATE_BULLETINS') || $hasPerm('VIEW_ABSENCES') || $hasPerm('MANAGE_ABSENCES') || $hasPerm('VIEW_ENSEIGNANTS') || $hasPerm('MANAGE_ENSEIGNANTS');
           $canGroup4 = $hasPerm('VIEW_CLASSES') || $hasPerm('MANAGE_CLASSES') || $hasPerm('VIEW_FILIERES') || $hasPerm('MANAGE_FILIERES') || $hasPerm('VIEW_MATIERES') || $hasPerm('MANAGE_MATIERES');
           $canGroup5 = $hasPerm('VIEW_USERS') || $hasPerm('MANAGE_USERS') || $hasPerm('MANAGE_ROLES');
@@ -630,27 +607,6 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                     </div>
                     <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
                       <strong style="color: #1E3A5F; font-size: 13px;">Caisse Scolarité</strong>
-                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                    </div>
-                  </a>
-                <?php endif; ?>
-
-                <?php if ($hasPerm('VIEW_CAISSE_ANNEXE') || $hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS')): ?>
-                  <a href="<?= RACINE ?>caisse_annexe/list" class="dash-module-card" style="border-left: 4px solid #0D9488;">
-                    <div>
-                      <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <div class="dash-module-icon" style="background: #CCFBF1; color: #0F766E;">
-                          <i data-lucide="archive" style="width: 24px; height: 24px;"></i>
-                        </div>
-                        <span style="font-size: 11px; font-weight: 800; background: #E6FFFA; color: #0F766E; padding: 4px 10px; border-radius: 20px;">Annexes</span>
-                      </div>
-                      <div class="dash-module-num" style="color: #0F766E; font-size: 22px;">
-                        <?= number_format((float)($stats['ca_encaisse_annexes'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
-                      </div>
-                      <div style="font-size: 12px; font-weight: 700; color: #0D9488; margin-top: 2px;">Caisse frais annexes & kits</div>
-                    </div>
-                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-                      <strong style="color: #1E3A5F; font-size: 13px;">Bilan Caisse Annexe</strong>
                       <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
                     </div>
                   </a>
