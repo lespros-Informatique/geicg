@@ -328,6 +328,9 @@ abstract class BaseController
     protected function success(string $message, $extra = []): void
     {
         $extraData = is_array($extra) ? $extra : ['redirect' => (string)$extra];
+        if (!empty($extraData['redirect'])) {
+            $_SESSION['flash_success'] = $message;
+        }
         if ($this->isAjax()) {
             $this->json(array_merge(['status' => 1, 'message' => $message], $extraData));
         } else {
@@ -349,6 +352,10 @@ abstract class BaseController
         } elseif (is_array($code)) {
             $redirect = $code['redirect'] ?? ($code['url'] ?? null);
             $httpCode = $code['code'] ?? 200;
+        }
+
+        if (!empty($redirect)) {
+            $_SESSION['flash_error'] = $message;
         }
 
         if ($this->isAjax()) {

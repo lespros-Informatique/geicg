@@ -41,23 +41,27 @@
             } catch(e) {}
         })();
     </script>
-    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/style.css">
+    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../assets/css/style.css') ?: time() ?>">
+    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/toastr.min.css?v=<?= @filemtime(__DIR__ . '/../assets/css/toastr.min.css') ?: time() ?>">
+    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/toastr.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script src="<?= RACINE ?>public/assets/js/jquery.min.js"></script>
     <script src="<?= RACINE ?>public/assets/js/toastr.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="<?= RACINE ?>public/assets/js/sweetalert2.all.min.js"></script>
+    <script src="<?= RACINE ?>public/assets/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         if (typeof toastr !== 'undefined') {
             toastr.options = {
                 closeButton: true,
                 progressBar: true,
                 positionClass: "toast-top-right",
-                timeOut: 4000,
-                extendedTimeOut: 1000,
+                preventDuplicates: true,
+                timeOut: 4500,
+                extendedTimeOut: 1500,
                 showEasing: "swing",
                 hideEasing: "linear",
                 showMethod: "fadeIn",
@@ -65,11 +69,83 @@
             };
         }
     </script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* TOASTR VISIBILITY & PREMIUM DESIGN SAFEGUARD */
+        #toast-container {
+            position: fixed !important;
+            top: 24px !important;
+            right: 24px !important;
+            z-index: 99999999 !important;
+            pointer-events: none !important;
+            max-width: 440px !important;
+            width: calc(100% - 48px) !important;
+        }
+        #toast-container > div,
+        #toast-container > .toast {
+            position: relative !important;
+            pointer-events: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            transform: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            margin: 0 0 12px 0 !important;
+            padding: 14px 18px 14px 52px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            border-radius: 12px !important;
+            font-family: inherit !important;
+            font-size: 13.5px !important;
+            font-weight: 600 !important;
+            line-height: 1.45 !important;
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            background-position: 16px center !important;
+            background-repeat: no-repeat !important;
+            background-size: 24px 24px !important;
+            transition: transform 0.2s ease, opacity 0.2s ease !important;
+        }
+        #toast-container > .toast:hover,
+        #toast-container > div:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 20px 42px rgba(15, 23, 42, 0.24), 0 6px 14px rgba(0, 0, 0, 0.12) !important;
+            opacity: 1 !important;
+        }
+        #toast-container > .toast-success { background-color: #059669 !important; color: #FFFFFF !important; }
+        #toast-container > .toast-error { background-color: #DC2626 !important; color: #FFFFFF !important; }
+        #toast-container > .toast-warning { background-color: #D97706 !important; color: #FFFFFF !important; }
+        #toast-container > .toast-info { background-color: #2563EB !important; color: #FFFFFF !important; }
+        #toast-container .toast-message {
+            color: #FFFFFF !important;
+            font-size: 13.5px !important;
+            font-weight: 600 !important;
+            word-break: break-word !important;
+            line-height: 1.45 !important;
+            flex: 1 !important;
+        }
+        #toast-container .toast-title {
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            color: #FFFFFF !important;
+            margin-bottom: 3px !important;
+        }
+        #toast-container .toast-close-button {
+            position: relative !important;
+            right: -4px !important;
+            top: 0 !important;
+            color: #FFFFFF !important;
+            opacity: 0.85 !important;
+            font-size: 22px !important;
+            font-weight: 700 !important;
+            background: transparent !important;
+            border: none !important;
+            cursor: pointer !important;
+            padding: 0 4px !important;
+            line-height: 1 !important;
+            margin-left: 10px !important;
+        }
+        #toast-container .toast-close-button:hover { opacity: 1 !important; }
         /* Désactiver les flèches d'incrémentation/décrémentation sur input[type=number] */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {

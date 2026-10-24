@@ -45,22 +45,46 @@
 ?>
 <?php if (!empty($_SESSION['flash_success'])): ?>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof showToast === 'function') {
-        showToast(<?= json_encode($_SESSION['flash_success']) ?>, 'success');
+    (function() {
+      function fireFlashSuccess() {
+        var msg = <?= json_encode($_SESSION['flash_success']) ?>;
+        if (typeof toastr !== 'undefined') {
+          toastr.success(msg);
+        } else if (typeof showToast === 'function') {
+          showToast(msg, 'success');
+        } else if (typeof Swal !== 'undefined') {
+          Swal.fire({ icon: 'success', title: 'Succès', html: msg, timer: 2500, showConfirmButton: false });
+        }
       }
-    });
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fireFlashSuccess);
+      } else {
+        fireFlashSuccess();
+      }
+    })();
   </script>
   <?php unset($_SESSION['flash_success']); ?>
 <?php endif; ?>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof showToast === 'function') {
-        showToast(<?= json_encode($_SESSION['flash_error']) ?>, 'error');
+    (function() {
+      function fireFlashError() {
+        var msg = <?= json_encode($_SESSION['flash_error']) ?>;
+        if (typeof toastr !== 'undefined') {
+          toastr.error(msg);
+        } else if (typeof showToast === 'function') {
+          showToast(msg, 'error');
+        } else if (typeof Swal !== 'undefined') {
+          Swal.fire({ icon: 'error', title: 'Erreur', html: msg });
+        }
       }
-    });
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fireFlashError);
+      } else {
+        fireFlashError();
+      }
+    })();
   </script>
   <?php unset($_SESSION['flash_error']); ?>
 <?php endif; ?>

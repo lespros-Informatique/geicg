@@ -198,22 +198,33 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
+          var successMsg = res.message || 'Enseignant enregistré avec succès !';
+          try {
+            sessionStorage.setItem('flash_toast', JSON.stringify({ message: successMsg, type: 'success' }));
+          } catch(e) {}
+
           if (window.toastr) {
-            toastr.success(res.message || 'Enseignant enregistré avec succès !');
+            toastr.success(successMsg);
+          } else if (typeof showToast === 'function') {
+            showToast(successMsg, 'success');
           } else if (window.Swal) {
-            Swal.fire({ icon: 'success', title: 'Succès', html: res.message || 'Enseignant enregistré avec succès !', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Succès', html: successMsg, timer: 1500, showConfirmButton: false });
           }
+
           var targetUrl = res.redirect || '<?= RACINE ?>enseignant/list';
           setTimeout(function() {
             window.location.href = targetUrl;
-          }, 1000);
+          }, 800);
         } else {
           $btn.prop('disabled', false).html(originalText);
           if (window.lucide) lucide.createIcons();
+          var errMsg = res.message || 'Erreur lors de l\'enregistrement.';
           if (window.toastr) {
-            toastr.error(res.message || 'Erreur lors de l\'enregistrement.');
+            toastr.error(errMsg);
+          } else if (typeof showToast === 'function') {
+            showToast(errMsg, 'error');
           } else if (window.Swal) {
-            Swal.fire({ icon: 'error', title: 'Erreur', html: res.message || 'Erreur lors de l\'enregistrement.' });
+            Swal.fire({ icon: 'error', title: 'Erreur', html: errMsg });
           }
         }
       },
@@ -226,6 +237,8 @@ $(document).ready(function() {
         }
         if (window.toastr) {
           toastr.error(msg);
+        } else if (typeof showToast === 'function') {
+          showToast(msg, 'error');
         } else if (window.Swal) {
           Swal.fire({ icon: 'error', title: 'Erreur réseau', text: msg });
         }

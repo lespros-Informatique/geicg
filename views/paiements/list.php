@@ -1615,13 +1615,16 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
+          var successMsg = res.message || 'Paiement annulé avec succès';
           if (window.toastr) {
-            toastr.success(res.message || 'Paiement annulé avec succès');
+            toastr.success(successMsg);
+          } else if (typeof showToast === 'function') {
+            showToast(successMsg, 'success');
           } else if (window.Swal) {
             Swal.fire({
               icon: 'success',
               title: 'Paiement annulé',
-              text: res.message || 'Le versement a été annulé avec succès.',
+              text: successMsg,
               timer: 2000,
               showConfirmButton: false
             });
@@ -1632,6 +1635,8 @@ $(document).ready(function() {
           var errMsg = res.message || 'Erreur lors de l\'annulation du paiement';
           if (window.toastr) {
             toastr.error(errMsg);
+          } else if (typeof showToast === 'function') {
+            showToast(errMsg, 'error');
           } else if (window.Swal) {
             Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
           }
@@ -1645,6 +1650,8 @@ $(document).ready(function() {
         } catch (e) {}
         if (window.toastr) {
           toastr.error(msg);
+        } else if (typeof showToast === 'function') {
+          showToast(msg, 'error');
         } else if (window.Swal) {
           Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
         }

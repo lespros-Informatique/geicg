@@ -707,13 +707,16 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
+          var successMsg = res.message || 'Inscription annulée avec succès';
           if (window.toastr) {
-            toastr.success(res.message || 'Inscription annulée avec succès');
+            toastr.success(successMsg);
+          } else if (typeof showToast === 'function') {
+            showToast(successMsg, 'success');
           } else if (window.Swal) {
             Swal.fire({
               icon: 'success',
               title: 'Inscription annulée',
-              text: res.message || 'L\'inscription a été annulée avec succès.',
+              text: successMsg,
               timer: 2000,
               showConfirmButton: false
             });
@@ -723,6 +726,8 @@ $(document).ready(function() {
           var errMsg = res.message || 'Erreur lors de l\'annulation de l\'inscription';
           if (window.toastr) {
             toastr.error(errMsg);
+          } else if (typeof showToast === 'function') {
+            showToast(errMsg, 'error');
           } else if (window.Swal) {
             Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
           }
@@ -736,6 +741,8 @@ $(document).ready(function() {
         } catch (e) {}
         if (window.toastr) {
           toastr.error(msg);
+        } else if (typeof showToast === 'function') {
+          showToast(msg, 'error');
         } else if (window.Swal) {
           Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
         }

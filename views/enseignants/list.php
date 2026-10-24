@@ -113,15 +113,20 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          var msg = res.message || 'Statut mis à jour avec succès';
+          if (window.toastr) toastr.success(msg);
+          else if (typeof showToast === 'function') showToast(msg, 'success');
           table.ajax.reload(null, false);
         } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          var errMsg = res.message || 'Erreur lors du changement de statut';
+          if (window.toastr) toastr.error(errMsg);
+          else if (typeof showToast === 'function') showToast(errMsg, 'error');
           $input.prop('checked', !isChecked);
         }
       },
       error: function() {
         if (window.toastr) toastr.error('Erreur réseau');
+        else if (typeof showToast === 'function') showToast('Erreur réseau', 'error');
         $input.prop('checked', !isChecked);
       }
     });
