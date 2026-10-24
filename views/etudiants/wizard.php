@@ -94,6 +94,21 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
   .wizard-step-content.active {
     display: block;
   }
+  .wizard-grid-etape1 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 991px) {
+    .wizard-grid-etape1 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 640px) {
+    .wizard-grid-etape1 {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 
 <div class="app-layout">
@@ -156,11 +171,10 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
             <h3 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-bottom: 20px; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="user" style="width: 20px; height: 20px;"></i> Étape 1 : Identité & Coordonnées de l'Étudiant
             </h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div class="wizard-grid-etape1">
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule École (Auto-généré)</label>
                 <input type="text" class="form-control" name="matricule_etudiant" id="wiz_matricule" placeholder="Auto-généré : XX-123/GEB/AA26" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-family: monospace; font-weight: 700; color: #1E3A5F; cursor: not-allowed;" readonly>
-                <small style="color: #64748B; font-size: 11px; margin-top: 3px; display: block;">Format : Initiales - Ordre / GEB / Filière + Année (Généré automatiquement par le système)</small>
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule MENET-FP</label>
