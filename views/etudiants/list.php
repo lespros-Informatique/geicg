@@ -74,6 +74,16 @@ $anneeActive = $anneeActive ?? '';
   border-color: #475569;
   color: #FFFFFF;
 }
+.btn-action-cancel {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+}
+.btn-action-cancel:hover {
+  background: #EF4444;
+  border-color: #EF4444;
+  color: #FFFFFF;
+}
 @media print {
   .sidebar, .main-nav, nav, .no-print, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate, button, a.btn {
     display: none !important;
@@ -315,6 +325,7 @@ $(document).ready(function() {
   // Permissions RBAC pour les actions étudiantes
   var canChangerClasse = <?= (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['CHANGER_CLASSE_ETUDIANT', 'MANAGE_ETUDIANTS']))) ? 'true' : 'false' ?>;
   var canEditEtudiant  = <?= (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['EDIT_ETUDIANT', 'MANAGE_ETUDIANTS']))) ? 'true' : 'false' ?>;
+  var canAnnulerInscription = <?= (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['ANNULER_INSCRIPTION', 'MANAGE_INSCRIPTIONS']))) ? 'true' : 'false' ?>;
 
   // Instance DataTable avec colonnes intelligentes
   var table = $('#table-etudiants').DataTable({
@@ -361,9 +372,11 @@ $(document).ready(function() {
       { data: null, width: '220px', render: function(d, type, row) {
         var nom = (row.nom_etudiant || '').toUpperCase();
         var prenom = row.prenom_etudiant || '';
+        var isAnnule = (row.statut_inscription === 'annule');
+        var badgeAnnule = isAnnule ? ' <span style="background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:800; vertical-align:middle;">ANNULÉE</span>' : '';
         return '<div style="white-space: normal; word-break: break-word; line-height: 1.35; max-width: 260px;">' +
-               '  <div style="font-weight:800; color:#0F172A; font-size:13px;">' + nom + '</div>' +
-               (prenom ? '  <div style="font-weight:600; color:#475569; font-size:12.5px; margin-top:2px;">' + prenom + '</div>' : '') +
+               '  <div style="font-weight:800; color:' + (isAnnule ? '#94A3B8; text-decoration:line-through;' : '#0F172A;') + ' font-size:13px;">' + nom + badgeAnnule + '</div>' +
+               (prenom ? '  <div style="font-weight:600; color:' + (isAnnule ? '#94A3B8;' : '#475569;') + ' font-size:12.5px; margin-top:2px;">' + prenom + '</div>' : '') +
                '</div>';
       }},
 
@@ -414,19 +427,21 @@ $(document).ready(function() {
       }},
 
       // 9. Actions
-      { data: null, width: '160px', orderable: false, render: function(d, type, row) {
+      { data: null, width: '180px', orderable: false, render: function(d, type, row) {
         var idCrypte = d.editId || d.id_etudiant;
         var nomComplet = (row.nom_etudiant || '').toUpperCase() + ' ' + (row.prenom_etudiant || '');
         var insCode = row.code_inscription || '';
+        var idIns = row.id_inscription || '';
         var etuCode = row.code_etudiant || '';
         var clsCode = row.code_classe || '';
         var hasPaiement = parseInt(row.total_paiements_count || 0, 10) > 0;
+        var isAnnule = (row.statut_inscription === 'annule');
 
-        var printBtn = hasPaiement 
+        var printBtn = (hasPaiement && !isAnnule)
           ? '  <a href="' + window.RACINE + 'inscription/fiche/' + idCrypte + '?pdf=1" target="_blank" class="btn-action-icon btn-action-print" title="Télécharger la fiche d\'inscription (PDF)"><i data-lucide="printer"></i></a>'
           : '';
 
-        var classeBtn = canChangerClasse
+        var classeBtn = (canChangerClasse && !isAnnule)
           ? '  <a href="' + window.RACINE + 'etudiant/changerClasse/' + idCrypte + '" class="btn-action-icon btn-action-classe" title="Changer la classe de l\'étudiant"><i data-lucide="refresh-cw"></i></a>'
           : '';
 
@@ -434,11 +449,21 @@ $(document).ready(function() {
           ? '  <a href="' + window.RACINE + 'etudiant/edition/' + idCrypte + '" class="btn-action-icon btn-action-edit" title="Modifier la fiche étudiant"><i data-lucide="edit"></i></a>'
           : '';
 
+        var cancelBtn = '';
+        if (canAnnulerInscription) {
+          if (!isAnnule) {
+            cancelBtn = '  <button type="button" class="btn-action-icon btn-action-cancel btn-annuler-inscription" data-id="' + idIns + '" data-code="' + insCode + '" data-nom="' + nomComplet.replace(/"/g, '&quot;') + '" data-payments="' + (row.total_paiements_count || 0) + '" title="Annuler l\'inscription"><i data-lucide="user-x"></i></button>';
+          } else {
+            cancelBtn = '  <span class="btn-action-icon" style="background:#FEE2E2; color:#991B1B; cursor:not-allowed; opacity:0.6; border:1px solid #FECACA;" title="Inscription déjà annulée"><i data-lucide="ban"></i></span>';
+          }
+        }
+
         return '<div style="display:inline-flex; align-items:center; gap:5px; justify-content:center;">' +
                classeBtn +
                printBtn +
                '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '" class="btn-action-icon btn-action-dossier" title="Consulter le dossier complet"><i data-lucide="eye"></i></a>' +
                editBtn +
+               cancelBtn +
                '</div>';
       }, className: 'text-center' }
     ],
@@ -624,6 +649,105 @@ $(document).ready(function() {
       }
     });
   });
+
+  // Annulation d'une inscription
+  $(document).on('click', '.btn-annuler-inscription', function(e) {
+    e.preventDefault();
+    var idInscription = $(this).data('id');
+    var codeInscription = $(this).data('code');
+    var nomEtudiant = $(this).data('nom') || 'cet étudiant';
+    var nbPayments = parseInt($(this).data('payments') || 0, 10);
+
+    var warningHtml = '<div style="text-align:left; font-size:13px; color:#475569; line-height:1.5;">' +
+      '<p>Êtes-vous sûr de vouloir <strong>annuler l\'inscription</strong> de <strong style="color:#0F172A;">' + $('<div>').text(nomEtudiant).html() + '</strong> ?</p>';
+
+    if (nbPayments > 0) {
+      warningHtml += '<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 12px; margin-top:10px; color:#92400E; display:flex; gap:8px; align-items:flex-start;">' +
+        '<span style="font-weight:800; font-size:14px;">⚠️</span>' +
+        '<span>Attention : <strong>' + nbPayments + ' paiement(s) actif(s)</strong> sont associés à ce dossier. L\'annulation du dossier d\'inscription n\'annulera pas automatiquement les paiements en caisse.</span>' +
+        '</div>';
+    }
+
+    warningHtml += '<p style="margin-top:10px; font-size:12px; color:#64748B;">Cette action changera le statut de l\'inscription à <em>"annulé"</em>.</p></div>';
+
+    if (window.Swal) {
+      Swal.fire({
+        title: 'Annuler l\'inscription ?',
+        html: warningHtml,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#DC2626',
+        cancelButtonColor: '#64748B',
+        confirmButtonText: '<i class="fas fa-user-times"></i> Confirmer l\'annulation',
+        cancelButtonText: 'Non, fermer',
+        reverseButtons: true,
+        focusCancel: true
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          executeAnnulation(idInscription, codeInscription);
+        }
+      });
+    } else {
+      if (confirm('Êtes-vous sûr de vouloir annuler l\'inscription de ' + nomEtudiant + ' ?')) {
+        executeAnnulation(idInscription, codeInscription);
+      }
+    }
+  });
+
+  function executeAnnulation(idInscription, codeInscription) {
+    $.ajax({
+      url: window.RACINE + 'etudiant/annulerInscription',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id_inscription: idInscription,
+        code_inscription: codeInscription,
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.Swal) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Inscription annulée',
+              text: res.message || 'L\'inscription a été annulée avec succès.',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else if (window.toastr) {
+            toastr.success(res.message || 'Inscription annulée avec succès');
+          } else {
+            alert(res.message || 'Inscription annulée avec succès');
+          }
+          table.ajax.reload(null, false);
+        } else {
+          var errMsg = res.message || 'Erreur lors de l\'annulation de l\'inscription';
+          if (window.Swal) {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
+          } else if (window.toastr) {
+            toastr.error(errMsg);
+          } else {
+            alert(errMsg);
+          }
+        }
+      },
+      error: function(xhr) {
+        var msg = 'Erreur réseau lors de la communication avec le serveur.';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch (e) {}
+        if (window.Swal) {
+          Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
+        } else if (window.toastr) {
+          toastr.error(msg);
+        } else {
+          alert(msg);
+        }
+      }
+    });
+  }
 
   if (window.lucide) lucide.createIcons();
 });

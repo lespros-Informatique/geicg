@@ -238,6 +238,7 @@ $route->addRoute('/etudiant/addWizard', [$etudiantController, 'addWizard']);
 $route->addRoute('/etudiant/changer', [$etudiantController, 'changer']);
 $route->addRoute('/etudiant/changerClasse', [$etudiantController, 'changerClasse']);
 $route->addRoute('/etudiant/changerClasse/{param}', [$etudiantController, 'changerClassePage']);
+$route->addRoute('/etudiant/annulerInscription', [$etudiantController, 'annulerInscription']);
 $route->addRoute('/etudiant/details/{param}', [$etudiantController, 'details']);
 $route->addRoute('/etudiant/edition/{param}', [$etudiantController, 'edition']);
 $route->addRoute('/etudiant/formulaire', [$etudiantController, 'formulaire']);

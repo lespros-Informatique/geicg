@@ -958,4 +958,59 @@ class EtudiantController extends BaseController
             'margin_bottom' => 8
         ]);
     }
+
+    public function annulerInscription()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(['ANNULER_INSCRIPTION', 'MANAGE_INSCRIPTIONS']);
+
+        $db = $this->model->getCon();
+        $idInscription = (int)$this->post('id_inscription');
+        $codeInscription = trim($this->post('code_inscription') ?? '');
+
+        $inscription = null;
+        if ($idInscription > 0) {
+            $stmt = $db->prepare("SELECT * FROM inscriptions WHERE id_inscription = ? LIMIT 1");
+            $stmt->execute([$idInscription]);
+            $inscription = $stmt->fetch(PDO::FETCH_ASSOC);
+        } elseif (!empty($codeInscription)) {
+            $stmt = $db->prepare("SELECT * FROM inscriptions WHERE code_inscription = ? LIMIT 1");
+            $stmt->execute([$codeInscription]);
+            $inscription = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$inscription) {
+            $this->error("Dossier d'inscription introuvable.");
+            return;
+        }
+
+        if ($inscription['statut_inscription'] === 'annule') {
+            $this->error("Cette inscription est déjà annulée.");
+            return;
+        }
+
+        // Vérifier si des paiements existent pour cette inscription
+        $stmtPay = $db->prepare("SELECT COUNT(*) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+        $stmtPay->execute([$inscription['code_inscription']]);
+        $nbPaiements = (int)$stmtPay->fetchColumn();
+
+        // Mettre à jour le statut vers 'annule'
+        $stmtUp = $db->prepare("UPDATE inscriptions SET statut_inscription = 'annule', updated_at_inscription = NOW() WHERE id_inscription = ?");
+        $res = $stmtUp->execute([$inscription['id_inscription']]);
+
+        if ($res) {
+            $msg = "L'inscription a été annulée avec succès.";
+            if ($nbPaiements > 0) {
+                $msg .= " Note : " . $nbPaiements . " paiement(s) étai(en)t rattaché(s) à ce dossier.";
+            }
+            $this->success($msg, [
+                'reload' => true,
+                'id_inscription' => $inscription['id_inscription'],
+                'code_inscription' => $inscription['code_inscription']
+            ]);
+        } else {
+            $this->error("Erreur lors de l'annulation de l'inscription.");
+        }
+    }
 }

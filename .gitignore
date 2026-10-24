@@ -81,4 +81,7 @@ public/get_last_ids.php
 public/run_permission_migration.php
 public/scratch_check_perms.php
 public/get_etudiant_cols.php
+public/scratch_check_max_perm.php
+public/migrate_annuler_inscription.php
+public/check_syntax.php
 public/test_check_*.php
