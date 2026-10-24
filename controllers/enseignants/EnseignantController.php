@@ -45,8 +45,12 @@ class EnseignantController extends BaseController
         $mode = trim($data['mode_creation'] ?? 'nouveau'); // 'nouveau' ou 'existant'
 
         // 1. Cas : Rattachement d'un employé / utilisateur existant
-        if ($mode === 'existant' && !empty($data['user_code_existant'])) {
-            $codeUser = trim($data['user_code_existant']);
+        if ($mode === 'existant') {
+            $codeUser = trim($data['user_code_existant'] ?? '');
+            if (empty($codeUser)) {
+                $this->error('Veuillez sélectionner un compte employé à rattacher comme enseignant.');
+                return;
+            }
             
             // Vérifier si cet utilisateur est déjà enseignant
             $stmtCheck = $db->prepare("SELECT id_enseignant FROM enseignants WHERE code_enseignant = ?");
@@ -106,7 +110,9 @@ class EnseignantController extends BaseController
             ]);
 
             if ($success) {
-                $this->success("L'employé <strong>{$userRow['nom_user']} {$userRow['prenom_user']}</strong> a été configuré comme enseignant avec succès !");
+                $this->success("L'employé <strong>{$userRow['nom_user']} {$userRow['prenom_user']}</strong> a été configuré comme enseignant avec succès !", [
+                    'redirect' => RACINE . 'enseignant/list'
+                ]);
             } else {
                 $this->error("Erreur lors de la configuration du profil enseignant.");
             }
@@ -213,7 +219,10 @@ class EnseignantController extends BaseController
 
             $db->commit();
             $idDisplay = $email ?: ($telephone ?: $codeUser);
-            $this->success("Enseignant et compte utilisateur créés avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe : <strong style='color:#15803D;'>{$rawPassword}</strong>", ['password' => $rawPassword]);
+            $this->success("Enseignant et compte utilisateur créés avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
+                'password' => $rawPassword,
+                'redirect' => RACINE . 'enseignant/list'
+            ]);
         } catch (Exception $e) {
             $db->rollBack();
             error_log("EnseignantController add error: " . $e->getMessage());
@@ -300,7 +309,9 @@ class EnseignantController extends BaseController
             ]);
 
             $db->commit();
-            $this->success('Profil enseignant et compte utilisateur mis à jour avec succès !');
+            $this->success('Profil enseignant et compte utilisateur mis à jour avec succès !', [
+                'redirect' => RACINE . 'enseignant/list'
+            ]);
         } catch (Exception $e) {
             $db->rollBack();
             error_log("EnseignantController edit error: " . $e->getMessage());

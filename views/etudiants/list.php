@@ -707,7 +707,9 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          if (window.Swal) {
+          if (window.toastr) {
+            toastr.success(res.message || 'Inscription annulée avec succès');
+          } else if (window.Swal) {
             Swal.fire({
               icon: 'success',
               title: 'Inscription annulée',
@@ -715,20 +717,14 @@ $(document).ready(function() {
               timer: 2000,
               showConfirmButton: false
             });
-          } else if (window.toastr) {
-            toastr.success(res.message || 'Inscription annulée avec succès');
-          } else {
-            alert(res.message || 'Inscription annulée avec succès');
           }
           table.ajax.reload(null, false);
         } else {
           var errMsg = res.message || 'Erreur lors de l\'annulation de l\'inscription';
-          if (window.Swal) {
-            Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
-          } else if (window.toastr) {
+          if (window.toastr) {
             toastr.error(errMsg);
-          } else {
-            alert(errMsg);
+          } else if (window.Swal) {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
           }
         }
       },
@@ -738,12 +734,10 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json && json.message) msg = json.message;
         } catch (e) {}
-        if (window.Swal) {
-          Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
-        } else if (window.toastr) {
+        if (window.toastr) {
           toastr.error(msg);
-        } else {
-          alert(msg);
+        } else if (window.Swal) {
+          Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
         }
       }
     });

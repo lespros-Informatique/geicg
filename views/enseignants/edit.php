@@ -20,7 +20,7 @@ $isEdit = !empty($item['id_enseignant']);
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>enseignant/<?= $isEdit ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form id="form-enseignant" action="<?= RACINE ?>enseignant/<?= $isEdit ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if ($isEdit): ?>
             <input type="hidden" name="id_enseignant" value="<?= $item['id_enseignant'] ?>">
@@ -147,7 +147,7 @@ $isEdit = !empty($item['id_enseignant']);
           </div>
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">
+            <button type="submit" id="btn-submit-enseignant" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">
               <?= $isEdit ? 'Mettre à jour l\'Enseignant' : 'Enregistrer l\'Enseignant' ?>
             </button>
             <a href="<?= RACINE ?>enseignant/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
@@ -167,7 +167,7 @@ $(document).ready(function() {
       $('#bloc-user-existant').slideUp(200);
       $('#bloc-user-identity').slideDown(200);
       $('.field-ident').prop('required', true);
-      $('#select_user_existant').prop('required', false);
+      $('#select_user_existant').prop('required', false).val('');
     }
   });
 
@@ -178,6 +178,59 @@ $(document).ready(function() {
       $('.field-ident').prop('required', false);
       $('#select_user_existant').prop('required', true);
     }
+  });
+
+  // Soumission AJAX du formulaire enseignant (Création & Édition)
+  $('#form-enseignant').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $btn = $('#btn-submit-enseignant');
+    var originalText = $btn.html();
+
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;display:inline-block;animation:spin 1s linear infinite;"></i> Enregistrement...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: $form.attr('action'),
+      type: 'POST',
+      data: $form.serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) {
+            toastr.success(res.message || 'Enseignant enregistré avec succès !');
+          } else if (window.Swal) {
+            Swal.fire({ icon: 'success', title: 'Succès', html: res.message || 'Enseignant enregistré avec succès !', timer: 1500, showConfirmButton: false });
+          }
+          var targetUrl = res.redirect || '<?= RACINE ?>enseignant/list';
+          setTimeout(function() {
+            window.location.href = targetUrl;
+          }, 1000);
+        } else {
+          $btn.prop('disabled', false).html(originalText);
+          if (window.lucide) lucide.createIcons();
+          if (window.toastr) {
+            toastr.error(res.message || 'Erreur lors de l\'enregistrement.');
+          } else if (window.Swal) {
+            Swal.fire({ icon: 'error', title: 'Erreur', html: res.message || 'Erreur lors de l\'enregistrement.' });
+          }
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html(originalText);
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur réseau lors de la communication avec le serveur.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          msg = xhr.responseJSON.message;
+        }
+        if (window.toastr) {
+          toastr.error(msg);
+        } else if (window.Swal) {
+          Swal.fire({ icon: 'error', title: 'Erreur réseau', text: msg });
+        }
+      }
+    });
   });
 });
 </script>
