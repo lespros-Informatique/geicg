@@ -43,10 +43,38 @@ class ModelHome extends BaseModel
             $totalEtudiants = (int)($synthese['total_inscrits'] ?? 0);
             $totalClasses = (int)($synthese['total_classes'] ?? 0);
             $caAttendu = (float)($synthese['total_scolarite_attendue'] ?? 0);
-            $caEncaisse = (float)($synthese['total_encaisse'] ?? 0);
             $totalDepenses = (float)($synthese['total_depenses'] ?? 0);
-            $reliquatImpayes = max(0, $caAttendu - $caEncaisse);
-            $soldeNet = $caEncaisse - $totalDepenses;
+
+            // Encaissements Scolarité (strictement dissociés des frais annexes)
+            $stmtEncScol = $db->prepare("
+                SELECT COALESCE(SUM(p.montant_paiement), 0)
+                FROM paiements p
+                WHERE (p.annee_code = ? OR ? = '')
+                  AND p.statut_paiement = 'confirme'
+                  AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
+                  AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
+            ");
+            $stmtEncScol->execute([$anneeCode ?: '', $anneeCode ?: '']);
+            $caEncaisseScolarite = (float)$stmtEncScol->fetchColumn();
+
+            // Encaissements Caisse Annexe (frais annexes dissociés)
+            $stmtEncAnnexe = $db->prepare("
+                SELECT COALESCE(SUM(p.montant_paiement), 0)
+                FROM paiements p
+                WHERE (p.annee_code = ? OR ? = '')
+                  AND p.statut_paiement = 'confirme'
+                  AND (p.categorie_paiement = 'FRAIS_ANNEXES' OR p.tranche_code = 'FRAIS_ANNEXES' OR p.type_paiement LIKE '%Frais Annexe%')
+            ");
+            $stmtEncAnnexe->execute([$anneeCode ?: '', $anneeCode ?: '']);
+            $caEncaisseAnnexes = (float)$stmtEncAnnexe->fetchColumn();
+
+            $totalEncaisseGlobal = $caEncaisseScolarite + $caEncaisseAnnexes;
+            $caEncaisse = $caEncaisseScolarite;
+            $reliquatImpayes = max(0, $caAttendu - $caEncaisseScolarite);
+            $soldeNet = $totalEncaisseGlobal - $totalDepenses;
+            $soldeNetScolarite = $caEncaisseScolarite - $totalDepenses;
+            $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisseScolarite / $caAttendu) * 100, 1)) : 0;
 
             // 2. Compteurs Pédagogiques
             $totalEnseignants = (int)$db->query("SELECT COUNT(*) FROM enseignants WHERE statut_enseignant = 'actif'")->fetchColumn();
@@ -157,10 +185,15 @@ class ModelHome extends BaseModel
                 'annee_code' => $anneeCode,
                 'total_etudiants' => $totalEtudiants,
                 'ca_encaisse' => $caEncaisse,
+                'ca_encaisse_scolarite' => $caEncaisseScolarite,
+                'ca_encaisse_annexes' => $caEncaisseAnnexes,
+                'total_encaisse_global' => $totalEncaisseGlobal,
                 'ca_attendu' => $caAttendu,
                 'reliquat_impayes' => $reliquatImpayes,
+                'taux_recouvrement' => $tauxRecouvrement,
                 'total_depenses' => $totalDepenses,
                 'solde_net' => $soldeNet,
+                'solde_net_scolarite' => $soldeNetScolarite,
                 'total_classes' => $totalClasses,
                 'total_enseignants' => $totalEnseignants,
                 'total_matieres' => $totalMatieres,
@@ -190,10 +223,15 @@ class ModelHome extends BaseModel
                 'annee_code' => $anneeCode,
                 'total_etudiants' => 0,
                 'ca_encaisse' => 0,
+                'ca_encaisse_scolarite' => 0,
+                'ca_encaisse_annexes' => 0,
+                'total_encaisse_global' => 0,
                 'ca_attendu' => 0,
                 'reliquat_impayes' => 0,
+                'taux_recouvrement' => 0,
                 'total_depenses' => 0,
                 'solde_net' => 0,
+                'solde_net_scolarite' => 0,
                 'total_classes' => 0,
                 'total_enseignants' => 0,
                 'total_matieres' => 0,
@@ -225,11 +263,15 @@ class ModelHome extends BaseModel
             $depenses = array_fill(1, 12, 0);
 
             $stmtP = $db->prepare("
-                SELECT MONTH(date_paiement) as mois, SUM(montant_paiement) as total
+                SELECT MONTH(p.date_paiement) as mois, SUM(p.montant_paiement) as total
                 FROM paiements p
                 JOIN inscriptions i ON i.code_inscription = p.inscription_code
-                WHERE (i.annee_code = ? OR ? = '') AND (p.statut_paiement = 'confirme' OR p.statut_paiement != 'annule')
-                GROUP BY MONTH(date_paiement)
+                WHERE (i.annee_code = ? OR ? = '') 
+                  AND (p.statut_paiement = 'confirme' OR p.statut_paiement != 'annule')
+                  AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
+                  AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
+                GROUP BY MONTH(p.date_paiement)
             ");
             $stmtP->execute([$anneeCode, $anneeCode]);
             while ($r = $stmtP->fetch(PDO::FETCH_ASSOC)) {
@@ -377,6 +419,7 @@ class ModelHome extends BaseModel
             $sql = "SELECT * FROM v_dash_paiements_details
                     WHERE (annee_code = ? OR ? = '')
                       AND (statut_paiement = 'confirme' OR statut_paiement != 'annule')
+                      AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
                     ORDER BY id_paiement DESC
                     LIMIT $limit";
             $stmt = $db->prepare($sql);
