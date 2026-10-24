@@ -327,7 +327,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
               <?= number_format($stats['solde_net'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 11px;">FCFA</span>
             </div>
             <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
-              Total Recettes &minus; Dépenses
+              Scolarité Encaissée &minus; Dépenses
             </div>
           </div>
         </div>
@@ -365,7 +365,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
             <div style="font-size: 24px; font-weight: 900; color: <?= ($stats['solde_net'] ?? 0) >= 0 ? '#15803D' : '#DC2626' ?>; margin-top: 8px;">
               <?= number_format($stats['solde_net'] ?? 0, 0, ',', ' ') ?> FCFA
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Total Recettes &minus; Dépenses</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Scolarité Encaissée &minus; Dépenses</div>
           </div>
         </div>
 

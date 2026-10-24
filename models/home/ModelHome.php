@@ -72,7 +72,7 @@ class ModelHome extends BaseModel
             $totalEncaisseGlobal = $caEncaisseScolarite + $caEncaisseAnnexes;
             $caEncaisse = $caEncaisseScolarite;
             $reliquatImpayes = max(0, $caAttendu - $caEncaisseScolarite);
-            $soldeNet = $totalEncaisseGlobal - $totalDepenses;
+            $soldeNet = $caEncaisseScolarite - $totalDepenses;
             $soldeNetScolarite = $caEncaisseScolarite - $totalDepenses;
             $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisseScolarite / $caAttendu) * 100, 1)) : 0;
 
