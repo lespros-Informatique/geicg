@@ -123,7 +123,7 @@ class TrancheController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
-            $this->success('Tranche créée avec succès!');
+            $this->success('Tranche créée avec succès!', RACINE . 'scolarite/list?tab=tranches');
         } else {
             $this->error('Erreur lors de la création de la tranche');
         }
@@ -150,7 +150,7 @@ class TrancheController extends BaseController
         $cols = $this->model->getCon()->query("DESCRIBE tranches_scolarite")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Tranche modifiée avec succès!');
+            $this->success('Tranche modifiée avec succès!', RACINE . 'scolarite/list?tab=tranches');
         } else {
             $this->error('Erreur lors de la modification');
         }
