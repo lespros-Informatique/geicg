@@ -6,6 +6,8 @@ $filieres = array_filter($rawFilieres, function($f) {
 });
 $niveaux = $niveaux ?? (new ModelNiveau())->getActifs();
 $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$canEditClasse = (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['EDIT_CLASSE', 'MANAGE_CLASSES'])));
+$canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_CLASSES'])));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -23,12 +25,14 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
               <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Répertoire (PDF)
             </a>
           <?php endif; ?>
-          <button type="button" class="btn btn-secondary btn-reconduire-classes" style="background: #0D9488; border-color: #0D9488; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;" title="Reconduire toutes les classes d'une année vers une autre">
-            <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduire les Classes (N-1 &rarr; N)
-          </button>
-          <button type="button" class="btn btn-primary btn-add-classe" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;">
-            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe
-          </button>
+          <?php if ($canManageClasses): ?>
+            <button type="button" class="btn btn-secondary btn-reconduire-classes" style="background: #0D9488; border-color: #0D9488; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;" title="Reconduire toutes les classes d'une année vers une autre">
+              <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduire les Classes (N-1 &rarr; N)
+            </button>
+            <button type="button" class="btn btn-primary btn-add-classe" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;">
+              <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe
+            </button>
+          <?php endif; ?>
         </div>
       </div>
  
@@ -306,6 +310,8 @@ $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '')
 
 <script>
 $(document).ready(function() {
+  var canEditClasse = <?= $canEditClasse ? 'true' : 'false' ?>;
+
   var table = $('#table-classes').DataTable({
     ajax: {
       url: '<?= RACINE ?>classe/apiList',
@@ -341,6 +347,9 @@ $(document).ready(function() {
       }},
       { data: 'statut_classe', width: '80px', className: 'text-center', render: function(d, type, row) {
         var isActif = (d === 'actif');
+        if (!canEditClasse) {
+          return '<span style="display:inline-block; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:700; background-color:' + (isActif ? '#DCFCE7' : '#F1F5F9') + '; color:' + (isActif ? '#15803D' : '#64748B') + ';">' + (isActif ? 'Actif' : 'Inactif') + '</span>';
+        }
         var checkedAttr = isActif ? 'checked' : '';
         return '<div style="display:flex; justify-content:center; align-items:center;">' +
                '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
@@ -353,8 +362,12 @@ $(document).ready(function() {
       }},
       { data: null, width: '160px', orderable: false, render: function(d) {
         var safeLib = d.libelle_classe ? $('<div>').text(d.libelle_classe).html() : '';
-        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-classe" data-id="' + (d.id_classe) + '" data-libelle="' + safeLib + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" data-statut="' + (d.statut_classe || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
-               '<a href="' + window.RACINE + 'classe/details/' + (d.editId || d.id_classe) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+        var actionsHtml = '';
+        if (canEditClasse) {
+          actionsHtml += '<button type="button" class="btn btn-sm btn-secondary btn-edit-classe" data-id="' + (d.id_classe) + '" data-libelle="' + safeLib + '" data-filiere="' + (d.filiere_code || '') + '" data-niveau="' + (d.niveau_code || '') + '" data-annee="' + (d.annee_code || '') + '" data-capacite="' + (d.capacite_max_classe || '35') + '" data-statut="' + (d.statut_classe || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
+        }
+        actionsHtml += '<a href="' + window.RACINE + 'classe/details/' + (d.editId || d.id_classe) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+        return actionsHtml;
       }, className: 'text-end' }
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
