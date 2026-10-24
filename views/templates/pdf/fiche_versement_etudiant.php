@@ -260,18 +260,17 @@
   <div class="fin-summary-box">
     <table style="width: 100%; font-size: 10px;">
       <tr>
-        <td style="width: 25%;">TOTAL SCOLARITÉ FIXÉ : <br><strong style="font-size: 11px;"><?= number_format($total_scolarite ?? 0, 0, ',', ' ') ?> FCFA</strong></td>
-        <td style="width: 25%;">DROIT D'INSCRIPTION : <br><strong><?= number_format($frais_inscription ?? 0, 0, ',', ' ') ?> FCFA</strong></td>
-        <td style="width: 25%;">CUMUL DÉJÀ PAYÉ : <br><strong style="color: #166534; font-size: 11px;"><?= number_format($montant_paye ?? 0, 0, ',', ' ') ?> FCFA</strong></td>
-        <td style="width: 25%; text-align: right;">SOLDE RESTANT DÛ : <br><strong style="color: <?= ($reste_payer ?? 0) <= 0 ? '#166534' : '#990000' ?>; font-size: 11.5px;"><?= number_format($reste_payer ?? 0, 0, ',', ' ') ?> FCFA</strong></td>
+        <td style="width: 33%;">TOTAL SCOLARITÉ DUE : <br><strong style="font-size: 11px;"><?= number_format($total_scolarite ?? 0, 0, ',', ' ') ?> FCFA</strong></td>
+        <td style="width: 33%; text-align: center;">CUMUL DÉJÀ PAYÉ : <br><strong style="color: #166534; font-size: 11px;"><?= number_format($montant_paye ?? 0, 0, ',', ' ') ?> FCFA</strong></td>
+        <td style="width: 34%; text-align: right;">SOLDE RESTANT DÛ : <br><strong style="color: <?= ($reste_payer ?? 0) <= 0 ? '#166534' : '#990000' ?>; font-size: 11.5px;"><?= number_format($reste_payer ?? 0, 0, ',', ' ') ?> FCFA</strong></td>
       </tr>
       <tr>
-        <td colspan="4" style="padding-top: 6px;">
+        <td colspan="3" style="padding-top: 6px;">
           État du compte : &nbsp;&nbsp;
           <?php if (($reste_payer ?? 0) <= 0): ?>
             <span class="badge-solde">✔ SCOLARITÉ ENTIÈREMENT SOLDÉE</span>
           <?php else: ?>
-            <span class="badge-partiel">⏳ SCOLARITÉ EN COURS DE RÈGLEMENT - RESTANT DÛ : <?= number_format($reste_payer, 0, ',', ' ') ?> FCFA</span>
+            <span class="badge-partiel">⏳ SCOLARITÉ EN COURS DE RÈGLEMENT - RESTANT DÛ : <?= number_format($reste_payer ?? 0, 0, ',', ' ') ?> FCFA</span>
           <?php endif; ?>
         </td>
       </tr>

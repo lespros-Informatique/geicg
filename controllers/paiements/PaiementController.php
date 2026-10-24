@@ -2329,9 +2329,6 @@ class PaiementController extends BaseController
         $anneeCode = $ins['annee_code'] ?? $this->getActiveAnneeCode();
 
         // Récupérer la grille de scolarité fixée
-        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
-        $modelFA = new ModelFraisAnnexe();
-
         $filiereCode = $ins['filiere_code'] ?? '';
         $nCode = $ins['niveau_code'] ?? '';
         $affRaw = $ins['affectation_etat'] ?? 'non';
@@ -2365,13 +2362,15 @@ class PaiementController extends BaseController
             $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
         }
 
-        $fraisInscription = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $nCode, 'inscription');
         $totalScolariteFixe = $scolariteDue;
 
-        // Récupérer tous les versements effectués
+        // Récupérer tous les versements de scolarité effectués
         $stmtPaiements = $db->prepare("
             SELECT * FROM paiements
-            WHERE inscription_code = ? AND statut_paiement != 'annule'
+            WHERE inscription_code = ? 
+              AND statut_paiement != 'annule'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
             ORDER BY date_paiement ASC, id_paiement ASC
         ");
         $stmtPaiements->execute([$inscriptionCode]);
@@ -2382,7 +2381,7 @@ class PaiementController extends BaseController
             $montantPaye += (float)$p['montant_paiement'];
         }
 
-        $restePayer = max(0, ($totalScolariteFixe + $fraisInscription) - $montantPaye);
+        $restePayer = max(0, $totalScolariteFixe - $montantPaye);
 
         // Helper Base64 Images
         $toBase64 = function($paths) {
@@ -2497,7 +2496,6 @@ class PaiementController extends BaseController
             'contact_etudiant' => $ins['telephone_etudiant'] ?? '-',
             'date_inscription' => $dateInscription,
             'total_scolarite' => $totalScolariteFixe,
-            'frais_inscription' => $fraisInscription,
             'montant_paye' => $montantPaye,
             'reste_payer' => $restePayer,
             'paiements' => $paiements,
