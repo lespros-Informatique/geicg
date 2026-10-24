@@ -130,7 +130,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ETUDIANTS');
+        $this->requirePermission(['EDIT_ETUDIANT', 'MANAGE_ETUDIANTS']);
         $id = (int)$this->post('id_etudiant');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -207,7 +207,7 @@ class EtudiantController extends BaseController
     public function changerClassePage($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ETUDIANTS');
+        $this->requirePermission(['CHANGER_CLASSE_ETUDIANT', 'MANAGE_ETUDIANTS']);
 
         try {
             $id = $this->validator->decrypter($details);
@@ -274,7 +274,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ETUDIANTS');
+        $this->requirePermission(['CHANGER_CLASSE_ETUDIANT', 'MANAGE_ETUDIANTS']);
 
         $db = $this->model->getCon();
         $codeInscription = trim($_POST['code_inscription'] ?? '');
@@ -507,7 +507,7 @@ class EtudiantController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ETUDIANTS');
+        $this->requirePermission(['EDIT_ETUDIANT', 'MANAGE_ETUDIANTS']);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);

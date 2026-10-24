@@ -117,9 +117,11 @@ $anneeActive = $anneeActive ?? '';
           <a href="<?= RACINE ?>etudiant/imprimerPdf" id="btn-print-etudiants" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer la liste des étudiants en PDF">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </a>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_ETUDIANTS', 'MANAGE_INSCRIPTIONS']))): ?>
           <a href="<?= RACINE ?>etudiant/wizard" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Dossier Étudiant
           </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -310,6 +312,10 @@ $anneeActive = $anneeActive ?? '';
 <script>
 $(document).ready(function() {
   
+  // Permissions RBAC pour les actions étudiantes
+  var canChangerClasse = <?= (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['CHANGER_CLASSE_ETUDIANT', 'MANAGE_ETUDIANTS']))) ? 'true' : 'false' ?>;
+  var canEditEtudiant  = <?= (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['EDIT_ETUDIANT', 'MANAGE_ETUDIANTS']))) ? 'true' : 'false' ?>;
+
   // Instance DataTable avec colonnes intelligentes
   var table = $('#table-etudiants').DataTable({
     order: [],
@@ -420,11 +426,19 @@ $(document).ready(function() {
           ? '  <a href="' + window.RACINE + 'inscription/fiche/' + idCrypte + '?pdf=1" target="_blank" class="btn-action-icon btn-action-print" title="Télécharger la fiche d\'inscription (PDF)"><i data-lucide="printer"></i></a>'
           : '';
 
+        var classeBtn = canChangerClasse
+          ? '  <a href="' + window.RACINE + 'etudiant/changerClasse/' + idCrypte + '" class="btn-action-icon btn-action-classe" title="Changer la classe de l\'étudiant"><i data-lucide="refresh-cw"></i></a>'
+          : '';
+
+        var editBtn = canEditEtudiant
+          ? '  <a href="' + window.RACINE + 'etudiant/edition/' + idCrypte + '" class="btn-action-icon btn-action-edit" title="Modifier la fiche étudiant"><i data-lucide="edit"></i></a>'
+          : '';
+
         return '<div style="display:inline-flex; align-items:center; gap:5px; justify-content:center;">' +
-               '  <a href="' + window.RACINE + 'etudiant/changerClasse/' + idCrypte + '" class="btn-action-icon btn-action-classe" title="Changer la classe de l\'étudiant"><i data-lucide="refresh-cw"></i></a>' +
+               classeBtn +
                printBtn +
                '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '" class="btn-action-icon btn-action-dossier" title="Consulter le dossier complet"><i data-lucide="eye"></i></a>' +
-               '  <a href="' + window.RACINE + 'etudiant/edition/' + idCrypte + '" class="btn-action-icon btn-action-edit" title="Modifier la fiche étudiant"><i data-lucide="edit"></i></a>' +
+               editBtn +
                '</div>';
       }, className: 'text-center' }
     ],

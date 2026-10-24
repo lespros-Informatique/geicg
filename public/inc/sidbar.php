@@ -24,24 +24,21 @@
       $userRoles = [$userRoles];
   }
 
-  // Récupérer les permissions cumulées de tous les rôles de l'utilisateur
-  $userPermissions = $_SESSION['permissions'] ?? [];
-  if (empty($userPermissions)) {
-      try {
-          $dbConn = (new Database())->getCon();
-          $inClause = implode(',', array_fill(0, count($userRoles), '?'));
-          $stmtP = $dbConn->prepare("
-              SELECT DISTINCT rp.permission_code 
-              FROM role_permissions rp
-              JOIN permissions p ON rp.permission_code = p.code_permission
-              WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
-          ");
-          $stmtP->execute($userRoles);
-          $userPermissions = $stmtP->fetchAll(PDO::FETCH_COLUMN) ?: [];
-          $_SESSION['permissions'] = $userPermissions;
-      } catch (Exception $e) {
-          $userPermissions = [];
-      }
+  // Récupérer les permissions cumulées de tous les rôles de l'utilisateur en temps réel
+  try {
+      $dbConn = (new Database())->getCon();
+      $inClause = implode(',', array_fill(0, count($userRoles), '?'));
+      $stmtP = $dbConn->prepare("
+          SELECT DISTINCT rp.permission_code 
+          FROM role_permissions rp
+          JOIN permissions p ON rp.permission_code = p.code_permission
+          WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
+      ");
+      $stmtP->execute($userRoles);
+      $userPermissions = $stmtP->fetchAll(PDO::FETCH_COLUMN) ?: [];
+      $_SESSION['permissions'] = $userPermissions;
+  } catch (Exception $e) {
+      $userPermissions = $_SESSION['permissions'] ?? [];
   }
 
   /**

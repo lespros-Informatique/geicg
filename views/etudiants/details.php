@@ -41,9 +41,11 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
           <button type="button" onclick="imprimerCarteScolaire()" class="btn btn-warning" style="background: #D97706; border-color: #D97706; color: #FFF; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
             <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer Carte Scolaire
           </button>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['EDIT_ETUDIANT', 'MANAGE_ETUDIANTS']))): ?>
           <a href="<?= RACINE ?>etudiant/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
             <i data-lucide="edit" style="width: 16px; height: 16px;"></i> Modifier le dossier
           </a>
+          <?php endif; ?>
         </div>
       </div>
 
