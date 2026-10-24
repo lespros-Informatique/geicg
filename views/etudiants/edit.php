@@ -2,6 +2,24 @@
 require_once __DIR__ . '/../../public/inc/header.php'; 
 $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())->crypter($item['id_etudiant']) : '');
 ?>
+<style>
+.edit-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+@media (max-width: 991px) {
+  .edit-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .edit-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -39,7 +57,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
             <input type="hidden" name="id_etudiant" value="<?= $item['id_etudiant'] ?>">
           <?php endif; ?>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%;">
+          <div class="edit-grid-3">
             
             <!-- Matricule École (Lecture seule) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
