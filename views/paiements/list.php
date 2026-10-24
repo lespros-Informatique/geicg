@@ -275,6 +275,19 @@
 #modal-recu-paiement-success > div {
   animation: modalZoomIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+.btn-action-cancel-paiement {
+  border: 1.5px solid #EF4444 !important;
+  color: #DC2626 !important;
+  background: #FEF2F2 !important;
+  transition: all 0.2s ease-in-out;
+}
+.btn-action-cancel-paiement:hover {
+  background: #EF4444 !important;
+  color: #FFFFFF !important;
+  border-color: #EF4444 !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
 </style>
 <?php
 $isCaisseOuverte = $isCaisseOuverte ?? false;
@@ -283,6 +296,7 @@ $encryptedSessionId = $encryptedSessionId ?? '';
 $canRecord = $canRecord ?? false;
 $canOpenCaisse = $canOpenCaisse ?? false;
 $canCloseCaisse = $canCloseCaisse ?? false;
+$canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -631,7 +645,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
                 <th style="padding: 12px; width: 110px;">Classe</th>
                 <th style="padding: 12px;">Type Transaction</th>
                 <th style="padding: 12px; width: 150px; text-align: right;">Montant Versé</th>
-                <th style="padding: 12px; width: 90px; text-align: center;">Actions</th>
+                <th style="padding: 12px; width: 130px; text-align: center;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -966,6 +980,8 @@ $(document).ready(function() {
     });
   });
 
+  var canCancelPaiement = <?= (!empty($canCancelPaiement) || (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']))) ? 'true' : 'false' ?>;
+
   var table = $('#table-paiements').DataTable({
     order: [],
     ajax: {
@@ -1011,14 +1027,44 @@ $(document).ready(function() {
         var libelle = (d && d.trim() !== '') ? 'Scolarité (' + escapeHtml(d) + ')' : 'Frais de Scolarité';
         return '<span style="font-weight:700; color:#15803D; background:#DCFCE7; border:1px solid #86EFAC; padding:4px 10px; border-radius:6px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="graduation-cap" style="width:13px;height:13px;"></i> ' + libelle + '</span>';
       } },
-      { data: 'montant_paiement', width: '150px', className: 'text-end', render: function(d) {
-        return d ? '<strong style="color:#15803D; font-size:14px;">' + Number(d).toLocaleString('fr-FR') + ' FCFA</strong>' : '-';
+      { data: 'montant_paiement', width: '160px', className: 'text-end', render: function(d, type, row) {
+        var isAnnule = (row.statut_paiement === 'annule');
+        if (!d) return '-';
+        var formatted = Number(d).toLocaleString('fr-FR') + ' FCFA';
+        if (isAnnule) {
+          return '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">' +
+                 '  <span style="color:#94A3B8; text-decoration:line-through; font-size:13px; font-weight:600;">' + formatted + '</span>' +
+                 '  <span style="background:#FEE2E2; color:#DC2626; border:1px solid #FECACA; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:800; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="slash" style="width:10px;height:10px;"></i> ANNULÉ</span>' +
+                 '</div>';
+        }
+        return '<strong style="color:#15803D; font-size:14px;">' + formatted + '</strong>';
       } },
-      { data: null, width: '90px', orderable: false, className: 'text-center', render: function(d) {
+      { data: null, width: '130px', orderable: false, className: 'text-center', render: function(d, type, row) {
         var idCrypte = d.editId || d.id_paiement;
+        var isAnnule = (row.statut_paiement === 'annule');
+        var codePaiement = row.code_paiement || '';
+        var etudiantNom = row.etudiant_nom || '';
+        var montant = Number(row.montant_paiement || 0).toLocaleString('fr-FR') + ' FCFA';
+
+        var printBtn = !isAnnule
+          ? '  <a href="' + window.RACINE + 'paiement/imprimerPdf/' + idCrypte + '" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:1.5px solid #1E3A5F; color:#1E3A5F; background:#FFFFFF;" title="Imprimer le reçu de versement (PDF)"><i data-lucide="printer" style="width:16px;height:16px;"></i></a>'
+          : '  <span class="btn btn-sm" style="border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; border:1px solid #E2E8F0; color:#CBD5E1; cursor:not-allowed;" title="Reçu annulé (impression désactivée)"><i data-lucide="printer" style="width:16px;height:16px;"></i></span>';
+
+        var detailsBtn = '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#1E3A5F; border-color:#1E3A5F; color:#FFFFFF;" title="Détails du versement"><i data-lucide="eye" style="width:16px;height:16px;"></i></a>';
+
+        var cancelBtn = '';
+        if (canCancelPaiement) {
+          if (!isAnnule) {
+            cancelBtn = '  <button type="button" class="btn btn-sm btn-action-cancel-paiement btn-annuler-paiement" data-id="' + (row.id_paiement || '') + '" data-code="' + escapeHtml(codePaiement) + '" data-nom="' + escapeHtml(etudiantNom) + '" data-montant="' + escapeHtml(montant) + '" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center;" title="Annuler le versement"><i data-lucide="x-circle" style="width:16px;height:16px;"></i></button>';
+          } else {
+            cancelBtn = '  <span class="btn btn-sm" style="border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FEF2F2; border:1px solid #FECACA; color:#EF4444; cursor:not-allowed; opacity:0.6;" title="Paiement déjà annulé"><i data-lucide="ban" style="width:16px;height:16px;"></i></span>';
+          }
+        }
+
         return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">' +
-               '  <a href="' + window.RACINE + 'paiement/imprimerPdf/' + idCrypte + '" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:1.5px solid #1E3A5F; color:#1E3A5F; background:#FFFFFF;" title="Imprimer le reçu de versement (PDF)"><i data-lucide="printer" style="width:16px;height:16px;"></i></a>' +
-               '  <a href="' + window.RACINE + 'paiement/details/' + idCrypte + '" class="btn btn-sm btn-info" style="font-weight:700; border-radius:8px; width:34px; height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#1E3A5F; border-color:#1E3A5F; color:#FFFFFF;" title="Détails du paiement"><i data-lucide="eye" style="width:16px;height:16px;"></i></a>' +
+               printBtn +
+               detailsBtn +
+               cancelBtn +
                '</div>';
       } }
     ],
@@ -1508,6 +1554,109 @@ $(document).ready(function() {
       }
     });
   });
+
+  // Annulation d'un paiement / versement
+  $(document).on('click', '.btn-annuler-paiement', function(e) {
+    e.preventDefault();
+    var idPaiement = $(this).data('id');
+    var codePaiement = $(this).data('code') || '';
+    var nomEtudiant = $(this).data('nom') || 'l\'étudiant';
+    var montant = $(this).data('montant') || '';
+
+    var htmlContent = '<div style="text-align:left; font-size:13px; color:#475569; line-height:1.5;">' +
+      '<p>Êtes-vous certain de vouloir annuler le versement <strong style="color:#1E3A5F;">#' + $('<div>').text(codePaiement).html() + '</strong> d\'un montant de <strong style="color:#DC2626;">' + $('<div>').text(montant).html() + '</strong> effectué pour <strong style="color:#0F172A;">' + $('<div>').text(nomEtudiant).html() + '</strong> ?</p>' +
+      '<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 12px; margin:12px 0; color:#92400E; display:flex; gap:8px; align-items:flex-start;">' +
+      '  <span style="font-weight:800; font-size:14px;">⚠️</span>' +
+      '  <span>Cette opération déduira ce versement du total encaissé en caisse et réajustera le solde de la scolarité de l\'étudiant.</span>' +
+      '</div>' +
+      '<label style="display:block; font-weight:700; color:#334155; margin-bottom:5px; font-size:12px;">Motif d\'annulation (facultatif) :</label>' +
+      '<input type="text" id="swal-input-motif-annulation" class="swal2-input" placeholder="Ex: Erreur de saisie caisse, rejet de chèque..." style="margin:0; width:100%; box-sizing:border-box; font-size:13px; padding:8px 12px; height:38px;">' +
+      '</div>';
+
+    if (window.Swal) {
+      Swal.fire({
+        title: 'Annuler ce versement ?',
+        html: htmlContent,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#DC2626',
+        cancelButtonColor: '#64748B',
+        confirmButtonText: '<i class="fas fa-times-circle"></i> Confirmer l\'annulation',
+        cancelButtonText: 'Non, conserver',
+        reverseButtons: true,
+        focusCancel: true,
+        preConfirm: function() {
+          return $('#swal-input-motif-annulation').val() || '';
+        }
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          executeAnnulationPaiement(idPaiement, codePaiement, result.value);
+        }
+      });
+    } else {
+      if (confirm('Êtes-vous certain de vouloir annuler le versement #' + codePaiement + ' (' + montant + ') ?')) {
+        var motif = prompt('Motif d\'annulation (facultatif) :') || '';
+        executeAnnulationPaiement(idPaiement, codePaiement, motif);
+      }
+    }
+  });
+
+  function executeAnnulationPaiement(idPaiement, codePaiement, motif) {
+    $.ajax({
+      url: window.RACINE + 'paiement/annuler',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id_paiement: idPaiement,
+        code_paiement: codePaiement,
+        motif: motif || '',
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.Swal) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Paiement annulé',
+              text: res.message || 'Le versement a été annulé avec succès.',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else if (window.toastr) {
+            toastr.success(res.message || 'Paiement annulé avec succès');
+          } else {
+            alert(res.message || 'Paiement annulé avec succès');
+          }
+          table.ajax.reload(null, false);
+          refreshKpis();
+        } else {
+          var errMsg = res.message || 'Erreur lors de l\'annulation du paiement';
+          if (window.Swal) {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
+          } else if (window.toastr) {
+            toastr.error(errMsg);
+          } else {
+            alert(errMsg);
+          }
+        }
+      },
+      error: function(xhr) {
+        var msg = 'Erreur réseau lors de la communication avec le serveur.';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch (e) {}
+        if (window.Swal) {
+          Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
+        } else if (window.toastr) {
+          toastr.error(msg);
+        } else {
+          alert(msg);
+        }
+      }
+    });
+  }
 });
 </script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

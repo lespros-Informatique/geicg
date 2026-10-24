@@ -77,6 +77,7 @@ class PaiementController extends BaseController
         $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS', 'MANAGE_PAYMENTS']);
         $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
         $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+        $canCancelPaiement = $this->hasPermission(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']);
 
         $this->loadView('../views/paiements/list.php', [
             'stats' => $stats,
@@ -90,7 +91,8 @@ class PaiementController extends BaseController
             'encryptedSessionId' => $encryptedSessionId,
             'canRecord' => $canRecord,
             'canOpenCaisse' => $canOpenCaisse,
-            'canCloseCaisse' => $canCloseCaisse
+            'canCloseCaisse' => $canCloseCaisse,
+            'canCancelPaiement' => $canCancelPaiement
         ]);
     }
 
@@ -1467,7 +1469,7 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('CANCEL_PAIEMENTS');
+        $this->requirePermission(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']);
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -1484,6 +1486,75 @@ class PaiementController extends BaseController
             }
         } else {
             $this->error('Paiement introuvable');
+        }
+    }
+
+    public function annuler()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']);
+
+        $db = $this->model->getCon();
+        $id = (int)($this->post('id_paiement') ?: $this->post('id'));
+        $codePaiement = trim($this->post('code_paiement') ?? '');
+        $motif = trim($this->post('motif') ?? '');
+
+        $paiement = null;
+        if ($id > 0) {
+            $stmt = $db->prepare("SELECT * FROM paiements WHERE id_paiement = ? LIMIT 1");
+            $stmt->execute([$id]);
+            $paiement = $stmt->fetch(PDO::FETCH_ASSOC);
+        } elseif (!empty($codePaiement)) {
+            $stmt = $db->prepare("SELECT * FROM paiements WHERE code_paiement = ? LIMIT 1");
+            $stmt->execute([$codePaiement]);
+            $paiement = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$paiement) {
+            $this->error("Paiement introuvable.");
+            return;
+        }
+
+        if ($paiement['statut_paiement'] === 'annule') {
+            $this->error("Ce versement est déjà annulé.");
+            return;
+        }
+
+        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? 'SYS';
+        $userName = trim(($_SESSION[USERS_AUTH]['prenom_user'] ?? '') . ' ' . ($_SESSION[USERS_AUTH]['nom_user'] ?? ''));
+        $cancellationNote = " [ANNULATION le " . date('d/m/Y H:i') . " par " . (!empty($userName) ? $userName : $userCode) . (!empty($motif) ? " - Motif: " . $motif : "") . "]";
+        $newObservations = trim(($paiement['observations'] ?? '') . $cancellationNote);
+
+        // Mettre à jour le statut du versement vers 'annule'
+        $stmtUp = $db->prepare("UPDATE paiements SET statut_paiement = 'annule', observations = ? WHERE id_paiement = ?");
+        $res = $stmtUp->execute([$newObservations, $paiement['id_paiement']]);
+
+        if ($res) {
+            // Réajuster éventuellement le statut de l'inscription si elle avait été marquée 'solde'
+            $inscriptionCode = $paiement['inscription_code'] ?? '';
+            if (!empty($inscriptionCode)) {
+                $stmtIns = $db->prepare("SELECT id_inscription, montant_scolarite_inscription, statut_inscription FROM inscriptions WHERE code_inscription = ? LIMIT 1");
+                $stmtIns->execute([$inscriptionCode]);
+                $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
+                if ($ins && $ins['statut_inscription'] === 'solde') {
+                    $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+                    $stmtTot = $db->prepare("SELECT SUM(montant_paiement) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+                    $stmtTot->execute([$inscriptionCode]);
+                    $totalPayeCumul = (float)($stmtTot->fetchColumn() ?: 0);
+                    if ($totalPayeCumul < $scolariteDue) {
+                        $db->prepare("UPDATE inscriptions SET statut_inscription = 'valide', updated_at_inscription = NOW() WHERE id_inscription = ?")->execute([$ins['id_inscription']]);
+                    }
+                }
+            }
+
+            $this->success("Le versement #" . ($paiement['code_paiement'] ?? '') . " a été annulé avec succès.", [
+                'reload' => true,
+                'id_paiement' => $paiement['id_paiement'],
+                'code_paiement' => $paiement['code_paiement']
+            ]);
+        } else {
+            $this->error("Erreur lors de l'annulation du versement.");
         }
     }
 
