@@ -94,17 +94,20 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
   .wizard-step-content.active {
     display: block;
   }
+  .wizard-grid-3,
   .wizard-grid-etape1 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
   }
   @media (max-width: 991px) {
+    .wizard-grid-3,
     .wizard-grid-etape1 {
       grid-template-columns: repeat(2, 1fr);
     }
   }
   @media (max-width: 640px) {
+    .wizard-grid-3,
     .wizard-grid-etape1 {
       grid-template-columns: 1fr;
     }
@@ -231,7 +234,7 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
             <h3 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-bottom: 20px; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="users" style="width: 20px; height: 20px;"></i> Étape 2 : Parents & Tuteurs Légaux
             </h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div class="wizard-grid-3">
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom & Prénom du Père</label>
                 <input type="text" class="form-control" name="nom_pere" placeholder="Ex: KOUASSI Paul" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
