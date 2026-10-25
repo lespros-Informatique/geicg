@@ -1104,6 +1104,7 @@ $(document).ready(function() {
       annee_code: $('#filter-annee').val() || '',
       niveau_code: $('#filter-niveau').val() || '',
       classe_code: $('#filter-classe').val() || '',
+      canal_paiement: $('#filter-canal').val() || '',
       mode_paiement: $('#filter-mode').val() || '',
       categorie_paiement: $('#filter-categorie').val() || '',
       date_debut: $('#filter-date-debut').val() || '',

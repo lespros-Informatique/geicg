@@ -117,8 +117,8 @@
       border: 1px solid #CBD5E1;
     }
     .kpi-total { background-color: #EFF6FF; color: #1E3A5F; }
-    .kpi-scolarite { background-color: #F0F9FF; color: #0369A1; }
-    .kpi-frais { background-color: #FAF5FF; color: #7E22CE; }
+    .kpi-guichet { background-color: #F0FDF4; color: #166534; }
+    .kpi-enligne { background-color: #EEF2FF; color: #4338CA; }
     .kpi-especes { background-color: #DCFCE7; color: #166534; }
     .kpi-banque { background-color: #FEF3C7; color: #92400E; }
     .kpi-count { background-color: #F1F5F9; color: #334155; }
@@ -186,7 +186,7 @@
       </td>
       <td style="width: 70%; text-align: center; vertical-align: middle;">
         <div class="inst-title" style="text-align: center;">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle" style="text-align: center; margin-top: 2px;">AGRÉÉ PAR L'ÉTAT ET LE FDFP &bull;Service de la Comptabilité & Direction Financière</div>
+        <div class="inst-subtitle" style="text-align: center; margin-top: 2px;">AGRÉÉ PAR L'ÉTAT ET LE FDFP &bull; Service de la Comptabilité & Direction Financière</div>
         <div class="inst-contacts" style="text-align: center; margin-top: 2px;">Tél : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99 &bull; Site web : www.groupe-eicg.net</div>
       </td>
       <td style="width: 15%; text-align: right; vertical-align: middle;">
@@ -210,23 +210,27 @@
   <!-- SECTION DES FILTRES APPLIQUÉS -->
   <table class="meta-box-table">
     <tr>
-      <td style="width: 20%;">
+      <td style="width: 17%;">
         <span class="meta-label">Année Académique :</span><br>
         <span class="meta-value"><?= htmlspecialchars($annee_libelle ?? 'Toutes les années') ?></span>
       </td>
-      <td style="width: 20%;">
+      <td style="width: 17%;">
         <span class="meta-label">Niveau d'Étude :</span><br>
         <span class="meta-value"><?= htmlspecialchars($niveau_libelle ?? 'Tous les niveaux') ?></span>
       </td>
-      <td style="width: 20%;">
+      <td style="width: 17%;">
         <span class="meta-label">Classe / Groupe :</span><br>
         <span class="meta-value"><?= htmlspecialchars($classe_libelle ?? 'Toutes les classes') ?></span>
       </td>
-      <td style="width: 20%;">
+      <td style="width: 16%;">
+        <span class="meta-label">Canal d'Opération :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($canal_libelle ?? 'Tous les canaux') ?></span>
+      </td>
+      <td style="width: 16%;">
         <span class="meta-label">Mode & Catégorie :</span><br>
         <span class="meta-value"><?= htmlspecialchars($mode_libelle ?? 'Tous') ?> (<?= htmlspecialchars($categorie_libelle ?? 'Toutes') ?>)</span>
       </td>
-      <td style="width: 20%;">
+      <td style="width: 17%;">
         <span class="meta-label">Période du Registre :</span><br>
         <span class="meta-value"><?= htmlspecialchars($periode_libelle ?? 'Toute la période') ?></span>
       </td>
@@ -240,13 +244,13 @@
         CUMUL ENCAISSÉ REGISTRE<br>
         <span style="font-size: 9.5pt; font-weight: bold;"><?= number_format($total_general ?? 0, 0, ',', ' ') ?> FCFA</span>
       </td>
-      <td class="kpi-scolarite" style="width: 16%;">
-        PART SCOLARITÉ<br>
-        <span style="font-size: 9pt; font-weight: bold;"><?= number_format($total_scolarite ?? 0, 0, ',', ' ') ?> FCFA</span>
+      <td class="kpi-guichet" style="width: 16%;">
+        ENCAISSÉ AU GUICHET<br>
+        <span style="font-size: 9pt; font-weight: bold;"><?= number_format($total_guichet ?? 0, 0, ',', ' ') ?> FCFA</span>
       </td>
-      <td class="kpi-frais" style="width: 16%;">
-        PART FRAIS ANNEXES<br>
-        <span style="font-size: 9pt; font-weight: bold;"><?= number_format($total_frais_annexes ?? 0, 0, ',', ' ') ?> FCFA</span>
+      <td class="kpi-enligne" style="width: 16%;">
+        ENCAISSÉ EN LIGNE<br>
+        <span style="font-size: 9pt; font-weight: bold;"><?= number_format($total_en_ligne ?? 0, 0, ',', ' ') ?> FCFA</span>
       </td>
       <td class="kpi-especes" style="width: 16%;">
         VERSEMENTS ESPÈCES<br>
@@ -254,7 +258,7 @@
       </td>
       <td class="kpi-banque" style="width: 16%;">
         MOBILES & BANQUE<br>
-        <span style="font-size: 9pt; font-weight: bold;"><?= number_format(($total_mobile_money + $total_banque) ?? 0, 0, ',', ' ') ?> FCFA</span>
+        <span style="font-size: 9pt; font-weight: bold;"><?= number_format((($total_mobile_money ?? 0) + ($total_banque ?? 0)), 0, ',', ' ') ?> FCFA</span>
       </td>
       <td class="kpi-count" style="width: 16%;">
         NBRE ENCAISSEMENTS<br>
@@ -268,20 +272,25 @@
     <thead>
       <tr>
         <th style="width: 3%;">N°</th>
-        <th style="width: 11%;">DATE & HEURE</th>
-        <th style="width: 12%;">N° REÇU</th>
-        <th style="width: 11%;">MATRICULE</th>
-        <th style="width: 20%; text-align: left;">NOM & PRÉNOMS ÉTUDIANT</th>
-        <th style="width: 11%;">CLASSE</th>
-        <th style="width: 14%; text-align: left;">LIBELLÉ OPÉRATION</th>
-        <th style="width: 8%;">MODE</th>
-        <th style="width: 10%;">RÉFÉRENCE</th>
-        <th style="width: 10%; text-align: right;">MONTANT VERSÉ</th>
+        <th style="width: 10%;">DATE & HEURE</th>
+        <th style="width: 10%;">N° REÇU</th>
+        <th style="width: 9%;">MATRICULE</th>
+        <th style="width: 18%; text-align: left;">NOM & PRÉNOMS ÉTUDIANT</th>
+        <th style="width: 9%;">CLASSE</th>
+        <th style="width: 7%;">CANAL</th>
+        <th style="width: 12%; text-align: left;">LIBELLÉ OPÉRATION</th>
+        <th style="width: 7%;">MODE</th>
+        <th style="width: 7%;">RÉFÉRENCE</th>
+        <th style="width: 8%; text-align: right;">MONTANT VERSÉ</th>
       </tr>
     </thead>
     <tbody>
       <?php if (!empty($paiements) && is_array($paiements)): ?>
         <?php foreach ($paiements as $idx => $p): ?>
+          <?php
+            $canalVal = strtolower($p['canal_paiement'] ?? 'guichet');
+            $isEnLigne = ($canalVal === 'en_ligne');
+          ?>
           <tr>
             <td style="text-align: center;"><?= $idx + 1 ?></td>
             <td style="text-align: center;"><?= date('d/m/Y H:i', strtotime($p['date_paiement'] ?? 'now')) ?></td>
@@ -289,6 +298,13 @@
             <td style="text-align: center; font-weight: bold;"><?= htmlspecialchars($p['matricule_etudiant'] ?? '-') ?></td>
             <td style="font-weight: bold;"><?= htmlspecialchars(mb_strtoupper(trim(($p['nom_etudiant'] ?? '') . ' ' . ($p['prenom_etudiant'] ?? '')))) ?></td>
             <td style="text-align: center;"><?= htmlspecialchars($p['libelle_classe'] ?? '-') ?></td>
+            <td style="text-align: center;">
+              <?php if ($isEnLigne): ?>
+                <span style="font-size: 6.5pt; font-weight: bold; color: #4338CA; background: #EEF2FF; padding: 1px 4px; border-radius: 3px; border: 0.5px solid #C7D2FE;">EN LIGNE</span>
+              <?php else: ?>
+                <span style="font-size: 6.5pt; font-weight: bold; color: #166534; background: #DCFCE7; padding: 1px 4px; border-radius: 3px; border: 0.5px solid #BBF7D0;">GUICHET</span>
+              <?php endif; ?>
+            </td>
             <td><?= htmlspecialchars($p['type_paiement'] ?? 'Versement Scolarité') ?></td>
             <td style="text-align: center;"><?= htmlspecialchars($p['mode_paiement'] ?? 'Espèces') ?></td>
             <td style="text-align: center; font-size: 7pt;"><?= htmlspecialchars($p['reference_paiement'] ?? '-') ?></td>
@@ -296,12 +312,12 @@
           </tr>
         <?php endforeach; ?>
         <tr class="total-row">
-          <td colspan="9" style="text-align: right; font-weight: bold;">TOTAL GÉNÉRAL DU REGISTRE DES ENCAISSEMENTS :</td>
+          <td colspan="10" style="text-align: right; font-weight: bold;">TOTAL GÉNÉRAL DU REGISTRE DES ENCAISSEMENTS :</td>
           <td style="text-align: right; font-weight: bold; font-size: 8.5pt; color: #000000;"><?= number_format($total_general ?? 0, 0, ',', ' ') ?> FCFA</td>
         </tr>
       <?php else: ?>
         <tr>
-          <td colspan="10" style="text-align: center; padding: 12px; color: #64748B;">Aucun encaissement enregistré pour les critères sélectionnés.</td>
+          <td colspan="11" style="text-align: center; padding: 12px; color: #64748B;">Aucun encaissement enregistré pour les critères sélectionnés.</td>
         </tr>
       <?php endif; ?>
     </tbody>

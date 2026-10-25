@@ -2161,6 +2161,7 @@ class PaiementController extends BaseController
         $anneeCode = $_GET['annee_code'] ?? '';
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
+        $canalPaiement = $_GET['canal_paiement'] ?? 'ALL';
         $modePaiement = $_GET['mode_paiement'] ?? 'ALL';
         $categoriePaiement = $_GET['categorie_paiement'] ?? 'ALL';
         $dateDebut = $_GET['date_debut'] ?? '';
@@ -2168,6 +2169,18 @@ class PaiementController extends BaseController
 
         $where = "WHERE p.statut_paiement != 'annule'";
         $params = [];
+
+        // Ségrégation stricte : par défaut, la comptabilité et le registre scolarité n'incluent pas les frais annexes
+        if (!empty($categoriePaiement) && $categoriePaiement !== 'ALL') {
+            if ($categoriePaiement === 'FRAIS_ANNEXES') {
+                $where .= " AND (p.categorie_paiement = 'FRAIS_ANNEXES' OR p.tranche_code = 'FRAIS_ANNEXES')";
+            } else {
+                $where .= " AND p.categorie_paiement = ?";
+                $params[] = $categoriePaiement;
+            }
+        } else {
+            $where .= " AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES') AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')";
+        }
 
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
             $where .= " AND (p.annee_code = ? OR i.annee_code = ?)";
@@ -2185,14 +2198,14 @@ class PaiementController extends BaseController
             $params[] = $classeCode;
         }
 
+        if (!empty($canalPaiement) && $canalPaiement !== 'ALL') {
+            $where .= " AND p.canal_paiement = ?";
+            $params[] = $canalPaiement;
+        }
+
         if (!empty($modePaiement) && $modePaiement !== 'ALL') {
             $where .= " AND p.mode_paiement = ?";
             $params[] = $modePaiement;
-        }
-
-        if (!empty($categoriePaiement) && $categoriePaiement !== 'ALL') {
-            $where .= " AND p.categorie_paiement = ?";
-            $params[] = $categoriePaiement;
         }
 
         if (!empty($dateDebut)) {
@@ -2208,7 +2221,7 @@ class PaiementController extends BaseController
         $sql = "
             SELECT 
                 p.id_paiement, p.code_paiement, p.montant_paiement, p.date_paiement, p.statut_paiement,
-                p.reference_paiement, p.type_paiement, p.categorie_paiement, p.mode_paiement, p.tranche_code,
+                p.reference_paiement, p.type_paiement, p.categorie_paiement, p.mode_paiement, p.canal_paiement, p.tranche_code,
                 i.code_inscription, i.affectation_etat,
                 e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant,
                 cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
@@ -2228,8 +2241,8 @@ class PaiementController extends BaseController
 
         // Traitement des statistiques et KPIs du registre
         $totalGeneral = 0;
-        $totalScolarite = 0;
-        $totalFraisAnnexes = 0;
+        $totalGuichet = 0;
+        $totalEnLigne = 0;
         $totalEspeces = 0;
         $totalMobileMoney = 0;
         $totalBanque = 0;
@@ -2238,11 +2251,11 @@ class PaiementController extends BaseController
             $mt = (float)$p['montant_paiement'];
             $totalGeneral += $mt;
 
-            $cat = strtoupper($p['categorie_paiement'] ?? 'SCOLARITE');
-            if ($cat === 'FRAIS_ANNEXES') {
-                $totalFraisAnnexes += $mt;
+            $canal = strtolower($p['canal_paiement'] ?? 'guichet');
+            if ($canal === 'en_ligne') {
+                $totalEnLigne += $mt;
             } else {
-                $totalScolarite += $mt;
+                $totalGuichet += $mt;
             }
 
             $mode = strtolower($p['mode_paiement'] ?? '');
@@ -2286,6 +2299,12 @@ class PaiementController extends BaseController
             $classeLibelle = $stmtC->fetchColumn() ?: $classeCode;
         }
 
+        // Intitulé Canal
+        $canalLibelle = 'Tous les canaux';
+        if (!empty($canalPaiement) && $canalPaiement !== 'ALL') {
+            $canalLibelle = ($canalPaiement === 'en_ligne') ? 'En Ligne' : 'Guichet';
+        }
+
         // Intitulé Mode
         $modeLibelle = 'Tous les modes';
         if (!empty($modePaiement) && $modePaiement !== 'ALL') {
@@ -2293,7 +2312,7 @@ class PaiementController extends BaseController
         }
 
         // Intitulé Catégorie
-        $categorieLibelle = 'Toutes les catégories';
+        $categorieLibelle = 'Scolarité';
         if (!empty($categoriePaiement) && $categoriePaiement !== 'ALL') {
             $categorieLibelle = ($categoriePaiement === 'FRAIS_ANNEXES') ? 'Frais Annexes' : 'Scolarité';
         }
@@ -2313,13 +2332,14 @@ class PaiementController extends BaseController
             'annee_libelle' => $anneeLibelle,
             'niveau_libelle' => $niveauLibelle,
             'classe_libelle' => $classeLibelle,
+            'canal_libelle' => $canalLibelle,
             'mode_libelle' => $modeLibelle,
             'categorie_libelle' => $categorieLibelle,
             'periode_libelle' => $periodeLibelle,
             'paiements' => $paiements,
             'total_general' => $totalGeneral,
-            'total_scolarite' => $totalScolarite,
-            'total_frais_annexes' => $totalFraisAnnexes,
+            'total_guichet' => $totalGuichet,
+            'total_en_ligne' => $totalEnLigne,
             'total_especes' => $totalEspeces,
             'total_mobile_money' => $totalMobileMoney,
             'total_banque' => $totalBanque,
