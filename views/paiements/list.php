@@ -880,13 +880,20 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
       </div>
 
       <!-- Pied de modal -->
-      <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px;">
-        <button type="button" class="btn btn-secondary btn-close-modal-encaissement" style="font-weight: 700; border-radius: 8px; padding: 10px 20px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
-          Annuler
-        </button>
-        <button type="submit" id="btn-submit-encaissement" class="btn btn-success" style="font-weight: 800; border-radius: 8px; padding: 10px 26px; background: #16A34A; border: none; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(22,163,74,0.3);">
-          <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser
-        </button>
+      <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div id="caisse-status-footer-note" style="<?= empty($isCaisseOuverte) ? 'display: inline-flex;' : 'display: none;' ?> align-items: center; gap: 8px; font-size: 12px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 12px; border-radius: 8px;">
+          <i data-lucide="lock" style="width: 15px; height: 15px; color: #D97706; flex-shrink: 0;"></i>
+          <span>Session de caisse fermée &bull; <a href="javascript:void(0)" class="btn-open-session-caisse" style="color: #1E3A5F; font-weight: 800; text-decoration: underline;">Ouvrir la caisse</a></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
+          <button type="button" class="btn btn-secondary btn-close-modal-encaissement" style="font-weight: 700; border-radius: 8px; padding: 10px 20px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+            Annuler
+          </button>
+          <button type="submit" id="btn-submit-encaissement" class="btn btn-success" 
+            <?= empty($isCaisseOuverte) ? 'disabled style="font-weight: 800; border-radius: 8px; padding: 10px 26px; background: #94A3B8; border: none; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; cursor: not-allowed; opacity: 0.65; box-shadow: none;" title="Session de caisse fermée : veuillez d\'abord ouvrir la caisse du jour pour encaisser en espèces."' : 'style="font-weight: 800; border-radius: 8px; padding: 10px 26px; background: #16A34A; border: none; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(22,163,74,0.3);"' ?>>
+            <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser
+          </button>
+        </div>
       </div>
     </form>
 
@@ -1242,6 +1249,75 @@ $(document).ready(function() {
   // =========================================================================
   var currentStudentSummary = null;
 
+  // Contrôle centralisé et dynamique de l'état du bouton "Valider & Encaisser"
+  function updateSubmitButtonState() {
+    var isCaisseActive = <?= !empty($isCaisseOuverte) ? 'true' : 'false' ?>;
+    var mode = $('#modal_select_mode').val() || 'espece';
+    var isCash = (mode === 'espece' || mode === 'especes' || mode === 'cash');
+    var inscrCode = $('#modal_select_inscription').val();
+    var montant = parseFloat($('#input-montant-versement').val() || 0);
+    var $optTranche = $('#modal_select_tranche').find('option:selected');
+    var isTrancheSoldee = $optTranche.length && ($optTranche.data('soldee') === '1' || $optTranche.data('soldee') === 1);
+
+    var $btn = $('#btn-submit-encaissement');
+    var $footerNote = $('#caisse-status-footer-note');
+    var $modeAlert = $('#mode-espece-caisse-alert');
+
+    var disableBtn = false;
+    var disableReason = '';
+
+    // 1. Session de caisse fermée avec mode Espèces
+    if (isCash && !isCaisseActive) {
+      disableBtn = true;
+      disableReason = "Session de caisse fermée : vous devez ouvrir la session de caisse du jour pour enregistrer un versement en espèces.";
+      $footerNote.css('display', 'inline-flex');
+      $modeAlert.slideDown(150);
+    } else {
+      $modeAlert.slideUp(150);
+      $footerNote.hide();
+    }
+
+    // 2. Règles de validation de saisie et de solde
+    if (!disableBtn) {
+      if (!inscrCode) {
+        disableBtn = true;
+        disableReason = "Veuillez d'abord sélectionner un étudiant.";
+      } else if (currentStudentSummary && currentStudentSummary.solde_restant <= 0) {
+        disableBtn = true;
+        disableReason = "Scolarité intégralement soldée pour cet étudiant.";
+      } else if (isTrancheSoldee) {
+        disableBtn = true;
+        disableReason = "Cette tranche de scolarité est déjà intégralement réglée.";
+      } else if (montant <= 0) {
+        disableBtn = true;
+        disableReason = "Le montant du versement doit être supérieur à 0 FCFA.";
+      }
+    }
+
+    // 3. Application du statut visuel et d'accessibilité sur le bouton
+    if (disableBtn) {
+      $btn.prop('disabled', true)
+          .css({
+            'background': '#94A3B8',
+            'cursor': 'not-allowed',
+            'opacity': '0.65',
+            'box-shadow': 'none'
+          })
+          .attr('title', disableReason);
+    } else {
+      $btn.prop('disabled', false)
+          .css({
+            'background': '#16A34A',
+            'cursor': 'pointer',
+            'opacity': '1',
+            'box-shadow': '0 2px 6px rgba(22,163,74,0.3)'
+          })
+          .removeAttr('title');
+    }
+
+    if (window.lucide) lucide.createIcons();
+  }
+
   function openEncaissementModal(preselectedCode) {
     $('#modal-encaisser-scolarite').css('display', 'flex');
     if ($.fn.select2) {
@@ -1282,6 +1358,7 @@ $(document).ready(function() {
     if (preselectedCode) {
       $('#modal_select_inscription').val(preselectedCode).trigger('change');
     }
+    updateSubmitButtonState();
     if (window.lucide) lucide.createIcons();
   }
 
@@ -1299,6 +1376,7 @@ $(document).ready(function() {
     $('#encaisse-student-summary-card').hide();
     $('#encaisse-payment-inputs-section').hide();
     currentStudentSummary = null;
+    updateSubmitButtonState();
   }
 
   $('#btn-open-encaissement-modal').on('click', function() {
@@ -1424,17 +1502,17 @@ $(document).ready(function() {
 
           if (d.solde_restant <= 0) {
             $('#montant-max-hint').html('<span style="color:#15803D; font-weight:800;">🎉 Scolarité intégralement soldée pour cet étudiant. Aucun versement supplémentaire attendu.</span>');
-            $('#btn-submit-encaissement').prop('disabled', true);
-          } else {
-            $('#btn-submit-encaissement').prop('disabled', false);
           }
+          updateSubmitButtonState();
 
           if (window.lucide) lucide.createIcons();
         } else {
+          updateSubmitButtonState();
           showEncaissementError(res.message || 'Impossible de récupérer la situation financière de cet étudiant.');
         }
       },
       error: function() {
+        updateSubmitButtonState();
         showEncaissementError('Erreur lors de la communication avec le serveur.');
       }
     });
@@ -1442,13 +1520,12 @@ $(document).ready(function() {
 
   // Changement de mode de paiement
   $('#modal_select_mode').on('change', function() {
-    var mode = $(this).val();
-    var isCaisseActive = <?= !empty($isCaisseOuverte) ? 'true' : 'false' ?>;
-    if ((mode === 'espece' || mode === 'especes' || mode === 'cash') && !isCaisseActive) {
-      $('#mode-espece-caisse-alert').slideDown(150);
-    } else {
-      $('#mode-espece-caisse-alert').slideUp(150);
-    }
+    updateSubmitButtonState();
+  });
+
+  // Changement de montant
+  $('#input-montant-versement').on('input change', function() {
+    updateSubmitButtonState();
   });
 
   // Changement de tranche
@@ -1469,11 +1546,10 @@ $(document).ready(function() {
 
     if (isSoldee) {
       $('#montant-max-hint').html('<span style="color:#15803D; font-weight:800;">🎉 Cette tranche est déjà intégralement réglée.</span>');
-      $('#btn-submit-encaissement').prop('disabled', true);
     } else {
       $('#montant-max-hint').html('Montant fixé pour la tranche : <strong style="color: #15803D;">' + trancheVal.toLocaleString('fr-FR') + ' FCFA</strong>');
-      $('#btn-submit-encaissement').prop('disabled', false);
     }
+    updateSubmitButtonState();
 
     if (limite && limite !== 'Non définie') {
       $('#tranche-hint-info').html('📅 Date d\'échéance : <strong>' + escapeHtml(limite) + '</strong>');
@@ -1576,7 +1652,8 @@ $(document).ready(function() {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
       dataType: 'json',
       success: function(res) {
-        $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
+        $btn.html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
+        updateSubmitButtonState();
         if (window.lucide) lucide.createIcons();
 
         if (res.status === 1) {
@@ -1606,7 +1683,8 @@ $(document).ready(function() {
         }
       },
       error: function(xhr) {
-        $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
+        $btn.html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
+        updateSubmitButtonState();
         if (window.lucide) lucide.createIcons();
         var errMsg = 'Une erreur est survenue lors de la communication avec le serveur.';
         if (xhr.responseJSON && xhr.responseJSON.message) {

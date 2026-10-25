@@ -564,13 +564,20 @@
 
       </div>
 
-      <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 14px 24px; display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-secondary btn-close-modal-encaissement" style="font-weight: 700; border-radius: 8px; padding: 8px 16px;">
-          Annuler
-        </button>
-        <button type="submit" id="btn-submit-encaissement" class="btn btn-success" style="font-weight: 800; border-radius: 8px; padding: 8px 20px; background: #16A34A; border: none; color: #FFF;">
-          <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Valider & Encaisser
-        </button>
+      <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+        <div id="caisse-status-footer-note" style="<?= empty($isCaisseOuverte) ? 'display: inline-flex;' : 'display: none;' ?> align-items: center; gap: 6px; font-size: 11.5px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; padding: 5px 10px; border-radius: 6px;">
+          <i data-lucide="lock" style="width: 14px; height: 14px; color: #D97706; flex-shrink: 0;"></i>
+          <span>Session de caisse fermée &bull; Ouvrez la caisse du jour pour encaisser en espèces</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+          <button type="button" class="btn btn-secondary btn-close-modal-encaissement" style="font-weight: 700; border-radius: 8px; padding: 8px 16px;">
+            Annuler
+          </button>
+          <button type="submit" id="btn-submit-encaissement" class="btn btn-success" 
+            <?= empty($isCaisseOuverte) ? 'disabled style="font-weight: 800; border-radius: 8px; padding: 8px 20px; background: #94A3B8; border: none; color: #FFF; cursor: not-allowed; opacity: 0.65;" title="Session de caisse fermée : veuillez d\'abord ouvrir la caisse du jour."' : 'style="font-weight: 800; border-radius: 8px; padding: 8px 20px; background: #16A34A; border: none; color: #FFF; cursor: pointer;"' ?>>
+            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Valider & Encaisser
+          </button>
+        </div>
       </div>
     </form>
 
@@ -1001,6 +1008,41 @@ function onInscriptionSelected(inscriptionCode) {
     });
 }
 
+function updateSubmitButtonStateCompta() {
+    const isCaisseActive = <?= !empty($isCaisseOuverte) ? 'true' : 'false' ?>;
+    const selMode = document.getElementById('modal_select_mode');
+    const mode = selMode ? selMode.value : 'espece';
+    const isCash = (mode === 'espece' || mode === 'especes' || mode === 'cash');
+    const btnSubmit = document.getElementById('btn-submit-encaissement');
+    const note = document.getElementById('caisse-status-footer-note');
+
+    if (!btnSubmit) return;
+
+    if (isCash && !isCaisseActive) {
+        btnSubmit.disabled = true;
+        btnSubmit.style.background = '#94A3B8';
+        btnSubmit.style.cursor = 'not-allowed';
+        btnSubmit.style.opacity = '0.65';
+        btnSubmit.title = "Session de caisse fermée : veuillez d'abord ouvrir la caisse du jour pour encaisser en espèces.";
+        if (note) note.style.display = 'inline-flex';
+    } else {
+        btnSubmit.disabled = false;
+        btnSubmit.style.background = '#16A34A';
+        btnSubmit.style.cursor = 'pointer';
+        btnSubmit.style.opacity = '1';
+        btnSubmit.removeAttribute('title');
+        if (note) note.style.display = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const selMode = document.getElementById('modal_select_mode');
+    if (selMode) {
+        selMode.addEventListener('change', updateSubmitButtonStateCompta);
+    }
+    updateSubmitButtonStateCompta();
+});
+
 function submitEncaissementForm(form) {
     const btnSubmit = document.getElementById('btn-submit-encaissement');
     if (btnSubmit) { btnSubmit.disabled = true; }
@@ -1012,7 +1054,7 @@ function submitEncaissementForm(form) {
     })
     .then(r => r.json())
     .then(res => {
-        if (btnSubmit) { btnSubmit.disabled = false; }
+        if (btnSubmit) { updateSubmitButtonStateCompta(); }
         if (res.status === 1 || res.success) {
             document.getElementById('modal-encaisse-versement').style.display = 'none';
             loadComptaData();
@@ -1022,7 +1064,7 @@ function submitEncaissementForm(form) {
         }
     })
     .catch(err => {
-        if (btnSubmit) { btnSubmit.disabled = false; }
+        if (btnSubmit) { updateSubmitButtonStateCompta(); }
         console.error("Erreur encaissement :", err);
         alert("Une erreur de communication est survenue avec le serveur.");
     });
