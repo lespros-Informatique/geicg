@@ -1059,7 +1059,32 @@ $(document).ready(function() {
         return '<code style="font-weight:700; color:#334155; background:#F1F5F9; border:1px solid #CBD5E1; padding:3px 7px; border-radius:6px; font-size:11.5px;">' + escapeHtml(d || '-') + '</code>';
       } },
       { data: 'etudiant_nom', render: function(d, type, row) {
-        return '<div style="font-weight:700; color:#0F172A; font-size:13.5px;">' + escapeHtml(d || 'Étudiant non identifié') + '</div>';
+        var nom = (row && row.nom_etudiant) ? String(row.nom_etudiant).trim() : '';
+        var prenom = (row && row.prenom_etudiant) ? String(row.prenom_etudiant).trim() : '';
+
+        if (type === 'filter' || type === 'sort') {
+          return (nom + ' ' + prenom).trim() || d || '';
+        }
+
+        if (nom && prenom) {
+          return '<div style="line-height:1.3; white-space:normal; min-width:140px;">' +
+                 '  <div style="font-weight:800; color:#0F172A; font-size:13px; text-transform:uppercase;">' + escapeHtml(nom) + '</div>' +
+                 '  <div style="font-weight:600; color:#475569; font-size:12px; margin-top:2px;">' + escapeHtml(prenom) + '</div>' +
+                 '</div>';
+        }
+
+        var full = (d || (row && row.etudiant_nom) || 'Étudiant non identifié').trim();
+        var parts = full.split(' ');
+        if (parts.length > 1) {
+          var firstPart = parts[0];
+          var otherParts = parts.slice(1).join(' ');
+          return '<div style="line-height:1.3; white-space:normal; min-width:140px;">' +
+                 '  <div style="font-weight:800; color:#0F172A; font-size:13px; text-transform:uppercase;">' + escapeHtml(firstPart) + '</div>' +
+                 '  <div style="font-weight:600; color:#475569; font-size:12px; margin-top:2px;">' + escapeHtml(otherParts) + '</div>' +
+                 '</div>';
+        }
+
+        return '<div style="font-weight:700; color:#0F172A; font-size:13px; white-space:normal; min-width:140px;">' + escapeHtml(full) + '</div>';
       } },
       { data: 'libelle_classe', width: '110px', render: function(d) {
         return '<span style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:3px 8px; border-radius:6px; font-size:12px;">' + escapeHtml(d || '-') + '</span>';
