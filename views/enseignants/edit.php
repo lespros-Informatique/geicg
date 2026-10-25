@@ -198,49 +198,35 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.status === 1 || res.success) {
-          var successMsg = res.message || 'Enseignant enregistré avec succès !';
-          try {
-            sessionStorage.setItem('flash_toast', JSON.stringify({ message: successMsg, type: 'success' }));
-          } catch(e) {}
-
-          if (window.toastr) {
-            toastr.success(successMsg);
-          } else if (typeof showToast === 'function') {
-            showToast(successMsg, 'success');
-          } else if (window.Swal) {
-            Swal.fire({ icon: 'success', title: 'Succès', html: successMsg, timer: 1500, showConfirmButton: false });
-          }
-
           var targetUrl = res.redirect || '<?= RACINE ?>enseignant/list';
-          setTimeout(function() {
-            window.location.href = targetUrl;
-          }, 800);
+          window.location.href = targetUrl;
         } else {
           $btn.prop('disabled', false).html(originalText);
           if (window.lucide) lucide.createIcons();
           var errMsg = res.message || 'Erreur lors de l\'enregistrement.';
-          if (window.toastr) {
-            toastr.error(errMsg);
-          } else if (typeof showToast === 'function') {
+          if (typeof showToast === 'function') {
             showToast(errMsg, 'error');
-          } else if (window.Swal) {
-            Swal.fire({ icon: 'error', title: 'Erreur', html: errMsg });
+          } else if (window.toastr) {
+            toastr.error(errMsg);
           }
         }
       },
       error: function(xhr) {
         $btn.prop('disabled', false).html(originalText);
         if (window.lucide) lucide.createIcons();
-        var msg = 'Erreur réseau lors de la communication avec le serveur.';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-          msg = xhr.responseJSON.message;
-        }
-        if (window.toastr) {
-          toastr.error(msg);
-        } else if (typeof showToast === 'function') {
+        var msg = 'Erreur lors de l\'enregistrement';
+        try {
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            msg = xhr.responseJSON.message;
+          } else if (xhr.responseText) {
+            var json = JSON.parse(xhr.responseText);
+            if (json && json.message) msg = json.message;
+          }
+        } catch(e) {}
+        if (typeof showToast === 'function') {
           showToast(msg, 'error');
-        } else if (window.Swal) {
-          Swal.fire({ icon: 'error', title: 'Erreur réseau', text: msg });
+        } else if (window.toastr) {
+          toastr.error(msg);
         }
       }
     });

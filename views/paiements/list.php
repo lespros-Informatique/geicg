@@ -1616,29 +1616,19 @@ $(document).ready(function() {
       success: function(res) {
         if (res.status === 1 || res.success) {
           var successMsg = res.message || 'Paiement annulé avec succès';
-          if (window.toastr) {
-            toastr.success(successMsg);
-          } else if (typeof showToast === 'function') {
+          if (typeof showToast === 'function') {
             showToast(successMsg, 'success');
-          } else if (window.Swal) {
-            Swal.fire({
-              icon: 'success',
-              title: 'Paiement annulé',
-              text: successMsg,
-              timer: 2000,
-              showConfirmButton: false
-            });
+          } else if (window.toastr) {
+            toastr.success(successMsg);
           }
           table.ajax.reload(null, false);
           refreshKpis();
         } else {
           var errMsg = res.message || 'Erreur lors de l\'annulation du paiement';
-          if (window.toastr) {
-            toastr.error(errMsg);
-          } else if (typeof showToast === 'function') {
+          if (typeof showToast === 'function') {
             showToast(errMsg, 'error');
-          } else if (window.Swal) {
-            Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
+          } else if (window.toastr) {
+            toastr.error(errMsg);
           }
         }
       },
@@ -1648,12 +1638,10 @@ $(document).ready(function() {
           var json = JSON.parse(xhr.responseText);
           if (json && json.message) msg = json.message;
         } catch (e) {}
-        if (window.toastr) {
-          toastr.error(msg);
-        } else if (typeof showToast === 'function') {
+        if (typeof showToast === 'function') {
           showToast(msg, 'error');
-        } else if (window.Swal) {
-          Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
+        } else if (window.toastr) {
+          toastr.error(msg);
         }
       }
     });

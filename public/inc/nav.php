@@ -2,6 +2,7 @@
   // Récupération dynamique de l'année académique active
   $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
   $activeAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Aucune année';
+  $dbNav = null;
 
   try {
       $dbNav = (new Database())->getCon();
@@ -48,12 +49,10 @@
     (function() {
       function fireFlashSuccess() {
         var msg = <?= json_encode($_SESSION['flash_success']) ?>;
-        if (typeof toastr !== 'undefined') {
-          toastr.success(msg);
-        } else if (typeof showToast === 'function') {
+        if (typeof showToast === 'function') {
           showToast(msg, 'success');
-        } else if (typeof Swal !== 'undefined') {
-          Swal.fire({ icon: 'success', title: 'Succès', html: msg, timer: 2500, showConfirmButton: false });
+        } else if (typeof toastr !== 'undefined') {
+          toastr.success(msg);
         }
       }
       if (document.readyState === 'loading') {
@@ -71,12 +70,10 @@
     (function() {
       function fireFlashError() {
         var msg = <?= json_encode($_SESSION['flash_error']) ?>;
-        if (typeof toastr !== 'undefined') {
-          toastr.error(msg);
-        } else if (typeof showToast === 'function') {
+        if (typeof showToast === 'function') {
           showToast(msg, 'error');
-        } else if (typeof Swal !== 'undefined') {
-          Swal.fire({ icon: 'error', title: 'Erreur', html: msg });
+        } else if (typeof toastr !== 'undefined') {
+          toastr.error(msg);
         }
       }
       if (document.readyState === 'loading') {

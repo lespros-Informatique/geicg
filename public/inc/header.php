@@ -48,26 +48,66 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 
     <script src="<?= RACINE ?>public/assets/js/jquery.min.js"></script>
+    <script src="<?= RACINE ?>public/json/func.js?v=<?= @filemtime(__DIR__ . '/../../public/json/func.js') ?: time() ?>"></script>
     <script src="<?= RACINE ?>public/assets/js/toastr.min.js"></script>
     <script src="<?= RACINE ?>public/assets/js/sweetalert2.all.min.js"></script>
     <script src="<?= RACINE ?>public/assets/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        if (typeof toastr !== 'undefined') {
-            toastr.options = {
-                closeButton: true,
-                progressBar: true,
-                positionClass: "toast-top-right",
-                preventDuplicates: true,
-                timeOut: 4500,
-                extendedTimeOut: 1500,
-                showEasing: "swing",
-                hideEasing: "linear",
-                showMethod: "fadeIn",
-                hideMethod: "fadeOut"
+        // Configuration & Bridge Toastr vers le modèle showToast de semestre/list
+        (function() {
+            if (typeof toastr !== 'undefined') {
+                toastr.options = {
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: "toast-top-right",
+                    preventDuplicates: true,
+                    timeOut: 4500,
+                    extendedTimeOut: 1500,
+                    showEasing: "swing",
+                    hideEasing: "linear",
+                    showMethod: "fadeIn",
+                    hideMethod: "fadeOut"
+                };
+            }
+
+            // Définition de window.toastr unifié avec showToast (Modèle semestre/list)
+            window.toastr = window.toastr || {};
+            var origSuccess = window.toastr.success;
+            var origError = window.toastr.error;
+            var origWarning = window.toastr.warning;
+            var origInfo = window.toastr.info;
+
+            window.toastr.success = function(msg, title) {
+                if (typeof showToast === 'function') {
+                    showToast(msg, 'success', title);
+                } else if (typeof origSuccess === 'function') {
+                    origSuccess(msg, title);
+                }
             };
-        }
+            window.toastr.error = function(msg, title) {
+                if (typeof showToast === 'function') {
+                    showToast(msg, 'error', title);
+                } else if (typeof origError === 'function') {
+                    origError(msg, title);
+                }
+            };
+            window.toastr.warning = function(msg, title) {
+                if (typeof showToast === 'function') {
+                    showToast(msg, 'warning', title);
+                } else if (typeof origWarning === 'function') {
+                    origWarning(msg, title);
+                }
+            };
+            window.toastr.info = function(msg, title) {
+                if (typeof showToast === 'function') {
+                    showToast(msg, 'info', title);
+                } else if (typeof origInfo === 'function') {
+                    origInfo(msg, title);
+                }
+            };
+        })();
     </script>
     <style>
         /* TOASTR VISIBILITY & PREMIUM DESIGN SAFEGUARD */

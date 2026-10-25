@@ -114,19 +114,19 @@ $(document).ready(function() {
       success: function(res) {
         if (res.status === 1 || res.success) {
           var msg = res.message || 'Statut mis à jour avec succès';
-          if (window.toastr) toastr.success(msg);
-          else if (typeof showToast === 'function') showToast(msg, 'success');
+          if (typeof showToast === 'function') showToast(msg, 'success');
+          else if (window.toastr) toastr.success(msg);
           table.ajax.reload(null, false);
         } else {
           var errMsg = res.message || 'Erreur lors du changement de statut';
-          if (window.toastr) toastr.error(errMsg);
-          else if (typeof showToast === 'function') showToast(errMsg, 'error');
+          if (typeof showToast === 'function') showToast(errMsg, 'error');
+          else if (window.toastr) toastr.error(errMsg);
           $input.prop('checked', !isChecked);
         }
       },
       error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
-        else if (typeof showToast === 'function') showToast('Erreur réseau', 'error');
+        if (typeof showToast === 'function') showToast('Erreur réseau', 'error');
+        else if (window.toastr) toastr.error('Erreur réseau');
         $input.prop('checked', !isChecked);
       }
     });

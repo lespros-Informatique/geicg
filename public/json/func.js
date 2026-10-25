@@ -58,8 +58,12 @@ function showToast(message, type = 'success', title = null) {
         document.body.appendChild(container);
     }
 
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = message;
+    const cleanMsg = tempDiv.textContent.trim().toLowerCase();
+
     const duplicate = [...container.querySelectorAll('.toast__message')]
-        .find(el => el.textContent.trim() === message.trim());
+        .find(el => el.textContent.trim().toLowerCase() === cleanMsg);
     if (duplicate) return;
 
     const theme = {
