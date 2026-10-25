@@ -251,7 +251,7 @@ if (empty($logoSrc)) {
 
 .student-photo-box {
   border: 1px solid #000000;
-  width: 95px;
+  width: 100px;
   height: 115px;
   float: right;
   margin-left: 12px;

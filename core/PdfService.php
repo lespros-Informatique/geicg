@@ -77,6 +77,11 @@ class PdfService
         $mpdf->WriteHTML($html);
 
         $dest = $options['destination'] ?? ($download ? \Mpdf\Output\Destination::DOWNLOAD : \Mpdf\Output\Destination::INLINE);
+        if (!headers_sent()) {
+            header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
         $mpdf->Output($filename, $dest);
     }
 

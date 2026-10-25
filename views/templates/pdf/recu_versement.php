@@ -119,10 +119,11 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       font-size: 10.5px;
     }
     .photo-box {
-      width: 75px;
+      width: 80px;
       height: 90px;
       border: 1px solid #000000;
       object-fit: cover;
+      display: inline-block;
     }
     .val-bold {
       font-weight: bold;
@@ -293,11 +294,13 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photo_etudiant)): ?>
-          <img src="<?= $photo_etudiant ?>" class="photo-box">
-        <?php else: ?>
-          <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 90px; color: #94A3B8; font-size: 9px;">PHOTO</div>
-        <?php endif; ?>
+        <div style="display: inline-block; width: 80px; text-align: right;">
+          <?php if (!empty($photo_etudiant)): ?>
+            <img src="<?= $photo_etudiant ?>" width="80" height="90" class="photo-box" style="width: 80px; height: 90px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
+          <?php else: ?>
+            <div class="photo-box" style="width: 80px; height: 90px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 90px; color: #94A3B8; font-size: 9px; display: inline-block;">PHOTO</div>
+          <?php endif; ?>
+        </div>
       </td>
     </tr>
   </table>
@@ -440,11 +443,13 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photo_etudiant)): ?>
-          <img src="<?= $photo_etudiant ?>" class="photo-box" style="height: 80px;">
-        <?php else: ?>
-          <div class="photo-box" style="height: 80px; background: #F1F5F9; text-align: center; line-height: 80px; color: #94A3B8; font-size: 8.5px;">PHOTO</div>
-        <?php endif; ?>
+        <div style="display: inline-block; width: 80px; text-align: right;">
+          <?php if (!empty($photo_etudiant)): ?>
+            <img src="<?= $photo_etudiant ?>" width="80" height="80" class="photo-box" style="width: 80px; height: 80px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
+          <?php else: ?>
+            <div class="photo-box" style="width: 80px; height: 80px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 80px; color: #94A3B8; font-size: 8.5px; display: inline-block;">PHOTO</div>
+          <?php endif; ?>
+        </div>
       </td>
     </tr>
   </table>
