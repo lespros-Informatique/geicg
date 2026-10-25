@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../public/inc/header.php';
 
 $item = isset($item) ? $item : [];
+$encryptedId = $encryptedId ?? '';
 $montantOp = (float)($item['montant_paye'] ?? ($item['montant_paiement'] ?? 0));
 $scolarite = (float)($scolarite ?? ($item['montant_scolarite_inscription'] ?? 0));
 $totalPayeCumul = (float)($totalPayeCumul ?? 0);
@@ -511,7 +512,9 @@ if (empty($logoSrc)) {
               </span>
             </td>
             <td style="text-align: right; vertical-align: top;">
-              <div style="display: inline-block; text-align: center; margin-bottom: 3px;">
+              <div style="font-weight: bold; font-size: 13px; margin-top: 2px;">CAISSIER(RE)</div>
+              <div style="font-size: 12px; font-weight: 600;"><?= htmlspecialchars($caissierNom) ?></div>
+              <div style="display: inline-block; text-align: center; margin-top: 4px;">
                 <div style="line-height: 1;">
                   <?= generatePicqerBarcodeHtml($barcodeCode, 32, 1.35) ?>
                 </div>
@@ -519,8 +522,6 @@ if (empty($logoSrc)) {
                   * <?= htmlspecialchars($barcodeCode) ?> *
                 </div>
               </div>
-              <div style="font-weight: bold; font-size: 13px; margin-top: 2px;">CAISSIER(RE)</div>
-              <div style="font-size: 12px; font-weight: 600;"><?= htmlspecialchars($caissierNom) ?></div>
             </td>
           </tr>
         </table>
@@ -614,7 +615,9 @@ if (empty($logoSrc)) {
               </span>
             </td>
             <td style="text-align: right; vertical-align: top;">
-              <div style="display: inline-block; text-align: center; margin-bottom: 3px;">
+              <div style="font-weight: bold; font-size: 13px; margin-top: 2px;">CAISSIER(RE)</div>
+              <div style="font-size: 12px; font-weight: 600;"><?= htmlspecialchars($caissierNom) ?></div>
+              <div style="display: inline-block; text-align: center; margin-top: 4px;">
                 <div style="line-height: 1;">
                   <?= generatePicqerBarcodeHtml($barcodeCode, 32, 1.35) ?>
                 </div>
@@ -622,8 +625,6 @@ if (empty($logoSrc)) {
                   * <?= htmlspecialchars($barcodeCode) ?> *
                 </div>
               </div>
-              <div style="font-weight: bold; font-size: 13px; margin-top: 2px;">CAISSIER(RE)</div>
-              <div style="font-size: 12px; font-weight: 600;"><?= htmlspecialchars($caissierNom) ?></div>
             </td>
           </tr>
         </table>

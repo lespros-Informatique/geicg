@@ -1,3 +1,21 @@
+<?php
+// Helper code-barres officiel Picqer & fallback natif mPDF
+if (!function_exists('generatePicqerBarcodeHtml')) {
+    function generatePicqerBarcodeHtml($code, $height = 26, $widthFactor = 1.0) {
+        $code = (string)($code ?? '');
+        if (empty($code)) return '';
+        try {
+            if (class_exists('\\Picqer\\Barcode\\BarcodeGeneratorPNG')) {
+                $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+                $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, $widthFactor, $height);
+                return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; width:auto; max-width:180px;">';
+            }
+        } catch (\Throwable $e) {}
+        return '<barcode code="' . htmlspecialchars($code) . '" type="C128A" size="0.6" height="0.6" />';
+    }
+}
+$barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? $numero_recu : ($code_barre_val ?? $ref_caiss ?? ''));
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -253,9 +271,9 @@
         <table style="width: 100%;">
           <tr>
             <td style="width: 50%;">
-              N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? 'GE-25260178') ?></span>
+              N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
             </td>
-            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(date('d/m/Y', strtotime($date_operation ?? 'now'))) ?></td>
+            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(!empty($date_operation) ? date('d/m/Y', strtotime($date_operation)) : date('d/m/Y')) ?></td>
           </tr>
           <tr>
             <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
@@ -266,7 +284,7 @@
           </tr>
           <tr>
             <td>Type d'Opération : <span class="val-bold"><?= htmlspecialchars($type_operation ?? '-') ?></span></td>
-            <td>Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? 'AFFECTE') ?></span></td>
+            <td>Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
           </tr>
           <tr>
             <td>Montant de l'Opération : <span class="val-bold"><?= number_format($montant_operation ?? 0, 0, ',', ' ') ?>CFA</span></td>
@@ -348,9 +366,17 @@
           <span class="badge-solde-red" style="background: #A6A6A6; color: #000;"><?= $badgeText ?></span>
         <?php endif; ?>
       </td>
-      <td style="width: 40%; text-align: right;">
+      <td style="width: 40%; text-align: right; vertical-align: top;">
         <div class="signature-title">CAISSIER(RE)</div>
-        <div class="signature-name"><?= htmlspecialchars($caissier_nom ?? 'Mlle KONE N\'diatty A. Mariam') ?></div>
+        <div class="signature-name"><?= htmlspecialchars($caissier_nom ?? '') ?></div>
+        <?php if (!empty($barcodeVal)): ?>
+          <div style="margin-top: 4px; text-align: right;">
+            <div style="display: inline-block; text-align: center;">
+              <?= generatePicqerBarcodeHtml($barcodeVal, 26, 1.0) ?>
+              <div style="font-size: 8px; font-family: 'Courier New', monospace; font-weight: bold; margin-top: 1px;">* <?= htmlspecialchars($barcodeVal) ?> *</div>
+            </div>
+          </div>
+        <?php endif; ?>
       </td>
     </tr>
   </table>
@@ -364,12 +390,12 @@
   <table style="width: 100%;" class="footer-note">
     <tr>
       <td style="width: 70%;">Ce reçu est à conserver. Pour toute réclamation il doit être présenté.</td>
-      <td style="width: 30%; text-align: right;"><?= htmlspecialchars($date_impression ?? date('26/08/2026 13:16:25')) ?></td>
+      <td style="width: 30%; text-align: right;"><?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></td>
     </tr>
   </table>
 
   <div class="dashed-sep"></div>
-  <div class="ref-caiss">Réf_caiss <?= htmlspecialchars($ref_caiss ?? 'GE-25260178ScoFOF45999ScaisKON') ?></div>
+  <div class="ref-caiss"><?= !empty($ref_caiss) ? ('Réf_caiss ' . htmlspecialchars($ref_caiss)) : '' ?></div>
 
   <!-- ========================================================================= -->
   <!-- BANNIÈRE 2 : COPIE REÇU POUR ARCHIVAGE                                      -->
@@ -386,9 +412,9 @@
         <table style="width: 100%;">
           <tr>
             <td style="width: 50%;">
-              N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? 'GE-25260178') ?></span>
+              N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
             </td>
-            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(date('d/m/Y', strtotime($date_operation ?? 'now'))) ?></td>
+            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(!empty($date_operation) ? date('d/m/Y', strtotime($date_operation)) : date('d/m/Y')) ?></td>
           </tr>
           <tr>
             <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
@@ -430,17 +456,25 @@
         Date du Prochain Payement : 
         <span class="badge-solde-gray"><?= $badgeText ?></span>
       </td>
-      <td style="width: 40%; text-align: right;">
+      <td style="width: 40%; text-align: right; vertical-align: top;">
         <div class="signature-title">CAISSIER(RE)</div>
-        <div class="signature-name"><?= htmlspecialchars($caissier_nom ?? 'Mlle KONE N\'diatty A. Mariam') ?></div>
+        <div class="signature-name"><?= htmlspecialchars($caissier_nom ?? '') ?></div>
+        <?php if (!empty($barcodeVal)): ?>
+          <div style="margin-top: 4px; text-align: right;">
+            <div style="display: inline-block; text-align: center;">
+              <?= generatePicqerBarcodeHtml($barcodeVal, 26, 1.0) ?>
+              <div style="font-size: 8px; font-family: 'Courier New', monospace; font-weight: bold; margin-top: 1px;">* <?= htmlspecialchars($barcodeVal) ?> *</div>
+            </div>
+          </div>
+        <?php endif; ?>
       </td>
     </tr>
   </table>
 
   <table style="width: 100%; font-size: 9px; margin-top: 10px;">
     <tr>
-      <td style="width: 70%; font-style: italic;"><?= htmlspecialchars($ref_caiss ?? 'GE-25260178ScoFOF45999ScaisKON') ?></td>
-      <td style="width: 30%; text-align: right;"><?= htmlspecialchars($date_impression ?? date('26/08/2026 13:16:25')) ?></td>
+      <td style="width: 70%; font-style: italic;"><?= !empty($ref_caiss) ? ('Réf_caiss ' . htmlspecialchars($ref_caiss)) : '' ?></td>
+      <td style="width: 30%; text-align: right;"><?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></td>
     </tr>
   </table>
 
