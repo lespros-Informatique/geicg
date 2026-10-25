@@ -289,9 +289,8 @@ class PaiementController extends BaseController
             $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
             $taux = ($totalAttendu > 0) ? min(100, round(($totalEncaisse / $totalAttendu) * 100, 1)) : 0;
 
-            $statutInscription = $ins['statut_inscription'] ?? 'valide';
             $statusCode = 'non_paye';
-            if ($statutInscription === 'solde' || ($totalAttendu > 0 && $totalEncaisse >= $totalAttendu) || ($soldeRestant <= 0 && $totalAttendu > 0)) {
+            if (($totalAttendu > 0 && $totalEncaisse >= $totalAttendu) || ($soldeRestant <= 0 && $totalAttendu > 0)) {
                 $statusCode = 'solde';
             } elseif ($totalEncaisse > 0) {
                 $statusCode = 'partiel';
@@ -1330,11 +1329,20 @@ class PaiementController extends BaseController
             $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
             if ($ins) {
                 $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
-                $stmtTot = $db->prepare("SELECT SUM(montant_paiement) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+                $stmtTot = $db->prepare("
+                    SELECT SUM(montant_paiement) 
+                    FROM paiements 
+                    WHERE inscription_code = ? 
+                      AND statut_paiement != 'annule'
+                      AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+                      AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+                ");
                 $stmtTot->execute([$inscriptionCode]);
                 $totalPayeCumul = (float)($stmtTot->fetchColumn() ?: 0);
                 if ($totalPayeCumul >= $scolariteDue && $scolariteDue > 0) {
                     $db->prepare("UPDATE inscriptions SET statut_inscription = 'solde' WHERE code_inscription = ?")->execute([$inscriptionCode]);
+                } else {
+                    $db->prepare("UPDATE inscriptions SET statut_inscription = 'valide' WHERE code_inscription = ? AND statut_inscription = 'solde'")->execute([$inscriptionCode]);
                 }
             }
 
@@ -1415,12 +1423,21 @@ class PaiementController extends BaseController
             $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
             if ($ins) {
                 $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
-                $stmtTot = $db->prepare("SELECT SUM(montant_paiement) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
+                $stmtTot = $db->prepare("
+                    SELECT SUM(montant_paiement) 
+                    FROM paiements 
+                    WHERE inscription_code = ? 
+                      AND statut_paiement != 'annule'
+                      AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+                      AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+                ");
                 $stmtTot->execute([$inscriptionCode]);
                 $totalPayeCumul = (float)($stmtTot->fetchColumn() ?: 0);
 
                 if ($totalPayeCumul >= $scolariteDue && $scolariteDue > 0) {
                     $db->prepare("UPDATE inscriptions SET statut_inscription = 'solde' WHERE code_inscription = ?")->execute([$inscriptionCode]);
+                } else {
+                    $db->prepare("UPDATE inscriptions SET statut_inscription = 'valide' WHERE code_inscription = ? AND statut_inscription = 'solde'")->execute([$inscriptionCode]);
                 }
             }
 
@@ -2048,9 +2065,8 @@ class PaiementController extends BaseController
             $totalEncaisse = $paymentsGrouped[$codeIns] ?? 0;
             $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
 
-            $statutInscription = $ins['statut_inscription'] ?? 'valide';
             $statusCode = 'non_paye';
-            if ($statutInscription === 'solde' || ($totalAttendu > 0 && $totalEncaisse >= $totalAttendu) || ($soldeRestant <= 0 && $totalAttendu > 0)) {
+            if (($totalAttendu > 0 && $totalEncaisse >= $totalAttendu) || ($soldeRestant <= 0 && $totalAttendu > 0)) {
                 $statusCode = 'solde';
             } elseif ($totalEncaisse > 0) {
                 $statusCode = 'partiel';
