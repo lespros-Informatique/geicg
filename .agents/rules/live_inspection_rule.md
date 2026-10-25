@@ -53,3 +53,16 @@ Lors de toute création ou modification d'élément d'interface (menu, sous-menu
    - Si aucune permission appropriée n'existe encore dans la table `permissions` pour la nouvelle fonction, menu ou bouton, créer la permission requise.
    - Insérer la nouvelle permission directement dans la base de données active MySQL et l'associer aux rôles autorisés (notamment `ROLE_SUPERADMIN`) dans la table `role_permissions`.
    - Mettre à jour immédiatement le fichier de référence `database/db_eicg.sql` afin de conserver la synchronisation complète du schéma et des données.
+
+---
+
+## 4. RÈGLE COMPTABLE DE DISSOCIATION STRICTE ENTRE SCOLARITÉ ET FRAIS ANNEXES
+
+1. **Séparation Étanche des Flux et des Caisses** :
+   - Les **Frais de Scolarité** (droits, tranches de scolarité, grille tarifaire, échéancier, caisse principale) et les **Frais Annexes** (caisse annexe, uniformes, kits, macarons, attestations) sont deux flux financiers **strictement étanches et indépendants**.
+   - Ne **JAMAIS** additionner, imputer ou mélanger les montants des Frais Annexes dans les calculs comptables de la scolarité (tableaux de bord, KPIs scolarité, reliquats d'impayés, états financiers, comptabilité étudiants).
+
+2. **Cohérence des Reçus et Documents Financiers** :
+   - Sur tout reçu, bordereau ou synthèse de versement de scolarité, le **Total Versé** (`$totalVerse`) doit être exclusivement égal à la somme des versements de scolarité (`$scolariteVerse`).
+   - Ne **JAMAIS** injecter `$fraisAnnexesVerse` dans le total d'un reçu ou état de scolarité, afin de garantir l'exactitude des soldes et d'éviter tout faux trop-perçu ou déséquilibre comptable.
+

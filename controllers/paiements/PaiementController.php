@@ -1818,7 +1818,7 @@ class PaiementController extends BaseController
         $versementOpJour = $montantOp;
         $totalOpJour = $montantOp;
         $totalPayer = $scolariteTotPayer;
-        $totalVerse = $scolariteVerse + $fraisAnnexesVerse;
+        $totalVerse = $scolariteVerse;
         $totalRestePayer = $scolariteReste;
 
         $nomComplet = trim(strtoupper($pRow['nom_etudiant'] ?? '') . ' ' . ($pRow['prenom_etudiant'] ?? ''));
