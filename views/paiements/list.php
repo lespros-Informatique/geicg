@@ -421,6 +421,18 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
             <input type="date" id="filter-date-fin" class="form-control" style="height: 42px; border-radius: 8px; border: 1px solid #CBD5E1; padding: 4px 10px; font-size: 13px; font-weight: 600; color: #1E293B; background-color: #FFFFFF; width: 100%; box-sizing: border-box;">
           </div>
 
+          <!-- Filtre Canal d'Encaissement -->
+          <div class="form-group" style="margin: 0;">
+            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="split" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Canal d'Encaissement :
+            </label>
+            <select id="filter-canal" class="form-control" style="height: 42px; border-radius: 8px; border: 1px solid #CBD5E1; padding: 4px 10px; font-size: 13px; font-weight: 600; color: #1E293B; background-color: #FFFFFF; width: 100%; box-sizing: border-box;">
+              <option value="ALL">-- Tous les canaux --</option>
+              <option value="guichet">Guichet Physique (Caisse)</option>
+              <option value="en_ligne">En Ligne (Portail Étudiant)</option>
+            </select>
+          </div>
+
         </div>
       </div>
 
@@ -992,6 +1004,7 @@ $(document).ready(function() {
         d.classe_code = $('#filter-classe').val();
         d.date_debut = $('#filter-date-debut').val();
         d.date_fin = $('#filter-date-fin').val();
+        d.canal_paiement = $('#filter-canal').val();
       }
     },
     processing: true,
@@ -1025,7 +1038,20 @@ $(document).ready(function() {
       } },
       { data: 'libelle_tranche', render: function(d, type, row) {
         var libelle = (d && d.trim() !== '') ? 'Scolarité (' + escapeHtml(d) + ')' : 'Frais de Scolarité';
-        return '<span style="font-weight:700; color:#15803D; background:#DCFCE7; border:1px solid #86EFAC; padding:4px 10px; border-radius:6px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="graduation-cap" style="width:13px;height:13px;"></i> ' + libelle + '</span>';
+        var isEnLigne = (row.canal_paiement === 'en_ligne');
+        var canalBadge = isEnLigne
+          ? '<span style="font-weight:800; color:#7E22CE; background:#F3E8FF; border:1px solid #D8B4FE; padding:2px 7px; border-radius:6px; font-size:10px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="globe" style="width:11px;height:11px;"></i> En Ligne</span>'
+          : '<span style="font-weight:700; color:#475569; background:#F1F5F9; border:1px solid #CBD5E1; padding:2px 7px; border-radius:6px; font-size:10px; display:inline-flex; align-items:center; gap:3px;"><i data-lucide="landmark" style="width:11px;height:11px;"></i> Guichet</span>';
+        
+        var modeStr = (row.mode_paiement || '').toUpperCase();
+        var modeBadge = modeStr ? '<span style="font-size:11px; color:#64748B; font-weight:700;">' + escapeHtml(modeStr) + '</span>' : '';
+        var refStr = row.reference_paiement ? '<div style="font-size:10.5px; color:#64748B; margin-top:2px;">Réf: <code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; padding:1px 4px; border-radius:3px;">' + escapeHtml(row.reference_paiement) + '</code></div>' : '';
+
+        return '<div>' +
+               '  <div style="font-weight:700; color:#15803D; background:#DCFCE7; border:1px solid #86EFAC; padding:3px 8px; border-radius:6px; font-size:11.5px; display:inline-flex; align-items:center; gap:4px; margin-bottom:3px;"><i data-lucide="graduation-cap" style="width:12px;height:12px;"></i> ' + libelle + '</div>' +
+               '  <div style="display:flex; align-items:center; gap:6px;">' + canalBadge + ' ' + modeBadge + '</div>' +
+               refStr +
+               '</div>';
       } },
       { data: 'montant_paiement', width: '160px', className: 'text-end', render: function(d, type, row) {
         var isAnnule = (row.statut_paiement === 'annule');
@@ -1184,7 +1210,7 @@ $(document).ready(function() {
   }
 
   // Événements de changement sur tous les filtres
-  $('#filter-annee, #filter-niveau, #filter-classe, #filter-date-debut, #filter-date-fin').on('change input', function() {
+  $('#filter-annee, #filter-niveau, #filter-classe, #filter-canal, #filter-date-debut, #filter-date-fin').on('change input', function() {
     table.ajax.reload();
     refreshKpis();
   });

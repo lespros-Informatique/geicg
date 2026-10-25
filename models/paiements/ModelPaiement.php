@@ -7,7 +7,7 @@ class ModelPaiement extends BaseModel
     protected ?string $statusField = 'statut_paiement';
     protected ?string $createdAtField = 'date_paiement';
 
-    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $dateDebut = null, ?string $dateFin = null): array
+    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $dateDebut = null, ?string $dateFin = null, ?string $canalPaiement = null): array
     {
         $where = "WHERE (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES') AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')";
         $params = [];
@@ -23,6 +23,10 @@ class ModelPaiement extends BaseModel
         if (!empty($classeCode) && $classeCode !== 'ALL') {
             $where .= " AND ins.classe_code = ?";
             $params[] = $classeCode;
+        }
+        if (!empty($canalPaiement) && $canalPaiement !== 'ALL') {
+            $where .= " AND p.canal_paiement = ?";
+            $params[] = $canalPaiement;
         }
         if (!empty($dateDebut)) {
             $where .= " AND DATE(p.date_paiement) >= ?";

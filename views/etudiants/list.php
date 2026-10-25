@@ -234,6 +234,32 @@ $anneeActive = $anneeActive ?? '';
             </select>
           </div>
 
+          <!-- Filtre Canal Inscription -->
+          <div class="form-group" style="margin: 0;">
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
+              <i data-lucide="split" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Canal
+            </label>
+            <select id="filter-canal" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+              <option value="ALL">-- Tous les canaux --</option>
+              <option value="guichet">Guichet (Admin)</option>
+              <option value="en_ligne">En Ligne (Portail)</option>
+            </select>
+          </div>
+
+          <!-- Filtre Statut Inscription -->
+          <div class="form-group" style="margin: 0;">
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
+              <i data-lucide="shield-check" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Statut Dossier
+            </label>
+            <select id="filter-statut-inscription" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+              <option value="ALL">-- Tous les statuts --</option>
+              <option value="en_attente">En Attente</option>
+              <option value="valide">Validée</option>
+              <option value="solde">Soldée</option>
+              <option value="annule">Annulée</option>
+            </select>
+          </div>
+
         </div>
       </div>
 
@@ -339,6 +365,8 @@ $(document).ready(function() {
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
         d.affectation_etat = $('#filter-regime').val();
+        d.canal_inscription = $('#filter-canal').val();
+        d.statut_inscription = $('#filter-statut-inscription').val();
       }
     },
     processing: true,
@@ -373,9 +401,22 @@ $(document).ready(function() {
         var nom = (row.nom_etudiant || '').toUpperCase();
         var prenom = row.prenom_etudiant || '';
         var isAnnule = (row.statut_inscription === 'annule');
-        var badgeAnnule = isAnnule ? ' <span style="background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:800; vertical-align:middle;">ANNULÉE</span>' : '';
+        var isEnAttente = (row.statut_inscription === 'en_attente');
+        var isEnLigne = (row.canal_inscription === 'en_ligne');
+
+        var badgeStatut = '';
+        if (isAnnule) {
+          badgeStatut = ' <span style="background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:800; vertical-align:middle;">ANNULÉE</span>';
+        } else if (isEnAttente) {
+          badgeStatut = ' <span style="background:#FEF3C7; color:#B45309; border:1px solid #FCD34D; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:800; vertical-align:middle;"><i data-lucide="clock" style="width:10px;height:10px;display:inline-block;vertical-align:-1px;"></i> EN ATTENTE</span>';
+        }
+
+        var badgeCanal = isEnLigne
+          ? ' <span style="background:#F3E8FF; color:#7E22CE; border:1px solid #D8B4FE; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:800; vertical-align:middle;"><i data-lucide="globe" style="width:10px;height:10px;display:inline-block;vertical-align:-1px;"></i> EN LIGNE</span>'
+          : '';
+
         return '<div style="white-space: normal; word-break: break-word; line-height: 1.35; max-width: 260px;">' +
-               '  <div style="font-weight:800; color:' + (isAnnule ? '#94A3B8; text-decoration:line-through;' : '#0F172A;') + ' font-size:13px;">' + nom + badgeAnnule + '</div>' +
+               '  <div style="font-weight:800; color:' + (isAnnule ? '#94A3B8; text-decoration:line-through;' : '#0F172A;') + ' font-size:13px;">' + nom + badgeStatut + badgeCanal + '</div>' +
                (prenom ? '  <div style="font-weight:600; color:' + (isAnnule ? '#94A3B8;' : '#475569;') + ' font-size:12.5px; margin-top:2px;">' + prenom + '</div>' : '') +
                '</div>';
       }},
@@ -436,6 +477,11 @@ $(document).ready(function() {
         var clsCode = row.code_classe || '';
         var hasPaiement = parseInt(row.total_paiements_count || 0, 10) > 0;
         var isAnnule = (row.statut_inscription === 'annule');
+        var isEnAttente = (row.statut_inscription === 'en_attente');
+
+        var validerBtn = (isEnAttente && canAnnulerInscription)
+          ? '  <button type="button" class="btn-action-icon btn-valider-inscription" data-id="' + idIns + '" data-nom="' + nomComplet.replace(/"/g, '&quot;') + '" style="background:#DCFCE7; border:1px solid #86EFAC; color:#15803D;" title="Valider cette inscription"><i data-lucide="check-circle-2"></i></button>'
+          : '';
 
         var printBtn = (hasPaiement && !isAnnule)
           ? '  <a href="' + window.RACINE + 'inscription/fiche/' + idCrypte + '?pdf=1" target="_blank" class="btn-action-icon btn-action-print" title="Télécharger la fiche d\'inscription (PDF)"><i data-lucide="printer"></i></a>'
@@ -459,6 +505,7 @@ $(document).ready(function() {
         }
 
         return '<div style="display:inline-flex; align-items:center; gap:5px; justify-content:center;">' +
+               validerBtn +
                classeBtn +
                printBtn +
                '  <a href="' + window.RACINE + 'etudiant/details/' + idCrypte + '" class="btn-action-icon btn-action-dossier" title="Consulter le dossier complet"><i data-lucide="eye"></i></a>' +
@@ -560,7 +607,7 @@ $(document).ready(function() {
   }
 
   // Déclenchement automatique du rechargement et des colonnes intelligentes
-  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe, #filter-regime').on('change', function() {
+  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe, #filter-regime, #filter-canal, #filter-statut-inscription').on('change', function() {
     filterClassDropdown();
     updateSmartColumns();
     updatePrintPdfUrl();
@@ -649,6 +696,75 @@ $(document).ready(function() {
       }
     });
   });
+
+  // Validation directe d'une inscription en attente
+  $(document).on('click', '.btn-valider-inscription', function(e) {
+    e.preventDefault();
+    var idInscription = $(this).data('id');
+    var nomEtudiant = $(this).data('nom') || 'cet étudiant';
+
+    var confirmMsg = 'Confirmez-vous la validation définitive de l\'inscription de ' + nomEtudiant + ' ?';
+    if (window.Swal) {
+      Swal.fire({
+        title: 'Valider l\'inscription ?',
+        text: confirmMsg,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#16A34A',
+        cancelButtonColor: '#64748B',
+        confirmButtonText: '<i class="fas fa-check"></i> Oui, valider le dossier',
+        cancelButtonText: 'Annuler',
+        reverseButtons: true
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          executeValidation(idInscription);
+        }
+      });
+    } else {
+      if (confirm(confirmMsg)) {
+        executeValidation(idInscription);
+      }
+    }
+  });
+
+  function executeValidation(idInscription) {
+    $.ajax({
+      url: window.RACINE + 'inscription/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: idInscription,
+        statut: 'valide',
+        csrf_token: '<?= Validator::generateCsrfToken() ?>'
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          var successMsg = res.message || 'Inscription validée avec succès !';
+          if (typeof showToast === 'function') {
+            showToast(successMsg, 'success');
+          } else if (window.toastr) {
+            toastr.success(successMsg);
+          }
+          table.ajax.reload(null, false);
+        } else {
+          var errMsg = res.message || 'Erreur lors de la validation';
+          if (typeof showToast === 'function') {
+            showToast(errMsg, 'error');
+          } else if (window.toastr) {
+            toastr.error(errMsg);
+          }
+        }
+      },
+      error: function() {
+        if (typeof showToast === 'function') {
+          showToast('Erreur réseau lors de la validation.', 'error');
+        } else if (window.toastr) {
+          toastr.error('Erreur réseau');
+        }
+      }
+    });
+  }
 
   // Annulation d'une inscription
   $(document).on('click', '.btn-annuler-inscription', function(e) {

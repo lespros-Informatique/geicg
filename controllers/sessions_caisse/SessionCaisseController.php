@@ -246,6 +246,7 @@ class SessionCaisseController extends BaseController
             LEFT JOIN classes c ON c.code_classe = i.classe_code
             LEFT JOIN tranches_scolarite ts ON ts.code_tranche = p.tranche_code
             WHERE (p.session_caisse_code = ? OR (p.session_caisse_code IS NULL AND DATE(p.date_paiement) = ?))
+              AND (p.canal_paiement = 'guichet' OR p.canal_paiement IS NULL)
               AND p.statut_paiement != 'annule'
             ORDER BY p.id_paiement DESC
         ");

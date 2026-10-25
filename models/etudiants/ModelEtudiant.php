@@ -132,6 +132,16 @@ class ModelEtudiant extends BaseModel
             }
         }
 
+        if (!empty($filters['canal_inscription']) && $filters['canal_inscription'] !== 'ALL') {
+            $where[] = "i.canal_inscription = ?";
+            $params[] = $filters['canal_inscription'];
+        }
+
+        if (!empty($filters['statut_inscription']) && $filters['statut_inscription'] !== 'ALL') {
+            $where[] = "i.statut_inscription = ?";
+            $params[] = $filters['statut_inscription'];
+        }
+
         $whereClause = implode(" AND ", $where);
 
         $sql = "
@@ -152,6 +162,7 @@ class ModelEtudiant extends BaseModel
                 i.affectation_etat,
                 i.id_inscription,
                 i.code_inscription,
+                i.canal_inscription,
                 i.statut_inscription,
                 i.montant_scolarite_inscription,
                 i.created_at_inscription,

@@ -971,7 +971,7 @@ class InscriptionController extends BaseController
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
-            $allowed = ['valide', 'solde', 'annule'];
+            $allowed = ['en_attente', 'valide', 'solde', 'annule'];
             if (!empty($statut) && in_array($statut, $allowed, true)) {
                 $success = $this->model->updateStatus($id, $statut, 'statut_inscription');
             } else {

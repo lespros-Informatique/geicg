@@ -676,8 +676,9 @@ class PaiementController extends BaseController
         $classeCode = $_GET['classe_code'] ?? null;
         $dateDebut = $_GET['date_debut'] ?? null;
         $dateFin = $_GET['date_fin'] ?? null;
+        $canalPaiement = $_GET['canal_paiement'] ?? null;
 
-        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $dateDebut, $dateFin);
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $dateDebut, $dateFin, $canalPaiement);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_paiement'];
