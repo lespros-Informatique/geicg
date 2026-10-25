@@ -131,7 +131,8 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
                 <th style="padding: 12px 14px;">Intitulé</th>
                 <th style="padding: 12px 14px;">Semestre</th>
                 <th style="padding: 12px 14px; text-align: center;">Coef</th>
-                <th style="padding: 12px 14px;">Date</th>
+                <th style="padding: 12px 14px;">Date Début</th>
+                <th style="padding: 12px 14px;">Date Fin</th>
                 <th style="padding: 12px 14px; text-align: center; width: 90px;">Statut</th>
                 <th style="padding: 12px 14px; text-align: right;">Actions</th>
               </tr>
@@ -229,21 +230,27 @@ $(document).ready(function() {
         defaultContent: '',
         render: function(d, type, row) { 
           var dateStr = d || (row ? row.created_at_composition : null);
-          var dateFinStr = row ? row.date_fin_composition : null;
-          var formatDate = function(val) {
-            if (!val) return '';
-            var p = val.split(' ')[0].split('-');
-            return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : val;
-          };
-          var startFmt = formatDate(dateStr);
-          var endFmt = formatDate(dateFinStr);
-          if (startFmt && endFmt && startFmt !== endFmt) {
-            return '<span style="font-size:12px; color:#1E3A5F; font-weight:700;">Du ' + startFmt + '<br><span style="color:#64748B; font-weight:600;">au</span> ' + endFmt + '</span>';
+          if (!dateStr) return '<span style="color:#94A3B8;">-</span>';
+          var cleanDate = dateStr.split(' ')[0];
+          var parts = cleanDate.split('-');
+          if (parts.length === 3) {
+            return '<strong style="font-size:13px; color:#1E3A5F;">' + parts[2] + '/' + parts[1] + '/' + parts[0] + '</strong>';
           }
-          if (startFmt) {
-            return '<strong style="font-size:13px; color:#1E3A5F;">' + startFmt + '</strong>';
+          return '<strong style="font-size:13px; color:#1E3A5F;">' + cleanDate + '</strong>';
+        } 
+      },
+      { 
+        data: 'date_fin_composition', 
+        defaultContent: '',
+        render: function(d, type, row) { 
+          var dateStr = d || (row ? (row.date_composition || row.created_at_composition) : null);
+          if (!dateStr) return '<span style="color:#94A3B8;">-</span>';
+          var cleanDate = dateStr.split(' ')[0];
+          var parts = cleanDate.split('-');
+          if (parts.length === 3) {
+            return '<strong style="font-size:13px; color:#1E3A5F;">' + parts[2] + '/' + parts[1] + '/' + parts[0] + '</strong>';
           }
-          return '<span style="color:#94A3B8;">-</span>';
+          return '<strong style="font-size:13px; color:#1E3A5F;">' + cleanDate + '</strong>';
         } 
       },
       { 
