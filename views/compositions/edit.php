@@ -218,7 +218,7 @@ if (empty($existingNiveaux)) {
           </div>
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
-            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; font-weight: 700; border-radius: 8px; padding: 11px 26px; box-shadow: 0 4px 10px rgba(30,58,95,0.25);">
+            <button type="submit" id="btn-submit-composition" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; font-weight: 700; border-radius: 8px; padding: 11px 26px; box-shadow: 0 4px 10px rgba(30,58,95,0.25);">
               <i data-lucide="save" style="width: 16px; height: 16px; vertical-align: text-bottom; margin-right: 4px;"></i> Enregistrer la Programmation
             </button>
             <a href="<?= RACINE ?>composition/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px;">Annuler</a>
@@ -488,6 +488,95 @@ $(document).ready(function() {
   updateDisabledNiveauxOptions();
   $('#niveaux-container .niveau-row-card').each(function() {
     renderClassesPreview($(this));
+  });
+
+  // Soumission AJAX du formulaire de programmation de composition
+  $('#form-composition').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $btn = $('#btn-submit-composition');
+    var originalHtml = $btn.html();
+
+    // Validation préalable : au moins un niveau et une filière cochée
+    var hasValidTarget = false;
+    $('#niveaux-container .niveau-row-card').each(function() {
+      var niv = $(this).find('.sel-niveau-item').val();
+      var checkedFil = $(this).find('.chk-filiere-item:checked:visible').length;
+      if (!checkedFil) {
+        checkedFil = $(this).find('.chk-filiere-item:checked').length;
+      }
+      if (niv && checkedFil > 0) {
+        hasValidTarget = true;
+      }
+    });
+
+    if (!hasValidTarget) {
+      var warningMsg = 'Veuillez sélectionner au moins un niveau et cocher au moins une filière associée.';
+      if (window.toastr) {
+        toastr.warning(warningMsg);
+      } else if (window.Swal) {
+        Swal.fire({ icon: 'warning', title: 'Attention', text: warningMsg });
+      } else {
+        alert(warningMsg);
+      }
+      return false;
+    }
+
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;display:inline-block;animation:spin 1s linear infinite;"></i> Enregistrement en cours...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: $form.attr('action'),
+      type: 'POST',
+      data: $form.serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) {
+            toastr.success(res.message || 'Composition / Examen programmé avec succès !');
+          } else if (window.Swal) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Succès',
+              text: res.message || 'Composition / Examen programmé avec succès !',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          }
+          var targetUrl = res.redirect || '<?= RACINE ?>composition/list';
+          setTimeout(function() {
+            window.location.href = targetUrl;
+          }, 600);
+        } else {
+          $btn.prop('disabled', false).html(originalHtml);
+          if (window.lucide) lucide.createIcons();
+          var errMsg = res.message || 'Erreur lors de la programmation de la composition.';
+          if (window.toastr) {
+            toastr.error(errMsg);
+          } else if (window.Swal) {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
+          } else {
+            alert(errMsg);
+          }
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html(originalHtml);
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur réseau lors de la communication avec le serveur.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          msg = xhr.responseJSON.message;
+        }
+        if (window.toastr) {
+          toastr.error(msg);
+        } else if (window.Swal) {
+          Swal.fire({ icon: 'error', title: 'Erreur Serveur', text: msg });
+        } else {
+          alert(msg);
+        }
+      }
+    });
   });
 });
 </script>
