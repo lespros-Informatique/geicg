@@ -1271,12 +1271,59 @@ $(document).ready(function() {
     });
   });
 
+  // Fonction centrale d'affichage des alertes d'erreur caisse annexe
+  function showEncaissementAnnexeError(message) {
+    message = message || 'Une erreur est survenue lors de l\'enregistrement.';
+    var isCaisseError = (message.indexOf("session de caisse") !== -1 || message.indexOf("Session de caisse") !== -1 || message.indexOf("OUVERTE") !== -1 || message.indexOf("ouverte") !== -1);
+    
+    if (window.Swal) {
+      if (isCaisseError) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Session de Caisse Requise',
+          html: '<div style="font-size: 13.5px; color: #334155; line-height: 1.5; text-align: left; padding: 4px;">' +
+                  '<div style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 12px 14px; border-radius: 6px; margin-bottom: 12px; color: #991B1B; font-weight: 600;">' +
+                    '<i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> ' + escapeHtml(message) +
+                  '</div>' +
+                  '<p style="margin: 0 0 8px 0; color: #475569; font-size: 13px;">Pour enregistrer un règlement en espèces au guichet, vous devez obligatoirement ouvrir la session de caisse du jour.</p>' +
+                  '<p style="margin: 0; color: #64748B; font-size: 12px; font-style: italic;">💡 Les modes Mobile Money, Chèque et Virement sont immédiatement acceptés sans ouverture de caisse.</p>' +
+                '</div>',
+          showCancelButton: true,
+          confirmButtonColor: '#1E3A5F',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: '<i class="fas fa-cash-register"></i> Ouvrir la Session de Caisse',
+          cancelButtonText: 'Fermer',
+          reverseButtons: true,
+          focusConfirm: true
+        }).then(function(result) {
+          if (result.isConfirmed) {
+            $('.btn-open-session-caisse').first().trigger('click');
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Opération non validée',
+          text: message,
+          confirmButtonColor: '#1E3A5F',
+          confirmButtonText: 'D\'accord'
+        });
+      }
+    } else if (typeof showToast === 'function') {
+      showToast(message, 'error');
+    } else if (window.toastr) {
+      toastr.error(message);
+    } else {
+      alert(message);
+    }
+  }
+
   // Validation Formulaire Encaissement Annexe
   $('#form-encaissement-annexe').on('submit', function(e) {
     e.preventDefault();
     var montant = parseFloat($('#input-montant-versement').val() || 0);
     if (montant <= 0) {
-      alert('Le montant du versement doit être supérieur à 0 FCFA.');
+      showEncaissementAnnexeError('Le montant du versement doit être supérieur à 0 FCFA.');
       return;
     }
 
@@ -1305,7 +1352,7 @@ $(document).ready(function() {
           $('#modal-recu-annexe-success').css('display', 'flex');
           if (window.lucide) lucide.createIcons();
         } else {
-          alert(res.message || 'Erreur lors de l\'enregistrement.');
+          showEncaissementAnnexeError(res.message || 'Erreur lors de l\'enregistrement.');
         }
       },
       error: function(xhr) {
@@ -1315,7 +1362,7 @@ $(document).ready(function() {
         if (xhr.responseJSON && xhr.responseJSON.message) {
           errMsg = xhr.responseJSON.message;
         }
-        alert(errMsg);
+        showEncaissementAnnexeError(errMsg);
       }
     });
   });

@@ -718,6 +718,23 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
           </div>
         <?php endif; ?>
 
+        <!-- Alerte dynamique d'erreur d'encaissement intégrée au modal -->
+        <div id="encaisse-error-dynamic-notice" style="display: none; background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 10px; padding: 12px 16px;">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <i data-lucide="alert-circle" style="width: 20px; height: 20px; color: #DC2626; flex-shrink: 0; margin-top: 1px;"></i>
+            <div style="flex: 1;">
+              <div id="encaisse-error-dynamic-title" style="font-size: 13px; font-weight: 800; color: #991B1B; margin-bottom: 2px;">Attention : Encaissement non validé</div>
+              <div id="encaisse-error-dynamic-text" style="font-size: 12.5px; color: #B91C1C; line-height: 1.45;"></div>
+              <div id="encaisse-error-dynamic-action" style="margin-top: 8px; display: none;">
+                <a href="javascript:void(0)" class="btn-open-session-caisse" style="display: inline-flex; align-items: center; gap: 6px; background: #1E3A5F; color: #FFFFFF; font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 6px; text-decoration: none;">
+                  <i data-lucide="unlock" style="width: 14px; height: 14px;"></i> Ouvrir la session de caisse maintenant
+                </a>
+              </div>
+            </div>
+            <button type="button" onclick="$('#encaisse-error-dynamic-notice').slideUp(150);" style="background: transparent; border: none; color: #991B1B; font-size: 18px; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
+          </div>
+        </div>
+
         <!-- 1. Sélection de l'étudiant / Inscription (Uniquement année en session) -->
         <div style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1.5px solid #CBD5E1;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
@@ -839,6 +856,10 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
                 <option value="cheque">🏦 Chèque Bancaire</option>
                 <option value="virement">🏛️ Virement Bancaire</option>
               </select>
+              <div id="mode-espece-caisse-alert" style="<?= empty($isCaisseOuverte) ? 'display: flex;' : 'display: none;' ?> margin-top: 6px; font-size: 11.5px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 10px; border-radius: 6px; align-items: center; gap: 6px;">
+                <i data-lucide="alert-triangle" style="width: 14px; height: 14px; color: #D97706; flex-shrink: 0;"></i>
+                <span>Session fermée : <a href="javascript:void(0)" class="btn-open-session-caisse" style="color: #1E3A5F; font-weight: 800; text-decoration: underline;">Ouvrir la caisse</a> pour encaisser en espèces.</span>
+              </div>
             </div>
 
             <!-- Référence / Transaction -->
@@ -1410,13 +1431,24 @@ $(document).ready(function() {
 
           if (window.lucide) lucide.createIcons();
         } else {
-          alert(res.message || 'Impossible de récupérer la situation financière de cet étudiant.');
+          showEncaissementError(res.message || 'Impossible de récupérer la situation financière de cet étudiant.');
         }
       },
       error: function() {
-        alert('Erreur lors de la communication avec le serveur.');
+        showEncaissementError('Erreur lors de la communication avec le serveur.');
       }
     });
+  });
+
+  // Changement de mode de paiement
+  $('#modal_select_mode').on('change', function() {
+    var mode = $(this).val();
+    var isCaisseActive = <?= !empty($isCaisseOuverte) ? 'true' : 'false' ?>;
+    if ((mode === 'espece' || mode === 'especes' || mode === 'cash') && !isCaisseActive) {
+      $('#mode-espece-caisse-alert').slideDown(150);
+    } else {
+      $('#mode-espece-caisse-alert').slideUp(150);
+    }
   });
 
   // Changement de tranche
@@ -1452,13 +1484,85 @@ $(document).ready(function() {
     if (window.lucide) lucide.createIcons();
   });
 
+  // Fonction centrale pour l'affichage moderne des erreurs d'encaissement
+  function showEncaissementError(message) {
+    message = message || 'Une erreur est survenue lors de l\'encaissement.';
+    
+    // 1. Affichage dans le bandeau interne du modal
+    $('#encaisse-error-dynamic-text').html(escapeHtml(message));
+    var isCaisseError = (message.indexOf("session de caisse") !== -1 || message.indexOf("Session de caisse") !== -1 || message.indexOf("OUVERTE") !== -1);
+    if (isCaisseError) {
+      $('#encaisse-error-dynamic-action').show();
+    } else {
+      $('#encaisse-error-dynamic-action').hide();
+    }
+    $('#encaisse-error-dynamic-notice').slideDown(200);
+    if (window.lucide) lucide.createIcons();
+
+    // 2. Notification modale élégante SweetAlert2
+    if (window.Swal) {
+      if (isCaisseError) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Session de Caisse Requise',
+          html: '<div style="font-size: 13.5px; color: #334155; line-height: 1.5; text-align: left; padding: 4px;">' +
+                  '<div style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 12px 14px; border-radius: 6px; margin-bottom: 12px; color: #991B1B; font-weight: 600;">' +
+                    '<i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> ' + escapeHtml(message) +
+                  '</div>' +
+                  '<p style="margin: 0 0 8px 0; color: #475569; font-size: 13px;">Pour enregistrer un encaissement en espèces au guichet, vous devez obligatoirement ouvrir la session de caisse du jour.</p>' +
+                  '<p style="margin: 0; color: #64748B; font-size: 12px; font-style: italic;">💡 Les modes Mobile Money, Chèque et Virement sont immédiatement acceptés sans ouverture de caisse.</p>' +
+                '</div>',
+          showCancelButton: true,
+          confirmButtonColor: '#1E3A5F',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: '<i class="fas fa-cash-register"></i> Ouvrir la Session de Caisse',
+          cancelButtonText: 'Fermer',
+          reverseButtons: true,
+          focusConfirm: true
+        }).then(function(result) {
+          if (result.isConfirmed) {
+            $('.btn-open-session-caisse').first().trigger('click');
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Encaissement non validé',
+          text: message,
+          confirmButtonColor: '#1E3A5F',
+          confirmButtonText: 'D\'accord'
+        });
+      }
+    } else if (typeof showToast === 'function') {
+      showToast(message, 'error');
+    } else if (window.toastr) {
+      toastr.error(message);
+    } else {
+      alert(message);
+    }
+  }
+
   // Soumission AJAX du formulaire d'encaissement
   $('#form-encaissement-scolarite').on('submit', function(e) {
     e.preventDefault();
-    
+    $('#encaisse-error-dynamic-notice').slideUp(150);
+
+    var inscrCode = $('#modal_select_inscription').val();
+    if (!inscrCode) {
+      showEncaissementError('Veuillez d\'abord sélectionner un étudiant ou dossier d\'inscription.');
+      return;
+    }
+
     var montant = parseFloat($('#input-montant-versement').val() || 0);
     if (montant <= 0) {
-      alert('Le montant du versement doit être supérieur à 0 FCFA.');
+      showEncaissementError('Le montant du versement doit être supérieur à 0 FCFA.');
+      return;
+    }
+
+    var modePaiement = $('#modal_select_mode').val();
+    var isCaisseActive = <?= !empty($isCaisseOuverte) ? 'true' : 'false' ?>;
+    if ((modePaiement === 'espece' || modePaiement === 'especes' || modePaiement === 'cash') && !isCaisseActive) {
+      showEncaissementError("Encaissement impossible : Aucune session de caisse n'est OUVERTE pour aujourd'hui. Veuillez ouvrir la session de caisse avant d'encaisser.");
       return;
     }
 
@@ -1498,7 +1602,7 @@ $(document).ready(function() {
 
           if (window.lucide) lucide.createIcons();
         } else {
-          alert(res.message || 'Erreur lors de l\'encaissement.');
+          showEncaissementError(res.message || 'Erreur lors de l\'encaissement.');
         }
       },
       error: function(xhr) {
@@ -1513,7 +1617,7 @@ $(document).ready(function() {
             if (r && r.message) errMsg = r.message;
           } catch(e) {}
         }
-        alert(errMsg);
+        showEncaissementError(errMsg);
       }
     });
   });
