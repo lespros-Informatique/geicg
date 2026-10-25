@@ -29,7 +29,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       
       <!-- Page Header -->
-      <div class="page-header" style="display: flex; justify-space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="award" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
@@ -265,12 +265,16 @@ $(document).ready(function() {
           if (!d) return '';
           var detailsUrl = '<?= RACINE ?>composition/details/' + (d.editId || d.id_composition);
           var editUrl = '<?= RACINE ?>composition/edition/' + (d.editId || d.id_composition);
+          var noterUrl = '<?= RACINE ?>note/saisieClasse?type_evaluation_code=EXAMEN&composition_code=' + encodeURIComponent(d.code_composition || '');
           return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">' +
+                   '<a href="' + noterUrl + '" class="btn btn-sm" style="background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Saisir les notes de l\'épreuve">' +
+                     '<i data-lucide="edit-3" style="width:14px; height:14px;"></i> Noter' +
+                   '</a>' +
                    '<a href="' + detailsUrl + '" class="btn btn-sm" style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Voir les détails de l\'épreuve">' +
                      '<i data-lucide="eye" style="width:14px; height:14px;"></i> Détails' +
                    '</a>' +
                    '<a href="' + editUrl + '" class="btn btn-sm" style="background:#F1F5F9; color:#334155; border:1px solid #CBD5E1; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Modifier">' +
-                     '<i data-lucide="edit-3" style="width:14px; height:14px;"></i> Éditer' +
+                     '<i data-lucide="edit" style="width:14px; height:14px;"></i> Éditer' +
                    '</a>' +
                  '</div>';
         } 

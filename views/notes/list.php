@@ -16,12 +16,14 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Saisie des Notes & Évaluations</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['ENTER_NOTES']))): ?>
           <a href="<?= RACINE ?>note/saisieClasse" id="btn-saisie-classe" class="btn btn-outline-primary" style="border-color: #1E3A5F; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie par Classe
           </a>
           <a href="<?= RACINE ?>note/formulaire" id="btn-add-note" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 10px rgba(30,58,95,0.25);">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Note / Évaluation
           </a>
+          <?php endif; ?>
         </div>
       </div>
 

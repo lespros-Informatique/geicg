@@ -77,6 +77,11 @@ $encryptedId = $encryptedId ?? '';
           <a href="<?= RACINE ?>composition/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
+          <?php if (!empty($item['code_composition']) && (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['ENTER_NOTES'])))): ?>
+          <a href="<?= RACINE ?>note/saisieClasse?type_evaluation_code=EXAMEN&composition_code=<?= urlencode($item['code_composition']) ?>" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 10px rgba(22,163,74,0.2);">
+            <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisir les Notes
+          </a>
+          <?php endif; ?>
           <?php if (!empty($encryptedId)): ?>
           <a href="<?= RACINE ?>composition/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
