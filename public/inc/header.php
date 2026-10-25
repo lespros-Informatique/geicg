@@ -323,10 +323,6 @@
     $currentRoleCode = $_SESSION[USERS_AUTH]['role_code'] ?? '';
     $currentRoles = [];
     $isSuperAdmin = false;
-    $isPressing = false;
-    $isLivreur = false;
-    $currentPressingCode = null;
-    $currentLivreurCode = null;
 
     if ($currentUserCode !== '') {
         try {

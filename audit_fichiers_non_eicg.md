@@ -1,15 +1,36 @@
 # Journal d'Audit, Nettoyage & Évolutions d'Architecture — GEICG
 
-**Statut Global** : ✅ **100% CONFORME & OPÉRATIONNEL**
+**Statut Global** : ✅ **100% ASSAINI, CONFORME & OPÉRATIONNEL**
 
 ---
 
-## 1. 🧹 Purgation des Dépendances Résiduelles (Legacy)
-* **Base de données de référence** : `db_eicg` (tables et vues académiques et financières).
-* **Modèles non scolaires supprimés** : 26 modèles hérités (Pressing, Article, Livreur, Panier, Commande, Retrait, Promotion, etc.).
-* **Contrôleurs non scolaires supprimés** : 22 contrôleurs.
-* **Vues non scolaires supprimées** : 57 vues obsolètes.
-* **Core / Routeur** : Mise à jour de `core/PrincipalRoute.php` pour assainir l'ensemble des inclusions et retirer les classes tierces.
+## 1. 🧹 Purgation des Dépendances & Fichiers Inutiles (Nettoyage Final)
+
+L'intégralité des fichiers résiduels, scripts de test temporaires et modules tiers obsolètes a été supprimée du projet :
+
+### A. Scripts & Fichiers Scratch à la Racine
+* `check_classes.php`, `check_regimes.php`, `check_tuition.php` : supprimés.
+* `debug_get_tuition.php`, `test_tuition_endpoint.php` : supprimés.
+* `scratch_migration.php`, `scratch_schema.json` : supprimés.
+* Dossier racine `scratch/` (84 fichiers temporaires : tests, aperçus PDF, rendus PNG, dumps) : intégralement supprimé.
+
+### B. Scripts Scratch dans `public/` (24 fichiers supprimés)
+* `public/apply_perm_classe.php`, `public/check_assigned.php`, `public/check_perm_classe.php`
+* `public/check_solde_details.php`, `public/check_solde_fix.php`, `public/check_syntax.php`
+* `public/find_annexe_lines.php`, `public/get_etudiant_cols.php`, `public/get_last_ids.php`
+* `public/get_swal.php`, `public/get_toastr.php`
+* `public/migrate_annuler_inscription.php`, `public/migrate_cancel_paiement_roles.php`
+* `public/run_permission_migration.php`
+* `public/scratch_check_cancel_perm.php`, `public/scratch_check_max_perm.php`, `public/scratch_check_perms.php`, `public/scratch_list_roles.php`
+* `public/test_bilan_exec.php`, `public/test_check.php`
+* `public/test_check_bilan_v2.php`, `public/test_check_bilan_v3.php`, `public/test_check_bilan_v4.php`, `public/test_compta_check.php`
+
+### C. Contrôleurs, Services & Vues Résiduels Hors-Périmètre
+* `controllers/settings/` & `views/settings/` : supprimés (anciens paramètres d'un module tiers).
+* `controllers/webhooks/` : supprimé (`GeniusPayWebhookController.php`).
+* `core/GeniusPayService.php` : supprimé.
+* `core/NotificationService.php` : supprimé et retiré de `core/PrincipalRoute.php`.
+* `public/inc/header.php` : nettoyage des variables inutilisées (`$isPressing`, `$isLivreur`, etc.).
 
 ---
 
@@ -29,3 +50,4 @@
 ## 3. 🛡️ Source de Vérité & Conformité
 * Le fichier `database/db_eicg.sql` est synchronisé en continu avec la base de données active MySQL.
 * Règle de zéro hardcoding strictement appliquée sur les contrôleurs, modèles et templates d'impression.
+* L'ensemble des répertoires du projet (`controllers/`, `models/`, `views/`, `core/`, `public/`) ne contient désormais plus que du code directement lié au fonctionnement de l'établissement **GROUPE EICG**.
