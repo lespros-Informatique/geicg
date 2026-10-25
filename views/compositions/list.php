@@ -229,13 +229,21 @@ $(document).ready(function() {
         defaultContent: '',
         render: function(d, type, row) { 
           var dateStr = d || (row ? row.created_at_composition : null);
-          if (!dateStr) return '<span style="color:#94A3B8;">-</span>';
-          var cleanDate = dateStr.split(' ')[0];
-          var parts = cleanDate.split('-');
-          if (parts.length === 3) {
-            return '<strong style="font-size:13px; color:#1E3A5F;">' + parts[2] + '/' + parts[1] + '/' + parts[0] + '</strong>';
+          var dateFinStr = row ? row.date_fin_composition : null;
+          var formatDate = function(val) {
+            if (!val) return '';
+            var p = val.split(' ')[0].split('-');
+            return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : val;
+          };
+          var startFmt = formatDate(dateStr);
+          var endFmt = formatDate(dateFinStr);
+          if (startFmt && endFmt && startFmt !== endFmt) {
+            return '<span style="font-size:12px; color:#1E3A5F; font-weight:700;">Du ' + startFmt + '<br><span style="color:#64748B; font-weight:600;">au</span> ' + endFmt + '</span>';
           }
-          return '<strong style="font-size:13px; color:#1E3A5F;">' + cleanDate + '</strong>';
+          if (startFmt) {
+            return '<strong style="font-size:13px; color:#1E3A5F;">' + startFmt + '</strong>';
+          }
+          return '<span style="color:#94A3B8;">-</span>';
         } 
       },
       { 

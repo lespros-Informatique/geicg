@@ -116,12 +116,20 @@ if (empty($existingNiveaux)) {
                 <input type="number" step="0.25" min="0.5" max="10" class="form-control" name="coefficient" value="<?= htmlspecialchars($item['coefficient'] ?? '2.00') ?>" required style="width: 100%; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 800; color: #1E40AF;">
               </div>
 
-              <!-- Date de l'épreuve -->
+              <!-- Date de l'épreuve (Début) -->
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
                   Date de l'Épreuve <span style="color: #EF4444;">*</span>
                 </label>
-                <input type="date" class="form-control" name="date_composition" value="<?= htmlspecialchars($item['date_composition'] ?? date('Y-m-d')) ?>" required style="width: 100%; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; color: #0F172A;">
+                <input type="date" class="form-control" name="date_composition" id="date_composition" value="<?= htmlspecialchars($item['date_composition'] ?? date('Y-m-d')) ?>" required style="width: 100%; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; color: #0F172A;">
+              </div>
+
+              <!-- Date fin de l'épreuve -->
+              <div class="form-group">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Date fin de l'Épreuve <span style="color: #EF4444;">*</span>
+                </label>
+                <input type="date" class="form-control" name="date_fin_composition" id="date_fin_composition" value="<?= htmlspecialchars($item['date_fin_composition'] ?? ($item['date_composition'] ?? date('Y-m-d'))) ?>" required style="width: 100%; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; color: #0F172A;">
               </div>
 
               <!-- Intitulé de l'épreuve -->
@@ -241,6 +249,18 @@ $(document).ready(function() {
   if ($.fn.select2) {
     $('.select2').select2({ width: '100%' });
   }
+
+  // Synchronisation des dates de début et de fin
+  $('#date_composition').on('change', function() {
+    var startVal = $(this).val();
+    var $endInput = $('#date_fin_composition');
+    if (startVal) {
+      $endInput.attr('min', startVal);
+      if ($endInput.val() && $endInput.val() < startVal) {
+        $endInput.val(startVal);
+      }
+    }
+  }).trigger('change');
 
   // Active Niveaux & Filières mapping from emplois_temps
   var edtActiveNiveaux = [];

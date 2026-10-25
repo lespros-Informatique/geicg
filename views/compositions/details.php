@@ -137,8 +137,12 @@ $encryptedId = $encryptedId ?? '';
             </div>
             <div>
               <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Date & Statut</div>
-              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;">
-                <?= !empty($item['date_composition']) ? date('d/m/Y', strtotime($item['date_composition'])) : '-' ?>
+              <div style="font-size: 14px; font-weight: 800; color: #0F172A; margin-top: 2px;">
+                <?php if (!empty($item['date_composition']) && !empty($item['date_fin_composition']) && $item['date_composition'] !== $item['date_fin_composition']): ?>
+                  Du <?= date('d/m/Y', strtotime($item['date_composition'])) ?> au <?= date('d/m/Y', strtotime($item['date_fin_composition'])) ?>
+                <?php else: ?>
+                  <?= !empty($item['date_composition']) ? date('d/m/Y', strtotime($item['date_composition'])) : (!empty($item['date_fin_composition']) ? date('d/m/Y', strtotime($item['date_fin_composition'])) : '-') ?>
+                <?php endif; ?>
               </div>
             </div>
           </div>

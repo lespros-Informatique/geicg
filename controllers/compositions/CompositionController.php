@@ -112,6 +112,9 @@ class CompositionController extends BaseController
 
         $data['statut_composition'] = $data['statut_composition'] ?? 'programme';
         $data['created_at_composition'] = date('Y-m-d H:i:s');
+        if (empty($data['date_fin_composition']) && !empty($data['date_composition'])) {
+            $data['date_fin_composition'] = $data['date_composition'];
+        }
         
         $cols = $this->model->getCon()->query("DESCRIBE compositions")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
@@ -166,6 +169,9 @@ class CompositionController extends BaseController
 
         $data = $_POST;
         unset($data['csrf_token']);
+        if (empty($data['date_fin_composition']) && !empty($data['date_composition'])) {
+            $data['date_fin_composition'] = $data['date_composition'];
+        }
 
         $cols = $this->model->getCon()->query("DESCRIBE compositions")->fetchAll(PDO::FETCH_COLUMN);
         $filteredData = array_intersect_key($data, array_flip($cols));
