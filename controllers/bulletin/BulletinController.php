@@ -10,6 +10,7 @@ class BulletinController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -26,6 +27,7 @@ class BulletinController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
         $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -256,6 +258,19 @@ class BulletinController extends BaseController
             }
         }
 
+        // Calcul dynamique des absences de l'étudiant
+        $stmtAbs = $db->prepare("
+            SELECT COALESCE(SUM(duree_heures), 0) AS total_abs,
+                   COALESCE(SUM(CASE WHEN justifiee = 'non' THEN duree_heures ELSE 0 END), 0) AS abs_non_justifiees
+            FROM absences
+            WHERE inscription_code = ?
+        ");
+        $stmtAbs->execute([$item['code_inscription']]);
+        $absData = $stmtAbs->fetch(PDO::FETCH_ASSOC);
+        $totalAbsHeures = (float)($absData['total_abs'] ?? 0);
+        $absNonJustHeures = (float)($absData['abs_non_justifiees'] ?? 0);
+        $heuresAbsences = $totalAbsHeures > 0 ? ($totalAbsHeures . ' H' . ($absNonJustHeures > 0 ? ' (dont ' . $absNonJustHeures . ' H non justifiées)' : '')) : '0 H';
+
         $encryptedId = $this->validator->crypter($id);
 
         return [
@@ -273,13 +288,15 @@ class BulletinController extends BaseController
             'totalElevesClasse' => $totalElevesClasse,
             'moyenneMinClasse' => $moyenneMinClasse,
             'moyenneMaxClasse' => $moyenneMaxClasse,
-            'moyenneMoyClasse' => $moyenneMoyClasse
+            'moyenneMoyClasse' => $moyenneMoyClasse,
+            'heuresAbsences' => $heuresAbsences
         ];
     }
 
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
         try {
             $id = $this->validator->decrypter($details);
             $selectedSemestreCode = $_GET['semestre'] ?? '';
@@ -299,7 +316,7 @@ class BulletinController extends BaseController
     public function imprimerBulletinPdf($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
+        $this->requirePermission(['VIEW_BULLETINS', 'GENERATE_BULLETINS', 'VIEW_NOTES']);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         try {
@@ -347,7 +364,7 @@ class BulletinController extends BaseController
                 'moyenneMinClasse' => $calc['moyenneMinClasse'],
                 'moyenneMaxClasse' => $calc['moyenneMaxClasse'],
                 'moyenneMoyClasse' => $calc['moyenneMoyClasse'],
-                'heures_absences' => '0 H'
+                'heures_absences' => $calc['heuresAbsences'] ?? '0 H'
             ];
 
             $html = PdfService::renderTemplate('bulletin_notes.php', $dataView);
@@ -385,11 +402,195 @@ class BulletinController extends BaseController
         $this->details($details);
     }
 
+    private function calculatePvClasseData(string $selectedClasseCode, string $selectedSemestreCode): array
+    {
+        $db = $this->model->getCon();
+        $anneeCode = $this->getActiveAnneeCode();
+        $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+        $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
+
+        $classeInfo = null;
+        $matieres = [];
+        $pvRows = [];
+        $statsClasse = [
+            'totalEleves' => 0,
+            'moyenneGeneraleClasse' => 0,
+            'moyenneMax' => 0,
+            'moyenneMin' => 0,
+            'tauxAdmis' => 0
+        ];
+
+        if (empty($selectedClasseCode)) {
+            return [
+                'classeInfo' => null,
+                'matieres' => [],
+                'pvRows' => [],
+                'statsClasse' => $statsClasse,
+                'anneeLibelle' => $anneeLibelle
+            ];
+        }
+
+        // 1. Informations de la classe
+        $stmtC = $db->prepare("
+            SELECT cl.*, f.libelle_filiere, n.libelle_niveau
+            FROM classes cl
+            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+            WHERE cl.code_classe = ?
+        ");
+        $stmtC->execute([$selectedClasseCode]);
+        $classeInfo = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+        // 2. Matières assignées à cette classe
+        $stmtM = $db->prepare("
+            SELECT DISTINCT m.code_matiere, m.libelle_matiere, 
+                   COALESCE(em.coefficient, 1.00) AS coefficient
+            FROM matieres m
+            INNER JOIN enseignant_matiere em ON em.matiere_code = m.code_matiere
+            WHERE em.classe_code = ? AND (em.annee_code = ? OR em.annee_code IS NULL OR ? = '')
+            ORDER BY m.libelle_matiere ASC
+        ");
+        $stmtM->execute([$selectedClasseCode, $anneeCode, $anneeCode]);
+        $matieres = $stmtM->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fallback dynamique: matières ayant des notes pour cette classe
+        if (empty($matieres)) {
+            $stmtMatNotes = $db->prepare("
+                SELECT DISTINCT m.code_matiere, m.libelle_matiere, 1.00 AS coefficient
+                FROM notes n
+                INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
+                INNER JOIN matieres m ON m.code_matiere = n.matiere_code
+                WHERE i.classe_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+                ORDER BY m.libelle_matiere ASC
+            ");
+            $stmtMatNotes->execute([$selectedClasseCode, $selectedSemestreCode]);
+            $matieres = $stmtMatNotes->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($matieres)) {
+                $matieres = $db->query("
+                    SELECT code_matiere, libelle_matiere, 1.00 as coefficient 
+                    FROM matieres 
+                    WHERE statut_matiere = 'actif' 
+                    ORDER BY libelle_matiere ASC
+                ")->fetchAll(PDO::FETCH_ASSOC);
+            }
+        }
+
+        // 3. Étudiants inscrits dans cette classe pour l'année active
+        $stmtE = $db->prepare("
+            SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant
+            FROM inscriptions i
+            INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND i.statut_inscription = 'actif'
+            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+        ");
+        $stmtE->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
+        $etudiants = $stmtE->fetchAll(PDO::FETCH_ASSOC);
+
+        // 4. Batch query: Récupération en 1 seule requête de toutes les moyennes par matière pour tous les étudiants
+        $stmtAllNotes = $db->prepare("
+            SELECT n.inscription_code, n.matiere_code, AVG(n.valeur_note) AS moy_mat
+            FROM notes n
+            INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
+            WHERE i.classe_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+            GROUP BY n.inscription_code, n.matiere_code
+        ");
+        $stmtAllNotes->execute([$selectedClasseCode, $selectedSemestreCode]);
+        $allNotesRows = $stmtAllNotes->fetchAll(PDO::FETCH_ASSOC);
+
+        $notesByInscAndMat = [];
+        foreach ($allNotesRows as $nr) {
+            $notesByInscAndMat[$nr['inscription_code']][$nr['matiere_code']] = (float)$nr['moy_mat'];
+        }
+
+        $tempPvData = [];
+        $nbAdmis = 0;
+
+        foreach ($etudiants as $e) {
+            $inscCode = $e['code_inscription'];
+            $notesMatiere = [];
+            $totalPointsEtud = 0;
+            $totalCoefEtud = 0;
+
+            foreach ($matieres as $m) {
+                $matCode = $m['code_matiere'];
+                $coef = (float)$m['coefficient'];
+
+                if (isset($notesByInscAndMat[$inscCode][$matCode])) {
+                    $moyMat = round($notesByInscAndMat[$inscCode][$matCode], 2);
+                    $pts = round($moyMat * $coef, 2);
+                    $totalPointsEtud += $pts;
+                    $totalCoefEtud += $coef;
+                    $notesMatiere[$matCode] = $moyMat;
+                } else {
+                    $notesMatiere[$matCode] = null;
+                }
+            }
+
+            $moyenneGen = $totalCoefEtud > 0 ? round($totalPointsEtud / $totalCoefEtud, 2) : 0;
+            
+            $decision = 'Non éval.';
+            if ($totalCoefEtud > 0) {
+                if ($moyenneGen >= 10) {
+                    $decision = 'Admis(e)';
+                    $nbAdmis++;
+                } else {
+                    $decision = 'Ajourné(e)';
+                }
+            }
+
+            $tempPvData[] = [
+                'inscription_code' => $inscCode,
+                'matricule' => $e['matricule_etudiant'],
+                'nom_prenom' => $e['nom_etudiant'] . ' ' . $e['prenom_etudiant'],
+                'sexe' => $e['sexe_etudiant'],
+                'notes_matieres' => $notesMatiere,
+                'total_points' => $totalPointsEtud,
+                'total_coef' => $totalCoefEtud,
+                'moyenne_generale' => $moyenneGen,
+                'decision' => $decision,
+                'rang' => 1
+            ];
+        }
+
+        usort($tempPvData, function($a, $b) {
+            return $b['moyenne_generale'] <=> $a['moyenne_generale'];
+        });
+
+        $rank = 1;
+        $allMoyennes = [];
+        foreach ($tempPvData as &$row) {
+            $row['rang'] = $rank++;
+            if ($row['total_coef'] > 0) {
+                $allMoyennes[] = $row['moyenne_generale'];
+            }
+        }
+        unset($row);
+
+        $pvRows = $tempPvData;
+
+        if (!empty($allMoyennes)) {
+            $statsClasse['totalEleves'] = count($allMoyennes);
+            $statsClasse['moyenneMax'] = max($allMoyennes);
+            $statsClasse['moyenneMin'] = min($allMoyennes);
+            $statsClasse['moyenneGeneraleClasse'] = round(array_sum($allMoyennes) / count($allMoyennes), 2);
+            $statsClasse['tauxAdmis'] = round(($nbAdmis / count($allMoyennes)) * 100, 1);
+        }
+
+        return [
+            'classeInfo' => $classeInfo,
+            'matieres' => $matieres,
+            'pvRows' => $pvRows,
+            'statsClasse' => $statsClasse,
+            'anneeLibelle' => $anneeLibelle
+        ];
+    }
+
     public function pvClasse($param = null)
     {
         $this->requireAuth();
+        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
         $db = $this->model->getCon();
-        $anneeCode = $this->getActiveAnneeCode();
 
         $classes = (new ModelClasse())->getAll();
         $semestres = $db->query("SELECT * FROM semestres WHERE statut_semestre = 'actif' ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -408,145 +609,74 @@ class BulletinController extends BaseController
 
         $selectedSemestreCode = $_GET['semestre_code'] ?? ($semestres[0]['code_semestre'] ?? '');
 
-        $classeInfo = null;
-        $matieres = [];
-        $pvRows = [];
-        $statsClasse = [
-            'totalEleves' => 0,
-            'moyenneGeneraleClasse' => 0,
-            'moyenneMax' => 0,
-            'moyenneMin' => 0,
-            'tauxAdmis' => 0
-        ];
+        $pvData = $this->calculatePvClasseData($selectedClasseCode, $selectedSemestreCode);
+        $encryptedClasseCode = !empty($selectedClasseCode) ? $this->validator->crypter($selectedClasseCode) : '';
 
-        if (!empty($selectedClasseCode)) {
-            $stmtC = $db->prepare("
-                SELECT cl.*, f.libelle_filiere, n.libelle_niveau
-                FROM classes cl
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                WHERE cl.code_classe = ?
-            ");
-            $stmtC->execute([$selectedClasseCode]);
-            $classeInfo = $stmtC->fetch(PDO::FETCH_ASSOC);
-
-            $stmtM = $db->prepare("
-                SELECT DISTINCT m.code_matiere, m.libelle_matiere, 
-                       COALESCE(em.coefficient, 1.00) AS coefficient
-                FROM matieres m
-                INNER JOIN enseignant_matiere em ON em.matiere_code = m.code_matiere
-                WHERE em.classe_code = ? AND (em.annee_code = ? OR em.annee_code IS NULL OR ? = '')
-                ORDER BY m.libelle_matiere ASC
-            ");
-            $stmtM->execute([$selectedClasseCode, $anneeCode, $anneeCode]);
-            $matieres = $stmtM->fetchAll(PDO::FETCH_ASSOC);
-
-            if (empty($matieres)) {
-                $matieres = $db->query("SELECT code_matiere, libelle_matiere, 1.00 as coefficient FROM matieres ORDER BY libelle_matiere ASC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
-            }
-
-            $stmtE = $db->prepare("
-                SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant
-                FROM inscriptions i
-                INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '')
-                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
-            ");
-            $stmtE->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
-            $etudiants = $stmtE->fetchAll(PDO::FETCH_ASSOC);
-
-            $tempPvData = [];
-            $nbAdmis = 0;
-
-            foreach ($etudiants as $e) {
-                $inscCode = $e['code_inscription'];
-                $notesMatiere = [];
-                $totalPointsEtud = 0;
-                $totalCoefEtud = 0;
-
-                foreach ($matieres as $m) {
-                    $matCode = $m['code_matiere'];
-                    $coef = (float)$m['coefficient'];
-
-                    $stmtNote = $db->prepare("
-                        SELECT AVG(valeur_note) as moy_mat
-                        FROM notes
-                        WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND statut_note = 'actif'
-                    ");
-                    $stmtNote->execute([$inscCode, $matCode, $selectedSemestreCode]);
-                    $moyMatVal = $stmtNote->fetchColumn();
-
-                    if ($moyMatVal !== null && $moyMatVal !== false) {
-                        $moyMat = round((float)$moyMatVal, 2);
-                        $pts = round($moyMat * $coef, 2);
-                        $totalPointsEtud += $pts;
-                        $totalCoefEtud += $coef;
-                        $notesMatiere[$matCode] = $moyMat;
-                    } else {
-                        $notesMatiere[$matCode] = null;
-                    }
-                }
-
-                $moyenneGen = $totalCoefEtud > 0 ? round($totalPointsEtud / $totalCoefEtud, 2) : 0;
-                
-                $decision = 'Non éval.';
-                if ($totalCoefEtud > 0) {
-                    if ($moyenneGen >= 10) {
-                        $decision = 'Admis(e)';
-                        $nbAdmis++;
-                    } else {
-                        $decision = 'Ajourné(e)';
-                    }
-                }
-
-                $tempPvData[] = [
-                    'inscription_code' => $inscCode,
-                    'matricule' => $e['matricule_etudiant'],
-                    'nom_prenom' => $e['nom_etudiant'] . ' ' . $e['prenom_etudiant'],
-                    'sexe' => $e['sexe_etudiant'],
-                    'notes_matieres' => $notesMatiere,
-                    'total_points' => $totalPointsEtud,
-                    'total_coef' => $totalCoefEtud,
-                    'moyenne_generale' => $moyenneGen,
-                    'decision' => $decision,
-                    'rang' => 1
-                ];
-            }
-
-            usort($tempPvData, function($a, $b) {
-                return $b['moyenne_generale'] <=> $a['moyenne_generale'];
-            });
-
-            $rank = 1;
-            $allMoyennes = [];
-            foreach ($tempPvData as &$row) {
-                $row['rang'] = $rank++;
-                if ($row['total_coef'] > 0) {
-                    $allMoyennes[] = $row['moyenne_generale'];
-                }
-            }
-            unset($row);
-
-            $pvRows = $tempPvData;
-
-            if (!empty($allMoyennes)) {
-                $statsClasse['totalEleves'] = count($allMoyennes);
-                $statsClasse['moyenneMax'] = max($allMoyennes);
-                $statsClasse['moyenneMin'] = min($allMoyennes);
-                $statsClasse['moyenneGeneraleClasse'] = round(array_sum($allMoyennes) / count($allMoyennes), 2);
-                $statsClasse['tauxAdmis'] = round(($nbAdmis / count($allMoyennes)) * 100, 1);
-            }
-        }
-
-        $this->loadView('../views/bulletin/pv_classe.php', [
+        $this->loadView('../views/bulletin/pv_classe.php', array_merge($pvData, [
             'classes' => $classes,
             'semestres' => $semestres,
             'selectedClasseCode' => $selectedClasseCode,
             'selectedSemestreCode' => $selectedSemestreCode,
-            'classeInfo' => $classeInfo,
-            'matieres' => $matieres,
-            'pvRows' => $pvRows,
-            'statsClasse' => $statsClasse
+            'encryptedClasseCode' => $encryptedClasseCode
+        ]));
+    }
+
+    public function imprimerPvPdf($param = null)
+    {
+        $this->requireAuth();
+        $this->requirePermission(['VIEW_BULLETINS', 'GENERATE_BULLETINS', 'VIEW_NOTES']);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $db = $this->model->getCon();
+        $selectedClasseCode = $_GET['classe_code'] ?? '';
+        if (empty($selectedClasseCode) && !empty($param)) {
+            try {
+                $selectedClasseCode = $this->validator->decrypter($param);
+            } catch (Exception $e) {
+                $selectedClasseCode = $param;
+            }
+        }
+
+        $semestres = $db->query("SELECT * FROM semestres WHERE statut_semestre = 'actif' ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $selectedSemestreCode = $_GET['semestre'] ?? ($_GET['semestre_code'] ?? ($semestres[0]['code_semestre'] ?? ''));
+
+        $selectedSemestreLibelle = $selectedSemestreCode;
+        foreach ($semestres as $s) {
+            if ($s['code_semestre'] === $selectedSemestreCode) {
+                $selectedSemestreLibelle = $s['libelle_semestre'];
+                break;
+            }
+        }
+
+        $pvData = $this->calculatePvClasseData($selectedClasseCode, $selectedSemestreCode);
+        if (empty($pvData['classeInfo'])) {
+            $this->renderNotFound("Classe introuvable pour la génération du PV.");
+            return;
+        }
+
+        $dataView = array_merge($pvData, [
+            'selectedClasseCode' => $selectedClasseCode,
+            'selectedSemestreCode' => $selectedSemestreCode,
+            'selectedSemestreLibelle' => $selectedSemestreLibelle
+        ]);
+
+        $html = PdfService::renderTemplate('pv_classe_pdf.php', $dataView);
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $className = preg_replace('/[^A-Za-z0-9_\-]/', '_', $pvData['classeInfo']['libelle_classe'] ?? 'Classe');
+        $filename = 'PV_Deliberation_' . $className . '_' . date('Ymd_His') . '.pdf';
+
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'PV de Délibération - ' . ($pvData['classeInfo']['libelle_classe'] ?? ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
         ]);
     }
 }

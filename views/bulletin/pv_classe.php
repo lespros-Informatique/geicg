@@ -8,6 +8,7 @@ $classeInfo = $classeInfo ?? [];
 $matieres = $matieres ?? [];
 $pvRows = $pvRows ?? [];
 $statsClasse = $statsClasse ?? [];
+$encryptedClasseCode = $encryptedClasseCode ?? '';
 ?>
 <style>
 @media print {
@@ -37,9 +38,14 @@ $statsClasse = $statsClasse ?? [];
           </div>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Tableau récapitulatif de délibération des notes et classements par classe</p>
         </div>
-        <button onclick="window.print();" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-          <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer / Exporter PV
-        </button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <a href="<?= RACINE ?>bulletin/imprimerPvPdf/<?= $encryptedClasseCode ?>?semestre=<?= urlencode($selectedSemestreCode) ?>" target="_blank" class="btn btn-outline-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; border-color: #1E3A5F; color: #1E3A5F;">
+            <i data-lucide="file-down" style="width: 18px; height: 18px;"></i> Télécharger PV (PDF)
+          </a>
+          <button onclick="window.print();" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Direct
+          </button>
+        </div>
       </div>
 
       <!-- Filtres de Sélection Classe & Semestre -->

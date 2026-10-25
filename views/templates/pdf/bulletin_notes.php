@@ -151,6 +151,10 @@
       border: 1px solid #000000;
       float: right;
       margin-top: 1px;
+      text-align: center;
+      line-height: 11px;
+      font-size: 8.5px;
+      font-weight: bold;
     }
 
     .recap-box {
@@ -329,9 +333,16 @@
           <div class="box-title">MENTIONS DU CONSEIL DE CLASSE</div>
           
           <div style="font-weight: bold; text-decoration: underline; margin-top: 4px; margin-bottom: 2px;">Distinctions</div>
-          <div class="checkbox-item">Félicitations du Jury <div class="checkbox-sq"></div></div>
-          <div class="checkbox-item">Tableau d'Honneur <div class="checkbox-sq"></div></div>
-          <div class="checkbox-item">Encouragements <div class="checkbox-sq"></div></div>
+          <?php
+            $hasNotes = !empty($totalCoefficients) && $totalCoefficients > 0;
+            $moy = (float)($moyenneGenerale ?? 0);
+            $felicitations = $hasNotes && ($moy >= 16);
+            $tableauHonneur = $hasNotes && ($moy >= 14 && $moy < 16);
+            $encouragements = $hasNotes && ($moy >= 12 && $moy < 14);
+          ?>
+          <div class="checkbox-item">Félicitations du Jury <div class="checkbox-sq"><?= $felicitations ? 'X' : '' ?></div></div>
+          <div class="checkbox-item">Tableau d'Honneur <div class="checkbox-sq"><?= $tableauHonneur ? 'X' : '' ?></div></div>
+          <div class="checkbox-item">Encouragements <div class="checkbox-sq"><?= $encouragements ? 'X' : '' ?></div></div>
 
           <div style="font-weight: bold; text-decoration: underline; margin-top: 6px; margin-bottom: 2px;">Décision</div>
           <div style="font-size: 11px; font-weight: bold; color: #1E3A5F; margin-top: 4px;">

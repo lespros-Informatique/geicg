@@ -15,6 +15,7 @@ $totalElevesClasse = $totalElevesClasse ?? 1;
 $moyenneMinClasse = $moyenneMinClasse ?? 0;
 $moyenneMaxClasse = $moyenneMaxClasse ?? 0;
 $moyenneMoyClasse = $moyenneMoyClasse ?? 0;
+$heuresAbsences = $heuresAbsences ?? '0 H';
 ?>
 <style>
 @media print {
@@ -133,6 +134,10 @@ $moyenneMoyClasse = $moyenneMoyClasse ?? 0;
             <div>
               <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 2px;">Date & Lieu de Naissance</span>
               <span style="font-size: 13px; color: #334155;"><?= htmlspecialchars(($item['date_naissance_etudiant'] ?? '-') . (!empty($item['lieu_naissance_etudiant']) ? ' à ' . $item['lieu_naissance_etudiant'] : '')) ?></span>
+            </div>
+            <div>
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 2px;">Absences Constatées</span>
+              <span style="font-size: 13px; font-weight: 700; color: #B91C1C;"><?= htmlspecialchars($heuresAbsences) ?></span>
             </div>
           </div>
         </div>

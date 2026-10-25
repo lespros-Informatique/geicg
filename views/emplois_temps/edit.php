@@ -159,21 +159,30 @@ $enseignants = (new ModelEnseignant())->getAll();
                 <?php endforeach; ?>
               </select>
             </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Jour de la semaine <span style="color: #EF4444;">*</span></label>
-              <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="jour" required>
-                <?php foreach(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as $j): ?>
-                  <option value="<?= strtolower($j) ?>" <?= (strtolower($item['jour'] ?? '') === strtolower($j)) ? 'selected' : '' ?>><?= $j ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Heure de début <span style="color: #EF4444;">*</span></label>
-              <input type="time" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="heure_debut" value="<?= htmlspecialchars($item['heure_debut'] ?? '') ?>" placeholder="Ex: 08:00" required>
-            </div>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Heure de fin <span style="color: #EF4444;">*</span></label>
-              <input type="time" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="heure_fin" value="<?= htmlspecialchars($item['heure_fin'] ?? '') ?>" placeholder="Ex: 11:30" required>
+            <style>
+              @media (max-width: 640px) {
+                .schedule-timing-row {
+                  grid-template-columns: 1fr !important;
+                }
+              }
+            </style>
+            <div class="schedule-timing-row" style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%;">
+              <div class="form-group" style="width: 100%; box-sizing: border-box;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Jour de la semaine <span style="color: #EF4444;">*</span></label>
+                <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="jour" required>
+                  <?php foreach(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as $j): ?>
+                    <option value="<?= strtolower($j) ?>" <?= (strtolower($item['jour'] ?? '') === strtolower($j)) ? 'selected' : '' ?>><?= $j ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="form-group" style="width: 100%; box-sizing: border-box;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Heure de début <span style="color: #EF4444;">*</span></label>
+                <input type="time" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="heure_debut" value="<?= htmlspecialchars($item['heure_debut'] ?? '') ?>" placeholder="Ex: 08:00" required>
+              </div>
+              <div class="form-group" style="width: 100%; box-sizing: border-box;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Heure de fin <span style="color: #EF4444;">*</span></label>
+                <input type="time" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="heure_fin" value="<?= htmlspecialchars($item['heure_fin'] ?? '') ?>" placeholder="Ex: 11:30" required>
+              </div>
             </div>
           </div>
 

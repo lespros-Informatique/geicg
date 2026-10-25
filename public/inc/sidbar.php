@@ -526,8 +526,11 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($showBulletins): ?>
-                <a href="<?= RACINE ?>bulletin/list" class="nav-item sub <?= strpos($currentUri, '/bulletin/') !== false ? 'active' : '' ?>" data-title="Bulletins & PV par Classe">
-                    <i data-lucide="file-text"></i> <span>Bulletins & PV de Notes</span>
+                <a href="<?= RACINE ?>bulletin/list" class="nav-item sub <?= (strpos($currentUri, '/bulletin/list') !== false || $currentUri === RACINE . 'bulletin/' || (strpos($currentUri, '/bulletin/') !== false && strpos($currentUri, 'pvClasse') === false)) ? 'active' : '' ?>" data-title="Bulletins Semestriels">
+                    <i data-lucide="file-text"></i> <span>Bulletins Semestriels</span>
+                </a>
+                <a href="<?= RACINE ?>bulletin/pvClasse" class="nav-item sub <?= strpos($currentUri, '/bulletin/pvClasse') !== false ? 'active' : '' ?>" data-title="PV de Délibération">
+                    <i data-lucide="file-spreadsheet"></i> <span>PV de Délibération</span>
                 </a>
                 <?php endif; ?>
             </div>
