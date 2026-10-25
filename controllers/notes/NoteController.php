@@ -71,9 +71,9 @@ class NoteController extends BaseController
             'annee_code' => $anneeCode,
             'etablissement_code' => $etabCode,
             'user_code' => $userCode,
-            'etudiant_code' => $data['etudiant_code'] ?? '',
+            'inscription_code' => $data['inscription_code'] ?? '',
             'matiere_code' => $data['matiere_code'] ?? '',
-            'classe_code' => $data['classe_code'] ?? ''
+            'semestre_code' => $data['semestre_code'] ?? ''
         ]);
 
         if (empty($data['code_note'])) {
@@ -84,7 +84,6 @@ class NoteController extends BaseController
         $cols = $this->model->getCon()->query("DESCRIBE notes")->fetchAll(PDO::FETCH_COLUMN);
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = array_intersect_key($data, array_flip($cols));
         if ($this->model->create($filteredData)) {
             $this->success('Note enregistrée avec succès!');
@@ -139,7 +138,7 @@ class NoteController extends BaseController
                        m.libelle_matiere,
                        cl.libelle_classe, f.libelle_filiere, niv.libelle_niveau,
                        s.libelle_semestre, a.libelle_annee,
-                       COALESCE(em.coefficient_enseignant_matiere, em.coefficient, 1.0) as coef_cours
+                       COALESCE(em.coefficient, 1.0) as coef_cours
                 FROM notes n
                 LEFT JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
                 LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
@@ -148,7 +147,7 @@ class NoteController extends BaseController
                 LEFT JOIN niveaux niv ON niv.code_niveau = cl.niveau_code
                 LEFT JOIN matieres m ON m.code_matiere = n.matiere_code
                 LEFT JOIN semestres s ON s.code_semestre = n.semestre_code
-                LEFT JOIN annees a ON a.code_annee = n.annee_code
+                LEFT JOIN annees a ON a.code_annee = ins.annee_code
                 LEFT JOIN enseignant_matiere em ON (em.classe_code = ins.classe_code AND em.matiere_code = n.matiere_code)
                 WHERE n.id_note = ?
             ");
@@ -159,6 +158,7 @@ class NoteController extends BaseController
         } catch (Exception $e) {
             error_log("NoteController::details error: " . $e->getMessage());
             $this->renderNotFound("L'évaluation / note demandée est introuvable.");
+            return;
         }
         $this->loadView('../views/notes/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -314,7 +314,8 @@ class NoteController extends BaseController
             'etablissement_code' => $etabCode,
             'user_code' => $userCode,
             'classe_code' => $classeCode,
-            'matiere_code' => $matiereCode
+            'matiere_code' => $matiereCode,
+            'semestre_code' => $semestreCode
         ]);
 
         try {
@@ -327,7 +328,7 @@ class NoteController extends BaseController
                     continue;
                 }
 
-                $valNote = (float)$valNoteStr;
+                $valNote = (float)str_replace(',', '.', $valNoteStr);
                 if ($valNote < 0 || $valNote > 20) {
                     throw new Exception("La note doit être comprise entre 0 et 20.");
                 }
@@ -343,7 +344,7 @@ class NoteController extends BaseController
                 } else {
                     $stmtCheck = $db->prepare("
                         SELECT id_note FROM notes 
-                        WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND type_evaluation_code = ?
+                        WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND type_evaluation_code = ? AND (composition_code IS NULL OR composition_code = '')
                     ");
                     $stmtCheck->execute([$inscCode, $matiereCode, $semestreCode, $typeEval]);
                 }
@@ -353,7 +354,7 @@ class NoteController extends BaseController
                 if ($existingId) {
                     $stmtUpd = $db->prepare("
                         UPDATE notes 
-                        SET valeur_note = ?, observations = ?, composition_code = ?, statut_note = 'actif'
+                        SET valeur_note = ?, observations = ?, composition_code = ?, updated_at_note = NOW(), statut_note = 'actif'
                         WHERE id_note = ?
                     ");
                     $stmtUpd->execute([$valNote, $obs, $compositionCode, $existingId]);
@@ -361,7 +362,7 @@ class NoteController extends BaseController
                     $fkErr = ForeignKeyValidator::validate($db, 'notes', [
                         'inscription_code' => $inscCode,
                         'matiere_code' => $matiereCode,
-                        'annee_code' => $anneeCode,
+                        'semestre_code' => $semestreCode,
                         'etablissement_code' => $etabCode
                     ]);
                     if ($fkErr !== null) {
@@ -372,10 +373,10 @@ class NoteController extends BaseController
 
                     $codeNote = $this->validator->generateCode('notes', 'code_note', 'NOT-', 8);
                     $stmtIns = $db->prepare("
-                        INSERT INTO notes (code_note, inscription_code, matiere_code, semestre_code, type_evaluation_code, composition_code, valeur_note, observations, statut_note, user_code, etablissement_code, annee_code, created_at_note)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?, ?)
+                        INSERT INTO notes (code_note, inscription_code, matiere_code, semestre_code, type_evaluation_code, composition_code, valeur_note, observations, statut_note, user_code, etablissement_code, created_at_note)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?)
                     ");
-                    $stmtIns->execute([$codeNote, $inscCode, $matiereCode, $semestreCode, $typeEval, $compositionCode, $valNote, $obs, $userCode, $etabCode, $anneeCode, date('Y-m-d H:i:s')]);
+                    $stmtIns->execute([$codeNote, $inscCode, $matiereCode, $semestreCode, $typeEval, $compositionCode, $valNote, $obs, $userCode, $etabCode, date('Y-m-d H:i:s')]);
                 }
                 $savedCount++;
             }

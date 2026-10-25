@@ -15,18 +15,22 @@ class ModelNote extends BaseModel
                    e.matricule_etudiant,
                    m.libelle_matiere,
                    cl.libelle_classe,
-                   niv.libelle_niveau
+                   niv.libelle_niveau,
+                   s.libelle_semestre,
+                   comp.libelle_composition
             FROM notes n
             LEFT JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
             LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
             LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
             LEFT JOIN niveaux niv ON niv.code_niveau = cl.niveau_code
             LEFT JOIN matieres m ON m.code_matiere = n.matiere_code
+            LEFT JOIN semestres s ON s.code_semestre = n.semestre_code
+            LEFT JOIN compositions comp ON comp.code_composition = n.composition_code
         ";
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "n.annee_code = ?";
+            $conditions[] = "ins.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {

@@ -140,6 +140,11 @@ class ForeignKeyValidator
             'table' => 'galeries',
             'field' => 'code_galerie',
             'label' => 'Galerie Médias'
+        ],
+        'semestre_code' => [
+            'table' => 'semestres',
+            'field' => 'code_semestre',
+            'label' => 'Semestre Académique'
         ]
     ];
 
@@ -151,7 +156,7 @@ class ForeignKeyValidator
         'paiements' => ['inscription_code', 'annee_code', 'etablissement_code'],
         'depenses' => ['type_depense_code', 'annee_code', 'etablissement_code'],
         'absences' => ['etudiant_code', 'classe_code', 'annee_code', 'etablissement_code'],
-        'notes' => ['etudiant_code', 'matiere_code', 'classe_code', 'annee_code', 'etablissement_code'],
+        'notes' => ['inscription_code', 'matiere_code', 'semestre_code', 'etablissement_code'],
         'classes' => ['filiere_code', 'niveau_code', 'annee_code', 'etablissement_code'],
         'annees' => ['etablissement_code'],
         'emplois_temps' => ['classe_code', 'matiere_code', 'enseignant_code', 'annee_code', 'etablissement_code'],

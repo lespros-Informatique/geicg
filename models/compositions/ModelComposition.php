@@ -191,12 +191,8 @@ class ModelComposition extends BaseModel
                 $sql .= " AND comp.semestre_code = ?";
                 $params[] = $semestreCode;
             }
-            if (!empty($typeComposition)) {
-                $sql .= " AND comp.type_composition = ?";
-                $params[] = $typeComposition;
-            }
 
-            $sql .= " ORDER BY comp.date_composition DESC ";
+            $sql .= " ORDER BY comp.id_composition DESC ";
 
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
@@ -220,7 +216,7 @@ class ModelComposition extends BaseModel
                     $sqlFallback .= " AND comp.semestre_code = ?";
                     $paramsFb[] = $semestreCode;
                 }
-                $sqlFallback .= " ORDER BY comp.date_composition DESC ";
+                $sqlFallback .= " ORDER BY comp.id_composition DESC ";
                 $stmtFb = $db->prepare($sqlFallback);
                 $stmtFb->execute($paramsFb);
                 $results = $stmtFb->fetchAll(PDO::FETCH_ASSOC) ?: [];

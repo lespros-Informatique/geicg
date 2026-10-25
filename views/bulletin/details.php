@@ -1,4 +1,21 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php
+$item = $item ?? [];
+$encryptedId = $encryptedId ?? '';
+$semestres = $semestres ?? [];
+$selectedSemestreCode = $selectedSemestreCode ?? '';
+$matieresNotes = $matieresNotes ?? [];
+$totalPoints = $totalPoints ?? 0;
+$totalCoefficients = $totalCoefficients ?? 0;
+$moyenneGenerale = $moyenneGenerale ?? 0;
+$mention = $mention ?? '-';
+$decision = $decision ?? '-';
+$rang = $rang ?? 1;
+$totalElevesClasse = $totalElevesClasse ?? 1;
+$moyenneMinClasse = $moyenneMinClasse ?? 0;
+$moyenneMaxClasse = $moyenneMaxClasse ?? 0;
+$moyenneMoyClasse = $moyenneMoyClasse ?? 0;
+?>
 <style>
 @media print {
   body { background: #fff !important; font-size: 11pt !important; color: #000 !important; }
@@ -41,8 +58,11 @@
           <a href="<?= RACINE ?>bulletin/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
+          <a href="<?= RACINE ?>bulletin/imprimerBulletinPdf/<?= $encryptedId ?>?semestre=<?= urlencode($selectedSemestreCode) ?>" target="_blank" class="btn btn-outline-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; border-color: #1E3A5F; color: #1E3A5F;">
+            <i data-lucide="file-down" style="width: 18px; height: 18px;"></i> Télécharger PDF
+          </a>
           <button onclick="window.print()" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 20px;">
-            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Relevé
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Direct
           </button>
         </div>
       </div>

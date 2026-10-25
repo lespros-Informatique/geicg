@@ -512,6 +512,7 @@ $route->addRoute('/bulletin/edit', [$bulletinController, 'edit']);
 $route->addRoute('/bulletin/changer', [$bulletinController, 'changer']);
 $route->addRoute('/bulletin/details/{param}', [$bulletinController, 'details']);
 $route->addRoute('/bulletin/edition/{param}', [$bulletinController, 'edition']);
+$route->addRoute('/bulletin/imprimerBulletinPdf/{param}', [$bulletinController, 'imprimerBulletinPdf']);
 $route->addRoute('/bulletin/formulaire', [$bulletinController, 'formulaire']);
 
 // Module: evenement (EvenementController)
