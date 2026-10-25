@@ -2,11 +2,21 @@
 <?php
 $item = $item ?? [];
 $paiements = $paiements ?? [];
+$kpis = $kpis ?? [];
 
-$fondInitial = (float)($item['fond_initial'] ?? 0);
-$totalGeneral = (float)($item['total_general'] ?? 0);
-$soldeAttendu = (float)($item['solde_attendu'] ?? ($fondInitial + $totalGeneral));
-$ecart = (float)($item['ecart_caisse'] ?? 0);
+$fondInitial = (float)($kpis['fond_initial'] ?? ($item['fond_initial'] ?? 0));
+$totalValide = (float)($kpis['total_valide'] ?? ($item['total_general'] ?? 0));
+$totalAnnule = (float)($kpis['total_annule'] ?? 0);
+$nbValides = (int)($kpis['nb_valides'] ?? 0);
+$nbAnnules = (int)($kpis['nb_annules'] ?? 0);
+$nbTotal = (int)($kpis['nb_total'] ?? count($paiements));
+$totalEspeces = (float)($kpis['total_especes'] ?? ($item['total_especes'] ?? 0));
+$totalMobile = (float)($kpis['total_mobile'] ?? ($item['total_mobile_money'] ?? 0));
+$totalCheque = (float)($kpis['total_cheque'] ?? ($item['total_cheque_virement'] ?? 0));
+$totalScolarite = (float)($kpis['total_scolarite'] ?? 0);
+$totalFraisAnnexes = (float)($kpis['total_frais_annexes'] ?? 0);
+$soldeAttendu = (float)($kpis['solde_attendu'] ?? ($fondInitial + $totalValide));
+$ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
 ?>
 <style>
 @media print {
@@ -123,76 +133,210 @@ $ecart = (float)($item['ecart_caisse'] ?? 0);
         </div>
 
         <!-- Synthèse Financière de la Session -->
-        <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0 0 14px 0;">Synthèse des Flux Financiers</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">
+            <i data-lucide="wallet" style="width: 17px; height: 17px; vertical-align: -3px; color: #1E3A5F;"></i> Synthèse des Flux & Arrêté de Caisse
+          </h3>
+          <div style="font-size: 12px; color: #64748B;">
+            <?= (int)$nbTotal ?> opération(s) enregistrée(s) au total
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px;">
           
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">1. Fond Initial</span>
+          <!-- Carte 1 : Fond Initial -->
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">1. Fond Initial</span>
+              <i data-lucide="coins" style="width: 15px; height: 15px; color: #94A3B8;"></i>
+            </div>
             <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= number_format($fondInitial, 0, ',', ' ') ?> F</div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Démarrage session</div>
           </div>
 
-          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">2. Espèces Encaissées</span>
-            <div style="font-size: 18px; font-weight: 800; color: #15803D; margin-top: 4px;"><?= number_format((float)$item['total_especes'], 0, ',', ' ') ?> F</div>
+          <!-- Carte 2 : Total Encaissé Validé -->
+          <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 10px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">2. Encaissé Validé</span>
+              <span style="background: #DCFCE7; color: #15803D; font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">+ Effectif</span>
+            </div>
+            <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 4px;"><?= number_format($totalValide, 0, ',', ' ') ?> F</div>
+            <div style="font-size: 11px; color: #166534; margin-top: 2px; font-weight: 700;"><?= $nbValides ?> règlement(s) encaissé(s)</div>
           </div>
 
-          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">3. Mobile Money</span>
-            <div style="font-size: 18px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= number_format((float)$item['total_mobile_money'], 0, ',', ' ') ?> F</div>
+          <!-- Carte 3 : Transactions Annulées -->
+          <div style="background: <?= $totalAnnule > 0 ? '#FEF2F2' : '#F8FAFC' ?>; border: 1.5px solid <?= $totalAnnule > 0 ? '#FECACA' : '#E2E8F0' ?>; border-radius: 10px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: <?= $totalAnnule > 0 ? '#DC2626' : '#64748B' ?>; text-transform: uppercase;">3. Annulations</span>
+              <span style="background: <?= $totalAnnule > 0 ? '#FEE2E2' : '#F1F5F9' ?>; color: <?= $totalAnnule > 0 ? '#DC2626' : '#64748B' ?>; font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">Exclues</span>
+            </div>
+            <div style="font-size: 18px; font-weight: 800; color: <?= $totalAnnule > 0 ? '#DC2626' : '#64748B' ?>; margin-top: 4px;"><?= number_format($totalAnnule, 0, ',', ' ') ?> F</div>
+            <div style="font-size: 11px; color: <?= $totalAnnule > 0 ? '#B91C1C' : '#94A3B8' ?>; margin-top: 2px; font-weight: 700;"><?= $nbAnnules ?> transaction(s) annulée(s)</div>
           </div>
 
-          <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">4. Total Encaissé</span>
-            <div style="font-size: 18px; font-weight: 800; color: #B45309; margin-top: 4px;"><?= number_format($totalGeneral, 0, ',', ' ') ?> F</div>
+          <!-- Carte 4 : Répartition Scolarité vs Frais Annexes -->
+          <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">4. Scol. & Annexes</span>
+              <i data-lucide="layers" style="width: 15px; height: 15px; color: #1E3A5F;"></i>
+            </div>
+            <div style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-top: 6px;">
+              Scol. : <strong><?= number_format($totalScolarite, 0, ',', ' ') ?> F</strong>
+            </div>
+            <div style="font-size: 12px; font-weight: 700; color: #475569; margin-top: 2px;">
+              Annexes : <strong><?= number_format($totalFraisAnnexes, 0, ',', ' ') ?> F</strong>
+            </div>
           </div>
 
-          <div style="background: <?= $ecart != 0 ? '#FEF2F2' : '#F0FDF4' ?>; border: 1px solid <?= $ecart != 0 ? '#FECACA' : '#BBF7D0' ?>; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: <?= $ecart != 0 ? '#DC2626' : '#15803D' ?>; text-transform: uppercase;">5. Écart Constaté</span>
+          <!-- Carte 5 : Total Espèces Réel -->
+          <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 10px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">5. Espèces en Caisse</span>
+              <i data-lucide="banknote" style="width: 15px; height: 15px; color: #B45309;"></i>
+            </div>
+            <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 4px;"><?= number_format($totalEspeces, 0, ',', ' ') ?> F</div>
+            <div style="font-size: 11px; color: #92400E; margin-top: 2px;">Autre canal : <?= number_format($totalMobile + $totalCheque, 0, ',', ' ') ?> F</div>
+          </div>
+
+          <!-- Carte 6 : Solde & Écart de Caisse -->
+          <div style="background: <?= $ecart != 0 ? '#FEF2F2' : '#F0FDF4' ?>; border: 1.5px solid <?= $ecart != 0 ? '#FECACA' : '#BBF7D0' ?>; border-radius: 10px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: <?= $ecart != 0 ? '#DC2626' : '#15803D' ?>; text-transform: uppercase;">6. Solde & Écart</span>
+              <span style="background: <?= $ecart != 0 ? '#FEE2E2' : '#DCFCE7' ?>; color: <?= $ecart != 0 ? '#DC2626' : '#15803D' ?>; font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">
+                <?= $ecart == 0 ? 'Conforme' : 'Écart' ?>
+              </span>
+            </div>
             <div style="font-size: 18px; font-weight: 900; color: <?= $ecart != 0 ? '#DC2626' : '#15803D' ?>; margin-top: 4px;">
               <?= ($ecart > 0 ? '+' : '') . number_format($ecart, 0, ',', ' ') ?> F
             </div>
+            <div style="font-size: 11px; color: #475569; margin-top: 2px;">Solde attendu : <strong><?= number_format($soldeAttendu, 0, ',', ' ') ?> F</strong></div>
           </div>
 
         </div>
 
-        <!-- Détail des Transactions Collectées -->
-        <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0 0 14px 0;">Journal des Règlements Encaissés (<?= count($paiements) ?>)</h3>
-        <div style="width: 100%; overflow-x: auto; margin-bottom: 28px;">
-          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <!-- Détail de Toutes les Transactions de la Session -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="list-ordered" style="width: 17px; height: 17px; color: #1E3A5F;"></i> Journal de Toutes les Transactions de la Session (<?= count($paiements) ?>)
+            </h3>
+            <span style="font-size: 12px; color: #64748B;">Reçus validés et écritures annulées enregistrés au cours de cette session</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="badge" style="background: #DCFCE7; color: #15803D; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 12px; border: 1px solid #BBF7D0;">
+              <?= $nbValides ?> Validé(s) : <?= number_format($totalValide, 0, ',', ' ') ?> F
+            </span>
+            <?php if ($nbAnnules > 0): ?>
+              <span class="badge" style="background: #FEF2F2; color: #DC2626; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 12px; border: 1px solid #FECACA;">
+                <?= $nbAnnules ?> Annulé(s) : <?= number_format($totalAnnule, 0, ',', ' ') ?> F
+              </span>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <div style="width: 100%; overflow-x: auto; margin-bottom: 28px; border: 1px solid #E2E8F0; border-radius: 10px;">
+          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 0;">
             <thead>
-              <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; text-align: left;">
-                <th style="padding: 10px;">Réf. Reçu</th>
-                <th style="padding: 10px;">Étudiant & Classe</th>
-                <th style="padding: 10px;">Tranche Réglée</th>
-                <th style="padding: 10px;">Mode Règlement</th>
-                <th style="padding: 10px;">Réf. Transaction</th>
-                <th style="padding: 10px; text-align: right;">Montant (FCFA)</th>
+              <tr style="background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; text-align: left; color: #475569; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                <th style="padding: 12px 14px; width: 40px;">#</th>
+                <th style="padding: 12px 14px;">Réf. Reçu</th>
+                <th style="padding: 12px 14px;">Date & Heure</th>
+                <th style="padding: 12px 14px;">Étudiant & Classe</th>
+                <th style="padding: 12px 14px;">Type Règlement</th>
+                <th style="padding: 12px 14px;">Mode Règlement</th>
+                <th style="padding: 12px 14px; text-align: center;">Statut</th>
+                <th style="padding: 12px 14px; text-align: right;">Montant (FCFA)</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($paiements)): ?>
                 <tr>
-                  <td colspan="6" style="padding: 16px; text-align: center; color: #94A3B8;">Aucun encaissement enregistré au cours de cette session.</td>
+                  <td colspan="8" style="padding: 24px; text-align: center; color: #94A3B8;">Aucune transaction enregistrée au cours de cette session.</td>
                 </tr>
               <?php else: ?>
-                <?php foreach ($paiements as $p): ?>
-                  <tr style="border-bottom: 1px solid #F1F5F9;">
-                    <td style="padding: 10px;"><code style="font-weight: 700; color: #1E3A5F;"><?= htmlspecialchars($p['code_paiement'] ?? '-') ?></code></td>
-                    <td style="padding: 10px;">
-                      <div style="font-weight: 700; color: #0F172A;"><?= htmlspecialchars(($p['nom_etudiant'] ?? ($p['nom'] ?? '')) . ' ' . ($p['prenom_etudiant'] ?? ($p['prenom'] ?? ''))) ?></div>
-                      <div style="font-size: 11px; color: #64748B;"><?= htmlspecialchars($p['libelle_classe'] ?? '') ?></div>
+                <?php $idx = 1; foreach ($paiements as $p): 
+                  $isAnnule = (strtolower($p['statut_paiement'] ?? '') === 'annule');
+                  $rowBg = $isAnnule ? '#FEF2F2' : '#FFFFFF';
+                  $cat = strtoupper($p['categorie_paiement'] ?? 'SCOLARITE');
+                  $typeLib = !empty($p['type_paiement']) ? $p['type_paiement'] : ($cat === 'FRAIS_ANNEXES' ? 'Frais Annexes' : 'Scolarité');
+                  $trancheLib = $p['libelle_tranche'] ?? '';
+                ?>
+                  <tr style="border-bottom: 1px solid #F1F5F9; background: <?= $rowBg ?>;">
+                    <td style="padding: 12px 14px; color: #64748B; font-weight: 700;"><?= $idx++ ?></td>
+                    <td style="padding: 12px 14px;">
+                      <code style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= htmlspecialchars($p['code_paiement'] ?? '-') ?></code>
+                      <?php if (!empty($p['reference_paiement']) && $p['reference_paiement'] !== '-'): ?>
+                        <div style="font-size: 11px; color: #64748B;">Réf: <?= htmlspecialchars($p['reference_paiement']) ?></div>
+                      <?php endif; ?>
                     </td>
-                    <td style="padding: 10px;">
-                      <span style="font-weight: 700; color: #1E3A5F; font-size: 12px;"><?= htmlspecialchars($p['libelle_tranche'] ?? ($p['type_paiement'] ?? 'Scolarité')) ?></span>
+                    <td style="padding: 12px 14px; white-space: nowrap; color: #334155; font-size: 12.5px;">
+                      <strong><?= date('d/m/Y', strtotime($p['date_paiement'])) ?></strong>
+                      <div style="font-size: 11.5px; color: #64748B;"><?= date('H:i:s', strtotime($p['date_paiement'])) ?></div>
                     </td>
-                    <td style="padding: 10px;">
-                      <span class="badge" style="background: #EFF6FF; color: #1E3A5F; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 11px; text-transform: uppercase;">
+                    <td style="padding: 12px 14px;">
+                      <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">
+                        <?= htmlspecialchars(($p['nom_etudiant'] ?? '') . ' ' . ($p['prenom_etudiant'] ?? '')) ?>
+                      </div>
+                      <div style="font-size: 11.5px; color: #64748B; display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                        <?php if (!empty($p['matricule_etudiant'])): ?>
+                          <span>Mat: <strong><?= htmlspecialchars($p['matricule_etudiant']) ?></strong></span>
+                        <?php endif; ?>
+                        <?php if (!empty($p['libelle_classe'])): ?>
+                          <span>&bull; <?= htmlspecialchars($p['libelle_classe']) ?></span>
+                        <?php endif; ?>
+                      </div>
+                    </td>
+                    <td style="padding: 12px 14px;">
+                      <?php if ($cat === 'FRAIS_ANNEXES'): ?>
+                        <span class="badge" style="background: #F3E8FF; color: #7E22CE; font-weight: 800; padding: 4px 9px; border-radius: 6px; font-size: 11.5px; border: 1px solid #E9D5FF; display: inline-flex; align-items: center; gap: 4px;">
+                          <i data-lucide="tag" style="width: 12px; height: 12px;"></i> Frais Annexes
+                        </span>
+                      <?php else: ?>
+                        <span class="badge" style="background: #EFF6FF; color: #1E3A5F; font-weight: 800; padding: 4px 9px; border-radius: 6px; font-size: 11.5px; border: 1px solid #BFDBFE; display: inline-flex; align-items: center; gap: 4px;">
+                          <i data-lucide="graduation-cap" style="width: 12px; height: 12px;"></i> Scolarité
+                        </span>
+                        <?php if (!empty($trancheLib)): ?>
+                          <div style="font-size: 11.5px; color: #475569; margin-top: 3px; font-weight: 600;">
+                            <?= htmlspecialchars($trancheLib) ?>
+                          </div>
+                        <?php endif; ?>
+                      <?php endif; ?>
+                    </td>
+                    <td style="padding: 12px 14px;">
+                      <span class="badge" style="background: #F8FAFC; color: #334155; font-weight: 700; padding: 4px 8px; border-radius: 6px; font-size: 11px; text-transform: uppercase; border: 1px solid #CBD5E1;">
                         <?= htmlspecialchars($p['mode_paiement'] ?? 'espece') ?>
                       </span>
+                      <div style="font-size: 11px; color: #64748B; margin-top: 2px;">
+                        <?= htmlspecialchars($p['canal_paiement'] ?? 'guichet') ?>
+                      </div>
                     </td>
-                    <td style="padding: 10px; color: #64748B; font-size: 12px;"><?= htmlspecialchars($p['reference_paiement'] ?? '-') ?></td>
-                    <td style="padding: 10px; text-align: right; font-weight: 800; color: #0F172A;">
-                      <?= number_format((float)$p['montant_paiement'], 0, ',', ' ') ?> F
+                    <td style="padding: 12px 14px; text-align: center;">
+                      <?php if ($isAnnule): ?>
+                        <span class="badge" style="background: #FEE2E2; color: #DC2626; font-weight: 800; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; border: 1px solid #FECACA; display: inline-flex; align-items: center; gap: 4px;">
+                          <i data-lucide="x-circle" style="width: 13px; height: 13px;"></i> Annulé
+                        </span>
+                        <?php if (!empty($p['observations'])): ?>
+                          <div style="font-size: 10.5px; color: #B91C1C; margin-top: 3px; max-width: 170px; line-height: 1.2; font-style: italic;">
+                            <?= htmlspecialchars($p['observations']) ?>
+                          </div>
+                        <?php endif; ?>
+                      <?php else: ?>
+                        <span class="badge" style="background: #DCFCE7; color: #15803D; font-weight: 800; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; border: 1px solid #BBF7D0; display: inline-flex; align-items: center; gap: 4px;">
+                          <i data-lucide="check" style="width: 13px; height: 13px;"></i> Confirmé
+                        </span>
+                      <?php endif; ?>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: right;">
+                      <?php if ($isAnnule): ?>
+                        <del style="font-weight: 700; color: #94A3B8; font-size: 13.5px;">
+                          <?= number_format((float)$p['montant_paiement'], 0, ',', ' ') ?> F
+                        </del>
+                        <div style="font-size: 11px; color: #DC2626; font-weight: 700;">Exclu de la caisse</div>
+                      <?php else: ?>
+                        <span style="font-weight: 900; color: #0F172A; font-size: 14.5px;">
+                          <?= number_format((float)$p['montant_paiement'], 0, ',', ' ') ?> F
+                        </span>
+                      <?php endif; ?>
                     </td>
                   </tr>
                 <?php endforeach; ?>

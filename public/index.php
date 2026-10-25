@@ -365,6 +365,7 @@ $route->addRoute('/session_caisse/cloturer', [$sessionCaisseController, 'cloture
 $route->addRoute('/session_caisse/cloturer/{param}', [$sessionCaisseController, 'cloturer']);
 $route->addRoute('/session_caisse/saveCloture', [$sessionCaisseController, 'saveCloture']);
 $route->addRoute('/session_caisse/details/{param}', [$sessionCaisseController, 'details']);
+$route->addRoute('/session_caisse/apiTransactions/{param}', [$sessionCaisseController, 'apiTransactions']);
 $route->addRoute('/session_caisse/edition/{param}', [$sessionCaisseController, 'edition']);
 $route->addRoute('/session_caisse/formulaire', [$sessionCaisseController, 'formulaire']);
 $route->addRoute('/session_caisse/getDailyTotals', [$sessionCaisseController, 'getDailyTotals']);

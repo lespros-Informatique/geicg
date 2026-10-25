@@ -49,8 +49,18 @@ class SessionCaisseController extends BaseController
         $stmtClo->execute($params);
         $totalCloturees = (int)($stmtClo->fetchColumn() ?: 0);
 
+        $whereSum = empty($whereAnnee) ? "" : $whereAnnee;
+        $stmtSum = $db->prepare("SELECT COALESCE(SUM(total_general), 0) FROM sessions_caisse" . $whereSum);
+        $stmtSum->execute($params);
+        $totalCumulSessions = (float)($stmtSum->fetchColumn() ?: 0);
+
         // Active session for today
         $activeSession = $this->model->getActiveSession($today);
+
+        // Latest session for reference
+        $stmtLatest = $db->prepare("SELECT * FROM sessions_caisse ORDER BY date_session DESC, id_session DESC LIMIT 1");
+        $stmtLatest->execute();
+        $latestSession = $stmtLatest->fetch(PDO::FETCH_ASSOC) ?: null;
         
         // Today's live collection totals from paiements
         $dailyTotals = $this->model->getDailyFinancialTotals($today);
@@ -59,7 +69,9 @@ class SessionCaisseController extends BaseController
             'totalSessions' => $totalSessions,
             'totalOuvertes' => $totalOuvertes,
             'totalCloturees' => $totalCloturees,
+            'totalCumulSessions' => $totalCumulSessions,
             'activeSession' => $activeSession,
+            'latestSession' => $latestSession,
             'dailyTotals' => $dailyTotals,
             'annees' => $annees,
             'selectedAnneeCode' => $selectedAnneeCode
@@ -236,7 +248,7 @@ class SessionCaisseController extends BaseController
             return;
         }
 
-        // Paiements réalisés au cours de la session
+        // Paiements réalisés au cours de la session (TOUTES LES TRANSACTIONS de la session, y compris annulées)
         $db = $this->model->getCon();
         $stmtP = $db->prepare("
             SELECT p.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, c.libelle_classe, ts.libelle_tranche
@@ -247,15 +259,169 @@ class SessionCaisseController extends BaseController
             LEFT JOIN tranches_scolarite ts ON ts.code_tranche = p.tranche_code
             WHERE (p.session_caisse_code = ? OR (p.session_caisse_code IS NULL AND DATE(p.date_paiement) = ?))
               AND (p.canal_paiement = 'guichet' OR p.canal_paiement IS NULL)
-              AND p.statut_paiement != 'annule'
             ORDER BY p.id_paiement DESC
         ");
         $stmtP->execute([$item['code_session'] ?? '', $item['date_session']]);
-        $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC);
+        $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $totalValide = 0;
+        $totalAnnule = 0;
+        $nbValides = 0;
+        $nbAnnules = 0;
+        $totalEspeces = 0;
+        $totalMobile = 0;
+        $totalCheque = 0;
+        $totalScolarite = 0;
+        $totalFraisAnnexes = 0;
+
+        foreach ($paiements as $p) {
+            $m = (float)($p['montant_paiement'] ?? 0);
+            $mode = strtolower($p['mode_paiement'] ?? '');
+            $cat = strtoupper($p['categorie_paiement'] ?? '');
+            $stat = strtolower($p['statut_paiement'] ?? 'confirme');
+
+            if ($stat === 'annule') {
+                $totalAnnule += $m;
+                $nbAnnules++;
+            } else {
+                $totalValide += $m;
+                $nbValides++;
+                if ($mode === 'espece' || $mode === 'especes') {
+                    $totalEspeces += $m;
+                } elseif (in_array($mode, ['mobile_money', 'mobile', 'wave', 'orange', 'mtn', 'moov'])) {
+                    $totalMobile += $m;
+                } else {
+                    $totalCheque += $m;
+                }
+
+                if ($cat === 'FRAIS_ANNEXES') {
+                    $totalFraisAnnexes += $m;
+                } else {
+                    $totalScolarite += $m;
+                }
+            }
+        }
+
+        $fondInitial = (float)($item['fond_initial'] ?? 0);
+        $soldeAttendu = $fondInitial + $totalValide;
+        $ecart = (float)($item['ecart_caisse'] ?? 0);
+
+        $kpis = [
+            'fond_initial' => $fondInitial,
+            'total_valide' => $totalValide,
+            'total_annule' => $totalAnnule,
+            'nb_valides' => $nbValides,
+            'nb_annules' => $nbAnnules,
+            'nb_total' => count($paiements),
+            'total_especes' => $totalEspeces,
+            'total_mobile' => $totalMobile,
+            'total_cheque' => $totalCheque,
+            'total_scolarite' => $totalScolarite,
+            'total_frais_annexes' => $totalFraisAnnexes,
+            'solde_attendu' => $soldeAttendu,
+            'ecart_caisse' => $ecart
+        ];
 
         $this->loadView('../views/sessions_caisse/details.php', [
             'item' => $item,
-            'paiements' => $paiements
+            'paiements' => $paiements,
+            'kpis' => $kpis
+        ]);
+    }
+
+    public function apiTransactions($idParam)
+    {
+        $this->requireAuth();
+        $id = $this->validator->decrypter($idParam);
+        if (!$id && is_numeric($idParam)) {
+            $id = $idParam;
+        }
+
+        $session = $this->model->getById($id);
+        if (!$session) {
+            $this->json(['status' => 0, 'message' => 'Session de caisse introuvable.', 'data' => []]);
+            return;
+        }
+
+        $db = $this->model->getCon();
+        $stmtP = $db->prepare("
+            SELECT p.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, c.libelle_classe, ts.libelle_tranche
+            FROM paiements p
+            LEFT JOIN inscriptions i ON i.code_inscription = p.inscription_code
+            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN classes c ON c.code_classe = i.classe_code
+            LEFT JOIN tranches_scolarite ts ON ts.code_tranche = p.tranche_code
+            WHERE (p.session_caisse_code = ? OR (p.session_caisse_code IS NULL AND DATE(p.date_paiement) = ?))
+              AND (p.canal_paiement = 'guichet' OR p.canal_paiement IS NULL)
+            ORDER BY p.id_paiement DESC
+        ");
+        $stmtP->execute([$session['code_session'] ?? '', $session['date_session']]);
+        $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $totalValide = 0;
+        $totalAnnule = 0;
+        $nbValides = 0;
+        $nbAnnules = 0;
+        $totalScolarite = 0;
+        $totalFraisAnnexes = 0;
+        $totalEspeces = 0;
+        $totalMobile = 0;
+
+        foreach ($paiements as &$p) {
+            $m = (float)($p['montant_paiement'] ?? 0);
+            $mode = strtolower($p['mode_paiement'] ?? '');
+            $cat = strtoupper($p['categorie_paiement'] ?? '');
+            $stat = strtolower($p['statut_paiement'] ?? 'confirme');
+
+            if ($stat === 'annule') {
+                $totalAnnule += $m;
+                $nbAnnules++;
+            } else {
+                $totalValide += $m;
+                $nbValides++;
+                if ($cat === 'FRAIS_ANNEXES') {
+                    $totalFraisAnnexes += $m;
+                } else {
+                    $totalScolarite += $m;
+                }
+
+                if ($mode === 'espece' || $mode === 'especes') {
+                    $totalEspeces += $m;
+                } else {
+                    $totalMobile += $m;
+                }
+            }
+
+            $p['formatted_montant'] = number_format($m, 0, ',', ' ') . ' FCFA';
+            $p['formatted_date'] = date('d/m/Y H:i', strtotime($p['date_paiement']));
+            $p['etudiant_complet'] = trim(($p['nom_etudiant'] ?? '') . ' ' . ($p['prenom_etudiant'] ?? ''));
+            if (empty($p['etudiant_complet'])) {
+                $p['etudiant_complet'] = 'Étudiant non renseigné';
+            }
+        }
+        unset($p);
+
+        $this->json([
+            'status' => 1,
+            'session' => [
+                'id_session' => $session['id_session'],
+                'code_session' => $session['code_session'],
+                'date_session' => date('d/m/Y', strtotime($session['date_session'])),
+                'caissier_nom' => $session['caissier_nom'] ?? ($session['user_code'] ?? 'Caissier'),
+                'fond_initial' => (float)($session['fond_initial'] ?? 0),
+                'statut_session' => $session['statut_session'] ?? 'ouverte',
+                'total_valide' => $totalValide,
+                'total_annule' => $totalAnnule,
+                'nb_valides' => $nbValides,
+                'nb_annules' => $nbAnnules,
+                'total_scolarite' => $totalScolarite,
+                'total_frais_annexes' => $totalFraisAnnexes,
+                'total_especes' => $totalEspeces,
+                'total_mobile' => $totalMobile,
+                'solde_attendu' => (float)($session['fond_initial'] ?? 0) + $totalValide,
+                'ecart_caisse' => (float)($session['ecart_caisse'] ?? 0)
+            ],
+            'data' => $paiements
         ]);
     }
 

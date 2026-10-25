@@ -82,32 +82,36 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           </div>
         </div>
 
-        <!-- Carte 2 : Fond Initial de la Session Active -->
+        <!-- Carte 2 : Fond Initial de la Session Active ou Récente -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
           <div style="width: 50px; height: 50px; min-width: 50px; border-radius: 12px; background: #F8FAFC; color: #334155; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="coins" style="width: 24px; height: 24px;"></i>
           </div>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Fond de Caisse Initial</div>
+            <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">
+              Fond Initial <?= !empty($activeSession) ? '(En cours)' : '(Dernière session)' ?>
+            </div>
             <div style="font-size: 20px; font-weight: 800; color: #0F172A; line-height: 1.3; margin-top: 2px;">
-              <?= number_format((float)($activeSession['fond_initial'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 13px; font-weight: 700; color: #64748B;">FCFA</span>
+              <?= number_format((float)($activeSession['fond_initial'] ?? ($latestSession['fond_initial'] ?? 0)), 0, ',', ' ') ?> <span style="font-size: 13px; font-weight: 700; color: #64748B;">FCFA</span>
             </div>
             <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Monnaie de réserve de départ</div>
           </div>
         </div>
 
-        <!-- Carte 3 : Encaissements en Direct Aujourd'hui -->
+        <!-- Carte 3 : Encaissements en Direct Aujourd'hui ou Cumul Exercice -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px;">
           <div style="width: 50px; height: 50px; min-width: 50px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="receipt" style="width: 24px; height: 24px;"></i>
           </div>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Aujourd'hui</div>
+            <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">
+              <?= !empty($activeSession) ? "Encaissements Aujourd'hui" : "Cumul Encaissé Sessions" ?>
+            </div>
             <div style="font-size: 20px; font-weight: 900; color: #1E3A5F; line-height: 1.3; margin-top: 2px;">
-              <?= number_format((float)($dailyTotals['total_general'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 13px; font-weight: 700; color: #1E3A5F;">FCFA</span>
+              <?= number_format((float)(!empty($activeSession) ? ($dailyTotals['total_general'] ?? 0) : ($totalCumulSessions ?? 0)), 0, ',', ' ') ?> <span style="font-size: 13px; font-weight: 700; color: #1E3A5F;">FCFA</span>
             </div>
             <div style="font-size: 11.5px; color: #15803D; font-weight: 700; margin-top: 2px;">
-              <?= (int)($dailyTotals['nb_encaissements'] ?? 0) ?> règlement(s) enregistré(s)
+              <?= !empty($activeSession) ? ((int)($dailyTotals['nb_encaissements'] ?? 0) . ' règlement(s) enregistré(s)') : ((int)$totalSessions . ' session(s) enregistrée(s)') ?>
             </div>
           </div>
         </div>
@@ -123,7 +127,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
               <?= (int)$totalSessions ?> <span style="font-size: 13px; font-weight: 700; color: #64748B;">session(s)</span>
             </div>
             <div style="font-size: 11.5px; color: #B45309; margin-top: 2px; font-weight: 700;">
-              <?= (int)$totalCloturees ?> clôturée(s) & archivée(s)
+              <?= (int)$totalCloturees ?> clôturée(s) &bull; <?= (int)$totalOuvertes ?> en cours
             </div>
           </div>
         </div>
@@ -153,6 +157,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
                 <th style="padding: 12px 14px; text-align: right;">Fond Initial</th>
                 <th style="padding: 12px 14px; text-align: right;">Total Encaissé</th>
                 <th style="padding: 12px 14px; text-align: center;">Écart Caisse</th>
+                <th style="padding: 12px 14px; text-align: center;">Statut</th>
                 <th class="text-end" style="padding: 12px 14px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -163,6 +168,64 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
 
     </div>
   </main>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : TOUTES LES TRANSACTIONS DE LA SESSION                 -->
+<!-- ========================================================================= -->
+<div id="modal-transactions-session" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 960px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h3 style="font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="receipt" style="width: 18px; height: 18px; color: #93C5FD;"></i> Transactions de la Session <span id="modal-trans-code" style="color: #93C5FD; font-family: monospace;">-</span>
+        </h3>
+        <p id="modal-trans-sub" style="font-size: 12px; color: #CBD5E1; margin: 3px 0 0 0;">Chargement des données...</p>
+      </div>
+      <button type="button" class="btn-close-modal-trans" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+      <!-- Mini Cartes KPI de la Session -->
+      <div id="modal-trans-kpis" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 20px;">
+        <!-- Injecté dynamiquement par JS -->
+      </div>
+
+      <!-- Tableau des Transactions -->
+      <div style="border: 1px solid #E2E8F0; border-radius: 10px; overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 0;">
+          <thead>
+            <tr style="background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; text-align: left; color: #475569; font-size: 11.5px; font-weight: 800; text-transform: uppercase;">
+              <th style="padding: 10px 12px; width: 35px;">#</th>
+              <th style="padding: 10px 12px;">Réf. Reçu</th>
+              <th style="padding: 10px 12px;">Date & Heure</th>
+              <th style="padding: 10px 12px;">Étudiant</th>
+              <th style="padding: 10px 12px;">Type</th>
+              <th style="padding: 10px 12px;">Mode</th>
+              <th style="padding: 10px 12px; text-align: center;">Statut</th>
+              <th style="padding: 10px 12px; text-align: right;">Montant</th>
+            </tr>
+          </thead>
+          <tbody id="modal-trans-tbody">
+            <tr>
+              <td colspan="8" style="padding: 20px; text-align: center; color: #64748B;">
+                <i data-lucide="loader" class="lucide-spin" style="width: 18px; height: 18px; vertical-align: -3px;"></i> Chargement des transactions...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="padding: 14px 24px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+      <a id="modal-trans-link-pv" href="#" class="btn btn-sm btn-info" style="font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; background: #1E3A5F; color: #FFFFFF; padding: 7px 14px; text-decoration: none;">
+        <i data-lucide="file-text" style="width: 14px; height: 14px;"></i> Ouvrir le PV Complet & Imprimer
+      </a>
+      <button type="button" class="btn btn-secondary btn-close-modal-trans" style="font-weight: 700; border-radius: 6px; padding: 7px 16px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+        Fermer
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ========================================================================= -->
@@ -305,11 +368,25 @@ $(document).ready(function() {
         }
       },
       { 
+        data: 'statut_session',
+        className: 'text-center',
+        render: function(data) {
+          if (data === 'ouverte') {
+            return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; border:1px solid #BBF7D0;"><i data-lucide="unlock" style="width:11px;height:11px;vertical-align:-1px;"></i> Ouverte</span>';
+          }
+          if (data === 'valide') {
+            return '<span class="badge" style="background:#DBEAFE; color:#1E40AF; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; border:1px solid #BFDBFE;"><i data-lucide="check-check" style="width:11px;height:11px;vertical-align:-1px;"></i> Validée</span>';
+          }
+          return '<span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:800; padding:4px 10px; border-radius:20px; font-size:11.5px; border:1px solid #FDE68A;"><i data-lucide="lock" style="width:11px;height:11px;vertical-align:-1px;"></i> Clôturée</span>';
+        }
+      },
+      { 
         data: null,
         orderable: false,
         className: 'text-end',
         render: function(data, type, row) {
           var btns = '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">';
+          btns += '<button type="button" class="btn btn-sm btn-show-transactions" data-id="' + (row.editId || row.id_session) + '" data-code="' + (row.code_session || '') + '" style="font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; padding:5px 10px; font-size:12px; background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; cursor:pointer;" title="Voir les transactions"><i data-lucide="receipt" style="width:13px;height:13px;"></i> Transactions</button>';
           if (row.statut_session === 'ouverte') {
             btns += '<a href="' + window.RACINE + 'session_caisse/cloturer/' + (row.editId || row.id_session) + '" class="btn btn-sm btn-primary" style="font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; background:#1E3A5F; padding:5px 10px; font-size:12px;"><i data-lucide="lock" style="width:13px;height:13px;"></i> Clôturer</a>';
           }
@@ -321,6 +398,141 @@ $(document).ready(function() {
     ],
     language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
     drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  // OUVERTURE DU MODAL TRANSACTIONS DE SESSION
+  $(document).on('click', '.btn-show-transactions', function(e) {
+    e.preventDefault();
+    var id = $(this).data('id');
+    var code = $(this).data('code') || '';
+    
+    $('#modal-trans-code').text(code || '...');
+    $('#modal-trans-sub').text('Chargement des transactions...');
+    $('#modal-trans-kpis').html('');
+    $('#modal-trans-tbody').html('<tr><td colspan="8" style="padding: 24px; text-align: center; color: #64748B;"><i data-lucide="loader" class="lucide-spin" style="width: 20px; height: 20px; vertical-align: -4px;"></i> Chargement des opérations en cours...</td></tr>');
+    $('#modal-trans-link-pv').attr('href', window.RACINE + 'session_caisse/details/' + id);
+    $('#modal-transactions-session').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: window.RACINE + 'session_caisse/apiTransactions/' + id,
+      type: 'GET',
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 && res.data) {
+          var s = res.session || {};
+          var list = res.data || [];
+          
+          $('#modal-trans-code').text(s.code_session || code);
+          $('#modal-trans-sub').text('Session du ' + (s.date_session || '') + ' • Caissier : ' + (s.caissier_nom || 'Caissier') + ' • Statut : ' + (s.statut_session || ''));
+
+          // Injecter Mini KPIs
+          var kpHtml = '';
+          kpHtml += '<div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:10px 14px;">';
+          kpHtml += '  <div style="font-size:11px; font-weight:700; color:#64748B; text-transform:uppercase;">Fond Initial</div>';
+          kpHtml += '  <div style="font-size:16px; font-weight:800; color:#0F172A; margin-top:2px;">' + Number(s.fond_initial || 0).toLocaleString('fr-FR') + ' F</div>';
+          kpHtml += '</div>';
+
+          kpHtml += '<div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:10px 14px;">';
+          kpHtml += '  <div style="font-size:11px; font-weight:700; color:#15803D; text-transform:uppercase;">Total Encaissé Validé</div>';
+          kpHtml += '  <div style="font-size:16px; font-weight:900; color:#15803D; margin-top:2px;">' + Number(s.total_valide || 0).toLocaleString('fr-FR') + ' F</div>';
+          kpHtml += '  <div style="font-size:11px; color:#166534; font-weight:700;">' + (s.nb_valides || 0) + ' règlement(s) effectif(s)</div>';
+          kpHtml += '</div>';
+
+          kpHtml += '<div style="background:' + (s.total_annule > 0 ? '#FEF2F2' : '#F8FAFC') + '; border:1px solid ' + (s.total_annule > 0 ? '#FECACA' : '#E2E8F0') + '; border-radius:8px; padding:10px 14px;">';
+          kpHtml += '  <div style="font-size:11px; font-weight:700; color:' + (s.total_annule > 0 ? '#DC2626' : '#64748B') + '; text-transform:uppercase;">Annulations</div>';
+          kpHtml += '  <div style="font-size:16px; font-weight:800; color:' + (s.total_annule > 0 ? '#DC2626' : '#64748B') + '; margin-top:2px;">' + Number(s.total_annule || 0).toLocaleString('fr-FR') + ' F</div>';
+          kpHtml += '  <div style="font-size:11px; color:' + (s.total_annule > 0 ? '#B91C1C' : '#94A3B8') + '; font-weight:700;">' + (s.nb_annules || 0) + ' annulée(s)</div>';
+          kpHtml += '</div>';
+
+          kpHtml += '<div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:10px 14px;">';
+          kpHtml += '  <div style="font-size:11px; font-weight:700; color:#1E3A5F; text-transform:uppercase;">Solde Attendu</div>';
+          kpHtml += '  <div style="font-size:16px; font-weight:900; color:#1E3A5F; margin-top:2px;">' + Number(s.solde_attendu || 0).toLocaleString('fr-FR') + ' F</div>';
+          kpHtml += '  <div style="font-size:11px; color:#475569;">Écart : ' + (s.ecart_caisse > 0 ? '+' : '') + Number(s.ecart_caisse || 0).toLocaleString('fr-FR') + ' F</div>';
+          kpHtml += '</div>';
+
+          $('#modal-trans-kpis').html(kpHtml);
+
+          // Remplir tableau
+          if (list.length === 0) {
+            $('#modal-trans-tbody').html('<tr><td colspan="8" style="padding: 24px; text-align: center; color: #94A3B8;">Aucune transaction enregistrée au cours de cette session.</td></tr>');
+          } else {
+            var tbHtml = '';
+            for (var i = 0; i < list.length; i++) {
+              var t = list[i];
+              var isAnn = (String(t.statut_paiement).toLowerCase() === 'annule');
+              var rowBg = isAnn ? '#FEF2F2' : '#FFFFFF';
+              var cat = String(t.categorie_paiement || 'SCOLARITE').toUpperCase();
+              
+              tbHtml += '<tr style="border-bottom: 1px solid #F1F5F9; background: ' + rowBg + ';">';
+              tbHtml += '  <td style="padding: 10px 12px; color: #64748B; font-weight: 700;">' + (i + 1) + '</td>';
+              tbHtml += '  <td style="padding: 10px 12px;"><code style="font-weight: 800; color: #1E3A5F;">' + (t.code_paiement || '-') + '</code></td>';
+              tbHtml += '  <td style="padding: 10px 12px; white-space: nowrap; font-size: 12px; color: #334155;"><strong>' + (t.formatted_date || '') + '</strong></td>';
+              tbHtml += '  <td style="padding: 10px 12px;">';
+              tbHtml += '    <div style="font-weight: 700; color: #0F172A; font-size: 13px;">' + (t.etudiant_complet || '') + '</div>';
+              if (t.matricule_etudiant) tbHtml += '    <div style="font-size: 11px; color: #64748B;">' + t.matricule_etudiant + '</div>';
+              tbHtml += '  </td>';
+              
+              // Type
+              tbHtml += '  <td style="padding: 10px 12px;">';
+              if (cat === 'FRAIS_ANNEXES') {
+                tbHtml += '    <span class="badge" style="background:#F3E8FF; color:#7E22CE; font-weight:800; padding:3px 8px; border-radius:6px; font-size:11px; border:1px solid #E9D5FF;"><i data-lucide="tag" style="width:11px;height:11px;vertical-align:-1px;"></i> Frais Annexes</span>';
+              } else {
+                tbHtml += '    <span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:800; padding:3px 8px; border-radius:6px; font-size:11px; border:1px solid #BFDBFE;"><i data-lucide="graduation-cap" style="width:11px;height:11px;vertical-align:-1px;"></i> Scolarité</span>';
+                if (t.libelle_tranche) {
+                  tbHtml += '    <div style="font-size: 11px; color: #475569; margin-top: 2px;">' + t.libelle_tranche + '</div>';
+                }
+              }
+              tbHtml += '  </td>';
+
+              // Mode
+              tbHtml += '  <td style="padding: 10px 12px;">';
+              tbHtml += '    <span class="badge" style="background:#F8FAFC; color:#334155; font-weight:700; padding:3px 7px; border-radius:5px; font-size:11px; text-transform:uppercase; border:1px solid #CBD5E1;">' + (t.mode_paiement || 'espece') + '</span>';
+              tbHtml += '  </td>';
+
+              // Statut
+              tbHtml += '  <td style="padding: 10px 12px; text-align: center;">';
+              if (isAnn) {
+                tbHtml += '    <span class="badge" style="background:#FEE2E2; color:#DC2626; font-weight:800; padding:3px 8px; border-radius:6px; font-size:11px; border:1px solid #FECACA;"><i data-lucide="x-circle" style="width:11px;height:11px;vertical-align:-1px;"></i> Annulé</span>';
+                if (t.observations) tbHtml += '    <div style="font-size:10px; color:#B91C1C; margin-top:2px; max-width:140px; line-height:1.2; font-style:italic;">' + t.observations + '</div>';
+              } else {
+                tbHtml += '    <span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:800; padding:3px 8px; border-radius:6px; font-size:11px; border:1px solid #BBF7D0;"><i data-lucide="check" style="width:11px;height:11px;vertical-align:-1px;"></i> Confirmé</span>';
+              }
+              tbHtml += '  </td>';
+
+              // Montant
+              tbHtml += '  <td style="padding: 10px 12px; text-align: right;">';
+              if (isAnn) {
+                tbHtml += '    <del style="font-weight:700; color:#94A3B8; font-size:13px;">' + (t.formatted_montant || '') + '</del>';
+                tbHtml += '    <div style="font-size:10.5px; color:#DC2626; font-weight:700;">Exclu</div>';
+              } else {
+                tbHtml += '    <span style="font-weight:900; color:#0F172A; font-size:13.5px;">' + (t.formatted_montant || '') + '</span>';
+              }
+              tbHtml += '  </td>';
+
+              tbHtml += '</tr>';
+            }
+            $('#modal-trans-tbody').html(tbHtml);
+          }
+          if (window.lucide) lucide.createIcons();
+        } else {
+          $('#modal-trans-tbody').html('<tr><td colspan="8" style="padding: 20px; text-align: center; color: #DC2626;">Erreur lors du chargement des transactions.</td></tr>');
+        }
+      },
+      error: function() {
+        $('#modal-trans-tbody').html('<tr><td colspan="8" style="padding: 20px; text-align: center; color: #DC2626;">Erreur de communication avec le serveur.</td></tr>');
+      }
+    });
+  });
+
+  $('.btn-close-modal-trans').on('click', function() {
+    $('#modal-transactions-session').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-transactions-session')) {
+      $('#modal-transactions-session').hide();
+    }
   });
 
   $('#filter-annee').on('change', function() {
