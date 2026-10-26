@@ -286,7 +286,7 @@ class NoteController extends BaseController
             SELECT i.id_inscription, i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
             FROM inscriptions i
             INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND i.statut_inscription = 'actif'
+            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != 'annule' OR i.statut_inscription IS NULL)
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
         $stmt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
@@ -373,7 +373,7 @@ class NoteController extends BaseController
                 SELECT i.id_inscription, i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
                 FROM inscriptions i
                 INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND i.statut_inscription = 'actif'
+                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != 'annule' OR i.statut_inscription IS NULL)
                 ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
             ");
             $stmt->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
