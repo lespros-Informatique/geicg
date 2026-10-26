@@ -8,10 +8,11 @@ $semestres = $semestres ?? [];
 $selectedClasseCode = $selectedClasseCode ?? '';
 $selectedMatiereCode = $selectedMatiereCode ?? '';
 $selectedSemestreCode = $selectedSemestreCode ?? '';
-$selectedTypeEval = $selectedTypeEval ?? 'INTERROGATION';
+$selectedTypeEval = $selectedTypeEval ?? '';
 $selectedCompositionCode = $selectedCompositionCode ?? '';
 $selectedLibelleEval = $selectedLibelleEval ?? '';
 $selectedCoefEval = $selectedCoefEval ?? '1.00';
+$tousExamens = $tousExamens ?? [];
 $etudiants = $etudiants ?? [];
 $existingNotes = $existingNotes ?? [];
 $compositionsProgrammees = $compositionsProgrammees ?? [];
@@ -110,13 +111,13 @@ $typeEvals = [
       <div class="card" style="background: #FFFFFF; border-radius: 14px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px;">
         <form method="GET" action="<?= RACINE ?>note/saisieClasse" id="filter-notes-form">
           
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; align-items: start;">
+          <!-- LIGNE 1 : Année Académique & Type d'Évaluation -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; align-items: start;">
             
             <!-- 1. Année Académique (Readonly) -->
             <div class="form-group">
               <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                 <span>Année Académique</span>
-                <span class="eval-badge" style="background: #EFF6FF; color: #1D4ED8;">Active</span>
               </label>
               <input type="text" class="form-control input-readonly" value="<?= htmlspecialchars($anneeLibelle) ?>" readonly style="width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px;">
               <input type="hidden" name="annee_code" value="<?= htmlspecialchars($anneeCode) ?>">
@@ -128,6 +129,7 @@ $typeEvals = [
                 Type d'Évaluation <span style="color:#EF4444;">*</span>
               </label>
               <select name="type_evaluation_code" id="sel_type_eval" class="form-control select2" required style="width: 100%;">
+                <option value="">-- Choisir le type d'évaluation --</option>
                 <?php foreach ($typeEvals as $code => $lbl): ?>
                   <option value="<?= htmlspecialchars($code) ?>" <?= ($selectedTypeEval === $code) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($lbl) ?>
@@ -136,131 +138,134 @@ $typeEvals = [
               </select>
             </div>
 
-            <!-- 3. Classe -->
-            <div class="form-group">
-              <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: block;">
-                Classe <span style="color:#EF4444;">*</span>
-              </label>
-              <select name="classe_code" id="sel_classe_code" class="form-control select2" required style="width: 100%;">
-                <option value="">-- Choisir la classe --</option>
-                <?php foreach ($classes as $c): ?>
-                  <option value="<?= htmlspecialchars($c['code_classe']) ?>" <?= ($selectedClasseCode === $c['code_classe']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($c['libelle_classe']) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <!-- 4. Matière -->
-            <div class="form-group">
-              <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                <span>Matière <span style="color:#EF4444;">*</span></span>
-                <span id="badge-matiere-count" class="eval-badge" style="background: #F1F5F9; color: #64748B;">
-                  <?= count($matieres) ?> matière(s)
-                </span>
-              </label>
-              <select name="matiere_code" id="sel_matiere_code" class="form-control select2" required style="width: 100%;">
-                <option value="">-- Choisir la matière --</option>
-                <?php foreach ($matieres as $m): ?>
-                  <?php 
-                    $coefVal = isset($m['coefficient']) ? (float)$m['coefficient'] : 1.0;
-                    $coefSuffix = " (Coef " . $coefVal . ")";
-                  ?>
-                  <option value="<?= htmlspecialchars($m['code_matiere']) ?>" 
-                          data-coef="<?= htmlspecialchars($coefVal) ?>"
-                          <?= ($selectedMatiereCode === $m['code_matiere']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($m['libelle_matiere']) ?><?= $coefSuffix ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <!-- 5. Semestre -->
-            <div class="form-group">
-              <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                <span>Semestre <span style="color:#EF4444;">*</span></span>
-                <span id="badge-semestre-lock" class="eval-badge" style="background: #F1F5F9; color: #64748B; display: none;">
-                  <i data-lucide="lock" style="width: 11px; height: 11px;"></i> Auto
-                </span>
-              </label>
-              <select name="semestre_code" id="sel_semestre_code" class="form-control select2" required style="width: 100%;">
-                <option value="">-- Choisir le semestre --</option>
-                <?php foreach ($semestres as $s): ?>
-                  <option value="<?= htmlspecialchars($s['code_semestre']) ?>" <?= ($selectedSemestreCode === $s['code_semestre']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($s['libelle_semestre']) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-              <input type="hidden" name="semestre_code_hidden" id="semestre_code_hidden" value="<?= htmlspecialchars($selectedSemestreCode) ?>">
-            </div>
-
           </div>
 
-          <!-- BLOC SÉLECTION OU CRÉATION DE L'ÉVALUATION -->
-          <div id="box-composition-select" style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed #E2E8F0; display: block;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; align-items: center;">
-              <div style="grid-column: 1 / -1;">
-                <label id="lbl-composition-select" style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="award" style="width: 16px; height: 16px; color: #0284C7;"></i> 
-                  <span id="txt-label-eval"><?= ($selectedTypeEval === 'EXAMEN') ? 'Épreuve / Composition Programmée' : 'Session d\'Évaluation (Existante ou Nouvelle)' ?></span> 
-                  <span id="comp-required-star" style="color:#EF4444; <?= ($selectedTypeEval === 'EXAMEN') ? '' : 'display:none;' ?>">*</span>
+          <!-- CAS A : BLOC DÉDIÉ AUX EXAMENS (Visible uniquement si Type == EXAMEN) -->
+          <div id="box-composition-select" style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed #E2E8F0; <?= ($selectedTypeEval === 'EXAMEN') ? 'display: block;' : 'display: none;' ?>">
+            <div class="form-group">
+              <label style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="award" style="width: 16px; height: 16px; color: #0284C7;"></i> Examen / Composition Programmée <span style="color:#EF4444;">*</span>
+              </label>
+              <select name="composition_code" id="sel_composition_code" class="form-control select2" style="width: 100%;">
+                <option value="">-- Sélectionner l'examen programmé --</option>
+                <?php foreach ($tousExamens as $exam): ?>
+                  <?php 
+                    $coef = !empty($exam['coefficient']) ? ' (Coef ' . floatval($exam['coefficient']) . ')' : '';
+                    $isSel = ($selectedCompositionCode === $exam['code_composition']);
+                    $jsonClasses = htmlspecialchars(json_encode($exam['target_classes'] ?? []), ENT_QUOTES, 'UTF-8');
+                  ?>
+                  <option value="<?= htmlspecialchars($exam['code_composition']) ?>" 
+                          data-libelle="<?= htmlspecialchars($exam['libelle_composition']) ?>"
+                          data-coef="<?= htmlspecialchars($exam['coefficient']) ?>"
+                          data-semestre="<?= htmlspecialchars($exam['semestre_code']) ?>"
+                          data-classes='<?= $jsonClasses ?>'
+                          <?= $isSel ? 'selected' : '' ?>>
+                    [Examen] <?= htmlspecialchars($exam['libelle_composition']) ?> <?= $coef ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+              <span id="msg-no-composition" style="font-size: 12px; color: #DC2626; margin-top: 4px; display: none; font-weight: 600;">
+                <i data-lucide="alert-circle" style="width: 14px; height: 14px; vertical-align: text-bottom;"></i> Aucun examen programmé trouvé pour cette année.
+              </span>
+            </div>
+          </div>
+
+          <!-- BLOC DES 4 CHAMPS : ORDRE STRICT DEMANDÉ -->
+          <!-- 1- Semestre - Coefficient - Classe (champ select) - Matière (champ select) -->
+          <?php
+            $isParamsVisible = (!empty($selectedTypeEval) && ($selectedTypeEval !== 'EXAMEN' || !empty($selectedCompositionCode)));
+          ?>
+          <div id="box-params-fields" style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed #E2E8F0; <?= $isParamsVisible ? 'display: block;' : 'display: none;' ?>">
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; align-items: start;">
+              
+              <!-- 1. Semestre -->
+              <div class="form-group">
+                <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                  <span> Semestre <span style="color:#EF4444;">*</span></span>
+                  <span id="badge-semestre-lock" class="eval-badge" style="background: #F1F5F9; color: #64748B; <?= ($selectedTypeEval === 'EXAMEN') ? '' : 'display: none;' ?>">
+                    <i data-lucide="lock" style="width: 11px; height: 11px;"></i> Auto
+                  </span>
                 </label>
-                <select name="composition_code" id="sel_composition_code" class="form-control select2" style="width: 100%;">
-                  <?php if ($selectedTypeEval === 'EXAMEN'): ?>
-                    <option value="">-- Sélectionner l'épreuve programmée --</option>
-                  <?php else: ?>
-                    <option value="">[ + Créer une nouvelle évaluation (saisie à la volée) ]</option>
-                  <?php endif; ?>
-                  <?php foreach ($compositionsProgrammees as $comp): ?>
-                    <?php 
-                      $coef = !empty($comp['coefficient']) ? ' (Coef ' . floatval($comp['coefficient']) . ')' : '';
-                      $isSel = ($selectedCompositionCode === $comp['code_composition']);
-                      $compType = $comp['type_composition'] ?? 'EXAMEN';
-                    ?>
-                    <option value="<?= htmlspecialchars($comp['code_composition']) ?>" 
-                            data-libelle="<?= htmlspecialchars($comp['libelle_composition']) ?>"
-                            data-coef="<?= htmlspecialchars($comp['coefficient']) ?>"
-                            data-semestre="<?= htmlspecialchars($comp['semestre_code']) ?>"
-                            data-type="<?= htmlspecialchars($compType) ?>"
-                            <?= $isSel ? 'selected' : '' ?>>
-                      [<?= htmlspecialchars($compType) ?>] <?= htmlspecialchars($comp['libelle_composition']) ?> <?= $coef ?>
+                <select name="semestre_code" id="sel_semestre_code" class="form-control select2" required style="width: 100%;">
+                  <option value="">-- Choisir le semestre --</option>
+                  <?php foreach ($semestres as $s): ?>
+                    <option value="<?= htmlspecialchars($s['code_semestre']) ?>" <?= ($selectedSemestreCode === $s['code_semestre']) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($s['libelle_semestre']) ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
-                <span id="msg-no-composition" style="font-size: 12px; color: #DC2626; margin-top: 4px; display: none; font-weight: 600;">
-                  <i data-lucide="alert-circle" style="width: 14px; height: 14px; vertical-align: text-bottom;"></i> Aucune composition programmée trouvée pour cette classe et matière.
-                </span>
+                <input type="hidden" name="semestre_code_hidden" id="semestre_code_hidden" value="<?= htmlspecialchars($selectedSemestreCode) ?>">
               </div>
-            </div>
-          </div>
 
-          <!-- BLOC CHAMPS LIBELLÉ & COEFFICIENT -->
-          <div style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed #E2E8F0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; align-items: end;">
-            
-            <!-- Libellé de l'Évaluation -->
-            <div class="form-group" style="grid-column: span 2;">
-              <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                <span>Intitulé / Libellé de l'Évaluation</span>
-                <span id="badge-libelle-mode" class="eval-badge" style="background: #F1F5F9; color: #475569;">Modifiable</span>
+              <!-- 2. Coefficient -->
+              <div class="form-group">
+                <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                  <span> Coefficient <span style="color:#EF4444;">*</span></span>
+                  
+                </label>
+                <input type="number" step="0.25" min="0.5" max="10" name="coefficient" id="input_coef_eval" 
+                       value="<?= htmlspecialchars($selectedCoefEval ?: '1.00') ?>" 
+                       class="form-control <?= ($selectedTypeEval === 'EXAMEN') ? 'input-readonly' : '' ?>" 
+                       <?= ($selectedTypeEval === 'EXAMEN') ? 'readonly' : '' ?>
+                       style="width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 800; color: #1E40AF;">
+              </div>
+
+              <!-- 3. Classe (champ select) -->
+              <div class="form-group">
+                <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: block;">
+                   Classe <span style="color:#EF4444;">*</span>
+                </label>
+                <select name="classe_code" id="sel_classe_code" class="form-control select2" required style="width: 100%;">
+                  <option value="">-- Choisir la classe --</option>
+                  <?php foreach ($classes as $c): ?>
+                    <option value="<?= htmlspecialchars($c['code_classe']) ?>" <?= ($selectedClasseCode === $c['code_classe']) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($c['libelle_classe']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <!-- 4. Matière (champ select) -->
+              <div class="form-group">
+                <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                  <span> Matière <span style="color:#EF4444;">*</span></span>
+                  <span id="badge-matiere-count" class="eval-badge" style="background: #F1F5F9; color: #64748B;">
+                    <?= count($matieres) ?> matière(s)
+                  </span>
+                </label>
+                <select name="matiere_code" id="sel_matiere_code" class="form-control select2" required style="width: 100%;">
+                  <option value="">-- <?= !empty($selectedClasseCode) ? 'Choisir la matière' : 'Choisir d\'abord une classe' ?> --</option>
+                  <?php foreach ($matieres as $m): ?>
+                    <?php 
+                      $coefVal = isset($m['coefficient']) ? (float)$m['coefficient'] : 1.0;
+                      $coefSuffix = " (Coef " . $coefVal . ")";
+                    ?>
+                    <option value="<?= htmlspecialchars($m['code_matiere']) ?>" 
+                            data-coef="<?= htmlspecialchars($coefVal) ?>"
+                            <?= ($selectedMatiereCode === $m['code_matiere']) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($m['libelle_matiere']) ?><?= $coefSuffix ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+            </div>
+
+            <!-- Champ Intitulé pour Interrogation / Devoir / Autre -->
+            <div id="box-libelle-eval" style="margin-top: 14px; <?= (empty($selectedTypeEval) || $selectedTypeEval === 'EXAMEN') ? 'display: none;' : 'display: block;' ?>">
+              <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; display: block;">
+                Intitulé / Libellé de l'Évaluation
               </label>
-              <input type="text" name="libelle_eval" id="input_libelle_eval" value="<?= htmlspecialchars($selectedLibelleEval) ?>" placeholder="Ex: Interrogation N°1, Devoir Surveillé..." class="form-control" style="width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700;">
+              <input type="text" name="libelle_eval" id="input_libelle_eval" value="<?= htmlspecialchars($selectedLibelleEval) ?>" placeholder="Ex: Interrogation N°1, Devoir Surveillé..." class="form-control" style="width: 100%; padding: 8px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700;">
             </div>
 
-            <!-- Coefficient -->
-            <div class="form-group">
-              <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                <span>Coefficient</span>
-                <span id="badge-coef-mode" class="eval-badge" style="background: #F1F5F9; color: #475569;">Modifiable</span>
-              </label>
-              <input type="number" step="0.25" min="0.5" max="10" name="coefficient" id="input_coef_eval" value="<?= htmlspecialchars($selectedCoefEval ?: '1.00') ?>" class="form-control" style="width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 800; color: #1E40AF;">
+            <!-- Indicateur de chargement automatique lors du choix de matière -->
+            <div id="loading-matiere-grid" style="display: none; margin-top: 14px; padding: 12px; background: #EFF6FF; border-radius: 8px; border: 1px solid #BFDBFE; text-align: center; color: #1D4ED8; font-weight: 700; font-size: 13px;">
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              Chargement de la liste des étudiants de la classe...
             </div>
 
-            <!-- Bouton Afficher Grille -->
-            <div>
-              <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; font-weight: 700; border-radius: 8px; width: 100%; padding: 11px; box-shadow: 0 4px 10px rgba(30,58,95,0.25); display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                <i data-lucide="filter" style="width: 16px; height: 16px;"></i> Afficher la Grille
-              </button>
-            </div>
           </div>
 
         </form>
@@ -461,7 +466,15 @@ $typeEvals = [
 <!-- SCRIPTS UX & ERGONOMIE AVANCÉE -->
 <script>
 window.COMPOSITIONS = <?= json_encode($compositionsProgrammees) ?>;
+window.ALL_CLASSES = <?= json_encode(array_values(array_map(function($c) {
+  return [
+    'code_classe' => $c['code_classe'],
+    'libelle_classe' => $c['libelle_classe']
+  ];
+}, $classes))) ?>;
+
 var isFormDirty = false;
+var isInitialLoading = true;
 
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
@@ -469,185 +482,309 @@ $(document).ready(function() {
     $('.select2').select2({ width: '100%' });
   }
 
-  // 1. Détection dynamique des matières selon la classe sélectionnée
+  // Rendu dynamique et intelligent des classes dans le select
+  function renderClasseOptions(classList, selectedCode) {
+    var $sel = $('#sel_classe_code');
+    var currentVal = selectedCode || $sel.val();
+    $sel.empty().append('<option value="">-- Choisir la classe --</option>');
+    
+    var valStillExists = false;
+    classList.forEach(function(c) {
+      var isSelected = (currentVal && currentVal === c.code_classe);
+      if (isSelected) valStillExists = true;
+      var opt = $('<option></option>')
+        .attr('value', c.code_classe)
+        .text(c.libelle_classe);
+      if (isSelected) opt.prop('selected', true);
+      $sel.append(opt);
+    });
+
+    if (!valStillExists && currentVal && !isInitialLoading) {
+      $sel.val('');
+    }
+    $sel.trigger('change.select2');
+  }
+
+  // 1. Détection du Type d'Évaluation (Par défaut tous les autres champs sont invisibles)
+  $('#sel_type_eval').on('change', function() {
+    var typeEval = $(this).val();
+
+    if (!typeEval) {
+      $('#box-composition-select').slideUp(150);
+      $('#box-params-fields').slideUp(150);
+      $('#box-libelle-eval').slideUp(150);
+      return;
+    }
+
+    if (typeEval === 'EXAMEN') {
+      // A) Sélection Type EXAMEN : affiche les champs dédiés (examen programmé)
+      $('#box-composition-select').slideDown(200);
+      $('#box-libelle-eval').slideUp(150);
+
+      var compCode = $('#sel_composition_code').val();
+      if (!compCode) {
+        // Invisible tant que l'examen programmé n'est pas choisi
+        $('#box-params-fields').slideUp(150);
+      } else {
+        $('#box-params-fields').slideDown(200);
+        $('#sel_composition_code').trigger('change');
+      }
+    } else {
+      // B) Sélection Type INTERROGATION, DEVOIR ou AUTRE :
+      // Masquer le bloc d'examen programmé
+      $('#box-composition-select').slideUp(150);
+      $('#sel_composition_code').val('').trigger('change.select2');
+
+      // Déverrouiller Semestre & Coefficient
+      $('#sel_semestre_code').prop('disabled', false);
+      $('#badge-semestre-lock').hide();
+      $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly');
+      $('#badge-coef-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
+
+      // Restaurer toutes les classes
+      var currentClasseVal = $('#sel_classe_code').val();
+      renderClasseOptions(window.ALL_CLASSES, currentClasseVal);
+
+      // Intitulé et affichage des 4 champs
+      $('#box-libelle-eval').slideDown(150);
+      if (!$('#input_libelle_eval').val()) {
+        var defaultLib = (typeEval === 'DEVOIR') ? 'Devoir Sur Table N°1' : ((typeEval === 'INTERROGATION') ? 'Interrogation N°1' : 'Évaluation N°1');
+        $('#input_libelle_eval').val(defaultLib);
+      }
+
+      // Afficher immédiatement les 4 champs dans l'ordre strict
+      $('#box-params-fields').slideDown(200);
+    }
+  });
+
+  // A) Sélection du Libellé Examen : remplit Semestre, Coefficient et filtre les Classes
+  $('#sel_composition_code').on('change', function() {
+    var compCode = $(this).val();
+    if (!compCode) {
+      if ($('#sel_type_eval').val() === 'EXAMEN') {
+        $('#box-params-fields').slideUp(150);
+      }
+      return;
+    }
+
+    var $opt = $(this).find('option:selected');
+    var lib = $opt.data('libelle');
+    var coef = $opt.data('coef');
+    var sem = $opt.data('semestre');
+    var rawClasses = $opt.data('classes');
+    var targetClasses = [];
+
+    if (rawClasses) {
+      try {
+        targetClasses = (typeof rawClasses === 'string') ? JSON.parse(rawClasses) : rawClasses;
+      } catch(e) {
+        targetClasses = [];
+      }
+    }
+
+    // 1- Remplir et verrouiller Semestre
+    if (sem) {
+      $('#sel_semestre_code').val(sem).trigger('change.select2');
+      $('#semestre_code_hidden').val(sem);
+      $('#sel_semestre_code').prop('disabled', true);
+      $('#badge-semestre-lock').show();
+    }
+
+    // 1- Remplir et verrouiller Coefficient
+    if (coef) {
+      $('#input_coef_eval').val(coef).prop('readonly', true).addClass('input-readonly');
+      $('#badge-coef-mode').text('Lecture Seule').css({ 'background': '#FEF3C7', 'color': '#B45309' });
+    }
+
+    if (lib) {
+      $('#input_libelle_eval').val(lib);
+    }
+
+    // 1- Filtrer les classes concernées par cet examen
+    var classesToRender = (targetClasses && targetClasses.length > 0) ? targetClasses : window.ALL_CLASSES;
+    var currentClasse = isInitialLoading ? '<?= htmlspecialchars($selectedClasseCode) ?>' : '';
+    renderClasseOptions(classesToRender, currentClasse);
+
+    if (!isInitialLoading) {
+      // Réinitialiser la matière
+      $('#sel_matiere_code').empty().append('<option value="">-- Choisir d\'abord une classe --</option>').trigger('change.select2');
+      $('#badge-matiere-count').text('0 matière(s)');
+    }
+
+    // Révéler le bloc des 4 champs
+    $('#box-params-fields').slideDown(200);
+  });
+
+  // 2- La sélection de classe remplit le champ Matière (via API)
   $('#sel_classe_code').on('change', function() {
     var classeCode = $(this).val();
-    if (!classeCode) return;
-
     var $matiereSel = $('#sel_matiere_code');
-    var currentMatiere = $matiereSel.val();
+
+    if (!classeCode) {
+      $matiereSel.empty().append('<option value="">-- Choisir d\'abord une classe --</option>');
+      $('#badge-matiere-count').text('0 matière(s)');
+      $matiereSel.trigger('change.select2');
+      return;
+    }
+
+    var typeEval = $('#sel_type_eval').val();
+    var compCode = (typeEval === 'EXAMEN') ? $('#sel_composition_code').val() : '';
+
+    $matiereSel.empty().append('<option value="">Chargement des matières...</option>').trigger('change.select2');
 
     $.ajax({
       url: '<?= RACINE ?>note/getMatieresByClasseApi',
       type: 'GET',
-      data: { classe_code: classeCode },
+      data: {
+        classe_code: classeCode,
+        composition_code: compCode
+      },
       dataType: 'json',
       success: function(res) {
-        if (res && res.data) {
-          $matiereSel.empty().append('<option value="">-- Choisir la matière --</option>');
-          $('#badge-matiere-count').text(res.data.length + ' matière(s)');
-          
-          res.data.forEach(function(m) {
-            var coef = m.coefficient ? parseFloat(m.coefficient) : 1.0;
-            var prof = m.prof_nom ? ' [' + m.prof_nom + ']' : '';
-            var optHtml = '<option value="' + m.code_matiere + '" data-coef="' + coef + '">' + m.libelle_matiere + ' (Coef ' + coef + ')' + prof + '</option>';
-            $matiereSel.append(optHtml);
-          });
+        $matiereSel.empty().append('<option value="">-- Choisir la matière --</option>');
+        var items = (res && res.data) ? res.data : [];
+        $('#badge-matiere-count').text(items.length + ' matière(s)');
 
-          if (currentMatiere) {
-            $matiereSel.val(currentMatiere);
-          }
-          $matiereSel.trigger('change.select2');
-          fetchCompositionsAjax();
-        }
+        var preselectedMatiere = isInitialLoading ? '<?= htmlspecialchars($selectedMatiereCode) ?>' : '';
+
+        items.forEach(function(m) {
+          var coef = m.coefficient ? parseFloat(m.coefficient) : 1.0;
+          var prof = m.prof_nom ? ' [' + m.prof_nom + ']' : '';
+          var isSel = (preselectedMatiere && preselectedMatiere === m.code_matiere);
+          var opt = $('<option></option>')
+            .attr('value', m.code_matiere)
+            .attr('data-coef', coef)
+            .text(m.libelle_matiere + ' (Coef ' + coef + ')' + prof);
+          if (isSel) opt.prop('selected', true);
+          $matiereSel.append(opt);
+        });
+
+        $matiereSel.trigger('change.select2');
+      },
+      error: function() {
+        $matiereSel.empty().append('<option value="">-- Erreur de chargement --</option>').trigger('change.select2');
       }
     });
   });
 
-  // 2. Gestion automatique du coefficient lors du choix de matière
+  // 3- La sélection Matière affiche la liste des étudiants de la classe
   $('#sel_matiere_code').on('change', function() {
-    var $opt = $(this).find('option:selected');
-    if ($opt.length && $opt.val()) {
-      var coef = $opt.data('coef');
-      if (coef && $('#sel_type_eval').val() !== 'EXAMEN') {
-        $('#input_coef_eval').val(coef);
-      }
-    }
-    fetchCompositionsAjax();
-  });
+    if (isInitialLoading) return;
 
-  // 3. Mode Évaluation (Interro / Devoir / Examen / Autre)
-  function handleTypeEvalChange() {
+    var matiereCode = $(this).val();
+    if (!matiereCode) return;
+
     var typeEval = $('#sel_type_eval').val();
-    
-    if (typeEval === 'EXAMEN') {
-      $('#box-composition-select').slideDown(200);
-      $('#txt-label-eval').text('Épreuve / Composition Programmée');
-      $('#comp-required-star').show();
-      $('#sel_composition_code').prop('required', true);
-      
-      var selectedCompCode = $('#sel_composition_code').val();
-      var selectedOption = $('#sel_composition_code option:selected');
-      
-      if (selectedCompCode && selectedOption.length) {
-        var lib = selectedOption.data('libelle');
-        var coef = selectedOption.data('coef');
-        var sem = selectedOption.data('semestre');
+    var opt = $(this).find('option:selected');
+    var coef = opt.data('coef');
 
-        if (lib) $('#input_libelle_eval').val(lib);
-        if (coef) $('#input_coef_eval').val(coef);
-        if (sem) {
-          $('#sel_semestre_code').val(sem).trigger('change.select2');
-          $('#semestre_code_hidden').val(sem);
-        }
-      }
-
-      $('#input_libelle_eval').prop('readonly', true).addClass('input-readonly');
-      $('#input_coef_eval').prop('readonly', true).addClass('input-readonly');
-      $('#badge-libelle-mode').text('Lecture Seule').css({ 'background': '#FEF3C7', 'color': '#B45309' });
-      $('#badge-coef-mode').text('Lecture Seule').css({ 'background': '#FEF3C7', 'color': '#B45309' });
-      $('#badge-semestre-lock').show();
-
-    } else {
-      $('#box-composition-select').slideDown(200);
-      $('#txt-label-eval').text('Session d\'Évaluation (Existante ou Nouvelle)');
-      $('#comp-required-star').hide();
-      $('#sel_composition_code').prop('required', false);
-      $('#msg-no-composition').hide();
-      
-      $('#input_libelle_eval').prop('readonly', false).removeClass('input-readonly');
-      $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly');
-      
-      var selectedCompCode = $('#sel_composition_code').val();
-      if (!selectedCompCode) {
-        if ($('#input_libelle_eval').val() === '' || $('#input_libelle_eval').val().indexOf('Composition') !== -1) {
-          $('#input_libelle_eval').val(typeEval === 'DEVOIR' ? 'Devoir Sur Table N°1' : (typeEval === 'INTERROGATION' ? 'Interrogation N°1' : 'Évaluation N°1'));
-        }
-      }
-
-      $('#badge-libelle-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
-      $('#badge-coef-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
-      $('#badge-semestre-lock').hide();
+    // Mise à jour automatique du coefficient si hors-examen
+    if (typeEval !== 'EXAMEN' && coef) {
+      $('#input_coef_eval').val(coef);
     }
-  }
 
-  $('#sel_type_eval').on('change', function() {
-    handleTypeEvalChange();
-    fetchCompositionsAjax();
+    // Vérifier si le semestre est choisi
+    var semCode = $('#sel_semestre_code').val() || $('#semestre_code_hidden').val();
+    if (!semCode) {
+      if (window.Swal) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Semestre requis',
+          text: 'Veuillez sélectionner le semestre avant d\'afficher la liste des étudiants.',
+          confirmButtonColor: '#1E3A5F'
+        }).then(function() {
+          $('#sel_semestre_code').select2('open');
+        });
+      } else {
+        alert('Veuillez sélectionner le semestre.');
+        $('#sel_semestre_code').focus();
+      }
+      return;
+    }
+
+    var classeCode = $('#sel_classe_code').val();
+    if (!classeCode) {
+      if (window.Swal) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Classe requise',
+          text: 'Veuillez sélectionner une classe.',
+          confirmButtonColor: '#1E3A5F'
+        });
+      }
+      return;
+    }
+
+    // Afficher l'animation de chargement
+    $('#loading-matiere-grid').slideDown(150);
+
+    // Déverrouiller temporairement les champs verrouillés pour la soumission GET
+    $('#sel_semestre_code').prop('disabled', false);
+    $('#input_coef_eval').prop('readonly', false);
+
+    // Soumettre le formulaire pour afficher la liste des étudiants
+    $('#filter-notes-form').submit();
   });
 
-  // 4. Sélection d'une Composition / Évaluation
-  $('#sel_composition_code').on('change', function() {
-    var $opt = $(this).find('option:selected');
-    var val = $(this).val();
-    if (val && $opt.length) {
-      var lib = $opt.data('libelle');
-      var coef = $opt.data('coef');
-      var sem = $opt.data('semestre');
+  // Support sélection Semestre après choix de la matière (Cas B)
+  $('#sel_semestre_code').on('change', function() {
+    if (isInitialLoading) return;
+    var semVal = $(this).val();
+    $('#semestre_code_hidden').val(semVal);
 
-      if (lib) $('#input_libelle_eval').val(lib);
-      if (coef) $('#input_coef_eval').val(coef);
-      if (sem) {
-        $('#sel_semestre_code').val(sem).trigger('change.select2');
-        $('#semestre_code_hidden').val(sem);
-      }
-    } else {
-      var typeEval = $('#sel_type_eval').val();
-      if (typeEval !== 'EXAMEN') {
-        $('#input_libelle_eval').val(typeEval === 'DEVOIR' ? 'Devoir Sur Table N°1' : (typeEval === 'INTERROGATION' ? 'Interrogation N°1' : 'Évaluation N°1'));
-      }
-    }
-  });
-
-  function fetchCompositionsAjax() {
     var classeCode = $('#sel_classe_code').val();
     var matiereCode = $('#sel_matiere_code').val();
-    var semestreCode = $('#sel_semestre_code').val();
-    var typeEval = $('#sel_type_eval').val();
 
-    if (!classeCode || !matiereCode) return;
+    if (semVal && classeCode && matiereCode) {
+      $('#loading-matiere-grid').slideDown(150);
+      $('#sel_semestre_code').prop('disabled', false);
+      $('#input_coef_eval').prop('readonly', false);
+      $('#filter-notes-form').submit();
+    }
+  });
 
-    $.ajax({
-      url: '<?= RACINE ?>composition/getByClasseMatiereApi',
-      type: 'GET',
-      data: { classe_code: classeCode, matiere_code: matiereCode, semestre_code: semestreCode, type_evaluation_code: typeEval },
-      dataType: 'json',
-      success: function(res) {
-        var $select = $('#sel_composition_code');
-        var curVal = $select.val();
-        $select.empty();
+  // Avant toute soumission de formulaire, déverrouiller pour inclure tous les champs en GET
+  $('#filter-notes-form').on('submit', function() {
+    $('#sel_semestre_code').prop('disabled', false);
+    $('#input_coef_eval').prop('readonly', false);
+  });
 
-        if (typeEval === 'EXAMEN') {
-          $select.append('<option value="">-- Sélectionner l\'épreuve programmée --</option>');
-        } else {
-          $select.append('<option value="">[ + Créer une nouvelle évaluation (saisie à la volée) ]</option>');
-        }
-        
-        var hasItems = res && res.data && res.data.length > 0;
-        if (typeEval === 'EXAMEN' && !hasItems) {
-          $('#msg-no-composition').show();
-        } else {
-          $('#msg-no-composition').hide();
-        }
+  // Initialisation à l'arrivée sur la page
+  var initialType = '<?= htmlspecialchars($selectedTypeEval) ?>';
+  var initialComp = '<?= htmlspecialchars($selectedCompositionCode) ?>';
+  var initialClasse = '<?= htmlspecialchars($selectedClasseCode) ?>';
 
-        if (hasItems) {
-          res.data.forEach(function(comp) {
-            var coef = comp.coefficient ? ' (Coef ' + parseFloat(comp.coefficient) + ')' : '';
-            var typTag = comp.type_composition ? '[' + comp.type_composition + '] ' : '';
-            var optHtml = '<option value="' + comp.code_composition + '" data-libelle="' + comp.libelle_composition + '" data-coef="' + comp.coefficient + '" data-semestre="' + comp.semestre_code + '" data-type="' + (comp.type_composition || 'EXAMEN') + '">' + typTag + comp.libelle_composition + ' ' + coef + '</option>';
-            $select.append(optHtml);
-          });
-        }
-
-        if (curVal) {
-          $select.val(curVal);
-        }
-        $select.trigger('change.select2');
+  if (initialType === 'EXAMEN') {
+    $('#box-composition-select').show();
+    if (initialComp) {
+      var $selCompOpt = $('#sel_composition_code option:selected');
+      var rawClasses = $selCompOpt.data('classes');
+      var targetClasses = [];
+      if (rawClasses) {
+        try {
+          targetClasses = (typeof rawClasses === 'string') ? JSON.parse(rawClasses) : rawClasses;
+        } catch(e) {}
       }
-    });
+      var classesToRender = (targetClasses && targetClasses.length > 0) ? targetClasses : window.ALL_CLASSES;
+      renderClasseOptions(classesToRender, initialClasse);
+      $('#sel_semestre_code').prop('disabled', true);
+      $('#badge-semestre-lock').show();
+      $('#input_coef_eval').prop('readonly', true).addClass('input-readonly');
+      $('#badge-coef-mode').text('Lecture Seule').css({ 'background': '#FEF3C7', 'color': '#B45309' });
+      $('#box-params-fields').show();
+    }
+  } else if (initialType) {
+    $('#box-composition-select').hide();
+    renderClasseOptions(window.ALL_CLASSES, initialClasse);
+    $('#sel_semestre_code').prop('disabled', false);
+    $('#badge-semestre-lock').hide();
+    $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly');
+    $('#badge-coef-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
+    $('#box-params-fields').show();
+    $('#box-libelle-eval').show();
   }
 
-  handleTypeEvalChange();
+  isInitialLoading = false;
 
   // 5. Calcul dynamique des appréciations et KPIs en direct (Zero Hardcoding)
   function getAppreciation(val, isAbsent) {

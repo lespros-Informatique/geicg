@@ -208,6 +208,7 @@ class NoteController extends BaseController
         $this->requireAuth();
         $this->requirePermission('ENTER_NOTES');
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $compositionCode = trim($_GET['composition_code'] ?? ($_POST['composition_code'] ?? ''));
         $anneeCode = $this->getActiveAnneeCode();
 
         if (empty($classeCode)) {
@@ -217,7 +218,28 @@ class NoteController extends BaseController
 
         $db = $this->model->getCon();
 
-        // 1. Priorité: Matières assignées à cette classe via enseignant_matiere
+        // 1. Si une composition est spécifiée et a des matières associées pour cette classe
+        if (!empty($compositionCode)) {
+            $stmtCompMat = $db->prepare("
+                SELECT DISTINCT m.code_matiere, m.libelle_matiere, COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
+                FROM composition_matieres cm
+                INNER JOIN compositions comp ON comp.code_composition = cm.composition_code
+                INNER JOIN composition_niveau_filiere cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
+                INNER JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                INNER JOIN matieres m ON m.code_matiere = cm.matiere_code
+                LEFT JOIN enseignant_matiere em ON (em.matiere_code = m.code_matiere AND em.classe_code = cl.code_classe)
+                WHERE cm.composition_code = ? AND cl.code_classe = ?
+                ORDER BY m.libelle_matiere ASC
+            ");
+            $stmtCompMat->execute([$compositionCode, $classeCode]);
+            $compItems = $stmtCompMat->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($compItems)) {
+                $this->json(['status' => 1, 'data' => $compItems]);
+                return;
+            }
+        }
+
+        // 2. Matières assignées à cette classe via enseignant_matiere
         $stmtEm = $db->prepare("
             SELECT DISTINCT m.code_matiere, m.libelle_matiere,
                    COALESCE(em.coefficient, 1.00) AS coefficient,
@@ -233,7 +255,7 @@ class NoteController extends BaseController
         $stmtEm->execute([$classeCode, $anneeCode]);
         $items = $stmtEm->fetchAll(PDO::FETCH_ASSOC);
 
-        // 2. Si aucune matière n'est assignée dans enseignant_matiere, fallback sur toutes les matières
+        // 3. Fallback toutes matières si non configuré
         if (empty($items)) {
             $stmtAll = $db->query("
                 SELECT code_matiere, libelle_matiere, 1.00 AS coefficient, '' AS prof_nom, 0 AS is_assigned
@@ -288,8 +310,8 @@ class NoteController extends BaseController
         
         $selectedClasseCode = $_GET['classe_code'] ?? '';
         $selectedMatiereCode = $_GET['matiere_code'] ?? '';
-        $selectedSemestreCode = $_GET['semestre_code'] ?? '';
-        $selectedTypeEval = $_GET['type_evaluation_code'] ?? 'INTERROGATION';
+        $selectedSemestreCode = $_GET['semestre_code'] ?? ($_GET['semestre_code_hidden'] ?? '');
+        $selectedTypeEval = $_GET['type_evaluation_code'] ?? '';
         $selectedCompositionCode = $_GET['composition_code'] ?? '';
         $selectedLibelleEval = $_GET['libelle_eval'] ?? '';
         $selectedCoefEval = $_GET['coefficient'] ?? '';
@@ -297,6 +319,29 @@ class NoteController extends BaseController
         $etudiants = [];
         $existingNotes = [];
         $compositionsProgrammees = [];
+
+        $compModel = new ModelComposition();
+        $tousExamens = $compModel->getAll($anneeCode, null, null, 'EXAMEN');
+        foreach ($tousExamens as &$exam) {
+            $targetCls = $compModel->getTargetClasses($exam['code_composition']);
+            $exam['target_classes'] = array_values(array_filter(array_map(function($tc) {
+                return !empty($tc['code_classe']) ? [
+                    'code_classe' => $tc['code_classe'],
+                    'libelle_classe' => $tc['libelle_classe']
+                ] : null;
+            }, $targetCls)));
+        }
+        unset($exam);
+
+        if (!empty($selectedCompositionCode)) {
+            $selectedCompItem = $compModel->getByCode($selectedCompositionCode);
+            if ($selectedCompItem) {
+                if (empty($selectedLibelleEval)) $selectedLibelleEval = $selectedCompItem['libelle_composition'];
+                if (empty($selectedCoefEval)) $selectedCoefEval = (string)$selectedCompItem['coefficient'];
+                if (empty($selectedSemestreCode)) $selectedSemestreCode = $selectedCompItem['semestre_code'];
+                if (empty($selectedTypeEval)) $selectedTypeEval = $selectedCompItem['type_composition'] ?? 'EXAMEN';
+            }
+        }
 
         if (!empty($selectedClasseCode)) {
             // Matières configurées pour cette classe
@@ -328,29 +373,14 @@ class NoteController extends BaseController
                 SELECT i.id_inscription, i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
                 FROM inscriptions i
                 INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '')
+                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND i.statut_inscription = 'actif'
                 ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
             ");
             $stmt->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
             $etudiants = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if (!empty($selectedMatiereCode)) {
-                $compModel = new ModelComposition();
                 $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode);
-
-                if (!empty($selectedCompositionCode)) {
-                    $selectedCompItem = $compModel->getByCode($selectedCompositionCode);
-                    if ($selectedCompItem) {
-                        $selectedLibelleEval = $selectedCompItem['libelle_composition'];
-                        $selectedCoefEval = (string)$selectedCompItem['coefficient'];
-                        if (empty($selectedSemestreCode)) {
-                            $selectedSemestreCode = $selectedCompItem['semestre_code'];
-                        }
-                        if (!empty($selectedCompItem['type_composition'])) {
-                            $selectedTypeEval = $selectedCompItem['type_composition'];
-                        }
-                    }
-                }
 
                 if (!empty($selectedSemestreCode)) {
                     $sqlNotes = "
@@ -395,11 +425,11 @@ class NoteController extends BaseController
             'selectedLibelleEval' => $selectedLibelleEval,
             'selectedCoefEval' => $selectedCoefEval,
             'compositionsProgrammees' => $compositionsProgrammees,
+            'tousExamens' => $tousExamens,
             'etudiants' => $etudiants,
             'existingNotes' => $existingNotes
         ]);
     }
-
 
     public function saveBatch()
     {
