@@ -183,9 +183,7 @@ $typeEvals = [
               <div class="form-group">
                 <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                   <span> Semestre <span style="color:#EF4444;">*</span></span>
-                  <span id="badge-semestre-lock" class="eval-badge" style="background: #F1F5F9; color: #64748B; <?= ($selectedTypeEval === 'EXAMEN') ? '' : 'display: none;' ?>">
-                    <i data-lucide="lock" style="width: 11px; height: 11px;"></i> Auto
-                  </span>
+                 
                 </label>
                 <select name="semestre_code" id="sel_semestre_code" class="form-control select2" required style="width: 100%;">
                   <option value="">-- Choisir le semestre --</option>
