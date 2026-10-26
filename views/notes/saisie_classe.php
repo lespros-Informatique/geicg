@@ -19,7 +19,8 @@ $compositionsProgrammees = $compositionsProgrammees ?? [];
 $typeEvals = [
   'INTERROGATION' => 'Interrogation',
   'DEVOIR' => 'Devoir Sur Table',
-  'EXAMEN' => 'Examen / Composition'
+  'EXAMEN' => 'Examen / Composition',
+  'AUTRE' => 'Autre Évaluation'
 ];
 ?>
 <style>
@@ -195,26 +196,34 @@ $typeEvals = [
 
           </div>
 
-          <!-- BLOC CONDITIONNEL DÉDIÉ AUX EXAMENS & COMPOSITIONS -->
-          <div id="box-composition-select" style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed #E2E8F0; <?= ($selectedTypeEval === 'EXAMEN') ? 'display: block;' : 'display: none;' ?>">
+          <!-- BLOC SÉLECTION OU CRÉATION DE L'ÉVALUATION -->
+          <div id="box-composition-select" style="margin-top: 18px; padding-top: 16px; border-top: 1px dashed #E2E8F0; display: block;">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; align-items: center;">
               <div style="grid-column: 1 / -1;">
-                <label style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="award" style="width: 16px; height: 16px; color: #0284C7;"></i> Épreuve / Composition Programmée <span style="color:#EF4444;">*</span>
+                <label id="lbl-composition-select" style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="award" style="width: 16px; height: 16px; color: #0284C7;"></i> 
+                  <span id="txt-label-eval"><?= ($selectedTypeEval === 'EXAMEN') ? 'Épreuve / Composition Programmée' : 'Session d\'Évaluation (Existante ou Nouvelle)' ?></span> 
+                  <span id="comp-required-star" style="color:#EF4444; <?= ($selectedTypeEval === 'EXAMEN') ? '' : 'display:none;' ?>">*</span>
                 </label>
                 <select name="composition_code" id="sel_composition_code" class="form-control select2" style="width: 100%;">
-                  <option value="">-- Sélectionner l'épreuve programmée --</option>
+                  <?php if ($selectedTypeEval === 'EXAMEN'): ?>
+                    <option value="">-- Sélectionner l'épreuve programmée --</option>
+                  <?php else: ?>
+                    <option value="">[ + Créer une nouvelle évaluation (saisie à la volée) ]</option>
+                  <?php endif; ?>
                   <?php foreach ($compositionsProgrammees as $comp): ?>
                     <?php 
                       $coef = !empty($comp['coefficient']) ? ' (Coef ' . floatval($comp['coefficient']) . ')' : '';
                       $isSel = ($selectedCompositionCode === $comp['code_composition']);
+                      $compType = $comp['type_composition'] ?? 'EXAMEN';
                     ?>
                     <option value="<?= htmlspecialchars($comp['code_composition']) ?>" 
                             data-libelle="<?= htmlspecialchars($comp['libelle_composition']) ?>"
                             data-coef="<?= htmlspecialchars($comp['coefficient']) ?>"
                             data-semestre="<?= htmlspecialchars($comp['semestre_code']) ?>"
+                            data-type="<?= htmlspecialchars($compType) ?>"
                             <?= $isSel ? 'selected' : '' ?>>
-                      [Examen] <?= htmlspecialchars($comp['libelle_composition']) ?> <?= $coef ?>
+                      [<?= htmlspecialchars($compType) ?>] <?= htmlspecialchars($comp['libelle_composition']) ?> <?= $coef ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
@@ -507,12 +516,15 @@ $(document).ready(function() {
     fetchCompositionsAjax();
   });
 
-  // 3. Mode Évaluation (Interro / Devoir / Examen)
+  // 3. Mode Évaluation (Interro / Devoir / Examen / Autre)
   function handleTypeEvalChange() {
     var typeEval = $('#sel_type_eval').val();
     
     if (typeEval === 'EXAMEN') {
       $('#box-composition-select').slideDown(200);
+      $('#txt-label-eval').text('Épreuve / Composition Programmée');
+      $('#comp-required-star').show();
+      $('#sel_composition_code').prop('required', true);
       
       var selectedCompCode = $('#sel_composition_code').val();
       var selectedOption = $('#sel_composition_code option:selected');
@@ -537,13 +549,20 @@ $(document).ready(function() {
       $('#badge-semestre-lock').show();
 
     } else {
-      $('#box-composition-select').slideUp(200);
+      $('#box-composition-select').slideDown(200);
+      $('#txt-label-eval').text('Session d\'Évaluation (Existante ou Nouvelle)');
+      $('#comp-required-star').hide();
+      $('#sel_composition_code').prop('required', false);
+      $('#msg-no-composition').hide();
       
       $('#input_libelle_eval').prop('readonly', false).removeClass('input-readonly');
       $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly');
       
-      if ($('#input_libelle_eval').val() === '' || $('#input_libelle_eval').val().indexOf('Composition') !== -1) {
-        $('#input_libelle_eval').val(typeEval === 'DEVOIR' ? 'Devoir Sur Table N°1' : 'Interrogation N°1');
+      var selectedCompCode = $('#sel_composition_code').val();
+      if (!selectedCompCode) {
+        if ($('#input_libelle_eval').val() === '' || $('#input_libelle_eval').val().indexOf('Composition') !== -1) {
+          $('#input_libelle_eval').val(typeEval === 'DEVOIR' ? 'Devoir Sur Table N°1' : (typeEval === 'INTERROGATION' ? 'Interrogation N°1' : 'Évaluation N°1'));
+        }
       }
 
       $('#badge-libelle-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
@@ -552,12 +571,16 @@ $(document).ready(function() {
     }
   }
 
-  $('#sel_type_eval').on('change', handleTypeEvalChange);
+  $('#sel_type_eval').on('change', function() {
+    handleTypeEvalChange();
+    fetchCompositionsAjax();
+  });
 
-  // 4. Sélection d'une Composition Programmée
+  // 4. Sélection d'une Composition / Évaluation
   $('#sel_composition_code').on('change', function() {
     var $opt = $(this).find('option:selected');
-    if ($opt.length && $opt.val()) {
+    var val = $(this).val();
+    if (val && $opt.length) {
       var lib = $opt.data('libelle');
       var coef = $opt.data('coef');
       var sem = $opt.data('semestre');
@@ -568,38 +591,58 @@ $(document).ready(function() {
         $('#sel_semestre_code').val(sem).trigger('change.select2');
         $('#semestre_code_hidden').val(sem);
       }
+    } else {
+      var typeEval = $('#sel_type_eval').val();
+      if (typeEval !== 'EXAMEN') {
+        $('#input_libelle_eval').val(typeEval === 'DEVOIR' ? 'Devoir Sur Table N°1' : (typeEval === 'INTERROGATION' ? 'Interrogation N°1' : 'Évaluation N°1'));
+      }
     }
   });
 
   function fetchCompositionsAjax() {
     var classeCode = $('#sel_classe_code').val();
     var matiereCode = $('#sel_matiere_code').val();
+    var semestreCode = $('#sel_semestre_code').val();
     var typeEval = $('#sel_type_eval').val();
 
-    if (typeEval !== 'EXAMEN' || !classeCode || !matiereCode) return;
+    if (!classeCode || !matiereCode) return;
 
     $.ajax({
       url: '<?= RACINE ?>composition/getByClasseMatiereApi',
       type: 'GET',
-      data: { classe_code: classeCode, matiere_code: matiereCode },
+      data: { classe_code: classeCode, matiere_code: matiereCode, semestre_code: semestreCode, type_evaluation_code: typeEval },
       dataType: 'json',
       success: function(res) {
-        if (res && res.data) {
-          var $select = $('#sel_composition_code');
-          $select.empty().append('<option value="">-- Sélectionner l\'épreuve programmée --</option>');
-          
-          if (res.data.length === 0) {
-            $('#msg-no-composition').show();
-          } else {
-            $('#msg-no-composition').hide();
-            res.data.forEach(function(comp) {
-              var coef = comp.coefficient ? ' (Coef ' + parseFloat(comp.coefficient) + ')' : '';
-              var optHtml = '<option value="' + comp.code_composition + '" data-libelle="' + comp.libelle_composition + '" data-coef="' + comp.coefficient + '" data-semestre="' + comp.semestre_code + '">[Examen] ' + comp.libelle_composition + ' ' + coef + '</option>';
-              $select.append(optHtml);
-            });
-          }
-          $select.trigger('change.select2');
+        var $select = $('#sel_composition_code');
+        var curVal = $select.val();
+        $select.empty();
+
+        if (typeEval === 'EXAMEN') {
+          $select.append('<option value="">-- Sélectionner l\'épreuve programmée --</option>');
+        } else {
+          $select.append('<option value="">[ + Créer une nouvelle évaluation (saisie à la volée) ]</option>');
         }
+        
+        var hasItems = res && res.data && res.data.length > 0;
+        if (typeEval === 'EXAMEN' && !hasItems) {
+          $('#msg-no-composition').show();
+        } else {
+          $('#msg-no-composition').hide();
+        }
+
+        if (hasItems) {
+          res.data.forEach(function(comp) {
+            var coef = comp.coefficient ? ' (Coef ' + parseFloat(comp.coefficient) + ')' : '';
+            var typTag = comp.type_composition ? '[' + comp.type_composition + '] ' : '';
+            var optHtml = '<option value="' + comp.code_composition + '" data-libelle="' + comp.libelle_composition + '" data-coef="' + comp.coefficient + '" data-semestre="' + comp.semestre_code + '" data-type="' + (comp.type_composition || 'EXAMEN') + '">' + typTag + comp.libelle_composition + ' ' + coef + '</option>';
+            $select.append(optHtml);
+          });
+        }
+
+        if (curVal) {
+          $select.val(curVal);
+        }
+        $select.trigger('change.select2');
       }
     });
   }
@@ -815,6 +858,11 @@ $(document).ready(function() {
           var now = new Date();
           var timeStr = now.toLocaleTimeString();
           $('#last-saved-time').text('Dernière sauvegarde : ' + timeStr);
+
+          if (res.composition_code) {
+            $('input[name="composition_code"]').val(res.composition_code);
+            $('#sel_composition_code').val(res.composition_code);
+          }
 
           // Mettre à jour les données originales pour chaque champ
           $('.note-row').each(function() {

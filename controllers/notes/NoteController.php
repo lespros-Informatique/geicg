@@ -336,7 +336,21 @@ class NoteController extends BaseController
 
             if (!empty($selectedMatiereCode)) {
                 $compModel = new ModelComposition();
-                $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode);
+                $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode);
+
+                if (!empty($selectedCompositionCode)) {
+                    $selectedCompItem = $compModel->getByCode($selectedCompositionCode);
+                    if ($selectedCompItem) {
+                        $selectedLibelleEval = $selectedCompItem['libelle_composition'];
+                        $selectedCoefEval = (string)$selectedCompItem['coefficient'];
+                        if (empty($selectedSemestreCode)) {
+                            $selectedSemestreCode = $selectedCompItem['semestre_code'];
+                        }
+                        if (!empty($selectedCompItem['type_composition'])) {
+                            $selectedTypeEval = $selectedCompItem['type_composition'];
+                        }
+                    }
+                }
 
                 if (!empty($selectedSemestreCode)) {
                     $sqlNotes = "
@@ -404,6 +418,8 @@ class NoteController extends BaseController
         $semestreCode = $this->post('semestre_code');
         $typeEval = $this->post('type_evaluation_code') ?? 'INTERROGATION';
         $compositionCode = $this->post('composition_code') ?: null;
+        $libelleEval = trim($this->post('libelle_eval') ?? '');
+        $coefEval = $this->post('coefficient') ? (float)$this->post('coefficient') : 1.00;
         $notesData = $_POST['notes'] ?? [];
 
         $db = $this->model->getCon();
@@ -429,6 +445,68 @@ class NoteController extends BaseController
 
         try {
             $db->beginTransaction();
+
+            // Si le type est différent de 'EXAMEN', enregistrer directement les infos dans 'compositions'
+            if ($typeEval !== 'EXAMEN') {
+                if (empty($compositionCode)) {
+                    $compositionCode = $this->validator->generateCode('compositions', 'code_composition', 'CMP-', 8);
+                    $defaultLbl = ($typeEval === 'DEVOIR') ? 'Devoir Sur Table' : (($typeEval === 'INTERROGATION') ? 'Interrogation' : 'Évaluation');
+                    $finalLibelle = !empty($libelleEval) ? $libelleEval : $defaultLbl;
+                    $today = date('Y-m-d');
+
+                    $stmtNewComp = $db->prepare("
+                        INSERT INTO compositions (
+                            code_composition, libelle_composition, type_composition, semestre_code, coefficient,
+                            date_composition, date_fin_composition, statut_composition, annee_code,
+                            etablissement_code, user_code, created_at_composition
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'programme', ?, ?, ?, NOW())
+                    ");
+                    $stmtNewComp->execute([
+                        $compositionCode,
+                        $finalLibelle,
+                        $typeEval,
+                        $semestreCode,
+                        $coefEval,
+                        $today,
+                        $today,
+                        $anneeCode,
+                        $etabCode,
+                        $userCode
+                    ]);
+
+                    // Associer cette composition à la classe et la matière
+                    $stmtCl = $db->prepare("SELECT niveau_code, filiere_code FROM classes WHERE code_classe = ?");
+                    $stmtCl->execute([$classeCode]);
+                    $clRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
+
+                    if ($clRow && !empty($clRow['niveau_code']) && !empty($clRow['filiere_code'])) {
+                        $codeCNF = $this->validator->generateCode('composition_niveau_filiere', 'code_composition_niveau_filiere', 'CNF-', 8);
+                        $stmtInsCNF = $db->prepare("
+                            INSERT IGNORE INTO composition_niveau_filiere (code_composition_niveau_filiere, composition_code, niveau_code, filiere_code)
+                            VALUES (?, ?, ?, ?)
+                        ");
+                        $stmtInsCNF->execute([$codeCNF, $compositionCode, $clRow['niveau_code'], $clRow['filiere_code']]);
+
+                        $stmtInsCM = $db->prepare("
+                            INSERT IGNORE INTO composition_matieres (composition_code, composition_niveau_filiere_code, matiere_code)
+                            VALUES (?, ?, ?)
+                        ");
+                        $stmtInsCM->execute([$compositionCode, $codeCNF, $matiereCode]);
+                    }
+                } else {
+                    // Mise à jour de l'évaluation existante dans 'compositions'
+                    if (!empty($libelleEval) || $coefEval > 0) {
+                        $stmtUpdComp = $db->prepare("
+                            UPDATE compositions 
+                            SET libelle_composition = COALESCE(NULLIF(?, ''), libelle_composition),
+                                coefficient = ?,
+                                updated_at_composition = NOW()
+                            WHERE code_composition = ?
+                        ");
+                        $stmtUpdComp->execute([$libelleEval, $coefEval, $compositionCode]);
+                    }
+                }
+            }
 
             $savedCount = 0;
             $deletedCount = 0;
@@ -478,10 +556,10 @@ class NoteController extends BaseController
                 if ($existingId) {
                     $stmtUpd = $db->prepare("
                         UPDATE notes 
-                        SET valeur_note = ?, observations = ?, composition_code = ?, updated_at_note = NOW(), statut_note = 'actif'
+                        SET valeur_note = ?, observations = ?, type_evaluation_code = ?, composition_code = ?, updated_at_note = NOW(), statut_note = 'actif'
                         WHERE id_note = ?
                     ");
-                    $stmtUpd->execute([$valNote, $obs, $compositionCode, $existingId]);
+                    $stmtUpd->execute([$valNote, $obs, $typeEval, $compositionCode, $existingId]);
                 } else {
                     $fkErr = ForeignKeyValidator::validate($db, 'notes', [
                         'inscription_code' => $inscCode,
@@ -510,7 +588,11 @@ class NoteController extends BaseController
             if ($deletedCount > 0) {
                 $msg .= " ($deletedCount note(s) effacée(s))";
             }
-            $this->success($msg, ['saved_count' => $savedCount, 'deleted_count' => $deletedCount]);
+            $this->success($msg, [
+                'saved_count' => $savedCount, 
+                'deleted_count' => $deletedCount,
+                'composition_code' => $compositionCode
+            ]);
         } catch (Exception $e) {
             $db->rollBack();
             error_log("NoteController::saveBatch error: " . $e->getMessage());

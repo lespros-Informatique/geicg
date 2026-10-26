@@ -35,6 +35,10 @@ class ModelComposition extends BaseModel
             $conditions[] = "cl.code_classe = ?";
             $params[] = $classeCode;
         }
+        if (!empty($typeComposition)) {
+            $conditions[] = "comp.type_composition = ?";
+            $params[] = $typeComposition;
+        }
 
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
@@ -191,6 +195,10 @@ class ModelComposition extends BaseModel
                 $sql .= " AND comp.semestre_code = ?";
                 $params[] = $semestreCode;
             }
+            if (!empty($typeComposition)) {
+                $sql .= " AND comp.type_composition = ?";
+                $params[] = $typeComposition;
+            }
 
             $sql .= " ORDER BY comp.id_composition DESC ";
 
@@ -215,6 +223,10 @@ class ModelComposition extends BaseModel
                 if (!empty($semestreCode)) {
                     $sqlFallback .= " AND comp.semestre_code = ?";
                     $paramsFb[] = $semestreCode;
+                }
+                if (!empty($typeComposition)) {
+                    $sqlFallback .= " AND comp.type_composition = ?";
+                    $paramsFb[] = $typeComposition;
                 }
                 $sqlFallback .= " ORDER BY comp.id_composition DESC ";
                 $stmtFb = $db->prepare($sqlFallback);

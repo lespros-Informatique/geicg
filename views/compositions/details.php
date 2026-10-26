@@ -101,7 +101,17 @@ $encryptedId = $encryptedId ?? '';
             </div>
             <div>
               <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Intitulé de l'Épreuve</div>
-              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;"><?= htmlspecialchars($item['libelle_composition'] ?? '-') ?></div>
+              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <?php 
+                  $typ = $item['type_composition'] ?? 'EXAMEN';
+                  $badgeBg = '#EFF6FF'; $badgeCol = '#1D4ED8';
+                  if ($typ === 'DEVOIR') { $badgeBg = '#FEF3C7'; $badgeCol = '#B45309'; }
+                  elseif ($typ === 'INTERROGATION') { $badgeBg = '#F0FDF4'; $badgeCol = '#15803D'; }
+                  elseif ($typ === 'AUTRE') { $badgeBg = '#F1F5F9'; $badgeCol = '#475569'; }
+                ?>
+                <span style="font-size: 11px; font-weight: 800; background: <?= $badgeBg ?>; color: <?= $badgeCol ?>; padding: 2px 8px; border-radius: 6px;"><?= htmlspecialchars($typ) ?></span>
+                <span><?= htmlspecialchars($item['libelle_composition'] ?? '-') ?></span>
+              </div>
             </div>
           </div>
           <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; align-items: center;">

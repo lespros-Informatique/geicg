@@ -206,7 +206,21 @@ $(document).ready(function() {
         data: 'libelle_composition', 
         defaultContent: '',
         render: function(d, t, r) { 
-          return '<strong style="font-size:14px; color:#0F172A;">' + (d || r.code_composition || '-') + '</strong>'; 
+          var typ = (r && r.type_composition) ? r.type_composition : 'EXAMEN';
+          var badgeStyle = 'background:#EFF6FF; color:#1D4ED8;';
+          var badgeText = 'EXAMEN';
+          if (typ === 'DEVOIR') {
+            badgeStyle = 'background:#FEF3C7; color:#B45309;';
+            badgeText = 'DEVOIR';
+          } else if (typ === 'INTERROGATION') {
+            badgeStyle = 'background:#F0FDF4; color:#15803D;';
+            badgeText = 'INTERRO';
+          } else if (typ !== 'EXAMEN') {
+            badgeStyle = 'background:#F1F5F9; color:#475569;';
+            badgeText = typ;
+          }
+          var typeBadge = '<span style="font-size:10px; font-weight:800; ' + badgeStyle + ' padding:2px 7px; border-radius:4px; margin-right:6px; display:inline-block;">' + badgeText + '</span>';
+          return '<div>' + typeBadge + '<strong style="font-size:13px; color:#0F172A;">' + (d || r.code_composition || '-') + '</strong></div>'; 
         } 
       },
       { 

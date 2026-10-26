@@ -93,6 +93,22 @@ if (empty($existingNiveaux)) {
                 </select>
               </div>
 
+              <!-- Type d'Épreuve -->
+              <div class="form-group">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Type d'Épreuve <span style="color: #EF4444;">*</span>
+                </label>
+                <?php 
+                  $currentType = $item['type_composition'] ?? 'EXAMEN';
+                ?>
+                <select class="form-control select2" name="type_composition" required style="width: 100%;">
+                  <option value="EXAMEN" <?= ($currentType === 'EXAMEN') ? 'selected' : '' ?>>Examen / Composition Officielle</option>
+                  <option value="DEVOIR" <?= ($currentType === 'DEVOIR') ? 'selected' : '' ?>>Devoir Sur Table</option>
+                  <option value="INTERROGATION" <?= ($currentType === 'INTERROGATION') ? 'selected' : '' ?>>Interrogation</option>
+                  <option value="AUTRE" <?= ($currentType === 'AUTRE') ? 'selected' : '' ?>>Autre Évaluation</option>
+                </select>
+              </div>
+
               <!-- Semestre Académique (Selectable) -->
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
