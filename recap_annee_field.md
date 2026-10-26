@@ -15,7 +15,7 @@ Ces interfaces intègrent un champ ou filtre d'année académique qui est **bloq
 | 2 | [`views/classes/edit.php`](file:///c:/wamp64/www/geicg/views/classes/edit.php#L52) | `<select>` + `<input type="hidden" name="annee_code">` | **Formulaire Classe** : Champ année désactivé avec `readonly tabindex="-1"` et `pointer-events: none;`, forcé sur la session active. |
 | 3 | [`views/scolarites/edit.php`](file:///c:/wamp64/www/geicg/views/scolarites/edit.php#L118) | `<select>` + `<input type="hidden" name="annee_code">` | **Formulaire Barème Scolarité** : Champ année verrouillé en lecture seule avec `readonly tabindex="-1"` et `pointer-events: none;`. |
 | 4 | [`views/compositions/edit.php`](file:///c:/wamp64/www/geicg/views/compositions/edit.php#L87) | `<select>` + `<input type="hidden" name="annee_code">` | **Formulaire Examen / Composition** : Liste déroulante désactivée (`disabled`), verrouillée sur l'année active. |
-| 5 | [`views/notes/saisie_classe.php`](file:///c:/wamp64/www/geicg/views/notes/saisie_classe.php#L78) | `<input type="text" class="input-readonly" readonly>` | **Saisie des Notes par Classe** : Champ textuel d'affichage de l'année en `readonly` couplé à un champ masqué (`annee_code`). |
+| 5 | [`views/notes/saisie_classe.php`](file:///c:/wamp64/www/geicg/views/notes/saisie_classe.php#L123) | `<input type="text" class="input-readonly" readonly>` | **Saisie des Notes par Classe** : Champ textuel d'affichage de l'année en `readonly` couplé à un champ masqué (`annee_code`). |
 | 6 | [`views/notes/edit.php`](file:///c:/wamp64/www/geicg/views/notes/edit.php#L189) | Texte statique + `<input type="hidden" name="annee_code">` | **Formulaire Édition Note** : Libellé fixe non modifiable avec transmission masquée du code de l'année. |
 
 ---

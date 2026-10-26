@@ -52,6 +52,7 @@ Avant d'exécuter toute modification de la structure de la base de données (`CR
    - Horodatages : `created_at_<entite>` (DATETIME NOT NULL), `updated_at_<entite>` (DATETIME).
    - Clés contextuelles obligatoires : `etablissement_code`, `annee_code`, `user_code`.
    - Colonnes de ségrégation des canaux : `canal_inscription` ENUM('guichet', 'en_ligne'), `canal_paiement` ENUM('guichet', 'en_ligne').
+   - Typage des sessions d'évaluations : `type_composition` ENUM('EXAMEN', 'DEVOIR', 'INTERROGATION', 'AUTRE') pour centraliser toute évaluation dans `compositions` et préserver la normalisation de la table `notes`.
 
 ---
 
