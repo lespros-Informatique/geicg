@@ -216,57 +216,69 @@ class NoteController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
+        try {
+            $db = $this->model->getCon();
 
-        // 1. Si une composition est spécifiée et a des matières associées pour cette classe
-        if (!empty($compositionCode)) {
-            $stmtCompMat = $db->prepare("
-                SELECT DISTINCT m.code_matiere, m.libelle_matiere, COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
-                FROM composition_matieres cm
-                INNER JOIN compositions comp ON comp.code_composition = cm.composition_code
-                INNER JOIN composition_niveau_filiere cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
-                INNER JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
-                INNER JOIN matieres m ON m.code_matiere = cm.matiere_code
-                LEFT JOIN enseignant_matiere em ON (em.matiere_code = m.code_matiere AND em.classe_code = cl.code_classe)
-                WHERE cm.composition_code = ? AND cl.code_classe = ?
+            // 1. Si une composition est spécifiée et a des matières associées pour cette classe
+            if (!empty($compositionCode)) {
+                $stmtCompMat = $db->prepare("
+                    SELECT DISTINCT m.code_matiere, m.libelle_matiere, COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
+                    FROM composition_matieres cm
+                    INNER JOIN compositions comp ON comp.code_composition = cm.composition_code
+                    INNER JOIN composition_niveau_filiere cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
+                    INNER JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                    INNER JOIN matieres m ON m.code_matiere = cm.matiere_code
+                    LEFT JOIN enseignant_matiere em ON (em.matiere_code = m.code_matiere AND em.classe_code = cl.code_classe)
+                    WHERE cm.composition_code = ? AND cl.code_classe = ?
+                    ORDER BY m.libelle_matiere ASC
+                ");
+                $stmtCompMat->execute([$compositionCode, $classeCode]);
+                $compItems = $stmtCompMat->fetchAll(PDO::FETCH_ASSOC);
+                if (!empty($compItems)) {
+                    $this->json(['status' => 1, 'data' => $compItems]);
+                    return;
+                }
+            }
+
+            // 2. Matières assignées à cette classe via enseignant_matiere
+            $stmtEm = $db->prepare("
+                SELECT DISTINCT m.code_matiere, m.libelle_matiere,
+                       COALESCE(em.coefficient, 1.00) AS coefficient,
+                       TRIM(CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, ''))) AS prof_nom,
+                       1 AS is_assigned
+                FROM enseignant_matiere em
+                INNER JOIN matieres m ON m.code_matiere = em.matiere_code
+                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
+                LEFT JOIN users u ON (u.code_user = em.enseignant_code OR u.code_user = e.user_code)
+                WHERE em.classe_code = ? AND (em.annee_code = ? OR em.annee_code IS NULL OR em.annee_code = '')
                 ORDER BY m.libelle_matiere ASC
             ");
-            $stmtCompMat->execute([$compositionCode, $classeCode]);
-            $compItems = $stmtCompMat->fetchAll(PDO::FETCH_ASSOC);
-            if (!empty($compItems)) {
-                $this->json(['status' => 1, 'data' => $compItems]);
-                return;
+            $stmtEm->execute([$classeCode, $anneeCode]);
+            $items = $stmtEm->fetchAll(PDO::FETCH_ASSOC);
+
+            // 3. Fallback toutes matières si non configuré
+            if (empty($items)) {
+                $stmtAll = $db->query("
+                    SELECT code_matiere, libelle_matiere, 1.00 AS coefficient, '' AS prof_nom, 0 AS is_assigned
+                    FROM matieres 
+                    WHERE statut_matiere = 'actif'
+                    ORDER BY libelle_matiere ASC
+                ");
+                $items = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+            }
+
+            $this->json(['status' => 1, 'data' => $items]);
+        } catch (\Throwable $e) {
+            error_log("NoteController::getMatieresByClasseApi error: " . $e->getMessage());
+            // Fallback robuste vers les matières actives en cas d'erreur
+            try {
+                $db = $this->model->getCon();
+                $items = $db->query("SELECT code_matiere, libelle_matiere, 1.00 AS coefficient, '' AS prof_nom, 0 AS is_assigned FROM matieres WHERE statut_matiere = 'actif' ORDER BY libelle_matiere ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $this->json(['status' => 1, 'data' => $items]);
+            } catch (\Throwable $fallbackErr) {
+                $this->json(['status' => 0, 'data' => [], 'message' => $e->getMessage()]);
             }
         }
-
-        // 2. Matières assignées à cette classe via enseignant_matiere
-        $stmtEm = $db->prepare("
-            SELECT DISTINCT m.code_matiere, m.libelle_matiere,
-                   COALESCE(em.coefficient, 1.00) AS coefficient,
-                   TRIM(CONCAT(COALESCE(u.nom_user, e.nom_enseignant, ''), ' ', COALESCE(u.prenom_user, e.prenom_enseignant, ''))) AS prof_nom,
-                   1 AS is_assigned
-            FROM enseignant_matiere em
-            INNER JOIN matieres m ON m.code_matiere = em.matiere_code
-            LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-            LEFT JOIN users u ON u.code_user = e.code_enseignant
-            WHERE em.classe_code = ? AND (em.annee_code = ? OR em.annee_code IS NULL OR em.annee_code = '')
-            ORDER BY m.libelle_matiere ASC
-        ");
-        $stmtEm->execute([$classeCode, $anneeCode]);
-        $items = $stmtEm->fetchAll(PDO::FETCH_ASSOC);
-
-        // 3. Fallback toutes matières si non configuré
-        if (empty($items)) {
-            $stmtAll = $db->query("
-                SELECT code_matiere, libelle_matiere, 1.00 AS coefficient, '' AS prof_nom, 0 AS is_assigned
-                FROM matieres 
-                WHERE statut_matiere = 'actif'
-                ORDER BY libelle_matiere ASC
-            ");
-            $items = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
-        }
-
-        $this->json(['status' => 1, 'data' => $items]);
     }
 
     public function getStudentsByClasse()
@@ -344,16 +356,38 @@ class NoteController extends BaseController
         }
 
         if (!empty($selectedClasseCode)) {
-            // Matières configurées pour cette classe
-            $stmtMatClasse = $db->prepare("
-                SELECT DISTINCT m.code_matiere, m.libelle_matiere, COALESCE(em.coefficient, 1.00) AS coefficient
-                FROM matieres m
-                INNER JOIN enseignant_matiere em ON em.matiere_code = m.code_matiere
-                WHERE em.classe_code = ? AND (em.annee_code = ? OR em.annee_code IS NULL OR em.annee_code = '')
-                ORDER BY m.libelle_matiere ASC
-            ");
-            $stmtMatClasse->execute([$selectedClasseCode, $anneeCode]);
-            $matieres = $stmtMatClasse->fetchAll(PDO::FETCH_ASSOC);
+            // 1. Si une composition est sélectionnée et a des matières associées pour cette classe
+            if (!empty($selectedCompositionCode)) {
+                $stmtCompMat = $db->prepare("
+                    SELECT DISTINCT m.code_matiere, m.libelle_matiere, COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
+                    FROM composition_matieres cm
+                    INNER JOIN compositions comp ON comp.code_composition = cm.composition_code
+                    INNER JOIN composition_niveau_filiere cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
+                    INNER JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                    INNER JOIN matieres m ON m.code_matiere = cm.matiere_code
+                    LEFT JOIN enseignant_matiere em ON (em.matiere_code = m.code_matiere AND em.classe_code = cl.code_classe)
+                    WHERE cm.composition_code = ? AND cl.code_classe = ?
+                    ORDER BY m.libelle_matiere ASC
+                ");
+                $stmtCompMat->execute([$selectedCompositionCode, $selectedClasseCode]);
+                $compMats = $stmtCompMat->fetchAll(PDO::FETCH_ASSOC);
+                if (!empty($compMats)) {
+                    $matieres = $compMats;
+                }
+            }
+
+            if (empty($matieres)) {
+                // Matières configurées pour cette classe via enseignant_matiere
+                $stmtMatClasse = $db->prepare("
+                    SELECT DISTINCT m.code_matiere, m.libelle_matiere, COALESCE(em.coefficient, 1.00) AS coefficient
+                    FROM matieres m
+                    INNER JOIN enseignant_matiere em ON em.matiere_code = m.code_matiere
+                    WHERE em.classe_code = ? AND (em.annee_code = ? OR em.annee_code IS NULL OR em.annee_code = '')
+                    ORDER BY m.libelle_matiere ASC
+                ");
+                $stmtMatClasse->execute([$selectedClasseCode, $anneeCode]);
+                $matieres = $stmtMatClasse->fetchAll(PDO::FETCH_ASSOC);
+            }
 
             if (empty($matieres)) {
                 $matieres = (new ModelMatiere())->getAll();

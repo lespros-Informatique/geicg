@@ -640,27 +640,34 @@ $(document).ready(function() {
       },
       dataType: 'json',
       success: function(res) {
-        $matiereSel.empty().append('<option value="">-- Choisir la matière --</option>');
+        $matiereSel.empty();
         var items = (res && res.data) ? res.data : [];
-        $('#badge-matiere-count').text(items.length + ' matière(s)');
+        if (items.length === 0) {
+          $matiereSel.append('<option value="">-- Aucune matière trouvée pour cette classe --</option>');
+          $('#badge-matiere-count').text('0 matière');
+        } else {
+          $matiereSel.append('<option value="">-- Choisir la matière (' + items.length + ' disponible(s)) --</option>');
+          $('#badge-matiere-count').text(items.length + ' matière(s)');
 
-        var preselectedMatiere = isInitialLoading ? '<?= htmlspecialchars($selectedMatiereCode) ?>' : '';
+          var preselectedMatiere = isInitialLoading ? '<?= htmlspecialchars($selectedMatiereCode) ?>' : '';
 
-        items.forEach(function(m) {
-          var coef = m.coefficient ? parseFloat(m.coefficient) : 1.0;
-          var prof = m.prof_nom ? ' [' + m.prof_nom + ']' : '';
-          var isSel = (preselectedMatiere && preselectedMatiere === m.code_matiere);
-          var opt = $('<option></option>')
-            .attr('value', m.code_matiere)
-            .attr('data-coef', coef)
-            .text(m.libelle_matiere + ' (Coef ' + coef + ')' + prof);
-          if (isSel) opt.prop('selected', true);
-          $matiereSel.append(opt);
-        });
+          items.forEach(function(m) {
+            var coef = m.coefficient ? parseFloat(m.coefficient) : 1.0;
+            var prof = m.prof_nom ? ' [' + m.prof_nom + ']' : '';
+            var isSel = (preselectedMatiere && preselectedMatiere === m.code_matiere);
+            var opt = $('<option></option>')
+              .attr('value', m.code_matiere)
+              .attr('data-coef', coef)
+              .text(m.libelle_matiere + ' (Coef ' + coef + ')' + prof);
+            if (isSel) opt.prop('selected', true);
+            $matiereSel.append(opt);
+          });
+        }
 
         $matiereSel.trigger('change.select2');
       },
-      error: function() {
+      error: function(xhr, status, err) {
+        console.error('Erreur chargement matières:', status, err, xhr.responseText);
         $matiereSel.empty().append('<option value="">-- Erreur de chargement --</option>').trigger('change.select2');
       }
     });
