@@ -408,7 +408,7 @@ class NoteController extends BaseController
                 }
             }
         } else {
-            $matieres = (new ModelMatiere())->getAll();
+            $matieres = [];
         }
 
         $this->loadView('../views/notes/saisie_classe.php', [

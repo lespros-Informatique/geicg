@@ -234,17 +234,19 @@ $typeEvals = [
                 </label>
                 <select name="matiere_code" id="sel_matiere_code" class="form-control select2" required style="width: 100%;">
                   <option value="">-- <?= !empty($selectedClasseCode) ? 'Choisir la matière' : 'Choisir d\'abord une classe' ?> --</option>
-                  <?php foreach ($matieres as $m): ?>
-                    <?php 
-                      $coefVal = isset($m['coefficient']) ? (float)$m['coefficient'] : 1.0;
-                      $coefSuffix = " (Coef " . $coefVal . ")";
-                    ?>
-                    <option value="<?= htmlspecialchars($m['code_matiere']) ?>" 
-                            data-coef="<?= htmlspecialchars($coefVal) ?>"
-                            <?= ($selectedMatiereCode === $m['code_matiere']) ? 'selected' : '' ?>>
-                      <?= htmlspecialchars($m['libelle_matiere']) ?><?= $coefSuffix ?>
-                    </option>
-                  <?php endforeach; ?>
+                  <?php if (!empty($selectedClasseCode) && !empty($matieres)): ?>
+                    <?php foreach ($matieres as $m): ?>
+                      <?php 
+                        $coefVal = isset($m['coefficient']) ? (float)$m['coefficient'] : 1.0;
+                        $coefSuffix = " (Coef " . $coefVal . ")";
+                      ?>
+                      <option value="<?= htmlspecialchars($m['code_matiere']) ?>" 
+                              data-coef="<?= htmlspecialchars($coefVal) ?>"
+                              <?= ($selectedMatiereCode === $m['code_matiere']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($m['libelle_matiere']) ?><?= $coefSuffix ?>
+                      </option>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
                 </select>
               </div>
 
@@ -537,11 +539,14 @@ $(document).ready(function() {
       $('#sel_semestre_code').prop('disabled', false);
       $('#badge-semestre-lock').hide();
       $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly');
-      $('#badge-coef-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
 
       // Restaurer toutes les classes
       var currentClasseVal = $('#sel_classe_code').val();
       renderClasseOptions(window.ALL_CLASSES, currentClasseVal);
+
+      if (!currentClasseVal) {
+        $('#sel_matiere_code').empty().append('<option value="">-- Choisir d\'abord une classe --</option>').trigger('change.select2');
+      }
 
       // Intitulé et affichage des 4 champs
       $('#box-libelle-eval').slideDown(150);
@@ -591,7 +596,6 @@ $(document).ready(function() {
     // 1- Remplir et verrouiller Coefficient
     if (coef) {
       $('#input_coef_eval').val(coef).prop('readonly', true).addClass('input-readonly');
-      $('#badge-coef-mode').text('Lecture Seule').css({ 'background': '#FEF3C7', 'color': '#B45309' });
     }
 
     if (lib) {
@@ -603,10 +607,9 @@ $(document).ready(function() {
     var currentClasse = isInitialLoading ? '<?= htmlspecialchars($selectedClasseCode) ?>' : '';
     renderClasseOptions(classesToRender, currentClasse);
 
-    if (!isInitialLoading) {
+    if (!isInitialLoading || !currentClasse) {
       // Réinitialiser la matière
       $('#sel_matiere_code').empty().append('<option value="">-- Choisir d\'abord une classe --</option>').trigger('change.select2');
-      $('#badge-matiere-count').text('0 matière(s)');
     }
 
     // Révéler le bloc des 4 champs
@@ -768,16 +771,17 @@ $(document).ready(function() {
       $('#sel_semestre_code').prop('disabled', true);
       $('#badge-semestre-lock').show();
       $('#input_coef_eval').prop('readonly', true).addClass('input-readonly');
-      $('#badge-coef-mode').text('Lecture Seule').css({ 'background': '#FEF3C7', 'color': '#B45309' });
       $('#box-params-fields').show();
     }
   } else if (initialType) {
     $('#box-composition-select').hide();
     renderClasseOptions(window.ALL_CLASSES, initialClasse);
+    if (!initialClasse) {
+      $('#sel_matiere_code').empty().append('<option value="">-- Choisir d\'abord une classe --</option>').trigger('change.select2');
+    }
     $('#sel_semestre_code').prop('disabled', false);
     $('#badge-semestre-lock').hide();
     $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly');
-    $('#badge-coef-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
     $('#box-params-fields').show();
     $('#box-libelle-eval').show();
   }
