@@ -230,9 +230,7 @@ $typeEvals = [
               <div class="form-group">
                 <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                   <span> Matière <span style="color:#EF4444;">*</span></span>
-                  <span id="badge-matiere-count" class="eval-badge" style="background: #F1F5F9; color: #64748B;">
-                    <?= count($matieres) ?> matière(s)
-                  </span>
+                 
                 </label>
                 <select name="matiere_code" id="sel_matiere_code" class="form-control select2" required style="width: 100%;">
                   <option value="">-- <?= !empty($selectedClasseCode) ? 'Choisir la matière' : 'Choisir d\'abord une classe' ?> --</option>
