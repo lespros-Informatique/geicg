@@ -237,11 +237,12 @@ $typeEvals = [
                       <?php 
                         $coefVal = isset($m['coefficient']) ? (float)$m['coefficient'] : 1.0;
                         $coefSuffix = " (Coef " . $coefVal . ")";
+                        $profSuffix = !empty($m['prof_nom']) ? " [" . htmlspecialchars($m['prof_nom']) . "]" : "";
                       ?>
                       <option value="<?= htmlspecialchars($m['code_matiere']) ?>" 
                               data-coef="<?= htmlspecialchars($coefVal) ?>"
                               <?= ($selectedMatiereCode === $m['code_matiere']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($m['libelle_matiere']) ?><?= $coefSuffix ?>
+                        <?= htmlspecialchars($m['libelle_matiere']) ?><?= $coefSuffix ?><?= $profSuffix ?>
                       </option>
                     <?php endforeach; ?>
                   <?php endif; ?>

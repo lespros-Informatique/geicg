@@ -86,11 +86,11 @@ Le fichier `database/db_eicg.sql` est la source de vérité absolue de la struct
   - **Cas A (`EXAMEN`)** :
     1. Affiche le sélecteur d'examen programmé. Les 4 champs paramètres restent masqués tant qu'aucun examen n'est sélectionné.
     2. La sélection de l'examen renseigne et verrouille le **Semestre** et le **Coefficient**, filtre les **Classes** cibles de l'épreuve, et révèle les 4 champs dans l'ordre strict : `Semestre - Coefficient - Classe - Matière`.
-    3. La sélection de la classe charge dynamiquement le champ **Matière**.
+    3. La sélection de la classe charge dynamiquement le champ **Matière** avec les matières enseignées dans la classe (résolues via `composition_matieres` / `composition_niveau_filiere`, ou selon l'emploi du temps `emplois_temps`).
     4. La sélection de la matière affiche instantanément la liste des étudiants avec grille de saisie, appréciations automatiques, KPIs en temps réel et raccourcis clavier (`Entrée`/`↓`/`↑`, `ABS`).
   - **Cas B (`INTERROGATION`, `DEVOIR`, `AUTRE`)** :
     1. Affiche directement les 4 champs paramètres dans le même ordre strict (`Semestre - Coefficient - Classe - Matière`), avec **Semestre** et **Coefficient** modifiables par l'utilisateur.
-    2. La sélection de la classe charge dynamiquement les matières associées.
+    2. La sélection de la classe charge dynamiquement la liste des **matières enseignées dans cette classe**, résolues prioritairement via l'emploi du temps (`emplois_temps`), les affectations de cours (`enseignant_matiere`), ou la maquette niveau/filière (`composition_niveau_filiere`), avec nom du professeur assigné.
     3. La sélection de la matière met à jour le coefficient par défaut et affiche immédiatement la liste des étudiants pour la saisie des notes.
 - **Calculs & Bulletins Officiels** :
   - Calcul automatisé des moyennes semestrielles, pondérations, rangs et mentions sans aucune valeur hard-codée.
