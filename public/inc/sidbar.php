@@ -1,56 +1,86 @@
 <?php
+  // 1. Mise en cache de session pour le Logo & le Nom de l'Établissement (évite la requête SQL répétée à chaque clic)
   if (!isset($globalEtablissementLogo)) {
-      try {
-          $db = (new Database())->getCon();
-          $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
-          $etabRow = $stmt->fetch(PDO::FETCH_ASSOC);
-          $rawLogo = $etabRow['logo_etablissement'] ?? '';
-          $globalEtablissementLogo = (!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : '';
-          $globalEtablissementNom = $etabRow['libelle_etablissement'] ?? 'GEICG';
-      } catch (Exception $e) {
-          $globalEtablissementLogo = '';
-          $globalEtablissementNom = 'GEICG';
+      if (isset($_SESSION['etablissement_logo']) && isset($_SESSION['etablissement_nom'])) {
+          $globalEtablissementLogo = $_SESSION['etablissement_logo'];
+          $globalEtablissementNom = $_SESSION['etablissement_nom'];
+      } else {
+          try {
+              $db = (new Database())->getCon();
+              $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements WHERE statut_etablissement = 'actif' ORDER BY id_etablissement ASC LIMIT 1");
+              $etabRow = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+              $rawLogo = $etabRow['logo_etablissement'] ?? '';
+              $globalEtablissementLogo = (!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : '';
+              $globalEtablissementNom = $etabRow['libelle_etablissement'] ?? 'GEICG';
+              $_SESSION['etablissement_logo'] = $globalEtablissementLogo;
+              $_SESSION['etablissement_nom'] = $globalEtablissementNom;
+          } catch (Exception $e) {
+              $globalEtablissementLogo = '';
+              $globalEtablissementNom = 'GEICG';
+          }
       }
   }
+
   $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
 
-  // --- SYSTÈME D'AUTORISATIONS & RBAC DU SIDEBAR (100% PERMISSIONS) ---
-  $userRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];
-  if (empty($userRoles)) {
-      $singleRole = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? 'ROLE_USER');
-      $userRoles = !empty($singleRole) ? [$singleRole] : ['ROLE_USER'];
-  }
-  if (is_string($userRoles)) {
-      $userRoles = [$userRoles];
+  // 2. Gestion ultra-rapide des permissions RBAC (Priorité Session + Table de hachage O(1))
+  $userPermissions = $_SESSION['permissions'] ?? null;
+  if ($userPermissions === null) {
+      $userRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];
+      if (empty($userRoles)) {
+          $singleRole = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? 'ROLE_USER');
+          $userRoles = !empty($singleRole) ? [$singleRole] : ['ROLE_USER'];
+      }
+      if (is_string($userRoles)) {
+          $userRoles = [$userRoles];
+      }
+
+      try {
+          $dbConn = (new Database())->getCon();
+          $inClause = implode(',', array_fill(0, count($userRoles), '?'));
+          $stmtP = $dbConn->prepare("
+              SELECT DISTINCT rp.permission_code 
+              FROM role_permissions rp
+              JOIN permissions p ON rp.permission_code = p.code_permission
+              WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
+          ");
+          $stmtP->execute($userRoles);
+          $userPermissions = $stmtP->fetchAll(PDO::FETCH_COLUMN) ?: [];
+          $_SESSION['permissions'] = $userPermissions;
+      } catch (Exception $e) {
+          $userPermissions = [];
+      }
   }
 
-  // Récupérer les permissions cumulées de tous les rôles de l'utilisateur en temps réel
-  try {
-      $dbConn = (new Database())->getCon();
-      $inClause = implode(',', array_fill(0, count($userRoles), '?'));
-      $stmtP = $dbConn->prepare("
-          SELECT DISTINCT rp.permission_code 
-          FROM role_permissions rp
-          JOIN permissions p ON rp.permission_code = p.code_permission
-          WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
-      ");
-      $stmtP->execute($userRoles);
-      $userPermissions = $stmtP->fetchAll(PDO::FETCH_COLUMN) ?: [];
-      $_SESSION['permissions'] = $userPermissions;
-  } catch (Exception $e) {
-      $userPermissions = $_SESSION['permissions'] ?? [];
-  }
+  // Table de hachage O(1) : vérification instantanée sans parcours linéaire in_array()
+  $permMap = array_fill_keys($userPermissions, true);
+  $isSuperAdmin = isset($permMap['*']);
 
   /**
-   * Helper d'autorisation granulaire pour les éléments du menu
-   * Débloque le module uniquement si l'utilisateur possède au moins UNE des permissions spécifiées
+   * Helper d'autorisation granulaire instantané O(1)
    */
-  $canAccess = function(array $requiredPerms = []) use ($userPermissions) {
-      if (in_array('*', $userPermissions, true)) return true;
+  $canAccess = function(array $requiredPerms = []) use ($permMap, $isSuperAdmin): bool {
+      if ($isSuperAdmin) return true;
       foreach ($requiredPerms as $perm) {
-          if (in_array($perm, $userPermissions, true)) return true;
+          if (isset($permMap[$perm])) return true;
       }
       return false;
+  };
+
+  /**
+   * Helper d'URL active : simplifie le HTML et évite la cascade de strpos
+   */
+  $isActiveRoute = function($patterns, $excludePatterns = []) use ($currentUri): string {
+      if (!is_array($patterns)) $patterns = [$patterns];
+      if (!is_array($excludePatterns)) $excludePatterns = [$excludePatterns];
+
+      foreach ($excludePatterns as $ex) {
+          if (!empty($ex) && strpos($currentUri, $ex) !== false) return '';
+      }
+      foreach ($patterns as $pattern) {
+          if (!empty($pattern) && strpos($currentUri, $pattern) !== false) return 'active';
+      }
+      return '';
   };
 ?>
 <style>
@@ -260,7 +290,7 @@
     </div>
 
     <nav class="sidebar-nav">
-        <a href="<?= RACINE ?>" class="nav-item <?= ($currentUri === RACINE || $currentUri === RACINE . 'public/' || $currentUri === '/geicg/' || $currentUri === '/geicg/public/') ? 'active' : '' ?>" data-title="Tableau de bord">
+        <a href="<?= RACINE ?>" class="nav-item <?= in_array($currentUri, [RACINE, RACINE . 'public/', '/geicg/', '/geicg/public/'], true) ? 'active' : '' ?>" data-title="Tableau de bord">
             <i data-lucide="layout-dashboard"></i> <span>Tableau de bord</span>
         </a>
 
@@ -284,27 +314,27 @@
             </div>
             <div class="nav-section-items" id="sec-structure">
                 <?php if ($showEtab): ?>
-                <a href="<?= RACINE ?>etablissement/config" class="nav-item sub <?= strpos($currentUri, '/etablissement/') !== false ? 'active' : '' ?>" data-title="Configuration Établissement">
+                <a href="<?= RACINE ?>etablissement/config" class="nav-item sub <?= $isActiveRoute('/etablissement/') ?>" data-title="Configuration Établissement">
                     <i data-lucide="landmark"></i> <span>Configuration Établissement</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showFilCycles || $showNiveaux): ?>
-                <a href="<?= RACINE ?>filiere_cycle/list" class="nav-item sub <?= strpos($currentUri, '/filiere_cycle/') !== false || strpos($currentUri, '/filiere/') !== false || strpos($currentUri, '/cycle/') !== false || strpos($currentUri, '/niveau/') !== false ? 'active' : '' ?>" data-title="Offre Académique (Cycles, Filières & Niveaux)">
+                <a href="<?= RACINE ?>filiere_cycle/list" class="nav-item sub <?= $isActiveRoute(['/filiere_cycle/', '/filiere/', '/cycle/', '/niveau/']) ?>" data-title="Offre Académique (Cycles, Filières & Niveaux)">
                     <i data-lucide="layers"></i> <span>Cycles, Filières & Niveaux</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showSalles): ?>
-                <a href="<?= RACINE ?>salle/list" class="nav-item sub <?= strpos($currentUri, '/salle/') !== false ? 'active' : '' ?>" data-title="Salles de Cours">
+                <a href="<?= RACINE ?>salle/list" class="nav-item sub <?= $isActiveRoute('/salle/') ?>" data-title="Salles de Cours">
                     <i data-lucide="door-open"></i> <span>Salles de Cours</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showPiecesFournir): ?>
-                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= strpos($currentUri, '/piece_fournir') !== false ? 'active' : '' ?>" data-title="Pièces à Fournir">
+                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= $isActiveRoute('/piece_fournir') ?>" data-title="Pièces à Fournir">
                     <i data-lucide="file-check-2"></i> <span>Pièces à Fournir</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showAccessoires): ?>
-                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= (strpos($currentUri, '/accessoire/list') !== false || $currentUri === RACINE . 'accessoire/list') ? 'active' : '' ?>" data-title="Kits & Accessoires">
+                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= $isActiveRoute('/accessoire/list') ?>" data-title="Kits & Accessoires">
                     <i data-lucide="package"></i> <span>Kits & Accessoires</span>
                 </a>
                 <?php endif; ?>
@@ -331,22 +361,22 @@
             </div>
             <div class="nav-section-items" id="sec-academique">
                 <?php if ($showAnnees || $showSemestres): ?>
-                <a href="<?= RACINE ?>annee/list" class="nav-item sub <?= (strpos($currentUri, '/annee') !== false || strpos($currentUri, '/semestre') !== false) ? 'active' : '' ?>" data-title="Années & Semestres">
+                <a href="<?= RACINE ?>annee/list" class="nav-item sub <?= $isActiveRoute(['/annee', '/semestre']) ?>" data-title="Années & Semestres">
                     <i data-lucide="calendar-range"></i> <span>Années & Semestres</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showClasses): ?>
-                <a href="<?= RACINE ?>classe/list" class="nav-item sub <?= strpos($currentUri, '/classe/') !== false ? 'active' : '' ?>" data-title="Classes">
+                <a href="<?= RACINE ?>classe/list" class="nav-item sub <?= $isActiveRoute('/classe/') ?>" data-title="Classes">
                     <i data-lucide="graduation-cap"></i> <span>Classes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showUe): ?>
-                <a href="<?= RACINE ?>ue/list" class="nav-item sub <?= strpos($currentUri, '/ue/') !== false || strpos($currentUri, '/unites_enseignement/') !== false ? 'active' : '' ?>" data-title="Unités d'Enseignement (UE)">
+                <a href="<?= RACINE ?>ue/list" class="nav-item sub <?= $isActiveRoute(['/ue/', '/unites_enseignement/']) ?>" data-title="Unités d'Enseignement (UE)">
                     <i data-lucide="layers"></i> <span>Unités d'Enseignement (UE)</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showMatieres): ?>
-                <a href="<?= RACINE ?>matiere/list" class="nav-item sub <?= strpos($currentUri, '/matiere/') !== false ? 'active' : '' ?>" data-title="Matières">
+                <a href="<?= RACINE ?>matiere/list" class="nav-item sub <?= $isActiveRoute('/matiere/') ?>" data-title="Matières">
                     <i data-lucide="book-open"></i> <span>Matières</span>
                 </a>
                 <?php endif; ?>
@@ -374,32 +404,32 @@
             </div>
             <div class="nav-section-items" id="sec-eleves">
                 <?php if ($showEtudiants): ?>
-                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= strpos($currentUri, '/etudiant/') !== false ? 'active' : '' ?>" data-title="Registre des Étudiants">
+                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= $isActiveRoute('/etudiant/') ?>" data-title="Registre des Étudiants">
                     <i data-lucide="users"></i> <span>Registre des Étudiants</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showInscriptions): ?>
-                <a href="<?= RACINE ?>reinscription/list" class="nav-item sub <?= (strpos($currentUri, '/inscription/') !== false || strpos($currentUri, '/reinscription/') !== false) && strpos($currentUri, '/inscription/sans_photo') === false ? 'active' : '' ?>" data-title="Réinscriptions">
+                <a href="<?= RACINE ?>reinscription/list" class="nav-item sub <?= $isActiveRoute(['/inscription/', '/reinscription/'], '/inscription/sans_photo') ?>" data-title="Réinscriptions">
                     <i data-lucide="clipboard-check"></i> <span>Réinscriptions</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showSansPhoto): ?>
-                <a href="<?= RACINE ?>inscription/prise_de_vue" class="nav-item sub <?= (strpos($currentUri, '/inscription/prise_de_vue') !== false || strpos($currentUri, '/inscription/sans_photo') !== false) ? 'active' : '' ?>" data-title="Prise de vue">
+                <a href="<?= RACINE ?>inscription/prise_de_vue" class="nav-item sub <?= $isActiveRoute(['/inscription/prise_de_vue', '/inscription/sans_photo']) ?>" data-title="Prise de vue">
                     <i data-lucide="camera"></i> <span>Prise de vue</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showDepotDossiers): ?>
-                <a href="<?= RACINE ?>dossier_etudiant/list" class="nav-item sub <?= strpos($currentUri, '/dossier_etudiant/') !== false ? 'active' : '' ?>" data-title="Dépôt des Dossiers Étudiants">
+                <a href="<?= RACINE ?>dossier_etudiant/list" class="nav-item sub <?= $isActiveRoute('/dossier_etudiant/') ?>" data-title="Dépôt des Dossiers Étudiants">
                     <i data-lucide="folder-open"></i> <span>Dépôt des Dossiers </span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showRemiseKits): ?>
-                <a href="<?= RACINE ?>accessoire_inscription/registre" class="nav-item sub <?= (strpos($currentUri, '/accessoire_inscription/') !== false || strpos($currentUri, '/accessoire/registre') !== false) ? 'active' : '' ?>" data-title="Registre & Remise des Kits">
+                <a href="<?= RACINE ?>accessoire_inscription/registre" class="nav-item sub <?= $isActiveRoute(['/accessoire_inscription/', '/accessoire/registre']) ?>" data-title="Registre & Remise des Kits">
                     <i data-lucide="package-check"></i> <span>Retrait des Kits</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showParents): ?>
-                <a href="<?= RACINE ?>parent/list" class="nav-item sub <?= strpos($currentUri, '/parent/') !== false ? 'active' : '' ?>" data-title="Parents & Tuteurs">
+                <a href="<?= RACINE ?>parent/list" class="nav-item sub <?= $isActiveRoute('/parent/') ?>" data-title="Parents & Tuteurs">
                     <i data-lucide="contact"></i> <span>Parents & Tuteurs</span>
                 </a>
                 <?php endif; ?>
@@ -410,6 +440,7 @@
         <!-- === MODULE 4 : FINANCE, CAISSE & DÉPENSES === -->
         <?php
           $showScolariteGrille = $canAccess(['MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
+          $showFraisAnnexesGrille = $canAccess(['MANAGE_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
           $showCaisseAnnexe = $canAccess(['VIEW_CAISSE_ANNEXE', 'MANAGE_CAISSE_ANNEXE', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS', 'VIEW_RAPPORTS_FINANCIERS', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_ANNEXES']);
           $showPaiements = $canAccess(['MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'RECORD_PAIEMENTS']);
           $showComptabiliteEtudiants = $canAccess(['VIEW_COMPTABILITE_ETUDIANTS', 'MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'VIEW_RAPPORTS_FINANCIERS', 'EXPORT_FINANCE']);
@@ -419,7 +450,7 @@
           $showArrieres = $canAccess(['MANAGE_ARRIERES', 'VIEW_ARRIERES', 'MANAGE_IMPAYES', 'MANAGE_PAIEMENTS']);
           $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_DEPENSES']);
           $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'VALIDATE_DEPENSES']);
-          $hasSecFinance = $showScolariteGrille || $showCaisseAnnexe || $showPaiements || $showComptabiliteEtudiants || $showOuvCaisse || $showClotCaisse || $showImpayes || $showArrieres || $showTypeDep || $showDepenses;
+          $hasSecFinance = $showScolariteGrille || $showFraisAnnexesGrille || $showCaisseAnnexe || $showPaiements || $showComptabiliteEtudiants || $showOuvCaisse || $showClotCaisse || $showImpayes || $showArrieres || $showTypeDep || $showDepenses;
         ?>
         <?php if ($hasSecFinance): ?>
         <div class="nav-section">
@@ -431,47 +462,47 @@
             </div>
             <div class="nav-section-items" id="sec-finance">
                 <?php if ($showScolariteGrille): ?>
-                <a href="<?= RACINE ?>scolarite/list" class="nav-item sub <?= strpos($currentUri, '/scolarite/') !== false || strpos($currentUri, '/tranche/') !== false ? 'active' : '' ?>" data-title="Scolarités & Échéanciers">
+                <a href="<?= RACINE ?>scolarite/list" class="nav-item sub <?= $isActiveRoute(['/scolarite/', '/tranche/']) ?>" data-title="Scolarités & Échéanciers">
                     <i data-lucide="receipt"></i> <span>Scolarités & Échéanciers</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($canAccess(['MANAGE_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE'])): ?>
-                <a href="<?= RACINE ?>fraisAnnexe/list" class="nav-item sub <?= strpos($currentUri, '/fraisAnnexe/') !== false ? 'active' : '' ?>" data-title="Grille Frais Annexes">
+                <?php if ($showFraisAnnexesGrille): ?>
+                <a href="<?= RACINE ?>fraisAnnexe/list" class="nav-item sub <?= $isActiveRoute('/fraisAnnexe/') ?>" data-title="Grille Frais Annexes">
                     <i data-lucide="package-check"></i> <span>Grille Frais Annexes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showCaisseAnnexe): ?>
-                <a href="<?= RACINE ?>caisse_annexe/list" class="nav-item sub <?= strpos($currentUri, '/caisse_annexe') !== false ? 'active' : '' ?>" data-title="Caisse Annexe (Bilan)">
+                <a href="<?= RACINE ?>caisse_annexe/list" class="nav-item sub <?= $isActiveRoute('/caisse_annexe') ?>" data-title="Caisse Annexe (Bilan)">
                     <i data-lucide="wallet-cards"></i> <span>Caisse Annexe</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showPaiements): ?>
-                <a href="<?= RACINE ?>paiement/list" class="nav-item sub <?= (strpos($currentUri, '/paiement/') !== false && strpos($currentUri, '/comptabilite_etudiants') === false) ? 'active' : '' ?>" data-title="Caisse & Encaissements">
+                <a href="<?= RACINE ?>paiement/list" class="nav-item sub <?= $isActiveRoute('/paiement/', '/comptabilite_etudiants') ?>" data-title="Caisse & Encaissements">
                     <i data-lucide="credit-card"></i> <span>Caisse & Encaissements</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showComptabiliteEtudiants): ?>
-                <a href="<?= RACINE ?>paiement/comptabilite_etudiants" class="nav-item sub <?= strpos($currentUri, '/comptabilite_etudiants') !== false ? 'active' : '' ?>" data-title="Comptabilité Étudiants">
+                <a href="<?= RACINE ?>paiement/comptabilite_etudiants" class="nav-item sub <?= $isActiveRoute('/comptabilite_etudiants') ?>" data-title="Comptabilité Étudiants">
                     <i data-lucide="users"></i> <span>Comptabilité Étudiants</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showOuvCaisse || $showClotCaisse): ?>
-                <a href="<?= RACINE ?>session_caisse/list" class="nav-item sub <?= (strpos($currentUri, '/session_caisse/') !== false || strpos($currentUri, '/ouverture_caisse/') !== false || strpos($currentUri, '/cloture_caisse/') !== false) ? 'active' : '' ?>" data-title="Sessions de Caisse">
+                <a href="<?= RACINE ?>session_caisse/list" class="nav-item sub <?= $isActiveRoute(['/session_caisse/', '/ouverture_caisse/', '/cloture_caisse/']) ?>" data-title="Sessions de Caisse">
                     <i data-lucide="vault"></i> <span>Sessions de Caisse</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showImpayes): ?>
-                <a href="<?= RACINE ?>impayes/list" class="nav-item sub <?= strpos($currentUri, '/impayes/') !== false ? 'active' : '' ?>" data-title="Relances & Impayés">
+                <a href="<?= RACINE ?>impayes/list" class="nav-item sub <?= $isActiveRoute('/impayes/') ?>" data-title="Relances & Impayés">
                     <i data-lucide="alert-triangle"></i> <span>Relances & Impayés</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showArrieres): ?>
-                <a href="<?= RACINE ?>arriere/list" class="nav-item sub <?= strpos($currentUri, '/arriere/') !== false ? 'active' : '' ?>" data-title="Arriérés Années Antérieures">
+                <a href="<?= RACINE ?>arriere/list" class="nav-item sub <?= $isActiveRoute('/arriere/') ?>" data-title="Arriérés Années Antérieures">
                     <i data-lucide="history"></i> <span>Arriérés Années Antérieures</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showDepenses || $showTypeDep): ?>
-                <a href="<?= RACINE ?>depense/list" class="nav-item sub <?= (strpos($currentUri, '/depense') !== false || strpos($currentUri, '/type_depense') !== false) ? 'active' : '' ?>" data-title="Dépenses & Engagements">
+                <a href="<?= RACINE ?>depense/list" class="nav-item sub <?= $isActiveRoute(['/depense', '/type_depense']) ?>" data-title="Dépenses & Engagements">
                     <i data-lucide="file-minus"></i> <span>Dépenses & Engagements</span>
                 </a>
                 <?php endif; ?>
@@ -499,37 +530,36 @@
             </div>
             <div class="nav-section-items" id="sec-pedagogie">
                 <?php if ($showEnseignants): ?>
-                <a href="<?= RACINE ?>enseignant/list" class="nav-item sub <?= strpos($currentUri, '/enseignant/') !== false && strpos($currentUri, '_matiere') === false ? 'active' : '' ?>" data-title="Corps Enseignant">
+                <a href="<?= RACINE ?>enseignant/list" class="nav-item sub <?= $isActiveRoute('/enseignant/', '_matiere') ?>" data-title="Corps Enseignant">
                     <i data-lucide="user-check"></i> <span>Corps Enseignant</span>
                 </a>
                 <?php endif; ?>
-
                 <?php if ($showEmplois): ?>
-                <a href="<?= RACINE ?>emploi/list" class="nav-item sub <?= strpos($currentUri, '/emploi/') !== false ? 'active' : '' ?>" data-title="Emplois du Temps">
+                <a href="<?= RACINE ?>emploi/list" class="nav-item sub <?= $isActiveRoute('/emploi/') ?>" data-title="Emplois du Temps">
                     <i data-lucide="calendar"></i> <span>Emplois du Temps</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showAbsences): ?>
-                <a href="<?= RACINE ?>absence/list" class="nav-item sub <?= strpos($currentUri, '/absence/') !== false ? 'active' : '' ?>" data-title="Absences par Classe">
+                <a href="<?= RACINE ?>absence/list" class="nav-item sub <?= $isActiveRoute('/absence/') ?>" data-title="Absences par Classe">
                     <i data-lucide="user-x"></i> <span>Absences & Appel par Classe</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showNotes): ?>
-                <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= strpos($currentUri, '/composition/') !== false ? 'active' : '' ?>" data-title="Planning Compositions & Examens">
+                <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= $isActiveRoute('/composition/') ?>" data-title="Planning Compositions & Examens">
                     <i data-lucide="award"></i> <span>Planning Compositions & Examens</span>
                 </a>
-                <a href="<?= RACINE ?>note/saisieClasse" class="nav-item sub <?= strpos($currentUri, '/note/saisieClasse') !== false ? 'active' : '' ?>" data-title="Saisie des Notes par Classe">
+                <a href="<?= RACINE ?>note/saisieClasse" class="nav-item sub <?= $isActiveRoute('/note/saisieClasse') ?>" data-title="Saisie des Notes par Classe">
                     <i data-lucide="edit-3"></i> <span>Saisie des Notes par Classe</span>
                 </a>
-                <a href="<?= RACINE ?>note/list" class="nav-item sub <?= (strpos($currentUri, '/note/list') !== false || (strpos($currentUri, '/note/') !== false && strpos($currentUri, 'saisieClasse') === false)) ? 'active' : '' ?>" data-title="Registre & Journal des Notes">
+                <a href="<?= RACINE ?>note/list" class="nav-item sub <?= $isActiveRoute('/note/', 'saisieClasse') ?>" data-title="Registre & Journal des Notes">
                     <i data-lucide="list"></i> <span>Registre & Journal des Notes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showBulletins): ?>
-                <a href="<?= RACINE ?>bulletin/list" class="nav-item sub <?= (strpos($currentUri, '/bulletin/list') !== false || $currentUri === RACINE . 'bulletin/' || (strpos($currentUri, '/bulletin/') !== false && strpos($currentUri, 'pvClasse') === false)) ? 'active' : '' ?>" data-title="Bulletins Semestriels">
+                <a href="<?= RACINE ?>bulletin/list" class="nav-item sub <?= $isActiveRoute(['/bulletin/list', RACINE . 'bulletin/'], 'pvClasse') ?>" data-title="Bulletins Semestriels">
                     <i data-lucide="file-text"></i> <span>Bulletins Semestriels</span>
                 </a>
-                <a href="<?= RACINE ?>bulletin/pvClasse" class="nav-item sub <?= strpos($currentUri, '/bulletin/pvClasse') !== false ? 'active' : '' ?>" data-title="PV de Délibération">
+                <a href="<?= RACINE ?>bulletin/pvClasse" class="nav-item sub <?= $isActiveRoute('/bulletin/pvClasse') ?>" data-title="PV de Délibération">
                     <i data-lucide="file-spreadsheet"></i> <span>PV de Délibération</span>
                 </a>
                 <?php endif; ?>
@@ -554,17 +584,17 @@
             </div>
             <div class="nav-section-items" id="sec-medias">
                 <?php if ($showEvents): ?>
-                <a href="<?= RACINE ?>evenement/list" class="nav-item sub <?= strpos($currentUri, '/evenement/') !== false ? 'active' : '' ?>" data-title="Actualités & Événements">
+                <a href="<?= RACINE ?>evenement/list" class="nav-item sub <?= $isActiveRoute('/evenement/') ?>" data-title="Actualités & Événements">
                     <i data-lucide="bell"></i> <span>Actualités & Événements</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showGaleries): ?>
-                <a href="<?= RACINE ?>galerie/list" class="nav-item sub <?= strpos($currentUri, '/galerie/') !== false ? 'active' : '' ?>" data-title="Galeries Photos/Vidéos">
+                <a href="<?= RACINE ?>galerie/list" class="nav-item sub <?= $isActiveRoute('/galerie/') ?>" data-title="Galeries Photos/Vidéos">
                     <i data-lucide="image"></i> <span>Galeries Photos/Vidéos</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showDocs): ?>
-                <a href="<?= RACINE ?>document/list" class="nav-item sub <?= strpos($currentUri, '/document/') !== false ? 'active' : '' ?>" data-title="Documents & Supports">
+                <a href="<?= RACINE ?>document/list" class="nav-item sub <?= $isActiveRoute('/document/') ?>" data-title="Documents & Supports">
                     <i data-lucide="folder-down"></i> <span>Documents & Supports</span>
                 </a>
                 <?php endif; ?>
@@ -590,22 +620,22 @@
             </div>
             <div class="nav-section-items" id="sec-securite">
                 <?php if ($showUsers): ?>
-                <a href="<?= RACINE ?>user/list" class="nav-item sub <?= strpos($currentUri, '/user/') !== false ? 'active' : '' ?>" data-title="Utilisateurs Système">
+                <a href="<?= RACINE ?>user/list" class="nav-item sub <?= $isActiveRoute('/user/') ?>" data-title="Utilisateurs Système">
                     <i data-lucide="users"></i> <span>Utilisateurs Système</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showFonctions): ?>
-                <a href="<?= RACINE ?>fonction/list" class="nav-item sub <?= strpos($currentUri, '/fonction/') !== false ? 'active' : '' ?>" data-title="Fonctions & Postes">
+                <a href="<?= RACINE ?>fonction/list" class="nav-item sub <?= $isActiveRoute('/fonction/') ?>" data-title="Fonctions & Postes">
                     <i data-lucide="user-check"></i> <span>Fonctions & Postes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showRoles): ?>
-                <a href="<?= RACINE ?>role/list" class="nav-item sub <?= strpos($currentUri, '/role/') !== false ? 'active' : '' ?>" data-title="Rôles & Groupes">
+                <a href="<?= RACINE ?>role/list" class="nav-item sub <?= $isActiveRoute('/role/') ?>" data-title="Rôles & Groupes">
                     <i data-lucide="shield"></i> <span>Rôles & Groupes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($showPerms): ?>
-                <a href="<?= RACINE ?>permission/list" class="nav-item sub <?= strpos($currentUri, '/permission/') !== false ? 'active' : '' ?>" data-title="Permissions Granulaires">
+                <a href="<?= RACINE ?>permission/list" class="nav-item sub <?= $isActiveRoute('/permission/') ?>" data-title="Permissions Granulaires">
                     <i data-lucide="key"></i> <span>Permissions Granulaires</span>
                 </a>
                 <?php endif; ?>
