@@ -74,10 +74,10 @@ class PaiementController extends BaseController
         $isCaisseOuverte = ($activeSession && ($activeSession['statut_session'] ?? '') === 'ouverte');
         $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
-        $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS', 'MANAGE_PAYMENTS']);
-        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
-        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
-        $canCancelPaiement = $this->hasPermission(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']);
+        $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canCancelPaiement = $this->hasPermission('CANCEL_PAIEMENTS');
 
         $this->loadView('../views/paiements/list.php', [
             'stats' => $stats,
@@ -154,9 +154,9 @@ class PaiementController extends BaseController
         $isCaisseOuverte = ($activeSession && ($activeSession['statut_session'] ?? '') === 'ouverte');
         $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
-        $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS', 'MANAGE_PAYMENTS']);
-        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
-        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+        $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
 
         $this->loadView('../views/paiements/comptabilite_etudiants.php', [
             'annees' => $annees,
@@ -1487,7 +1487,7 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']);
+        $this->requirePermission('CANCEL_PAIEMENTS');
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -1511,7 +1511,7 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']);
+        $this->requirePermission('CANCEL_PAIEMENTS');
 
         $db = $this->model->getCon();
         $id = (int)($this->post('id_paiement') ?: $this->post('id'));

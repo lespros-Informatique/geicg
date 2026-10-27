@@ -6,7 +6,7 @@ $filieres = array_filter($rawFilieres, function($f) {
 });
 $niveaux = $niveaux ?? (new ModelNiveau())->getActifs();
 $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
-$canEditClasse = (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['EDIT_CLASSE', 'MANAGE_CLASSES'])));
+$canEditClasse = (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_CLASSES'])));
 $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_CLASSES'])));
 ?>
 <div class="app-layout">

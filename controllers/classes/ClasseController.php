@@ -169,7 +169,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['EDIT_CLASSE', 'MANAGE_CLASSES']);
+        $this->requirePermission('MANAGE_CLASSES');
         $id = (int)$this->post('id_classe');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -237,7 +237,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['EDIT_CLASSE', 'MANAGE_CLASSES']);
+        $this->requirePermission('MANAGE_CLASSES');
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -320,7 +320,7 @@ class ClasseController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['EDIT_CLASSE', 'MANAGE_CLASSES']);
+        $this->requirePermission('MANAGE_CLASSES');
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);

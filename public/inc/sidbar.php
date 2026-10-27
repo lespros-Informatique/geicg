@@ -266,7 +266,7 @@
 
         <!-- === MODULE 1 : STRUCTURE & ÉTABLISSEMENT === -->
         <?php
-          $showEtab = $canAccess(['MANAGE_ETABLISSEMENT', 'MANAGE_SCHOOL', 'CONFIG_SYSTEM']);
+          $showEtab = $canAccess(['MANAGE_ETABLISSEMENT', 'CONFIG_SYSTEM']);
           $showFilCycles = $canAccess(['MANAGE_FILIERES', 'VIEW_FILIERES', 'MANAGE_CYCLES', 'VIEW_CYCLES', 'CONFIG_ACADEMIQUE']);
           $showNiveaux = $canAccess(['MANAGE_NIVEAUX', 'VIEW_NIVEAUX', 'CONFIG_ACADEMIQUE']);
           $showSalles = $canAccess(['MANAGE_SALLES', 'VIEW_SALLES', 'CONFIG_ACADEMIQUE']);
@@ -314,7 +314,7 @@
 
         <!-- === MODULE 2 : PLANIFICATION ACADÉMIQUE === -->
         <?php
-          $showAnnees = $canAccess(['MANAGE_ANNEES', 'VIEW_ANNEES', 'MANAGE_YEARS', 'CONFIG_ACADEMIQUE']);
+          $showAnnees = $canAccess(['MANAGE_ANNEES', 'VIEW_ANNEES', 'CONFIG_ACADEMIQUE']);
           $showClasses = $canAccess(['MANAGE_CLASSES', 'VIEW_CLASSES', 'CONFIG_ACADEMIQUE']);
           $showSemestres = $canAccess(['MANAGE_SEMESTRES', 'VIEW_SEMESTRES', 'CONFIG_ACADEMIQUE']);
           $showUe = $canAccess(['MANAGE_UE', 'VIEW_UE', 'CONFIG_ACADEMIQUE']);
@@ -356,9 +356,9 @@
 
         <!-- === MODULE 3 : ADMISSIONS & SCOLARITÉ === -->
         <?php
-          $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS', 'MANAGE_STUDENTS']);
-          $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_STUDENTS']);
-          $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS', 'MANAGE_ENROLLMENTS']);
+          $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS']);
+          $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_ETUDIANTS']);
+          $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS']);
           $showDepotDossiers = $canAccess(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
           $showRemiseKits = $canAccess(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
           $showSansPhoto = $canAccess(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
@@ -411,14 +411,14 @@
         <?php
           $showScolariteGrille = $canAccess(['MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
           $showCaisseAnnexe = $canAccess(['VIEW_CAISSE_ANNEXE', 'MANAGE_CAISSE_ANNEXE', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS', 'VIEW_RAPPORTS_FINANCIERS', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_ANNEXES']);
-          $showPaiements = $canAccess(['MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+          $showPaiements = $canAccess(['MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'RECORD_PAIEMENTS']);
           $showComptabiliteEtudiants = $canAccess(['VIEW_COMPTABILITE_ETUDIANTS', 'MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'VIEW_RAPPORTS_FINANCIERS', 'EXPORT_FINANCE']);
-          $showOuvCaisse = $canAccess(['MANAGE_CAISSE', 'OUVERTURE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
-          $showClotCaisse = $canAccess(['CLOTURE_CAISSE', 'VIEW_RAPPORTS_FINANCIERS', 'MANAGE_PAYMENTS']);
+          $showOuvCaisse = $canAccess(['MANAGE_CAISSE', 'OUVERTURE_CAISSE', 'MANAGE_PAIEMENTS', 'RECORD_PAIEMENTS']);
+          $showClotCaisse = $canAccess(['CLOTURE_CAISSE', 'VIEW_RAPPORTS_FINANCIERS', 'MANAGE_PAIEMENTS']);
           $showImpayes = $canAccess(['MANAGE_IMPAYES', 'VIEW_IMPAYES', 'SEND_RELANCES', 'MANAGE_MORATOIRES']);
           $showArrieres = $canAccess(['MANAGE_ARRIERES', 'VIEW_ARRIERES', 'MANAGE_IMPAYES', 'MANAGE_PAIEMENTS']);
-          $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_EXPENSES']);
-          $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'MANAGE_EXPENSES', 'VALIDATE_DEPENSES']);
+          $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_DEPENSES']);
+          $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'VALIDATE_DEPENSES']);
           $hasSecFinance = $showScolariteGrille || $showCaisseAnnexe || $showPaiements || $showComptabiliteEtudiants || $showOuvCaisse || $showClotCaisse || $showImpayes || $showArrieres || $showTypeDep || $showDepenses;
         ?>
         <?php if ($hasSecFinance): ?>
@@ -481,11 +481,11 @@
 
         <!-- === MODULE 5 : PÉDAGOGIE & ÉVALUATIONS === -->
         <?php
-          $showEnseignants = $canAccess(['MANAGE_ENSEIGNANTS', 'VIEW_ENSEIGNANTS', 'MANAGE_TEACHERS']);
-          $showAffectations = $canAccess(['MANAGE_AFFECTATIONS', 'VIEW_AFFECTATIONS', 'MANAGE_TEACHERS']);
-          $showEmplois = $canAccess(['MANAGE_EMPLOI_TEMPS', 'VIEW_EMPLOI_TEMPS', 'MANAGE_SCHEDULES']);
+          $showEnseignants = $canAccess(['MANAGE_ENSEIGNANTS', 'VIEW_ENSEIGNANTS']);
+          $showAffectations = $canAccess(['MANAGE_AFFECTATIONS', 'VIEW_AFFECTATIONS', 'MANAGE_ENSEIGNANTS']);
+          $showEmplois = $canAccess(['MANAGE_EMPLOI_TEMPS', 'VIEW_EMPLOI_TEMPS']);
           $showAbsences = $canAccess(['MANAGE_ABSENCES', 'VIEW_ABSENCES']);
-          $showNotes = $canAccess(['ENTER_NOTES', 'VIEW_NOTES', 'MANAGE_GRADES', 'LOCK_NOTES']);
+          $showNotes = $canAccess(['ENTER_NOTES', 'VIEW_NOTES', 'LOCK_NOTES']);
           $showBulletins = $canAccess(['GENERATE_BULLETINS', 'VIEW_BULLETINS', 'VIEW_REPORTS']);
           $hasSecPedagogie = $showEnseignants || $showAffectations || $showEmplois || $showAbsences || $showNotes || $showBulletins;
         ?>
@@ -539,7 +539,7 @@
 
         <!-- === MODULE 6 : PORTAIL & COMMUNICATION === -->
         <?php
-          $showEvents = $canAccess(['MANAGE_EVENEMENTS', 'VIEW_EVENEMENTS', 'MANAGE_EVENTS']);
+          $showEvents = $canAccess(['MANAGE_EVENEMENTS', 'VIEW_EVENEMENTS']);
           $showGaleries = $canAccess(['MANAGE_GALLERY', 'VIEW_GALLERY', 'MANAGE_COMMUNICATION']);
           $showDocs = $canAccess(['MANAGE_DOCUMENTS', 'VIEW_DOCUMENTS']);
           $hasSecMedias = $showEvents || $showGaleries || $showDocs;
@@ -574,7 +574,7 @@
 
         <!-- === MODULE 7 : ADMINISTRATION & SÉCURITÉ === -->
         <?php
-          $showUsers = $canAccess(['MANAGE_USERS', 'VIEW_USERS', 'MANAGE_ACCOUNTS']);
+          $showUsers = $canAccess(['MANAGE_USERS', 'VIEW_USERS']);
           $showFonctions = $canAccess(['MANAGE_FONCTIONS', 'VIEW_FONCTIONS']);
           $showRoles = $canAccess(['MANAGE_ROLES', 'VIEW_ROLES']);
           $showPerms = $canAccess(['MANAGE_PERMISSIONS', 'VIEW_PERMISSIONS']);

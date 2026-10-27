@@ -30,7 +30,7 @@ class ImpayesController extends BaseController
         }
 
         $canSendRelance = $this->hasPermission(['SEND_RELANCES', 'MANAGE_IMPAYES']);
-        $canRecordPayment = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS', 'MANAGE_PAYMENTS']);
+        $canRecordPayment = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
 
         $this->loadView('../views/impayes/list.php', [
             'annees' => $annees,

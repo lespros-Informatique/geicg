@@ -27,7 +27,7 @@ $encryptedId = $encryptedId ?? '';
           <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['annee_code'] ?? '') ?>&classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste nominative des étudiants de cette classe">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Liste de la Classe
           </a>
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['EDIT_CLASSE', 'MANAGE_CLASSES']))): ?>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_CLASSES']))): ?>
             <a href="<?= RACINE ?>classe/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
               <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la classe
             </a>

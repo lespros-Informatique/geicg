@@ -85,9 +85,9 @@ class CaisseAnnexeController extends BaseController
         $isCaisseOuverte = ($activeSession && ($activeSession['statut_session'] ?? '') === 'ouverte');
         $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
-        $canRecord = $this->hasPermission(['MANAGE_CAISSE_ANNEXE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS', 'MANAGE_PAYMENTS']);
-        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
-        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'MANAGE_PAYMENTS', 'RECORD_PAIEMENTS']);
+        $canRecord = $this->hasPermission(['MANAGE_CAISSE_ANNEXE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
 
         $this->loadView('../views/caisse_annexe/list.php', [
             'stats' => $stats,

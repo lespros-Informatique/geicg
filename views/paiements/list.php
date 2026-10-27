@@ -296,7 +296,7 @@ $encryptedSessionId = $encryptedSessionId ?? '';
 $canRecord = $canRecord ?? false;
 $canOpenCaisse = $canOpenCaisse ?? false;
 $canCloseCaisse = $canCloseCaisse ?? false;
-$canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']));
+$canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS']));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -1020,7 +1020,7 @@ $(document).ready(function() {
     });
   });
 
-  var canCancelPaiement = <?= (!empty($canCancelPaiement) || (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS', 'CANCEL_PAYMENTS']))) ? 'true' : 'false' ?>;
+  var canCancelPaiement = <?= (!empty($canCancelPaiement) || (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS']))) ? 'true' : 'false' ?>;
 
   var table = $('#table-paiements').DataTable({
     order: [],
