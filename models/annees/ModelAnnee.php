@@ -136,14 +136,14 @@ class ModelAnnee extends BaseModel
             $allAnnees = $db->query("SELECT * FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             if (empty($allAnnees)) return [];
 
-            $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-            $userPerms = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+            $userCode = Auth::code();
+            $userPerms = Auth::permissions();
             $hasGlobalView = in_array('*', $userPerms, true) || in_array('VIEW_ANNEES_ANTERIEURES', $userPerms, true);
 
             $userAcces = [];
             if (!$hasGlobalView && !empty($userCode)) {
                 try {
-                    $st = $db->prepare("SELECT annee_code, niveau_acces FROM user_annee_acces WHERE user_code = ?");
+                    $st = $db->prepare("SELECT annee_code, niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ?");
                     $st->execute([$userCode]);
                     foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
                         $userAcces[$r['annee_code']] = $r['niveau_acces'];
@@ -164,6 +164,86 @@ class ModelAnnee extends BaseModel
             return $accessible;
         } catch (Exception $e) {
             return [];
+        }
+    }
+
+    /**
+     * Statistiques consolidées pour une année académique
+     */
+    public function getStatsForAnnee(string $anneeCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ? AND (statut_inscription != 'annule' OR statut_inscription IS NULL)) as total_etudiants,
+                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = 'actif' OR statut_classe IS NULL)) as total_classes,
+                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND (statut_semestre = 'actif' OR statut_semestre IS NULL)) as total_semestres,
+                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != 'annule' OR statut_paiement IS NULL)) as total_recouvrement
+            ");
+            $stmt->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [
+                'total_etudiants' => 0, 'total_classes' => 0, 'total_semestres' => 0, 'total_recouvrement' => 0
+            ];
+        } catch (Exception $e) {
+            error_log("ModelAnnee::getStatsForAnnee error: " . $e->getMessage());
+            return [
+                'total_etudiants' => 0, 'total_classes' => 0, 'total_semestres' => 0, 'total_recouvrement' => 0
+            ];
+        }
+    }
+
+    /**
+     * Classes associées à une année académique avec le nombre d'élèves inscrits
+     */
+    public function getClassesForAnnee(string $anneeCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT cl.*, f.libelle_filiere, n.libelle_niveau,
+                       (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)) as nb_eleves
+                FROM " . TABLES::CLASSES . " cl
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                WHERE cl.annee_code = ?
+                ORDER BY cl.libelle_classe ASC
+            ");
+            $stmt->execute([$anneeCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAnnee::getClassesForAnnee error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Semestres associés à une année académique
+     */
+    public function getSemestresForAnnee(string $anneeCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT * FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? ORDER BY id_semestre ASC
+            ");
+            $stmt->execute([$anneeCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAnnee::getSemestresForAnnee error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Recherche une année par son code ou son identifiant numérique
+     */
+    public function getAnneeByCodeOrId(string $code): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::ANNEES . " WHERE code_annee = ? OR id_annee = ? LIMIT 1");
+            $stmt->execute([$code, is_numeric($code) ? (int)$code : 0]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            error_log("ModelAnnee::getAnneeByCodeOrId error: " . $e->getMessage());
+            return null;
         }
     }
 }

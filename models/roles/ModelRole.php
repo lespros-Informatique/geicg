@@ -170,4 +170,21 @@ class ModelRole extends BaseModel
             return false;
         }
     }
+
+    public function getUsersByRole(string $roleCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT u.* FROM " . TABLES::USERS . " u
+                INNER JOIN " . TABLES::USER_ROLES . " ur ON ur.user_code = u.code_user
+                WHERE ur.role_code = ? AND u.statut_user = 'actif'
+                ORDER BY u.nom_user ASC, u.prenom_user ASC
+            ");
+            $stmt->execute([$roleCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log('[ModelRole::getUsersByRole] ' . $e->getMessage());
+            return [];
+        }
+    }
 }

@@ -11,14 +11,14 @@ class EtablissementController extends BaseController
     {
         $items = $this->model->getAll();
         return !empty($items) ? $items[0] : [
-            'id_etablissement' => 1,
-            'libelle_etablissement' => 'Institut Supérieur GEICG',
+            'id_etablissement' => null,
+            'libelle_etablissement' => '',
             'numero_autorisation_etablissement' => '',
-            'telephone_etablissement' => '0708091011',
-            'telephone_etablissement2' => '0102030405',
-            'email_etablissement' => 'contact@geicg.ci',
-            'slogan_etablissement' => 'L\'Excellence au Service de l\'Avenir',
-            'adresse_etablissement' => 'Abidjan Cocody Angré 8ème Tranche',
+            'telephone_etablissement' => '',
+            'telephone_etablissement2' => '',
+            'email_etablissement' => '',
+            'slogan_etablissement' => '',
+            'adresse_etablissement' => '',
             'statut_etablissement' => 'actif'
         ];
     }
@@ -26,6 +26,7 @@ class EtablissementController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -33,6 +34,7 @@ class EtablissementController extends BaseController
     public function config()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -40,6 +42,7 @@ class EtablissementController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -47,6 +50,7 @@ class EtablissementController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -54,6 +58,7 @@ class EtablissementController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -61,6 +66,7 @@ class EtablissementController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $id = $item['id_etablissement'] ?? 1;
         $idCrypte = $this->validator->crypter($id);
@@ -71,6 +77,7 @@ class EtablissementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $id = (int)$this->post('id_etablissement');
         $data = $_POST;
         unset($data['csrf_token']);
@@ -96,18 +103,17 @@ class EtablissementController extends BaseController
         $data['use_slug_cycle'] = isset($data['use_slug_cycle']) ? (int)$data['use_slug_cycle'] : 0;
         $data['use_slug_niveau'] = isset($data['use_slug_niveau']) ? (int)$data['use_slug_niveau'] : 0;
 
-        $cols = $this->model->getCon()->query("DESCRIBE etablissements")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
 
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
         if ($id && $this->model->getById($id)) {
             if ($this->model->update($filteredData, $id)) {
-                unset($_SESSION['etablissement_config']);
+                Session::remove('etablissement_config');
                 if ($isAjax) {
                     $this->success('Configuration de l\'établissement mise à jour avec succès!');
                 } else {
-                    $_SESSION['flash_success'] = 'Configuration de l\'établissement mise à jour avec succès!';
+                    Session::set('flash_success', 'Configuration de l\'établissement mise à jour avec succès!');
                     header('Location: ' . RACINE . 'etablissement/config');
                     exit();
                 }
@@ -115,7 +121,7 @@ class EtablissementController extends BaseController
                 if ($isAjax) {
                     $this->error('Erreur lors de la mise à jour de la configuration');
                 } else {
-                    $_SESSION['flash_error'] = 'Erreur lors de la mise à jour de la configuration';
+                    Session::set('flash_error', 'Erreur lors de la mise à jour de la configuration');
                     header('Location: ' . RACINE . 'etablissement/config');
                     exit();
                 }
@@ -128,7 +134,7 @@ class EtablissementController extends BaseController
                 if ($isAjax) {
                     $this->success('Configuration enregistrée avec succès!');
                 } else {
-                    $_SESSION['flash_success'] = 'Configuration enregistrée avec succès!';
+                    Session::set('flash_success', 'Configuration enregistrée avec succès!');
                     header('Location: ' . RACINE . 'etablissement/config');
                     exit();
                 }
@@ -136,7 +142,7 @@ class EtablissementController extends BaseController
                 if ($isAjax) {
                     $this->error('Erreur lors de l\'enregistrement');
                 } else {
-                    $_SESSION['flash_error'] = 'Erreur lors de l\'enregistrement';
+                    Session::set('flash_error', 'Erreur lors de l\'enregistrement');
                     header('Location: ' . RACINE . 'etablissement/config');
                     exit();
                 }

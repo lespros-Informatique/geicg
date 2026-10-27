@@ -10,12 +10,14 @@ class GalerieController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_GALLERY, PERMISSIONS::MANAGE_GALLERY]);
         $this->loadView('../views/galeries/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_GALLERY, PERMISSIONS::MANAGE_GALLERY]);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -33,7 +35,8 @@ class GalerieController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $this->requirePermission(PERMISSIONS::MANAGE_GALLERY);
+        $userCode = Auth::code() ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
@@ -55,11 +58,11 @@ class GalerieController extends BaseController
         }
         $data['statut_galerie'] = $data['statut_galerie'] ?? 'actif';
         $data['created_at_galerie'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE galeries")->fetchAll(PDO::FETCH_COLUMN);
+        $cols = $this->model->getTableColumns();
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $this->success('Item créé avec succès!');
         } else {
@@ -71,6 +74,7 @@ class GalerieController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_GALLERY);
         $id = (int)$this->post('id_galerie');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -84,8 +88,7 @@ class GalerieController extends BaseController
                 $this->error($uploadResult['message']); return;
             }
         }
-        $cols = $this->model->getCon()->query("DESCRIBE galeries")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->success('Item modifié avec succès!');
         } else {
@@ -131,6 +134,7 @@ class GalerieController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_GALLERY);
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -153,6 +157,7 @@ class GalerieController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_GALLERY, PERMISSIONS::MANAGE_GALLERY]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -167,6 +172,7 @@ class GalerieController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_GALLERY);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -181,6 +187,7 @@ class GalerieController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_GALLERY);
         $this->loadView('../views/galeries/edit.php', ['item' => []]);
     }
 }

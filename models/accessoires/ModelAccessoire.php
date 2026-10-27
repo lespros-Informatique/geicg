@@ -218,4 +218,107 @@ class ModelAccessoire extends BaseModel
             'total_types' => $totalTypes
         ];
     }
+
+    public function getAccessoireInscription(int $id, string $code = ''): ?array
+    {
+        $db = $this->getCon();
+        if ($id > 0) {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE id_accessoire_inscription = ? LIMIT 1");
+            $stmt->execute([$id]);
+        } else {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE code_accessoire_inscription = ? LIMIT 1");
+            $stmt->execute([$code]);
+        }
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function updateEtatRetrait(int $id, string $newEtat, ?string $dateRetrait): bool
+    {
+        $stmt = $this->getCon()->prepare("
+            UPDATE " . TABLES::ACCESSOIRE_INSCRIPTION . " 
+            SET etat_retrait = ?, date_retrait = ? 
+            WHERE id_accessoire_inscription = ?
+        ");
+        return $stmt->execute([$newEtat, $dateRetrait, $id]);
+    }
+
+    public function updateAllKitsForInscription(string $inscriptionCode, string $targetEtat, ?string $dateRetrait): bool
+    {
+        $stmt = $this->getCon()->prepare("
+            UPDATE " . TABLES::ACCESSOIRE_INSCRIPTION . " 
+            SET etat_retrait = ?, date_retrait = ? 
+            WHERE inscription_code = ?
+              AND (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)
+        ");
+        return $stmt->execute([$targetEtat, $dateRetrait, $inscriptionCode]);
+    }
+
+    public function getKitsByEtudiant(string $etudiantCode, ?string $anneeCode = null): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT ai.*, a.libelle_accessoire,
+                   DATE_FORMAT(ai.date_retrait, '%d/%m/%Y %H:%i') as date_retrait_formatee,
+                   DATE_FORMAT(ai.created_at_accessoire_inscription, '%d/%m/%Y') as date_attribution_formatee
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+            JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
+            WHERE i.etudiant_code = ?
+              AND (ai.annee_code = ? OR ? = '')
+              AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
+            ORDER BY ai.id_accessoire_inscription DESC
+        ");
+        $stmt->execute([$etudiantCode, $anneeCode ?: '', $anneeCode ?: '']);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getAllActiveKits(): array
+    {
+        return $this->getCon()->query("SELECT code_accessoire, libelle_accessoire FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = 'actif' ORDER BY libelle_accessoire ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getLatestInscriptionForStudent(string $etudiantCode): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ? ORDER BY id_inscription DESC LIMIT 1");
+        $stmt->execute([$etudiantCode]);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res ?: null;
+    }
+
+    public function checkKitAlreadyAttributed(string $etudiantCode, string $insCode, string $accCode, ?string $anneeCode = null): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT ai.id_accessoire_inscription, a.libelle_accessoire 
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            LEFT JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+            JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
+            WHERE (i.etudiant_code = ? OR ai.inscription_code = ?)
+              AND ai.accessoire_code = ? 
+              AND (ai.annee_code = ? OR ? = '')
+              AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
+            LIMIT 1
+        ");
+        $stmt->execute([$etudiantCode, $insCode, $accCode, $anneeCode ?: '', $anneeCode ?: '']);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res ?: null;
+    }
+
+    public function insertAccessoireInscription(array $data): bool
+    {
+        $stmt = $this->getCon()->prepare("
+            INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
+            (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, date_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+            VALUES (?, ?, ?, ?, 'actif', ?, ?, ?, ?, NOW())
+        ");
+        return $stmt->execute([
+            $data['code_accessoire_inscription'],
+            $data['inscription_code'],
+            $data['accessoire_code'],
+            $data['annee_code'],
+            $data['etat_retrait'] ?? 'en_attente',
+            $data['date_retrait'] ?? null,
+            $data['user_code'] ?? null,
+            $data['etablissement_code'] ?? null
+        ]);
+    }
 }

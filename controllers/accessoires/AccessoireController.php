@@ -10,20 +10,20 @@ class AccessoireController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $annees = $this->getAccessibleAnnees();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    Session::set('annee_active_code', $a['code_annee']);
+                    Session::set('annee_active_libelle', $a['libelle_annee']);
                     break;
                 }
             }
         } else {
-            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
         $stats = $this->model->getStats($selectedAnneeCode);
@@ -40,7 +40,7 @@ class AccessoireController extends BaseController
     public function registre()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
 
         $annees = $this->getAccessibleAnnees();
         
@@ -48,13 +48,13 @@ class AccessoireController extends BaseController
             $selectedAnneeCode = trim($_GET['annee_code']);
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    Session::set('annee_active_code', $a['code_annee']);
+                    Session::set('annee_active_libelle', $a['libelle_annee']);
                     break;
                 }
             }
         } else {
-            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
         $classeModel = new ModelClasse();
@@ -73,7 +73,8 @@ class AccessoireController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES]);
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
@@ -91,30 +92,33 @@ class AccessoireController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ACCESSOIRES);
         $data = $_POST;
         unset($data['csrf_token']);
         unset($data['id_accessoire']);
         unset($data['id']);
         if (!empty($data['libelle_accessoire'])) {
-            if (!$this->checkUnique('accessoires', 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire')) return;
+            if (!$this->checkUnique(TABLES::ACCESSOIRES, 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire')) return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_accessoire'])) {
-            $data['code_accessoire'] = $this->validator->generateCode('accessoires', 'code_accessoire', 'ACC-', 8);
+            $data['code_accessoire'] = $this->validator->generateCode(TABLES::ACCESSOIRES, 'code_accessoire', 'ACC-', 8);
         }
         $data['statut_accessoire'] = $data['statut_accessoire'] ?? 'actif';
         $data['created_at_accessoire'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE accessoires")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+
         $libelle = trim($data['libelle_accessoire'] ?? '');
         if (isset($data['niveau_code']) && empty(trim($data['niveau_code']))) {
             $data['niveau_code'] = null;
         }
-        $filteredData = array_intersect_key($data, array_flip($cols));
+
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été créé avec succès !" : "Accessoire créé avec succès !";
             $this->success($msg);
@@ -130,20 +134,21 @@ class AccessoireController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ACCESSOIRES);
         $id = (int)$this->post('id_accessoire');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_accessoire'])) {
-            if (!$this->checkUnique('accessoires', 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire', 'id_accessoire', $id)) return;
+            if (!$this->checkUnique(TABLES::ACCESSOIRES, 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire', 'id_accessoire', $id)) return;
         }
 
         $libelle = trim($data['libelle_accessoire'] ?? '');
-        $cols = $this->model->getCon()->query("DESCRIBE accessoires")->fetchAll(PDO::FETCH_COLUMN);
         if (isset($data['niveau_code']) && empty(trim($data['niveau_code']))) {
             $data['niveau_code'] = null;
         }
-        $filteredData = array_intersect_key($data, array_flip($cols));
+
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été modifié avec succès !" : "Accessoire modifié avec succès !";
             $this->success($msg);
@@ -158,10 +163,10 @@ class AccessoireController extends BaseController
     public function apiDistributions()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
 
         $filter = trim($_GET['filter'] ?? 'all');
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $classeCode = $_GET['classe_code'] ?? null;
 
         try {
@@ -176,7 +181,7 @@ class AccessoireController extends BaseController
     public function getBonRemiseData()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
 
         $inscriptionCode = trim($_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? ''));
         if (empty($inscriptionCode)) {
@@ -191,7 +196,8 @@ class AccessoireController extends BaseController
                 return;
             }
 
-            $agentName = ($_SESSION[USERS_AUTH]['prenom_user'] ?? '') . ' ' . ($_SESSION[USERS_AUTH]['nom_user'] ?? '');
+            $user = Auth::user();
+            $agentName = ($user['prenom_user'] ?? '') . ' ' . ($user['nom_user'] ?? '');
             $data['status'] = 1;
             $data['date_emission'] = date('d/m/Y H:i');
             $data['agent_nom'] = trim($agentName) ?: 'Administration';
@@ -206,7 +212,8 @@ class AccessoireController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $stats = $this->model->getStats($anneeCode);
         $this->json(['status' => 1, 'stats' => $stats]);
     }
@@ -215,21 +222,12 @@ class AccessoireController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_REMISE_KITS);
 
         $id = (int)$this->post('id');
         $code = trim($this->post('code_accessoire_inscription') ?? '');
 
-        $db = $this->model->getCon();
-
-        if ($id > 0) {
-            $stmt = $db->prepare("SELECT * FROM accessoire_inscription WHERE id_accessoire_inscription = ? LIMIT 1");
-            $stmt->execute([$id]);
-        } else {
-            $stmt = $db->prepare("SELECT * FROM accessoire_inscription WHERE code_accessoire_inscription = ? LIMIT 1");
-            $stmt->execute([$code]);
-        }
-
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $this->model->getAccessoireInscription($id, $code);
         if (!$row) {
             $this->error('Enregistrement de kit introuvable');
             return;
@@ -238,12 +236,7 @@ class AccessoireController extends BaseController
         $newEtat = ($row['etat_retrait'] === 'retire') ? 'en_attente' : 'retire';
         $dateRetrait = ($newEtat === 'retire') ? date('Y-m-d H:i:s') : null;
 
-        $stmtUp = $db->prepare("
-            UPDATE accessoire_inscription 
-            SET etat_retrait = ?, date_retrait = ? 
-            WHERE id_accessoire_inscription = ?
-        ");
-        $success = $stmtUp->execute([$newEtat, $dateRetrait, $row['id_accessoire_inscription']]);
+        $success = $this->model->updateEtatRetrait($row['id_accessoire_inscription'], $newEtat, $dateRetrait);
 
         if ($success) {
             $msg = ($newEtat === 'retire') 
@@ -263,6 +256,7 @@ class AccessoireController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_REMISE_KITS);
 
         $inscriptionCode = trim($this->post('inscription_code') ?? '');
         $targetEtat = trim($this->post('target_etat') ?? 'retire'); // 'retire' or 'en_attente'
@@ -272,16 +266,8 @@ class AccessoireController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
         $dateRetrait = ($targetEtat === 'retire') ? date('Y-m-d H:i:s') : null;
-
-        $stmt = $db->prepare("
-            UPDATE accessoire_inscription 
-            SET etat_retrait = ?, date_retrait = ? 
-            WHERE inscription_code = ?
-              AND (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)
-        ");
-        $success = $stmt->execute([$targetEtat, $dateRetrait, $inscriptionCode]);
+        $success = $this->model->updateAllKitsForInscription($inscriptionCode, $targetEtat, $dateRetrait);
 
         if ($success) {
             $msg = ($targetEtat === 'retire') 
@@ -296,6 +282,7 @@ class AccessoireController extends BaseController
     public function getStudentKits()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
         $etudiantCode = trim($_GET['etudiant_code'] ?? $_POST['etudiant_code'] ?? '');
         if (empty($etudiantCode)) {
             $this->json(['status' => 0, 'message' => 'Étudiant non spécifié', 'existing_kits' => [], 'existing_codes' => []]);
@@ -303,26 +290,9 @@ class AccessoireController extends BaseController
         }
 
         $anneeCode = $this->getActiveAnneeCode();
-        $db = $this->model->getCon();
-
-        $stmt = $db->prepare("
-            SELECT ai.*, a.libelle_accessoire,
-                   DATE_FORMAT(ai.date_retrait, '%d/%m/%Y %H:%i') as date_retrait_formatee,
-                   DATE_FORMAT(ai.created_at_accessoire_inscription, '%d/%m/%Y') as date_attribution_formatee
-            FROM accessoire_inscription ai
-            JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
-            JOIN inscriptions i ON i.code_inscription = ai.inscription_code
-            WHERE i.etudiant_code = ?
-              AND (ai.annee_code = ? OR ? = '')
-              AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
-            ORDER BY ai.id_accessoire_inscription DESC
-        ");
-        $stmt->execute([$etudiantCode, $anneeCode, $anneeCode]);
-        $existingKits = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+        $existingKits = $this->model->getKitsByEtudiant($etudiantCode, $anneeCode);
         $existingCodes = array_values(array_unique(array_column($existingKits, 'accessoire_code')));
-
-        $allKits = $db->query("SELECT code_accessoire, libelle_accessoire FROM accessoires WHERE statut_accessoire = 'actif' ORDER BY libelle_accessoire ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $allKits = $this->model->getAllActiveKits();
 
         $this->json([
             'status' => 1,
@@ -337,8 +307,8 @@ class AccessoireController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_REMISE_KITS);
 
-        $db = $this->model->getCon();
         $etudiantCode = trim($_POST['etudiant_code'] ?? '');
         $etatRetrait = trim($_POST['etat_retrait'] ?? 'en_attente');
 
@@ -355,14 +325,12 @@ class AccessoireController extends BaseController
             return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
-        // Trouver la dernière inscription de l'étudiant
-        $stmtIns = $db->prepare("SELECT code_inscription FROM inscriptions WHERE etudiant_code = ? ORDER BY id_inscription DESC LIMIT 1");
-        $stmtIns->execute([$etudiantCode]);
-        $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
+        // Trouver la dernière inscription de l'étudiant via modèle
+        $ins = $this->model->getLatestInscriptionForStudent($etudiantCode);
         $insCode = $ins['code_inscription'] ?? '';
 
         if (empty($insCode)) {
@@ -371,24 +339,11 @@ class AccessoireController extends BaseController
         }
 
         // VÉRIFICATION D'UNICITÉ : Ne pas attribuer un kit déjà existant pour cet étudiant cette année
-        $stmtCheck = $db->prepare("
-            SELECT ai.id_accessoire_inscription, a.libelle_accessoire 
-            FROM accessoire_inscription ai
-            LEFT JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
-            JOIN inscriptions i ON i.code_inscription = ai.inscription_code
-            WHERE (i.etudiant_code = ? OR ai.inscription_code = ?)
-              AND ai.accessoire_code = ? 
-              AND (ai.annee_code = ? OR ? = '')
-              AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
-            LIMIT 1
-        ");
-
         $toInsert = [];
         $duplicates = [];
 
         foreach ($accessoireCodes as $accCode) {
-            $stmtCheck->execute([$etudiantCode, $insCode, $accCode, $anneeCode]);
-            $existing = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+            $existing = $this->model->checkKitAlreadyAttributed($etudiantCode, $insCode, $accCode, $anneeCode);
             if ($existing) {
                 $duplicates[] = $existing['libelle_accessoire'] ?? $accCode;
             } else {
@@ -404,35 +359,25 @@ class AccessoireController extends BaseController
 
         $dateRetrait = ($etatRetrait === 'retire') ? date('Y-m-d H:i:s') : null;
 
-        $stmt = $db->prepare("
-            INSERT INTO accessoire_inscription
-            (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, date_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
-            VALUES (?, ?, ?, ?, 'actif', ?, ?, ?, ?, NOW())
-        ");
-
         $count = 0;
         foreach ($toInsert as $accCode) {
-            $fkErr = ForeignKeyValidator::validate($db, 'accessoire_inscription', [
+            $this->validateForeignKeys([
                 'inscription_code' => $insCode,
                 'accessoire_code' => $accCode,
                 'annee_code' => $anneeCode,
                 'etablissement_code' => $etabCode
             ]);
-            if ($fkErr !== null) {
-                $this->error($fkErr);
-                return;
-            }
 
-            $codeAccIns = $this->validator->generateCode('accessoire_inscription', 'code_accessoire_inscription', 'ACI-', 8);
-            $ok = $stmt->execute([
-                $codeAccIns,
-                $insCode,
-                $accCode,
-                $anneeCode,
-                $etatRetrait,
-                $dateRetrait,
-                $userCode,
-                $etabCode
+            $codeAccIns = $this->validator->generateCode(TABLES::ACCESSOIRE_INSCRIPTION, 'code_accessoire_inscription', 'ACI-', 8);
+            $ok = $this->model->insertAccessoireInscription([
+                'code_accessoire_inscription' => $codeAccIns,
+                'inscription_code' => $insCode,
+                'accessoire_code' => $accCode,
+                'annee_code' => $anneeCode,
+                'etat_retrait' => $etatRetrait,
+                'date_retrait' => $dateRetrait,
+                'user_code' => $userCode,
+                'etablissement_code' => $etabCode
             ]);
             if ($ok) $count++;
         }
@@ -452,6 +397,7 @@ class AccessoireController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ACCESSOIRES);
         $id = $this->post('id') ?: $this->post('id_accessoire');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -467,6 +413,7 @@ class AccessoireController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ACCESSOIRES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);

@@ -10,7 +10,7 @@ class ImpayesController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_IMPAYES', 'MANAGE_IMPAYES', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
@@ -20,17 +20,17 @@ class ImpayesController extends BaseController
             $selectedAnneeCode = trim($_GET['annee_code']);
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    Session::set('annee_active_code', $a['code_annee']);
+                    Session::set('annee_active_libelle', $a['libelle_annee']);
                     break;
                 }
             }
         } else {
-            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
-        $canSendRelance = $this->hasPermission(['SEND_RELANCES', 'MANAGE_IMPAYES']);
-        $canRecordPayment = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canSendRelance = $this->hasPermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]);
+        $canRecordPayment = $this->hasPermission([PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $this->loadView('../views/impayes/list.php', [
             'annees' => $annees,
@@ -45,9 +45,9 @@ class ImpayesController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_IMPAYES', 'MANAGE_IMPAYES', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $severite = $_GET['severite'] ?? 'ALL';
@@ -79,9 +79,9 @@ class ImpayesController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['SEND_RELANCES', 'MANAGE_IMPAYES']);
+        $this->requirePermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]);
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
@@ -89,7 +89,7 @@ class ImpayesController extends BaseController
         unset($data['csrf_token']);
 
         if (empty($data['code_relance'])) {
-            $data['code_relance'] = $this->validator->generateCode('relances_impayes', 'code_relance', 'REL-', 8);
+            $data['code_relance'] = $this->validator->generateCode(TABLES::IMPAYES, 'code_relance', 'REL-', 8);
         }
         $data['statut_relance'] = 'envoye';
         $data['created_at_relance'] = date('Y-m-d H:i:s');
@@ -97,8 +97,7 @@ class ImpayesController extends BaseController
         $data['annee_code'] = $anneeCode;
         $data['etablissement_code'] = $etabCode;
 
-        $cols = $this->model->getCon()->query("DESCRIBE relances_impayes")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
 
         if ($this->model->create($filteredData)) {
             $this->success('Relance d\'impayé enregistrée et journalisée avec succès!');
@@ -111,9 +110,9 @@ class ImpayesController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['SEND_RELANCES', 'MANAGE_IMPAYES']);
+        $this->requirePermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]);
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
@@ -128,12 +127,9 @@ class ImpayesController extends BaseController
         $canalRelance = $_POST['canal_relance'] ?? 'sms';
         $messageTemplate = $_POST['message_relance'] ?? '';
 
-        $cols = $this->model->getCon()->query("DESCRIBE relances_impayes")->fetchAll(PDO::FETCH_COLUMN);
-        $colsFlip = array_flip($cols);
-
         $savedCount = 0;
         foreach ($items as $item) {
-            $codeRelance = $this->validator->generateCode('relances_impayes', 'code_relance', 'REL-', 8);
+            $codeRelance = $this->validator->generateCode(TABLES::IMPAYES, 'code_relance', 'REL-', 8);
             
             $msg = $messageTemplate;
             $msg = str_replace('{NOM_ETUDIANT}', $item['student_name'] ?? '', $msg);
@@ -156,7 +152,7 @@ class ImpayesController extends BaseController
                 'created_at_relance' => date('Y-m-d H:i:s')
             ];
 
-            $filteredData = array_intersect_key($data, $colsFlip);
+            $filteredData = $this->model->filterData($data);
             if ($this->model->create($filteredData)) {
                 $savedCount++;
             }
@@ -172,10 +168,10 @@ class ImpayesController extends BaseController
     public function imprimerListeImpayes()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_IMPAYES', 'MANAGE_IMPAYES', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $severite = $_GET['severite'] ?? 'ALL';
@@ -184,23 +180,17 @@ class ImpayesController extends BaseController
 
         $anneeLibelle = 'Toutes';
         if (!empty($anneeCode)) {
-            $stmt = $this->model->getCon()->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ?");
-            $stmt->execute([$anneeCode]);
-            $anneeLibelle = $stmt->fetchColumn() ?: $anneeCode;
+            $anneeLibelle = $this->model->getAnneeLibelle($anneeCode);
         }
 
         $niveauLibelle = 'Tous';
         if (!empty($niveauCode) && $niveauCode !== 'ALL') {
-            $stmt = $this->model->getCon()->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ?");
-            $stmt->execute([$niveauCode]);
-            $niveauLibelle = $stmt->fetchColumn() ?: $niveauCode;
+            $niveauLibelle = $this->model->getNiveauLibelle($niveauCode);
         }
 
         $classeLibelle = 'Toutes';
         if (!empty($classeCode) && $classeCode !== 'ALL') {
-            $stmt = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ?");
-            $stmt->execute([$classeCode]);
-            $classeLibelle = $stmt->fetchColumn() ?: $classeCode;
+            $classeLibelle = $this->model->getClasseLibelle($classeCode);
         }
 
         $severiteLibelle = 'Tous les retards';
@@ -229,8 +219,9 @@ class ImpayesController extends BaseController
     public function imprimerRappelPdf($param)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_IMPAYES', 'MANAGE_IMPAYES', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
+        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
 
         try {
             $id = $this->validator->decrypter($param);
@@ -238,64 +229,24 @@ class ImpayesController extends BaseController
             $id = $param;
         }
 
-        $db = $this->model->getCon();
-        $stmt = $db->prepare("
-            SELECT 
-                i.id_inscription,
-                i.code_inscription,
-                i.montant_scolarite_inscription,
-                i.affectation_etat,
-                i.annee_code,
-                e.code_etudiant,
-                e.matricule_etudiant,
-                e.nom_etudiant,
-                e.prenom_etudiant,
-                e.telephone_etudiant,
-                e.photo_etudiant,
-                c.libelle_classe,
-                c.filiere_code,
-                c.niveau_code,
-                f.libelle_filiere,
-                f.slug_filiere,
-                f.type_filiere,
-                n.libelle_niveau,
-                n.slug_niveau,
-                a.libelle_annee,
-                p.nom_pere, p.telephone_pere,
-                p.nom_mere, p.telephone_mere,
-                p.nom_tuteur, p.telephone_tuteur
-            FROM inscriptions i
-            JOIN etudiants e ON i.etudiant_code = e.code_etudiant
-            LEFT JOIN classes c ON i.classe_code = c.code_classe
-            LEFT JOIN filieres f ON c.filiere_code = f.code_filiere
-            LEFT JOIN niveaux n ON c.niveau_code = n.code_niveau
-            LEFT JOIN annees a ON a.code_annee = i.annee_code
-            LEFT JOIN parents p ON p.etudiant_code = e.code_etudiant
-            WHERE i.id_inscription = ? OR i.code_inscription = ?
-            LIMIT 1
-        ");
-        $stmt->execute([$id, $id]);
-        $ins = $stmt->fetch(PDO::FETCH_ASSOC);
-
+        $ins = $this->model->getInscriptionDetailsForRappel($id);
         if (!$ins) {
             $this->error('Inscription introuvable pour ce rappel.');
             return;
         }
 
-        // Paiements
-        $stmtPay = $db->prepare("SELECT SUM(montant_paiement) as total_paye FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
-        $stmtPay->execute([$ins['code_inscription']]);
-        $totalPaye = (float)($stmtPay->fetchColumn() ?: 0);
+        // Paiements via modèle
+        $totalPaye = $this->model->getTotalPayeByInscription($ins['code_inscription']);
 
-        require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
         $modelFA = new ModelFraisAnnexe();
         $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
         $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $ins['annee_code'], $ins['niveau_code'], 'inscription');
 
-        // Scolarité due
-        $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = 'actif' LIMIT 1");
-        $stmtSco->execute([$ins['filiere_code'], $ins['niveau_code'], $ins['annee_code']]);
-        $scolariteDue = (float)($stmtSco->fetchColumn() ?: $ins['montant_scolarite_inscription']);
+        // Scolarité due via modèle
+        $scolariteDue = $this->model->getScolariteDue($ins['filiere_code'], $ins['niveau_code'], $ins['annee_code']);
+        if ($scolariteDue === null) {
+            $scolariteDue = (float)$ins['montant_scolarite_inscription'];
+        }
 
         $totalAttendu = $scolariteDue + $fraisAnnexesDus;
         $restePayer = max(0, $totalAttendu - $totalPaye);
@@ -314,37 +265,18 @@ class ImpayesController extends BaseController
             if (!empty($ins['telephone_mere'])) $contactParent = $ins['telephone_mere'];
         }
 
-        $userNom = $_SESSION[USERS_AUTH]['nom_user'] ?? 'La Caissière';
-        $userPrenom = $_SESSION[USERS_AUTH]['prenom_user'] ?? '';
+        $user = Auth::user();
+        $userNom = $user['nom_user'] ?? 'La Caissière';
+        $userPrenom = $user['prenom_user'] ?? '';
         $caissierNom = trim($userNom . ' ' . $userPrenom);
 
-        $toBase64 = function($paths) {
-            foreach ($paths as $p) {
-                if (empty($p)) continue;
-                $pClean = ltrim($p, '/');
-                $candidates = [
-                    $pClean,
-                    __DIR__ . '/../../' . $pClean,
-                    __DIR__ . '/../../public/' . $pClean
-                ];
-                foreach ($candidates as $cand) {
-                    if (file_exists($cand) && is_file($cand)) {
-                        $ext = pathinfo($cand, PATHINFO_EXTENSION);
-                        $mime = ($ext === 'png') ? 'image/png' : (($ext === 'svg') ? 'image/svg+xml' : 'image/jpeg');
-                        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($cand));
-                    }
-                }
-            }
-            return '';
-        };
-
-        $logoSrc = $toBase64([
+        $logoSrc = $this->toBase64([
             'public/assets/images/logo/logo_eicg.jpg',
             'assets/images/logo/logo_eicg.jpg',
             'public/uploads/logos/logo_1787358264.jpg'
         ]);
 
-        $photoSrc = $toBase64([
+        $photoSrc = $this->toBase64([
             $ins['photo_etudiant'] ?? '',
             $ins['photo_inscription'] ?? '',
             'public/assets/images/placeholders/etudiant.png',
@@ -387,7 +319,7 @@ class ImpayesController extends BaseController
     public function imprimerRappelsMasse()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_IMPAYES', 'MANAGE_IMPAYES', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
         require_once __DIR__ . '/../../models/frais_annexes/ModelFraisAnnexe.php';
 
@@ -403,72 +335,36 @@ class ImpayesController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-
-        $stmt = $db->prepare("
-            SELECT 
-                i.id_inscription,
-                i.code_inscription,
-                i.montant_scolarite_inscription,
-                i.affectation_etat,
-                i.annee_code,
-                e.code_etudiant,
-                e.matricule_etudiant,
-                e.nom_etudiant,
-                e.prenom_etudiant,
-                e.telephone_etudiant,
-                e.photo_etudiant,
-                c.libelle_classe,
-                c.filiere_code,
-                c.niveau_code,
-                f.libelle_filiere,
-                f.slug_filiere,
-                f.type_filiere,
-                n.libelle_niveau,
-                n.slug_niveau,
-                a.libelle_annee,
-                p.nom_pere, p.telephone_pere,
-                p.nom_mere, p.telephone_mere,
-                p.nom_tuteur, p.telephone_tuteur
-            FROM inscriptions i
-            JOIN etudiants e ON i.etudiant_code = e.code_etudiant
-            LEFT JOIN classes c ON i.classe_code = c.code_classe
-            LEFT JOIN filieres f ON c.filiere_code = f.code_filiere
-            LEFT JOIN niveaux n ON c.niveau_code = n.code_niveau
-            LEFT JOIN annees a ON a.code_annee = i.annee_code
-            LEFT JOIN parents p ON p.etudiant_code = e.code_etudiant
-            WHERE i.id_inscription IN ({$placeholders}) OR i.code_inscription IN ({$placeholders})
-            ORDER BY e.nom_etudiant ASC
-        ");
-
-        $execParams = array_merge($ids, $ids);
-        $stmt->execute($execParams);
-        $inscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
+        $inscriptions = $this->model->getInscriptionsDetailsForRappelsMasse($ids);
         if (empty($inscriptions)) {
             $this->error('Aucune inscription trouvée pour ces identifiants.');
             return;
         }
 
         $modelFA = new ModelFraisAnnexe();
-        $userNom = $_SESSION[USERS_AUTH]['nom_user'] ?? 'La Caissière';
-        $userPrenom = $_SESSION[USERS_AUTH]['prenom_user'] ?? '';
+        $user = Auth::user();
+        $userNom = $user['nom_user'] ?? 'La Caissière';
+        $userPrenom = $user['prenom_user'] ?? '';
         $caissierNom = trim($userNom . ' ' . $userPrenom);
+
+        $logoSrc = $this->toBase64([
+            'public/assets/images/logo/logo_eicg.jpg',
+            'assets/images/logo/logo_eicg.jpg',
+            'public/uploads/logos/logo_1787358264.jpg'
+        ]);
 
         $htmlPages = [];
 
         foreach ($inscriptions as $ins) {
-            $stmtPay = $db->prepare("SELECT SUM(montant_paiement) as total_paye FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
-            $stmtPay->execute([$ins['code_inscription']]);
-            $totalPaye = (float)($stmtPay->fetchColumn() ?: 0);
+            $totalPaye = $this->model->getTotalPayeByInscription($ins['code_inscription']);
 
             $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
             $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $ins['annee_code'], $ins['niveau_code'], 'inscription');
 
-            $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = 'actif' LIMIT 1");
-            $stmtSco->execute([$ins['filiere_code'], $ins['niveau_code'], $ins['annee_code']]);
-            $scolariteDue = (float)($stmtSco->fetchColumn() ?: $ins['montant_scolarite_inscription']);
+            $scolariteDue = $this->model->getScolariteDue($ins['filiere_code'], $ins['niveau_code'], $ins['annee_code']);
+            if ($scolariteDue === null) {
+                $scolariteDue = (float)$ins['montant_scolarite_inscription'];
+            }
 
             $totalAttendu = $scolariteDue + $fraisAnnexesDus;
             $restePayer = max(0, $totalAttendu - $totalPaye);
@@ -487,7 +383,7 @@ class ImpayesController extends BaseController
                 if (!empty($ins['telephone_mere'])) $contactParent = $ins['telephone_mere'];
             }
 
-            $photoSrc = $toBase64([
+            $photoSrc = $this->toBase64([
                 $ins['photo_etudiant'] ?? '',
                 $ins['photo_inscription'] ?? '',
                 'public/assets/images/placeholders/etudiant.png',
@@ -497,7 +393,7 @@ class ImpayesController extends BaseController
             $dataView = [
                 'annee_libelle' => $ins['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
                 'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
-            'code_barre_val' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
+                'code_barre_val' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
                 'code_inscription' => $ins['code_inscription'],
                 'statut_affectation' => $isAffecte ? 'AFFECTE' : 'NON AFFECTE',
                 'matricule_etudiant' => $ins['matricule_etudiant'] ?? 'N/A',
@@ -528,6 +424,27 @@ class ImpayesController extends BaseController
             'format' => 'A4',
             'title' => 'Rappels de Scolarité en Masse (' . count($inscriptions) . ')'
         ]);
+    }
+
+    private function toBase64(array $paths): string
+    {
+        foreach ($paths as $p) {
+            if (empty($p)) continue;
+            $pClean = ltrim($p, '/');
+            $candidates = [
+                $pClean,
+                __DIR__ . '/../../' . $pClean,
+                __DIR__ . '/../../public/' . $pClean
+            ];
+            foreach ($candidates as $cand) {
+                if (file_exists($cand) && is_file($cand)) {
+                    $ext = pathinfo($cand, PATHINFO_EXTENSION);
+                    $mime = ($ext === 'png') ? 'image/png' : (($ext === 'svg') ? 'image/svg+xml' : 'image/jpeg');
+                    return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($cand));
+                }
+            }
+        }
+        return '';
     }
 }
 

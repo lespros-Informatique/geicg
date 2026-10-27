@@ -130,8 +130,49 @@ class ModelDepense extends BaseModel
         }
 
         $now = date('Y-m-d H:i:s');
-        $sql = "UPDATE depenses SET statut_depense = ?, user_confirm = ?, created_at_confirm = ?, updated_at_depense = ? WHERE id_depense = ?";
+        $sql = "UPDATE " . TABLES::DEPENSES . " SET statut_depense = ?, user_confirm = ?, created_at_confirm = ?, updated_at_depense = ? WHERE id_depense = ?";
         $stmt = $this->getCon()->prepare($sql);
         return $stmt->execute([$statut, $userCode, $now, $now, $id]);
+    }
+
+    /**
+     * Récupère les détails complets d'une dépense
+     */
+    public function getDetailsById(int $id): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT d.*, 
+                       td.libelle_type_depense, 
+                       a.libelle_annee, 
+                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) as auteur_nom_complet,
+                       CONCAT(COALESCE(uc.nom_user, ''), ' ', COALESCE(uc.prenom_user, '')) as confirmateur_nom_complet
+                FROM " . TABLES::DEPENSES . " d
+                LEFT JOIN " . TABLES::TYPE_DEPENSES . " td ON td.code_type_depense = d.type_depense_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = d.annee_code
+                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = d.user_code
+                LEFT JOIN " . TABLES::USERS . " uc ON uc.code_user = d.user_confirm
+                WHERE d.id_depense = ?
+            ");
+            $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            error_log("ModelDepense getDetailsById error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Récupère une année par son code
+     */
+    public function getAnneeByCode(string $code): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+            $stmt->execute([$code]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            return null;
+        }
     }
 }

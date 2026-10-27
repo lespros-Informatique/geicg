@@ -59,7 +59,7 @@ class ModelDossierEtudiant extends BaseModel
         ?string $userCode = null,
         ?string $fichierJoint = null
     ): bool {
-        $etabCode = $_SESSION['etablissement_active_code'] ?? '';
+        $etabCode = Session::get('etablissement_active_code') ?? '';
         if (empty($etabCode)) {
             try {
                 $stmtEtab = $this->getCon()->query("SELECT code_etablissement FROM etablissements ORDER BY id_etablissement DESC LIMIT 1");
@@ -114,6 +114,83 @@ class ModelDossierEtudiant extends BaseModel
         } catch (Exception $e) {
             error_log("ModelDossierEtudiant::saveStatutPiece error: " . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Récupère la liste des étudiants/inscriptions avec filtres pour le tableau de suivi des dossiers
+     */
+    public function getInscriptionsForDossiers(?string $anneeCode = null, ?string $classeCode = null): array
+    {
+        try {
+            $sql = "
+                SELECT 
+                    i.code_inscription,
+                    i.created_at_inscription AS date_inscription,
+                    i.statut_inscription,
+                    e.code_etudiant,
+                    e.matricule_etudiant,
+                    e.nom_etudiant,
+                    e.prenom_etudiant,
+                    e.photo_etudiant,
+                    e.telephone_etudiant,
+                    cl.code_classe,
+                    cl.libelle_classe,
+                    cl.filiere_code
+                FROM inscriptions i
+                JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+                JOIN classes cl ON cl.code_classe = i.classe_code
+                WHERE 1=1
+            ";
+
+            $params = [];
+            if (!empty($anneeCode)) {
+                $sql .= " AND i.annee_code = ?";
+                $params[] = $anneeCode;
+            }
+            if (!empty($classeCode)) {
+                $sql .= " AND i.classe_code = ?";
+                $params[] = $classeCode;
+            }
+
+            $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC";
+
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelDossierEtudiant::getInscriptionsForDossiers error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Récupère les informations complètes de l'étudiant pour le récépissé de dépôt
+     */
+    public function getRecepisseStudent(string $inscriptionCode): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT 
+                    i.code_inscription, i.created_at_inscription AS date_inscription, i.statut_inscription,
+                    e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, e.photo_etudiant,
+                    cl.libelle_classe, cl.filiere_code,
+                    a.libelle_annee,
+                    et.libelle_etablissement AS nom_etablissement, et.logo_etablissement, et.telephone_etablissement, et.adresse_etablissement
+                FROM inscriptions i
+                JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+                JOIN classes cl ON cl.code_classe = i.classe_code
+                LEFT JOIN annees a ON a.code_annee = i.annee_code
+                LEFT JOIN etablissements et ON et.code_etablissement = i.etablissement_code
+                WHERE i.code_inscription = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$inscriptionCode]);
+            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $student ?: null;
+        } catch (Exception $e) {
+            error_log("ModelDossierEtudiant::getRecepisseStudent error: " . $e->getMessage());
+            return null;
         }
     }
 }

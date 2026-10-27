@@ -10,12 +10,14 @@ class FiliereCycleController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_CYCLES]);
         $this->loadView('../views/filiere_cycles/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_CYCLES]);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -129,6 +131,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -144,38 +147,17 @@ class FiliereCycleController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_CYCLES]);
         try {
             $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT fc.*, f.libelle_filiere, c.libelle_cycle
-                FROM filiere_cycles fc
-                LEFT JOIN filieres f ON f.code_filiere = fc.filiere_code
-                LEFT JOIN cycles c ON c.code_cycle = fc.cycle_code
-                WHERE fc.id_filiere_cycle = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            $item = $this->model->getDetails((int)$id);
             if (!$item) { 
                 $this->renderNotFound("L'assignation Filière - Cycle demandée est introuvable.");
                 return;
             }
 
-            // Classes liées à ce parcours pivot (Cycle - Filière - Niveau)
-            $stmtClasses = $this->model->getCon()->prepare("
-                SELECT cl.*, n.libelle_niveau, COUNT(i.id_inscription) as nb_etudiants
-                FROM classes cl
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN inscriptions i ON i.classe_code = cl.code_classe AND i.statut_inscription = 'actif'
-                WHERE cl.filiere_code = ?
-                  AND (cl.cycle_code = ? OR ? = '' OR cl.cycle_code IS NULL)
-                  AND (cl.niveau_code = ? OR ? = '' OR cl.niveau_code IS NULL)
-                GROUP BY cl.id_classe
-                ORDER BY cl.libelle_classe ASC
-            ");
-            $cycleCodeVal = $item['cycle_code'] ?? '';
-            $niveauCodeVal = $item['niveau_code'] ?? '';
-            $stmtClasses->execute([$item['filiere_code'], $cycleCodeVal, $cycleCodeVal, $niveauCodeVal, $niveauCodeVal]);
-            $classes = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
+            // Classes liées à ce parcours pivot (Cycle - Filière - Niveau) via le modèle
+            $classes = $this->model->getClassesForParcours($item['filiere_code'], $item['cycle_code'] ?? null, $item['niveau_code'] ?? null);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
@@ -193,6 +175,7 @@ class FiliereCycleController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -214,6 +197,7 @@ class FiliereCycleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
         $filieresList = $this->model->getActiveFilieres();
         $cyclesList = $this->model->getActiveCycles();
         $this->loadView('../views/filiere_cycles/edit.php', [
@@ -296,7 +280,7 @@ class FiliereCycleController extends BaseController
         $etablissement = $this->getEtablissementConfig();
         $anneeLibelle = $this->getActiveAnneeLibelle();
 
-        $authSession = $_SESSION[USERS_AUTH] ?? [];
+        $authSession = Auth::user() ?? [];
         $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
         if (empty($editeurNom)) {
             $editeurNom = 'Direction des Études & Scolarité';

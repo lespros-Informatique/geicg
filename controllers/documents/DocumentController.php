@@ -10,21 +10,15 @@ class DocumentController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_DOCUMENTS, PERMISSIONS::MANAGE_DOCUMENTS]);
         $this->loadView('../views/documents/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $sql = "SELECT d.*, 
-                       COALESCE(f.libelle_filiere, d.filiere_code, 'Toutes les filières') as libelle_filiere, 
-                       COALESCE(n.libelle_niveau, d.niveaux_code, 'Tous les niveaux') as libelle_niveau,
-                       DATE_FORMAT(d.created_at_document, '%d/%m/%Y') as date_creation_formatee
-                FROM documents d
-                LEFT JOIN filieres f ON (f.code_filiere = d.filiere_code OR f.libelle_filiere = d.filiere_code)
-                LEFT JOIN niveaux n ON (n.code_niveau = d.niveaux_code OR n.libelle_niveau = d.niveaux_code)
-                ORDER BY d.id_document DESC";
-        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $this->requirePermission([PERMISSIONS::VIEW_DOCUMENTS, PERMISSIONS::MANAGE_DOCUMENTS]);
+        $items = $this->model->getDocumentsList();
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_document'];
@@ -41,7 +35,8 @@ class DocumentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
+        $userCode = Auth::code() ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
@@ -77,12 +72,12 @@ class DocumentController extends BaseController
 
         $data['statut_document'] = $data['statut_document'] ?? 'actif';
         $data['created_at_document'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE documents")->fetchAll(PDO::FETCH_COLUMN);
+        $cols = $this->model->getTableColumns();
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('etablisement_code', $cols)) $data['etablisement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $this->success('Document enregistré avec succès !', ['redirect' => RACINE . 'document/list']);
         } else {
@@ -94,6 +89,7 @@ class DocumentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
         $id = (int)$this->post('id_document');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -118,8 +114,7 @@ class DocumentController extends BaseController
             }
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE documents")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->success('Document modifié avec succès !', ['redirect' => RACINE . 'document/list']);
         } else {
@@ -180,6 +175,7 @@ class DocumentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -195,6 +191,7 @@ class DocumentController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_DOCUMENTS, PERMISSIONS::MANAGE_DOCUMENTS]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -209,6 +206,7 @@ class DocumentController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -223,6 +221,7 @@ class DocumentController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
         $this->loadView('../views/documents/edit.php', ['item' => []]);
     }
 }

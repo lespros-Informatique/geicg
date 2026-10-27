@@ -18,13 +18,13 @@ class DossierEtudiantController extends BaseController
             $selectedAnneeCode = trim($_GET['annee_code']);
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    Session::set('annee_active_code', $a['code_annee']);
+                    Session::set('annee_active_libelle', $a['libelle_annee']);
                     break;
                 }
             }
         } else {
-            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
         $classeModel = new ModelClasse();
@@ -42,48 +42,12 @@ class DossierEtudiantController extends BaseController
         $this->requireAuth();
         $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
 
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? '';
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code') ?? '';
         $classeCode = $_GET['classe_code'] ?? '';
         $filterStatut = $_GET['filter_statut'] ?? 'all';
 
         try {
-            $db = $this->model->getCon();
-
-            $sql = "
-                SELECT 
-                    i.code_inscription,
-                    i.created_at_inscription AS date_inscription,
-                    i.statut_inscription,
-                    e.code_etudiant,
-                    e.matricule_etudiant,
-                    e.nom_etudiant,
-                    e.prenom_etudiant,
-                    e.photo_etudiant,
-                    e.telephone_etudiant,
-                    cl.code_classe,
-                    cl.libelle_classe,
-                    cl.filiere_code
-                FROM inscriptions i
-                JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-                JOIN classes cl ON cl.code_classe = i.classe_code
-                WHERE 1=1
-            ";
-
-            $params = [];
-            if (!empty($anneeCode)) {
-                $sql .= " AND i.annee_code = ?";
-                $params[] = $anneeCode;
-            }
-            if (!empty($classeCode)) {
-                $sql .= " AND i.classe_code = ?";
-                $params[] = $classeCode;
-            }
-
-            $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC";
-
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $this->model->getInscriptionsForDossiers($anneeCode, $classeCode);
 
             $data = [];
             foreach ($rows as $r) {
@@ -149,7 +113,7 @@ class DossierEtudiantController extends BaseController
         $pieceCode = trim($_POST['piece_code'] ?? '');
         $statut = trim($_POST['statut'] ?? 'depose');
         $observations = trim($_POST['observations'] ?? '');
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
 
         if (empty($inscriptionCode) || empty($pieceCode)) {
             $this->error('Informations insuffisantes pour modifier le statut du dépôt.');
@@ -216,7 +180,7 @@ class DossierEtudiantController extends BaseController
 
         $inscriptionCode = trim($_POST['inscription_code'] ?? '');
         $etudiantCode = trim($_POST['etudiant_code'] ?? '');
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
 
         if (empty($inscriptionCode)) {
             $this->error('Inscription introuvable.');
@@ -257,24 +221,7 @@ class DossierEtudiantController extends BaseController
         }
 
         try {
-            $db = $this->model->getCon();
-            $stmt = $db->prepare("
-                SELECT 
-                    i.code_inscription, i.created_at_inscription AS date_inscription, i.statut_inscription,
-                    e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, e.photo_etudiant,
-                    cl.libelle_classe, cl.filiere_code,
-                    a.libelle_annee,
-                    et.libelle_etablissement AS nom_etablissement, et.logo_etablissement, et.telephone_etablissement, et.adresse_etablissement
-                FROM inscriptions i
-                JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-                JOIN classes cl ON cl.code_classe = i.classe_code
-                LEFT JOIN annees a ON a.code_annee = i.annee_code
-                LEFT JOIN etablissements et ON et.code_etablissement = i.etablissement_code
-                WHERE i.code_inscription = ?
-                LIMIT 1
-            ");
-            $stmt->execute([$inscriptionCode]);
-            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+            $student = $this->model->getRecepisseStudent($inscriptionCode);
 
             if (!$student) {
                 $this->error('Dossier d\'inscription introuvable.');
@@ -293,7 +240,7 @@ class DossierEtudiantController extends BaseController
                 }
             }
 
-            $agentName = ($_SESSION[USERS_AUTH]['prenom_user'] ?? '') . ' ' . ($_SESSION[USERS_AUTH]['nom_user'] ?? '');
+            $agentName = Auth::name() ?? '';
 
             $this->json([
                 'status' => 1,

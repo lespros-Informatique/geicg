@@ -10,14 +10,14 @@ class RoleController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ROLES');
+        $this->requirePermission(PERMISSIONS::VIEW_ROLES);
         $this->loadView('../views/roles/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ROLES');
+        $this->requirePermission(PERMISSIONS::VIEW_ROLES);
         $items = $this->model->getRolesWithCounts();
 
         $data = [];
@@ -36,7 +36,7 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ROLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -80,7 +80,7 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ROLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $id = (int)$this->post('id');
         if (!$id) { $this->error('Identifiant invalide', RACINE . 'role/list'); return; }
 
@@ -120,7 +120,7 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ROLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -136,20 +136,14 @@ class RoleController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ROLES');
+        $this->requirePermission(PERMISSIONS::VIEW_ROLES);
         try {
             $id = $this->validator->decrypter($details);
             $role = $this->model->getById($id);
             if (!$role) { header('Location: ' . RACINE . 'role/list'); exit(); }
 
             $permissions = $this->model->getPermissions($role['code_role']);
-            $stmtUsers = $this->model->getCon()->prepare("
-                SELECT u.* FROM users u
-                INNER JOIN user_roles ur ON ur.user_code = u.code_user
-                WHERE ur.role_code = ? AND u.statut_user = 'actif'
-            ");
-            $stmtUsers->execute([$role['code_role']]);
-            $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
+            $users = $this->model->getUsersByRole($role['code_role']);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
@@ -166,7 +160,7 @@ class RoleController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ROLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         try {
             $id = $this->validator->decrypter($details);
             $role = $this->model->getById($id);
@@ -191,7 +185,7 @@ class RoleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ROLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $allPermissions = (new ModelPermission())->getGrouped();
         $this->loadView('../views/roles/edit.php', [
             'role' => [],

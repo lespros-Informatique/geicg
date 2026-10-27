@@ -36,12 +36,11 @@ class EnseignantController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission('MANAGE_ENSEIGNANTS');
-        $currentUserCode = $_SESSION[USERS_AUTH]['code_user'] ?? '5wBEh2OfI00frxk8ITPf';
+        $currentUserCode = Auth::code();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
 
-        $db = $this->model->getCon();
         $mode = trim($data['mode_creation'] ?? 'nouveau'); // 'nouveau' ou 'existant'
 
         // 1. Cas : Rattachement d'un employé / utilisateur existant
@@ -52,69 +51,14 @@ class EnseignantController extends BaseController
                 return;
             }
             
-            // Vérifier si cet utilisateur est déjà enseignant
-            $stmtCheck = $db->prepare("SELECT id_enseignant FROM enseignants WHERE code_enseignant = ?");
-            $stmtCheck->execute([$codeUser]);
-            if ($stmtCheck->fetch()) {
-                $this->error('Cet utilisateur est déjà enregistré dans le corps enseignant.');
-                return;
-            }
-
-            // Vérifier que l'utilisateur existe bien dans `users`
-            $stmtUser = $db->prepare("SELECT * FROM users WHERE code_user = ?");
-            $stmtUser->execute([$codeUser]);
-            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
-            if (!$userRow) {
-                $this->error('Utilisateur introuvable.');
-                return;
-            }
-
-            // Assigner le rôle ROLE_ENSEIGNANT dans user_roles s'il ne l'a pas déjà
-            $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
-                'user_code' => $codeUser,
-                'role_code' => 'ROLE_ENSEIGNANT'
-            ]);
-            if ($fkErrRole !== null) {
-                $this->error($fkErrRole);
-                return;
-            }
-
-            $stmtRole = $db->prepare("
-                INSERT IGNORE INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
-                VALUES (?, 'ROLE_ENSEIGNANT', 1, 1, 1, 0)
-            ");
-            $stmtRole->execute([$codeUser]);
-
-            // Créer la fiche dans enseignants
-            $fkErrEns = ForeignKeyValidator::validate($db, 'enseignants', [
-                'etablissement_code' => $etabCode
-            ]);
-            if ($fkErrEns !== null) {
-                $this->error($fkErrEns);
-                return;
-            }
-
-            $stmtEns = $db->prepare("
-                INSERT INTO enseignants (
-                    code_enseignant, grade_enseignant, type_contrat, numero_autorisation,
-                    etablissement_code, user_code, statut_enseignant, created_at_enseignant
-                ) VALUES (?, ?, ?, ?, ?, ?, 'actif', NOW())
-            ");
-            $success = $stmtEns->execute([
-                $codeUser,
-                $data['grade_enseignant'] ?? 'Enseignant',
-                $data['type_contrat'] ?? 'permanent',
-                !empty($data['numero_autorisation']) ? trim($data['numero_autorisation']) : null,
-                $etabCode,
-                $currentUserCode
-            ]);
-
-            if ($success) {
+            $errorMsg = null;
+            $userRow = $this->model->attachExistingUser($codeUser, $etabCode, $currentUserCode, $data, $errorMsg);
+            if ($userRow) {
                 $this->success("L'employé <strong>{$userRow['nom_user']} {$userRow['prenom_user']}</strong> a été configuré comme enseignant avec succès !", [
                     'redirect' => RACINE . 'enseignant/list'
                 ]);
             } else {
-                $this->error("Erreur lors de la configuration du profil enseignant.");
+                $this->error($errorMsg ?: "Erreur lors de la configuration du profil enseignant.");
             }
             return;
         }
@@ -131,102 +75,39 @@ class EnseignantController extends BaseController
             return;
         }
 
-        if (!empty($email)) {
-            $stmtCheckEmail = $db->prepare("SELECT id_user FROM users WHERE email_user = ?");
-            $stmtCheckEmail->execute([$email]);
-            if ($stmtCheckEmail->fetch()) {
-                $this->error('Cette adresse email est déjà utilisée par un compte utilisateur.');
-                return;
-            }
+        if (!empty($email) && $this->model->isEmailTaken($email)) {
+            $this->error('Cette adresse email est déjà utilisée par un compte utilisateur.');
+            return;
         }
 
         $codeUser = $this->validator->generateCode('users', 'code_user', 'ENS-', 8);
-        $matricule = 'MAT-' . $codeUser;
-        $rawPassword = !empty($data['password_user']) ? trim($data['password_user']) : ('ENS' . rand(100000, 999999));
-        $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
+        $userData = [
+            'code_user' => $codeUser,
+            'nom' => $nom,
+            'prenom' => $prenom,
+            'email' => $email,
+            'telephone' => $telephone,
+            'sexe' => $sexe,
+            'password_raw' => !empty($data['password_user']) ? trim($data['password_user']) : null
+        ];
 
-        $db->beginTransaction();
-        try {
-            // Créer le compte utilisateur dans `users`
-            $fkErrUser = ForeignKeyValidator::validate($db, 'users', [
-                'etablissement_code' => $etabCode
-            ]);
-            if ($fkErrUser !== null) {
-                $db->rollBack();
-                $this->error($fkErrUser);
-                return;
-            }
+        $ensData = [
+            'grade_enseignant' => $data['grade_enseignant'] ?? 'Enseignant',
+            'type_contrat' => $data['type_contrat'] ?? 'permanent',
+            'numero_autorisation' => !empty($data['numero_autorisation']) ? trim($data['numero_autorisation']) : null
+        ];
 
-            $stmtUser = $db->prepare("
-                INSERT INTO users (
-                    code_user, matricule_user, nom_user, prenom_user, email_user, telephone_user,
-                    sexe_user, password_user, etablissement_code, statut_user, created_at_user
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
-            ");
-            $stmtUser->execute([
-                $codeUser,
-                $matricule,
-                $nom,
-                $prenom,
-                $email ?: ($codeUser . '@geicg.ci'),
-                $telephone ?: null,
-                $sexe,
-                $hashedPassword,
-                $etabCode
-            ]);
+        $errorMsg = null;
+        $rawPassword = $this->model->createNewTeacher($userData, $ensData, $etabCode, $currentUserCode, $errorMsg);
 
-            // Assigner le rôle ROLE_ENSEIGNANT
-            $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
-                'user_code' => $codeUser,
-                'role_code' => 'ROLE_ENSEIGNANT'
-            ]);
-            if ($fkErrRole !== null) {
-                $db->rollBack();
-                $this->error($fkErrRole);
-                return;
-            }
-
-            $stmtRole = $db->prepare("
-                INSERT INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
-                VALUES (?, 'ROLE_ENSEIGNANT', 1, 1, 1, 0)
-            ");
-            $stmtRole->execute([$codeUser]);
-
-            // Créer la fiche enseignant
-            $fkErrEns = ForeignKeyValidator::validate($db, 'enseignants', [
-                'etablissement_code' => $etabCode
-            ]);
-            if ($fkErrEns !== null) {
-                $db->rollBack();
-                $this->error($fkErrEns);
-                return;
-            }
-
-            $stmtEns = $db->prepare("
-                INSERT INTO enseignants (
-                    code_enseignant, grade_enseignant, type_contrat, numero_autorisation,
-                    etablissement_code, user_code, statut_enseignant, created_at_enseignant
-                ) VALUES (?, ?, ?, ?, ?, ?, 'actif', NOW())
-            ");
-            $stmtEns->execute([
-                $codeUser,
-                $data['grade_enseignant'] ?? 'Enseignant',
-                $data['type_contrat'] ?? 'permanent',
-                !empty($data['numero_autorisation']) ? trim($data['numero_autorisation']) : null,
-                $etabCode,
-                $currentUserCode
-            ]);
-
-            $db->commit();
+        if ($rawPassword !== null) {
             $idDisplay = $email ?: ($telephone ?: $codeUser);
             $this->success("Enseignant et compte utilisateur créés avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
                 'password' => $rawPassword,
                 'redirect' => RACINE . 'enseignant/list'
             ]);
-        } catch (Exception $e) {
-            $db->rollBack();
-            error_log("EnseignantController add error: " . $e->getMessage());
-            $this->error("Erreur lors de la création de l'enseignant : " . $e->getMessage());
+        } else {
+            $this->error($errorMsg ?: "Erreur lors de la création de l'enseignant.");
         }
     }
 
@@ -255,67 +136,35 @@ class EnseignantController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-
-        if (!empty($email)) {
-            $stmtCheck = $db->prepare("SELECT id_user FROM users WHERE email_user = ? AND code_user != ?");
-            $stmtCheck->execute([$email, $item['code_enseignant']]);
-            if ($stmtCheck->fetch()) {
-                $this->error('Cette adresse email est déjà enregistrée pour un autre utilisateur.');
-                return;
-            }
+        if (!empty($email) && $this->model->isEmailTaken($email, $item['code_enseignant'])) {
+            $this->error('Cette adresse email est déjà enregistrée pour un autre utilisateur.');
+            return;
         }
 
-        $db->beginTransaction();
-        try {
-            // 1. Mettre à jour la table USERS
-            $sqlUser = "
-                UPDATE users 
-                SET nom_user = ?, prenom_user = ?, email_user = ?, telephone_user = ?, sexe_user = ?, updated_at_user = NOW()";
-            $paramsUser = [
-                $nom,
-                $prenom,
-                $email ?: null,
-                $telephone ?: null,
-                $sexe
-            ];
+        $rawPwd = !empty($data['password_user']) ? $data['password_user'] : ($data['password_enseignant'] ?? null);
+        $userData = [
+            'nom' => $nom,
+            'prenom' => $prenom,
+            'email' => $email,
+            'telephone' => $telephone,
+            'sexe' => $sexe,
+            'password_raw' => $rawPwd
+        ];
 
-            if (!empty($data['password_user']) || !empty($data['password_enseignant'])) {
-                $rawPwd = !empty($data['password_user']) ? $data['password_user'] : $data['password_enseignant'];
-                $sqlUser .= ", password_user = ?";
-                $paramsUser[] = password_hash(trim($rawPwd), PASSWORD_DEFAULT);
-            }
+        $ensData = [
+            'grade_enseignant' => $data['grade_enseignant'] ?? 'Enseignant',
+            'type_contrat' => $data['type_contrat'] ?? 'permanent',
+            'numero_autorisation' => !empty($data['numero_autorisation']) ? trim($data['numero_autorisation']) : null,
+            'statut_enseignant' => $data['statut_enseignant'] ?? 'actif'
+        ];
 
-            $sqlUser .= " WHERE code_user = ?";
-            $paramsUser[] = $item['code_enseignant'];
-
-            $stmtU = $db->prepare($sqlUser);
-            $stmtU->execute($paramsUser);
-
-            // 2. Mettre à jour la table ENSEIGNANTS
-            $sqlEns = "
-                UPDATE enseignants 
-                SET grade_enseignant = ?, type_contrat = ?, numero_autorisation = ?, 
-                    statut_enseignant = ?, updated_at_enseignant = NOW()
-                WHERE id_enseignant = ?
-            ";
-            $stmtE = $db->prepare($sqlEns);
-            $stmtE->execute([
-                $data['grade_enseignant'] ?? 'Enseignant',
-                $data['type_contrat'] ?? 'permanent',
-                !empty($data['numero_autorisation']) ? trim($data['numero_autorisation']) : null,
-                $data['statut_enseignant'] ?? 'actif',
-                $id
-            ]);
-
-            $db->commit();
+        $errorMsg = null;
+        if ($this->model->updateTeacherAndUser($id, $item['code_enseignant'], $userData, $ensData, $errorMsg)) {
             $this->success('Profil enseignant et compte utilisateur mis à jour avec succès !', [
                 'redirect' => RACINE . 'enseignant/list'
             ]);
-        } catch (Exception $e) {
-            $db->rollBack();
-            error_log("EnseignantController edit error: " . $e->getMessage());
-            $this->error('Erreur lors de la modification : ' . $e->getMessage());
+        } else {
+            $this->error($errorMsg ?: 'Erreur lors de la modification.');
         }
     }
 
@@ -347,18 +196,7 @@ class EnseignantController extends BaseController
             $item = $this->model->getById((int)$id);
             if (!$item) { header('Location: ' . RACINE . 'enseignant/list'); exit(); }
 
-            // Récupérer les cours / matières affectés
-            $stmtCours = $this->model->getCon()->prepare("
-                SELECT em.*, m.libelle_matiere, cl.libelle_classe
-                FROM enseignant_matiere em
-                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
-                LEFT JOIN classes cl ON cl.code_classe = em.classe_code
-                WHERE em.enseignant_code = ?
-                ORDER BY cl.libelle_classe ASC, m.libelle_matiere ASC
-            ");
-            $stmtCours->execute([$item['code_enseignant']]);
-            $cours = $stmtCours->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
+            $cours = $this->model->getCoursForEnseignant($item['code_enseignant']);
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'enseignant/list'); exit();

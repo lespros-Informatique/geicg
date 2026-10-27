@@ -10,6 +10,7 @@ class EnseignantMatiereController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_AFFECTATIONS');
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -18,13 +19,13 @@ class EnseignantMatiereController extends BaseController
             $selectedAnneeCode = trim($_GET['annee_code']);
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    Session::set('annee_active_code', $a['code_annee']);
+                    Session::set('annee_active_libelle', $a['libelle_annee']);
                     break;
                 }
             }
         } else {
-            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
         $this->loadView('../views/enseignant_matiere/list.php', [
@@ -38,7 +39,8 @@ class EnseignantMatiereController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $this->requirePermission('VIEW_AFFECTATIONS');
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
@@ -58,7 +60,8 @@ class EnseignantMatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $this->requirePermission('MANAGE_AFFECTATIONS');
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
@@ -72,12 +75,10 @@ class EnseignantMatiereController extends BaseController
         $data['coefficient'] = !empty($data['coefficient']) ? (float)$data['coefficient'] : 1.0;
         $data['statut_enseignant_matiere'] = $data['statut_enseignant_matiere'] ?? 'actif';
         $data['created_at_enseignant_matiere'] = date('Y-m-d H:i:s');
-
-        $cols = $this->model->getCon()->query("DESCRIBE enseignant_matiere")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $this->success('Affectation de composition créée avec succès!');
         } else {
@@ -89,6 +90,7 @@ class EnseignantMatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_AFFECTATIONS');
         $id = (int)$this->post('id_enseignant_matiere');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -99,9 +101,7 @@ class EnseignantMatiereController extends BaseController
         }
 
         $data['updated_at_enseignant_matiere'] = date('Y-m-d H:i:s');
-
-        $cols = $this->model->getCon()->query("DESCRIBE enseignant_matiere")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->success('Affectation modifiée avec succès!');
         } else {
@@ -113,6 +113,7 @@ class EnseignantMatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_AFFECTATIONS');
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -128,42 +129,13 @@ class EnseignantMatiereController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_AFFECTATIONS');
         try {
             $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT em.*, 
-                       m.libelle_matiere,
-                       cl.libelle_classe,
-                       f.libelle_filiere,
-                       n.libelle_niveau,
-                       u.nom_user AS nom_prof,
-                       u.prenom_user AS prenom_prof,
-                       e.grade_enseignant,
-                       u.email_user AS email_enseignant,
-                       u.telephone_user AS telephone_enseignant
-                FROM enseignant_matiere em
-                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
-                LEFT JOIN classes cl ON cl.code_classe = em.classe_code
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN users u ON u.code_user = em.enseignant_code
-                WHERE em.id_enseignant_matiere = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            $item = $this->model->getDetailsById((int)$id);
             if (!$item) { header('Location: ' . RACINE . 'enseignant_matiere/list'); exit(); }
 
-            // Notes saisies pour ce cours dans cette classe
-            $stmtNotes = $this->model->getCon()->prepare("
-                SELECT COUNT(*) FROM notes n
-                JOIN compositions comp ON comp.code_composition = n.composition_code
-                JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
-                WHERE ins.classe_code = ? AND comp.matiere_code = ? AND (n.statut_note = 'actif' OR n.statut_note IS NULL)
-            ");
-            $stmtNotes->execute([$item['classe_code'], $item['matiere_code']]);
-            $nbNotes = (int)$stmtNotes->fetchColumn();
-
+            $nbNotes = $this->model->getNbNotesForCourse($item['classe_code'], $item['matiere_code']);
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("EnseignantMatiereController::details error: " . $e->getMessage());

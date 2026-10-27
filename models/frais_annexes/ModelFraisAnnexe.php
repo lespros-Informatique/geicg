@@ -158,4 +158,12 @@ class ModelFraisAnnexe extends BaseModel
         $dup = $stmt->fetch(PDO::FETCH_ASSOC);
         return $dup ?: null;
     }
+
+    public function getAnneeByCode(string $code): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
 }

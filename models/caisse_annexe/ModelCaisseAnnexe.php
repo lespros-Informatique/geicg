@@ -286,4 +286,119 @@ class ModelCaisseAnnexe extends BaseModel
             'annee_exercice_libelle' => $anneeExerciceLibelle
         ];
     }
+
+    public function getNiveauxActifs(): array
+    {
+        return $this->getCon()->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getClassesActives(): array
+    {
+        return $this->getCon()->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getFilieresActives(): array
+    {
+        return $this->getCon()->query("SELECT code_filiere, libelle_filiere, type_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getInscriptionsForYear(string $anneeCode): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT 
+                i.code_inscription,
+                i.annee_code,
+                i.photo_inscription,
+                e.code_etudiant,
+                e.matricule_etudiant,
+                e.nom_etudiant,
+                e.prenom_etudiant,
+                e.photo_etudiant,
+                c.libelle_classe,
+                c.code_classe,
+                f.libelle_filiere,
+                f.type_filiere
+            FROM " . TABLES::INSCRIPTIONS . " i
+            JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
+            LEFT JOIN " . TABLES::FILIERES . " f ON c.filiere_code = f.code_filiere
+            WHERE i.statut_inscription != 'annule'
+              AND i.annee_code = ?
+            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+        ");
+        $stmt->execute([$anneeCode]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getAnneeByCode(string $code): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function getStudentAnnexeDetails(string $codeInscription): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT 
+                i.code_inscription, i.annee_code, i.affectation_etat, i.photo_inscription,
+                e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, 
+                e.telephone_etudiant, e.email_etudiant, e.photo_etudiant,
+                c.code_classe, c.libelle_classe, c.niveau_code,
+                f.libelle_filiere, f.type_filiere,
+                n.libelle_niveau, a.libelle_annee
+            FROM " . TABLES::INSCRIPTIONS . " i
+            JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
+            WHERE i.code_inscription = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$codeInscription]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function getStudentPaymentsAnnexe(string $codeInscription): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT * FROM " . TABLES::PAIEMENTS . "
+            WHERE inscription_code = ?
+              AND (categorie_paiement = 'FRAIS_ANNEXES' OR tranche_code = 'FRAIS_ANNEXES' OR LOWER(type_paiement) LIKE '%annexe%')
+              AND statut_paiement != 'annule'
+            ORDER BY date_paiement ASC
+        ");
+        $stmt->execute([$codeInscription]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getOpenSessionForDate(string $date): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::SESSIONS_CAISSE . " WHERE date_session = ? AND statut_session = 'ouverte' ORDER BY id_session DESC LIMIT 1");
+        $stmt->execute([$date]);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$res) {
+            $stmtLast = $this->getCon()->prepare("SELECT * FROM " . TABLES::SESSIONS_CAISSE . " WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
+            $stmtLast->execute([$date]);
+            $res = $stmtLast->fetch(PDO::FETCH_ASSOC);
+        }
+        return $res ?: null;
+    }
+
+    public function getInscriptionByCode(string $codeInscription): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+        $stmt->execute([$codeInscription]);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res ?: null;
+    }
+
+    public function recordPayment(array $data): int|string
+    {
+        $filtered = $this->filterData($data);
+        return $this->create($filtered);
+    }
 }

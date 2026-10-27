@@ -103,7 +103,7 @@ class PieceFournirCycleController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
@@ -164,9 +164,9 @@ class PieceFournirCycleController extends BaseController
 
             if ($insertedCount > 0) {
                 if ($duplicateCount > 0) {
-                    $_SESSION['flash_success'] = "$insertedCount nouvelle(s) pièce(s) enregistrée(s). $duplicateCount pièce(s) déjà existante(s) ont été ignorées.";
+                    Session::set('flash_success', "$insertedCount nouvelle(s) pièce(s) enregistrée(s). $duplicateCount pièce(s) déjà existante(s) ont été ignorées.");
                 } else {
-                    $_SESSION['flash_success'] = "$insertedCount pièce(s) assignée(s) au dossier du cycle avec succès !";
+                    Session::set('flash_success', "$insertedCount pièce(s) assignée(s) au dossier du cycle avec succès !");
                 }
                 header('Location: ' . RACINE . 'piece_fournir_cycle/list');
                 exit();
@@ -209,7 +209,7 @@ class PieceFournirCycleController extends BaseController
         ];
 
         if ($this->model->create($saveData)) {
-            $_SESSION['flash_success'] = "Pièce assignée au dossier du cycle avec succès !";
+            Session::set('flash_success', "Pièce assignée au dossier du cycle avec succès !");
             header('Location: ' . RACINE . 'piece_fournir_cycle/list');
             exit();
         } else {
@@ -257,7 +257,7 @@ class PieceFournirCycleController extends BaseController
         ];
 
         if ($this->model->update($updateData, $id)) {
-            $_SESSION['flash_success'] = "Pièce du cycle mise à jour avec succès !";
+            Session::set('flash_success', "Pièce du cycle mise à jour avec succès !");
             header('Location: ' . RACINE . 'piece_fournir_cycle/list');
             exit();
         } else {
@@ -300,7 +300,7 @@ class PieceFournirCycleController extends BaseController
         }
 
         if ($this->model->delete((int)$id)) {
-            $_SESSION['flash_success'] = "Pièce retirée du dossier de ce cycle.";
+            Session::set('flash_success', "Pièce retirée du dossier de ce cycle.");
             header('Location: ' . RACINE . 'piece_fournir_cycle/list');
             exit();
         } else {

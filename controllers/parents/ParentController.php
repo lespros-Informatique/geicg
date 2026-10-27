@@ -10,12 +10,14 @@ class ParentController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_PARENTS, PERMISSIONS::MANAGE_PARENTS]);
         $this->loadView('../views/parents/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_PARENTS, PERMISSIONS::MANAGE_PARENTS]);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -33,6 +35,7 @@ class ParentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_PARENTS);
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['telephone_parent'])) {
@@ -42,7 +45,7 @@ class ParentController extends BaseController
             if (!$this->checkUnique('parents', 'email_parent', $data['email_parent'], 'Email du parent')) return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_parent'])) {
@@ -50,11 +53,11 @@ class ParentController extends BaseController
         }
         $data['statut_parent'] = $data['statut_parent'] ?? 'actif';
         $data['created_at_parent'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE parents")->fetchAll(PDO::FETCH_COLUMN);
+        $cols = $this->model->getTableColumns();
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $this->success('Item créé avec succès!');
         } else {
@@ -66,6 +69,7 @@ class ParentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_PARENTS);
         $id = (int)$this->post('id_parent');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -77,8 +81,7 @@ class ParentController extends BaseController
             if (!$this->checkUnique('parents', 'email_parent', $data['email_parent'], 'Email du parent', 'id_parent', $id)) return;
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE parents")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->success('Item modifié avec succès!');
         } else {
@@ -90,6 +93,7 @@ class ParentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_PARENTS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -105,20 +109,10 @@ class ParentController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_PARENTS, PERMISSIONS::MANAGE_PARENTS]);
         try {
             $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT p.*, 
-                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
-                       cl.libelle_classe
-                FROM parents p
-                LEFT JOIN etudiants e ON e.code_etudiant = p.etudiant_code
-                LEFT JOIN inscriptions ins ON (ins.etudiant_code = e.code_etudiant AND ins.statut_inscription = 'actif')
-                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-                WHERE p.id_parent = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            $item = $this->model->getParentDetails((int)$id);
             if (!$item) { header('Location: ' . RACINE . 'parent/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
@@ -130,6 +124,7 @@ class ParentController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_PARENTS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -144,6 +139,7 @@ class ParentController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_PARENTS);
         $this->loadView('../views/parents/edit.php', ['item' => []]);
     }
 }

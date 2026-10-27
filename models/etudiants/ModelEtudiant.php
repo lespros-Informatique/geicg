@@ -560,4 +560,254 @@ class ModelEtudiant extends BaseModel
             return ['success' => false, 'message' => "Erreur lors de l'annulation de l'inscription."];
         }
     }
+
+    /**
+     * Enregistre un étudiant complet (étudiant, parents, inscription, accessoires, dossier)
+     */
+    public function createFullStudent(array $data, string $userCode, string $etabCode, string $anneeCode, object $validator): array
+    {
+        $db = $this->getCon();
+        $nomEtudiant = trim($data['nom_etudiant'] ?? '');
+        $prenomEtudiant = trim($data['prenom_etudiant'] ?? '');
+        $telephoneEtudiant = $data['telephone_etudiant'] ?? '';
+
+        if (empty($nomEtudiant) || empty($prenomEtudiant) || empty($telephoneEtudiant)) {
+            return ['success' => false, 'message' => "Veuillez renseigner le nom, prénoms et téléphone de l'étudiant."];
+        }
+
+        $matriculeEtudiant = trim($data['matricule_etudiant'] ?? '');
+        if (empty($matriculeEtudiant)) {
+            $matriculeEtudiant = $this->generateMatricule($nomEtudiant, $prenomEtudiant, $data['classe_code'] ?? null, $anneeCode);
+        }
+
+        $matriculeMenet = !empty($data['matricule_menet']) ? trim($data['matricule_menet']) : null;
+        $matriculeMesrs = !empty($data['matricule_mesrs']) ? trim($data['matricule_mesrs']) : null;
+
+        $codeEtudiant = $validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
+
+        try {
+            $db->beginTransaction();
+
+            // 1. Insert Student into `etudiants`
+            $fkErrEtu = ForeignKeyValidator::validate($db, 'etudiants', [
+                'etablissement_code' => $etabCode
+            ]);
+            if ($fkErrEtu !== null) {
+                $db->rollBack();
+                return ['success' => false, 'message' => $fkErrEtu];
+            }
+
+            $stmtEtu = $db->prepare("
+                INSERT INTO etudiants 
+                (code_etudiant, matricule_etudiant, matricule_menet, matricule_mesrs, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
+            ");
+            $stmtEtu->execute([
+                $codeEtudiant,
+                $matriculeEtudiant,
+                $matriculeMenet,
+                $matriculeMesrs,
+                $nomEtudiant,
+                $prenomEtudiant,
+                $data['sexe_etudiant'] ?? 'M',
+                !empty($data['date_naissance_etudiant']) ? $data['date_naissance_etudiant'] : (!empty($data['date_naissance']) ? $data['date_naissance'] : null),
+                !empty($data['lieu_naissance_etudiant']) ? $data['lieu_naissance_etudiant'] : (!empty($data['lieu_naissance']) ? $data['lieu_naissance'] : null),
+                !empty($data['nationalite_etudiant']) ? $data['nationalite_etudiant'] : (!empty($data['nationalite']) ? $data['nationalite'] : 'Ivoirienne'),
+                $telephoneEtudiant,
+                !empty($data['email_etudiant']) ? $data['email_etudiant'] : null,
+                !empty($data['lieu_residence_etudiant']) ? $data['lieu_residence_etudiant'] : (!empty($data['adresse_etudiant']) ? $data['adresse_etudiant'] : null),
+                $userCode,
+                $etabCode
+            ]);
+
+            // 2. Insert Parent into `parents` if parent info provided
+            if (!empty($data['nom_pere']) || !empty($data['nom_mere']) || !empty($data['nom_tuteur'])) {
+                $codeParent = $validator->generateCode('parents', 'code_parent', 'PAR-', 8);
+                $fkErrPar = ForeignKeyValidator::validate($db, 'parents', [
+                    'etudiant_code' => $codeEtudiant,
+                    'etablissement_code' => $etabCode
+                ]);
+                if ($fkErrPar !== null) {
+                    $db->rollBack();
+                    return ['success' => false, 'message' => $fkErrPar];
+                }
+
+                $stmtPar = $db->prepare("
+                    INSERT INTO parents 
+                    (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, profession_mere, nom_tuteur, telephone_tuteur, profession_tuteur, user_code, etablissement_code, created_at_parent)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+                $stmtPar->execute([
+                    $codeParent,
+                    $codeEtudiant,
+                    !empty($data['nom_pere']) ? $data['nom_pere'] : null,
+                    !empty($data['telephone_pere']) ? $data['telephone_pere'] : null,
+                    !empty($data['profession_pere']) ? $data['profession_pere'] : null,
+                    !empty($data['nom_mere']) ? $data['nom_mere'] : null,
+                    !empty($data['telephone_mere']) ? $data['telephone_mere'] : null,
+                    !empty($data['profession_mere']) ? $data['profession_mere'] : null,
+                    !empty($data['nom_tuteur']) ? $data['nom_tuteur'] : null,
+                    !empty($data['telephone_tuteur']) ? $data['telephone_tuteur'] : null,
+                    !empty($data['profession_tuteur']) ? $data['profession_tuteur'] : null,
+                    $userCode,
+                    $etabCode
+                ]);
+            }
+
+            // 3. Insert Academic Inscription into `inscriptions` if classe_code provided
+            $codeInscription = null;
+            if (!empty($data['classe_code'])) {
+                $affectationEtatVal = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'oui' : 'non';
+                $regimeScol = ($affectationEtatVal === 'oui') ? 'affecte' : 'non_affecte';
+                $montantScolarite = (float)($data['montant_scolarite_inscription'] ?? 0);
+                if ($montantScolarite <= 0) {
+                    $stmtCl = $db->prepare("SELECT * FROM classes WHERE code_classe = ? LIMIT 1");
+                    $stmtCl->execute([$data['classe_code']]);
+                    $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
+                    if ($cl) {
+                        $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND affectation_etat = ? AND statut_scolarite = 'actif' ORDER BY id_scolarite DESC LIMIT 1");
+                        $stmtSco->execute([$cl['filiere_code'], $cl['niveau_code'], $anneeCode, $regimeScol]);
+                        $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
+                        if (!$sco) {
+                            $stmtSco2 = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? ORDER BY id_scolarite DESC LIMIT 1");
+                            $stmtSco2->execute([$cl['filiere_code'], $cl['niveau_code']]);
+                            $sco = $stmtSco2->fetch(PDO::FETCH_ASSOC);
+                        }
+                        if ($sco) {
+                            $montantScolarite = (float)$sco['montant_scolarite'];
+                        }
+                    }
+                }
+                $codeInscription = $validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
+                
+                $fkErrIns = ForeignKeyValidator::validate($db, 'inscriptions', [
+                    'etudiant_code' => $codeEtudiant,
+                    'classe_code' => $data['classe_code'],
+                    'annee_code' => $anneeCode,
+                    'etablissement_code' => $etabCode
+                ]);
+                if ($fkErrIns !== null) {
+                    $db->rollBack();
+                    return ['success' => false, 'message' => $fkErrIns];
+                }
+
+                $stmtIns = $db->prepare("
+                    INSERT INTO inscriptions
+                    (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, user_code, annee_code, etablissement_code, statut_inscription, affectation_etat, created_at_inscription)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'valide', ?, NOW())
+                ");
+                $stmtIns->execute([
+                    $codeInscription,
+                    $codeEtudiant,
+                    $data['classe_code'],
+                    $montantScolarite,
+                    $userCode,
+                    $anneeCode,
+                    $etabCode,
+                    $affectationEtatVal
+                ]);
+            }
+
+            // 4. Insert Accessoires / Kits into `accessoire_inscription`
+            if (!empty($data['accessoires']) && is_array($data['accessoires'])) {
+                if (empty($codeInscription)) {
+                    $db->rollBack();
+                    return ['success' => false, 'message' => "Opération interrompue : Une classe et une inscription sont obligatoires pour attribuer des accessoires."];
+                }
+                $stmtAcc = $db->prepare("
+                    INSERT INTO accessoire_inscription
+                    (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+                    VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
+                ");
+                foreach ($data['accessoires'] as $accCode) {
+                    if (empty($accCode)) continue;
+                    
+                    $fkErrAcc = ForeignKeyValidator::validate($db, 'accessoire_inscription', [
+                        'inscription_code' => $codeInscription,
+                        'accessoire_code' => $accCode,
+                        'annee_code' => $anneeCode,
+                        'etablissement_code' => $etabCode
+                    ]);
+                    if ($fkErrAcc !== null) {
+                        $db->rollBack();
+                        return ['success' => false, 'message' => $fkErrAcc];
+                    }
+
+                    $codeAccIns = $validator->generateCode('accessoire_inscription', 'code_accessoire_inscription', 'ACI-', 8);
+                    $stmtAcc->execute([
+                        $codeAccIns,
+                        $codeInscription,
+                        $accCode,
+                        $anneeCode,
+                        $userCode,
+                        $etabCode
+                    ]);
+                }
+            }
+
+            // 5. Insert Documents / Checklist into `dossier_etudiant`
+            $piecesFournies = !empty($data['pieces_fournies']) && is_array($data['pieces_fournies']) ? $data['pieces_fournies'] : [];
+            $allPieces = $db->query("SELECT code_piece_fournir FROM pieces_fournir WHERE statut_piece = 'actif'")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+            if (!empty($allPieces)) {
+                if (empty($codeInscription)) {
+                    $db->rollBack();
+                    return ['success' => false, 'message' => "Opération interrompue : Une inscription valide est nécessaire pour initialiser le dossier étudiant."];
+                }
+                $stmtDos = $db->prepare("
+                    INSERT INTO dossier_etudiant
+                    (code_dossier_etudiant, inscription_code, etudiant_code, piece_code, statut_depot, date_depot, observations, user_code, etablissement_code, created_at_dossier_etudiant)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+
+                $piecesReqMap = [];
+                try {
+                    $pfcList = $db->query("SELECT piece_code, nombre_exemplaires FROM piece_fournir_cycle WHERE statut_piece_cycle = 'actif'")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+                    $piecesReqMap = $pfcList;
+                } catch (Exception $e) {}
+
+                foreach ($allPieces as $pCode) {
+                    $isDepose = in_array($pCode, $piecesFournies);
+                    $nbEx = !empty($piecesReqMap[$pCode]) ? max(1, (int)$piecesReqMap[$pCode]) : 1;
+                    $obsText = $isDepose 
+                        ? ("Pièce déposée ({$nbEx} exemplaire" . ($nbEx > 1 ? "s" : "") . ") lors de l'inscription initiale")
+                        : ("En attente de transmission ({$nbEx} exemplaire" . ($nbEx > 1 ? "s requis" : " requis") . ")");
+
+                    $fkErrDos = ForeignKeyValidator::validate($db, 'dossier_etudiant', [
+                        'inscription_code' => $codeInscription,
+                        'etudiant_code' => $codeEtudiant,
+                        'piece_code' => $pCode,
+                        'etablissement_code' => $etabCode
+                    ]);
+                    if ($fkErrDos !== null) {
+                        $db->rollBack();
+                        return ['success' => false, 'message' => $fkErrDos];
+                    }
+
+                    $codeDos = $validator->generateCode('dossier_etudiant', 'code_dossier_etudiant', 'DOS-', 8);
+                    $stmtDos->execute([
+                        $codeDos,
+                        $codeInscription,
+                        $codeEtudiant,
+                        $pCode,
+                        $isDepose ? 'depose' : 'en_attente',
+                        $isDepose ? date('Y-m-d H:i:s') : null,
+                        $obsText,
+                        $userCode,
+                        $etabCode
+                    ]);
+                }
+            }
+
+            $db->commit();
+            return ['success' => true, 'message' => "Dossier d'inscription étudiant créé avec succès !"];
+
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            error_log("ModelEtudiant::createFullStudent error: " . $e->getMessage());
+            return ['success' => false, 'message' => "Erreur lors de la création du dossier: " . $e->getMessage()];
+        }
+    }
 }

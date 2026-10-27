@@ -11,10 +11,10 @@ class HomeController extends BaseController
     {
         if (Validator::isConnected()) {
             $model = $this->resolveModel();
-            $auth = $_SESSION[USERS_AUTH] ?? [];
-            $roleCode = $auth['role_code'] ?? '';
-            $userCode = $auth['code_user'] ?? '';
-            $anneeCode = $_SESSION['annee_active_code'] ?? null;
+            $auth = Auth::user() ?? [];
+            $roleCode = Auth::role() ?? '';
+            $userCode = Auth::code() ?? '';
+            $anneeCode = Session::get('annee_active_code');
 
             $anneeModel = new ModelAnnee();
             $annees = $anneeModel->getAll();
@@ -45,10 +45,10 @@ class HomeController extends BaseController
     {
         $this->requireAuth();
         $model = $this->resolveModel();
-        $auth = $_SESSION[USERS_AUTH] ?? [];
-        $roleCode = $auth['role_code'] ?? '';
-        $userCode = $auth['code_user'] ?? '';
-        $anneeCode = $_SESSION['annee_active_code'] ?? null;
+        $auth = Auth::user() ?? [];
+        $roleCode = Auth::role() ?? '';
+        $userCode = Auth::code() ?? '';
+        $anneeCode = Session::get('annee_active_code');
 
         $stats = $model->getStats($anneeCode, $userCode, $roleCode);
 

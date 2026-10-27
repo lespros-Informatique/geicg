@@ -120,6 +120,87 @@ class ModelSemestre extends BaseModel
 
         return true;
     }
+
+    /**
+     * Récupère une année académique par son code
+     */
+    public function getAnneeByCode(string $anneeCode): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+            $stmt->execute([$anneeCode]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            error_log("ModelSemestre::getAnneeByCode error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Vérifie si un semestre existe déjà pour une année donnée (libellé identique)
+     */
+    public function checkSemestreExists(string $libelle, string $anneeCode, int $excludeId = 0): bool
+    {
+        try {
+            $sql = "SELECT id_semestre FROM " . TABLES::SEMESTRES . " 
+                    WHERE (libelle_semestre = ? OR UPPER(libelle_semestre) = ?) AND annee_code = ?";
+            $params = [$libelle, strtoupper($libelle), $anneeCode];
+            if ($excludeId > 0) {
+                $sql .= " AND id_semestre != ?";
+                $params[] = $excludeId;
+            }
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return (bool)$stmt->fetch();
+        } catch (Exception $e) {
+            error_log("ModelSemestre::checkSemestreExists error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Récupère un semestre avec les infos de son année académique
+     */
+    public function getSemestreWithAnnee(int $id): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT s.*, a.libelle_annee 
+                FROM " . TABLES::SEMESTRES . " s
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = s.annee_code
+                WHERE s.id_semestre = ?
+            ");
+            $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            error_log("ModelSemestre::getSemestreWithAnnee error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Statistiques pour un semestre (notes, classes évaluées, étudiants notés)
+     */
+    public function getStatsForSemestre(string $semestreCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.semestre_code = ? AND n.statut_note = 'actif') as total_notes,
+                    (SELECT COUNT(DISTINCT ins.classe_code) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = n.inscription_code WHERE c.semestre_code = ?) as total_classes_evaluees,
+                    (SELECT COUNT(DISTINCT n.etudiant_code) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.semestre_code = ?) as total_etudiants_notes
+            ");
+            $stmt->execute([$semestreCode, $semestreCode, $semestreCode]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [
+                'total_notes' => 0, 'total_classes_evaluees' => 0, 'total_etudiants_notes' => 0
+            ];
+        } catch (Exception $e) {
+            error_log("ModelSemestre::getStatsForSemestre error: " . $e->getMessage());
+            return [
+                'total_notes' => 0, 'total_classes_evaluees' => 0, 'total_etudiants_notes' => 0
+            ];
+        }
+    }
 }
 
 

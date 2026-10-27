@@ -43,9 +43,8 @@ class CycleController extends BaseController
         $this->requireAuth();
         $this->requirePermission('MANAGE_CYCLES');
         $data = $_POST;
-        unset($data['csrf_token']);
-        unset($data['id_cycle']);
-        unset($data['id']);
+        unset($data['csrf_token'], $data['id_cycle'], $data['id']);
+
         if (!empty($data['libelle_cycle'])) {
             if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libellé du cycle')) return;
         }
@@ -53,20 +52,21 @@ class CycleController extends BaseController
             $data['slug_cycle'] = trim($data['slug_cycle']) !== '' ? trim($data['slug_cycle']) : null;
         }
 
-        $userCode = $this->getCurrentUserCode() ?? ($_SESSION[USERS_AUTH]['code_user'] ?? '');
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
+
         if (empty($data['code_cycle'])) {
             $data['code_cycle'] = $this->validator->generateCode('cycles', 'code_cycle', 'CYC-', 8);
         }
         $data['statut_cycle'] = $data['statut_cycle'] ?? 'actif';
         $data['created_at_cycle'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE cycles")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+
         $libelle = trim($data['libelle_cycle'] ?? '');
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $msg = !empty($libelle) ? "Le cycle d'études « {$libelle} » a été créé avec succès !" : "Cycle d'études créé avec succès !";
             $this->success($msg);
@@ -87,6 +87,7 @@ class CycleController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
         if (!empty($data['libelle_cycle'])) {
             if (!$this->checkUnique('cycles', 'libelle_cycle', $data['libelle_cycle'], 'Libellé du cycle', 'id_cycle', $id)) return;
         }
@@ -94,20 +95,19 @@ class CycleController extends BaseController
             $data['slug_cycle'] = trim($data['slug_cycle']) !== '' ? trim($data['slug_cycle']) : null;
         }
 
-        $userCode = $this->getCurrentUserCode() ?? ($_SESSION[USERS_AUTH]['code_user'] ?? '');
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
-        $cols = $this->model->getCon()->query("DESCRIBE cycles")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols) && empty($data['user_code'])) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols) && empty($data['etablissement_code'])) {
+        if (empty($data['user_code'])) $data['user_code'] = $userCode;
+        if (empty($data['etablissement_code'])) {
             $existingItem = $this->model->getById($id);
             $data['etablissement_code'] = $existingItem['etablissement_code'] ?? $etabCode;
         }
-        if (in_array('annee_code', $cols) && empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
+        if (empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
 
         $libelle = trim($data['libelle_cycle'] ?? '');
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $msg = !empty($libelle) ? "Le cycle d'études « {$libelle} » a été modifié avec succès !" : "Cycle d'études modifié avec succès !";
             $this->success($msg);
@@ -141,35 +141,8 @@ class CycleController extends BaseController
             if (!$item) { header('Location: ' . RACINE . 'cycle/list'); exit(); }
 
             $cycleCode = $item['code_cycle'];
-
-            // Filières associées à ce cycle
-            $stmtFil = $this->model->getCon()->prepare("
-                SELECT f.*,
-                       (SELECT COUNT(*) FROM classes cl WHERE cl.filiere_code = f.code_filiere AND cl.cycle_code = ? AND cl.statut_classe = 'actif') as nb_classes
-                FROM filieres f
-                INNER JOIN filiere_cycles fc ON fc.filiere_code = f.code_filiere
-                WHERE fc.cycle_code = ?
-                ORDER BY f.libelle_filiere ASC
-            ");
-            $stmtFil->execute([$cycleCode, $cycleCode]);
-            $filieres = $stmtFil->fetchAll(PDO::FETCH_ASSOC);
-
-            // Statistiques du cycle
-            $stmtStats = $this->model->getCon()->prepare("
-                SELECT 
-                    COUNT(DISTINCT fc.filiere_code) as total_filieres,
-                    (SELECT COUNT(*) FROM classes cl 
-                     WHERE cl.cycle_code = ? AND cl.statut_classe = 'actif') as total_classes,
-                    (SELECT COUNT(*) FROM inscriptions ins 
-                     JOIN classes cl2 ON cl2.code_classe = ins.classe_code
-                     WHERE cl2.cycle_code = ? AND ins.statut_inscription = 'actif') as total_etudiants
-                FROM filiere_cycles fc
-                WHERE fc.cycle_code = ?
-            ");
-            $stmtStats->execute([$cycleCode, $cycleCode, $cycleCode]);
-            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [
-                'total_filieres' => count($filieres), 'total_classes' => 0, 'total_etudiants' => 0
-            ];
+            $filieres = $this->model->getFilieresForCycle($cycleCode);
+            $stats = $this->model->getStatsForCycle($cycleCode, count($filieres));
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

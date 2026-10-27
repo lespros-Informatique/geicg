@@ -37,9 +37,8 @@ class NiveauController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $data = $_POST;
-        unset($data['csrf_token']);
-        unset($data['id_niveau']);
-        unset($data['id']);
+        unset($data['csrf_token'], $data['id_niveau'], $data['id']);
+
         if (!empty($data['libelle_niveau'])) {
             if (!$this->checkUnique('niveaux', 'libelle_niveau', $data['libelle_niveau'], 'Libelle du niveau')) return;
         }
@@ -47,20 +46,21 @@ class NiveauController extends BaseController
             $data['slug_niveau'] = trim($data['slug_niveau']) !== '' ? trim($data['slug_niveau']) : null;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
+
         if (empty($data['code_niveau'])) {
             $data['code_niveau'] = $this->validator->generateCode('niveaux', 'code_niveau', 'NIV-', 8);
         }
         $data['statut_niveau'] = $data['statut_niveau'] ?? 'actif';
         $data['created_at_niveau'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE niveaux")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+
         $libelle = trim($data['libelle_niveau'] ?? '');
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $msg = !empty($libelle) ? "Le niveau « {$libelle} » a été créé avec succès !" : "Niveau créé avec succès !";
             $this->success($msg);
@@ -80,6 +80,7 @@ class NiveauController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
+
         if (!empty($data['libelle_niveau'])) {
             if (!$this->checkUnique('niveaux', 'libelle_niveau', $data['libelle_niveau'], 'Libelle du niveau', 'id_niveau', $id)) return;
         }
@@ -87,20 +88,19 @@ class NiveauController extends BaseController
             $data['slug_niveau'] = trim($data['slug_niveau']) !== '' ? trim($data['slug_niveau']) : null;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
-        $cols = $this->model->getCon()->query("DESCRIBE niveaux")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols) && empty($data['user_code'])) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols) && empty($data['etablissement_code'])) {
+        if (empty($data['user_code'])) $data['user_code'] = $userCode;
+        if (empty($data['etablissement_code'])) {
             $existingItem = $this->model->getById($id);
             $data['etablissement_code'] = $existingItem['etablissement_code'] ?? $etabCode;
         }
-        if (in_array('annee_code', $cols) && empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
+        if (empty($data['annee_code'])) $data['annee_code'] = $anneeCode;
 
         $libelle = trim($data['libelle_niveau'] ?? '');
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $msg = !empty($libelle) ? "Le niveau « {$libelle} » a été modifié avec succès !" : "Niveau modifié avec succès !";
             $this->success($msg);
@@ -134,29 +134,8 @@ class NiveauController extends BaseController
             if (!$item) { header('Location: ' . RACINE . 'niveau/list'); exit(); }
 
             $niveauCode = $item['code_niveau'];
-
-            // Classes rattachées à ce niveau
-            $stmtCls = $this->model->getCon()->prepare("
-                SELECT cl.*, f.libelle_filiere,
-                       (SELECT COUNT(*) FROM inscriptions ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription = 'actif') as nb_eleves
-                FROM classes cl
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                WHERE cl.niveau_code = ?
-                ORDER BY cl.libelle_classe ASC
-            ");
-            $stmtCls->execute([$niveauCode]);
-            $classes = $stmtCls->fetchAll(PDO::FETCH_ASSOC);
-
-            // Statistiques globales
-            $stmtStats = $this->model->getCon()->prepare("
-                SELECT 
-                    (SELECT COUNT(*) FROM classes WHERE niveau_code = ? AND statut_classe = 'actif') as total_classes,
-                    (SELECT COUNT(*) FROM inscriptions ins 
-                     JOIN classes cl ON cl.code_classe = ins.classe_code 
-                     WHERE cl.niveau_code = ? AND ins.statut_inscription = 'actif') as total_etudiants
-            ");
-            $stmtStats->execute([$niveauCode, $niveauCode]);
-            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: ['total_classes' => count($classes), 'total_etudiants' => 0];
+            $classes = $this->model->getClassesForNiveau($niveauCode);
+            $stats = $this->model->getStatsForNiveau($niveauCode, count($classes));
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {

@@ -10,12 +10,14 @@ class SalleController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_SALLES');
         $this->loadView('../views/salles/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_SALLES');
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -33,13 +35,14 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_SALLES');
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_salle'])) {
             if (!$this->checkUnique('salles', 'libelle_salle', $data['libelle_salle'], 'Nom de la salle')) return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_salle'])) {
@@ -47,15 +50,14 @@ class SalleController extends BaseController
         }
         $data['statut_salle'] = $data['statut_salle'] ?? 'actif';
         $data['created_at_salle'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE salles")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
         $libelle = trim($data['libelle_salle'] ?? '');
         if (isset($data['capacite_salle'])) {
             $data['capacite_salle'] = ($data['capacite_salle'] !== '' && $data['capacite_salle'] !== null) ? (int)$data['capacite_salle'] : null;
         }
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $msg = !empty($libelle) ? "La salle « {$libelle} » a été créée avec succès !" : "Salle de classe créée avec succès !";
             $this->success($msg);
@@ -71,6 +73,7 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_SALLES');
         $id = (int)$this->post('id_salle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -83,8 +86,7 @@ class SalleController extends BaseController
         if (isset($data['capacite_salle'])) {
             $data['capacite_salle'] = ($data['capacite_salle'] !== '' && $data['capacite_salle'] !== null) ? (int)$data['capacite_salle'] : null;
         }
-        $cols = $this->model->getCon()->query("DESCRIBE salles")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $msg = !empty($libelle) ? "La salle « {$libelle} » a été modifiée avec succès !" : "Salle de classe modifiée avec succès !";
             $this->success($msg);
@@ -100,6 +102,7 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission('MANAGE_SALLES');
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -115,33 +118,19 @@ class SalleController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission('VIEW_SALLES');
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'salle/list'); exit(); }
 
             $salleCode = $item['code_salle'];
-
-            // Planning / Emplois du temps dans cette salle
-            $stmtEdt = $this->model->getCon()->prepare("
-                SELECT edt.*, cl.libelle_classe, m.libelle_matiere,
-                        u.nom_user as nom_prof,
-                        u.prenom_user as prenom_prof
-                 FROM emplois_temps edt
-                 LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
-                 LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-                 LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-                 LEFT JOIN users u ON u.code_user = edt.enseignant_code
-                 WHERE edt.salle_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
-                ORDER BY edt.jour ASC, edt.heure_debut ASC
-            ");
-            $stmtEdt->execute([$salleCode]);
-            $planning = $stmtEdt->fetchAll(PDO::FETCH_ASSOC);
-
+            $planning = $this->model->getPlanningForSalle($salleCode);
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("SalleController::details error: " . $e->getMessage());
             $this->renderNotFound("La salle demandée est introuvable.");
+            return;
         }
         $this->loadView('../views/salles/details.php', [
             'item' => $item, 
@@ -172,16 +161,11 @@ class SalleController extends BaseController
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $db = $this->model->getCon();
-        $sql = "SELECT s.* FROM salles s ORDER BY s.libelle_salle ASC";
-        $stmt = $db->query($sql);
-        $salles = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
-
+        $salles = $this->model->getAllForPdf();
         $etablissement = $this->getEtablissementConfig();
         $anneeLibelle = $this->getActiveAnneeLibelle();
 
-        $authSession = $_SESSION[USERS_AUTH] ?? [];
-        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
+        $editeurNom = Auth::fullName();
         if (empty($editeurNom)) {
             $editeurNom = 'Direction des Études & Scolarité';
         }

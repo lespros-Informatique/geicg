@@ -10,21 +10,21 @@ class CaisseAnnexeController extends BaseController
     /**
      * Page Principale : Bilan & Journal de la Caisse Annexe
      */
+    /**
+     * Page Principale : Bilan & Journal de la Caisse Annexe
+     */
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_CAISSE_ANNEXE', 'VIEW_PAIEMENTS', 'VIEW_FRAIS_ANNEXES', 'MANAGE_PAIEMENTS']);
-        $db = $this->model->getCon();
+        $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         // Synchronisation de l'année académique si passée en paramètre GET
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            $aRow = $this->model->getAnneeByCode($getAnnee);
             if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+                Session::set('annee_active_code', $aRow['code_annee']);
+                Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
@@ -37,57 +37,26 @@ class CaisseAnnexeController extends BaseController
         $dateFin = $_GET['date_fin'] ?? null;
 
         $annees = $this->getAccessibleAnnees();
-        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM niveaux WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $filieres = $db->query("SELECT code_filiere, libelle_filiere, type_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $niveaux = $this->model->getNiveauxActifs();
+        $classes = $this->model->getClassesActives();
+        $filieres = $this->model->getFilieresActives();
 
         // Évaluation dynamique des statistiques financières pour les Frais Annexes
         $stats = $this->model->getFinancialStats($activeYear, $niveauCode, $classeCode, $typeFiliere, $dateDebut, $dateFin);
 
         // Étudiants inscrits pour la sélection dans le modal d'encaissement direct
-        $stmtInscr = $db->prepare("
-            SELECT 
-                i.code_inscription,
-                i.annee_code,
-                i.photo_inscription,
-                e.code_etudiant,
-                e.matricule_etudiant,
-                e.nom_etudiant,
-                e.prenom_etudiant,
-                e.photo_etudiant,
-                c.libelle_classe,
-                c.code_classe,
-                f.libelle_filiere,
-                f.type_filiere
-            FROM inscriptions i
-            JOIN etudiants e ON i.etudiant_code = e.code_etudiant
-            LEFT JOIN classes c ON i.classe_code = c.code_classe
-            LEFT JOIN filieres f ON c.filiere_code = f.code_filiere
-            WHERE i.statut_inscription != 'annule'
-              AND i.annee_code = ?
-            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
-        ");
-        $stmtInscr->execute([$activeYear]);
-        $inscriptions = $stmtInscr->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $inscriptions = $this->model->getInscriptionsForYear($activeYear);
 
         // État de la caisse du jour
         $today = date('Y-m-d');
-        $stmtSess = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? AND statut_session = 'ouverte' ORDER BY id_session DESC LIMIT 1");
-        $stmtSess->execute([$today]);
-        $activeSession = $stmtSess->fetch(PDO::FETCH_ASSOC) ?: null;
-
-        if (!$activeSession) {
-            $stmtLast = $db->prepare("SELECT * FROM sessions_caisse WHERE date_session = ? ORDER BY id_session DESC LIMIT 1");
-            $stmtLast->execute([$today]);
-            $activeSession = $stmtLast->fetch(PDO::FETCH_ASSOC) ?: null;
-        }
+        $activeSession = $this->model->getOpenSessionForDate($today);
 
         $isCaisseOuverte = ($activeSession && ($activeSession['statut_session'] ?? '') === 'ouverte');
         $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
-        $canRecord = $this->hasPermission(['MANAGE_CAISSE_ANNEXE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
-        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
-        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canRecord = $this->hasPermission([PERMISSIONS::MANAGE_CAISSE_ANNEXE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canOpenCaisse = $this->hasPermission([PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canCloseCaisse = $this->hasPermission([PERMISSIONS::CLOTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $this->loadView('../views/caisse_annexe/list.php', [
             'stats' => $stats,
@@ -112,17 +81,14 @@ class CaisseAnnexeController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_CAISSE_ANNEXE', 'VIEW_PAIEMENTS', 'VIEW_FRAIS_ANNEXES', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
-            $db = $this->model->getCon();
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            $aRow = $this->model->getAnneeByCode($getAnnee);
             if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+                Session::set('annee_active_code', $aRow['code_annee']);
+                Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
@@ -160,7 +126,7 @@ class CaisseAnnexeController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_CAISSE_ANNEXE', 'VIEW_PAIEMENTS', 'VIEW_FRAIS_ANNEXES']);
+        $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_FRAIS_ANNEXES]);
 
         $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? null;
@@ -179,7 +145,7 @@ class CaisseAnnexeController extends BaseController
     public function getStudentAnnexesSummary()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_CAISSE_ANNEXE', 'VIEW_PAIEMENTS', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $codeInscription = $_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? '');
         if (empty($codeInscription)) {
@@ -187,28 +153,8 @@ class CaisseAnnexeController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-
-        // Récupération de l'inscription et de l'étudiant
-        $stmt = $db->prepare("
-            SELECT 
-                i.code_inscription, i.annee_code, i.affectation_etat, i.photo_inscription,
-                e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, 
-                e.telephone_etudiant, e.email_etudiant, e.photo_etudiant,
-                c.code_classe, c.libelle_classe, c.niveau_code,
-                f.libelle_filiere, f.type_filiere,
-                n.libelle_niveau, a.libelle_annee
-            FROM inscriptions i
-            JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN classes c ON c.code_classe = i.classe_code
-            LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-            LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-            LEFT JOIN annees a ON a.code_annee = i.annee_code
-            WHERE i.code_inscription = ?
-            LIMIT 1
-        ");
-        $stmt->execute([$codeInscription]);
-        $ins = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Récupération de l'inscription et de l'étudiant via modèle
+        $ins = $this->model->getStudentAnnexeDetails($codeInscription);
 
         if (!$ins) {
             $this->json(['status' => 0, 'message' => 'Étudiant introuvable pour ce dossier'], 404);
@@ -228,15 +174,7 @@ class CaisseAnnexeController extends BaseController
         $libelleFA = $faDetails ? ($faDetails['libelle_frais_annexe'] ?? 'Frais Annexes') : 'Frais Annexes Obligatoires';
 
         // Historique des versements déjà effectués pour les frais annexes
-        $stmtPay = $db->prepare("
-            SELECT * FROM paiements
-            WHERE inscription_code = ?
-              AND (categorie_paiement = 'FRAIS_ANNEXES' OR tranche_code = 'FRAIS_ANNEXES' OR LOWER(type_paiement) LIKE '%annexe%')
-              AND statut_paiement != 'annule'
-            ORDER BY date_paiement ASC
-        ");
-        $stmtPay->execute([$codeInscription]);
-        $allPayments = $stmtPay->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $allPayments = $this->model->getStudentPaymentsAnnexe($codeInscription);
 
         $dejaPaye = 0;
         $historique = [];
@@ -291,9 +229,8 @@ class CaisseAnnexeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_CAISSE_ANNEXE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE_ANNEXE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        $db = $this->model->getCon();
         $codeInscription = trim($_POST['inscription_code'] ?? '');
         $montant = (float)($_POST['montant_paiement'] ?? 0);
         $modePaiement = trim($_POST['mode_paiement'] ?? 'espece');
@@ -310,10 +247,8 @@ class CaisseAnnexeController extends BaseController
             return;
         }
 
-        // Vérification de l'inscription
-        $stmtInscr = $db->prepare("SELECT * FROM inscriptions WHERE code_inscription = ? LIMIT 1");
-        $stmtInscr->execute([$codeInscription]);
-        $inscription = $stmtInscr->fetch(PDO::FETCH_ASSOC);
+        // Vérification de l'inscription via modèle
+        $inscription = $this->model->getInscriptionByCode($codeInscription);
 
         if (!$inscription) {
             $this->error("Dossier d'inscription introuvable.");
@@ -322,15 +257,14 @@ class CaisseAnnexeController extends BaseController
 
         $activeYear = $inscription['annee_code'] ?? $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
-        $userCode = $this->getCurrentUserCode() ?: 'SYSTEM';
+        $userCode = Auth::code() ?: 'SYSTEM';
 
         // Contrôle de session de caisse si paiement en espèces
         $today = date('Y-m-d');
         $sessionCode = null;
         if (strpos(strtolower($modePaiement), 'espece') !== false) {
-            $stmtSess = $db->prepare("SELECT code_session FROM sessions_caisse WHERE date_session = ? AND statut_session = 'ouverte' ORDER BY id_session DESC LIMIT 1");
-            $stmtSess->execute([$today]);
-            $sessionCode = $stmtSess->fetchColumn() ?: null;
+            $sess = $this->model->getOpenSessionForDate($today);
+            $sessionCode = ($sess && ($sess['statut_session'] ?? '') === 'ouverte') ? ($sess['code_session'] ?? null) : null;
 
             if (!$sessionCode) {
                 $this->error("Opération refusée : Aucune session de caisse n'est ouverte pour aujourd'hui. Veuillez ouvrir la caisse du jour pour enregistrer un versement en espèces.");
@@ -339,47 +273,28 @@ class CaisseAnnexeController extends BaseController
         }
 
         // Génération du code paiement unique
-        $codePaiement = $this->generateCode('paiements', 'code_paiement', 'REC-FA-', 6);
+        $codePaiement = $this->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'REC-FA-', 6);
 
         try {
-            $sql = "
-                INSERT INTO paiements (
-                    code_paiement, 
-                    inscription_code, 
-                    etablissement_code, 
-                    annee_code, 
-                    tranche_code,
-                    montant_paiement, 
-                    mode_paiement, 
-                    reference_paiement, 
-                    type_paiement, 
-                    categorie_paiement, 
-                    observations,
-                    statut_paiement, 
-                    date_paiement, 
-                    session_caisse_code, 
-                    user_code
-                ) VALUES (
-                    ?, ?, ?, ?, 'FRAIS_ANNEXES',
-                    ?, ?, ?, 'Frais Annexes', 'FRAIS_ANNEXES', ?,
-                    'confirme', NOW(), ?, ?
-                )
-            ";
-            $stmt = $db->prepare($sql);
-            $stmt->execute([
-                $codePaiement,
-                $codeInscription,
-                $etabCode,
-                $activeYear,
-                $montant,
-                $modePaiement,
-                $reference ?: null,
-                $observations ?: 'Règlement Frais Annexes via Caisse Annexe',
-                $sessionCode,
-                $userCode
-            ]);
+            $paymentData = [
+                'code_paiement' => $codePaiement,
+                'inscription_code' => $codeInscription,
+                'etablissement_code' => $etabCode,
+                'annee_code' => $activeYear,
+                'tranche_code' => 'FRAIS_ANNEXES',
+                'montant_paiement' => $montant,
+                'mode_paiement' => $modePaiement,
+                'reference_paiement' => $reference ?: null,
+                'type_paiement' => 'Frais Annexes',
+                'categorie_paiement' => 'FRAIS_ANNEXES',
+                'observations' => $observations ?: 'Règlement Frais Annexes via Caisse Annexe',
+                'statut_paiement' => 'confirme',
+                'date_paiement' => date('Y-m-d H:i:s'),
+                'session_caisse_code' => $sessionCode,
+                'user_code' => $userCode
+            ];
 
-            $newId = $db->lastInsertId();
+            $newId = $this->model->recordPayment($paymentData);
             $encryptedId = $this->validator->crypter($newId);
             $encryptedInscrId = $this->validator->crypter($inscription['id_inscription'] ?? $codeInscription);
 
@@ -401,7 +316,7 @@ class CaisseAnnexeController extends BaseController
     public function imprimerRegistre()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_CAISSE_ANNEXE', 'VIEW_PAIEMENTS', 'VIEW_RAPPORTS_FINANCIERS']);
+        $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_RAPPORTS_FINANCIERS]);
 
         $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? null;
@@ -414,12 +329,10 @@ class CaisseAnnexeController extends BaseController
         $paiements = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $typeFiliere, $modePaiement, $dateDebut, $dateFin);
         $stats = $this->model->getFinancialStats($anneeCode, $niveauCode, $classeCode, $typeFiliere, $dateDebut, $dateFin);
 
-        $db = $this->model->getCon();
         $anneeLibelle = 'Toutes les années';
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$anneeCode]);
-            $anneeLibelle = $stmtA->fetchColumn() ?: $anneeCode;
+            $aRow = $this->model->getAnneeByCode($anneeCode);
+            $anneeLibelle = $aRow['libelle_annee'] ?? $anneeCode;
         }
 
         // Rendu de la vue d'impression épurée

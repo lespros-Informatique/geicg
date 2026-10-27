@@ -364,5 +364,127 @@ class ModelImpayes extends BaseModel
             ];
         }
     }
+
+    public function getAnneeLibelle(string $code): string
+    {
+        $stmt = $this->getCon()->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+        $stmt->execute([$code]);
+        return (string)($stmt->fetchColumn() ?: $code);
+    }
+
+    public function getNiveauLibelle(string $code): string
+    {
+        $stmt = $this->getCon()->prepare("SELECT libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ? LIMIT 1");
+        $stmt->execute([$code]);
+        return (string)($stmt->fetchColumn() ?: $code);
+    }
+
+    public function getClasseLibelle(string $code): string
+    {
+        $stmt = $this->getCon()->prepare("SELECT libelle_classe FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
+        $stmt->execute([$code]);
+        return (string)($stmt->fetchColumn() ?: $code);
+    }
+
+    public function getInscriptionDetailsForRappel($idOrCode): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT 
+                i.id_inscription,
+                i.code_inscription,
+                i.montant_scolarite_inscription,
+                i.affectation_etat,
+                i.annee_code,
+                e.code_etudiant,
+                e.matricule_etudiant,
+                e.nom_etudiant,
+                e.prenom_etudiant,
+                e.telephone_etudiant,
+                e.photo_etudiant,
+                c.libelle_classe,
+                c.filiere_code,
+                c.niveau_code,
+                f.libelle_filiere,
+                f.slug_filiere,
+                f.type_filiere,
+                n.libelle_niveau,
+                n.slug_niveau,
+                a.libelle_annee,
+                p.nom_pere, p.telephone_pere,
+                p.nom_mere, p.telephone_mere,
+                p.nom_tuteur, p.telephone_tuteur
+            FROM " . TABLES::INSCRIPTIONS . " i
+            JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
+            LEFT JOIN " . TABLES::FILIERES . " f ON c.filiere_code = f.code_filiere
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON c.niveau_code = n.code_niveau
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
+            LEFT JOIN " . TABLES::PARENTS . " p ON p.etudiant_code = e.code_etudiant
+            WHERE i.id_inscription = ? OR i.code_inscription = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$idOrCode, $idOrCode]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function getInscriptionsDetailsForRappelsMasse(array $ids): array
+    {
+        if (empty($ids)) return [];
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->getCon()->prepare("
+            SELECT 
+                i.id_inscription,
+                i.code_inscription,
+                i.montant_scolarite_inscription,
+                i.affectation_etat,
+                i.annee_code,
+                e.code_etudiant,
+                e.matricule_etudiant,
+                e.nom_etudiant,
+                e.prenom_etudiant,
+                e.telephone_etudiant,
+                e.photo_etudiant,
+                c.libelle_classe,
+                c.filiere_code,
+                c.niveau_code,
+                f.libelle_filiere,
+                f.slug_filiere,
+                f.type_filiere,
+                n.libelle_niveau,
+                n.slug_niveau,
+                a.libelle_annee,
+                p.nom_pere, p.telephone_pere,
+                p.nom_mere, p.telephone_mere,
+                p.nom_tuteur, p.telephone_tuteur
+            FROM " . TABLES::INSCRIPTIONS . " i
+            JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
+            LEFT JOIN " . TABLES::FILIERES . " f ON c.filiere_code = f.code_filiere
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON c.niveau_code = n.code_niveau
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
+            LEFT JOIN " . TABLES::PARENTS . " p ON p.etudiant_code = e.code_etudiant
+            WHERE i.id_inscription IN ({$placeholders}) OR i.code_inscription IN ({$placeholders})
+            ORDER BY e.nom_etudiant ASC
+        ");
+        $execParams = array_merge($ids, $ids);
+        $stmt->execute($execParams);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getTotalPayeByInscription(string $inscriptionCode): float
+    {
+        $stmt = $this->getCon()->prepare("SELECT SUM(montant_paiement) as total_paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != 'annule'");
+        $stmt->execute([$inscriptionCode]);
+        return (float)($stmt->fetchColumn() ?: 0);
+    }
+
+    public function getScolariteDue(string $filiereCode, string $niveauCode, ?string $anneeCode = null): ?float
+    {
+        $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = 'actif' LIMIT 1");
+        $stmt->execute([$filiereCode, $niveauCode, $anneeCode]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? (float)$val : null;
+    }
 }
 

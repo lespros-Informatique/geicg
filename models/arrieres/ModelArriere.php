@@ -1,16 +1,17 @@
 <?php
 
-require_once __DIR__ . '/../../config/Database.php';
-
-class ModelArriere extends Database
+class ModelArriere extends BaseModel
 {
+    protected string $table = 'arrieres';
+    protected string $primaryKey = 'id_arriere';
+
     /**
      * Récupère la liste des étudiants ayant des arriérés de scolarité sur des années antérieures.
      */
     public function getArrieresList(?string $anneeActiveCode = null, ?string $anneeOrigineCode = null, ?string $classeCode = null, ?string $statutFilter = null): array
     {
         $db = $this->getCon();
-        $anneeActiveCode = $anneeActiveCode ?? ($_SESSION['annee_active_code'] ?? '');
+        $anneeActiveCode = $anneeActiveCode ?: Session::get('annee_active_code', '');
 
         $where = "WHERE i_orig.statut_inscription != 'annule'";
         $params = [];
@@ -116,7 +117,7 @@ class ModelArriere extends Database
     public function getStats(?string $anneeActiveCode = null): array
     {
         $db = $this->getCon();
-        $anneeActiveCode = $anneeActiveCode ?? ($_SESSION['annee_active_code'] ?? '');
+        $anneeActiveCode = $anneeActiveCode ?: Session::get('annee_active_code', '');
 
         $sql = "
             SELECT 
@@ -181,7 +182,7 @@ class ModelArriere extends Database
     public function getArrieresEtudiantDetail(string $etudiantCode, ?string $anneeActiveCode = null): array
     {
         $db = $this->getCon();
-        $anneeActiveCode = $anneeActiveCode ?? ($_SESSION['annee_active_code'] ?? '');
+        $anneeActiveCode = $anneeActiveCode ?: Session::get('annee_active_code', '');
 
         $sql = "
             SELECT 
@@ -212,5 +213,68 @@ class ModelArriere extends Database
             error_log("ModelArriere::getArrieresEtudiantDetail error: " . $e->getMessage());
             return [];
         }
+    }
+
+    public function getInscriptionByCode(string $inscriptionCode): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+        $stmt->execute([$inscriptionCode]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function getTotalPayeByInscription(string $inscriptionCode): float
+    {
+        $stmt = $this->getCon()->prepare("SELECT COALESCE(SUM(montant_paiement), 0) as paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement = 'confirme'");
+        $stmt->execute([$inscriptionCode]);
+        return (float)($stmt->fetchColumn() ?: 0);
+    }
+
+    public function getActiveSessionForUser(string $userCode): ?string
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_session FROM " . TABLES::SESSIONS_CAISSE . " WHERE user_code = ? AND statut_session = 'ouverte' ORDER BY id_session DESC LIMIT 1");
+        $stmt->execute([$userCode]);
+        $val = $stmt->fetchColumn();
+        return $val ?: null;
+    }
+
+    public function recordArrierePayment(array $data): bool
+    {
+        $stmt = $this->getCon()->prepare("
+            INSERT INTO " . TABLES::PAIEMENTS . " 
+            (code_paiement, montant_paiement, statut_paiement, reference_paiement, observations, type_paiement, mode_paiement, user_code, annee_code, etablissement_code, inscription_code, tranche_code, session_caisse_code)
+            VALUES (?, ?, 'confirme', ?, ?, 'Règlement Arriéré Scolarité', ?, ?, ?, ?, ?, NULL, ?)
+        ");
+        return $stmt->execute([
+            $data['code_paiement'],
+            $data['montant_paiement'],
+            $data['reference_paiement'],
+            $data['observations'],
+            $data['mode_paiement'],
+            $data['user_code'],
+            $data['annee_code'],
+            $data['etablissement_code'],
+            $data['inscription_code'],
+            $data['session_caisse_code']
+        ]);
+    }
+
+    public function getPaiementArriereDetail(string $codePaiement): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT p.*, i.montant_scolarite_inscription, i.annee_code as annee_origine,
+                   e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.statut_affectation_etudiant,
+                   f.libelle_filiere, n.libelle_niveau, u.nom_user, u.prenom_user
+            FROM " . TABLES::PAIEMENTS . " p
+            INNER JOIN " . TABLES::INSCRIPTIONS . " i ON p.inscription_code = i.code_inscription
+            INNER JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN " . TABLES::FILIERES . " f ON i.filiere_code = f.code_filiere
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON i.niveau_code = n.code_niveau
+            LEFT JOIN " . TABLES::USERS . " u ON p.user_code = u.code_user
+            WHERE p.code_paiement = ? LIMIT 1
+        ");
+        $stmt->execute([$codePaiement]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
     }
 }

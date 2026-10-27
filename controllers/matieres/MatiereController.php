@@ -44,7 +44,7 @@ class MatiereController extends BaseController
             if (!$this->checkUnique('matieres', 'libelle_matiere', $data['libelle_matiere'], 'Nom de la matiere')) return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_matiere'])) {
@@ -52,12 +52,11 @@ class MatiereController extends BaseController
         }
         $data['statut_matiere'] = $data['statut_matiere'] ?? 'actif';
         $data['created_at_matiere'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE matieres")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
         $libelle = trim($data['libelle_matiere'] ?? '');
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $msg = !empty($libelle) ? "La matière « {$libelle} » a été créée avec succès !" : "Matière créée avec succès !";
             $this->success($msg);
@@ -83,8 +82,7 @@ class MatiereController extends BaseController
         }
 
         $libelle = trim($data['libelle_matiere'] ?? '');
-        $cols = $this->model->getCon()->query("DESCRIBE matieres")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $msg = !empty($libelle) ? "La matière « {$libelle} » a été modifiée avec succès !" : "Matière modifiée avec succès !";
             $this->success($msg);
@@ -123,37 +121,8 @@ class MatiereController extends BaseController
             if (!$item) { header('Location: ' . RACINE . 'matiere/list'); exit(); }
 
             $matiereCode = $item['code_matiere'];
-
-            // Classes et Enseignants où cette matière est enseignée
-            $stmtAffectations = $this->model->getCon()->prepare("
-                SELECT em.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
-                        u.nom_user as nom_prof,
-                        u.prenom_user as prenom_prof,
-                        e.grade_enseignant
-                 FROM enseignant_matiere em
-                 LEFT JOIN classes cl ON cl.code_classe = em.classe_code
-                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                 LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                 LEFT JOIN users u ON u.code_user = em.enseignant_code
-                 WHERE em.matiere_code = ?
-                ORDER BY cl.libelle_classe ASC
-            ");
-            $stmtAffectations->execute([$matiereCode]);
-            $affectations = $stmtAffectations->fetchAll(PDO::FETCH_ASSOC);
-
-            // Statistiques globales de la matière
-            $stmtStats = $this->model->getCon()->prepare("
-                SELECT 
-                    COUNT(DISTINCT classe_code) as total_classes,
-                    COUNT(DISTINCT COALESCE(enseignant_code, user_code)) as total_profs,
-                    (SELECT COUNT(*) FROM notes n JOIN compositions c ON c.code_composition = n.composition_code WHERE c.matiere_code = ? AND n.statut_note = 'actif') as total_notes
-                FROM enseignant_matiere
-                WHERE matiere_code = ?
-            ");
-            $stmtStats->execute([$matiereCode, $matiereCode]);
-            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: ['total_classes' => count($affectations), 'total_profs' => 0, 'total_notes' => 0];
-
+            $affectations = $this->model->getAffectationsForMatiere($matiereCode);
+            $stats = $this->model->getStatsForMatiere($matiereCode, count($affectations));
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'matiere/list'); exit();

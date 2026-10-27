@@ -75,7 +75,7 @@ class AnneeController extends BaseController
             return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_annee'])) {
@@ -85,12 +85,11 @@ class AnneeController extends BaseController
         // Toute nouvelle année académique est créée avec le statut 'planifie' par défaut (En préparation)
         $data['statut_annee'] = 'planifie';
         $data['created_at_annee'] = date('Y-m-d H:i:s');
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
         
-        $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         $libelle = $data['libelle_annee'] ?? '';
         if ($this->model->create($filteredData)) {
             $this->success("L'année académique « {$libelle} » a été créée avec succès (statut initial : en préparation).");
@@ -153,11 +152,8 @@ class AnneeController extends BaseController
             }
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
-        if (in_array('updated_at_annee', $cols)) {
-            $filteredData['updated_at_annee'] = date('Y-m-d H:i:s');
-        }
+        $data['updated_at_annee'] = date('Y-m-d H:i:s');
+        $filteredData = $this->model->filterData($data);
 
         $libelle = $data['libelle_annee'] ?? ($currentItem['libelle_annee'] ?? '');
 
@@ -166,8 +162,8 @@ class AnneeController extends BaseController
                 $this->model->setActiveYear($id);
                 $updatedRow = $this->model->getById($id);
                 if ($updatedRow) {
-                    $_SESSION['annee_active_code'] = $updatedRow['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $updatedRow['libelle_annee'];
+                    Session::set('annee_active_code', $updatedRow['code_annee']);
+                    Session::set('annee_active_libelle', $updatedRow['libelle_annee']);
                 }
             }
             $this->success("L'année académique « {$libelle} » a été modifiée avec succès !");
@@ -205,8 +201,8 @@ class AnneeController extends BaseController
             if ($this->model->toggleStatus($id)) {
                 $activeYear = $this->model->getActiveYear();
                 if ($activeYear) {
-                    $_SESSION['annee_active_code'] = $activeYear['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $activeYear['libelle_annee'];
+                    Session::set('annee_active_code', $activeYear['code_annee']);
+                    Session::set('annee_active_libelle', $activeYear['libelle_annee']);
                 }
                 $this->success('Statut mis à jour avec succès (Une seule année active à la fois) !', [
                     'reload' => true,
@@ -233,40 +229,9 @@ class AnneeController extends BaseController
             }
             
             $anneeCode = $item['code_annee'];
-            
-            // Statistiques
-            $stmtStats = $this->model->getCon()->prepare("
-                SELECT 
-                    (SELECT COUNT(*) FROM inscriptions WHERE annee_code = ? AND (statut_inscription != 'annule' OR statut_inscription IS NULL)) as total_etudiants,
-                    (SELECT COUNT(*) FROM classes WHERE annee_code = ? AND (statut_classe = 'actif' OR statut_classe IS NULL)) as total_classes,
-                    (SELECT COUNT(*) FROM semestres WHERE annee_code = ? AND (statut_semestre = 'actif' OR statut_semestre IS NULL)) as total_semestres,
-                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM paiements WHERE annee_code = ? AND (statut_paiement != 'annule' OR statut_paiement IS NULL)) as total_recouvrement
-            ");
-            $stmtStats->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode]);
-            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [
-                'total_etudiants' => 0, 'total_classes' => 0, 'total_semestres' => 0, 'total_recouvrement' => 0
-            ];
-
-            // Liste des classes de cette année
-            $stmtCls = $this->model->getCon()->prepare("
-                SELECT cl.*, f.libelle_filiere, n.libelle_niveau,
-                       (SELECT COUNT(*) FROM inscriptions ins WHERE ins.classe_code = cl.code_classe AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)) as nb_eleves
-                FROM classes cl
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                WHERE cl.annee_code = ?
-                ORDER BY cl.libelle_classe ASC
-            ");
-            $stmtCls->execute([$anneeCode]);
-            $classes = $stmtCls->fetchAll(PDO::FETCH_ASSOC);
-
-            // Liste des semestres de cette année
-            $stmtSem = $this->model->getCon()->prepare("
-                SELECT * FROM semestres WHERE annee_code = ? ORDER BY id_semestre ASC
-            ");
-            $stmtSem->execute([$anneeCode]);
-            $semestres = $stmtSem->fetchAll(PDO::FETCH_ASSOC);
-
+            $stats = $this->model->getStatsForAnnee($anneeCode);
+            $classes = $this->model->getClassesForAnnee($anneeCode);
+            $semestres = $this->model->getSemestresForAnnee($anneeCode);
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("AnneeController::details error: " . $e->getMessage());
@@ -307,14 +272,11 @@ class AnneeController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-        $stmt = $db->prepare("SELECT * FROM annees WHERE code_annee = ? OR id_annee = ? LIMIT 1");
-        $stmt->execute([$code, is_numeric($code) ? (int)$code : 0]);
-        $annee = $stmt->fetch(PDO::FETCH_ASSOC);
+        $annee = $this->model->getAnneeByCodeOrId($code);
 
         if ($annee) {
-            $_SESSION['annee_active_code'] = $annee['code_annee'];
-            $_SESSION['annee_active_libelle'] = $annee['libelle_annee'];
+            Session::set('annee_active_code', $annee['code_annee']);
+            Session::set('annee_active_libelle', $annee['libelle_annee']);
             
             $this->json([
                 'status' => 1,

@@ -66,7 +66,7 @@ class PieceFournirController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
@@ -107,9 +107,9 @@ class PieceFournirController extends BaseController
 
             if ($inserted > 0) {
                 if ($duplicates > 0) {
-                    $_SESSION['flash_success'] = "$inserted pièce(s) ajoutée(s) au répertoire avec succès. $duplicates document(s) existant déjà ont été ignoré(s).";
+                    Session::set('flash_success', "$inserted pièce(s) ajoutée(s) au répertoire avec succès. $duplicates document(s) existant déjà ont été ignoré(s).");
                 } else {
-                    $_SESSION['flash_success'] = "$inserted pièce(s) ajoutée(s) au répertoire avec succès !";
+                    Session::set('flash_success', "$inserted pièce(s) ajoutée(s) au répertoire avec succès !");
                 }
                 header('Location: ' . RACINE . 'piece_fournir/list');
                 exit();
@@ -146,7 +146,7 @@ class PieceFournirController extends BaseController
         ];
 
         if ($this->model->create($saveData)) {
-            $_SESSION['flash_success'] = "Pièce « $libelle » enregistrée avec succès !";
+            Session::set('flash_success', "Pièce « $libelle » enregistrée avec succès !");
             header('Location: ' . RACINE . 'piece_fournir/list');
             exit();
         } else {
@@ -185,7 +185,7 @@ class PieceFournirController extends BaseController
         ];
 
         if ($this->model->update($updateData, $id)) {
-            $_SESSION['flash_success'] = "Pièce à fournir mise à jour avec succès !";
+            Session::set('flash_success', "Pièce à fournir mise à jour avec succès !");
             header('Location: ' . RACINE . 'piece_fournir/list');
             exit();
         } else {
@@ -226,7 +226,7 @@ class PieceFournirController extends BaseController
         }
 
         if ($this->model->delete((int)$id)) {
-            $_SESSION['flash_success'] = "Pièce supprimée du répertoire.";
+            Session::set('flash_success', "Pièce supprimée du répertoire.");
             header('Location: ' . RACINE . 'piece_fournir/list');
             exit();
         } else {

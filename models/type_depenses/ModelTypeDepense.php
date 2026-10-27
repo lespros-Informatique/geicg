@@ -33,8 +33,8 @@ class ModelTypeDepense extends BaseModel
     public function initDefaultTypes(): void
     {
         $pdo = $this->getCon();
-        $etabCode = $_SESSION['etablissement_active_code'] ?? '5454544456';
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '5wBEh2OfI00frxk8ITPf';
+        $etabCode = Session::get('etablissement_active_code', '');
+        $userCode = Auth::code();
 
         $defaults = [
             ['code' => 'TYP-DESK001', 'libelle' => 'Fournitures & Consommables de Bureau'],
@@ -60,6 +60,25 @@ class ModelTypeDepense extends BaseModel
             if ((int)$stmtCheck->fetchColumn() === 0) {
                 $stmtInsert->execute([$d['code'], $d['libelle'], $etabCode, $userCode]);
             }
+        }
+    }
+
+    /**
+     * Récupère la liste des dépenses rattachées à ce type
+     */
+    public function getDepensesForType(string $typeCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT * FROM " . TABLES::DEPENSES . " 
+                WHERE type_depense_code = ? 
+                ORDER BY id_depense DESC
+            ");
+            $stmt->execute([$typeCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelTypeDepense getDepensesForType error: " . $e->getMessage());
+            return [];
         }
     }
 }

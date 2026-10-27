@@ -77,6 +77,7 @@ class TABLES
     public const SESSIONS_CAISSE = 'sessions_caisse';
     public const CLOTURES_CAISSE = 'clotures_caisse';
     public const CAISSE_ANNEXE = 'caisse_annexe';
+    public const FRAIS_ANNEXES = 'frais_annexes';
     public const DEPENSES = 'depenses';
     public const TYPE_DEPENSES = 'type_depenses';
     public const ARRIERES = 'arrieres';
@@ -182,6 +183,7 @@ class PERMISSIONS
     public const CANCEL_PAIEMENTS                 = 'CANCEL_PAIEMENTS';
     public const CLOTURE_CAISSE                   = 'CLOTURE_CAISSE';
     public const EXPORT_FINANCE                   = 'EXPORT_FINANCE';
+    public const MANAGE_ARRIERES                  = 'MANAGE_ARRIERES';
     public const MANAGE_CAISSE                    = 'MANAGE_CAISSE';
     public const MANAGE_CAISSE_ANNEXE             = 'MANAGE_CAISSE_ANNEXE';
     public const MANAGE_FRAIS_ANNEXES             = 'MANAGE_FRAIS_ANNEXES';
@@ -197,6 +199,7 @@ class PERMISSIONS
     public const RECORD_PAIEMENTS                 = 'RECORD_PAIEMENTS';
     public const SEND_RELANCES                    = 'SEND_RELANCES';
     public const VALIDATE_DEPENSES                = 'VALIDATE_DEPENSES';
+    public const VIEW_ARRIERES                    = 'VIEW_ARRIERES';
     public const VIEW_CAISSE_ANNEXE               = 'VIEW_CAISSE_ANNEXE';
     public const VIEW_COMPTABILITE_ETUDIANTS      = 'VIEW_COMPTABILITE_ETUDIANTS';
     public const VIEW_DEPENSES                    = 'VIEW_DEPENSES';

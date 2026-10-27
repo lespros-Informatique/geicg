@@ -10,6 +10,7 @@ class SessionCaisseController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::CLOTURE_CAISSE]);
         $today = date('Y-m-d');
         
         $annees = $this->getAccessibleAnnees();
@@ -18,49 +19,26 @@ class SessionCaisseController extends BaseController
             $selectedAnneeCode = trim($_GET['annee_code']);
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    Session::set('annee_active_code', $a['code_annee']);
+                    Session::set('annee_active_libelle', $a['libelle_annee']);
                     break;
                 }
             }
         } else {
-            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
-        $db = $this->model->getCon();
-        $whereAnnee = "";
-        $params = [];
-        if (!empty($selectedAnneeCode)) {
-            $whereAnnee = " WHERE annee_code = ? ";
-            $params[] = $selectedAnneeCode;
-        }
-
-        $stmtTot = $db->prepare("SELECT COUNT(*) FROM sessions_caisse" . $whereAnnee);
-        $stmtTot->execute($params);
-        $totalSessions = (int)($stmtTot->fetchColumn() ?: 0);
-
-        $whereOuv = empty($whereAnnee) ? " WHERE statut_session = 'ouverte'" : $whereAnnee . " AND statut_session = 'ouverte'";
-        $stmtOuv = $db->prepare("SELECT COUNT(*) FROM sessions_caisse" . $whereOuv);
-        $stmtOuv->execute($params);
-        $totalOuvertes = (int)($stmtOuv->fetchColumn() ?: 0);
-
-        $whereClo = empty($whereAnnee) ? " WHERE statut_session IN ('cloturee', 'valide')" : $whereAnnee . " AND statut_session IN ('cloturee', 'valide')";
-        $stmtClo = $db->prepare("SELECT COUNT(*) FROM sessions_caisse" . $whereClo);
-        $stmtClo->execute($params);
-        $totalCloturees = (int)($stmtClo->fetchColumn() ?: 0);
-
-        $whereSum = empty($whereAnnee) ? "" : $whereAnnee;
-        $stmtSum = $db->prepare("SELECT COALESCE(SUM(total_general), 0) FROM sessions_caisse" . $whereSum);
-        $stmtSum->execute($params);
-        $totalCumulSessions = (float)($stmtSum->fetchColumn() ?: 0);
+        $stats = $this->model->getStatistics($selectedAnneeCode);
+        $totalSessions = $stats['totalSessions'];
+        $totalOuvertes = $stats['totalOuvertes'];
+        $totalCloturees = $stats['totalCloturees'];
+        $totalCumulSessions = $stats['totalCumulSessions'];
 
         // Active session for today
         $activeSession = $this->model->getActiveSession($today);
 
         // Latest session for reference
-        $stmtLatest = $db->prepare("SELECT * FROM sessions_caisse ORDER BY date_session DESC, id_session DESC LIMIT 1");
-        $stmtLatest->execute();
-        $latestSession = $stmtLatest->fetch(PDO::FETCH_ASSOC) ?: null;
+        $latestSession = $this->model->getLatestSession();
         
         // Today's live collection totals from paiements
         $dailyTotals = $this->model->getDailyFinancialTotals($today);
@@ -81,7 +59,8 @@ class SessionCaisseController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::CLOTURE_CAISSE]);
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
@@ -98,6 +77,7 @@ class SessionCaisseController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE]);
         $this->loadView('../views/sessions_caisse/edit.php', [
             'item' => [
                 'date_session' => date('Y-m-d'),
@@ -111,7 +91,8 @@ class SessionCaisseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE]);
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
@@ -134,7 +115,7 @@ class SessionCaisseController extends BaseController
         }
 
         if (empty($data['code_session'])) {
-            $data['code_session'] = $this->validator->generateCode('sessions_caisse', 'code_session', 'SES-', 8);
+            $data['code_session'] = $this->validator->generateCode(TABLES::SESSIONS_CAISSE, 'code_session', 'SES-', 8);
         }
         $data['heure_ouverture'] = date('H:i:s');
         $data['statut_session'] = 'ouverte';
@@ -143,8 +124,7 @@ class SessionCaisseController extends BaseController
         $data['annee_code'] = $anneeCode;
         $data['etablissement_code'] = $etabCode;
 
-        $cols = $this->model->getCon()->query("DESCRIBE sessions_caisse")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
 
         $id = $this->model->create($filteredData);
         if ($id) {
@@ -157,6 +137,7 @@ class SessionCaisseController extends BaseController
     public function cloturer($idParam = null)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::CLOTURE_CAISSE]);
         $id = $idParam ? $this->validator->decrypter($idParam) : null;
         if (!$id && is_numeric($idParam)) {
             $id = $idParam;
@@ -187,7 +168,8 @@ class SessionCaisseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::CLOTURE_CAISSE]);
+        $userCode = Auth::code();
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -237,6 +219,7 @@ class SessionCaisseController extends BaseController
     public function details($idParam)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::CLOTURE_CAISSE]);
         $id = $this->validator->decrypter($idParam);
         if (!$id && is_numeric($idParam)) {
             $id = $idParam;
@@ -249,20 +232,7 @@ class SessionCaisseController extends BaseController
         }
 
         // Paiements réalisés au cours de la session (TOUTES LES TRANSACTIONS de la session, y compris annulées)
-        $db = $this->model->getCon();
-        $stmtP = $db->prepare("
-            SELECT p.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, c.libelle_classe, ts.libelle_tranche
-            FROM paiements p
-            LEFT JOIN inscriptions i ON i.code_inscription = p.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN classes c ON c.code_classe = i.classe_code
-            LEFT JOIN tranches_scolarite ts ON ts.code_tranche = p.tranche_code
-            WHERE (p.session_caisse_code = ? OR (p.session_caisse_code IS NULL AND DATE(p.date_paiement) = ?))
-              AND (p.canal_paiement = 'guichet' OR p.canal_paiement IS NULL)
-            ORDER BY p.id_paiement DESC
-        ");
-        $stmtP->execute([$item['code_session'] ?? '', $item['date_session']]);
-        $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $paiements = $this->model->getSessionTransactions($item['code_session'] ?? '', $item['date_session']);
 
         $totalValide = 0;
         $totalAnnule = 0;
@@ -332,6 +302,7 @@ class SessionCaisseController extends BaseController
     public function apiTransactions($idParam)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::CLOTURE_CAISSE]);
         $id = $this->validator->decrypter($idParam);
         if (!$id && is_numeric($idParam)) {
             $id = $idParam;
@@ -343,20 +314,7 @@ class SessionCaisseController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-        $stmtP = $db->prepare("
-            SELECT p.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, c.libelle_classe, ts.libelle_tranche
-            FROM paiements p
-            LEFT JOIN inscriptions i ON i.code_inscription = p.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN classes c ON c.code_classe = i.classe_code
-            LEFT JOIN tranches_scolarite ts ON ts.code_tranche = p.tranche_code
-            WHERE (p.session_caisse_code = ? OR (p.session_caisse_code IS NULL AND DATE(p.date_paiement) = ?))
-              AND (p.canal_paiement = 'guichet' OR p.canal_paiement IS NULL)
-            ORDER BY p.id_paiement DESC
-        ");
-        $stmtP->execute([$session['code_session'] ?? '', $session['date_session']]);
-        $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $paiements = $this->model->getSessionTransactions($session['code_session'] ?? '', $session['date_session']);
 
         $totalValide = 0;
         $totalAnnule = 0;
@@ -428,6 +386,7 @@ class SessionCaisseController extends BaseController
     public function edition($idParam)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CAISSE);
         $id = $this->validator->decrypter($idParam);
         if (!$id && is_numeric($idParam)) {
             $id = $idParam;
@@ -448,6 +407,7 @@ class SessionCaisseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CAISSE);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -457,8 +417,7 @@ class SessionCaisseController extends BaseController
             return;
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE sessions_caisse")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
 
         $res = $this->model->update($filteredData, $id);
         if ($res) {
@@ -471,6 +430,7 @@ class SessionCaisseController extends BaseController
     public function changer()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CAISSE);
         $id = $_POST['id'] ?? null;
         $statut = $_POST['statut'] ?? null;
 
@@ -487,10 +447,10 @@ class SessionCaisseController extends BaseController
 
         $update = ['statut_session' => $statut];
         if ($statut === 'valide') {
-            $update['user_validation'] = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+            $update['user_validation'] = Auth::code();
         }
 
-        $res = $this->model->update($id, $update);
+        $res = $this->model->update($update, $id);
         if ($res) {
             $this->json(['status' => 1, 'message' => 'Statut de session mis à jour avec succès']);
         } else {
@@ -501,6 +461,7 @@ class SessionCaisseController extends BaseController
     public function getDailyTotals()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::CLOTURE_CAISSE]);
         $date = $_GET['date'] ?? ($_POST['date'] ?? date('Y-m-d'));
         $data = $this->model->getDailyFinancialTotals($date);
         $this->json($data);

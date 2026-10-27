@@ -66,7 +66,7 @@ class ModelSessionCaisse extends BaseModel
     /**
      * Récupère la session active (ouverte) pour aujourd'hui ou une date donnée
      */
-    public function getActiveSession(string $date = null)
+    public function getActiveSession(?string $date = null)
     {
         if (!$date) $date = date('Y-m-d');
         $stmt = $this->getCon()->prepare("
@@ -137,5 +137,76 @@ class ModelSessionCaisse extends BaseModel
             'total_general' => $totalGeneral,
             'nb_encaissements' => $nbEncaissements
         ];
+    }
+
+    /**
+     * Récupère les statistiques globales des sessions
+     */
+    public function getStatistics(?string $anneeCode = null): array
+    {
+        $db = $this->getCon();
+        $whereAnnee = "";
+        $params = [];
+        if (!empty($anneeCode)) {
+            $whereAnnee = " WHERE annee_code = ? ";
+            $params[] = $anneeCode;
+        }
+
+        $stmtTot = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SESSIONS_CAISSE . $whereAnnee);
+        $stmtTot->execute($params);
+        $totalSessions = (int)($stmtTot->fetchColumn() ?: 0);
+
+        $whereOuv = empty($whereAnnee) ? " WHERE statut_session = 'ouverte'" : $whereAnnee . " AND statut_session = 'ouverte'";
+        $stmtOuv = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SESSIONS_CAISSE . $whereOuv);
+        $stmtOuv->execute($params);
+        $totalOuvertes = (int)($stmtOuv->fetchColumn() ?: 0);
+
+        $whereClo = empty($whereAnnee) ? " WHERE statut_session IN ('cloturee', 'valide')" : $whereAnnee . " AND statut_session IN ('cloturee', 'valide')";
+        $stmtClo = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SESSIONS_CAISSE . $whereClo);
+        $stmtClo->execute($params);
+        $totalCloturees = (int)($stmtClo->fetchColumn() ?: 0);
+
+        $whereSum = empty($whereAnnee) ? "" : $whereAnnee;
+        $stmtSum = $db->prepare("SELECT COALESCE(SUM(total_general), 0) FROM " . TABLES::SESSIONS_CAISSE . $whereSum);
+        $stmtSum->execute($params);
+        $totalCumulSessions = (float)($stmtSum->fetchColumn() ?: 0);
+
+        return [
+            'totalSessions' => $totalSessions,
+            'totalOuvertes' => $totalOuvertes,
+            'totalCloturees' => $totalCloturees,
+            'totalCumulSessions' => $totalCumulSessions
+        ];
+    }
+
+    /**
+     * Récupère la dernière session enregistrée
+     */
+    public function getLatestSession(): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::SESSIONS_CAISSE . " ORDER BY date_session DESC, id_session DESC LIMIT 1");
+        $stmt->execute();
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res ?: null;
+    }
+
+    /**
+     * Récupère les transactions de paiement associées à une session
+     */
+    public function getSessionTransactions(string $codeSession, string $dateSession): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT p.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, c.libelle_classe, ts.libelle_tranche
+            FROM " . TABLES::PAIEMENTS . " p
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = p.inscription_code
+            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::TRANCHES_SCOLARITE . " ts ON ts.code_tranche = p.tranche_code
+            WHERE (p.session_caisse_code = ? OR (p.session_caisse_code IS NULL AND DATE(p.date_paiement) = ?))
+              AND (p.canal_paiement = 'guichet' OR p.canal_paiement IS NULL)
+            ORDER BY p.id_paiement DESC
+        ");
+        $stmt->execute([$codeSession, $dateSession]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }

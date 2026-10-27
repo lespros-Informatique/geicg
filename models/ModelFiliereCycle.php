@@ -136,4 +136,47 @@ class ModelFiliereCycle
         $cols = $this->getTableColumns();
         return array_intersect_key($data, array_flip($cols));
     }
+
+    public function getDetails(int $id): ?array
+    {
+        try {
+            $stmt = $this->con->prepare("
+                SELECT fc.*, f.libelle_filiere, c.libelle_cycle
+                FROM filiere_cycles fc
+                LEFT JOIN filieres f ON f.code_filiere = fc.filiere_code
+                LEFT JOIN cycles c ON c.code_cycle = fc.cycle_code
+                WHERE fc.id_filiere_cycle = ?
+            ");
+            $stmt->execute([$id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (Exception $e) {
+            error_log("ModelFiliereCycle::getDetails error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function getClassesForParcours(string $filiereCode, ?string $cycleCode = null, ?string $niveauCode = null): array
+    {
+        try {
+            $cycleVal = $cycleCode ?? '';
+            $niveauVal = $niveauCode ?? '';
+            $stmt = $this->con->prepare("
+                SELECT cl.*, n.libelle_niveau, COUNT(i.id_inscription) as nb_etudiants
+                FROM classes cl
+                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN inscriptions i ON i.classe_code = cl.code_classe AND i.statut_inscription = 'actif'
+                WHERE cl.filiere_code = ?
+                  AND (cl.cycle_code = ? OR ? = '' OR cl.cycle_code IS NULL)
+                  AND (cl.niveau_code = ? OR ? = '' OR cl.niveau_code IS NULL)
+                GROUP BY cl.id_classe
+                ORDER BY cl.libelle_classe ASC
+            ");
+            $stmt->execute([$filiereCode, $cycleVal, $cycleVal, $niveauVal, $niveauVal]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelFiliereCycle::getClassesForParcours error: " . $e->getMessage());
+            return [];
+        }
+    }
 }

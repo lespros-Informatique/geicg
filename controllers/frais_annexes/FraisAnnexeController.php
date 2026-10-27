@@ -10,17 +10,14 @@ class FraisAnnexeController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
-        $db = $this->model->getCon();
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]);
 
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            $aRow = $this->model->getAnneeByCode($getAnnee);
             if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+                Session::set('annee_active_code', $aRow['code_annee']);
+                Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
@@ -38,17 +35,14 @@ class FraisAnnexeController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]);
 
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
-            $db = $this->model->getCon();
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            $aRow = $this->model->getAnneeByCode($getAnnee);
             if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+                Session::set('annee_active_code', $aRow['code_annee']);
+                Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
@@ -74,11 +68,11 @@ class FraisAnnexeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
         $data = $_POST;
         unset($data['csrf_token']);
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
@@ -102,7 +96,7 @@ class FraisAnnexeController extends BaseController
         }
 
         if (empty($data['code_frais_annexe'])) {
-            $data['code_frais_annexe'] = $this->validator->generateCode('frais_annexes', 'code_frais_annexe', 'FRAIS-ANN-', 8);
+            $data['code_frais_annexe'] = $this->validator->generateCode(TABLES::FRAIS_ANNEXES, 'code_frais_annexe', 'FRAIS-ANN-', 8);
         }
 
         $data['niveau_code'] = $niveauCode;
@@ -112,8 +106,7 @@ class FraisAnnexeController extends BaseController
         $data['statut_frais_annexe'] = $data['statut_frais_annexe'] ?? 'actif';
         $data['created_at_frais_annexe'] = date('Y-m-d H:i:s');
 
-        $cols = $this->model->getCon()->query("DESCRIBE frais_annexes")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
 
         if ($this->model->create($filteredData)) {
             $this->success("Tarif de frais annexes enregistré avec succès !");
@@ -126,7 +119,7 @@ class FraisAnnexeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
         
         $rawId = $this->post('id_frais_annexe');
         $id = (int)$rawId;
@@ -171,8 +164,7 @@ class FraisAnnexeController extends BaseController
         $data['niveau_code'] = $niveauCode;
         $data['updated_at_frais_annexe'] = date('Y-m-d H:i:s');
 
-        $cols = $this->model->getCon()->query("DESCRIBE frais_annexes")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
 
         if ($this->model->update($filteredData, $id)) {
             $this->success("Tarif de frais annexes modifié avec succès !");
@@ -188,7 +180,7 @@ class FraisAnnexeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
         $id = (int)$this->post('id_frais_annexe');
         if (!$id) {
             $this->error('Identifiant invalide');
@@ -215,11 +207,10 @@ class FraisAnnexeController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_ANNEXES', 'PRINT_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
+        $this->requirePermission([PERMISSIONS::PRINT_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::PRINT_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $db = $this->model->getCon();
         $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : $this->getActiveAnneeCode();
         $categorie = !empty($_GET['categorie']) ? trim($_GET['categorie']) : null;
         $typeFiliere = !empty($_GET['type_filiere']) ? trim($_GET['type_filiere']) : null;
@@ -227,17 +218,17 @@ class FraisAnnexeController extends BaseController
 
         $anneeLibelle = $this->getActiveAnneeLibelle();
         if ($anneeCode) {
-            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$anneeCode]);
-            $aName = $stmtA->fetchColumn();
-            if ($aName) $anneeLibelle = $aName;
+            $aRow = $this->model->getAnneeByCode($anneeCode);
+            if (!empty($aRow['libelle_annee'])) {
+                $anneeLibelle = $aRow['libelle_annee'];
+            }
         }
 
         $fraisAnnexes = $this->model->getAll($anneeCode, $typeFiliere, $niveauCode, $categorie);
 
         $etablissement = $this->getEtablissementConfig();
 
-        $authSession = $_SESSION[USERS_AUTH] ?? [];
+        $authSession = Auth::user() ?: [];
         $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
         if (empty($editeurNom)) {
             $editeurNom = 'Service Comptabilité & Scolarité';
