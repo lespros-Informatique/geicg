@@ -323,12 +323,37 @@ $(document).ready(function() {
     $sel.trigger('change.select2');
   }
 
-  // 1. Détection du Type d'Évaluation (Par défaut tous les autres champs sont invisibles)
+  // 1. Détection du Type d'Évaluation : Tout réinitialiser lors d'un changement
   $('#sel_type_eval').on('change', function() {
     var typeEval = $(this).val();
 
     if (!isInitialLoading) {
+      // RÉINITIALISATION COMPLÈTE DE TOUT L'ÉTAT ET DES CHAMPS
       $('#box-grille-notes-container').empty();
+      isFormDirty = false;
+      $('#badge-unsaved').hide();
+
+      // Réinitialiser la composition / examen
+      $('#sel_composition_code').val('').trigger('change.select2');
+
+      // Réinitialiser Semestre (déverrouillé et vide)
+      $('#sel_semestre_code').prop('disabled', false).val('').trigger('change.select2');
+      $('#badge-semestre-lock').hide();
+      $('#semestre_code_hidden').val('');
+
+      // Réinitialiser Coefficient (déverrouillé et vide)
+      $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly').val('');
+
+      // Réinitialiser Classe (remettre toutes les classes et vider la sélection)
+      renderClasseOptions(window.ALL_CLASSES, '');
+      $('#sel_classe_code').val('').trigger('change.select2');
+
+      // Réinitialiser Matière (vider la liste et remettre l'option d'attente)
+      $('#sel_matiere_code').empty().append('<option value="">-- Choisir d\'abord une classe --</option>').val('').trigger('change.select2');
+      $('#badge-matiere-count').text('0 matière(s)');
+
+      // Réinitialiser le libellé d'évaluation
+      $('#input_libelle_eval').val('');
     }
 
     if (!typeEval) {
@@ -339,42 +364,23 @@ $(document).ready(function() {
     }
 
     if (typeEval === 'EXAMEN') {
-      // A) Sélection Type EXAMEN : affiche les champs dédiés (examen programmé)
+      // A) Sélection Type EXAMEN : affiche le sélecteur d'examen programmé
       $('#box-composition-select').slideDown(200);
       $('#box-libelle-eval').slideUp(150);
-
-      var compCode = $('#sel_composition_code').val();
-      if (!compCode) {
-        // Invisible tant que l'examen programmé n'est pas choisi
-        $('#box-params-fields').slideUp(150);
-      } else {
-        $('#box-params-fields').slideDown(200);
-        $('#sel_composition_code').trigger('change');
-      }
+      // Le bloc des 4 champs reste masqué tant que l'examen n'est pas choisi
+      $('#box-params-fields').slideUp(150);
     } else {
       // B) Sélection Type INTERROGATION, DEVOIR ou AUTRE :
-      // Masquer le bloc d'examen programmé
       $('#box-composition-select').slideUp(150);
-      $('#sel_composition_code').val('').trigger('change.select2');
 
-      // Déverrouiller Semestre & Coefficient
-      $('#sel_semestre_code').prop('disabled', false);
-      $('#badge-semestre-lock').hide();
-      $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly');
-
-      // Restaurer toutes les classes
-      var currentClasseVal = $('#sel_classe_code').val();
-      renderClasseOptions(window.ALL_CLASSES, currentClasseVal);
-
-      if (!currentClasseVal) {
-        $('#sel_matiere_code').empty().append('<option value="">-- Choisir d\'abord une classe --</option>').trigger('change.select2');
-      }
-
-      // Intitulé et affichage des 4 champs
+      // Intitulé par défaut selon le type
+      var defaultLib = (typeEval === 'DEVOIR') ? 'Devoir Sur Table N°1' : ((typeEval === 'INTERROGATION') ? 'Interrogation N°1' : 'Évaluation N°1');
+      $('#input_libelle_eval').val(defaultLib);
       $('#box-libelle-eval').slideDown(150);
-      if (!$('#input_libelle_eval').val()) {
-        var defaultLib = (typeEval === 'DEVOIR') ? 'Devoir Sur Table N°1' : ((typeEval === 'INTERROGATION') ? 'Interrogation N°1' : 'Évaluation N°1');
-        $('#input_libelle_eval').val(defaultLib);
+
+      // Coefficient par défaut si vide
+      if (!$('#input_coef_eval').val()) {
+        $('#input_coef_eval').val('1.00');
       }
 
       // Afficher immédiatement les 4 champs dans l'ordre strict
@@ -388,6 +394,10 @@ $(document).ready(function() {
 
     if (!isInitialLoading) {
       $('#box-grille-notes-container').empty();
+      renderClasseOptions(window.ALL_CLASSES, '');
+      $('#sel_classe_code').val('').trigger('change.select2');
+      $('#sel_matiere_code').empty().append('<option value="">-- Choisir d\'abord une classe --</option>').val('').trigger('change.select2');
+      $('#badge-matiere-count').text('0 matière(s)');
     }
 
     if (!compCode) {
