@@ -24,59 +24,6 @@ $typeEvals = [
   'AUTRE' => 'Autre Évaluation'
 ];
 ?>
-<style>
-  .input-readonly {
-    background-color: #F8FAFC !important;
-    color: #1E3A5F !important;
-    font-weight: 700 !important;
-    cursor: not-allowed !important;
-    border-color: #CBD5E1 !important;
-  }
-  .eval-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .input-valeur-note:focus {
-    border-color: #1E3A5F !important;
-    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15) !important;
-    outline: none;
-    background-color: #FFFFFF !important;
-  }
-  .row-absent {
-    background-color: #FEF2F2 !important;
-  }
-  .row-dirty {
-    background-color: #F0FDF4 !important;
-  }
-  .progress-track {
-    background-color: #E2E8F0;
-    border-radius: 999px;
-    height: 8px;
-    overflow: hidden;
-    width: 100%;
-  }
-  .progress-fill {
-    background: linear-gradient(90deg, #1E3A5F 0%, #16A34A 100%);
-    height: 100%;
-    border-radius: 999px;
-    transition: width 0.3s ease;
-  }
-  .kbd-hint {
-    background: #E2E8F0;
-    color: #334155;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    font-family: monospace;
-    border: 1px solid #CBD5E1;
-  }
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

@@ -31,24 +31,6 @@ $canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_ar
         </div>
       </div>
 
-
-<style>
-.kpi-card {
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.28s ease;
-}
-.kpi-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 20px -4px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04) !important;
-  border-color: #CBD5E1 !important;
-}
-.kpi-icon-wrapper {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.kpi-card:hover .kpi-icon-wrapper {
-  transform: scale(1.12) rotate(-4deg);
-}
-</style>
-
       <!-- ========================================================================= -->
       <!-- BARRE DE FILTRAGE : CATÉGORIE & PÉRIODE -->
       <!-- ========================================================================= -->

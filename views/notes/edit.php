@@ -45,24 +45,6 @@ $selectedTypeEval = $item['type_evaluation_code'] ?? 'INTERROGATION';
 if ($selectedTypeEval === 'CC') $selectedTypeEval = 'DEVOIR';
 if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
 ?>
-<style>
-  .input-readonly {
-    background-color: #F8FAFC !important;
-    color: #1E3A5F !important;
-    font-weight: 700 !important;
-    cursor: not-allowed !important;
-    border-color: #CBD5E1 !important;
-  }
-  .eval-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

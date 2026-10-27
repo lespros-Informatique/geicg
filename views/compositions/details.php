@@ -5,58 +5,6 @@ $targetClasses = $targetClasses ?? [];
 $matieres = $matieres ?? [];
 $encryptedId = $encryptedId ?? '';
 ?>
-<style>
-  /* Card Hover Animations & Micro-Interactions */
-  .card {
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease !important;
-  }
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04) !important;
-  }
-  .card [data-lucide] {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  }
-  .card:hover [data-lucide] {
-    transform: scale(1.14) rotate(-3deg);
-  }
-  .matiere-card-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border: 1.5px solid #CBD5E1;
-    border-radius: 8px;
-    margin-bottom: 6px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    background: #FFFFFF;
-  }
-  .matiere-card-item:hover {
-    border-color: #0284C7;
-    background: #F0F9FF;
-    transform: translateX(4px);
-  }
-  .matiere-card-item.selected {
-    border-color: #0284C7;
-    background: #EFF6FF;
-    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.12);
-  }
-  @keyframes btnSpin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  .btn-circle-loader {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    border-radius: 50%;
-    border-top-color: #FFFFFF;
-    animation: btnSpin 0.65s linear infinite;
-    vertical-align: middle;
-  }
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

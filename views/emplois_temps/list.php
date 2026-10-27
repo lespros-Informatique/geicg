@@ -134,46 +134,6 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
   </div>
 </div>
 
-<style>
-.btn-print-schedule:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(2,132,199,0.45) !important;
-  filter: brightness(1.05);
-}
-.btn-action-planning:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(30,58,95,0.3) !important;
-}
-.btn-action-grille:hover {
-  background: #E2E8F0 !important;
-  color: #0F172A !important;
-}
-.btn-action-reset:hover {
-  background: #DC2626 !important;
-  color: #FFFFFF !important;
-  border-color: #DC2626 !important;
-  box-shadow: 0 4px 10px rgba(220,38,38,0.3) !important;
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@media print {
-  body * { visibility: hidden !important; }
-  #printable-schedule-area, #printable-schedule-area * { visibility: visible !important; }
-  #printable-schedule-area { 
-    position: absolute !important; 
-    left: 0 !important; 
-    top: 0 !important; 
-    width: 100% !important; 
-    padding: 20px !important; 
-    background: #FFFFFF !important;
-  }
-  .print-only-header { display: block !important; }
-  .modal-footer, .btn-close-modal, .btn-print-schedule { display: none !important; }
-}
-</style>
-
 <script>
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();

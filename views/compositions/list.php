@@ -6,22 +6,6 @@ $classes = $classes ?? [];
 $matieres = $matieres ?? [];
 $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
 ?>
-<style>
-  /* Card Hover Animations & Micro-Interactions */
-  .card {
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease !important;
-  }
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04) !important;
-  }
-  .card [data-lucide] {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  }
-  .card:hover [data-lucide] {
-    transform: scale(1.14) rotate(-3deg);
-  }
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">

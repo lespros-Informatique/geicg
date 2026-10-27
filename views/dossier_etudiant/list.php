@@ -314,32 +314,6 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
   </div>
 </div>
 
-<style>
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.kpi-card-clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08);
-}
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  #printable-recepisse-area, #printable-recepisse-area * {
-    visibility: visible;
-  }
-  #printable-recepisse-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 0;
-  }
-}
-</style>
-
 <script>
 $(document).ready(function() {
   var table;

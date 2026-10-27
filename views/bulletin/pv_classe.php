@@ -10,16 +10,6 @@ $pvRows = $pvRows ?? [];
 $statsClasse = $statsClasse ?? [];
 $encryptedClasseCode = $encryptedClasseCode ?? '';
 ?>
-<style>
-@media print {
-  .app-layout, .sidebar, .nav, .no-print, .main-content > nav { display: none !important; }
-  .content-wrapper { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-  .pv-container { border: none !important; box-shadow: none !important; }
-  body { background: #fff !important; color: #000 !important; font-size: 11pt; }
-  table { page-break-inside: auto; }
-  tr { page-break-inside: avoid; page-break-after: auto; }
-}
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

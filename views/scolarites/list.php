@@ -131,64 +131,6 @@
         </li>
       </ul>
 
-      <style>
-        .kpi-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08) !important;
-        }
-        .dataTables_wrapper {
-          width: 100% !important;
-          position: relative !important;
-          clear: both !important;
-          box-sizing: border-box !important;
-        }
-        .dataTables_wrapper .dataTables_length {
-          float: left !important;
-          margin-bottom: 16px !important;
-        }
-        .dataTables_wrapper .dataTables_filter {
-          float: right !important;
-          margin-bottom: 16px !important;
-          text-align: right !important;
-        }
-        .dataTables_wrapper::after {
-          content: "" !important;
-          display: block !important;
-          clear: both !important;
-        }
-        .dataTables_wrapper .dataTables_scroll,
-        .dataTables_wrapper table.dataTable {
-          clear: both !important;
-          width: 100% !important;
-          margin-top: 14px !important;
-          border-collapse: collapse !important;
-        }
-        table.dataTable thead th {
-          background-color: #F8FAFC !important;
-          color: #475569 !important;
-          font-size: 13px !important;
-          font-weight: 700 !important;
-          padding: 12px 14px !important;
-          border-bottom: 2px solid #E2E8F0 !important;
-          white-space: nowrap !important;
-          vertical-align: middle !important;
-        }
-        table.dataTable tbody td {
-          padding: 12px 14px !important;
-          font-size: 13px !important;
-          vertical-align: middle !important;
-          white-space: nowrap !important;
-          border-bottom: 1px solid #F1F5F9 !important;
-        }
-        table.dataTable .annee-badge,
-        table.dataTable .badge {
-          position: static !important;
-          top: auto !important;
-          right: auto !important;
-          display: inline-block !important;
-        }
-      </style>
-
       <div class="tab-content" id="scolariteTabsContent">
         <!-- TAB 1 : GRILLE DES SCOLARITÉS -->
         <div class="tab-pane fade show active" id="tab-scolarites" role="tabpanel">

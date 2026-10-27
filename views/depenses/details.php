@@ -24,16 +24,6 @@ $modePaiementLibelle = $labelsMode[$modeReglement] ?? ucfirst($modeReglement);
 $auteur = !empty($item['auteur_nom_complet']) && trim($item['auteur_nom_complet']) !== '' ? trim($item['auteur_nom_complet']) : ((!empty($item['nom_user']) ? $item['nom_user'] . ' ' . ($item['prenom_user'] ?? '') : 'Comptabilité'));
 $confirmateur = !empty($item['confirmateur_nom_complet']) ? trim($item['confirmateur_nom_complet']) : '';
 ?>
-<style>
-@media print {
-  body { background: #fff !important; color: #000 !important; }
-  .sidebar, .nav-header, .page-header-actions, .no-print { display: none !important; }
-  .app-layout { display: block !important; }
-  .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-  .content-wrapper { padding: 0 !important; }
-  .card-bon { border: 1px dashed #000 !important; box-shadow: none !important; }
-}
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">

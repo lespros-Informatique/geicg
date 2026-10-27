@@ -1,137 +1,17 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<style>
-@media print {
-  @page {
-    size: A4 landscape;
-    margin: 8mm;
-  }
-  body, html, .app-layout, .main-content, .content-wrapper {
-    background: #FFFFFF !important;
-    color: #000000 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    box-shadow: none !important;
-  }
-  header, .topbar, .topbar *, .sidebar, .sidebar *, aside, nav, .main-nav, .page-header, .no-print, 
-  .card-filters, .card-kpi-container, .kpi-section-title,
-  .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate,
-  button, a.btn, input, select, textarea, .form-control, .select2, .select2-container {
-    display: none !important;
-  }
-  #table-comptabilite-etudiants th:last-child,
-  #table-comptabilite-etudiants td:last-child {
-    display: none !important;
-  }
-  .card {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  table#table-comptabilite-etudiants {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    margin-top: 10px !important;
-  }
-  table#table-comptabilite-etudiants th,
-  table#table-comptabilite-etudiants td {
-    border: 1px solid #334155 !important;
-    padding: 6px 8px !important;
-    font-size: 11px !important;
-    color: #000000 !important;
-  }
-  table#table-comptabilite-etudiants th {
-    background: #F1F5F9 !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-  }
-  table#table-comptabilite-etudiants tr {
-    page-break-inside: avoid !important;
-  }
-  #print-header-banner, .print-signatures-block {
-    display: block !important;
-  }
-}
+<?php
+$isCaisseOuverte = $isCaisseOuverte ?? false;
+$activeSession = $activeSession ?? null;
+$encryptedSessionId = $encryptedSessionId ?? '';
+$canRecord = $canRecord ?? false;
+$canOpenCaisse = $canOpenCaisse ?? false;
+$canCloseCaisse = $canCloseCaisse ?? false;
+$annees = $annees ?? [];
+$selectedAnneeCode = $selectedAnneeCode ?? '';
+$niveaux = $niveaux ?? [];
+$classes = $classes ?? [];
+?>
 
-#print-header-banner, .print-signatures-block {
-  display: none;
-}
-
-/* Animations and Premium Layout */
-@keyframes kpiEntrance {
-  0% { opacity: 0; transform: translateY(18px) scale(0.98); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes btnPulseGlow {
-  0%, 100% { box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25); transform: translateY(0); }
-  50% { box-shadow: 0 6px 22px rgba(22, 163, 74, 0.45); transform: translateY(-1.5px); }
-}
-
-@keyframes modalZoomIn {
-  from { opacity: 0; transform: scale(0.95) translateY(-8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.kpi-card {
-  animation: kpiEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transition: all 0.25s ease;
-  border-radius: 12px;
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  padding: 18px 20px;
-}
-.kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.08);
-  border-color: #CBD5E1;
-}
-
-.badge-status {
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  text-transform: uppercase;
-}
-.badge-success { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
-.badge-warning { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
-.badge-danger { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
-.badge-info { background: #E0F2FE; color: #0369A1; border: 1px solid #7DD3FC; }
-.badge-secondary { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
-
-.student-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #E2E8F0;
-}
-.student-avatar-initials {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%);
-  color: #FFFFFF;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 13.5px;
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(15,23,42,0.15);
-  border: 1.5px solid #CBD5E1;
-}
-</style>
-
-<div class="content-wrapper">
 
   <!-- BANNIÈRE D'IMPRESSION  -->
   <div id="print-header-banner">

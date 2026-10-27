@@ -17,30 +17,6 @@ $moyenneMaxClasse = $moyenneMaxClasse ?? 0;
 $moyenneMoyClasse = $moyenneMoyClasse ?? 0;
 $heuresAbsences = $heuresAbsences ?? '0 H';
 ?>
-<style>
-@media print {
-  body { background: #fff !important; font-size: 11pt !important; color: #000 !important; }
-  .sidebar, .nav-header, .page-header-actions, .semestre-nav, .no-print { display: none !important; }
-  .app-layout { display: block !important; }
-  .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-  .content-wrapper { padding: 0 !important; }
-  .card-bulletin { border: none !important; box-shadow: none !important; padding: 0 !important; }
-  .print-header { display: block !important; margin-bottom: 20px !important; }
-  .page-break { page-break-after: always; }
-}
-.bulletin-table th, .bulletin-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #E2E8F0;
-}
-.bulletin-table thead th {
-  background: #F8FAFC;
-  font-weight: 700;
-  font-size: 12px;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">

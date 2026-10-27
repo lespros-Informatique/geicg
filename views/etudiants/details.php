@@ -19,6 +19,7 @@ $etabNom = $etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONA
 $etabTel = $etablissement['telephone_etablissement'] ?? '+225 01 02 03 04 05';
 $etabEmail = $etablissement['email_etablissement'] ?? 'contact@geicg.ci';
 $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivoire';
+$encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())->crypter($item['id_etudiant']) : '');
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -475,40 +476,6 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
     </div>
   </main>
 </div>
-
-<!-- ========================================================================= -->
-<!-- STYLES D'IMPRESSION DÉDIÉS : IMPRESSION STRICTEMENT RÉSERVÉE AU BADGE -->
-<!-- ========================================================================= -->
-<style>
-@media print {
-  body * {
-    visibility: hidden !important;
-  }
-  #section-carte-scolaire, #section-carte-scolaire * {
-    visibility: visible !important;
-  }
-  #section-carte-scolaire {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 30px !important;
-    padding: 20px !important;
-    background: #FFF !important;
-  }
-  .badge-card-container {
-    box-shadow: none !important;
-    border: 1px solid #94A3B8 !important;
-    page-break-inside: avoid !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-}
-</style>
 
 <script>
 function imprimerCarteScolaire() {

@@ -2,24 +2,6 @@
 require_once __DIR__ . '/../../public/inc/header.php'; 
 $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())->crypter($item['id_etudiant']) : '');
 ?>
-<style>
-.edit-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  width: 100%;
-}
-@media (max-width: 991px) {
-  .edit-grid-3 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 640px) {
-  .edit-grid-3 {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -249,13 +231,4 @@ $(document).ready(function() {
   });
 });
 </script>
-<style>
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-.spin {
-  animation: spin 1s linear infinite;
-}
-</style>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

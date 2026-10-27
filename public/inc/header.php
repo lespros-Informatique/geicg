@@ -42,12 +42,14 @@
         })();
     </script>
     <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../assets/css/style.css') ?: time() ?>">
+    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/geicg-components.css?v=<?= @filemtime(__DIR__ . '/../assets/css/geicg-components.css') ?: time() ?>">
     <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/toastr.min.css?v=<?= @filemtime(__DIR__ . '/../assets/css/toastr.min.css') ?: time() ?>">
     <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 
     <script src="<?= RACINE ?>public/assets/js/jquery.min.js"></script>
+    <script src="<?= RACINE ?>public/assets/js/geicg-app.js?v=<?= @filemtime(__DIR__ . '/../assets/js/geicg-app.js') ?: time() ?>"></script>
     <script src="<?= RACINE ?>public/json/func.js?v=<?= @filemtime(__DIR__ . '/../../public/json/func.js') ?: time() ?>"></script>
     <script src="<?= RACINE ?>public/assets/js/toastr.min.js"></script>
     <script src="<?= RACINE ?>public/assets/js/sweetalert2.all.min.js"></script>

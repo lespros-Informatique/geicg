@@ -18,14 +18,6 @@ $totalFraisAnnexes = (float)($kpis['total_frais_annexes'] ?? 0);
 $soldeAttendu = (float)($kpis['solde_attendu'] ?? ($fondInitial + $totalValide));
 $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
 ?>
-<style>
-@media print {
-  body { background: #FFF !important; margin: 0; padding: 0; }
-  .app-layout > *:not(.main-content), .main-content > *:not(.content-wrapper), .page-header, .btn-no-print { display: none !important; }
-  .content-wrapper { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-  .print-area { border: none !important; box-shadow: none !important; padding: 0 !important; width: 100% !important; }
-}
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">

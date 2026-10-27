@@ -533,14 +533,4 @@ $(document).ready(function() {
 });
 </script>
 
-<style>
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-.spin {
-  animation: spin 1s linear infinite;
-}
-</style>
-
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

@@ -6,16 +6,8 @@ $scolarite = $scolarite ?? 0;
 $totalPaye = $totalPaye ?? 0;
 $solde = $solde ?? 0;
 $tauxPaiement = ($scolarite > 0) ? min(100, round(($totalPaye / $scolarite) * 100)) : 100;
+$encryptedId = $encryptedId ?? (!empty($item['id_inscription']) ? (new Validator())->crypter($item['id_inscription']) : '');
 ?>
-<style>
-@media print {
-  body { background: #fff !important; color: #000 !important; }
-  .sidebar, .nav-header, .page-header-actions, .no-print { display: none !important; }
-  .app-layout { display: block !important; }
-  .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-  .content-wrapper { padding: 0 !important; }
-}
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">

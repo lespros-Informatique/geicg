@@ -159,13 +159,6 @@ $enseignants = (new ModelEnseignant())->getAll();
                 <?php endforeach; ?>
               </select>
             </div>
-            <style>
-              @media (max-width: 640px) {
-                .schedule-timing-row {
-                  grid-template-columns: 1fr !important;
-                }
-              }
-            </style>
             <div class="schedule-timing-row" style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%;">
               <div class="form-group" style="width: 100%; box-sizing: border-box;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Jour de la semaine <span style="color: #EF4444;">*</span></label>

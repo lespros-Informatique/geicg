@@ -287,13 +287,6 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
   </div>
 </div>
 
-<style>
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-</style>
-
 <script>
 $(document).ready(function() {
   if (window.lucide) lucide.createIcons();

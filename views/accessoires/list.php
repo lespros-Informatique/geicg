@@ -994,33 +994,5 @@ $(document).ready(function() {
 });
 </script>
 
-<style>
-/* Style Slider Switch */
-.switch input:checked + .slider {
-  background-color: #15803D !important;
-}
-.switch input:focus + .slider {
-  box-shadow: 0 0 1px #15803D;
-}
-.switch input:checked + .slider:before {
-  transform: translateX(18px);
-}
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 14px;
-  width: 14px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: .3s;
-  border-radius: 50%;
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-</style>
-
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
 
