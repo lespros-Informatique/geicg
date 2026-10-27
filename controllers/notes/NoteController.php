@@ -322,8 +322,8 @@ class NoteController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission('ENTER_NOTES');
-        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
-        $compositionCode = trim($_GET['composition_code'] ?? ($_POST['composition_code'] ?? ''));
+        $classeCode = trim($_POST['classe_code'] ?? ($_GET['classe_code'] ?? ''));
+        $compositionCode = trim($_POST['composition_code'] ?? ($_GET['composition_code'] ?? ''));
         $anneeCode = $this->getActiveAnneeCode();
 
         if (empty($classeCode)) {
@@ -351,7 +351,7 @@ class NoteController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission('ENTER_NOTES');
-        $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $classeCode = trim($_POST['classe_code'] ?? ($_GET['classe_code'] ?? ''));
         $anneeCode = $this->getActiveAnneeCode();
 
         if (empty($classeCode)) {
@@ -509,13 +509,13 @@ class NoteController extends BaseController
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
 
-        $selectedClasseCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
-        $selectedMatiereCode = trim($_GET['matiere_code'] ?? ($_POST['matiere_code'] ?? ''));
-        $selectedSemestreCode = trim($_GET['semestre_code'] ?? ($_POST['semestre_code'] ?? ''));
-        $selectedTypeEval = trim($_GET['type_evaluation_code'] ?? ($_POST['type_evaluation_code'] ?? ''));
-        $selectedCompositionCode = trim($_GET['composition_code'] ?? ($_POST['composition_code'] ?? ''));
-        $selectedLibelleEval = trim($_GET['libelle_eval'] ?? ($_POST['libelle_eval'] ?? ''));
-        $selectedCoefEval = trim($_GET['coefficient'] ?? ($_POST['coefficient'] ?? ''));
+        $selectedClasseCode = trim($_POST['classe_code'] ?? ($_GET['classe_code'] ?? ''));
+        $selectedMatiereCode = trim($_POST['matiere_code'] ?? ($_GET['matiere_code'] ?? ''));
+        $selectedSemestreCode = trim($_POST['semestre_code'] ?? ($_GET['semestre_code'] ?? ''));
+        $selectedTypeEval = trim($_POST['type_evaluation_code'] ?? ($_GET['type_evaluation_code'] ?? ''));
+        $selectedCompositionCode = trim($_POST['composition_code'] ?? ($_GET['composition_code'] ?? ''));
+        $selectedLibelleEval = trim($_POST['libelle_eval'] ?? ($_GET['libelle_eval'] ?? ''));
+        $selectedCoefEval = trim($_POST['coefficient'] ?? ($_GET['coefficient'] ?? ''));
 
         if (empty($selectedClasseCode) || empty($selectedMatiereCode) || empty($selectedSemestreCode)) {
             echo '<div style="padding: 24px; text-align: center; color: #64748B; background: #F8FAFC; border-radius: 12px; border: 1px dashed #CBD5E1; margin: 20px 0;">'

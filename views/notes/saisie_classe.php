@@ -109,7 +109,7 @@ $typeEvals = [
 
       <!-- FORMULAIRE DE SÉLECTION INTELLIGENT & DYNAMIQUE -->
       <div class="card" style="background: #FFFFFF; border-radius: 14px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px;">
-        <form method="GET" action="<?= RACINE ?>note/saisieClasse" id="filter-notes-form">
+        <form method="POST" action="javascript:void(0);" id="filter-notes-form" onsubmit="return false;">
           
           <!-- LIGNE 1 : Année Académique & Type d'Évaluation -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; align-items: start;">
@@ -466,7 +466,7 @@ $(document).ready(function() {
 
     $.ajax({
       url: '<?= RACINE ?>note/getMatieresByClasseApi',
-      type: 'GET',
+      type: 'POST',
       data: {
         classe_code: classeCode,
         composition_code: compCode
@@ -555,7 +555,7 @@ $(document).ready(function() {
 
     $.ajax({
       url: '<?= RACINE ?>note/getGrilleAjax',
-      type: 'GET',
+      type: 'POST',
       data: {
         classe_code: classeCode,
         matiere_code: matiereCode,
@@ -575,20 +575,6 @@ $(document).ready(function() {
         }
 
         updateDynamicStats();
-
-        // Mettre à jour l'URL sans rechargement de page pour conserver l'état
-        if (window.history && window.history.replaceState) {
-          var params = new URLSearchParams();
-          if (typeEval) params.set('type_evaluation_code', typeEval);
-          if (compCode) params.set('composition_code', compCode);
-          if (semCode) params.set('semestre_code', semCode);
-          if (coefEval) params.set('coefficient', coefEval);
-          if (classeCode) params.set('classe_code', classeCode);
-          if (matiereCode) params.set('matiere_code', matiereCode);
-          if (libelleEval) params.set('libelle_eval', libelleEval);
-          var newUrl = '<?= RACINE ?>note/saisieClasse?' + params.toString();
-          window.history.replaceState({}, '', newUrl);
-        }
       },
       error: function(xhr, status, err) {
         $('#loading-matiere-grid').slideUp(150);
