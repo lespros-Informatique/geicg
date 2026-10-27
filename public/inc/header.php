@@ -47,6 +47,7 @@
     <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/sidebar.css?v=<?= @filemtime(__DIR__ . '/../assets/css/sidebar.css') ?: time() ?>">
 
     <script src="<?= RACINE ?>public/assets/js/jquery.min.js"></script>
     <script src="<?= RACINE ?>public/assets/js/geicg-app.js?v=<?= @filemtime(__DIR__ . '/../assets/js/geicg-app.js') ?: time() ?>"></script>
