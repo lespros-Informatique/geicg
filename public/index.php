@@ -479,6 +479,7 @@ $route->addRoute('/note/saisieClasse', [$noteController, 'saisieClasse']);
 $route->addRoute('/note/saveBatch', [$noteController, 'saveBatch']);
 $route->addRoute('/note/getStudentsByClasse', [$noteController, 'getStudentsByClasse']);
 $route->addRoute('/note/getMatieresByClasseApi', [$noteController, 'getMatieresByClasseApi']);
+$route->addRoute('/note/getGrilleAjax', [$noteController, 'getGrilleAjax']);
 $route->addRoute('/note/add', [$noteController, 'add']);
 $route->addRoute('/note/edit', [$noteController, 'edit']);
 $route->addRoute('/note/changer', [$noteController, 'changer']);

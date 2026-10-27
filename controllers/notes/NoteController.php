@@ -496,6 +496,108 @@ class NoteController extends BaseController
         ]);
     }
 
+    /**
+     * Endpoint AJAX pour charger dynamiquement la grille des notes et KPIs
+     * sans rechargement de page GET
+     */
+    public function getGrilleAjax()
+    {
+        $this->requireAuth();
+        $this->requirePermission('ENTER_NOTES');
+
+        $anneeCode = $this->getActiveAnneeCode();
+        $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+        $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
+
+        $selectedClasseCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
+        $selectedMatiereCode = trim($_GET['matiere_code'] ?? ($_POST['matiere_code'] ?? ''));
+        $selectedSemestreCode = trim($_GET['semestre_code'] ?? ($_POST['semestre_code'] ?? ''));
+        $selectedTypeEval = trim($_GET['type_evaluation_code'] ?? ($_POST['type_evaluation_code'] ?? ''));
+        $selectedCompositionCode = trim($_GET['composition_code'] ?? ($_POST['composition_code'] ?? ''));
+        $selectedLibelleEval = trim($_GET['libelle_eval'] ?? ($_POST['libelle_eval'] ?? ''));
+        $selectedCoefEval = trim($_GET['coefficient'] ?? ($_POST['coefficient'] ?? ''));
+
+        if (empty($selectedClasseCode) || empty($selectedMatiereCode) || empty($selectedSemestreCode)) {
+            echo '<div style="padding: 24px; text-align: center; color: #64748B; background: #F8FAFC; border-radius: 12px; border: 1px dashed #CBD5E1; margin: 20px 0;">'
+                . '<i data-lucide="info" style="width: 28px; height: 28px; color: #3B82F6; margin-bottom: 6px;"></i>'
+                . '<p style="margin: 0; font-weight: 700; font-size: 14px;">Veuillez renseigner le Semestre, la Classe et la Matière pour afficher la grille des notes.</p>'
+                . '</div>';
+            return;
+        }
+
+        $db = $this->model->getCon();
+        $compModel = new ModelComposition();
+
+        if (!empty($selectedCompositionCode)) {
+            $selectedCompItem = $compModel->getByCode($selectedCompositionCode);
+            if ($selectedCompItem) {
+                if (empty($selectedLibelleEval)) $selectedLibelleEval = $selectedCompItem['libelle_composition'];
+                if (empty($selectedCoefEval)) $selectedCoefEval = (string)$selectedCompItem['coefficient'];
+                if (empty($selectedSemestreCode)) $selectedSemestreCode = $selectedCompItem['semestre_code'];
+                if (empty($selectedTypeEval)) $selectedTypeEval = $selectedCompItem['type_composition'] ?? 'EXAMEN';
+            }
+        }
+
+        $classes = (new ModelClasse())->getAll();
+        $matieres = $this->getMatieresForClasse($selectedClasseCode, $anneeCode, $selectedCompositionCode);
+        $semestres = $db->query("SELECT * FROM semestres WHERE (annee_code = " . $db->quote($anneeCode) . " OR " . $db->quote($anneeCode) . " = '') ORDER BY id_semestre ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Déduire le coefficient si non spécifié
+        if (empty($selectedCoefEval) && !empty($selectedMatiereCode)) {
+            foreach ($matieres as $m) {
+                if ($m['code_matiere'] === $selectedMatiereCode && isset($m['coefficient'])) {
+                    $selectedCoefEval = (string)$m['coefficient'];
+                    break;
+                }
+            }
+        }
+
+        // Récupérer les étudiants de la classe
+        $stmt = $db->prepare("
+            SELECT i.id_inscription, i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
+            FROM inscriptions i
+            INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
+            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != 'annule' OR i.statut_inscription IS NULL)
+            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+        ");
+        $stmt->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
+        $etudiants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Récupérer les notes existantes
+        $existingNotes = [];
+        $sqlNotes = "
+            SELECT n.*, n.inscription_code 
+            FROM notes n
+            INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
+            WHERE i.classe_code = ? AND n.matiere_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+        ";
+        $paramsNotes = [$selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode];
+
+        if (!empty($selectedCompositionCode)) {
+            $sqlNotes .= " AND n.composition_code = ?";
+            $paramsNotes[] = $selectedCompositionCode;
+        } else if (!empty($selectedTypeEval)) {
+            $sqlNotes .= " AND n.type_evaluation_code = ?";
+            $paramsNotes[] = $selectedTypeEval;
+        }
+
+        $stmtNotes = $db->prepare($sqlNotes);
+        $stmtNotes->execute($paramsNotes);
+        $rows = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as $r) {
+            $existingNotes[$r['inscription_code']] = $r;
+        }
+
+        $typeEvals = [
+            'EXAMEN' => 'Examen / Épreuve',
+            'DEVOIR' => 'Devoir Surveillé',
+            'INTERROGATION' => 'Interrogation Écrite',
+            'AUTRE' => 'Autre Évaluation'
+        ];
+
+        include __DIR__ . '/../../views/notes/partials/grille_notes_table.php';
+    }
+
     public function saveBatch()
     {
         $this->requirePost(false);
