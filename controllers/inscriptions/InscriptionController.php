@@ -857,12 +857,11 @@ class InscriptionController extends BaseController
         $codeInscription = $data['code_inscription'];
         $data['statut_inscription'] = $data['statut_inscription'] ?? 'valide';
         $data['created_at_inscription'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
         
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             // Récupérer les informations de l'étudiant pour la fiche navette
             $stmtE = $db->prepare("SELECT nom_etudiant, prenom_etudiant, matricule_etudiant, telephone_etudiant FROM etudiants WHERE code_etudiant = ? OR matricule_etudiant = ? LIMIT 1");
@@ -954,8 +953,7 @@ class InscriptionController extends BaseController
             }
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE inscriptions")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->success('Inscription modifiée avec succès !');
         } else {
@@ -971,7 +969,7 @@ class InscriptionController extends BaseController
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
-            $allowed = ['en_attente', 'valide', 'solde', 'annule'];
+            $allowed = STATUTS::INSCRIPTIONS;
             if (!empty($statut) && in_array($statut, $allowed, true)) {
                 $success = $this->model->updateStatus($id, $statut, 'statut_inscription');
             } else {
@@ -990,48 +988,21 @@ class InscriptionController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_INSCRIPTIONS');
+        $this->requirePermission(PERMISSIONS::VIEW_INSCRIPTIONS);
         try {
             $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT ins.*, 
-                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant, e.sexe_etudiant, e.date_naissance_etudiant,
-                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
-                       a.libelle_annee
-                FROM inscriptions ins
-                LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
-                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN annees a ON a.code_annee = ins.annee_code
-                WHERE ins.id_inscription = ? OR ins.code_inscription = ?
-            ");
-            $stmt->execute([is_numeric($id) ? (int)$id : 0, $details]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$item) { 
+            $fullDetails = $this->model->getInscriptionFullDetails($id ?: $details);
+            if (!$fullDetails) { 
                 $this->renderNotFound("L'inscription demandée est introuvable.");
                 return;
             }
 
-            // Paiements pour cette inscription
-            $stmtP = $this->model->getCon()->prepare("
-                SELECT * FROM paiements 
-                WHERE inscription_code = ?
-                ORDER BY date_paiement DESC
-            ");
-            $stmtP->execute([$item['code_inscription']]);
-            $paiements = $stmtP->fetchAll(PDO::FETCH_ASSOC);
-
-            $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
-            $totalPaye = 0;
-            foreach ($paiements as $p) {
-                if (($p['statut_paiement'] ?? '') !== 'annule') {
-                    $totalPaye += (float)($p['montant_paiement'] ?? 0);
-                }
-            }
-            $solde = max(0, $scolarite - $totalPaye);
-
-            $encryptedId = $this->validator->crypter($id);
+            $item = $fullDetails['item'];
+            $paiements = $fullDetails['paiements'];
+            $scolarite = $fullDetails['scolarite'];
+            $totalPaye = $fullDetails['totalPaye'];
+            $solde = $fullDetails['soldeRestant'];
+            $encryptedId = $this->validator->crypter($item['id_inscription']);
         } catch (Exception $e) {
             error_log("InscriptionController::details error: " . $e->getMessage());
             $this->renderNotFound("L'inscription demandée est introuvable.");
@@ -1349,59 +1320,7 @@ class InscriptionController extends BaseController
         $filterPhoto = $_GET['filter_photo'] ?? 'all';
 
         try {
-            $db = $this->model->getCon();
-            $sql = "
-                SELECT 
-                    i.id_inscription,
-                    i.code_inscription,
-                    i.created_at_inscription,
-                    i.statut_inscription,
-                    i.photo_inscription,
-                    e.code_etudiant,
-                    e.matricule_etudiant,
-                    e.nom_etudiant,
-                    e.prenom_etudiant,
-                    e.photo_etudiant,
-                    e.telephone_etudiant,
-                    cl.code_classe,
-                    cl.libelle_classe,
-                    f.code_filiere,
-                    f.libelle_filiere,
-                    a.libelle_annee
-                FROM inscriptions i
-                JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-                JOIN classes cl ON cl.code_classe = i.classe_code
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN annees a ON a.code_annee = i.annee_code
-                WHERE 1=1
-            ";
-
-            $params = [];
-            if (!empty($anneeCode)) {
-                $sql .= " AND i.annee_code = ?";
-                $params[] = $anneeCode;
-            }
-            if (!empty($filiereCode)) {
-                $sql .= " AND cl.filiere_code = ?";
-                $params[] = $filiereCode;
-            }
-            if (!empty($classeCode)) {
-                $sql .= " AND i.classe_code = ?";
-                $params[] = $classeCode;
-            }
-
-            if ($filterPhoto === 'sans_photo') {
-                $sql .= " AND (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '')";
-            } elseif ($filterPhoto === 'avec_photo') {
-                $sql .= " AND i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != ''";
-            }
-
-            $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC";
-
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
+            $rows = $this->model->getInscriptionsSansPhoto($anneeCode, $filiereCode, $classeCode, $filterPhoto);
             $data = [];
             foreach ($rows as $r) {
                 $id = $r['id_inscription'];
@@ -1438,26 +1357,7 @@ class InscriptionController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-        $stmtInfo = $db->prepare("
-            SELECT 
-                i.id_inscription,
-                i.code_inscription,
-                i.etudiant_code,
-                i.annee_code,
-                i.photo_inscription,
-                e.matricule_etudiant,
-                e.code_etudiant,
-                e.photo_etudiant,
-                a.libelle_annee
-            FROM inscriptions i
-            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN annees a ON a.code_annee = i.annee_code
-            WHERE " . ($idInscription ? "i.id_inscription = ?" : "i.code_inscription = ?") . "
-            LIMIT 1
-        ");
-        $stmtInfo->execute([$idInscription ?: $codeInscription]);
-        $inscInfo = $stmtInfo->fetch(PDO::FETCH_ASSOC);
+        $inscInfo = $this->model->getInscriptionForPhotoUpload($idInscription ?: $codeInscription);
 
         if (!$inscInfo) {
             $this->error("Inscription introuvable.");
@@ -1535,18 +1435,9 @@ class InscriptionController extends BaseController
         }
 
         if ($relativePath) {
-            // Mettre à jour l'inscription
-            $stmt = $db->prepare("UPDATE inscriptions SET photo_inscription = ?, updated_at_inscription = NOW() WHERE id_inscription = ?");
-            $ok = $stmt->execute([$relativePath, $inscInfo['id_inscription']]);
-
-            // Mettre à jour et enregistrer systématiquement le lien de la photo dans la table etudiants (champ photo_etudiant)
             $codeEtu = !empty($inscInfo['code_etudiant']) ? $inscInfo['code_etudiant'] : ($inscInfo['etudiant_code'] ?? '');
             $matEtu = !empty($inscInfo['matricule_etudiant']) ? $inscInfo['matricule_etudiant'] : '';
-
-            if (!empty($codeEtu) || !empty($matEtu)) {
-                $db->prepare("UPDATE etudiants SET photo_etudiant = ?, updated_at_etudiant = NOW() WHERE code_etudiant = ? OR (matricule_etudiant = ? AND matricule_etudiant != '') OR code_etudiant = ?")
-                   ->execute([$relativePath, $codeEtu, $matEtu, $codeEtu]);
-            }
+            $ok = $this->model->updatePhoto((int)$inscInfo['id_inscription'], $relativePath, $codeEtu, $matEtu);
 
             if ($ok) {
                 $this->success("La photo d'inscription a été enregistrée avec succès !", [

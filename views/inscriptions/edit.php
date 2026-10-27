@@ -16,19 +16,8 @@ $users = (new ModelUser())->getAll();
 $enseignants = (new ModelEnseignant())->getAll();
 $annees = (new ModelAnnee())->getAll();
 
-if (!isset($globalEtablissementLogo)) {
-    try {
-        $dbConnLogo = (new Database())->getCon();
-        $stmtLogo = $dbConnLogo->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
-        $etabRowLogo = $stmtLogo ? $stmtLogo->fetch(PDO::FETCH_ASSOC) : null;
-        $rawLogo = $etabRowLogo['logo_etablissement'] ?? '';
-        $globalEtablissementLogo = (!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : '';
-        $globalEtablissementNom = $etabRowLogo['libelle_etablissement'] ?? 'GEICG';
-    } catch (Exception $e) {
-        $globalEtablissementLogo = '';
-        $globalEtablissementNom = 'GEICG';
-    }
-}
+$globalEtablissementLogo = $globalEtablissementLogo ?? getEtablissementLogoUrl();
+$globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libelle_etablissement'] ?? 'GEICG');
 ?>
 <style>
 @media print {

@@ -213,7 +213,7 @@ abstract class BaseController
 
     protected function requireAuth(): void
     {
-        if (!isset($_SESSION[USERS_AUTH]['id_user']) && !isset($_SESSION[USERS_AUTH]['code_user'])) {
+        if (!Auth::check()) {
             if ($this->isAjax()) {
                 $this->json(['status' => 0, 'message' => 'Authentification requise pour cette opération'], 401);
             } else {
@@ -225,7 +225,7 @@ abstract class BaseController
 
     protected function requireGuest(): void
     {
-        if (isset($_SESSION[USERS_AUTH]['id_user']) || isset($_SESSION[USERS_AUTH]['code_user'])) {
+        if (Auth::check()) {
             if ($this->isAjax()) {
                 $this->json(['status' => 0, 'message' => 'Vous êtes déjà connecté.'], 200);
             } else {
@@ -457,9 +457,19 @@ abstract class BaseController
         $data['useSlugNiveau'] = !empty($etabCfg['use_slug_niveau']);
 
         $data['isSuperAdmin'] = $this->isSuperAdmin();
-        $data['currentUserName'] = $data['currentUserName'] ?? ($_SESSION[USERS_AUTH]['nom'] ?? ($_SESSION[USERS_AUTH]['nom_user'] ?? 'Utilisateur'));
-        $data['currentUserEmail'] = $data['currentUserEmail'] ?? ($_SESSION[USERS_AUTH]['email'] ?? ($_SESSION[USERS_AUTH]['email_user'] ?? ''));
-        $data['currentUserRole'] = $_SESSION[USERS_AUTH]['role_code'] ?? 'ROLE_USER';
+        $data['currentUserName'] = $data['currentUserName'] ?? (Auth::user('nom_user') ?? (Auth::user('nom') ?? 'Utilisateur'));
+        $data['currentUserEmail'] = $data['currentUserEmail'] ?? (Auth::user('email_user') ?? (Auth::user('email') ?? ''));
+        $data['currentUserRole'] = Auth::role() ?? 'ROLE_USER';
+
+        $rawLogo = $etabCfg['logo_etablissement'] ?? '';
+        $etabNom = $etabCfg['libelle_etablissement'] ?? ($etabCfg['nom_etablissement'] ?? 'GEICG');
+        $resolvedLogo = getEtablissementLogoUrl($rawLogo);
+
+        $data['globalEtablissementLogo'] = $data['globalEtablissementLogo'] ?? $resolvedLogo;
+        $data['globalEtablissementNom'] = $data['globalEtablissementNom'] ?? $etabNom;
+        $data['loginLogo'] = $data['loginLogo'] ?? $rawLogo;
+        $data['logoSrc'] = $data['logoSrc'] ?? $resolvedLogo;
+        $data['etabLogoUrl'] = $data['etabLogoUrl'] ?? $resolvedLogo;
 
         if (!file_exists($path)) {
             $candidate = __DIR__ . '/../' . ltrim(str_replace('../', '', $path), '/\\');
@@ -605,19 +615,7 @@ abstract class BaseController
      */
     protected function hasPermission(string|array $permissionCode): bool
     {
-        $perms = $this->getUserPermissions();
-        if (in_array('*', $perms, true)) {
-            return true;
-        }
-        if (is_array($permissionCode)) {
-            foreach ($permissionCode as $p) {
-                if (in_array($p, $perms, true)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        return in_array($permissionCode, $perms, true);
+        return Auth::can($permissionCode);
     }
 
     /**

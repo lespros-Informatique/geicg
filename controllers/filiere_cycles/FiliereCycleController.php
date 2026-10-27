@@ -59,20 +59,17 @@ class FiliereCycleController extends BaseController
 
         // Auto-déduction du type de filière depuis le catalogue des filières si non renseigné
         if ((empty($data['type_filiere']) || $data['type_filiere'] === 'AUTO') && !empty($data['filiere_code'])) {
-            $stmtF = $this->model->getCon()->prepare("SELECT type_filiere FROM filieres WHERE code_filiere = ? LIMIT 1");
-            $stmtF->execute([$data['filiere_code']]);
-            $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
-            $data['type_filiere'] = $fRow['type_filiere'] ?? null;
+            $data['type_filiere'] = $this->model->getTypeFiliereByFiliereCode($data['filiere_code']);
         }
 
         $data['statut_filiere_cycle'] = $data['statut_filiere_cycle'] ?? 'actif';
         $data['created_at_filiere_cycle'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE filiere_cycles")->fetchAll(PDO::FETCH_COLUMN);
+        $cols = $this->model->getTableColumns();
 
         if (in_array('user_code', $cols) && !empty($userCode)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
 
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         unset($filteredData['id_filiere_cycle']);
 
         if ($this->model->create($filteredData)) {
@@ -108,14 +105,11 @@ class FiliereCycleController extends BaseController
 
         // Auto-déduction du type de filière depuis le catalogue des filières si non renseigné
         if ((empty($data['type_filiere']) || $data['type_filiere'] === 'AUTO') && !empty($data['filiere_code'])) {
-            $stmtF = $this->model->getCon()->prepare("SELECT type_filiere FROM filieres WHERE code_filiere = ? LIMIT 1");
-            $stmtF->execute([$data['filiere_code']]);
-            $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
-            $data['type_filiere'] = $fRow['type_filiere'] ?? null;
+            $data['type_filiere'] = $this->model->getTypeFiliereByFiliereCode($data['filiere_code']);
         }
 
-        $userCode = $this->getCurrentUserCode();
-        $cols = $this->model->getCon()->query("DESCRIBE filiere_cycles")->fetchAll(PDO::FETCH_COLUMN);
+        $userCode = Auth::code() ?? '';
+        $cols = $this->model->getTableColumns();
         if (in_array('etablissement_code', $cols) && empty($data['etablissement_code'])) {
             $existingItem = $this->model->getById($id);
             $data['etablissement_code'] = $existingItem['etablissement_code'] ?? $this->getActiveEtablissementCode();
@@ -123,7 +117,7 @@ class FiliereCycleController extends BaseController
         if (in_array('user_code', $cols) && !empty($userCode)) $data['user_code'] = $userCode;
         $data['updated_at_filiere_cycle'] = date('Y-m-d H:i:s');
 
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->success('Assignation Parcours Pivot modifiée avec succès!', RACINE . 'filiere_cycle/list');
         } else {
@@ -207,13 +201,26 @@ class FiliereCycleController extends BaseController
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'filiere_cycle/list'); exit();
         }
-        $this->loadView('../views/filiere_cycles/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $filieresList = $this->model->getActiveFilieres();
+        $cyclesList = $this->model->getActiveCycles();
+        $this->loadView('../views/filiere_cycles/edit.php', [
+            'item' => $item,
+            'encryptedId' => $encryptedId,
+            'filieresList' => $filieresList,
+            'cyclesList' => $cyclesList
+        ]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/filiere_cycles/edit.php', ['item' => []]);
+        $filieresList = $this->model->getActiveFilieres();
+        $cyclesList = $this->model->getActiveCycles();
+        $this->loadView('../views/filiere_cycles/edit.php', [
+            'item' => [],
+            'filieresList' => $filieresList,
+            'cyclesList' => $cyclesList
+        ]);
     }
 
     /**

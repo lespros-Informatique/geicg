@@ -26,4 +26,15 @@ class ModelPermission extends BaseModel
             return [];
         }
     }
+
+    public function getDistinctModules(): array
+    {
+        try {
+            $sql = "SELECT DISTINCT module_permission FROM " . TABLES::PERMISSIONS . " WHERE module_permission IS NOT NULL AND module_permission != '' ORDER BY module_permission ASC";
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            error_log('[ModelPermission::getDistinctModules] ' . $e->getMessage());
+            return [];
+        }
+    }
 }

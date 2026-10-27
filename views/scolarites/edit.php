@@ -1,42 +1,11 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$dbScol = (new Database())->getCon();
-$annees = (new ModelAnnee())->getAll();
-
-$currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
-
-$cycles = (new ModelCycle())->getAll();
-$filieres = (new ModelFiliere())->getAll();
-$niveaux = (new ModelNiveau())->getAll();
-
-// En mode édition, s'assurer que les choix de la fiche existante sont inclus
-if (!empty($item['filiere_code'])) {
-    $hasFil = false;
-    foreach ($filieres as $f) {
-        if ($f['code_filiere'] === $item['filiere_code']) { $hasFil = true; break; }
-    }
-    if (!$hasFil) {
-        $extraFil = (new ModelFiliere())->getByCode($item['filiere_code']);
-        if ($extraFil) $filieres[] = $extraFil;
-    }
-}
-if (!empty($item['niveau_code'])) {
-    $hasNiv = false;
-    foreach ($niveaux as $n) {
-        if ($n['code_niveau'] === $item['niveau_code']) { $hasNiv = true; break; }
-    }
-    if (!$hasNiv) {
-        $extraNiv = (new ModelNiveau())->getByCode($item['niveau_code']);
-        if ($extraNiv) $niveaux[] = $extraNiv;
-    }
-}
-
-$filiereCyclesMap = $dbScol->query("
-    SELECT fc.filiere_code, fc.cycle_code, fc.niveau_code, fc.type_filiere, f.type_filiere as f_type 
-    FROM filiere_cycles fc
-    LEFT JOIN filieres f ON f.code_filiere = fc.filiere_code
-    WHERE (fc.statut_filiere_cycle = 'actif' OR fc.statut_filiere_cycle IS NULL)
-")->fetchAll(PDO::FETCH_ASSOC);
+$annees = $annees ?? [];
+$currentAnneeCode = $item['annee_code'] ?? Session::get('annee_active_code', '');
+$cycles = $cycles ?? [];
+$filieres = $filieres ?? [];
+$niveaux = $niveaux ?? [];
+$filiereCyclesMap = $filiereCyclesMap ?? [];
 
 $cycleToNiveaux = [];
 $filiereToCycles = [];

@@ -142,27 +142,7 @@ if (!function_exists('generatePicqerBarcodeHtml')) {
 }
 
 // Logo (dynamique depuis la base ou fallback logo_eicg.jpg)
-$logoSrc = '';
-try {
-    $dbEtab = (new Database())->getCon();
-    $stmtEtab = $dbEtab->query("SELECT logo_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
-    $rawEtabLogo = $stmtEtab->fetchColumn();
-    if (!empty($rawEtabLogo)) {
-        $cleanPath = ltrim($rawEtabLogo, '/');
-        if (file_exists(__DIR__ . '/../../' . $cleanPath)) {
-            $logoSrc = RACINE . $cleanPath;
-        }
-    }
-} catch (Exception $e) {
-    // continue
-}
-if (empty($logoSrc)) {
-    if (file_exists(__DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg')) {
-        $logoSrc = RACINE . 'public/assets/images/logo/logo_eicg.jpg';
-    } elseif (file_exists(__DIR__ . '/../../public/uploads/logos/logo_1787358264.jpg')) {
-        $logoSrc = RACINE . 'public/uploads/logos/logo_1787358264.jpg';
-    }
-}
+$logoSrc = $logoSrc ?? getEtablissementLogoUrl();
 ?>
 <style>
 @media print {

@@ -10,25 +10,15 @@ class UserController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_USERS');
+        $this->requirePermission(PERMISSIONS::VIEW_USERS);
         $this->loadView('../views/users/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_USERS');
-        $sql = "SELECT u.*, 
-                       GROUP_CONCAT(DISTINCT r.libelle_role ORDER BY r.id SEPARATOR '||') as roles_libelles,
-                       GROUP_CONCAT(DISTINCT r.code_role ORDER BY r.id SEPARATOR ',') as roles_codes,
-                       f.libelle_fonction
-                FROM users u
-                LEFT JOIN user_roles ur ON ur.user_code = u.code_user
-                LEFT JOIN roles r ON r.code_role = ur.role_code
-                LEFT JOIN fonctions f ON f.code_fonction = u.fonction_code
-                GROUP BY u.id_user
-                ORDER BY u.id_user DESC";
-        $users = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $this->requirePermission(PERMISSIONS::VIEW_USERS);
+        $users = $this->model->getUsersWithRolesAndFonctions();
 
         $data = [];
         foreach ($users as $u) {
@@ -59,7 +49,7 @@ class UserController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_USERS');
+        $this->requirePermission(PERMISSIONS::MANAGE_USERS);
 
         $nom = trim($_POST['nom'] ?? '');
         $prenom = trim($_POST['prenom'] ?? '');
@@ -72,11 +62,7 @@ class UserController extends BaseController
         }
         $postedRoles = array_values(array_unique(array_filter(array_map('trim', $postedRoles))));
         if (empty($postedRoles)) {
-            $stmtDefRole = $this->model->getCon()->query("SELECT code_role FROM roles WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
-            $defRoleCode = $stmtDefRole ? $stmtDefRole->fetchColumn() : '';
-            if ($defRoleCode) {
-                $postedRoles = [$defRoleCode];
-            }
+            $postedRoles = [$this->model->getDefaultRoleCode()];
         }
 
         $fonctionCode = $_POST['fonction_code'] ?? null;
@@ -87,25 +73,17 @@ class UserController extends BaseController
             return;
         }
 
-        if (!empty($email)) {
-            $stmtCheckEmail = $this->model->getCon()->prepare("SELECT id_user FROM users WHERE email_user = ?");
-            $stmtCheckEmail->execute([$email]);
-            if ($stmtCheckEmail->fetch()) {
-                $this->error('Cette adresse email est déjà attribuée à un compte !');
-                return;
-            }
+        if (!empty($email) && $this->model->existsEmail($email)) {
+            $this->error('Cette adresse email est déjà attribuée à un compte !');
+            return;
         }
 
-        if (!empty($telephone)) {
-            $stmtCheckTel = $this->model->getCon()->prepare("SELECT id_user FROM users WHERE telephone_user = ?");
-            $stmtCheckTel->execute([$telephone]);
-            if ($stmtCheckTel->fetch()) {
-                $this->error('Ce numéro de téléphone est déjà attribué à un compte !');
-                return;
-            }
+        if (!empty($telephone) && $this->model->existsTelephone($telephone)) {
+            $this->error('Ce numéro de téléphone est déjà attribué à un compte !');
+            return;
         }
 
-        $code_user = $this->validator->generateCode('users', 'code_user', 'USR-', 8);
+        $code_user = $this->validator->generateCode(TABLES::USERS, 'code_user', 'USR-', 8);
         $password = password_hash($rawPassword, PASSWORD_DEFAULT);
         $etabCode = $this->getActiveEtablissementCode();
 
@@ -119,11 +97,13 @@ class UserController extends BaseController
             'password_user' => $password,
             'fonction_code' => $fonctionCode,
             'etablissement_code' => $etabCode,
-            'statut_user' => 'actif',
+            'statut_user' => STATUTS::ACTIF,
             'created_at_user' => date('Y-m-d H:i:s')
         ];
 
-        if ($this->model->create($data)) {
+        $filteredData = $this->model->filterData($data);
+
+        if ($this->model->create($filteredData)) {
             $rolePerms = $_POST['role_perms'] ?? [];
             $rolesData = [];
             foreach ($postedRoles as $r) {
@@ -143,18 +123,10 @@ class UserController extends BaseController
                 $this->model->saveUserAnneeAcces($code_user, $_POST['annee_acces']);
             }
 
-            // Envoi automatique de l'e-mail de bienvenue avec les identifiants d'accès si une adresse email est renseignée
+            // Envoi automatique de l'e-mail de bienvenue si email présent
             if (!empty($email)) {
                 $nomComplet = trim($nom . ' ' . $prenom);
-                $libelleFonction = 'Collaborateur / Utilisateur';
-                if (!empty($fonctionCode)) {
-                    $stmtF = $this->model->getCon()->prepare("SELECT libelle_fonction FROM fonctions WHERE code_fonction = ? LIMIT 1");
-                    $stmtF->execute([$fonctionCode]);
-                    $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
-                    if ($fRow && !empty($fRow['libelle_fonction'])) {
-                        $libelleFonction = $fRow['libelle_fonction'];
-                    }
-                }
+                $libelleFonction = (!empty($fonctionCode) ? $this->model->getFonctionLibelle($fonctionCode) : null) ?: 'Collaborateur / Utilisateur';
 
                 MailerService::sendTemplate(
                     $email,
@@ -189,7 +161,7 @@ class UserController extends BaseController
 
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_USERS');
+        $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         $id = (int)$this->post('id_user');
         if (!$id) { $this->error('Identifiant invalide', RACINE . 'user/list'); return; }
 
@@ -209,29 +181,21 @@ class UserController extends BaseController
         $postedRoles = array_values(array_unique(array_filter(array_map('trim', $postedRoles))));
 
         $fonctionCode = $_POST['fonction_code'] ?? null;
-        $statut = ($_POST['actif'] ?? '') === '0' || ($_POST['actif'] ?? '') === 'inactif' ? 'inactif' : 'actif';
+        $statut = ($_POST['actif'] ?? '') === '0' || ($_POST['actif'] ?? '') === 'inactif' ? STATUTS::INACTIF : STATUTS::ACTIF;
 
         if (empty($nom)) {
             $this->error('Le nom est obligatoire !');
             return;
         }
 
-        if (!empty($email)) {
-            $stmtCheck = $this->model->getCon()->prepare("SELECT id_user FROM users WHERE email_user = ? AND id_user != ?");
-            $stmtCheck->execute([$email, $id]);
-            if ($stmtCheck->fetch()) {
-                $this->error('Cette adresse email est déjà utilisée par un autre compte.');
-                return;
-            }
+        if (!empty($email) && $this->model->existsEmail($email, $id)) {
+            $this->error('Cette adresse email est déjà utilisée par un autre compte.');
+            return;
         }
 
-        if (!empty($telephone)) {
-            $stmtCheck = $this->model->getCon()->prepare("SELECT id_user FROM users WHERE telephone_user = ? AND id_user != ?");
-            $stmtCheck->execute([$telephone, $id]);
-            if ($stmtCheck->fetch()) {
-                $this->error('Ce numéro de téléphone est déjà utilisé par un autre compte.');
-                return;
-            }
+        if (!empty($telephone) && $this->model->existsTelephone($telephone, $id)) {
+            $this->error('Ce numéro de téléphone est déjà utilisé par un autre compte.');
+            return;
         }
 
         $data = [
@@ -250,7 +214,9 @@ class UserController extends BaseController
             $data['password_user'] = password_hash(trim($_POST['password']), PASSWORD_DEFAULT);
         }
 
-        if ($this->model->update($data, $id)) {
+        $filteredData = $this->model->filterData($data);
+
+        if ($this->model->update($filteredData, $id)) {
             if (!empty($postedRoles)) {
                 $rolePerms = $_POST['role_perms'] ?? [];
                 $rolesData = [];
@@ -380,8 +346,7 @@ class UserController extends BaseController
     public function profil()
     {
         $this->requireAuth();
-        $auth = $_SESSION[USERS_AUTH] ?? null;
-        $userId = $auth['id_user'] ?? 0;
+        $userId = Auth::id() ?: 0;
         $editId = $this->validator->crypter($userId);
         $userProfile = $this->model->getById((int)$userId);
         $userRoles = $this->model->getUserRoles($userProfile['code_user'] ?? '');
@@ -410,33 +375,19 @@ class UserController extends BaseController
             $login = trim($this->post('login'));
             $password = $this->post('password');
 
-            // Recherche dans la table USERS (par email, téléphone ou matricule/code)
-            $user = $this->validator->getByElement('users', 'telephone_user', $login);
-            if (!$user) {
-                $user = $this->validator->getByElement('users', 'email_user', $login);
-            }
-            if (!$user) {
-                $user = $this->validator->getByElement('users', 'matricule_user', $login);
-            }
-            if (!$user) {
-                $user = $this->validator->getByElement('users', 'code_user', $login);
-            }
+            // Recherche utilisateur via ModelUser
+            $user = $this->model->findUserByLogin($login);
 
-            if (isset($user) && !empty($user) && password_verify($password, $user['password_user'] ?? '')) {
-                if ($user['statut_user'] === 'actif') {
+            if ($user && password_verify($password, $user['password_user'] ?? '')) {
+                if ($user['statut_user'] === STATUTS::ACTIF) {
                     $userRoles = $this->model->getUserRoles($user['code_user']);
-                    $roleCodes = !empty($userRoles) ? array_column($userRoles, 'role_code') : ['ROLE_USER'];
-                    $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
-                    $roleCode = !empty($roleCodes) ? $roleCodes[0] : 'ROLE_USER';
+                    $roleCodes = !empty($userRoles) ? array_column($userRoles, 'role_code') : [ROLES::USER];
+                    $roleCode = !empty($roleCodes) ? $roleCodes[0] : ROLES::USER;
 
-                    // Vérifier si cet utilisateur a une fiche enseignant active
-                    $stmtEns = $this->model->getCon()->prepare("
-                        SELECT * FROM enseignants WHERE code_enseignant = ? AND statut_enseignant = 'actif' LIMIT 1
-                    ");
-                    $stmtEns->execute([$user['code_user']]);
-                    $enseignantProfile = $stmtEns->fetch(PDO::FETCH_ASSOC);
+                    // Profil enseignant actif éventuel
+                    $enseignantProfile = $this->model->getEnseignantProfile($user['code_user']);
 
-                    // Permissions cumulées
+                    // Permissions CRUD cumulées
                     $createPerm = 0; $editPerm = 0; $showPerm = 0; $deletePerm = 0;
                     if (!empty($userRoles)) {
                         foreach ($userRoles as $ur) {
@@ -449,16 +400,8 @@ class UserController extends BaseController
                         $createPerm = 1; $editPerm = 1; $showPerm = 1; $deletePerm = 0;
                     }
 
-                    // Récupérer toutes les permissions métier de l'ensemble des rôles
-                    $inClause = implode(',', array_fill(0, count($roleCodes), '?'));
-                    $stmtPerms = $this->model->getCon()->prepare("
-                        SELECT DISTINCT rp.permission_code 
-                        FROM role_permissions rp
-                        JOIN permissions p ON rp.permission_code = p.code_permission
-                        WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
-                    ");
-                    $stmtPerms->execute($roleCodes);
-                    $allPermissions = $stmtPerms->fetchAll(PDO::FETCH_COLUMN) ?: [];
+                    // Récupérer toutes les permissions métier des rôles
+                    $allPermissions = $this->model->getPermissionsByRoles($roleCodes);
 
                     $sessionData = [
                         'id_user' => $user['id_user'],
@@ -470,7 +413,7 @@ class UserController extends BaseController
                         'role_code' => $roleCode,
                         'roles' => $roleCodes,
                         'roles_details' => $userRoles,
-                        'is_enseignant' => !empty($enseignantProfile) || in_array('ROLE_ENSEIGNANT', $roleCodes, true),
+                        'is_enseignant' => !empty($enseignantProfile) || in_array(ROLES::ENSEIGNANT, $roleCodes, true),
                         'code_enseignant' => $enseignantProfile['code_enseignant'] ?? $user['code_user'],
                         'grade_enseignant' => $enseignantProfile['grade_enseignant'] ?? null,
                         'type_contrat' => $enseignantProfile['type_contrat'] ?? null,
@@ -482,34 +425,17 @@ class UserController extends BaseController
                         ]
                     ];
 
-                    Validator::saveSesion(USERS_AUTH, $sessionData);
-                    $_SESSION['permissions'] = $allPermissions;
-                    $_SESSION['roles'] = $roleCodes;
+                    Auth::login($sessionData, $roleCodes, $allPermissions);
+                    Session::set('roles', $roleCodes);
 
-                    // Initialisation de l'année académique active (avec fallback si aucune marquée active)
-                    try {
-                        $db = $this->model->getCon();
-                        $stmtAnnee = $db->query("
-                            SELECT code_annee, libelle_annee 
-                            FROM annees 
-                            WHERE statut_annee = 'actif' 
-                            ORDER BY id_annee DESC LIMIT 1
-                        ");
-                        $anneeActive = $stmtAnnee ? $stmtAnnee->fetch(PDO::FETCH_ASSOC) : null;
-                        if (!$anneeActive) {
-                            $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
-                            $anneeActive = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
-                        }
-                        if ($anneeActive) {
-                            $_SESSION['annee_active_code'] = $anneeActive['code_annee'];
-                            $_SESSION['annee_active_libelle'] = $anneeActive['libelle_annee'];
-                        } else {
-                            $_SESSION['annee_active_code'] = '';
-                            $_SESSION['annee_active_libelle'] = 'Aucune';
-                        }
-                    } catch (Exception $e) {
-                        $_SESSION['annee_active_code'] = '';
-                        $_SESSION['annee_active_libelle'] = 'Aucune année';
+                    // Année académique active
+                    $anneeActive = $this->model->getActiveAnneeAcademique();
+                    if ($anneeActive) {
+                        Session::set('annee_active_code', $anneeActive['code_annee']);
+                        Session::set('annee_active_libelle', $anneeActive['libelle_annee']);
+                    } else {
+                        Session::set('annee_active_code', '');
+                        Session::set('annee_active_libelle', 'Aucune');
                     }
 
                     $welcomeMsg = !empty($enseignantProfile) 
@@ -526,8 +452,6 @@ class UserController extends BaseController
 
             $this->error('Identifiant ou mot de passe incorrect.');
             return;
-
-            $this->error('Identifiants incorrects. Veuillez vérifier votre adresse email / téléphone et mot de passe.');
         } else {
             $this->error('Veuillez renseigner tous les champs !');
         }
@@ -535,13 +459,7 @@ class UserController extends BaseController
 
     public function decon()
     {
-        $this->unsetSession();
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            @session_destroy();
-        }
-        $_SESSION = [];
-
+        Auth::logout();
         header('Location: ' . RACINE . 'user/connexion');
         exit();
     }
@@ -557,7 +475,7 @@ class UserController extends BaseController
 
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $this->loadView('../views/users/editPassword.php', [
-                'user' => $_SESSION[USERS_AUTH] ?? []
+                'user' => Auth::user() ?: []
             ]);
             return;
         }
@@ -583,7 +501,7 @@ class UserController extends BaseController
             return;
         }
 
-        $userId = $_SESSION[USERS_AUTH]['id_user'] ?? 0;
+        $userId = Auth::id() ?: 0;
         $user = $this->model->getById((int)$userId);
 
         if (!$user) {

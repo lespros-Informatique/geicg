@@ -1,8 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-  $db = (new Database())->getCon();
-  $filieresList = $db->query("SELECT code_filiere, libelle_filiere FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC);
-  $cyclesList = $db->query("SELECT code_cycle, libelle_cycle FROM cycles WHERE statut_cycle = 'actif' ORDER BY libelle_cycle ASC")->fetchAll(PDO::FETCH_ASSOC);
+  $filieresList = $filieresList ?? [];
+  $cyclesList = $cyclesList ?? [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

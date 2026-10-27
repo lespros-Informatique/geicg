@@ -196,4 +196,368 @@ class ModelEtudiant extends BaseModel
             return [];
         }
     }
+
+    /**
+     * Récupère les dépendances pour les filtres de la liste des étudiants
+     */
+    public function getListFilterDependencies(): array
+    {
+        $db = $this->getCon();
+        try {
+            $annees = $db->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $niveaux = $db->query("SELECT * FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = 'actif' ORDER BY libelle_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $filieres = $db->query("SELECT * FROM " . TABLES::FILIERES . " WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $classes = $db->query("SELECT * FROM " . TABLES::CLASSES . " WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return [
+                'annees' => $annees,
+                'niveaux' => $niveaux,
+                'filieres' => $filieres,
+                'classes' => $classes
+            ];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getListFilterDependencies error: " . $e->getMessage());
+            return ['annees' => [], 'niveaux' => [], 'filieres' => [], 'classes' => []];
+        }
+    }
+
+    /**
+     * Récupère les données d'inscription et de classes pour le formulaire de changement de classe
+     */
+    public function getChangerClasseData(string $etudiantCode, string $anneeActive): array
+    {
+        $db = $this->getCon();
+        try {
+            $stmtIns = $db->prepare("
+                SELECT i.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau
+                FROM " . TABLES::INSCRIPTIONS . " i
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                WHERE i.etudiant_code = ? AND i.statut_inscription != 'annule'
+                ORDER BY (i.annee_code = ?) DESC, i.id_inscription DESC
+                LIMIT 1
+            ");
+            $stmtIns->execute([$etudiantCode, $anneeActive]);
+            $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $stmtCl = $db->query("
+                SELECT code_classe, libelle_classe, filiere_code, niveau_code, annee_code
+                FROM " . TABLES::CLASSES . " 
+                WHERE statut_classe = 'actif'
+                ORDER BY libelle_classe ASC
+            ");
+            $classes = $stmtCl ? $stmtCl->fetchAll(PDO::FETCH_ASSOC) : [];
+
+            $stmtAnn = $db->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC");
+            $annees = $stmtAnn ? $stmtAnn->fetchAll(PDO::FETCH_ASSOC) : [];
+
+            return [
+                'inscription' => $inscription,
+                'classes' => $classes ?: [],
+                'annees' => $annees ?: []
+            ];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getChangerClasseData error: " . $e->getMessage());
+            return ['inscription' => [], 'classes' => [], 'annees' => []];
+        }
+    }
+
+    /**
+     * Effectue le changement de classe, de régime et de scolarité pour une inscription
+     */
+    public function changerClasseInscription(string $codeInscription, string $codeEtudiant, string $nouvelleClasse, string $affectationEtat, string $anneeCode, ?float $montantScolarite = null): array
+    {
+        $db = $this->getCon();
+        try {
+            $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE code_classe = ? AND statut_classe = 'actif' LIMIT 1");
+            $stmtCl->execute([$nouvelleClasse]);
+            $classeRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
+
+            if (!$classeRow) {
+                return ['success' => false, 'message' => "La classe sélectionnée est introuvable ou inactive."];
+            }
+
+            $inscriptionRow = null;
+            if (!empty($codeInscription)) {
+                $stmtIns = $db->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+                $stmtIns->execute([$codeInscription]);
+                $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
+            }
+
+            if (!$inscriptionRow && !empty($codeEtudiant)) {
+                $stmtIns = $db->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ? AND statut_inscription != 'annule' ORDER BY (annee_code = ?) DESC, id_inscription DESC LIMIT 1");
+                $stmtIns->execute([$codeEtudiant, $anneeCode]);
+                $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
+            }
+
+            if (!$inscriptionRow) {
+                return ['success' => false, 'message' => "Aucun dossier d'inscription actif n'a été trouvé pour cet étudiant."];
+            }
+
+            if ($montantScolarite === null || $montantScolarite <= 0) {
+                $regimeScol = ($affectationEtat === 'oui') ? 'affecte' : 'non_affecte';
+                $stmtSco = $db->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND affectation_etat = ? AND statut_scolarite = 'actif' ORDER BY id_scolarite DESC LIMIT 1");
+                $stmtSco->execute([$classeRow['filiere_code'], $classeRow['niveau_code'], $anneeCode, $regimeScol]);
+                $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
+                if ($sco) {
+                    $montantScolarite = (float)$sco['montant_scolarite'];
+                } else {
+                    $montantScolarite = (float)($inscriptionRow['montant_scolarite_inscription'] ?? 0);
+                }
+            }
+
+            $stmtUpdate = $db->prepare("
+                UPDATE " . TABLES::INSCRIPTIONS . " 
+                SET classe_code = ?,
+                    affectation_etat = ?,
+                    montant_scolarite_inscription = ?,
+                    annee_code = COALESCE(NULLIF(?, ''), annee_code),
+                    updated_at_inscription = NOW()
+                WHERE id_inscription = ?
+            ");
+            $ok = $stmtUpdate->execute([
+                $nouvelleClasse,
+                $affectationEtat,
+                $montantScolarite,
+                $anneeCode,
+                $inscriptionRow['id_inscription']
+            ]);
+
+            if ($ok) {
+                return [
+                    'success' => true,
+                    'message' => "La classe et le régime de l'étudiant ont été modifiés avec succès vers " . $classeRow['libelle_classe'] . " !",
+                    'classe_libelle' => $classeRow['libelle_classe']
+                ];
+            }
+            return ['success' => false, 'message' => "Erreur lors de la mise à jour de la classe de l'étudiant."];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::changerClasseInscription error: " . $e->getMessage());
+            return ['success' => false, 'message' => "Erreur lors de la mise à jour de la classe de l'étudiant."];
+        }
+    }
+
+    /**
+     * Récupère l'ensemble complet des détails d'un étudiant (parent, inscription, paiements, absences, dossier)
+     */
+    public function getStudentFullDetails(string $etudiantCode): array
+    {
+        $db = $this->getCon();
+
+        // 1. Parent info
+        $parent = [];
+        try {
+            $stmtPar = $db->prepare("SELECT * FROM " . TABLES::PARENTS . " WHERE etudiant_code = ? LIMIT 1");
+            $stmtPar->execute([$etudiantCode]);
+            $parent = $stmtPar->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails parent: " . $e->getMessage());
+        }
+
+        // 2. Inscription active & Classe
+        $inscription = [];
+        try {
+            $stmtIns = $db->prepare("
+                SELECT ins.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                FROM " . TABLES::INSCRIPTIONS . " ins
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = ins.annee_code
+                WHERE ins.etudiant_code = ? AND ins.statut_inscription != 'annule'
+                ORDER BY ins.id_inscription DESC LIMIT 1
+            ");
+            $stmtIns->execute([$etudiantCode]);
+            $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails inscription: " . $e->getMessage());
+        }
+
+        // 2.bis Établissement
+        $etablissement = [];
+        try {
+            $etablissement = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails etablissement: " . $e->getMessage());
+        }
+
+        // 3. Paiements effectués
+        $paiements = [];
+        try {
+            $stmtPaiements = $db->prepare("
+                SELECT p.*, a.libelle_annee, ins.code_inscription
+                FROM " . TABLES::PAIEMENTS . " p
+                JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = p.inscription_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = p.annee_code
+                WHERE ins.etudiant_code = ?
+                ORDER BY p.date_paiement DESC
+            ");
+            $stmtPaiements->execute([$etudiantCode]);
+            $paiements = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails paiements: " . $e->getMessage());
+        }
+
+        // 4. Statistiques financières calculées dynamiquement
+        $scolariteTotale = (float)($inscription['montant_scolarite_inscription'] ?? 0);
+        $totalPaye = 0;
+        foreach ($paiements as $p) {
+            if (($p['statut_paiement'] ?? '') !== 'annule') {
+                $totalPaye += (float)($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0));
+            }
+        }
+        $soldeRestant = max(0, $scolariteTotale - $totalPaye);
+
+        // 5. Absences
+        $absences = [];
+        try {
+            $stmtAbs = $db->prepare("
+                SELECT abs.*, m.libelle_matiere
+                FROM absences abs
+                JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = abs.inscription_code
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = abs.matiere_code
+                WHERE ins.etudiant_code = ?
+                ORDER BY abs.date_absence DESC
+            ");
+            $stmtAbs->execute([$etudiantCode]);
+            $absences = $stmtAbs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails absences: " . $e->getMessage());
+        }
+
+        // 6. Dossier / Pièces physiques
+        $dossierPieces = [];
+        try {
+            $stmtDossier = $db->prepare("
+                SELECT pf.libelle_piece, pf.description_piece, COALESCE(de.statut_depot, 'en_attente') AS statut_depot, de.date_depot, de.observations, de.id_dossier_etudiant
+                FROM " . TABLES::PIECES_FOURNIR . " pf
+                LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.piece_code = pf.code_piece_fournir AND de.etudiant_code = ?
+                WHERE pf.statut_piece = 'actif'
+                ORDER BY pf.id_piece_fournir ASC
+            ");
+            $stmtDossier->execute([$etudiantCode]);
+            $dossierPieces = $stmtDossier->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails dossierPieces: " . $e->getMessage());
+        }
+
+        return [
+            'parent' => $parent,
+            'inscription' => $inscription,
+            'etablissement' => $etablissement,
+            'paiements' => $paiements,
+            'totalPaye' => $totalPaye,
+            'soldeRestant' => $soldeRestant,
+            'scolariteTotale' => $scolariteTotale,
+            'absences' => $absences,
+            'dossierPieces' => $dossierPieces
+        ];
+    }
+
+    /**
+     * Récupère les intitulés lisibles des filtres pour l'export PDF
+     */
+    public function getFiltresLabels(array $filters): array
+    {
+        $db = $this->getCon();
+        $filtresLabels = [
+            'filiere' => 'Toutes les filières',
+            'niveau' => 'Tous les niveaux',
+            'classe' => 'Toutes les classes',
+            'regime' => 'Tous les régimes'
+        ];
+
+        try {
+            if (!empty($filters['filiere_code']) && $filters['filiere_code'] !== 'ALL') {
+                $stmt = $db->prepare("SELECT libelle_filiere FROM " . TABLES::FILIERES . " WHERE code_filiere = ? LIMIT 1");
+                $stmt->execute([$filters['filiere_code']]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) $filtresLabels['filiere'] = $row['libelle_filiere'];
+            }
+
+            if (!empty($filters['niveau_code']) && $filters['niveau_code'] !== 'ALL') {
+                $stmt = $db->prepare("SELECT libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ? LIMIT 1");
+                $stmt->execute([$filters['niveau_code']]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) $filtresLabels['niveau'] = $row['libelle_niveau'];
+            }
+
+            if (!empty($filters['classe_code']) && $filters['classe_code'] !== 'ALL') {
+                $stmt = $db->prepare("
+                    SELECT c.*, f.libelle_filiere, n.libelle_niveau 
+                    FROM " . TABLES::CLASSES . " c 
+                    LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code 
+                    LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code 
+                    WHERE c.code_classe = ? LIMIT 1
+                ");
+                $stmt->execute([$filters['classe_code']]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) {
+                    $filtresLabels['classe'] = $row['libelle_classe'];
+                    if (empty($filters['filiere_code']) || $filters['filiere_code'] === 'ALL') {
+                        $filtresLabels['filiere'] = $row['libelle_filiere'] ?? '-';
+                    }
+                    if (empty($filters['niveau_code']) || $filters['niveau_code'] === 'ALL') {
+                        $filtresLabels['niveau'] = $row['libelle_niveau'] ?? '-';
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getFiltresLabels error: " . $e->getMessage());
+        }
+
+        return $filtresLabels;
+    }
+
+    /**
+     * Annule une inscription académique
+     */
+    public function annulerInscription(int $idInscription, string $codeInscription): array
+    {
+        $db = $this->getCon();
+        try {
+            $inscription = null;
+            if ($idInscription > 0) {
+                $stmt = $db->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE id_inscription = ? LIMIT 1");
+                $stmt->execute([$idInscription]);
+                $inscription = $stmt->fetch(PDO::FETCH_ASSOC);
+            } elseif (!empty($codeInscription)) {
+                $stmt = $db->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+                $stmt->execute([$codeInscription]);
+                $inscription = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+
+            if (!$inscription) {
+                return ['success' => false, 'message' => "Dossier d'inscription introuvable."];
+            }
+
+            if ($inscription['statut_inscription'] === 'annule') {
+                return ['success' => false, 'message' => "Cette inscription est déjà annulée."];
+            }
+
+            $stmtPay = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != 'annule'");
+            $stmtPay->execute([$inscription['code_inscription']]);
+            $nbPaiements = (int)$stmtPay->fetchColumn();
+
+            $stmtUp = $db->prepare("UPDATE " . TABLES::INSCRIPTIONS . " SET statut_inscription = 'annule', updated_at_inscription = NOW() WHERE id_inscription = ?");
+            $res = $stmtUp->execute([$inscription['id_inscription']]);
+
+            if ($res) {
+                $msg = "L'inscription a été annulée avec succès.";
+                if ($nbPaiements > 0) {
+                    $msg .= " Note : " . $nbPaiements . " paiement(s) étai(en)t rattaché(s) à ce dossier.";
+                }
+                return [
+                    'success' => true,
+                    'message' => $msg,
+                    'inscription' => $inscription,
+                    'nbPaiements' => $nbPaiements
+                ];
+            }
+            return ['success' => false, 'message' => "Erreur lors de l'annulation de l'inscription."];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::annulerInscription error: " . $e->getMessage());
+            return ['success' => false, 'message' => "Erreur lors de l'annulation de l'inscription."];
+        }
+    }
 }

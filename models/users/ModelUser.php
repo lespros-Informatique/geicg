@@ -199,4 +199,183 @@ class ModelUser extends BaseModel
             return false;
         }
     }
+
+    /**
+     * Récupère la liste complète des utilisateurs avec leurs rôles concaténés et libellé de fonction
+     */
+    public function getUsersWithRolesAndFonctions(): array
+    {
+        try {
+            $sql = "SELECT u.*, 
+                           GROUP_CONCAT(DISTINCT r.libelle_role ORDER BY r.id SEPARATOR '||') as roles_libelles,
+                           GROUP_CONCAT(DISTINCT r.code_role ORDER BY r.id SEPARATOR ',') as roles_codes,
+                           f.libelle_fonction
+                    FROM " . TABLES::USERS . " u
+                    LEFT JOIN " . TABLES::USER_ROLES . " ur ON ur.user_code = u.code_user
+                    LEFT JOIN " . TABLES::ROLES . " r ON r.code_role = ur.role_code
+                    LEFT JOIN " . TABLES::FONCTIONS . " f ON f.code_fonction = u.fonction_code
+                    GROUP BY u.id_user
+                    ORDER BY u.id_user DESC";
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelUser::getUsersWithRolesAndFonctions error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Vérifie si un e-mail est déjà attribué à un compte utilisateur
+     */
+    public function existsEmail(string $email, ?int $excludeId = null): bool
+    {
+        try {
+            $sql = "SELECT id_user FROM " . TABLES::USERS . " WHERE email_user = ?";
+            $params = [$email];
+            if ($excludeId !== null) {
+                $sql .= " AND id_user != ?";
+                $params[] = $excludeId;
+            }
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return (bool)$stmt->fetch();
+        } catch (Exception $e) {
+            error_log("ModelUser::existsEmail error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Vérifie si un numéro de téléphone est déjà attribué à un compte utilisateur
+     */
+    public function existsTelephone(string $telephone, ?int $excludeId = null): bool
+    {
+        try {
+            $sql = "SELECT id_user FROM " . TABLES::USERS . " WHERE telephone_user = ?";
+            $params = [$telephone];
+            if ($excludeId !== null) {
+                $sql .= " AND id_user != ?";
+                $params[] = $excludeId;
+            }
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return (bool)$stmt->fetch();
+        } catch (Exception $e) {
+            error_log("ModelUser::existsTelephone error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Récupère le code du rôle actif par défaut
+     */
+    public function getDefaultRoleCode(): string
+    {
+        try {
+            $stmt = $this->getCon()->query("SELECT code_role FROM " . TABLES::ROLES . " WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
+            return ($stmt && ($code = $stmt->fetchColumn())) ? $code : 'ROLE_USER';
+        } catch (Exception $e) {
+            error_log("ModelUser::getDefaultRoleCode error: " . $e->getMessage());
+            return 'ROLE_USER';
+        }
+    }
+
+    /**
+     * Récupère le libellé d'une fonction à partir de son code
+     */
+    public function getFonctionLibelle(string $fonctionCode): ?string
+    {
+        try {
+            $stmt = $this->getCon()->prepare("SELECT libelle_fonction FROM " . TABLES::FONCTIONS . " WHERE code_fonction = ? LIMIT 1");
+            $stmt->execute([$fonctionCode]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row['libelle_fonction'] ?? null;
+        } catch (Exception $e) {
+            error_log("ModelUser::getFonctionLibelle error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Récupère la fiche enseignant active liée à un utilisateur
+     */
+    public function getEnseignantProfile(string $userCode): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::ENSEIGNANTS . " WHERE code_enseignant = ? AND statut_enseignant = 'actif' LIMIT 1");
+            $stmt->execute([$userCode]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            error_log("ModelUser::getEnseignantProfile error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Récupère toutes les permissions uniques accordées à un ensemble de rôles
+     */
+    public function getPermissionsByRoles(array $roleCodes): array
+    {
+        if (empty($roleCodes)) {
+            return [];
+        }
+        try {
+            $inClause = implode(',', array_fill(0, count($roleCodes), '?'));
+            $sql = "SELECT DISTINCT rp.permission_code 
+                    FROM " . TABLES::ROLE_PERMISSIONS . " rp
+                    JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
+                    WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($roleCodes);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelUser::getPermissionsByRoles error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Récupère l'année académique active courante
+     */
+    public function getActiveAnneeAcademique(): ?array
+    {
+        try {
+            $stmt = $this->getCon()->query("
+                SELECT code_annee, libelle_annee 
+                FROM " . TABLES::ANNEES . " 
+                WHERE statut_annee = 'actif' 
+                ORDER BY id_annee DESC LIMIT 1
+            ");
+            $active = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+            if (!$active) {
+                $stmtFallback = $this->getCon()->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
+                $active = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
+            }
+            return $active ?: null;
+        } catch (Exception $e) {
+            error_log("ModelUser::getActiveAnneeAcademique error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Recherche un utilisateur par l'un de ses identifiants uniques (téléphone, e-mail, matricule, code)
+     */
+    public function findUserByLogin(string $login): ?array
+    {
+        try {
+            $sql = "SELECT * FROM " . TABLES::USERS . " 
+                    WHERE telephone_user = :login 
+                       OR email_user = :login 
+                       OR matricule_user = :login 
+                       OR code_user = :login 
+                    LIMIT 1";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([':login' => $login]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            error_log("ModelUser::findUserByLogin error: " . $e->getMessage());
+            return null;
+        }
+    }
 }
+

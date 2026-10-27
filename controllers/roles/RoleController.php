@@ -18,16 +18,7 @@ class RoleController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission('VIEW_ROLES');
-        $sql = "SELECT r.*,
-                       COUNT(DISTINCT u.code_user) as nb_users,
-                       COUNT(DISTINCT rp.permission_code) as nb_permissions
-                FROM roles r
-                LEFT JOIN user_roles ur ON ur.role_code = r.code_role
-                LEFT JOIN users u ON u.code_user = ur.user_code AND u.statut_user = 'actif'
-                LEFT JOIN role_permissions rp ON rp.role_code = r.code_role
-                GROUP BY r.id
-                ORDER BY r.id ASC";
-        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $items = $this->model->getRolesWithCounts();
 
         $data = [];
         foreach ($items as $i) {
@@ -54,7 +45,7 @@ class RoleController extends BaseController
         $module = trim($data['module'] ?? 'ADMINISTRATION');
         $groupe = trim($data['groupe'] ?? 'Direction');
         $description = trim($data['description'] ?? '');
-        $permissions = $data['permissions'] ?? [];
+        $permissions = isset($data['permissions']) && is_array($data['permissions']) ? $data['permissions'] : [];
 
         if (empty($libelle)) {
             $this->error('Le libellé du rôle est obligatoire.');
@@ -65,20 +56,20 @@ class RoleController extends BaseController
             $codeRole = 'ROLE_' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '_', $libelle));
         }
 
-        $stmtCheck = $this->model->getCon()->prepare("SELECT id FROM roles WHERE code_role = ?");
-        $stmtCheck->execute([$codeRole]);
-        if ($stmtCheck->fetch()) {
+        if ($this->model->existsCode($codeRole)) {
             $this->error('Ce code de rôle existe déjà.');
             return;
         }
 
-        $stmtIns = $this->model->getCon()->prepare("
-            INSERT INTO roles (code_role, libelle_role, module, groupe, description, statut_role)
-            VALUES (?, ?, ?, ?, ?, 'actif')
-        ");
-        if ($stmtIns->execute([$codeRole, $libelle, $module, $groupe, $description])) {
-            $permissions = isset($data['permissions']) && is_array($data['permissions']) ? $data['permissions'] : [];
-            $this->model->syncPermissions($codeRole, $permissions);
+        $rolePayload = [
+            'code_role' => $codeRole,
+            'libelle_role' => $libelle,
+            'module' => $module,
+            'groupe' => $groupe,
+            'description' => $description,
+            'statut_role' => 'actif'
+        ];
+        if ($this->model->createRole($rolePayload, $permissions)) {
             $this->success('Rôle créé avec succès !', RACINE . 'role/list');
         } else {
             $this->error('Erreur lors de la création du rôle.');
@@ -100,9 +91,9 @@ class RoleController extends BaseController
         unset($data['csrf_token']);
 
         $libelle = trim($data['libelle_role'] ?? '');
-        $module = trim($data['module'] ?? $role['module']);
-        $groupe = trim($data['groupe'] ?? $role['groupe']);
-        $description = trim($data['description'] ?? $role['description']);
+        $module = trim($data['module'] ?? ($role['module'] ?? 'ADMINISTRATION'));
+        $groupe = trim($data['groupe'] ?? ($role['groupe'] ?? 'Direction'));
+        $description = trim($data['description'] ?? ($role['description'] ?? ''));
         $statut = $data['statut_role'] ?? ($role['statut_role'] ?? 'actif');
         $permissions = isset($data['permissions']) && is_array($data['permissions']) ? $data['permissions'] : [];
 
@@ -111,13 +102,14 @@ class RoleController extends BaseController
             return;
         }
 
-        $stmtUp = $this->model->getCon()->prepare("
-            UPDATE roles 
-            SET libelle_role = ?, module = ?, groupe = ?, description = ?, statut_role = ?
-            WHERE id = ?
-        ");
-        if ($stmtUp->execute([$libelle, $module, $groupe, $description, $statut, $id])) {
-            $this->model->syncPermissions($role['code_role'], $permissions);
+        $rolePayload = [
+            'libelle_role' => $libelle,
+            'module' => $module,
+            'groupe' => $groupe,
+            'description' => $description,
+            'statut_role' => $statut
+        ];
+        if ($this->model->updateRole($id, $rolePayload, $permissions)) {
             $this->success('Rôle et permissions mis à jour avec succès !', RACINE . 'role/list');
         } else {
             $this->error('Erreur lors de la modification du rôle.');

@@ -1,24 +1,12 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$dbConn = (new Database())->getCon();
-$anneeCode = $anneeCode ?? ($_SESSION['annee_active_code'] ?? '');
-$anneeLibelle = $anneeLibelle ?? ($_SESSION['annee_active_libelle'] ?? $anneeCode);
-$niveaux = (new ModelNiveau())->getAll();
-$classes = (new ModelClasse())->getAll();
-$matieres = (new ModelMatiere())->getAll();
-$semestres = (new ModelSemestre())->getAll();
-
-$inscriptionsDetails = $dbConn->query("
-    SELECT i.code_inscription, i.classe_code,
-           CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) AS etudiant_nom,
-           e.matricule_etudiant,
-           cl.libelle_classe,
-           cl.niveau_code
-    FROM inscriptions i
-    LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-    LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-    ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC
-")->fetchAll(PDO::FETCH_ASSOC);
+$anneeCode = $anneeCode ?? Session::get('annee_active_code', '');
+$anneeLibelle = $anneeLibelle ?? Session::get('annee_active_libelle', $anneeCode);
+$niveaux = $niveaux ?? [];
+$classes = $classes ?? [];
+$matieres = $matieres ?? [];
+$semestres = $semestres ?? [];
+$inscriptionsDetails = $inscriptionsDetails ?? [];
 
 // Structurer les étudiants strictement par classe
 $studentsByClass = [];

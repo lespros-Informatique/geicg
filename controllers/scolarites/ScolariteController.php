@@ -10,37 +10,19 @@ class ScolariteController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $db = $this->model->getCon();
 
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            $aRow = (new ModelAnnee())->getByCode($getAnnee);
             if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+                Session::set('annee_active_code', $aRow['code_annee']);
+                Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
         $activeYear = $this->getActiveAnneeCode();
         $annees = $this->getAccessibleAnnees();
-
-        $stmtTot = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (annee_code = ? OR ? = '')");
-        $stmtTot->execute([$activeYear, $activeYear]);
-        $totalScolarites = (int)$stmtTot->fetchColumn();
-
-        $stmtAff = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE affectation_etat = 'affecte' AND (annee_code = ? OR ? = '')");
-        $stmtAff->execute([$activeYear, $activeYear]);
-        $totalAffectes = (int)$stmtAff->fetchColumn();
-
-        $stmtNonAff = $db->prepare("SELECT COUNT(*) FROM scolarites WHERE (affectation_etat = 'non_affecte' OR affectation_etat IS NULL OR affectation_etat = '') AND (annee_code = ? OR ? = '')");
-        $stmtNonAff->execute([$activeYear, $activeYear]);
-        $totalNonAffectes = (int)$stmtNonAff->fetchColumn();
-
-        $stmtTr = $db->prepare("SELECT COUNT(*) FROM tranches_scolarite WHERE (annee_code = ? OR ? = '')");
-        $stmtTr->execute([$activeYear, $activeYear]);
-        $totalTranches = (int)$stmtTr->fetchColumn();
+        $stats = $this->model->getStats($activeYear);
 
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -49,17 +31,13 @@ class ScolariteController extends BaseController
             return (($f['statut_filiere'] ?? 'actif') === 'actif');
         });
 
-        $this->loadView('../views/scolarites/list.php', [
-            'totalScolarites' => $totalScolarites,
-            'totalAffectes' => $totalAffectes,
-            'totalNonAffectes' => $totalNonAffectes,
-            'totalTranches' => $totalTranches,
+        $this->loadView('../views/scolarites/list.php', array_merge($stats, [
             'annees' => $annees,
             'filieres' => $filieres,
             'niveaux' => $niveaux,
             'classes' => $classes,
             'selectedAnneeCode' => $activeYear
-        ]);
+        ]));
     }
 
     public function apiList()
@@ -67,13 +45,10 @@ class ScolariteController extends BaseController
         $this->requireAuth();
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
-            $db = $this->model->getCon();
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
+            $aRow = (new ModelAnnee())->getByCode($getAnnee);
             if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
+                Session::set('annee_active_code', $aRow['code_annee']);
+                Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
@@ -111,9 +86,7 @@ class ScolariteController extends BaseController
         $anneeEnd = null;
         $anneeLibelle = '';
         if (!empty($anneeCode)) {
-            $stmtAnnee = $this->model->getCon()->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtAnnee->execute([$anneeCode]);
-            $annee = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
+            $annee = (new ModelAnnee())->getByCode($anneeCode);
             if ($annee) {
                 $anneeLibelle = $annee['libelle_annee'] ?? '';
                 if (!empty($annee['date_debut_annee'])) $anneeStart = strtotime($annee['date_debut_annee']);
@@ -181,7 +154,7 @@ class ScolariteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($this->getActiveAnneeCode());
         
         $cycleCode = !empty($_POST['cycle_code']) ? trim($_POST['cycle_code']) : '';
@@ -205,32 +178,11 @@ class ScolariteController extends BaseController
         $montantScolarite = (float)($_POST['montant_scolarite'] ?? 0);
         $etabCode = $this->getActiveEtablissementCode();
 
-        $db = $this->model->getCon();
-
         // Logique de sélection des filières :
-        // 1. Si filières sélectionnées -> ces filières uniquement.
-        // 2. Si type de filière sélectionné et filières vides -> toutes les filières du type.
-        // 3. Si type de filière et filières vides -> toutes les filières.
         if (!empty($rawFiliereCodes)) {
             $filiereCodes = array_values(array_unique($rawFiliereCodes));
         } else {
-            $sqlF = "SELECT f.code_filiere FROM filieres f WHERE 1=1";
-            $paramsF = [];
-
-            if (!empty($typeFiliere)) {
-                $sqlF .= " AND f.type_filiere = ?";
-                $paramsF[] = $typeFiliere;
-            }
-
-            if (!empty($cycleCode)) {
-                $sqlF .= " AND f.code_filiere IN (SELECT filiere_code FROM filiere_cycles WHERE cycle_code = ?)";
-                $paramsF[] = $cycleCode;
-            }
-
-            $stmtF = $db->prepare($sqlF);
-            $stmtF->execute($paramsF);
-            $filiereCodes = $stmtF->fetchAll(PDO::FETCH_COLUMN);
-
+            $filiereCodes = $this->model->getFilieresByCriteria($typeFiliere, $cycleCode);
             if (empty($filiereCodes)) {
                 $this->error("Aucune filière ne correspond aux critères sélectionnés.");
                 return;
@@ -249,15 +201,7 @@ class ScolariteController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-        $stmtCheck = $db->prepare("
-            SELECT id_scolarite FROM scolarites 
-            WHERE annee_code = ? AND filiere_code = ? AND niveau_code = ? AND affectation_etat = ?
-        ");
-
-        $cols = $db->query("DESCRIBE scolarites")->fetchAll(PDO::FETCH_COLUMN);
         $trancheModel = new ModelTranche();
-        $trancheCols = $db->query("DESCRIBE tranches_scolarite")->fetchAll(PDO::FETCH_COLUMN);
 
         $createdCount = 0;
         $skippedCount = 0;
@@ -271,8 +215,7 @@ class ScolariteController extends BaseController
                 if (empty($nCode)) continue;
 
                 // Contrôle d'unicité pour chaque combinaison
-                $stmtCheck->execute([$anneeCode, $fCode, $nCode, $affectationEtat]);
-                if ($stmtCheck->fetch()) {
+                if ($this->model->checkCombinaisonExists($anneeCode, $fCode, $nCode, $affectationEtat)) {
                     $skippedCount++;
                     continue;
                 }
@@ -294,11 +237,10 @@ class ScolariteController extends BaseController
                 $data['montant_scolarite'] = $montantScolarite;
                 $data['statut_scolarite'] = $data['statut_scolarite'] ?? 'actif';
                 $data['created_at_scolarite'] = date('Y-m-d H:i:s');
+                $data['user_code'] = $userCode;
+                $data['etablissement_code'] = $etabCode;
 
-                if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-                if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-
-                $filteredData = array_intersect_key($data, array_flip($cols));
+                $filteredData = $this->model->filterData($data);
 
                 if ($this->model->create($filteredData)) {
                     $createdCount++;
@@ -328,12 +270,10 @@ class ScolariteController extends BaseController
                                 'annee_code' => $anneeCode,
                                 'etablissement_code' => $etabCode,
                                 'statut_tranche' => $tData['statut_tranche'] ?? 'actif',
-                                'created_at_tranche' => date('Y-m-d H:i:s')
+                                'created_at_tranche' => date('Y-m-d H:i:s'),
+                                'user_code' => $userCode
                             ];
-                            if (in_array('user_code', $trancheCols)) {
-                                $newTranche['user_code'] = $userCode;
-                            }
-                            $filteredTranche = array_intersect_key($newTranche, array_flip($trancheCols));
+                            $filteredTranche = $trancheModel->filterData($newTranche);
                             $trancheModel->create($filteredTranche);
                         }
                     }
@@ -368,7 +308,7 @@ class ScolariteController extends BaseController
         $item = $this->model->getById($id);
         if (!$item) { $this->error('Scolarité introuvable'); return; }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($item['annee_code'] ?? '');
         $filiereCode = !empty($_POST['filiere_code']) ? trim($_POST['filiere_code']) : ($item['filiere_code'] ?? '');
         $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : ($item['niveau_code'] ?? '');
@@ -378,12 +318,7 @@ class ScolariteController extends BaseController
         $etabCode = $this->getActiveEtablissementCode();
 
         // Contrôle d'unicité de la grille tarifaire (Année, Filière, Niveau, Régime)
-        $stmtCheck = $this->model->getCon()->prepare("
-            SELECT id_scolarite FROM scolarites 
-            WHERE annee_code = ? AND filiere_code = ? AND niveau_code = ? AND affectation_etat = ? AND id_scolarite != ?
-        ");
-        $stmtCheck->execute([$anneeCode, $filiereCode, $niveauCode, $affectationEtat, $id]);
-        if ($stmtCheck->fetch()) {
+        if ($this->model->checkCombinaisonExists($anneeCode, $filiereCode, $niveauCode, $affectationEtat, $id)) {
             $regimeName = ($affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
             $this->error("Un tarif de scolarité pour le régime $regimeName existe déjà pour cette année, filière et niveau.");
             return;
@@ -404,13 +339,10 @@ class ScolariteController extends BaseController
         if (!empty($_POST['annee_code'])) {
             $data['annee_code'] = trim($_POST['annee_code']);
         }
-        $cols = $this->model->getCon()->query("DESCRIBE scolarites")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
 
         if ($this->model->update($filteredData, $id)) {
-            $db = $this->model->getCon();
             $trancheModel = new ModelTranche();
-            $trancheCols = $db->query("DESCRIBE tranches_scolarite")->fetchAll(PDO::FETCH_COLUMN);
 
             // Gestion de la suppression des tranches retirées du panier
             if (!empty($_POST['deleted_tranches_ids'])) {
@@ -449,7 +381,7 @@ class ScolariteController extends BaseController
                             'annee_code' => $anneeCode,
                             'statut_tranche' => $tData['statut_tranche'] ?? 'actif'
                         ];
-                        $filteredTranche = array_intersect_key($updateTranche, array_flip($trancheCols));
+                        $filteredTranche = $trancheModel->filterData($updateTranche);
                         $trancheModel->update($filteredTranche, $trancheId);
                     } else {
                         // Création d'une nouvelle tranche
@@ -465,12 +397,10 @@ class ScolariteController extends BaseController
                             'annee_code' => $anneeCode,
                             'etablissement_code' => $etabCode,
                             'statut_tranche' => $tData['statut_tranche'] ?? 'actif',
-                            'created_at_tranche' => date('Y-m-d H:i:s')
+                            'created_at_tranche' => date('Y-m-d H:i:s'),
+                            'user_code' => $userCode
                         ];
-                        if (in_array('user_code', $trancheCols)) {
-                            $newTranche['user_code'] = $userCode;
-                        }
-                        $filteredTranche = array_intersect_key($newTranche, array_flip($trancheCols));
+                        $filteredTranche = $trancheModel->filterData($newTranche);
                         $trancheModel->create($filteredTranche);
                     }
                 }
@@ -504,32 +434,14 @@ class ScolariteController extends BaseController
         $this->requireAuth();
         try {
             $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT s.*, 
-                       f.libelle_filiere, 
-                       n.libelle_niveau, 
-                       a.libelle_annee
-                FROM scolarites s
-                LEFT JOIN filieres f ON f.code_filiere = s.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = s.niveau_code
-                LEFT JOIN annees a ON a.code_annee = s.annee_code
-                WHERE s.id_scolarite = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            $item = $this->model->getById($id);
             if (!$item) { 
                 $this->renderNotFound("La grille de scolarité demandée est introuvable.");
                 return;
             }
 
             // Tranches / Échéancier de cette scolarité
-            $stmtTranches = $this->model->getCon()->prepare("
-                SELECT * FROM tranches_scolarite 
-                WHERE scolarite_code = ? OR ((scolarite_code IS NULL OR scolarite_code = '') AND filiere_code = ? AND niveau_code = ?)
-                ORDER BY date_limite ASC, id_tranche ASC
-            ");
-            $stmtTranches->execute([$item['code_scolarite'], $item['filiere_code'], $item['niveau_code']]);
-            $tranches = $stmtTranches->fetchAll(PDO::FETCH_ASSOC);
+            $tranches = $this->model->getTranches($item['code_scolarite'] ?? '', $item['filiere_code'] ?? null, $item['niveau_code'] ?? null);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
@@ -553,32 +465,28 @@ class ScolariteController extends BaseController
             if (!$item) { header('Location: ' . RACINE . 'scolarite/list'); exit(); }
             
             // Récupérer les tranches existantes associées à cette scolarité
-            $stmtTranches = $this->model->getCon()->prepare("
-                SELECT * FROM tranches_scolarite 
-                WHERE scolarite_code = ? OR ((scolarite_code IS NULL OR scolarite_code = '') AND filiere_code = ? AND niveau_code = ? AND annee_code = ?)
-                ORDER BY date_limite ASC, id_tranche ASC
-            ");
-            $stmtTranches->execute([$item['code_scolarite'], $item['filiere_code'], $item['niveau_code'], $item['annee_code']]);
-            $tranches = $stmtTranches->fetchAll(PDO::FETCH_ASSOC);
+            $tranches = $this->model->getTranches($item['code_scolarite'] ?? '', $item['filiere_code'] ?? null, $item['niveau_code'] ?? null, $item['annee_code'] ?? null);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'scolarite/list'); exit();
         }
-        $this->loadView('../views/scolarites/edit.php', [
+        $formData = $this->model->getFormData($item);
+        $this->loadView('../views/scolarites/edit.php', array_merge([
             'item' => $item, 
             'tranches' => $tranches ?? [], 
             'encryptedId' => $encryptedId
-        ]);
+        ], $formData));
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/scolarites/edit.php', [
+        $formData = $this->model->getFormData([]);
+        $this->loadView('../views/scolarites/edit.php', array_merge([
             'item' => [], 
             'tranches' => []
-        ]);
+        ], $formData));
     }
 
     /**
@@ -611,19 +519,7 @@ class ScolariteController extends BaseController
         $db = $this->model->getCon();
 
         if (empty($filiereCodes)) {
-            $sqlF = "SELECT f.code_filiere FROM filieres f WHERE 1=1";
-            $paramsF = [];
-            if (!empty($typeFiliere)) {
-                $sqlF .= " AND f.type_filiere = ?";
-                $paramsF[] = $typeFiliere;
-            }
-            if (!empty($cycleCode)) {
-                $sqlF .= " AND f.code_filiere IN (SELECT filiere_code FROM filiere_cycles WHERE cycle_code = ?)";
-                $paramsF[] = $cycleCode;
-            }
-            $stmtF = $db->prepare($sqlF);
-            $stmtF->execute($paramsF);
-            $filiereCodes = $stmtF->fetchAll(PDO::FETCH_COLUMN);
+            $filiereCodes = $this->model->getFilieresByCriteria($typeFiliere, $cycleCode);
         }
 
         if (empty($anneeCode) || empty($filiereCodes) || empty($niveauCodes)) {
@@ -631,20 +527,8 @@ class ScolariteController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
         $existing = [];
         $totalCombos = count($filiereCodes) * count($niveauCodes);
-
-        $sql = "SELECT s.id_scolarite, f.libelle_filiere, n.libelle_niveau 
-                FROM scolarites s
-                LEFT JOIN filieres f ON f.code_filiere = s.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = s.niveau_code
-                WHERE s.annee_code = ? AND s.filiere_code = ? AND s.niveau_code = ? AND s.affectation_etat = ?";
-        if ($idExclude > 0) {
-            $sql .= " AND s.id_scolarite != ?";
-        }
-
-        $stmt = $db->prepare($sql);
 
         foreach ($filiereCodes as $fCode) {
             $fCode = trim($fCode);
@@ -654,13 +538,7 @@ class ScolariteController extends BaseController
                 $nCode = trim($nCode);
                 if (empty($nCode)) continue;
 
-                $queryParams = [$anneeCode, $fCode, $nCode, $affectationEtat];
-                if ($idExclude > 0) {
-                    $queryParams[] = $idExclude;
-                }
-
-                $stmt->execute($queryParams);
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                $row = $this->model->checkCombinaisonExists($anneeCode, $fCode, $nCode, $affectationEtat, $idExclude);
                 if ($row) {
                     $fName = !empty($row['libelle_filiere']) ? $row['libelle_filiere'] : $fCode;
                     $nName = !empty($row['libelle_niveau']) ? $row['libelle_niveau'] : $nCode;
@@ -700,7 +578,6 @@ class ScolariteController extends BaseController
         require_once __DIR__ . '/../../core/PdfService.php';
         require_once __DIR__ . '/../../models/tranches_scolarite/ModelTranche.php';
 
-        $db = $this->model->getCon();
         $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : $this->getActiveAnneeCode();
         $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
@@ -709,10 +586,8 @@ class ScolariteController extends BaseController
 
         $anneeLibelle = $this->getActiveAnneeLibelle();
         if ($anneeCode) {
-            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$anneeCode]);
-            $aName = $stmtA->fetchColumn();
-            if ($aName) $anneeLibelle = $aName;
+            $aRow = (new ModelAnnee())->getByCode($anneeCode);
+            if (!empty($aRow['libelle_annee'])) $anneeLibelle = $aRow['libelle_annee'];
         }
 
         // Récupérer les scolarités
@@ -723,12 +598,7 @@ class ScolariteController extends BaseController
         $tranches = $tranchesModel->getAll($anneeCode, $filiereCode, $niveauCode, $statutScolarite);
 
         $etablissement = $this->getEtablissementConfig();
-
-        $authSession = $_SESSION[USERS_AUTH] ?? [];
-        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
-        if (empty($editeurNom)) {
-            $editeurNom = 'Service Comptabilité & Scolarité';
-        }
+        $editeurNom = Auth::fullName() ?: 'Service Comptabilité & Scolarité';
 
         $data = [
             'etablissement' => $etablissement,

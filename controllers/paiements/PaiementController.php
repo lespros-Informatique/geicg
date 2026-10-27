@@ -1044,15 +1044,7 @@ class PaiementController extends BaseController
     public function getNextUnpaidTranche(string $inscriptionCode): ?array
     {
         $db = $this->model->getCon();
-        $stmtIns = $db->prepare("
-            SELECT i.*, c.filiere_code, c.niveau_code
-            FROM inscriptions i
-            LEFT JOIN classes c ON i.classe_code = c.code_classe
-            WHERE i.code_inscription = ? OR i.id_inscription = ?
-            LIMIT 1
-        ");
-        $stmtIns->execute([$inscriptionCode, is_numeric($inscriptionCode) ? (int)$inscriptionCode : 0]);
-        $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
+        $ins = $this->model->getInscriptionForPaiement($inscriptionCode);
         if (!$ins) return null;
 
         $filiereCode = $ins['filiere_code'] ?? '';
@@ -1159,7 +1151,7 @@ class PaiementController extends BaseController
         $this->requireAuth();
         $this->requirePermission('RECORD_PAIEMENTS');
         $db = $this->model->getCon();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -1400,13 +1392,12 @@ class PaiementController extends BaseController
             }
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE paiements")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        if (in_array('tranche_code', $cols)) $data['tranche_code'] = $trancheCode;
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+        $data['tranche_code'] = $trancheCode;
 
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             // Récupération immédiate de l'ID inséré avant toute autre requête PDO
             $lastId = (int)$this->model->getCon()->lastInsertId();
@@ -1474,8 +1465,7 @@ class PaiementController extends BaseController
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
-        $cols = $this->model->getCon()->query("DESCRIBE paiements")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->success('Item modifié avec succès!');
         } else {
@@ -1539,8 +1529,8 @@ class PaiementController extends BaseController
             return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? 'SYS';
-        $userName = trim(($_SESSION[USERS_AUTH]['prenom_user'] ?? '') . ' ' . ($_SESSION[USERS_AUTH]['nom_user'] ?? ''));
+        $userCode = Auth::code() ?: 'SYS';
+        $userName = trim(Auth::user('prenom') . ' ' . Auth::user('nom'));
         $cancellationNote = " [ANNULATION le " . date('d/m/Y H:i') . " par " . (!empty($userName) ? $userName : $userCode) . (!empty($motif) ? " - Motif: " . $motif : "") . "]";
         $newObservations = trim(($paiement['observations'] ?? '') . $cancellationNote);
 
@@ -1609,14 +1599,7 @@ class PaiementController extends BaseController
             $inscriptionCode = $item['inscription_code'] ?? '';
 
             // Tous les paiements non annulés pour cette inscription
-            $stmtAllPay = $this->model->getCon()->prepare("
-                SELECT id_paiement, montant_paiement, date_paiement, tranche_code, categorie_paiement 
-                FROM paiements 
-                WHERE inscription_code = ? AND statut_paiement != 'annule'
-                ORDER BY date_paiement ASC, id_paiement ASC
-            ");
-            $stmtAllPay->execute([$inscriptionCode]);
-            $allPayments = $stmtAllPay->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $allPayments = $this->model->getPaiementsByInscription($inscriptionCode, true);
 
             $firstPaymentId = !empty($allPayments) ? (int)$allPayments[0]['id_paiement'] : 0;
             $firstDateMinute = !empty($allPayments) ? substr($allPayments[0]['date_paiement'] ?? '', 0, 16) : '';
@@ -1666,14 +1649,7 @@ class PaiementController extends BaseController
 
             // Récupération de la photo de l'étudiant si manquante
             if (empty($item['photo_inscription']) && empty($item['photo_etudiant']) && !empty($inscriptionCode)) {
-                $stmtPhoto = $this->model->getCon()->prepare("
-                    SELECT i.photo_inscription, e.photo_etudiant 
-                    FROM inscriptions i 
-                    LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code 
-                    WHERE i.code_inscription = ? LIMIT 1
-                ");
-                $stmtPhoto->execute([$inscriptionCode]);
-                $pRow = $stmtPhoto->fetch(PDO::FETCH_ASSOC);
+                $pRow = $this->model->getPhotoInscription($inscriptionCode);
                 if ($pRow) {
                     $item['photo_inscription'] = $pRow['photo_inscription'] ?? null;
                     $item['photo_etudiant'] = $pRow['photo_etudiant'] ?? null;

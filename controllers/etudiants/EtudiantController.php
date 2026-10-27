@@ -10,20 +10,15 @@ class EtudiantController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ETUDIANTS');
-        $db = $this->model->getCon();
-        $annees = $db->query("SELECT * FROM annees ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC);
-        $niveaux = $db->query("SELECT * FROM niveaux WHERE statut_niveau = 'actif' ORDER BY libelle_niveau ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $filieres = $db->query("SELECT * FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $classes = $db->query("SELECT * FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC);
-
+        $this->requirePermission(PERMISSIONS::VIEW_ETUDIANTS);
+        $deps = $this->model->getListFilterDependencies();
         $anneeActive = $this->getActiveAnneeCode();
 
         $this->loadView('../views/etudiants/list.php', [
-            'annees' => $annees,
-            'niveaux' => $niveaux,
-            'filieres' => $filieres,
-            'classes' => $classes,
+            'annees' => $deps['annees'],
+            'niveaux' => $deps['niveaux'],
+            'filieres' => $deps['filieres'],
+            'classes' => $deps['classes'],
             'anneeActive' => $anneeActive
         ]);
     }
@@ -102,7 +97,7 @@ class EtudiantController extends BaseController
             if (!$this->checkUnique('etudiants', 'telephone_etudiant', $data['telephone_etudiant'], 'Telephone etudiant')) return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $nomEtudiant = trim($data['nom_etudiant'] ?? '');
@@ -112,15 +107,14 @@ class EtudiantController extends BaseController
             $data['matricule_etudiant'] = $this->model->generateMatricule($nomEtudiant, $prenomEtudiant, $data['classe_code'] ?? null, $anneeCode);
         }
         if (empty($data['code_etudiant'])) {
-            $data['code_etudiant'] = $this->validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
+            $data['code_etudiant'] = $this->validator->generateCode(TABLES::ETUDIANTS, 'code_etudiant', 'ETU-', 8);
         }
-        $data['statut_etudiant'] = $data['statut_etudiant'] ?? 'actif';
+        $data['statut_etudiant'] = $data['statut_etudiant'] ?? STATUTS::ACTIF;
         $data['created_at_etudiant'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE etudiants")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $this->success('Item créé avec succès!');
         } else {
@@ -163,14 +157,13 @@ class EtudiantController extends BaseController
             if (!$this->checkUnique('etudiants', 'telephone_etudiant', $data['telephone_etudiant'], 'Telephone etudiant', 'id_etudiant', $id)) return;
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE etudiants")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         $encryptedId = $this->validator->crypter($id);
         $redirectUrl = RACINE . 'etudiant/details/' . $encryptedId;
 
         if ($this->model->update($filteredData, $id)) {
             if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
-                $_SESSION['flash_success'] = "Fiche de l'étudiant modifiée avec succès !";
+                Session::flash('flash_success', "Fiche de l'étudiant modifiée avec succès !");
                 header('Location: ' . $redirectUrl);
                 exit;
             }
@@ -181,7 +174,7 @@ class EtudiantController extends BaseController
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de la modification de la fiche étudiant.';
             if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
-                $_SESSION['flash_error'] = $err;
+                Session::flash('flash_error', $err);
                 header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? $redirectUrl));
                 exit;
             }
@@ -209,7 +202,7 @@ class EtudiantController extends BaseController
     public function changerClassePage($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['CHANGER_CLASSE_ETUDIANT', 'MANAGE_ETUDIANTS']);
+        $this->requirePermission(['CHANGER_CLASSE_ETUDIANT', PERMISSIONS::MANAGE_ETUDIANTS]);
 
         try {
             $id = $this->validator->decrypter($details);
@@ -219,54 +212,26 @@ class EtudiantController extends BaseController
 
             $item = $this->model->getById($id);
             if (!$item) {
-                $_SESSION['flash_error'] = "Étudiant introuvable.";
+                Session::flash('flash_error', "Étudiant introuvable.");
                 header('Location: ' . RACINE . 'etudiant/list');
                 exit;
             }
 
-            $db = $this->model->getCon();
             $anneeActive = $this->getActiveAnneeCode();
-
-            // Récupérer l'inscription active ou la plus récente
-            $stmtIns = $db->prepare("
-                SELECT i.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau
-                FROM inscriptions i
-                LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                WHERE i.etudiant_code = ? AND i.statut_inscription != 'annule'
-                ORDER BY (i.annee_code = ?) DESC, i.id_inscription DESC
-                LIMIT 1
-            ");
-            $stmtIns->execute([$item['code_etudiant'], $anneeActive]);
-            $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
-
-            // Récupérer toutes les classes actives
-            $stmtCl = $db->query("
-                SELECT code_classe, libelle_classe, filiere_code, niveau_code, annee_code
-                FROM classes 
-                WHERE statut_classe = 'actif'
-                ORDER BY libelle_classe ASC
-            ");
-            $classes = $stmtCl->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-            // Récupérer les années académiques
-            $stmtAnn = $db->query("SELECT * FROM annees ORDER BY id_annee DESC");
-            $annees = $stmtAnn->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
+            $data = $this->model->getChangerClasseData($item['code_etudiant'], $anneeActive);
             $encryptedId = $this->validator->crypter($item['id_etudiant']);
 
             $this->loadView('../views/etudiants/changer_classe.php', [
                 'item' => $item,
-                'inscription' => $inscription,
-                'classes' => $classes,
-                'annees' => $annees,
+                'inscription' => $data['inscription'],
+                'classes' => $data['classes'],
+                'annees' => $data['annees'],
                 'encryptedId' => $encryptedId,
-                'activeAnneeCode' => !empty($inscription['annee_code']) ? $inscription['annee_code'] : $anneeActive
+                'activeAnneeCode' => !empty($data['inscription']['annee_code']) ? $data['inscription']['annee_code'] : $anneeActive
             ]);
 
         } catch (Exception $e) {
-            $_SESSION['flash_error'] = "Erreur : " . $e->getMessage();
+            Session::flash('flash_error', "Erreur : " . $e->getMessage());
             header('Location: ' . RACINE . 'etudiant/list');
             exit;
         }
@@ -276,9 +241,8 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['CHANGER_CLASSE_ETUDIANT', 'MANAGE_ETUDIANTS']);
+        $this->requirePermission(['CHANGER_CLASSE_ETUDIANT', PERMISSIONS::MANAGE_ETUDIANTS]);
 
-        $db = $this->model->getCon();
         $codeInscription = trim($_POST['code_inscription'] ?? '');
         $codeEtudiant = trim($_POST['code_etudiant'] ?? '');
         $nouvelleClasse = trim($_POST['classe_code'] ?? ($_POST['nouvelle_classe_code'] ?? ''));
@@ -292,82 +256,26 @@ class EtudiantController extends BaseController
             return;
         }
 
-        // Vérifier l'existence et la validité de la nouvelle classe
-        $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, filiere_code, niveau_code FROM classes WHERE code_classe = ? AND statut_classe = 'actif' LIMIT 1");
-        $stmtCl->execute([$nouvelleClasse]);
-        $classeRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
-
-        if (!$classeRow) {
-            $this->error("La classe sélectionnée est introuvable ou inactive.");
-            return;
-        }
-
-        // Trouver le dossier d'inscription concerné
-        $anneeActive = !empty($anneeCode) ? $anneeCode : $this->getActiveAnneeCode();
-        $inscriptionRow = null;
-
-        if (!empty($codeInscription)) {
-            $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE code_inscription = ? LIMIT 1");
-            $stmtIns->execute([$codeInscription]);
-            $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
-        }
-
-        if (!$inscriptionRow && !empty($codeEtudiant)) {
-            $stmtIns = $db->prepare("SELECT * FROM inscriptions WHERE etudiant_code = ? AND statut_inscription != 'annule' ORDER BY (annee_code = ?) DESC, id_inscription DESC LIMIT 1");
-            $stmtIns->execute([$codeEtudiant, $anneeActive]);
-            $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
-        }
-
-        if (!$inscriptionRow) {
-            $this->error("Aucun dossier d'inscription actif n'a été trouvé pour cet étudiant.");
-            return;
-        }
-
-        // Si le montant de la scolarité n'a pas été fourni par le formulaire, le dériver
-        if ($montantScolarite === null || $montantScolarite <= 0) {
-            $regimeScol = ($affectationEtat === 'oui') ? 'affecte' : 'non_affecte';
-            $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND affectation_etat = ? AND statut_scolarite = 'actif' ORDER BY id_scolarite DESC LIMIT 1");
-            $stmtSco->execute([$classeRow['filiere_code'], $classeRow['niveau_code'], $anneeActive, $regimeScol]);
-            $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
-            if ($sco) {
-                $montantScolarite = (float)$sco['montant_scolarite'];
-            } else {
-                $montantScolarite = (float)($inscriptionRow['montant_scolarite_inscription'] ?? 0);
-            }
-        }
-
-        // Mise à jour de la classe, régime et scolarité rattachés à l'inscription
-        $stmtUpdate = $db->prepare("
-            UPDATE inscriptions 
-            SET classe_code = ?,
-                affectation_etat = ?,
-                montant_scolarite_inscription = ?,
-                annee_code = COALESCE(NULLIF(?, ''), annee_code),
-                updated_at_inscription = NOW()
-            WHERE id_inscription = ?
-        ");
-        $ok = $stmtUpdate->execute([
+        $res = $this->model->changerClasseInscription(
+            $codeInscription,
+            $codeEtudiant,
             $nouvelleClasse,
             $affectationEtat,
-            $montantScolarite,
-            $anneeCode,
-            $inscriptionRow['id_inscription']
-        ]);
+            $anneeCode ?: $this->getActiveAnneeCode(),
+            $montantScolarite
+        );
 
-        if ($ok) {
-            $redirectUrl = RACINE . 'etudiant/list';
-            $this->success("La classe et le régime de l'étudiant ont été modifiés avec succès vers " . $classeRow['libelle_classe'] . " !", [
-                'redirect' => $redirectUrl
-            ]);
+        if ($res['success']) {
+            $this->success($res['message'], ['redirect' => RACINE . 'etudiant/list']);
         } else {
-            $this->error("Erreur lors de la mise à jour de la classe de l'étudiant.");
+            $this->error($res['message']);
         }
     }
 
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ETUDIANTS');
+        $this->requirePermission(PERMISSIONS::VIEW_ETUDIANTS);
         try {
             $id = $this->validator->decrypter($details);
             if (empty($id)) {
@@ -378,126 +286,29 @@ class EtudiantController extends BaseController
                 $item = $this->model->getByCode($id);
             }
             if (!$item && is_string($details)) {
-                $item = $this->model->getById($details);
+                $item = $this->model->getByCode($details);
             }
-            if (!$item) { 
+
+            if (!$item) {
                 $this->renderNotFound("Le dossier étudiant demandé est introuvable.");
                 return;
             }
 
             $etudiantCode = $item['code_etudiant'];
-            $db = $this->model->getCon();
-
-            // 1. Parent info
-            $parent = [];
-            try {
-                $stmtPar = $db->prepare("SELECT * FROM parents WHERE etudiant_code = ? LIMIT 1");
-                $stmtPar->execute([$etudiantCode]);
-                $parent = $stmtPar->fetch(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details parent error: " . $e->getMessage());
-            }
-
-            // 2. Inscription active & Classe
-            $inscription = [];
-            try {
-                $stmtIns = $db->prepare("
-                    SELECT ins.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
-                    FROM inscriptions ins
-                    LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-                    LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                    LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                    LEFT JOIN annees a ON a.code_annee = ins.annee_code
-                    WHERE ins.etudiant_code = ? AND ins.statut_inscription != 'annule'
-                    ORDER BY ins.id_inscription DESC LIMIT 1
-                ");
-                $stmtIns->execute([$etudiantCode]);
-                $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details inscription error: " . $e->getMessage());
-            }
-
-            // 2.bis Établissement
-            $etablissement = [];
-            try {
-                $etablissement = $db->query("SELECT * FROM etablissements LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details etablissement error: " . $e->getMessage());
-            }
-
-            // 3. Paiements effectués
-            $paiements = [];
-            try {
-                $stmtPaiements = $db->prepare("
-                    SELECT p.*, a.libelle_annee, ins.code_inscription
-                    FROM paiements p
-                    JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
-                    LEFT JOIN annees a ON a.code_annee = p.annee_code
-                    WHERE ins.etudiant_code = ?
-                    ORDER BY p.date_paiement DESC
-                ");
-                $stmtPaiements->execute([$etudiantCode]);
-                $paiements = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details paiements error: " . $e->getMessage());
-            }
-
-            // 4. Statistiques financières
-            $scolariteTotale = (float)($inscription['montant_scolarite_inscription'] ?? 0);
-            $totalPaye = 0;
-            foreach ($paiements as $p) {
-                if (($p['statut_paiement'] ?? '') !== 'annule') {
-                    $totalPaye += (float)($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0));
-                }
-            }
-            $soldeRestant = max(0, $scolariteTotale - $totalPaye);
-
-            // 5. Absences
-            $absences = [];
-            try {
-                $stmtAbs = $db->prepare("
-                    SELECT abs.*, m.libelle_matiere
-                    FROM absences abs
-                    JOIN inscriptions ins ON ins.code_inscription = abs.inscription_code
-                    LEFT JOIN matieres m ON m.code_matiere = abs.matiere_code
-                    WHERE ins.etudiant_code = ?
-                    ORDER BY abs.date_absence DESC
-                ");
-                $stmtAbs->execute([$etudiantCode]);
-                $absences = $stmtAbs->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details absences error: " . $e->getMessage());
-            }
-
-            // 6. Dossier / Pièces physiques fournies (Robuste aux mélanges de collation MySQL)
-            $dossierPieces = [];
-            try {
-                $stmtDossier = $db->prepare("
-                    SELECT pf.libelle_piece, pf.description_piece, COALESCE(de.statut_depot, 'en_attente') AS statut_depot, de.date_depot, de.observations, de.id_dossier_etudiant
-                    FROM pieces_fournir pf
-                    LEFT JOIN dossier_etudiant de ON de.piece_code = pf.code_piece_fournir AND de.etudiant_code = ?
-                    WHERE pf.statut_piece = 'actif'
-                    ORDER BY pf.id_piece_fournir ASC
-                ");
-                $stmtDossier->execute([$etudiantCode]);
-                $dossierPieces = $stmtDossier->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details dossierPieces error: " . $e->getMessage());
-            }
-
+            $fullDetails = $this->model->getStudentFullDetails($etudiantCode);
             $encryptedId = $this->validator->crypter($id);
 
             $this->loadView('../views/etudiants/details.php', [
                 'item' => $item, 
-                'parent' => $parent,
-                'inscription' => $inscription,
-                'etablissement' => $etablissement,
-                'dossierPieces' => $dossierPieces,
-                'paiements' => $paiements,
-                'totalPaye' => $totalPaye,
-                'soldeRestant' => $soldeRestant,
-                'scolariteTotale' => $scolariteTotale,
-                'absences' => $absences,
+                'parent' => $fullDetails['parent'],
+                'inscription' => $fullDetails['inscription'],
+                'etablissement' => $fullDetails['etablissement'],
+                'dossierPieces' => $fullDetails['dossierPieces'],
+                'paiements' => $fullDetails['paiements'],
+                'totalPaye' => $fullDetails['totalPaye'],
+                'soldeRestant' => $fullDetails['soldeRestant'],
+                'scolariteTotale' => $fullDetails['scolariteTotale'],
+                'absences' => $fullDetails['absences'],
                 'encryptedId' => $encryptedId
             ]);
         } catch (Exception $e) {
@@ -542,7 +353,7 @@ class EtudiantController extends BaseController
         $this->requirePermission('MANAGE_ETUDIANTS');
 
         $db = $this->model->getCon();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $data = $_POST;
         unset($data['csrf_token']);
         $this->cleanPhoneFields($data);
@@ -832,49 +643,7 @@ class EtudiantController extends BaseController
             return strnatcmp($nomA, $nomB);
         });
 
-        // Intitulés lisibles des filtres
-        $filtresLabels = [
-            'filiere' => 'Toutes les filières',
-            'niveau' => 'Tous les niveaux',
-            'classe' => 'Toutes les classes',
-            'regime' => 'Tous les régimes'
-        ];
-
-        if (!empty($filters['filiere_code']) && $filters['filiere_code'] !== 'ALL') {
-            $stmt = $db->prepare("SELECT libelle_filiere FROM filieres WHERE code_filiere = ? LIMIT 1");
-            $stmt->execute([$filters['filiere_code']]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) $filtresLabels['filiere'] = $row['libelle_filiere'];
-        }
-
-        if (!empty($filters['niveau_code']) && $filters['niveau_code'] !== 'ALL') {
-            $stmt = $db->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ? LIMIT 1");
-            $stmt->execute([$filters['niveau_code']]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) $filtresLabels['niveau'] = $row['libelle_niveau'];
-        }
-
-        if (!empty($filters['classe_code']) && $filters['classe_code'] !== 'ALL') {
-            $stmt = $db->prepare("
-                SELECT c.*, f.libelle_filiere, n.libelle_niveau 
-                FROM classes c 
-                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code 
-                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code 
-                WHERE c.code_classe = ? LIMIT 1
-            ");
-            $stmt->execute([$filters['classe_code']]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) {
-                $filtresLabels['classe'] = $row['libelle_classe'];
-                if (empty($filters['filiere_code']) || $filters['filiere_code'] === 'ALL') {
-                    $filtresLabels['filiere'] = $row['libelle_filiere'] ?? '-';
-                }
-                if (empty($filters['niveau_code']) || $filters['niveau_code'] === 'ALL') {
-                    $filtresLabels['niveau'] = $row['libelle_niveau'] ?? '-';
-                }
-            }
-        }
-
+        $filtresLabels = $this->model->getFiltresLabels($filters);
         if (!empty($filters['affectation_etat']) && $filters['affectation_etat'] !== 'ALL') {
             $filtresLabels['regime'] = ($filters['affectation_etat'] === 'affecte') ? 'Affectés (État)' : 'Non Affectés (Privé)';
         }
@@ -882,7 +651,7 @@ class EtudiantController extends BaseController
         // Année académique libellé
         $anneeLibelle = $this->getActiveAnneeLibelle();
         if (!empty($anneeCode)) {
-            $stmtA = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtA = $db->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtA->execute([$anneeCode]);
             $aName = $stmtA->fetchColumn();
             if ($aName) $anneeLibelle = $aName;
@@ -965,54 +734,21 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['ANNULER_INSCRIPTION', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission(['ANNULER_INSCRIPTION', PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
-        $db = $this->model->getCon();
         $idInscription = (int)$this->post('id_inscription');
         $codeInscription = trim($this->post('code_inscription') ?? '');
 
-        $inscription = null;
-        if ($idInscription > 0) {
-            $stmt = $db->prepare("SELECT * FROM inscriptions WHERE id_inscription = ? LIMIT 1");
-            $stmt->execute([$idInscription]);
-            $inscription = $stmt->fetch(PDO::FETCH_ASSOC);
-        } elseif (!empty($codeInscription)) {
-            $stmt = $db->prepare("SELECT * FROM inscriptions WHERE code_inscription = ? LIMIT 1");
-            $stmt->execute([$codeInscription]);
-            $inscription = $stmt->fetch(PDO::FETCH_ASSOC);
-        }
+        $res = $this->model->annulerInscription($idInscription, $codeInscription);
 
-        if (!$inscription) {
-            $this->error("Dossier d'inscription introuvable.");
-            return;
-        }
-
-        if ($inscription['statut_inscription'] === 'annule') {
-            $this->error("Cette inscription est déjà annulée.");
-            return;
-        }
-
-        // Vérifier si des paiements existent pour cette inscription
-        $stmtPay = $db->prepare("SELECT COUNT(*) FROM paiements WHERE inscription_code = ? AND statut_paiement != 'annule'");
-        $stmtPay->execute([$inscription['code_inscription']]);
-        $nbPaiements = (int)$stmtPay->fetchColumn();
-
-        // Mettre à jour le statut vers 'annule'
-        $stmtUp = $db->prepare("UPDATE inscriptions SET statut_inscription = 'annule', updated_at_inscription = NOW() WHERE id_inscription = ?");
-        $res = $stmtUp->execute([$inscription['id_inscription']]);
-
-        if ($res) {
-            $msg = "L'inscription a été annulée avec succès.";
-            if ($nbPaiements > 0) {
-                $msg .= " Note : " . $nbPaiements . " paiement(s) étai(en)t rattaché(s) à ce dossier.";
-            }
-            $this->success($msg, [
+        if ($res['success']) {
+            $this->success($res['message'], [
                 'reload' => true,
-                'id_inscription' => $inscription['id_inscription'],
-                'code_inscription' => $inscription['code_inscription']
+                'id_inscription' => $res['inscription']['id_inscription'] ?? $idInscription,
+                'code_inscription' => $res['inscription']['code_inscription'] ?? $codeInscription
             ]);
         } else {
-            $this->error("Erreur lors de l'annulation de l'inscription.");
+            $this->error($res['message']);
         }
     }
 }

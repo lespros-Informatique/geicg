@@ -47,8 +47,7 @@ $isEdit = !empty($item['id_permission']);
               </div>
 
               <?php
-                $dbConn = (new Database())->getCon();
-                $existingModules = $dbConn->query("SELECT DISTINCT module_permission FROM permissions WHERE module_permission IS NOT NULL AND module_permission != '' ORDER BY module_permission ASC")->fetchAll(PDO::FETCH_COLUMN);
+                $existingModules = $existingModules ?? [];
                 $curMod = strtoupper($item['module_permission'] ?? 'ADMINISTRATION');
               ?>
 

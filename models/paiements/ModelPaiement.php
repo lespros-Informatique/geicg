@@ -86,4 +86,87 @@ class ModelPaiement extends BaseModel
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: [];
     }
+
+    /**
+     * Récupère la liste des paiements pour une inscription
+     */
+    public function getPaiementsByInscription(string $inscriptionCode, bool $excludeAnnule = true): array
+    {
+        $sql = "SELECT id_paiement, montant_paiement, date_paiement, tranche_code, categorie_paiement 
+                FROM " . TABLES::PAIEMENTS . " 
+                WHERE inscription_code = ?";
+        if ($excludeAnnule) {
+            $sql .= " AND statut_paiement != 'annule'";
+        }
+        $sql .= " ORDER BY date_paiement ASC";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute([$inscriptionCode]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Récupère les données d'inscription nécessaires pour un paiement
+     */
+    public function getInscriptionForPaiement(string $inscriptionCode): ?array
+    {
+        $sql = "SELECT i.*, c.filiere_code, c.niveau_code, c.libelle_classe, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
+                FROM " . TABLES::INSCRIPTIONS . " i
+                LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
+                LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+                WHERE i.code_inscription = ? LIMIT 1";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute([$inscriptionCode]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Annule un paiement de scolarité
+     */
+    public function annulerPaiement(int $idPaiement, string $codePaiement, string $motif = ''): array
+    {
+        $db = $this->getCon();
+        try {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::PAIEMENTS . " WHERE id_paiement = ? OR code_paiement = ? LIMIT 1");
+            $stmt->execute([$idPaiement, $codePaiement]);
+            $paiement = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$paiement) {
+                return ['success' => false, 'message' => "Paiement introuvable."];
+            }
+
+            if ($paiement['statut_paiement'] === 'annule') {
+                return ['success' => false, 'message' => "Ce paiement est déjà annulé."];
+            }
+
+            $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = 'annule', motif_annulation = ?, updated_at_paiement = NOW() WHERE id_paiement = ?");
+            $ok = $stmtUp->execute([$motif, $paiement['id_paiement']]);
+
+            if ($ok) {
+                return [
+                    'success' => true,
+                    'message' => "Le paiement a été annulé avec succès.",
+                    'paiement' => $paiement
+                ];
+            }
+            return ['success' => false, 'message' => "Erreur lors de l'annulation du paiement."];
+        } catch (Exception $e) {
+            error_log("ModelPaiement::annulerPaiement error: " . $e->getMessage());
+            return ['success' => false, 'message' => "Erreur lors de l'annulation du paiement."];
+        }
+    }
+
+    /**
+     * Récupère la photo de l'étudiant / inscription rattachée
+     */
+    public function getPhotoInscription(string $inscriptionCode): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT i.photo_inscription, e.photo_etudiant 
+            FROM " . TABLES::INSCRIPTIONS . " i 
+            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code 
+            WHERE i.code_inscription = ? LIMIT 1
+        ");
+        $stmt->execute([$inscriptionCode]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 }

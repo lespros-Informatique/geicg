@@ -327,4 +327,20 @@ abstract class BaseModel
             return false;
         }
     }
+
+    public function getTableColumns(): array
+    {
+        try {
+            return $this->pdo->getCon()->query("DESCRIBE `{$this->table}`")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            error_log("Describe table {$this->table}: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function filterData(array $data): array
+    {
+        $cols = $this->getTableColumns();
+        return array_intersect_key($data, array_flip($cols));
+    }
 }

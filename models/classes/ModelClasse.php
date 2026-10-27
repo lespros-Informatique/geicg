@@ -141,4 +141,117 @@ class ModelClasse extends BaseModel
             'skipped' => $skippedCount
         ];
     }
+
+    public function getAllWithDetails(?string $anneeCode = null): array
+    {
+        $sql = "SELECT c.*, 
+                       f.libelle_filiere, f.slug_filiere,
+                       n.libelle_niveau, n.slug_niveau,
+                       cy.libelle_cycle, cy.slug_cycle,
+                       a.libelle_annee
+                FROM " . TABLES::CLASSES . " c
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+                LEFT JOIN " . TABLES::CYCLES . " cy ON cy.code_cycle = c.cycle_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = c.annee_code";
+        $params = [];
+        if (!empty($anneeCode)) {
+            $sql .= " WHERE c.annee_code = ?";
+            $params[] = $anneeCode;
+        }
+        $sql .= " ORDER BY cy.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC, c.libelle_classe ASC";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getParcoursPivots(): array
+    {
+        $sql = "
+            SELECT fc.*, 
+                   f.libelle_filiere, f.slug_filiere,
+                   c.libelle_cycle, c.slug_cycle,
+                   n.libelle_niveau, n.slug_niveau
+            FROM " . TABLES::FILIERE_CYCLES . " fc
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = fc.filiere_code
+            LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = fc.cycle_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = fc.niveau_code
+            WHERE fc.statut_filiere_cycle = 'actif'
+            ORDER BY c.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC
+        ";
+        return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getCycleForFiliereNiveau(string $filiereCode, ?string $niveauCode = null): ?string
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT cycle_code FROM " . TABLES::FILIERE_CYCLES . " 
+            WHERE filiere_code = ? AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '') 
+            LIMIT 1
+        ");
+        $stmt->execute([$filiereCode, $niveauCode ?? '']);
+        return $stmt->fetchColumn() ?: null;
+    }
+
+    public function getFiliereAndNiveauNames(string $filiereCode, string $niveauCode): array
+    {
+        $stmtF = $this->getCon()->prepare("SELECT libelle_filiere FROM " . TABLES::FILIERES . " WHERE code_filiere = ?");
+        $stmtF->execute([$filiereCode]);
+        $fName = $stmtF->fetchColumn() ?: '';
+
+        $stmtN = $this->getCon()->prepare("SELECT libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ?");
+        $stmtN->execute([$niveauCode]);
+        $nName = $stmtN->fetchColumn() ?: '';
+
+        return ['filiere' => $fName, 'niveau' => $nName];
+    }
+
+    public function getClasseWithDetails($id): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT c.*, 
+                   f.libelle_filiere,
+                   n.libelle_niveau,
+                   a.libelle_annee
+            FROM " . TABLES::CLASSES . " c
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = c.annee_code
+            WHERE c.id_classe = ? OR c.code_classe = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$id, (string)$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function getEtudiantsForClasse(string $classeCode): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription, ins.affectation_etat
+            FROM " . TABLES::ETUDIANTS . " e
+            INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.etudiant_code = e.code_etudiant
+            WHERE ins.classe_code = ? AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)
+            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+        ");
+        $stmt->execute([$classeCode]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getMatieresForClasse(string $classeCode): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT em.*, m.libelle_matiere, m.code_matiere,
+                   u.nom_user as nom_prof,
+                   u.prenom_user as prenom_prof,
+                   e.grade_enseignant
+            FROM " . TABLES::ENSEIGNANT_MATIERE . " em
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
+            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
+            WHERE em.classe_code = ?
+            ORDER BY m.libelle_matiere ASC
+        ");
+        $stmt->execute([$classeCode]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

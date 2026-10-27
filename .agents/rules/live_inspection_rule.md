@@ -54,6 +54,16 @@ Lors de toute création ou modification d'élément d'interface (menu, sous-menu
    - Insérer la nouvelle permission directement dans la base de données active MySQL et l'associer aux rôles autorisés (notamment `ROLE_SUPERADMIN`) dans la table `role_permissions`.
    - Mettre à jour immédiatement le fichier de référence `database/db_eicg.sql` afin de conserver la synchronisation complète du schéma et des données.
 
+3. **Règle Dédiée pour les Menus de la Sidebar (Zéro Vérification Enchaînée)** :
+   - Chaque menu principal de la sidebar (section accordéon / conteneur de navigation) doit **obligatoirement posséder sa propre permission dédiée** dans le module `SIDEBAR` (ex: `MENU_STRUCTURE`, `MENU_PLANIFICATION`, `MENU_SCOLARITE`, `MENU_FINANCE`, `MENU_PEDAGOGIE`, `MENU_COMMUNICATION`, `MENU_ADMINISTRATION`).
+   - L'affichage d'un menu dans la sidebar (`public/inc/sidbar.php`) doit **strictement être conditionné par cette permission unique** : `<?php if ($canAccess('MENU_...')): ?>`.
+   - **Interdiction formelle des vérifications enchaînées** : Ne JAMAIS conditionner l'affichage d'un menu par une agrégation indirecte ou un enchaînement d'opérateurs `||` basés sur les sous-liens (`$hasSec... = $a || $b || $c ...`).
+   - Les liens et actions situés à l'intérieur du menu continuent quant à eux d'être protégés individuellement par leurs propres permissions opérationnelles métier.
+   - Lors de la création de tout nouveau menu principal dans la barre latérale :
+     1. Créer systématiquement la permission correspondante `MENU_<NOM>` avec `module_permission = 'SIDEBAR'` dans la table `permissions`.
+     2. L'associer immédiatement au rôle `ROLE_SUPERADMIN` ainsi qu'aux rôles autorisés dans `role_permissions`.
+     3. Mettre à jour immédiatement les fichiers SQL de référence `database/rbac.sql` et `database/db_eicg.sql`.
+
 ---
 
 ## 4. RÈGLE COMPTABLE DE DISSOCIATION STRICTE ENTRE SCOLARITÉ ET FRAIS ANNEXES
@@ -66,3 +76,41 @@ Lors de toute création ou modification d'élément d'interface (menu, sous-menu
    - Sur tout reçu, bordereau ou synthèse de versement de scolarité, le **Total Versé** (`$totalVerse`) doit être exclusivement égal à la somme des versements de scolarité (`$scolariteVerse`).
    - Ne **JAMAIS** injecter `$fraisAnnexesVerse` dans le total d'un reçu ou état de scolarité, afin de garantir l'exactitude des soldes et d'éviter tout faux trop-perçu ou déséquilibre comptable.
 
+---
+
+## 5. RÈGLE ARCHITECTURALE MVC STRICTE & INTÉGRITÉ DES INTERFACES
+
+Dans toute opération de refactorisation ou d'évolution du code, l'architecture MVC et l'expérience visuelle utilisateur doivent être rigoureusement protégées :
+
+1. **Sanctuaire Absolu de l'Interface Utilisateur (Zero UI Regression)** :
+   - Ne **JAMAIS modifier, dégrader, simplifier ou altérer les interfaces graphiques existantes** (design, mise en page HTML, classes Bootstrap, styles CSS, éléments visuels, formulaires, modales, boutons, icônes ou comportement UX).
+   - Toute modification apportée à une vue doit être **100% neutre sur le plan visuel** : stricte conservation des identifiants (`id`), des classes CSS, des attributs data, des structures de tableau/grille, des fenêtres modales et des scripts JavaScript associés.
+   - La restructuration concerne **exclusivement le moteur sous-jacent** (Back-End, Modèles, Séparation des couches, Helpers, Sécurité). L'utilisateur doit retrouver exactement son interface visuelle au pixel près, mais propulsée par un code interne propre, rapide et robuste.
+
+2. **Interdiction Absolue des Requêtes SQL dans les Vues (Zero SQL in Views)** :
+   - Les vues (`views/`) sont de purs gabarits d'affichage passifs.
+   - Ne JAMAIS instancier de connexion PDO (`new Database()`) ni exécuter de requêtes (`$db->query()`, `$db->prepare()`) dans un fichier de vue ou de template.
+   - Toutes les données nécessaires à la vue doivent obligatoirement être préparées en amont par le Contrôleur via les Modèles et injectées dans la vue sous forme de variables propres.
+
+3. **Encapsulation Obligatoire des Requêtes dans les Modèles (Thin Controller, Fat Model)** :
+   - Les Contrôleurs (`controllers/`) ne doivent plus contenir de requêtes SQL brutes (`SELECT ... JOIN ...`, `DESCRIBE ...`).
+   - Toute opération d'accès aux données doit être encapsulée dans une méthode dédiée du Modèle correspondant (`models/`), typée et réutilisable.
+
+4. **Encapsulation de la Session & de l'Authentification (`Session` & `Auth`)** :
+   - Proscrire l'accès direct et dispersé à la superglobale `$_SESSION` dans le code métier et les vues.
+   - Utiliser systématiquement la classe `core/Session` (`Session::get()`, `Session::set()`, `Session::has()`, etc.) et la classe `core/Auth` (`Auth::check()`, `Auth::user()`, `Auth::id()`, `Auth::can()`, `Auth::isSuperAdmin()`).
+
+5. **Utilisation Systématique des Constantes du Projet (`config/const.php`)** :
+   - Proscrire les chaînes de caractères magiques (*magic strings*) dans les requêtes et les conditions.
+   - Utiliser obligatoirement les constantes définies :
+     - Tables : `TABLES::INSCRIPTIONS`, `TABLES::USERS`, `TABLES::CLASSES`, etc.
+     - Rôles : `ROLES::SUPER_ADMIN`, `ROLES::DIR_ETUDES`, etc.
+     - Statuts : `STATUTS::INSCRIPTIONS`, `STATUTS::GENERAL`, etc.
+     - Permissions : `PERMISSIONS::...`
+
+6. **Centralisation des Helpers (Principe DRY)** :
+   - Mutualiser les fonctions de formatage et de sécurité récurrentes dans `core/Helper.php` (`formatMoney()`, `formatDate()`, `statusBadge()`, `csrfToken()`, `csrfField()`, `sanitize()`) pour éviter la duplication de logique d'affichage dans les vues.
+
+7. **Sécurisation par Middlewares & Filtrage d'Accès** :
+   - Les contrôleurs doivent systématiser la vérification de l'authentification (`Auth::check()`) et le contrôle RBAC (`Auth::can(...)` ou `$this->requirePermission(...)`) dès l'initialisation des actions.
+   - Toute soumission de formulaire critique doit intégrer la validation CSRF.

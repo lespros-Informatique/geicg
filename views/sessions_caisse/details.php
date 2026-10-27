@@ -52,28 +52,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
         
         <!-- En-tête du Reçu / PV -->
         <?php 
-          $logoUrl = '';
-          try {
-              $dbEtab = (new Database())->getCon();
-              $stmtEtab = $dbEtab->query("SELECT logo_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
-              $rawEtabLogo = $stmtEtab->fetchColumn();
-              if (!empty($rawEtabLogo)) {
-                  $cleanPath = ltrim($rawEtabLogo, '/');
-                  if (strpos($cleanPath, 'public/') === 0 && file_exists(__DIR__ . '/../../' . $cleanPath)) {
-                      $logoUrl = RACINE . $cleanPath;
-                  } elseif (file_exists(__DIR__ . '/../../public/' . $cleanPath)) {
-                      $logoUrl = RACINE . 'public/' . $cleanPath;
-                  }
-              }
-          } catch (Exception $e) {}
-
-          if (empty($logoUrl)) {
-              if (file_exists(__DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg')) {
-                  $logoUrl = RACINE . 'public/assets/images/logo/logo_eicg.jpg';
-              } elseif (file_exists(__DIR__ . '/../../public/uploads/logos/logo_1787358264.jpg')) {
-                  $logoUrl = RACINE . 'public/uploads/logos/logo_1787358264.jpg';
-              }
-          }
+          $logoUrl = $logoUrl ?? getEtablissementLogoUrl();
         ?>
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
           <div style="display: flex; align-items: center; gap: 16px;">

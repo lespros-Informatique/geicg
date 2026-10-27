@@ -1,17 +1,8 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$dbConn = (new Database())->getCon();
-$classes = (new ModelClasse())->getAll();
-$matieres = (new ModelMatiere())->getAll();
-
-$etudiantsDetails = $dbConn->query("
-    SELECT DISTINCT e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant,
-           i.classe_code, cl.libelle_classe
-    FROM etudiants e
-    LEFT JOIN inscriptions i ON i.etudiant_code = e.code_etudiant
-    LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-    ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC
-")->fetchAll(PDO::FETCH_ASSOC);
+$classes = $classes ?? [];
+$matieres = $matieres ?? [];
+$etudiantsDetails = $etudiantsDetails ?? [];
 
 // Structurer les étudiants uniquement par classe
 $studentsByClass = [];

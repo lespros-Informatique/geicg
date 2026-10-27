@@ -85,4 +85,89 @@ class ModelRole extends BaseModel
             return false;
         }
     }
+
+    public function getRolesWithCounts(): array
+    {
+        try {
+            $sql = "SELECT r.*,
+                           COUNT(DISTINCT u.code_user) as nb_users,
+                           COUNT(DISTINCT rp.permission_code) as nb_permissions
+                    FROM " . TABLES::ROLES . " r
+                    LEFT JOIN " . TABLES::USER_ROLES . " ur ON ur.role_code = r.code_role
+                    LEFT JOIN " . TABLES::USERS . " u ON u.code_user = ur.user_code AND u.statut_user = 'actif'
+                    LEFT JOIN " . TABLES::ROLE_PERMISSIONS . " rp ON rp.role_code = r.code_role
+                    GROUP BY r.id
+                    ORDER BY r.id ASC";
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log('[ModelRole::getRolesWithCounts] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function existsCode(string $codeRole): bool
+    {
+        try {
+            $stmt = $this->getCon()->prepare("SELECT id FROM " . TABLES::ROLES . " WHERE code_role = ?");
+            $stmt->execute([$codeRole]);
+            return (bool)$stmt->fetch();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function createRole(array $data, array $permissions = []): bool
+    {
+        try {
+            $data['statut_role'] = $data['statut_role'] ?? 'actif';
+            $sql = "INSERT INTO " . TABLES::ROLES . " (code_role, libelle_role, module, groupe, description, statut_role)
+                    VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = $this->getCon()->prepare($sql);
+            $ok = $stmt->execute([
+                $data['code_role'],
+                $data['libelle_role'],
+                $data['module'] ?? 'ADMINISTRATION',
+                $data['groupe'] ?? 'Direction',
+                $data['description'] ?? '',
+                $data['statut_role']
+            ]);
+            if ($ok && !empty($permissions)) {
+                $this->syncPermissions($data['code_role'], $permissions);
+            }
+            return $ok;
+        } catch (Exception $e) {
+            $this->lastError = $e->getMessage();
+            error_log('[ModelRole::createRole] ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateRole(int $id, array $data, array $permissions = []): bool
+    {
+        try {
+            $role = $this->getById($id);
+            if (!$role) return false;
+
+            $sql = "UPDATE " . TABLES::ROLES . " 
+                    SET libelle_role = ?, module = ?, groupe = ?, description = ?, statut_role = ?
+                    WHERE id = ?";
+            $stmt = $this->getCon()->prepare($sql);
+            $ok = $stmt->execute([
+                $data['libelle_role'],
+                $data['module'] ?? ($role['module'] ?? 'ADMINISTRATION'),
+                $data['groupe'] ?? ($role['groupe'] ?? 'Direction'),
+                $data['description'] ?? ($role['description'] ?? ''),
+                $data['statut_role'] ?? ($role['statut_role'] ?? 'actif'),
+                $id
+            ]);
+            if ($ok) {
+                $this->syncPermissions($role['code_role'], $permissions);
+            }
+            return $ok;
+        } catch (Exception $e) {
+            $this->lastError = $e->getMessage();
+            error_log('[ModelRole::updateRole] ' . $e->getMessage());
+            return false;
+        }
+    }
 }

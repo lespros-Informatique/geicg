@@ -280,4 +280,95 @@ class ModelComposition extends BaseModel
             return [];
         }
     }
+
+    public function getTeachersWithUsers(): array
+    {
+        try {
+            $sql = "
+                SELECT e.code_enseignant, CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_complet
+                FROM " . TABLES::ENSEIGNANTS . " e
+                JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
+                ORDER BY u.nom_user ASC
+            ";
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("Get teachers with users error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getMatieresForClasse(string $classeCode, ?string $anneeCode = null): array
+    {
+        $db = $this->getCon();
+        $source = 'emploi_temps';
+
+        // 1. Emploi du temps
+        $stmtEdt = $db->prepare("
+            SELECT DISTINCT m.code_matiere, m.libelle_matiere,
+                   GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ') AS prof_nom
+            FROM " . TABLES::EMPLOIS_TEMPS . " edt
+            INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.classe_code = edt.classe_code AND em.matiere_code = edt.matiere_code)
+            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
+            WHERE edt.classe_code = ? AND (edt.annee_code = ? OR ? = '')
+            GROUP BY m.code_matiere, m.libelle_matiere
+            ORDER BY m.libelle_matiere ASC
+        ");
+        $stmtEdt->execute([$classeCode, $anneeCode, $anneeCode]);
+        $items = $stmtEdt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 2. Fallback enseignant_matiere
+        if (empty($items)) {
+            $stmtEm = $db->prepare("
+                SELECT DISTINCT m.code_matiere, m.libelle_matiere,
+                       GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ') AS prof_nom
+                FROM " . TABLES::ENSEIGNANT_MATIERE . " em
+                INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
+                LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
+                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
+                WHERE em.classe_code = ?
+                GROUP BY m.code_matiere, m.libelle_matiere
+                ORDER BY m.libelle_matiere ASC
+            ");
+            $stmtEm->execute([$classeCode]);
+            $items = $stmtEm->fetchAll(PDO::FETCH_ASSOC);
+            $source = 'enseignant_matiere';
+        }
+
+        // 3. Fallback all matieres
+        if (empty($items)) {
+            $stmtAll = $db->query("SELECT code_matiere, libelle_matiere FROM " . TABLES::MATIERES . " ORDER BY libelle_matiere ASC");
+            $items = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+            $source = 'all';
+        }
+
+        return ['items' => $items, 'source' => $source];
+    }
+
+    public function findClasseForTargetNiveauFiliere(string $compositionNiveauFiliereCode): ?string
+    {
+        $db = $this->getCon();
+        $stmtCible = $db->prepare("SELECT niveau_code, filiere_code FROM composition_niveau_filiere WHERE code_composition_niveau_filiere = ?");
+        $stmtCible->execute([$compositionNiveauFiliereCode]);
+        $targetRow = $stmtCible->fetch(PDO::FETCH_ASSOC);
+        if ($targetRow) {
+            $stmtCl = $db->prepare("SELECT code_classe FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND filiere_code = ? LIMIT 1");
+            $stmtCl->execute([$targetRow['niveau_code'], $targetRow['filiere_code']]);
+            $cRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
+            return $cRow['code_classe'] ?? null;
+        }
+        return null;
+    }
+
+    public function findExistingComposition(string $classeCode, string $matiereCode, string $semestreCode, string $typeComposition, string $anneeCode): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT * FROM " . TABLES::COMPOSITIONS . " 
+            WHERE classe_code = ? AND matiere_code = ? AND semestre_code = ? AND type_composition = ? AND (annee_code = ? OR ? IS NULL OR ? = '')
+            ORDER BY id_composition DESC LIMIT 1
+        ");
+        $stmt->execute([$classeCode, $matiereCode, $semestreCode, $typeComposition, $anneeCode, $anneeCode, $anneeCode]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 }

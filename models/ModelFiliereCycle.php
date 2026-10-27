@@ -97,4 +97,43 @@ class ModelFiliereCycle
         $stmt = $this->con->prepare("UPDATE filiere_cycles SET statut_filiere_cycle = ? WHERE id_filiere_cycle = ?");
         return $stmt->execute([$newStatus, $id]);
     }
+
+    public function getActiveFilieres(): array
+    {
+        $sql = "SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC";
+        return $this->con->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getActiveCycles(): array
+    {
+        $sql = "SELECT code_cycle, libelle_cycle FROM " . TABLES::CYCLES . " WHERE statut_cycle = 'actif' ORDER BY libelle_cycle ASC";
+        return $this->con->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getTypeFiliereByFiliereCode(string $filiereCode): ?string
+    {
+        try {
+            $stmt = $this->con->prepare("SELECT type_filiere FROM " . TABLES::FILIERES . " WHERE code_filiere = ? LIMIT 1");
+            $stmt->execute([$filiereCode]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row['type_filiere'] ?? null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    public function getTableColumns(): array
+    {
+        try {
+            return $this->con->query("DESCRIBE " . TABLES::FILIERE_CYCLES)->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public function filterData(array $data): array
+    {
+        $cols = $this->getTableColumns();
+        return array_intersect_key($data, array_flip($cols));
+    }
 }

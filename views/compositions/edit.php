@@ -1,26 +1,15 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $item = $item ?? [];
-$annees = $annees ?? (new ModelAnnee())->getAll();
-$niveaux = $niveaux ?? (new ModelNiveau())->getAll();
-$filieres = $filieres ?? (new ModelFiliere())->getAll();
-$classes = $classes ?? (new ModelClasse())->getAll();
-$matieres = $matieres ?? (new ModelMatiere())->getAll();
-$activeAnneeCode = $activeAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
-$semestres = $semestres ?? (new ModelSemestre())->getAll($activeAnneeCode);
-$salles = $salles ?? (new ModelSalle())->getAll();
-
-$dbConn = (new Database())->getCon();
-if (empty($teachersWithUsers)) {
-    $teachersWithUsers = $dbConn->query("
-        SELECT e.code_enseignant, CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_complet
-        FROM enseignants e
-        JOIN users u ON u.code_user = e.code_enseignant
-        ORDER BY u.nom_user ASC
-    ")->fetchAll(PDO::FETCH_ASSOC);
-}
-
-$activeAnneeCode = $activeAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$annees = $annees ?? [];
+$niveaux = $niveaux ?? [];
+$filieres = $filieres ?? [];
+$classes = $classes ?? [];
+$matieres = $matieres ?? [];
+$activeAnneeCode = $activeAnneeCode ?? Session::get('annee_active_code', '');
+$semestres = $semestres ?? [];
+$salles = $salles ?? [];
+$teachersWithUsers = $teachersWithUsers ?? [];
 $activeAnneeLibelle = '';
 foreach ($annees as $a) {
     if ($a['code_annee'] === $activeAnneeCode) {

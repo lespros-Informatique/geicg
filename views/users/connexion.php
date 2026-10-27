@@ -1,14 +1,7 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
 
-try {
-    $db = (new Database())->getCon();
-    $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
-    $etabRow = $stmt->fetch(PDO::FETCH_ASSOC);
-    $loginLogo = $etabRow['logo_etablissement'] ?? '';
-} catch (Exception $e) {
-    $loginLogo = '';
-}
+$loginLogo = $loginLogo ?? '';
 ?>
 
 <div class="app-layout auth-layout">
