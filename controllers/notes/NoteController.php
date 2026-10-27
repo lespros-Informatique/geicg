@@ -419,6 +419,19 @@ class NoteController extends BaseController
                 if (empty($selectedSemestreCode)) $selectedSemestreCode = $selectedCompItem['semestre_code'];
                 if (empty($selectedTypeEval)) $selectedTypeEval = $selectedCompItem['type_composition'] ?? 'EXAMEN';
             }
+        } else if (!empty($selectedClasseCode) && !empty($selectedMatiereCode) && !empty($selectedSemestreCode) && !empty($selectedTypeEval) && $selectedTypeEval !== 'EXAMEN') {
+            $stmtFindComp = $db->prepare("
+                SELECT * FROM compositions 
+                WHERE classe_code = ? AND matiere_code = ? AND semestre_code = ? AND type_composition = ? AND (annee_code = ? OR ? IS NULL OR ? = '')
+                ORDER BY id_composition DESC LIMIT 1
+            ");
+            $stmtFindComp->execute([$selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode, $selectedTypeEval, $anneeCode, $anneeCode, $anneeCode]);
+            $existingComp = $stmtFindComp->fetch(PDO::FETCH_ASSOC);
+            if ($existingComp) {
+                $selectedCompositionCode = $existingComp['code_composition'];
+                if (empty($selectedLibelleEval)) $selectedLibelleEval = $existingComp['libelle_composition'];
+                if (empty($selectedCoefEval)) $selectedCoefEval = (string)$existingComp['coefficient'];
+            }
         }
 
         if (!empty($selectedClasseCode)) {
@@ -535,6 +548,19 @@ class NoteController extends BaseController
                 if (empty($selectedCoefEval)) $selectedCoefEval = (string)$selectedCompItem['coefficient'];
                 if (empty($selectedSemestreCode)) $selectedSemestreCode = $selectedCompItem['semestre_code'];
                 if (empty($selectedTypeEval)) $selectedTypeEval = $selectedCompItem['type_composition'] ?? 'EXAMEN';
+            }
+        } else if (!empty($selectedClasseCode) && !empty($selectedMatiereCode) && !empty($selectedSemestreCode) && !empty($selectedTypeEval) && $selectedTypeEval !== 'EXAMEN') {
+            $stmtFindComp = $db->prepare("
+                SELECT * FROM compositions 
+                WHERE classe_code = ? AND matiere_code = ? AND semestre_code = ? AND type_composition = ? AND (annee_code = ? OR ? IS NULL OR ? = '')
+                ORDER BY id_composition DESC LIMIT 1
+            ");
+            $stmtFindComp->execute([$selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode, $selectedTypeEval, $anneeCode, $anneeCode, $anneeCode]);
+            $existingComp = $stmtFindComp->fetch(PDO::FETCH_ASSOC);
+            if ($existingComp) {
+                $selectedCompositionCode = $existingComp['code_composition'];
+                if (empty($selectedLibelleEval)) $selectedLibelleEval = $existingComp['libelle_composition'];
+                if (empty($selectedCoefEval)) $selectedCoefEval = (string)$existingComp['coefficient'];
             }
         }
 
@@ -653,16 +679,18 @@ class NoteController extends BaseController
 
                     $stmtNewComp = $db->prepare("
                         INSERT INTO compositions (
-                            code_composition, libelle_composition, type_composition, semestre_code, coefficient,
+                            code_composition, libelle_composition, type_composition, semestre_code, classe_code, matiere_code, coefficient,
                             date_composition, date_fin_composition, statut_composition, annee_code,
                             etablissement_code, user_code, created_at_composition
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'programme', ?, ?, ?, NOW())
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'programme', ?, ?, ?, NOW())
                     ");
                     $stmtNewComp->execute([
                         $compositionCode,
                         $finalLibelle,
                         $typeEval,
                         $semestreCode,
+                        $classeCode,
+                        $matiereCode,
                         $coefEval,
                         $today,
                         $today,
@@ -671,7 +699,7 @@ class NoteController extends BaseController
                         $userCode
                     ]);
 
-                    // Associer cette composition à la classe et la matière
+                    // Associer également au niveau/filière pour rétrocompatibilité
                     $stmtCl = $db->prepare("SELECT niveau_code, filiere_code FROM classes WHERE code_classe = ?");
                     $stmtCl->execute([$classeCode]);
                     $clRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
@@ -692,16 +720,16 @@ class NoteController extends BaseController
                     }
                 } else {
                     // Mise à jour de l'évaluation existante dans 'compositions'
-                    if (!empty($libelleEval) || $coefEval > 0) {
-                        $stmtUpdComp = $db->prepare("
-                            UPDATE compositions 
-                            SET libelle_composition = COALESCE(NULLIF(?, ''), libelle_composition),
-                                coefficient = ?,
-                                updated_at_composition = NOW()
-                            WHERE code_composition = ?
-                        ");
-                        $stmtUpdComp->execute([$libelleEval, $coefEval, $compositionCode]);
-                    }
+                    $stmtUpdComp = $db->prepare("
+                        UPDATE compositions 
+                        SET libelle_composition = COALESCE(NULLIF(?, ''), libelle_composition),
+                            coefficient = ?,
+                            classe_code = COALESCE(classe_code, ?),
+                            matiere_code = COALESCE(matiere_code, ?),
+                            updated_at_composition = NOW()
+                        WHERE code_composition = ?
+                    ");
+                    $stmtUpdComp->execute([$libelleEval, $coefEval, $classeCode, $matiereCode, $compositionCode]);
                 }
             }
 
