@@ -59,8 +59,11 @@
   /**
    * Helper d'autorisation granulaire instantané O(1)
    */
-  $canAccess = function(array $requiredPerms = []) use ($permMap, $isSuperAdmin): bool {
+  $canAccess = function($requiredPerms = []) use ($permMap, $isSuperAdmin): bool {
       if ($isSuperAdmin) return true;
+      if (is_string($requiredPerms)) {
+          return isset($permMap[$requiredPerms]);
+      }
       foreach ($requiredPerms as $perm) {
           if (isset($permMap[$perm])) return true;
       }
@@ -296,13 +299,12 @@
 
         <!-- === MODULE 1 : STRUCTURE & ÉTABLISSEMENT === -->
         <?php
-          $showEtab = $canAccess(['MANAGE_ETABLISSEMENT', 'CONFIG_SYSTEM']);
-          $showFilCycles = $canAccess(['MANAGE_FILIERES', 'VIEW_FILIERES', 'MANAGE_CYCLES', 'VIEW_CYCLES', 'CONFIG_ACADEMIQUE']);
-          $showNiveaux = $canAccess(['MANAGE_NIVEAUX', 'VIEW_NIVEAUX', 'CONFIG_ACADEMIQUE']);
-          $showSalles = $canAccess(['MANAGE_SALLES', 'VIEW_SALLES', 'CONFIG_ACADEMIQUE']);
-          $showPiecesFournir = $canAccess(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
-          $showAccessoires = $canAccess(['MANAGE_ACCESSOIRES', 'VIEW_ACCESSOIRES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
-          $hasSecStructure = $showEtab || $showFilCycles || $showNiveaux || $showSalles || $showPiecesFournir || $showAccessoires;
+          $showEtab = $canAccess('MENU_ETABLISSEMENT');
+          $showOffreAcademique = $canAccess('MENU_OFFRE_ACADEMIQUE');
+          $showSalles = $canAccess('MENU_SALLES');
+          $showPiecesFournir = $canAccess('MENU_PIECES_FOURNIR');
+          $showAccessoires = $canAccess('MENU_ACCESSOIRES');
+          $hasSecStructure = $showEtab || $showOffreAcademique || $showSalles || $showPiecesFournir || $showAccessoires;
         ?>
         <?php if ($hasSecStructure): ?>
         <div class="nav-section">
@@ -318,7 +320,7 @@
                     <i data-lucide="landmark"></i> <span>Configuration Établissement</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showFilCycles || $showNiveaux): ?>
+                <?php if ($showOffreAcademique): ?>
                 <a href="<?= RACINE ?>filiere_cycle/list" class="nav-item sub <?= $isActiveRoute(['/filiere_cycle/', '/filiere/', '/cycle/', '/niveau/']) ?>" data-title="Offre Académique (Cycles, Filières & Niveaux)">
                     <i data-lucide="layers"></i> <span>Cycles, Filières & Niveaux</span>
                 </a>
@@ -344,12 +346,11 @@
 
         <!-- === MODULE 2 : PLANIFICATION ACADÉMIQUE === -->
         <?php
-          $showAnnees = $canAccess(['MANAGE_ANNEES', 'VIEW_ANNEES', 'CONFIG_ACADEMIQUE']);
-          $showClasses = $canAccess(['MANAGE_CLASSES', 'VIEW_CLASSES', 'CONFIG_ACADEMIQUE']);
-          $showSemestres = $canAccess(['MANAGE_SEMESTRES', 'VIEW_SEMESTRES', 'CONFIG_ACADEMIQUE']);
-          $showUe = $canAccess(['MANAGE_UE', 'VIEW_UE', 'CONFIG_ACADEMIQUE']);
-          $showMatieres = $canAccess(['MANAGE_MATIERES', 'VIEW_MATIERES', 'CONFIG_ACADEMIQUE']);
-          $hasSecAcademique = $showAnnees || $showClasses || $showSemestres || $showUe || $showMatieres;
+          $showAnneesSemestres = $canAccess('MENU_ANNEES_SEMESTRES');
+          $showClasses = $canAccess('MENU_CLASSES');
+          $showUe = $canAccess('MENU_UE');
+          $showMatieres = $canAccess('MENU_MATIERES');
+          $hasSecAcademique = $showAnneesSemestres || $showClasses || $showUe || $showMatieres;
         ?>
         <?php if ($hasSecAcademique): ?>
         <div class="nav-section">
@@ -360,7 +361,7 @@
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
             <div class="nav-section-items" id="sec-academique">
-                <?php if ($showAnnees || $showSemestres): ?>
+                <?php if ($showAnneesSemestres): ?>
                 <a href="<?= RACINE ?>annee/list" class="nav-item sub <?= $isActiveRoute(['/annee', '/semestre']) ?>" data-title="Années & Semestres">
                     <i data-lucide="calendar-range"></i> <span>Années & Semestres</span>
                 </a>
@@ -386,13 +387,13 @@
 
         <!-- === MODULE 3 : ADMISSIONS & SCOLARITÉ === -->
         <?php
-          $showEtudiants = $canAccess(['MANAGE_ETUDIANTS', 'VIEW_ETUDIANTS']);
-          $showParents = $canAccess(['MANAGE_PARENTS', 'VIEW_PARENTS', 'MANAGE_ETUDIANTS']);
-          $showInscriptions = $canAccess(['MANAGE_INSCRIPTIONS', 'VIEW_INSCRIPTIONS']);
-          $showDepotDossiers = $canAccess(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
-          $showRemiseKits = $canAccess(['MANAGE_REMISE_KITS', 'VIEW_REMISE_KITS']);
-          $showSansPhoto = $canAccess(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
-          $hasSecEleves = $showEtudiants || $showParents || $showInscriptions || $showDepotDossiers || $showRemiseKits || $showSansPhoto;
+          $showEtudiants = $canAccess('MENU_ETUDIANTS');
+          $showInscriptions = $canAccess('MENU_INSCRIPTIONS');
+          $showPriseVue = $canAccess('MENU_PRISE_VUE');
+          $showDepotDossiers = $canAccess('MENU_DEPOT_DOSSIERS');
+          $showRetraitKits = $canAccess('MENU_RETRAIT_KITS');
+          $showParents = $canAccess('MENU_PARENTS');
+          $hasSecEleves = $showEtudiants || $showInscriptions || $showPriseVue || $showDepotDossiers || $showRetraitKits || $showParents;
         ?>
         <?php if ($hasSecEleves): ?>
         <div class="nav-section">
@@ -413,7 +414,7 @@
                     <i data-lucide="clipboard-check"></i> <span>Réinscriptions</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showSansPhoto): ?>
+                <?php if ($showPriseVue): ?>
                 <a href="<?= RACINE ?>inscription/prise_de_vue" class="nav-item sub <?= $isActiveRoute(['/inscription/prise_de_vue', '/inscription/sans_photo']) ?>" data-title="Prise de vue">
                     <i data-lucide="camera"></i> <span>Prise de vue</span>
                 </a>
@@ -423,7 +424,7 @@
                     <i data-lucide="folder-open"></i> <span>Dépôt des Dossiers </span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showRemiseKits): ?>
+                <?php if ($showRetraitKits): ?>
                 <a href="<?= RACINE ?>accessoire_inscription/registre" class="nav-item sub <?= $isActiveRoute(['/accessoire_inscription/', '/accessoire/registre']) ?>" data-title="Registre & Remise des Kits">
                     <i data-lucide="package-check"></i> <span>Retrait des Kits</span>
                 </a>
@@ -439,18 +440,16 @@
 
         <!-- === MODULE 4 : FINANCE, CAISSE & DÉPENSES === -->
         <?php
-          $showScolariteGrille = $canAccess(['MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
-          $showFraisAnnexesGrille = $canAccess(['MANAGE_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']);
-          $showCaisseAnnexe = $canAccess(['VIEW_CAISSE_ANNEXE', 'MANAGE_CAISSE_ANNEXE', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS', 'VIEW_RAPPORTS_FINANCIERS', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_ANNEXES']);
-          $showPaiements = $canAccess(['MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'RECORD_PAIEMENTS']);
-          $showComptabiliteEtudiants = $canAccess(['VIEW_COMPTABILITE_ETUDIANTS', 'MANAGE_PAIEMENTS', 'VIEW_PAIEMENTS', 'VIEW_RAPPORTS_FINANCIERS', 'EXPORT_FINANCE']);
-          $showOuvCaisse = $canAccess(['MANAGE_CAISSE', 'OUVERTURE_CAISSE', 'MANAGE_PAIEMENTS', 'RECORD_PAIEMENTS']);
-          $showClotCaisse = $canAccess(['CLOTURE_CAISSE', 'VIEW_RAPPORTS_FINANCIERS', 'MANAGE_PAIEMENTS']);
-          $showImpayes = $canAccess(['MANAGE_IMPAYES', 'VIEW_IMPAYES', 'SEND_RELANCES', 'MANAGE_MORATOIRES']);
-          $showArrieres = $canAccess(['MANAGE_ARRIERES', 'VIEW_ARRIERES', 'MANAGE_IMPAYES', 'MANAGE_PAIEMENTS']);
-          $showTypeDep = $canAccess(['MANAGE_TYPES_DEPENSE', 'VIEW_TYPES_DEPENSE', 'VALIDATE_DEPENSES']);
-          $showDepenses = $canAccess(['RECORD_DEPENSES', 'VIEW_DEPENSES', 'VALIDATE_DEPENSES']);
-          $hasSecFinance = $showScolariteGrille || $showFraisAnnexesGrille || $showCaisseAnnexe || $showPaiements || $showComptabiliteEtudiants || $showOuvCaisse || $showClotCaisse || $showImpayes || $showArrieres || $showTypeDep || $showDepenses;
+          $showScolarites = $canAccess('MENU_SCOLARITES');
+          $showFraisAnnexes = $canAccess('MENU_FRAIS_ANNEXES');
+          $showCaisseAnnexe = $canAccess('MENU_CAISSE_ANNEXE');
+          $showPaiements = $canAccess('MENU_PAIEMENTS');
+          $showComptabiliteEtudiants = $canAccess('MENU_COMPTABILITE_ETUDIANTS');
+          $showSessionsCaisse = $canAccess('MENU_SESSIONS_CAISSE');
+          $showImpayes = $canAccess('MENU_IMPAYES');
+          $showArrieres = $canAccess('MENU_ARRIERES');
+          $showDepenses = $canAccess('MENU_DEPENSES');
+          $hasSecFinance = $showScolarites || $showFraisAnnexes || $showCaisseAnnexe || $showPaiements || $showComptabiliteEtudiants || $showSessionsCaisse || $showImpayes || $showArrieres || $showDepenses;
         ?>
         <?php if ($hasSecFinance): ?>
         <div class="nav-section">
@@ -461,12 +460,12 @@
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
             <div class="nav-section-items" id="sec-finance">
-                <?php if ($showScolariteGrille): ?>
+                <?php if ($showScolarites): ?>
                 <a href="<?= RACINE ?>scolarite/list" class="nav-item sub <?= $isActiveRoute(['/scolarite/', '/tranche/']) ?>" data-title="Scolarités & Échéanciers">
                     <i data-lucide="receipt"></i> <span>Scolarités & Échéanciers</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showFraisAnnexesGrille): ?>
+                <?php if ($showFraisAnnexes): ?>
                 <a href="<?= RACINE ?>fraisAnnexe/list" class="nav-item sub <?= $isActiveRoute('/fraisAnnexe/') ?>" data-title="Grille Frais Annexes">
                     <i data-lucide="package-check"></i> <span>Grille Frais Annexes</span>
                 </a>
@@ -486,7 +485,7 @@
                     <i data-lucide="users"></i> <span>Comptabilité Étudiants</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showOuvCaisse || $showClotCaisse): ?>
+                <?php if ($showSessionsCaisse): ?>
                 <a href="<?= RACINE ?>session_caisse/list" class="nav-item sub <?= $isActiveRoute(['/session_caisse/', '/ouverture_caisse/', '/cloture_caisse/']) ?>" data-title="Sessions de Caisse">
                     <i data-lucide="vault"></i> <span>Sessions de Caisse</span>
                 </a>
@@ -501,7 +500,7 @@
                     <i data-lucide="history"></i> <span>Arriérés Années Antérieures</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showDepenses || $showTypeDep): ?>
+                <?php if ($showDepenses): ?>
                 <a href="<?= RACINE ?>depense/list" class="nav-item sub <?= $isActiveRoute(['/depense', '/type_depense']) ?>" data-title="Dépenses & Engagements">
                     <i data-lucide="file-minus"></i> <span>Dépenses & Engagements</span>
                 </a>
@@ -512,13 +511,15 @@
 
         <!-- === MODULE 5 : PÉDAGOGIE & ÉVALUATIONS === -->
         <?php
-          $showEnseignants = $canAccess(['MANAGE_ENSEIGNANTS', 'VIEW_ENSEIGNANTS']);
-          $showAffectations = $canAccess(['MANAGE_AFFECTATIONS', 'VIEW_AFFECTATIONS', 'MANAGE_ENSEIGNANTS']);
-          $showEmplois = $canAccess(['MANAGE_EMPLOI_TEMPS', 'VIEW_EMPLOI_TEMPS']);
-          $showAbsences = $canAccess(['MANAGE_ABSENCES', 'VIEW_ABSENCES']);
-          $showNotes = $canAccess(['ENTER_NOTES', 'VIEW_NOTES', 'LOCK_NOTES']);
-          $showBulletins = $canAccess(['GENERATE_BULLETINS', 'VIEW_BULLETINS', 'VIEW_REPORTS']);
-          $hasSecPedagogie = $showEnseignants || $showAffectations || $showEmplois || $showAbsences || $showNotes || $showBulletins;
+          $showEnseignants = $canAccess('MENU_ENSEIGNANTS');
+          $showEmplois = $canAccess('MENU_EMPLOI_TEMPS');
+          $showAbsences = $canAccess('MENU_ABSENCES');
+          $showCompositions = $canAccess('MENU_COMPOSITIONS');
+          $showSaisieNotes = $canAccess('MENU_SAISIE_NOTES');
+          $showJournalNotes = $canAccess('MENU_JOURNAL_NOTES');
+          $showBulletins = $canAccess('MENU_BULLETINS');
+          $showPvDelib = $canAccess('MENU_PV_DELIBERATION');
+          $hasSecPedagogie = $showEnseignants || $showEmplois || $showAbsences || $showCompositions || $showSaisieNotes || $showJournalNotes || $showBulletins || $showPvDelib;
         ?>
         <?php if ($hasSecPedagogie): ?>
         <div class="nav-section">
@@ -544,13 +545,17 @@
                     <i data-lucide="user-x"></i> <span>Absences & Appel par Classe</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showNotes): ?>
+                <?php if ($showCompositions): ?>
                 <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= $isActiveRoute('/composition/') ?>" data-title="Planning Compositions & Examens">
                     <i data-lucide="award"></i> <span>Planning Compositions & Examens</span>
                 </a>
+                <?php endif; ?>
+                <?php if ($showSaisieNotes): ?>
                 <a href="<?= RACINE ?>note/saisieClasse" class="nav-item sub <?= $isActiveRoute('/note/saisieClasse') ?>" data-title="Saisie des Notes par Classe">
                     <i data-lucide="edit-3"></i> <span>Saisie des Notes par Classe</span>
                 </a>
+                <?php endif; ?>
+                <?php if ($showJournalNotes): ?>
                 <a href="<?= RACINE ?>note/list" class="nav-item sub <?= $isActiveRoute('/note/', 'saisieClasse') ?>" data-title="Registre & Journal des Notes">
                     <i data-lucide="list"></i> <span>Registre & Journal des Notes</span>
                 </a>
@@ -559,6 +564,8 @@
                 <a href="<?= RACINE ?>bulletin/list" class="nav-item sub <?= $isActiveRoute(['/bulletin/list', RACINE . 'bulletin/'], 'pvClasse') ?>" data-title="Bulletins Semestriels">
                     <i data-lucide="file-text"></i> <span>Bulletins Semestriels</span>
                 </a>
+                <?php endif; ?>
+                <?php if ($showPvDelib): ?>
                 <a href="<?= RACINE ?>bulletin/pvClasse" class="nav-item sub <?= $isActiveRoute('/bulletin/pvClasse') ?>" data-title="PV de Délibération">
                     <i data-lucide="file-spreadsheet"></i> <span>PV de Délibération</span>
                 </a>
@@ -569,10 +576,10 @@
 
         <!-- === MODULE 6 : PORTAIL & COMMUNICATION === -->
         <?php
-          $showEvents = $canAccess(['MANAGE_EVENEMENTS', 'VIEW_EVENEMENTS']);
-          $showGaleries = $canAccess(['MANAGE_GALLERY', 'VIEW_GALLERY', 'MANAGE_COMMUNICATION']);
-          $showDocs = $canAccess(['MANAGE_DOCUMENTS', 'VIEW_DOCUMENTS']);
-          $hasSecMedias = $showEvents || $showGaleries || $showDocs;
+          $showEvenements = $canAccess('MENU_EVENEMENTS');
+          $showGaleries = $canAccess('MENU_GALERIES');
+          $showDocuments = $canAccess('MENU_DOCUMENTS');
+          $hasSecMedias = $showEvenements || $showGaleries || $showDocuments;
         ?>
         <?php if ($hasSecMedias): ?>
         <div class="nav-section">
@@ -583,7 +590,7 @@
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
             <div class="nav-section-items" id="sec-medias">
-                <?php if ($showEvents): ?>
+                <?php if ($showEvenements): ?>
                 <a href="<?= RACINE ?>evenement/list" class="nav-item sub <?= $isActiveRoute('/evenement/') ?>" data-title="Actualités & Événements">
                     <i data-lucide="bell"></i> <span>Actualités & Événements</span>
                 </a>
@@ -593,7 +600,7 @@
                     <i data-lucide="image"></i> <span>Galeries Photos/Vidéos</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showDocs): ?>
+                <?php if ($showDocuments): ?>
                 <a href="<?= RACINE ?>document/list" class="nav-item sub <?= $isActiveRoute('/document/') ?>" data-title="Documents & Supports">
                     <i data-lucide="folder-down"></i> <span>Documents & Supports</span>
                 </a>
@@ -604,11 +611,11 @@
 
         <!-- === MODULE 7 : ADMINISTRATION & SÉCURITÉ === -->
         <?php
-          $showUsers = $canAccess(['MANAGE_USERS', 'VIEW_USERS']);
-          $showFonctions = $canAccess(['MANAGE_FONCTIONS', 'VIEW_FONCTIONS']);
-          $showRoles = $canAccess(['MANAGE_ROLES', 'VIEW_ROLES']);
-          $showPerms = $canAccess(['MANAGE_PERMISSIONS', 'VIEW_PERMISSIONS']);
-          $hasSecSecurite = $showUsers || $showFonctions || $showRoles || $showPerms;
+          $showUsers = $canAccess('MENU_USERS');
+          $showFonctions = $canAccess('MENU_FONCTIONS');
+          $showRoles = $canAccess('MENU_ROLES');
+          $showPermissions = $canAccess('MENU_PERMISSIONS');
+          $hasSecSecurite = $showUsers || $showFonctions || $showRoles || $showPermissions;
         ?>
         <?php if ($hasSecSecurite): ?>
         <div class="nav-section">
@@ -634,7 +641,7 @@
                     <i data-lucide="shield"></i> <span>Rôles & Groupes</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($showPerms): ?>
+                <?php if ($showPermissions): ?>
                 <a href="<?= RACINE ?>permission/list" class="nav-item sub <?= $isActiveRoute('/permission/') ?>" data-title="Permissions Granulaires">
                     <i data-lucide="key"></i> <span>Permissions Granulaires</span>
                 </a>
@@ -642,6 +649,7 @@
             </div>
         </div>
         <?php endif; ?>
+
     </nav>
 </aside>
 
