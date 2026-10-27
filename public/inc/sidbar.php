@@ -23,48 +23,18 @@
 
   $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
 
-  // 2. Gestion ultra-rapide des permissions RBAC (Priorité Session + Table de hachage O(1))
-  $userPermissions = $_SESSION['permissions'] ?? null;
-  if ($userPermissions === null) {
-      $userRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];
-      if (empty($userRoles)) {
-          $singleRole = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? 'ROLE_USER');
-          $userRoles = !empty($singleRole) ? [$singleRole] : ['ROLE_USER'];
-      }
-      if (is_string($userRoles)) {
-          $userRoles = [$userRoles];
-      }
-
-      try {
-          $dbConn = (new Database())->getCon();
-          $inClause = implode(',', array_fill(0, count($userRoles), '?'));
-          $stmtP = $dbConn->prepare("
-              SELECT DISTINCT rp.permission_code 
-              FROM role_permissions rp
-              JOIN permissions p ON rp.permission_code = p.code_permission
-              WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
-          ");
-          $stmtP->execute($userRoles);
-          $userPermissions = $stmtP->fetchAll(PDO::FETCH_COLUMN) ?: [];
-          $_SESSION['permissions'] = $userPermissions;
-      } catch (Exception $e) {
-          $userPermissions = [];
-      }
-  }
-
-  // Table de hachage O(1) : vérification instantanée sans parcours linéaire in_array()
-  $permMap = array_fill_keys($userPermissions, true);
-  $isSuperAdmin = isset($permMap['*']);
+  // 2. Gestion des permissions RBAC déléguée à la classe Auth (source de vérité unique)
+  //    - Auth::permissions() : cache session + chargement dynamique si absent
+  //    - Auth::isSuperAdmin() : reconnaît '*' ET les rôles super-admin (ROLE_SUPERADMIN, all_control...)
+  $isSuperAdmin = Auth::isSuperAdmin();
+  $permMap = array_fill_keys(Auth::permissions(), true);
 
   /**
    * Helper d'autorisation granulaire instantané O(1)
    */
   $canAccess = function($requiredPerms = []) use ($permMap, $isSuperAdmin): bool {
       if ($isSuperAdmin) return true;
-      if (is_string($requiredPerms)) {
-          return isset($permMap[$requiredPerms]);
-      }
-      foreach ($requiredPerms as $perm) {
+      foreach ((array)$requiredPerms as $perm) {
           if (isset($permMap[$perm])) return true;
       }
       return false;
