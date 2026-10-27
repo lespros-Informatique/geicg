@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
 $item = isset($item) ? $item : [];
+$encryptedId = $encryptedId ?? '';
 $noteVal = (float)($item['note'] ?? ($item['valeur_note'] ?? 0));
 ?>
 <div class="app-layout">
@@ -57,7 +58,7 @@ $noteVal = (float)($item['note'] ?? ($item['valeur_note'] ?? 0));
           <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #7E22CE; text-transform: uppercase;">Classe & Semestre</span>
             <div style="font-size: 16px; font-weight: 800; color: #7E22CE; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;"><?= htmlspecialchars($item['libelle_semestre'] ?? 'Semestre 1') ?></div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;"><?= htmlspecialchars($item['libelle_semestre'] ?? '-') ?></div>
           </div>
 
         </div>

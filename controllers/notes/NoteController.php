@@ -67,13 +67,56 @@ class NoteController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
 
+        $db = $this->model->getCon();
+        $inscCode = trim($data['inscription_code'] ?? '');
+        $etudiantCode = trim($data['etudiant_code'] ?? '');
+        if (empty($etudiantCode) && !empty($inscCode)) {
+            $stmtEtu = $db->prepare("SELECT etudiant_code FROM inscriptions WHERE code_inscription = ?");
+            $stmtEtu->execute([$inscCode]);
+            $etudiantCode = $stmtEtu->fetchColumn() ?: '';
+        }
+        $data['etudiant_code'] = $etudiantCode;
+
+        $compositionCode = trim($data['composition_code'] ?? '');
+        $typeEval = trim($data['type_evaluation_code'] ?? 'INTERROGATION');
+        $matiereCode = trim($data['matiere_code'] ?? '');
+        $semestreCode = trim($data['semestre_code'] ?? '');
+        $classeCode = trim($data['classe_code'] ?? '');
+
+        if (empty($compositionCode) && !empty($matiereCode)) {
+            $compositionCode = $this->validator->generateCode('compositions', 'code_composition', 'CMP-', 8);
+            $libelleEval = ($typeEval === 'DEVOIR') ? 'Devoir Sur Table' : (($typeEval === 'INTERROGATION') ? 'Interrogation' : 'Évaluation');
+            $today = date('Y-m-d');
+            $stmtNewComp = $db->prepare("
+                INSERT INTO compositions (
+                    code_composition, libelle_composition, type_composition, semestre_code, classe_code, matiere_code, coefficient,
+                    date_composition, date_fin_composition, statut_composition, annee_code,
+                    etablissement_code, user_code, created_at_composition
+                ) VALUES (?, ?, ?, ?, ?, ?, 1.00, ?, ?, 'programme', ?, ?, ?, NOW())
+            ");
+            $stmtNewComp->execute([
+                $compositionCode,
+                $libelleEval,
+                $typeEval,
+                $semestreCode,
+                $classeCode,
+                $matiereCode,
+                $today,
+                $today,
+                $anneeCode,
+                $etabCode,
+                $userCode
+            ]);
+        }
+        $data['composition_code'] = $compositionCode;
+
         $this->validateForeignKeys([
             'annee_code' => $anneeCode,
             'etablissement_code' => $etabCode,
             'user_code' => $userCode,
-            'inscription_code' => $data['inscription_code'] ?? '',
-            'matiere_code' => $data['matiere_code'] ?? '',
-            'semestre_code' => $data['semestre_code'] ?? ''
+            'inscription_code' => $inscCode,
+            'composition_code' => $compositionCode,
+            'etudiant_code' => $etudiantCode
         ]);
 
         if (empty($data['code_note'])) {
@@ -135,20 +178,22 @@ class NoteController extends BaseController
             $stmt = $this->model->getCon()->prepare("
                 SELECT n.*, 
                        e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
-                       m.libelle_matiere,
+                       m.libelle_matiere, comp.matiere_code,
                        cl.libelle_classe, f.libelle_filiere, niv.libelle_niveau,
-                       s.libelle_semestre, a.libelle_annee,
-                       COALESCE(em.coefficient, 1.0) as coef_cours
+                       s.libelle_semestre, comp.semestre_code, a.libelle_annee,
+                       comp.libelle_composition, comp.type_composition, comp.type_composition AS type_evaluation_code,
+                       COALESCE(em.coefficient, comp.coefficient, 1.0) as coef_cours
                 FROM notes n
+                INNER JOIN compositions comp ON comp.code_composition = n.composition_code
+                LEFT JOIN etudiants e ON e.code_etudiant = n.etudiant_code
                 LEFT JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
-                LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
-                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN classes cl ON cl.code_classe = COALESCE(comp.classe_code, ins.classe_code)
                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN niveaux niv ON niv.code_niveau = cl.niveau_code
-                LEFT JOIN matieres m ON m.code_matiere = n.matiere_code
-                LEFT JOIN semestres s ON s.code_semestre = n.semestre_code
-                LEFT JOIN annees a ON a.code_annee = ins.annee_code
-                LEFT JOIN enseignant_matiere em ON (em.classe_code = ins.classe_code AND em.matiere_code = n.matiere_code)
+                LEFT JOIN matieres m ON m.code_matiere = comp.matiere_code
+                LEFT JOIN semestres s ON s.code_semestre = comp.semestre_code
+                LEFT JOIN annees a ON a.code_annee = COALESCE(comp.annee_code, ins.annee_code)
+                LEFT JOIN enseignant_matiere em ON (em.classe_code = cl.code_classe AND em.matiere_code = comp.matiere_code)
                 WHERE n.id_note = ?
             ");
             $stmt->execute([$id]);
@@ -172,7 +217,18 @@ class NoteController extends BaseController
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
         try {
             $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
+            $stmt = $this->model->getCon()->prepare("
+                SELECT n.*, 
+                       comp.matiere_code, comp.semestre_code, comp.classe_code,
+                       comp.type_composition, comp.type_composition AS type_evaluation_code,
+                       ins.classe_code AS inscription_classe_code
+                FROM notes n
+                LEFT JOIN compositions comp ON comp.code_composition = n.composition_code
+                LEFT JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
+                WHERE n.id_note = ?
+            ");
+            $stmt->execute([$id]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$item) { header('Location: ' . RACINE . 'note/list'); exit(); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
@@ -460,25 +516,14 @@ class NoteController extends BaseController
             if (!empty($selectedMatiereCode)) {
                 $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode);
 
-                if (!empty($selectedSemestreCode)) {
+                if (!empty($selectedCompositionCode)) {
                     $sqlNotes = "
                         SELECT n.*, n.inscription_code 
                         FROM notes n
-                        INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
-                        WHERE i.classe_code = ? AND n.matiere_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+                        WHERE n.composition_code = ? AND n.statut_note = 'actif'
                     ";
-                    $paramsNotes = [$selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode];
-
-                    if (!empty($selectedCompositionCode)) {
-                        $sqlNotes .= " AND n.composition_code = ?";
-                        $paramsNotes[] = $selectedCompositionCode;
-                    } else if (!empty($selectedTypeEval)) {
-                        $sqlNotes .= " AND n.type_evaluation_code = ?";
-                        $paramsNotes[] = $selectedTypeEval;
-                    }
-
                     $stmtNotes = $db->prepare($sqlNotes);
-                    $stmtNotes->execute($paramsNotes);
+                    $stmtNotes->execute([$selectedCompositionCode]);
                     $rows = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
                     foreach ($rows as $r) {
                         $existingNotes[$r['inscription_code']] = $r;
@@ -591,27 +636,18 @@ class NoteController extends BaseController
 
         // Récupérer les notes existantes
         $existingNotes = [];
-        $sqlNotes = "
-            SELECT n.*, n.inscription_code 
-            FROM notes n
-            INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
-            WHERE i.classe_code = ? AND n.matiere_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
-        ";
-        $paramsNotes = [$selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode];
-
         if (!empty($selectedCompositionCode)) {
-            $sqlNotes .= " AND n.composition_code = ?";
-            $paramsNotes[] = $selectedCompositionCode;
-        } else if (!empty($selectedTypeEval)) {
-            $sqlNotes .= " AND n.type_evaluation_code = ?";
-            $paramsNotes[] = $selectedTypeEval;
-        }
-
-        $stmtNotes = $db->prepare($sqlNotes);
-        $stmtNotes->execute($paramsNotes);
-        $rows = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rows as $r) {
-            $existingNotes[$r['inscription_code']] = $r;
+            $sqlNotes = "
+                SELECT n.*, n.inscription_code 
+                FROM notes n
+                WHERE n.composition_code = ? AND n.statut_note = 'actif'
+            ";
+            $stmtNotes = $db->prepare($sqlNotes);
+            $stmtNotes->execute([$selectedCompositionCode]);
+            $rows = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as $r) {
+                $existingNotes[$r['inscription_code']] = $r;
+            }
         }
 
         $typeEvals = [
@@ -740,21 +776,12 @@ class NoteController extends BaseController
                 $valNoteStr = trim($info['valeur_note'] ?? '');
                 $obs = trim($info['observations'] ?? '');
 
-                // Vérifier s'il y a déjà une note existante pour cet étudiant
-                if (!empty($compositionCode)) {
-                    $stmtCheck = $db->prepare("
-                        SELECT id_note FROM notes 
-                        WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND composition_code = ?
-                    ");
-                    $stmtCheck->execute([$inscCode, $matiereCode, $semestreCode, $compositionCode]);
-                } else {
-                    $stmtCheck = $db->prepare("
-                        SELECT id_note FROM notes 
-                        WHERE inscription_code = ? AND matiere_code = ? AND semestre_code = ? AND type_evaluation_code = ? AND (composition_code IS NULL OR composition_code = '')
-                    ");
-                    $stmtCheck->execute([$inscCode, $matiereCode, $semestreCode, $typeEval]);
-                }
-
+                // Vérifier s'il y a déjà une note existante pour cet étudiant dans cette composition
+                $stmtCheck = $db->prepare("
+                    SELECT id_note FROM notes 
+                    WHERE inscription_code = ? AND composition_code = ?
+                ");
+                $stmtCheck->execute([$inscCode, $compositionCode]);
                 $existingId = $stmtCheck->fetchColumn();
 
                 // Gestion champ note vide
@@ -781,15 +808,22 @@ class NoteController extends BaseController
                 if ($existingId) {
                     $stmtUpd = $db->prepare("
                         UPDATE notes 
-                        SET valeur_note = ?, observations = ?, type_evaluation_code = ?, composition_code = ?, updated_at_note = NOW(), statut_note = 'actif'
+                        SET valeur_note = ?, observations = ?, updated_at_note = NOW(), statut_note = 'actif'
                         WHERE id_note = ?
                     ");
-                    $stmtUpd->execute([$valNote, $obs, $typeEval, $compositionCode, $existingId]);
+                    $stmtUpd->execute([$valNote, $obs, $existingId]);
                 } else {
+                    $etudiantCode = trim($info['etudiant_code'] ?? '');
+                    if (empty($etudiantCode)) {
+                        $stmtEtu = $db->prepare("SELECT etudiant_code FROM inscriptions WHERE code_inscription = ?");
+                        $stmtEtu->execute([$inscCode]);
+                        $etudiantCode = $stmtEtu->fetchColumn() ?: '';
+                    }
+
                     $fkErr = ForeignKeyValidator::validate($db, 'notes', [
                         'inscription_code' => $inscCode,
-                        'matiere_code' => $matiereCode,
-                        'semestre_code' => $semestreCode,
+                        'composition_code' => $compositionCode,
+                        'etudiant_code' => $etudiantCode,
                         'etablissement_code' => $etabCode
                     ]);
                     if ($fkErr !== null) {
@@ -800,10 +834,10 @@ class NoteController extends BaseController
 
                     $codeNote = $this->validator->generateCode('notes', 'code_note', 'NOT-', 8);
                     $stmtIns = $db->prepare("
-                        INSERT INTO notes (code_note, inscription_code, matiere_code, semestre_code, type_evaluation_code, composition_code, valeur_note, observations, statut_note, user_code, etablissement_code, created_at_note)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?)
+                        INSERT INTO notes (code_note, composition_code, etudiant_code, inscription_code, valeur_note, observations, statut_note, user_code, etablissement_code, created_at_note)
+                        VALUES (?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?)
                     ");
-                    $stmtIns->execute([$codeNote, $inscCode, $matiereCode, $semestreCode, $typeEval, $compositionCode, $valNote, $obs, $userCode, $etabCode, date('Y-m-d H:i:s')]);
+                    $stmtIns->execute([$codeNote, $compositionCode, $etudiantCode, $inscCode, $valNote, $obs, $userCode, $etabCode, date('Y-m-d H:i:s')]);
                 }
                 $savedCount++;
             }

@@ -156,7 +156,7 @@ class ForeignKeyValidator
         'paiements' => ['inscription_code', 'annee_code', 'etablissement_code'],
         'depenses' => ['type_depense_code', 'annee_code', 'etablissement_code'],
         'absences' => ['etudiant_code', 'classe_code', 'annee_code', 'etablissement_code'],
-        'notes' => ['inscription_code', 'matiere_code', 'semestre_code', 'etablissement_code'],
+        'notes' => ['composition_code', 'etudiant_code', 'inscription_code', 'etablissement_code'],
         'classes' => ['filiere_code', 'niveau_code', 'annee_code', 'etablissement_code'],
         'annees' => ['etablissement_code'],
         'emplois_temps' => ['classe_code', 'matiere_code', 'enseignant_code', 'annee_code', 'etablissement_code'],

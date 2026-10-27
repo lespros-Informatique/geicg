@@ -147,7 +147,7 @@ class MatiereController extends BaseController
                 SELECT 
                     COUNT(DISTINCT classe_code) as total_classes,
                     COUNT(DISTINCT COALESCE(enseignant_code, user_code)) as total_profs,
-                    (SELECT COUNT(*) FROM notes WHERE matiere_code = ? AND statut_note = 'actif') as total_notes
+                    (SELECT COUNT(*) FROM notes n JOIN compositions c ON c.code_composition = n.composition_code WHERE c.matiere_code = ? AND n.statut_note = 'actif') as total_notes
                 FROM enseignant_matiere
                 WHERE matiere_code = ?
             ");

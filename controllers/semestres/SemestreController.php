@@ -287,9 +287,9 @@ class SemestreController extends BaseController
             // Statistiques d'évaluations et de notes
             $stmtStats = $this->model->getCon()->prepare("
                 SELECT 
-                    (SELECT COUNT(*) FROM notes WHERE semestre_code = ? AND statut_note = 'actif') as total_notes,
-                    (SELECT COUNT(DISTINCT ins.classe_code) FROM notes n JOIN inscriptions ins ON ins.code_inscription = n.inscription_code WHERE n.semestre_code = ?) as total_classes_evaluees,
-                    (SELECT COUNT(DISTINCT ins.etudiant_code) FROM notes n JOIN inscriptions ins ON ins.code_inscription = n.inscription_code WHERE n.semestre_code = ?) as total_etudiants_notes
+                    (SELECT COUNT(*) FROM notes n JOIN compositions c ON c.code_composition = n.composition_code WHERE c.semestre_code = ? AND n.statut_note = 'actif') as total_notes,
+                    (SELECT COUNT(DISTINCT ins.classe_code) FROM notes n JOIN compositions c ON c.code_composition = n.composition_code JOIN inscriptions ins ON ins.code_inscription = n.inscription_code WHERE c.semestre_code = ?) as total_classes_evaluees,
+                    (SELECT COUNT(DISTINCT n.etudiant_code) FROM notes n JOIN compositions c ON c.code_composition = n.composition_code WHERE c.semestre_code = ?) as total_etudiants_notes
             ");
             $stmtStats->execute([$semestreCode, $semestreCode, $semestreCode]);
             $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [
@@ -300,6 +300,7 @@ class SemestreController extends BaseController
         } catch (Exception $e) {
             error_log("SemestreController::details error: " . $e->getMessage());
             $this->renderNotFound("Le semestre demandé est introuvable.");
+            return;
         }
         $this->loadView('../views/semestres/details.php', [
             'item' => $item, 

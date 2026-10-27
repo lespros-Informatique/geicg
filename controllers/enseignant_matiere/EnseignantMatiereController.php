@@ -157,8 +157,9 @@ class EnseignantMatiereController extends BaseController
             // Notes saisies pour ce cours dans cette classe
             $stmtNotes = $this->model->getCon()->prepare("
                 SELECT COUNT(*) FROM notes n
+                JOIN compositions comp ON comp.code_composition = n.composition_code
                 JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
-                WHERE ins.classe_code = ? AND n.matiere_code = ? AND (n.statut_note = 'actif' OR n.statut_note IS NULL)
+                WHERE ins.classe_code = ? AND comp.matiere_code = ? AND (n.statut_note = 'actif' OR n.statut_note IS NULL)
             ");
             $stmtNotes->execute([$item['classe_code'], $item['matiere_code']]);
             $nbNotes = (int)$stmtNotes->fetchColumn();
@@ -167,6 +168,7 @@ class EnseignantMatiereController extends BaseController
         } catch (Exception $e) {
             error_log("EnseignantMatiereController::details error: " . $e->getMessage());
             $this->renderNotFound("L'affectation de composition demandée est introuvable.");
+            return;
         }
         $this->loadView('../views/enseignant_matiere/details.php', [
             'item' => $item, 

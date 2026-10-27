@@ -110,8 +110,9 @@ class BulletinController extends BaseController
 
         if (empty($selectedSemestreCode)) {
             $stmtCheck = $db->prepare("
-                SELECT semestre_code FROM notes 
-                WHERE inscription_code = ? AND statut_note = 'actif' 
+                SELECT comp.semestre_code FROM notes n 
+                INNER JOIN compositions comp ON comp.code_composition = n.composition_code
+                WHERE n.inscription_code = ? AND n.statut_note = 'actif' 
                 LIMIT 1
             ");
             $stmtCheck->execute([$item['code_inscription']]);
@@ -122,16 +123,18 @@ class BulletinController extends BaseController
         $sqlNotes = "
             SELECT n.*, 
                    m.libelle_matiere, 
-                   COALESCE(em.coefficient, 1.00) AS coefficient, 
-                   m.code_matiere,
+                   COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient, 
+                   comp.matiere_code,
+                   comp.type_composition AS type_evaluation_code,
                    CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_enseignant
             FROM notes n
-            LEFT JOIN matieres m ON m.code_matiere = n.matiere_code
-            LEFT JOIN enseignant_matiere em ON (em.matiere_code = n.matiere_code AND em.classe_code = ?)
+            INNER JOIN compositions comp ON comp.code_composition = n.composition_code
+            LEFT JOIN matieres m ON m.code_matiere = comp.matiere_code
+            LEFT JOIN enseignant_matiere em ON (em.matiere_code = comp.matiere_code AND em.classe_code = ?)
             LEFT JOIN enseignants ens ON ens.code_enseignant = em.enseignant_code
             LEFT JOIN users u ON u.code_user = ens.code_enseignant
-            WHERE n.inscription_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
-            ORDER BY m.libelle_matiere ASC, n.type_evaluation_code ASC
+            WHERE n.inscription_code = ? AND comp.semestre_code = ? AND n.statut_note = 'actif'
+            ORDER BY m.libelle_matiere ASC, comp.type_composition ASC
         ";
         $stmtNotes = $db->prepare($sqlNotes);
         $stmtNotes->execute([$item['classe_code'], $item['code_inscription'], $selectedSemestreCode]);
@@ -213,9 +216,10 @@ class BulletinController extends BaseController
                        COALESCE(em.coefficient, 1.00) AS coefficient
                 FROM inscriptions i
                 INNER JOIN notes n ON n.inscription_code = i.code_inscription
-                INNER JOIN matieres m ON m.code_matiere = n.matiere_code
-                LEFT JOIN enseignant_matiere em ON (em.matiere_code = n.matiere_code AND em.classe_code = i.classe_code)
-                WHERE i.classe_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+                INNER JOIN compositions comp ON comp.code_composition = n.composition_code
+                INNER JOIN matieres m ON m.code_matiere = comp.matiere_code
+                LEFT JOIN enseignant_matiere em ON (em.matiere_code = comp.matiere_code AND em.classe_code = i.classe_code)
+                WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = 'actif'
             ";
             $stmtClass = $db->prepare($sqlClassmates);
             $stmtClass->execute([$item['classe_code'], $selectedSemestreCode]);
@@ -458,9 +462,10 @@ class BulletinController extends BaseController
             $stmtMatNotes = $db->prepare("
                 SELECT DISTINCT m.code_matiere, m.libelle_matiere, 1.00 AS coefficient
                 FROM notes n
+                INNER JOIN compositions comp ON comp.code_composition = n.composition_code
                 INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
-                INNER JOIN matieres m ON m.code_matiere = n.matiere_code
-                WHERE i.classe_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
+                INNER JOIN matieres m ON m.code_matiere = comp.matiere_code
+                WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = 'actif'
                 ORDER BY m.libelle_matiere ASC
             ");
             $stmtMatNotes->execute([$selectedClasseCode, $selectedSemestreCode]);
@@ -489,11 +494,12 @@ class BulletinController extends BaseController
 
         // 4. Batch query: Récupération en 1 seule requête de toutes les moyennes par matière pour tous les étudiants
         $stmtAllNotes = $db->prepare("
-            SELECT n.inscription_code, n.matiere_code, AVG(n.valeur_note) AS moy_mat
+            SELECT n.inscription_code, comp.matiere_code, AVG(n.valeur_note) AS moy_mat
             FROM notes n
+            INNER JOIN compositions comp ON comp.code_composition = n.composition_code
             INNER JOIN inscriptions i ON i.code_inscription = n.inscription_code
-            WHERE i.classe_code = ? AND n.semestre_code = ? AND n.statut_note = 'actif'
-            GROUP BY n.inscription_code, n.matiere_code
+            WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = 'actif'
+            GROUP BY n.inscription_code, comp.matiere_code
         ");
         $stmtAllNotes->execute([$selectedClasseCode, $selectedSemestreCode]);
         $allNotesRows = $stmtAllNotes->fetchAll(PDO::FETCH_ASSOC);

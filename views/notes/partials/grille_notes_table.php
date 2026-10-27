@@ -143,6 +143,7 @@ $finalLibelle = !empty($selectedLibelleEval) ? $selectedLibelleEval : $typeLabel
                   <?= htmlspecialchars($e['nom_etudiant'] . ' ' . $e['prenom_etudiant']) ?>
                 </td>
                 <td style="padding: 12px 14px; text-align: center;">
+                  <input type="hidden" name="notes[<?= $inscCode ?>][etudiant_code]" value="<?= htmlspecialchars($e['code_etudiant']) ?>">
                   <input type="text" inputmode="decimal" name="notes[<?= $inscCode ?>][valeur_note]" value="<?= $valNote !== '' ? htmlspecialchars($valNote) : '' ?>" placeholder="0 - 20" class="form-control form-control-sm input-valeur-note" style="border-radius: 8px; text-align: center; font-weight: 800; font-size: 14px; width: 100px; margin: 0 auto; border: 1.5px solid #CBD5E1; color: #0F172A;" data-original="<?= $valNote !== '' ? htmlspecialchars($valNote) : '' ?>">
                 </td>
                 <td style="padding: 12px 14px; text-align: center;">

@@ -14,18 +14,23 @@ class ModelNote extends BaseModel
                    CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) as nom_etudiant,
                    e.matricule_etudiant,
                    m.libelle_matiere,
+                   comp.matiere_code,
                    cl.libelle_classe,
                    niv.libelle_niveau,
                    s.libelle_semestre,
-                   comp.libelle_composition
+                   comp.semestre_code,
+                   comp.libelle_composition,
+                   comp.type_composition,
+                   comp.type_composition AS type_evaluation_code,
+                   comp.coefficient
             FROM notes n
+            INNER JOIN compositions comp ON comp.code_composition = n.composition_code
+            LEFT JOIN etudiants e ON e.code_etudiant = n.etudiant_code
             LEFT JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
-            LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+            LEFT JOIN classes cl ON cl.code_classe = COALESCE(comp.classe_code, ins.classe_code)
             LEFT JOIN niveaux niv ON niv.code_niveau = cl.niveau_code
-            LEFT JOIN matieres m ON m.code_matiere = n.matiere_code
-            LEFT JOIN semestres s ON s.code_semestre = n.semestre_code
-            LEFT JOIN compositions comp ON comp.code_composition = n.composition_code
+            LEFT JOIN matieres m ON m.code_matiere = comp.matiere_code
+            LEFT JOIN semestres s ON s.code_semestre = comp.semestre_code
         ";
         $conditions = [];
         $params = [];
