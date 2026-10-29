@@ -65,8 +65,11 @@ class ModelArriere extends BaseModel
             LEFT JOIN classes c_act ON c_act.code_classe = i_act.classe_code
             LEFT JOIN (
                 SELECT inscription_code, SUM(montant_paiement) as total_paye
-                FROM paiements
+                FROM " . TABLES::PAIEMENTS . "
                 WHERE statut_paiement = 'confirme'
+                  AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+                  AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
                 GROUP BY inscription_code
             ) p_sub ON p_sub.inscription_code = i_orig.code_inscription
             {$where}
@@ -128,8 +131,11 @@ class ModelArriere extends BaseModel
             FROM inscriptions i_orig
             LEFT JOIN (
                 SELECT inscription_code, SUM(montant_paiement) as total_paye
-                FROM paiements
+                FROM " . TABLES::PAIEMENTS . "
                 WHERE statut_paiement = 'confirme'
+                  AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+                  AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
                 GROUP BY inscription_code
             ) p_sub ON p_sub.inscription_code = i_orig.code_inscription
             WHERE i_orig.annee_code != ?
@@ -191,8 +197,16 @@ class ModelArriere extends BaseModel
                 ann.libelle_annee,
                 c.libelle_classe,
                 i.montant_scolarite_inscription,
-                COALESCE(SUM(CASE WHEN p.statut_paiement = 'confirme' THEN p.montant_paiement ELSE 0 END), 0) as total_paye,
-                (i.montant_scolarite_inscription - COALESCE(SUM(CASE WHEN p.statut_paiement = 'confirme' THEN p.montant_paiement ELSE 0 END), 0)) as solde_restant
+                COALESCE(SUM(CASE WHEN p.statut_paiement = 'confirme' 
+                  AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
+                  AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
+                THEN p.montant_paiement ELSE 0 END), 0) as total_paye,
+                (i.montant_scolarite_inscription - COALESCE(SUM(CASE WHEN p.statut_paiement = 'confirme' 
+                  AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
+                  AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
+                THEN p.montant_paiement ELSE 0 END), 0)) as solde_restant
             FROM inscriptions i
             LEFT JOIN annees ann ON ann.code_annee = i.annee_code
             LEFT JOIN classes c ON c.code_classe = i.classe_code
@@ -225,7 +239,15 @@ class ModelArriere extends BaseModel
 
     public function getTotalPayeByInscription(string $inscriptionCode): float
     {
-        $stmt = $this->getCon()->prepare("SELECT COALESCE(SUM(montant_paiement), 0) as paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement = 'confirme'");
+        $stmt = $this->getCon()->prepare("
+            SELECT COALESCE(SUM(montant_paiement), 0) as paye 
+            FROM " . TABLES::PAIEMENTS . " 
+            WHERE inscription_code = ? 
+              AND statut_paiement = 'confirme'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+              AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
+        ");
         $stmt->execute([$inscriptionCode]);
         return (float)($stmt->fetchColumn() ?: 0);
     }
@@ -242,8 +264,8 @@ class ModelArriere extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             INSERT INTO " . TABLES::PAIEMENTS . " 
-            (code_paiement, montant_paiement, statut_paiement, reference_paiement, observations, type_paiement, mode_paiement, user_code, annee_code, etablissement_code, inscription_code, tranche_code, session_caisse_code)
-            VALUES (?, ?, 'confirme', ?, ?, 'Règlement Arriéré Scolarité', ?, ?, ?, ?, ?, NULL, ?)
+            (code_paiement, montant_paiement, statut_paiement, reference_paiement, observations, type_paiement, categorie_paiement, mode_paiement, user_code, annee_code, etablissement_code, inscription_code, tranche_code, session_caisse_code)
+            VALUES (?, ?, 'confirme', ?, ?, 'Règlement Arriéré Scolarité', 'ARRIERE', ?, ?, ?, ?, ?, NULL, ?)
         ");
         return $stmt->execute([
             $data['code_paiement'],

@@ -248,7 +248,7 @@ class ImpayesController extends BaseController
             $scolariteDue = (float)$ins['montant_scolarite_inscription'];
         }
 
-        $totalAttendu = $scolariteDue + $fraisAnnexesDus;
+        $totalAttendu = $scolariteDue;
         $restePayer = max(0, $totalAttendu - $totalPaye);
         $isAffecte = ($ins['affectation_etat'] === 'affecte' || $ins['affectation_etat'] === 'oui');
 
@@ -366,7 +366,7 @@ class ImpayesController extends BaseController
                 $scolariteDue = (float)$ins['montant_scolarite_inscription'];
             }
 
-            $totalAttendu = $scolariteDue + $fraisAnnexesDus;
+            $totalAttendu = $scolariteDue;
             $restePayer = max(0, $totalAttendu - $totalPaye);
             $isAffecte = ($ins['affectation_etat'] === 'affecte' || $ins['affectation_etat'] === 'oui');
 

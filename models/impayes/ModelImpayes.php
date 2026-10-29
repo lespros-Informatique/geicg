@@ -104,11 +104,14 @@ class ModelImpayes extends BaseModel
             $stmtInscr->execute($params);
             $inscriptions = $stmtInscr->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            // Totaux paiements effectués
+            // Totaux paiements de scolarité effectués (exclusion stricte des frais annexes)
             $stmtPay = $db->prepare("
                 SELECT inscription_code, SUM(montant_paiement) as total_paye
-                FROM paiements
+                FROM " . TABLES::PAIEMENTS . "
                 WHERE statut_paiement != 'annule'
+                  AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+                  AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
                 GROUP BY inscription_code
             ");
             $stmtPay->execute();
@@ -160,7 +163,7 @@ class ModelImpayes extends BaseModel
                 }
 
                 $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $aCode, $nCode, 'inscription');
-                $totalAttendu = $scolariteDue + $fraisAnnexesDus;
+                $totalAttendu = $scolariteDue;
                 $totalEncaisse = $paymentsGrouped[$codeIns] ?? 0;
                 $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
 
@@ -474,7 +477,15 @@ class ModelImpayes extends BaseModel
 
     public function getTotalPayeByInscription(string $inscriptionCode): float
     {
-        $stmt = $this->getCon()->prepare("SELECT SUM(montant_paiement) as total_paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != 'annule'");
+        $stmt = $this->getCon()->prepare("
+            SELECT SUM(montant_paiement) as total_paye 
+            FROM " . TABLES::PAIEMENTS . " 
+            WHERE inscription_code = ? 
+              AND statut_paiement != 'annule'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+              AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
+        ");
         $stmt->execute([$inscriptionCode]);
         return (float)($stmt->fetchColumn() ?: 0);
     }
