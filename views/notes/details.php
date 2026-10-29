@@ -78,5 +78,4 @@ $noteVal = (float)($item['note'] ?? ($item['valeur_note'] ?? 0));
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

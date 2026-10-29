@@ -427,6 +427,12 @@
     GEICG.initSidebar();
   });
 
+  // Rafraîchissement automatique des icônes et select2 à l'ouverture de toute modale Bootstrap
+  $(document).on('shown.bs.modal', function(e) {
+    GEICG.initUI(e.target);
+  });
+
+
   window.GEICG = GEICG;
 
 })(window, window.jQuery);

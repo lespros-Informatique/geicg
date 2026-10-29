@@ -471,6 +471,12 @@ abstract class BaseController
         $data['logoSrc'] = $data['logoSrc'] ?? $resolvedLogo;
         $data['etabLogoUrl'] = $data['etabLogoUrl'] ?? $resolvedLogo;
 
+        // Support standardisé des scripts JS modulaires de page
+        if (!isset($data['pageScripts']) && isset($data['scripts'])) {
+            $data['pageScripts'] = $data['scripts'];
+        }
+        $data['pageScripts'] = (array)($data['pageScripts'] ?? []);
+
         if (!file_exists($path)) {
             $candidate = __DIR__ . '/../' . ltrim(str_replace('../', '', $path), '/\\');
             if (file_exists($candidate)) {
