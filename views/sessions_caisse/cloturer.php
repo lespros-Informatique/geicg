@@ -71,7 +71,7 @@ $soldeTheorique = $fondInitial + $totalGeneral;
 
       <!-- Formulaire de Clôture & Rapprochement -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>session_caisse/saveCloture" method="POST" style="width: 100%;">
+        <form id="form-cloture-session" data-fond-initial="<?= (float)$fondInitial ?>" action="<?= RACINE ?>session_caisse/saveCloture" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <input type="hidden" name="id_session" value="<?= $session['id_session'] ?>">
 
@@ -140,37 +140,5 @@ $soldeTheorique = $fondInitial + $totalGeneral;
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-
-  var fondInitial = <?= $fondInitial ?>;
-
-  function recalculateEcart() {
-    var esp = parseFloat($('#inp_total_especes').val()) || 0;
-    var mob = parseFloat($('#inp_total_mobile').val()) || 0;
-    var chq = parseFloat($('#inp_total_cheque').val()) || 0;
-    var totalTheorique = fondInitial + esp + mob + chq;
-
-    var physique = parseFloat($('#inp_montant_physique').val()) || 0;
-    var ecart = physique - totalTheorique;
-
-    if (ecart === 0) {
-      $('#panel-ecart').css({ 'background': '#F0FDF4', 'border-color': '#BBF7D0' });
-      $('#ecart-val-text').css('color', '#15803D').text('0 FCFA (Caisse Équilibrée)');
-      $('#ecart-badge').css({ 'background': '#DCFCE7', 'color': '#15803D' }).text('Parfaitement Conforme');
-    } else if (ecart > 0) {
-      $('#panel-ecart').css({ 'background': '#EFF6FF', 'border-color': '#BFDBFE' });
-      $('#ecart-val-text').css('color', '#1E40AF').text('+' + ecart.toLocaleString('fr-FR') + ' FCFA (Excédent)');
-      $('#ecart-badge').css({ 'background': '#DBEAFE', 'color': '#1E40AF' }).text('Excédent constaté');
-    } else {
-      $('#panel-ecart').css({ 'background': '#FEF2F2', 'border-color': '#FECACA' });
-      $('#ecart-val-text').css('color', '#DC2626').text(ecart.toLocaleString('fr-FR') + ' FCFA (Déficit)');
-      $('#ecart-badge').css({ 'background': '#FEE2E2', 'color': '#DC2626' }).text('Manquant de caisse');
-    }
-  }
-
-  $('.calc-field, #inp_montant_physique').on('input', recalculateEcart);
-});
-</script>
+<?php $pageScripts = ['public/assets/js/modules/sessions_caisse.js']; ?>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

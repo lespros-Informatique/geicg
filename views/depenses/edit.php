@@ -80,16 +80,7 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('.select2').select2({
-      placeholder: "-- Rechercher la catégorie de dépense --",
-      allowClear: true,
-      width: '100%'
-    });
-  }
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+$pageScripts = ['public/assets/js/modules/depenses_edit.js'];
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>
