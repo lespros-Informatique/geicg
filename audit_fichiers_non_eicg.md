@@ -13,6 +13,7 @@ L'intégralité des fichiers résiduels, scripts de test temporaires et modules 
 * `check_classes.php`, `check_regimes.php`, `check_tuition.php` : supprimés.
 * `debug_get_tuition.php`, `test_tuition_endpoint.php` : supprimés.
 * `scratch_migration.php`, `scratch_schema.json` : supprimés.
+* `inspect_classes_inscriptions.php`, `inspect_inscriptions_col.php`, `scratch_inspect.php` : supprimés.
 * Dossier racine `scratch/` (84 fichiers temporaires : tests, aperçus PDF, rendus PNG, dumps) : intégralement supprimé.
 
 ### B. Scripts Scratch dans `public/` (24 fichiers supprimés)
@@ -47,6 +48,7 @@ L'intégralité des fichiers résiduels, scripts de test temporaires et modules 
 | **Oct. 2026** | **Caisses (`sessions_caisse`)** | Ségrégation stricte des caisses : la caisse journalière ne prend en compte que `canal_paiement = 'guichet'`. | Aucun impact des versements en ligne sur le tiroir-caisse physique du caissier. |
 | **Oct. 2026** | **Ségrégation Comptable** | Isolation stricte des frais annexes (`FRAIS_ANNEXES`) des calculs de scolarité. | Garantie d'exactitude des totaux comptables scolarité sans pollution des frais annexes. |
 | **Oct. 2026** | **RBAC & Permissions** | Création de la permission `VALIDER_INSCRIPTION_EN_LIGNE` assignée à `ROLE_SUPERADMIN`. | Contrôle strict sur la validation administrative des dossiers étudiants en attente. |
+| **Oct. 2026** | **Pureté Vue Sidebar (`sidbar.php`)** | Éradication de la requête SQL directe (`new Database()`) et externalisation du code JS inline vers `public/assets/js/geicg-app.js` (`GEICG.initSidebar()`). | Respect absolu de la règle *Zero SQL in Views* et mutualisation du comportement des accordéons. |
 | **Oct. 2026** | **Registre PDF Encaissements** | Mise à jour de `imprimerRegistreEncaissements` et `views/templates/pdf/registre_encaissements.php`. | Intégration du filtre Canal, ventilation des KPIs (Guichet vs En Ligne) et colonne `CANAL` avec badges. |
 
 ---

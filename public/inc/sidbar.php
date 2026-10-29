@@ -1,24 +1,10 @@
 <?php
-  // 1. Mise en cache de session pour le Logo & le Nom de l'Établissement (évite la requête SQL répétée à chaque clic)
-  if (!isset($globalEtablissementLogo)) {
-      if (isset($_SESSION['etablissement_logo']) && isset($_SESSION['etablissement_nom'])) {
-          $globalEtablissementLogo = $_SESSION['etablissement_logo'];
-          $globalEtablissementNom = $_SESSION['etablissement_nom'];
-      } else {
-          try {
-              $db = (new Database())->getCon();
-              $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements WHERE statut_etablissement = 'actif' ORDER BY id_etablissement ASC LIMIT 1");
-              $etabRow = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
-              $rawLogo = $etabRow['logo_etablissement'] ?? '';
-              $globalEtablissementLogo = (!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : '';
-              $globalEtablissementNom = $etabRow['libelle_etablissement'] ?? 'GEICG';
-              $_SESSION['etablissement_logo'] = $globalEtablissementLogo;
-              $_SESSION['etablissement_nom'] = $globalEtablissementNom;
-          } catch (Exception $e) {
-              $globalEtablissementLogo = '';
-              $globalEtablissementNom = 'GEICG';
-          }
-      }
+  // 1. Récupération du Logo & Nom de l'Établissement (injectés par le contrôleur ou en session, Zéro SQL dans la vue)
+  if (!isset($globalEtablissementLogo) || !isset($globalEtablissementNom)) {
+      $etabCfg = Session::get('etablissement_config') ?? [];
+      $rawLogo = $etabCfg['logo_etablissement'] ?? Session::get('etablissement_logo', '');
+      $globalEtablissementLogo = $globalEtablissementLogo ?? (function_exists('getEtablissementLogoUrl') ? getEtablissementLogoUrl($rawLogo) : ((!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : ''));
+      $globalEtablissementNom = $globalEtablissementNom ?? ($etabCfg['libelle_etablissement'] ?? ($etabCfg['nom_etablissement'] ?? Session::get('etablissement_nom', 'GEICG')));
   }
 
   $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
@@ -388,93 +374,3 @@
         </nav>
 </aside>
 
-<script>
-$(document).ready(function() {
-  // Toggle réduction/déploiement du sidebar
-  $(document).on('click', '#sidebarToggle', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (typeof toggleSidebar === 'function') {
-      toggleSidebar();
-    } else {
-      var $sidebar = $('#sidebar, #mainSidebar, .sidebar');
-      var $mainContent = $('.main-content');
-      var $footer = $('#footer, .footer');
-      $sidebar.toggleClass('collapsed');
-      var isCollapsed = $sidebar.hasClass('collapsed');
-      $mainContent.toggleClass('expanded', isCollapsed);
-      $footer.toggleClass('expanded', isCollapsed);
-      try {
-        localStorage.setItem('geicg_sidebar_collapsed', isCollapsed ? '1' : '0');
-      } catch(ex) {}
-      if (window.lucide) {
-        lucide.createIcons();
-      }
-    }
-  });
-
-  // Accordéons du sidebar (Comportement accordéon unique : fermer les autres modules à l'ouverture)
-  $(document).on('click', '.sidebar-accordion-toggle', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    var $toggle = $(this);
-    var targetId = $toggle.attr('data-bs-target');
-    var $target = $(targetId);
-
-    if ($target.length) {
-      var isExpanded = $toggle.attr('aria-expanded') === 'true';
-      if (isExpanded) {
-        $target.slideUp(200, function() {
-          $target.removeClass('show');
-        });
-        $toggle.attr('aria-expanded', 'false');
-      } else {
-        // Fermer automatiquement tous les autres accordéons ouverts
-        $('.sidebar-accordion-toggle').not($toggle).each(function() {
-          var $otherToggle = $(this);
-          var otherTargetId = $otherToggle.attr('data-bs-target');
-          var $otherTarget = $(otherTargetId);
-          if ($otherTarget.length && $otherToggle.attr('aria-expanded') === 'true') {
-            $otherTarget.slideUp(200, function() {
-              $otherTarget.removeClass('show');
-            });
-            $otherToggle.attr('aria-expanded', 'false');
-          }
-        });
-
-        // Ouvrir la section sélectionnée
-        $target.slideDown(200, function() {
-          $target.addClass('show');
-        });
-        $toggle.attr('aria-expanded', 'true');
-      }
-    }
-  });
-
-  // Déplier automatiquement la section contenant le lien actif
-  var $activeLink = $('.sidebar-nav .nav-item.sub.active');
-  if ($activeLink.length) {
-    var $parentItems = $activeLink.closest('.nav-section-items');
-    if ($parentItems.length) {
-      $parentItems.addClass('show').show();
-      var $parentToggle = $parentItems.siblings('.sidebar-accordion-toggle');
-      if ($parentToggle.length) {
-        $parentToggle.attr('aria-expanded', 'true');
-      }
-    }
-  } else {
-    var $firstSection = $('.sidebar-nav .nav-section-items').first();
-    if ($firstSection.length) {
-      $firstSection.addClass('show').show();
-      var $firstToggle = $firstSection.siblings('.sidebar-accordion-toggle');
-      if ($firstToggle.length) {
-        $firstToggle.attr('aria-expanded', 'true');
-      }
-    }
-  }
-
-  if (window.lucide) {
-    lucide.createIcons();
-  }
-});
-</script>

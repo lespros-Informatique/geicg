@@ -309,6 +309,102 @@
     });
   };
 
+  // 12. Gestion complète et mutualisée de la Sidebar & des Accordéons
+  GEICG.initSidebar = function() {
+    var $sidebar = $('#sidebar, #mainSidebar, .sidebar');
+    var $mainContent = $('.main-content');
+    var $footer = $('#footer, .footer');
+
+    // Restaurer l'état réduit depuis le localStorage
+    try {
+      if (localStorage.getItem('geicg_sidebar_collapsed') === '1') {
+        $sidebar.addClass('collapsed');
+        $mainContent.addClass('expanded');
+        $footer.addClass('expanded');
+      }
+    } catch(e) {}
+
+    // Toggle réduction/déploiement du sidebar
+    $(document).off('click.geicgSidebarToggle', '#sidebarToggle').on('click.geicgSidebarToggle', '#sidebarToggle', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof window.toggleSidebar === 'function') {
+        window.toggleSidebar();
+      } else {
+        $sidebar.toggleClass('collapsed');
+        var isCollapsed = $sidebar.hasClass('collapsed');
+        $mainContent.toggleClass('expanded', isCollapsed);
+        $footer.toggleClass('expanded', isCollapsed);
+        try {
+          localStorage.setItem('geicg_sidebar_collapsed', isCollapsed ? '1' : '0');
+        } catch(ex) {}
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      }
+    });
+
+    // Accordéons du sidebar (Comportement accordéon exclusif : fermer les autres modules à l'ouverture)
+    $(document).off('click.geicgAccordion', '.sidebar-accordion-toggle').on('click.geicgAccordion', '.sidebar-accordion-toggle', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var $toggle = $(this);
+      var targetId = $toggle.attr('data-bs-target');
+      var $target = $(targetId);
+
+      if ($target.length) {
+        var isExpanded = $toggle.attr('aria-expanded') === 'true';
+        if (isExpanded) {
+          $target.slideUp(200, function() {
+            $target.removeClass('show');
+          });
+          $toggle.attr('aria-expanded', 'false');
+        } else {
+          // Fermer automatiquement tous les autres accordéons ouverts
+          $('.sidebar-accordion-toggle').not($toggle).each(function() {
+            var $otherToggle = $(this);
+            var otherTargetId = $otherToggle.attr('data-bs-target');
+            var $otherTarget = $(otherTargetId);
+            if ($otherTarget.length && $otherToggle.attr('aria-expanded') === 'true') {
+              $otherTarget.slideUp(200, function() {
+                $otherTarget.removeClass('show');
+              });
+              $otherToggle.attr('aria-expanded', 'false');
+            }
+          });
+
+          // Ouvrir la section sélectionnée
+          $target.slideDown(200, function() {
+            $target.addClass('show');
+          });
+          $toggle.attr('aria-expanded', 'true');
+        }
+      }
+    });
+
+    // Déplier automatiquement la section contenant le lien actif
+    var $activeLink = $('.sidebar-nav .nav-item.sub.active');
+    if ($activeLink.length) {
+      var $parentItems = $activeLink.closest('.nav-section-items');
+      if ($parentItems.length) {
+        $parentItems.addClass('show').show();
+        var $parentToggle = $parentItems.siblings('.sidebar-accordion-toggle');
+        if ($parentToggle.length) {
+          $parentToggle.attr('aria-expanded', 'true');
+        }
+      }
+    } else {
+      var $firstSection = $('.sidebar-nav .nav-section-items').first();
+      if ($firstSection.length) {
+        $firstSection.addClass('show').show();
+        var $firstToggle = $firstSection.siblings('.sidebar-accordion-toggle');
+        if ($firstToggle.length) {
+          $firstToggle.attr('aria-expanded', 'true');
+        }
+      }
+    }
+  };
+
   // 11. Initialisation automatique UI universelle
   GEICG.initUI = function(context) {
     var $ctx = context ? $(context) : $(document);
@@ -328,6 +424,7 @@
   $(document).ready(function() {
     GEICG.initUI();
     GEICG.bindToggleStatus();
+    GEICG.initSidebar();
   });
 
   window.GEICG = GEICG;
