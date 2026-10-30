@@ -11,8 +11,11 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
 $niveaux = $niveaux ?? [];
 $classes = $classes ?? [];
 ?>
-
-
+<div class="app-layout">
+  <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
+  <main class="main-content">
+    <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
+    <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
   <!-- BANNIÈRE D'IMPRESSION  -->
   <div id="print-header-banner">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 15px;">
@@ -259,6 +262,8 @@ $classes = $classes ?? [];
     </div>
   </div>
 
+    </div>
+  </main>
 </div>
 
 <!-- ========================================================================= -->
