@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $stats = $stats ?? (new ModelDepense())->getStats();
 $annees = $annees ?? [];
@@ -261,7 +261,7 @@ $canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_ar
 <?php
 $depensesListConfig = [
     'canValidate' => (bool)(!empty($canValidate)),
-    'csrfToken' => \core\Validator::generateCsrfToken()
+    'csrfToken' => Validator::generateCsrfToken()
 ];
 ?>
 <script type="application/json" id="depenses-list-config">

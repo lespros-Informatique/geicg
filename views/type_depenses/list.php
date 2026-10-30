@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -79,7 +79,7 @@
 
 <?php
 $typeDepensesConfig = [
-    'csrfToken' => \core\Validator::generateCsrfToken()
+    'csrfToken' => Validator::generateCsrfToken()
 ];
 ?>
 <script type="application/json" id="type-depenses-config">

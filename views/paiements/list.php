@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $isCaisseOuverte = $isCaisseOuverte ?? false;
 $activeSession = $activeSession ?? null;
@@ -702,7 +702,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
 $paiementsListConfig = [
     'canCancelPaiement' => (bool)(!empty($canCancelPaiement) || (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS']))),
     'isCaisseOuverte' => (bool)(!empty($isCaisseOuverte)),
-    'csrfToken' => \core\Validator::generateCsrfToken()
+    'csrfToken' => Validator::generateCsrfToken()
 ];
 ?>
 <script type="application/json" id="paiements-list-config">
