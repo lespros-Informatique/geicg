@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $isJustifie = (($item['justifie'] ?? '') == '1' || strtolower($item['justifie'] ?? '') === 'oui' || ($item['statut_absence'] ?? '') === 'justifie');
 ?>
 <div class="app-layout">

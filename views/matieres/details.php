@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $affectations = isset($affectations) ? $affectations : [];
 $stats = isset($stats) ? $stats : [];
 ?>

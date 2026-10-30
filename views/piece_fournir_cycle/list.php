@@ -88,6 +88,6 @@ $pieceFournirCycleListConfig = [
 ?>
 <script type="application/json" id="piece-fournir-cycle-list-config"><?= json_encode($pieceFournirCycleListConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?></script>
 <?php 
-$pageScripts = ['public/assets/js/modules/piece_fournir_cycle_list.js'];
+ViewContext::setScripts(['public/assets/js/modules/piece_fournir_cycle_list.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

@@ -1,9 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
-$classes = $classes ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -82,6 +79,6 @@ $selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''
 </div>
 
 <?php
-$pageScripts = ['public/assets/js/modules/bulletin_list.js'];
+ViewContext::setScripts(['public/assets/js/modules/bulletin_list.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

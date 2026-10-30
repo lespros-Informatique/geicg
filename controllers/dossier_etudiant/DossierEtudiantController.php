@@ -242,7 +242,7 @@ class DossierEtudiantController extends BaseController
                 }
             }
 
-            $agentName = Auth::name() ?? '';
+            $agentName = Auth::fullName() ?: (Auth::user('name') ?? '');
 
             $this->json([
                 'status' => 1,

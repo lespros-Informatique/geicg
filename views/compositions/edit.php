@@ -1,14 +1,8 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$item = $item ?? [];
-$annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
-$filieres = $filieres ?? [];
-$classes = $classes ?? [];
 $matieres = $matieres ?? [];
 $activeAnneeCode = $activeAnneeCode ?? Session::get('annee_active_code', '');
-$semestres = $semestres ?? [];
-$salles = $salles ?? [];
 $teachersWithUsers = $teachersWithUsers ?? [];
 $activeAnneeLibelle = '';
 foreach ($annees as $a) {
@@ -252,6 +246,6 @@ if (empty($existingNiveaux)) {
 ]) ?>
 </script>
 <?php
-$pageScripts = ['public/assets/js/modules/compositions_edit.js'];
+ViewContext::setScripts(['public/assets/js/modules/compositions_edit.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

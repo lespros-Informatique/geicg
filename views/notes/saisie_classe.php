@@ -2,18 +2,12 @@
 <?php
 $anneeCode = $anneeCode ?? (Session::get('annee_active_code', ''));
 $anneeLibelle = $anneeLibelle ?? (Session::get('annee_active_libelle') ?? $anneeCode);
-$classes = $classes ?? [];
 $matieres = $matieres ?? [];
-$semestres = $semestres ?? [];
-$selectedClasseCode = $selectedClasseCode ?? '';
-$selectedMatiereCode = $selectedMatiereCode ?? '';
-$selectedSemestreCode = $selectedSemestreCode ?? '';
 $selectedTypeEval = $selectedTypeEval ?? '';
 $selectedCompositionCode = $selectedCompositionCode ?? '';
 $selectedLibelleEval = $selectedLibelleEval ?? '';
 $selectedCoefEval = $selectedCoefEval ?? '1.00';
 $tousExamens = $tousExamens ?? [];
-$etudiants = $etudiants ?? [];
 $existingNotes = $existingNotes ?? [];
 $compositionsProgrammees = $compositionsProgrammees ?? [];
 
@@ -245,6 +239,6 @@ $typeEvals = [
 ]) ?>
 </script>
 <?php
-$pageScripts = ['public/assets/js/modules/notes_saisie_classe.js'];
+ViewContext::setScripts(['public/assets/js/modules/notes_saisie_classe.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

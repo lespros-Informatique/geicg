@@ -1,46 +1,9 @@
 <?php
-  // 1. Récupération du Logo & Nom de l'Établissement (injectés par le contrôleur ou en session, Zéro SQL dans la vue)
-  if (!isset($globalEtablissementLogo) || !isset($globalEtablissementNom)) {
-      $etabCfg = Session::get('etablissement_config') ?? [];
-      $rawLogo = $etabCfg['logo_etablissement'] ?? Session::get('etablissement_logo', '');
-      $globalEtablissementLogo = $globalEtablissementLogo ?? (function_exists('getEtablissementLogoUrl') ? getEtablissementLogoUrl($rawLogo) : ((!empty($rawLogo)) ? ((strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/')) : ''));
-      $globalEtablissementNom = $globalEtablissementNom ?? ($etabCfg['libelle_etablissement'] ?? ($etabCfg['nom_etablissement'] ?? Session::get('etablissement_nom', 'GEICG')));
-  }
-
-  $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
-
-  // 2. Gestion des permissions RBAC déléguée à la classe Auth (source de vérité unique)
-  //    - Auth::permissions() : cache session + chargement dynamique si absent
-  //    - Auth::isSuperAdmin() : reconnaît '*' ET les rôles super-admin (ROLE_SUPERADMIN, all_control...)
-  $isSuperAdmin = Auth::isSuperAdmin();
-  $permMap = array_fill_keys(Auth::permissions(), true);
-
-  /**
-   * Helper d'autorisation granulaire instantané O(1)
-   */
-  $canAccess = function($requiredPerms = []) use ($permMap, $isSuperAdmin): bool {
-      if ($isSuperAdmin) return true;
-      foreach ((array)$requiredPerms as $perm) {
-          if (isset($permMap[$perm])) return true;
-      }
-      return false;
-  };
-
-  /**
-   * Helper d'URL active : simplifie le HTML et évite la cascade de strpos
-   */
-  $isActiveRoute = function($patterns, $excludePatterns = []) use ($currentUri): string {
-      if (!is_array($patterns)) $patterns = [$patterns];
-      if (!is_array($excludePatterns)) $excludePatterns = [$excludePatterns];
-
-      foreach ($excludePatterns as $ex) {
-          if (!empty($ex) && strpos($currentUri, $ex) !== false) return '';
-      }
-      foreach ($patterns as $pattern) {
-          if (!empty($pattern) && strpos($currentUri, $pattern) !== false) return 'active';
-      }
-      return '';
-  };
+  // Contexte Sidebar centralisé (Logo, URI courante, RBAC, helpers $canAccess / $isActiveRoute)
+  extract(ViewContext::sidebarData([
+      'globalEtablissementLogo' => $globalEtablissementLogo ?? null,
+      'globalEtablissementNom'  => $globalEtablissementNom ?? null,
+  ]));
 ?>
 <aside class="sidebar bg-white border-end shadow-sm" id="sidebar">
     <!-- Sidebar Header / Logo & Collapser -->

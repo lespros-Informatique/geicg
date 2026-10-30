@@ -4,7 +4,6 @@
  * Conforme aux règles d'affichage dynamique et charte graphique GEICG
  */
 $anneeLibelle = $anneeLibelle ?? 'Toutes les années';
-$paiements = $paiements ?? [];
 $stats = $stats ?? [];
 $sumTable = 0;
 $dateDebutFmt = !empty($dateDebut) ? date('d/m/Y', strtotime($dateDebut)) : '';

@@ -1,11 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$isCaisseOuverte = $isCaisseOuverte ?? false;
-$activeSession = $activeSession ?? null;
-$encryptedSessionId = $encryptedSessionId ?? '';
 $canRecord = $canRecord ?? false;
-$canOpenCaisse = $canOpenCaisse ?? false;
-$canCloseCaisse = $canCloseCaisse ?? false;
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -648,6 +643,6 @@ $canCloseCaisse = $canCloseCaisse ?? false;
 </div>
 
 <?php 
-$pageScripts = ['public/assets/js/modules/caisse_annexe.js'];
+ViewContext::setScripts(['public/assets/js/modules/caisse_annexe.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

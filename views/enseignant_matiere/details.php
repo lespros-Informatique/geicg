@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $nbNotes = $nbNotes ?? 0;
 ?>
 <div class="app-layout">

@@ -1,15 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$isCaisseOuverte = $isCaisseOuverte ?? false;
-$activeSession = $activeSession ?? null;
-$encryptedSessionId = $encryptedSessionId ?? '';
 $canRecord = $canRecord ?? false;
-$canOpenCaisse = $canOpenCaisse ?? false;
-$canCloseCaisse = $canCloseCaisse ?? false;
-$annees = $annees ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? '';
 $niveaux = $niveaux ?? [];
-$classes = $classes ?? [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -474,6 +466,6 @@ $comptaConfig = [
 <?= json_encode($comptaConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
 </script>
 <?php 
-$pageScripts = ['public/assets/js/modules/paiements_compta.js'];
+ViewContext::setScripts(['public/assets/js/modules/paiements_compta.js']);
 require_once __DIR__ . '/../../public/inc/footer.php'; 
 ?>

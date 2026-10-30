@@ -1,9 +1,6 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $stats = isset($stats) ? $stats : [];
-$classes = isset($classes) ? $classes : [];
-$semestres = isset($semestres) ? $semestres : [];
 $stAnnee = $item['statut_annee'] ?? 'planifie';
 ?>
 <div class="app-layout">

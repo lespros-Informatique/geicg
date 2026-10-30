@@ -450,6 +450,9 @@ abstract class BaseController
 
     protected function loadView(string $path, array $data = []): void
     {
+        // Valeurs par défaut centralisées (le contrôleur reste prioritaire)
+        $data = array_merge(ViewContext::defaults(), $data);
+
         $etabCfg = $this->getEtablissementConfig();
         $data['etablissementConfig'] = $etabCfg;
         $data['useSlugFiliere'] = !empty($etabCfg['use_slug_filiere']);

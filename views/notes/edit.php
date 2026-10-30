@@ -3,9 +3,7 @@
 $anneeCode = $anneeCode ?? Session::get('annee_active_code', '');
 $anneeLibelle = $anneeLibelle ?? Session::get('annee_active_libelle', $anneeCode);
 $niveaux = $niveaux ?? [];
-$classes = $classes ?? [];
 $matieres = $matieres ?? [];
-$semestres = $semestres ?? [];
 $inscriptionsDetails = $inscriptionsDetails ?? [];
 
 // Structurer les étudiants strictement par classe
@@ -26,7 +24,6 @@ foreach ($inscriptionsDetails as $ins) {
 }
 
 $selectedInscriptionCode = $item['inscription_code'] ?? '';
-$selectedClasseCode = $selectedClasseCode ?? '';
 if (empty($selectedClasseCode) && !empty($selectedInscriptionCode)) {
   foreach ($inscriptionsDetails as $ins) {
     if ($ins['code_inscription'] === $selectedInscriptionCode) {
@@ -302,6 +299,6 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
 ]) ?>
 </script>
 <?php
-$pageScripts = ['public/assets/js/modules/notes_edit.js'];
+ViewContext::setScripts(['public/assets/js/modules/notes_edit.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

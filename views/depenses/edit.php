@@ -81,6 +81,6 @@ $enseignants = (new ModelEnseignant())->getAll();
   </main>
 </div>
 <?php 
-$pageScripts = ['public/assets/js/modules/depenses_edit.js'];
+ViewContext::setScripts(['public/assets/js/modules/depenses_edit.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

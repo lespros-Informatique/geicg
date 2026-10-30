@@ -3,7 +3,7 @@
 $annees = (new ModelAnnee())->getAccessibleAnnees();
 $modelAnnee = new ModelAnnee();
 $activeYearRow = $modelAnnee->getActiveYear();
-$activeAnneeCode = Session::getActiveAnneeCode() ?: ($activeYearRow['code_annee'] ?? '');
+$activeAnneeCode = Session::get('annee_active_code', '') ?: ($activeYearRow['code_annee'] ?? '');
 if (empty($activeAnneeCode)) {
     foreach ($annees as $a) {
         if (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) {
@@ -700,6 +700,6 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
 </div>
 
 <?php
-$pageScripts = ['public/assets/js/modules/etudiants_wizard.js'];
+ViewContext::setScripts(['public/assets/js/modules/etudiants_wizard.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

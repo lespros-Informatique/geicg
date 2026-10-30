@@ -1,10 +1,7 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php'; 
 
-$item = $item ?? [];
 $inscription = $inscription ?? [];
-$classes = $classes ?? [];
-$annees = $annees ?? [];
 $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())->crypter($item['id_etudiant']) : '');
 $activeAnneeCode = $activeAnneeCode ?? ($inscription['annee_code'] ?? '');
 
@@ -266,6 +263,6 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
 </div>
 
 <?php
-$pageScripts = ['public/assets/js/modules/etudiants_changer_classe.js'];
+ViewContext::setScripts(['public/assets/js/modules/etudiants_changer_classe.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

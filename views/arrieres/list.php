@@ -1,9 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
-$classes = $classes ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 $stats = $stats ?? ['nb_etudiants' => 0, 'total_du' => 0, 'total_recouvre' => 0, 'total_solde' => 0, 'taux_recouvrement' => 0];
 ?>
 <div class="app-layout">
@@ -242,5 +239,5 @@ $stats = $stats ?? ['nb_etudiants' => 0, 'total_du' => 0, 'total_recouvre' => 0,
   </div>
 </div>
 
-<?php $pageScripts = ['public/assets/js/modules/arrieres.js']; ?>
+<?php ViewContext::setScripts(['public/assets/js/modules/arrieres.js']); ?>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

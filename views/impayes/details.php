@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $montantDu = (float)($item['montant_restant'] ?? ($item['montant_du'] ?? 0));
 ?>
 <div class="app-layout">

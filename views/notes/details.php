@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $encryptedId = $encryptedId ?? '';
 $noteVal = (float)($item['note'] ?? ($item['valeur_note'] ?? 0));
 ?>

@@ -1,9 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$item = $item ?? [];
 $encryptedId = $encryptedId ?? '';
-$semestres = $semestres ?? [];
-$selectedSemestreCode = $selectedSemestreCode ?? '';
 $matieresNotes = $matieresNotes ?? [];
 $totalPoints = $totalPoints ?? 0;
 $totalCoefficients = $totalCoefficients ?? 0;

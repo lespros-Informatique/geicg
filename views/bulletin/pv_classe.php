@@ -1,13 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$classes = $classes ?? [];
-$semestres = $semestres ?? [];
-$selectedClasseCode = $selectedClasseCode ?? '';
-$selectedSemestreCode = $selectedSemestreCode ?? '';
-$classeInfo = $classeInfo ?? [];
 $matieres = $matieres ?? [];
-$pvRows = $pvRows ?? [];
-$statsClasse = $statsClasse ?? [];
 $encryptedClasseCode = $encryptedClasseCode ?? '';
 ?>
 

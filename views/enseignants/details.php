@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $cours = isset($cours) ? $cours : [];
 ?>
 <div class="app-layout">

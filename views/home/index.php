@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../../public/inc/header.php';
 
 $stats = $stats ?? [];
-$annees = $annees ?? [];
 $auth = $auth ?? (Auth::user() ?: []);
 $recentInscriptions = $recentInscriptions ?? [];
 $recentPaiements = $recentPaiements ?? [];
@@ -922,6 +921,6 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
 ]) ?>
 </script>
 <?php
-$pageScripts = ['public/assets/js/modules/home_dashboard.js'];
+ViewContext::setScripts(['public/assets/js/modules/home_dashboard.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

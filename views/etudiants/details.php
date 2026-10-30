@@ -1,13 +1,10 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $parent = isset($parent) ? $parent : [];
 $inscription = isset($inscription) ? $inscription : [];
 $etablissement = isset($etablissement) ? $etablissement : [];
-$paiements = isset($paiements) ? $paiements : [];
 $absences = isset($absences) ? $absences : [];
 $scolariteTotale = $scolariteTotale ?? 0;
-$totalPaye = $totalPaye ?? 0;
 $soldeRestant = $soldeRestant ?? 0;
 $tauxPaiement = ($scolariteTotale > 0) ? min(100, round(($totalPaye / $scolariteTotale) * 100)) : 100;
 
@@ -478,6 +475,6 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
 </div>
 
 <?php 
-$pageScripts = ['public/assets/js/modules/etudiants_details.js'];
+ViewContext::setScripts(['public/assets/js/modules/etudiants_details.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

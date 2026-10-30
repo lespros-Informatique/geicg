@@ -1,6 +1,5 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $availableUsers = isset($availableUsers) ? $availableUsers : [];
 $isEdit = !empty($item['id_enseignant']);
 ?>
@@ -159,6 +158,6 @@ $isEdit = !empty($item['id_enseignant']);
 </div>
 
 <?php
-$pageScripts = ['public/assets/js/modules/enseignants_edit.js'];
+ViewContext::setScripts(['public/assets/js/modules/enseignants_edit.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

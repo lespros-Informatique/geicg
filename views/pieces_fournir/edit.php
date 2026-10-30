@@ -300,6 +300,6 @@ $isEdit = !empty($item['id_piece_fournir']);
 </div>
 
 <?php 
-$pageScripts = ['public/assets/js/modules/pieces_fournir_edit.js'];
+ViewContext::setScripts(['public/assets/js/modules/pieces_fournir_edit.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

@@ -1,7 +1,5 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$item = $item ?? [];
-$paiements = $paiements ?? [];
 $kpis = $kpis ?? [];
 
 $fondInitial = (float)($kpis['fond_initial'] ?? ($item['fond_initial'] ?? 0));

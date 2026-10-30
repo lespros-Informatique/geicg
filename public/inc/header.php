@@ -321,33 +321,7 @@
         window.LINK = '<?= RACINE ?>';
     </script>
 
-    <?php
-    $currentUserCode = Auth::code() ?? '';
-    $currentRoleCode = Auth::role() ?? '';
-    $currentRoles = [];
-    $isSuperAdmin = false;
-
-    if ($currentUserCode !== '') {
-        try {
-            $userRoles = Auth::roles();
-            if (empty($userRoles)) {
-                $userRoles = (new ModelUser())->getUserRoleCodes($currentUserCode);
-            }
-            $currentRoles = $userRoles;
-            $isSuperAdmin = in_array(ROLES::SUPER_ADMIN, $currentRoles, true) || in_array(ROLES::DIR_GENERAL, $currentRoles, true);
-        } catch (\Throwable $e) {
-            $currentRoles = [];
-        }
-    }
-
-    $currentUserName  = Auth::user('nom_user') ?? (Auth::user('nom') ?? (Auth::user('login_user') ?? 'Utilisateur'));
-    $currentUserEmail = Auth::user('email_user') ?? (Auth::user('email') ?? '');
-    $currentUserPhoto = !empty(Auth::user('photo_user')) ? RACINE . 'public/assets/images/users/' . Auth::user('photo_user') : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
-
-    $recentAdminNotifs = [];
-    $unreadNotifsCount = 0;
-
-    ?>
+    <?php extract(ViewContext::headerData()); ?>
 </head>
 <body>
     <input type="hidden" id="csrf_token" value="<?= Validator::generateCsrfToken() ?>">

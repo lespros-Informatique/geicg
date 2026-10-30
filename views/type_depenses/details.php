@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $depenses = isset($depenses) ? $depenses : [];
 $totalDepenses = $totalDepenses ?? 0;
 ?>

@@ -1,11 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$classes = $classes ?? [];
 $matieres = $matieres ?? [];
-$selectedClasseCode = $selectedClasseCode ?? '';
 $selectedDate = $selectedDate ?? date('Y-m-d');
-$selectedMatiereCode = $selectedMatiereCode ?? '';
-$etudiants = $etudiants ?? [];
 $existingAbsences = $existingAbsences ?? [];
 ?>
 <div class="app-layout">
@@ -159,6 +155,6 @@ $existingAbsences = $existingAbsences ?? [];
 </div>
 
 <?php
-$pageScripts = ['public/assets/js/modules/absences_saisie_classe.js'];
+ViewContext::setScripts(['public/assets/js/modules/absences_saisie_classe.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

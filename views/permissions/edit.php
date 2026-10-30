@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : (isset($permission) ? $permission : []);
 $isEdit = !empty($item['id_permission']);
 ?>
 <div class="app-layout">
@@ -92,6 +91,6 @@ $isEdit = !empty($item['id_permission']);
 </div>
 
 <?php
-$pageScripts = ['public/assets/js/modules/permissions_edit.js'];
+ViewContext::setScripts(['public/assets/js/modules/permissions_edit.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

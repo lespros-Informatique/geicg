@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $montantTranche = (float)($item['montant_tranche'] ?? 0);
 $montantScolarite = (float)($item['montant_scolarite'] ?? 0);
 $pct = ($montantScolarite > 0) ? round(($montantTranche / $montantScolarite) * 100, 1) : 0;

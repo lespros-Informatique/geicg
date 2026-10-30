@@ -1,12 +1,9 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$activeSession = $activeSession ?? null;
 $dailyTotals = $dailyTotals ?? ['total_general' => 0, 'nb_encaissements' => 0];
 $totalSessions = $totalSessions ?? 0;
 $totalOuvertes = $totalOuvertes ?? 0;
 $totalCloturees = $totalCloturees ?? 0;
-$annees = $annees ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -287,5 +284,5 @@ $selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''
   </div>
 </div>
 
-<?php $pageScripts = ['public/assets/js/modules/sessions_caisse.js']; ?>
+<?php ViewContext::setScripts(['public/assets/js/modules/sessions_caisse.js']); ?>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

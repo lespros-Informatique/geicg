@@ -1,7 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
-$etudiants = isset($etudiants) ? $etudiants : [];
 $matieres = isset($matieres) ? $matieres : [];
 $capacite = (int)($item['capacite_max_classe'] ?? 40);
 $nbInscrits = count($etudiants);

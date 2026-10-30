@@ -187,6 +187,6 @@
   </main>
 </div>
 <?php
-$pageScripts = ['public/assets/js/modules/etablissements_config.js'];
+ViewContext::setScripts(['public/assets/js/modules/etablissements_config.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

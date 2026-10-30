@@ -79,5 +79,5 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<?php $pageScripts = ['public/assets/js/modules/tranches_edit.js']; ?>
+<?php ViewContext::setScripts(['public/assets/js/modules/tranches_edit.js']); ?>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

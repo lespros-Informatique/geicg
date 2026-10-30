@@ -1,8 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $stats = $stats ?? (new ModelDepense())->getStats();
-$annees = $annees ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 $typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
 $canValidate = $canValidate ?? Auth::can(PERMISSIONS::VALIDATE_DEPENSES);
 $canRecord = $canRecord ?? Auth::can(PERMISSIONS::RECORD_DEPENSES);
@@ -268,6 +266,6 @@ $depensesListConfig = [
 <?= json_encode($depensesListConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
 </script>
 <?php 
-$pageScripts = ['public/assets/js/modules/depenses_list.js'];
+ViewContext::setScripts(['public/assets/js/modules/depenses_list.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

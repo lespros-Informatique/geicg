@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $montant = (float)($item['montant_depense'] ?? ($item['montant'] ?? 0));
 $codeDepense = $item['code_depense'] ?? ('DEP-' . ($item['id_depense'] ?? ''));
 $statut = $item['statut_depense'] ?? 'en_attente';

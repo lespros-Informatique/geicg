@@ -1,11 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$isCaisseOuverte = $isCaisseOuverte ?? false;
-$activeSession = $activeSession ?? null;
-$encryptedSessionId = $encryptedSessionId ?? '';
 $canRecord = $canRecord ?? false;
-$canOpenCaisse = $canOpenCaisse ?? false;
-$canCloseCaisse = $canCloseCaisse ?? false;
 $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($canAccess) && $canAccess([PERMISSIONS::CANCEL_PAIEMENTS]));
 ?>
 <div class="app-layout">
@@ -709,6 +704,6 @@ $paiementsListConfig = [
 <?= json_encode($paiementsListConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
 </script>
 <?php 
-$pageScripts = ['public/assets/js/modules/paiements_list.js'];
+ViewContext::setScripts(['public/assets/js/modules/paiements_list.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

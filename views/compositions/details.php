@@ -1,6 +1,5 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$item = $item ?? [];
 $targetClasses = $targetClasses ?? [];
 $matieres = $matieres ?? [];
 $encryptedId = $encryptedId ?? '';
@@ -285,6 +284,6 @@ $encryptedId = $encryptedId ?? '';
 ]) ?>
 </script>
 <?php
-$pageScripts = ['public/assets/js/modules/compositions_details.js'];
+ViewContext::setScripts(['public/assets/js/modules/compositions_details.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

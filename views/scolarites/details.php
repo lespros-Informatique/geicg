@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $tranches = isset($tranches) ? $tranches : [];
 $montantScolarite = (float)($item['montant_scolarite'] ?? ($item['montant'] ?? 0));
 

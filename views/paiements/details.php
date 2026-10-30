@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
 
-$item = isset($item) ? $item : [];
 $encryptedId = $encryptedId ?? '';
 $montantOp = (float)($item['montant_paye'] ?? ($item['montant_paiement'] ?? 0));
 $scolarite = (float)($scolarite ?? ($item['montant_scolarite_inscription'] ?? 0));
@@ -452,6 +451,6 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
 </div>
 
 <?php 
-$pageScripts = ['public/assets/js/modules/paiements_details.js'];
+ViewContext::setScripts(['public/assets/js/modules/paiements_details.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

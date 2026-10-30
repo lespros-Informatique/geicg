@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $typeMedia = strtolower($item['type_media'] ?? ($item['type_fichier'] ?? 'image'));
 $urlMedia = $item['url_fichier'] ?? ($item['fichier'] ?? '');
 ?>

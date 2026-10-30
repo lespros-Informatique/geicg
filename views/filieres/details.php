@@ -1,8 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
-$cycles = isset($cycles) ? $cycles : [];
-$classes = isset($classes) ? $classes : [];
 $stats = isset($stats) ? $stats : [];
 ?>
 <div class="app-layout">

@@ -1,9 +1,6 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php'; 
-$annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
-$filieres = $filieres ?? [];
-$classes = $classes ?? [];
 $anneeActive = $anneeActive ?? '';
 ?>
 <div class="app-layout">
@@ -254,6 +251,6 @@ $anneeActive = $anneeActive ?? '';
 ]) ?>
 </script>
 <?php
-$pageScripts = ['public/assets/js/modules/etudiants_list.js'];
+ViewContext::setScripts(['public/assets/js/modules/etudiants_list.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

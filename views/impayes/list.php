@@ -1,9 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
-$classes = $classes ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 $canSendRelance = $canSendRelance ?? true;
 $canRecordPayment = $canRecordPayment ?? true;
 ?>
@@ -311,5 +308,5 @@ $canRecordPayment = $canRecordPayment ?? true;
   </div>
 </div>
 
-<?php $pageScripts = ['public/assets/js/modules/impayes.js']; ?>
+<?php ViewContext::setScripts(['public/assets/js/modules/impayes.js']); ?>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

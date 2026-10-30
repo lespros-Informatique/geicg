@@ -123,6 +123,6 @@
 </div>
 
 <?php
-$pageScripts = ['public/assets/js/modules/filiere_cycles_hub.js'];
+ViewContext::setScripts(['public/assets/js/modules/filiere_cycles_hub.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

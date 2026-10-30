@@ -1,10 +1,4 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<?php
-$annees = $annees ?? [];
-$filieres = $filieres ?? [];
-$classes = $classes ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
-?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -181,6 +175,6 @@ $selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''
 </div>
 
 <?php 
-$pageScripts = ['public/assets/js/modules/inscriptions_prise_de_vue.js'];
+ViewContext::setScripts(['public/assets/js/modules/inscriptions_prise_de_vue.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

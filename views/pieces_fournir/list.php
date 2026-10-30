@@ -58,6 +58,6 @@ $piecesFournirListConfig = [
 ?>
 <script type="application/json" id="pieces-fournir-list-config"><?= json_encode($piecesFournirListConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?></script>
 <?php 
-$pageScripts = ['public/assets/js/modules/pieces_fournir_list.js'];
+ViewContext::setScripts(['public/assets/js/modules/pieces_fournir_list.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

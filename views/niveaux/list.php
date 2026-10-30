@@ -96,6 +96,6 @@
 ]) ?>
 </script>
 <?php
-$pageScripts = ['public/assets/js/modules/niveaux_list.js'];
+ViewContext::setScripts(['public/assets/js/modules/niveaux_list.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

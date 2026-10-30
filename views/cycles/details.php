@@ -1,8 +1,6 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $stats = isset($stats) ? $stats : [];
-$filieres = isset($filieres) ? $filieres : [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
