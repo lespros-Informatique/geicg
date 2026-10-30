@@ -81,14 +81,7 @@ $enseignants = (new ModelEnseignant())->getActifs();
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('#sel_ens_em').select2({ placeholder: "-- Rechercher un enseignant --", allowClear: true, width: '100%' });
-    $('#sel_mat_em').select2({ placeholder: "-- Rechercher une matière --", allowClear: true, width: '100%' });
-    $('#sel_cls_em').select2({ placeholder: "-- Rechercher une classe --", allowClear: true, width: '100%' });
-  }
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+$pageScripts = ['public/assets/js/modules/enseignant_matiere_edit.js'];
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

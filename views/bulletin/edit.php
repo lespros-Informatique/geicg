@@ -64,13 +64,7 @@ $enseignants = (new ModelEnseignant())->getAll();
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('#sel_etu_bu').select2({ placeholder: "-- Rechercher un étudiant --", allowClear: true, width: '100%' });
-    $('#sel_cls_bu').select2({ placeholder: "-- Rechercher une classe --", allowClear: true, width: '100%' });
-  }
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+$pageScripts = ['public/assets/js/modules/bulletin_edit.js'];
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

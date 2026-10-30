@@ -173,62 +173,13 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-
-  $('#form-edit-etudiant').on('submit', function(e) {
-    e.preventDefault();
-    var $form = $(this);
-    var $btn = $('#btn-submit-etudiant');
-    var originalHtml = $btn.html();
-
-    $btn.prop('disabled', true).html('<i data-lucide="loader" class="spin" style="width:18px;height:18px;display:inline-block;animation:spin 1s linear infinite;"></i> <span>Enregistrement en cours...</span>');
-    if (window.lucide) lucide.createIcons();
-
-    $.ajax({
-      url: $form.attr('action'),
-      type: 'POST',
-      data: $form.serialize(),
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 || res.success) {
-          if (typeof showToast === 'function') {
-            showToast(res.message || 'Fiche étudiant modifiée avec succès !', 'success');
-          } else if (window.toastr) {
-            toastr.success(res.message || 'Fiche étudiant modifiée avec succès !');
-          }
-          var targetUrl = res.redirect || '<?= !empty($encryptedId) ? (RACINE . "etudiant/details/" . $encryptedId) : (RACINE . "etudiant/list") ?>';
-          setTimeout(function() {
-            window.location.href = targetUrl;
-          }, 600);
-        } else {
-          $btn.prop('disabled', false).html(originalHtml);
-          if (window.lucide) lucide.createIcons();
-          if (typeof showToast === 'function') {
-            showToast(res.message || 'Erreur lors de la modification', 'error');
-          } else if (window.toastr) {
-            toastr.error(res.message || 'Erreur lors de la modification');
-          }
-        }
-      },
-      error: function(xhr) {
-        $btn.prop('disabled', false).html(originalHtml);
-        if (window.lucide) lucide.createIcons();
-        var msg = 'Erreur réseau ou serveur lors de l\'enregistrement';
-        try {
-          var json = JSON.parse(xhr.responseText);
-          if (json && json.message) msg = json.message;
-        } catch(e) {}
-        if (typeof showToast === 'function') {
-          showToast(msg, 'error');
-        } else if (window.toastr) {
-          toastr.error(msg);
-        }
-      }
-    });
-  });
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+$etudiantsEditConfig = [
+  'redirectUrl' => !empty($encryptedId) ? (RACINE . "etudiant/details/" . $encryptedId) : (RACINE . "etudiant/list")
+];
+?>
+<script type="application/json" id="etudiants-edit-config"><?= json_encode($etudiantsEditConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?></script>
+<?php 
+$pageScripts = ['public/assets/js/modules/etudiants_edit.js'];
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

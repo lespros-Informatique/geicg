@@ -64,12 +64,4 @@
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons(); 
-  if ($.fn.select2) {
-    $('.select2').select2({ width: '100%' });
-  }
-});
-</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
