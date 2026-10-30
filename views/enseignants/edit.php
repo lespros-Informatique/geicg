@@ -140,7 +140,7 @@ $isEdit = !empty($item['id_enseignant']);
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut d'activité</label>
               <select class="form-control" name="statut_enseignant" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;">
                 <option value="actif" <?= (($item['statut_enseignant'] ?? 'actif') === 'actif') ? 'selected' : '' ?>>Actif (En service)</option>
-                <option value="inactif" <?= (($item['statut_enseignant'] ?? '') === 'inactif') ? 'selected' : '' ?>>Inactif / Suspendu</option>
+                <option value="inactif" <?= (($item['statut_enseignant'] ?? '') === STATUTS::INACTIF) ? 'selected' : '' ?>>Inactif / Suspendu</option>
               </select>
             </div>
             <?php endif; ?>

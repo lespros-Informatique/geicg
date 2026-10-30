@@ -66,7 +66,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
             <div style="margin-top: 8px;">
               <?php if ($item['statut_session'] === 'ouverte'): ?>
                 <span class="badge" style="background: #DCFCE7; color: #15803D; font-weight: 800; padding: 5px 12px; border-radius: 20px; font-size: 12px;">En cours (Ouverte)</span>
-              <?php elseif ($item['statut_session'] === 'valide'): ?>
+              <?php elseif ($item['statut_session'] === STATUTS::VALIDE): ?>
                 <span class="badge" style="background: #DBEAFE; color: #1E40AF; font-weight: 800; padding: 5px 12px; border-radius: 20px; font-size: 12px;">Clôturée & Validée</span>
               <?php else: ?>
                 <span class="badge" style="background: #FEF3C7; color: #B45309; font-weight: 800; padding: 5px 12px; border-radius: 20px; font-size: 12px;">Clôturée</span>
@@ -226,7 +226,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
                 </tr>
               <?php else: ?>
                 <?php $idx = 1; foreach ($paiements as $p): 
-                  $isAnnule = (strtolower($p['statut_paiement'] ?? '') === 'annule');
+                  $isAnnule = (strtolower($p['statut_paiement'] ?? '') === STATUTS::ANNULE);
                   $rowBg = $isAnnule ? '#FEF2F2' : '#FFFFFF';
                   $cat = strtoupper($p['categorie_paiement'] ?? 'SCOLARITE');
                   $typeLib = !empty($p['type_paiement']) ? $p['type_paiement'] : ($cat === 'FRAIS_ANNEXES' ? 'Frais Annexes' : 'Scolarité');

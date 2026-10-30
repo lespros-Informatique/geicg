@@ -33,7 +33,7 @@ $role = isset($role) ? $role : [];
             <h2 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;"><?= htmlspecialchars(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? '')) ?></h2>
             <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;"><?= htmlspecialchars($role['libelle_role'] ?? 'Rôle non attribué') ?></p>
             <div style="margin-top: 10px;">
-              <?php if (($user['statut_user'] ?? '') === 'actif'): ?>
+              <?php if (($user['statut_user'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:12px; font-weight:700; font-size:12px;">Compte Actif</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 12px; border-radius:12px; font-weight:700; font-size:12px;">Compte Inactif</span>

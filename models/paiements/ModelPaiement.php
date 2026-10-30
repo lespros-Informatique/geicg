@@ -72,7 +72,7 @@ class ModelPaiement extends BaseModel
                 FROM " . TABLES::PAIEMENTS . " 
                 WHERE inscription_code = ?";
         if ($excludeAnnule) {
-            $sql .= " AND statut_paiement != 'annule'";
+            $sql .= " AND statut_paiement != '" . STATUTS::ANNULE . "'";
         }
         $sql .= " ORDER BY date_paiement ASC";
         $stmt = $this->getCon()->prepare($sql);
@@ -110,11 +110,11 @@ class ModelPaiement extends BaseModel
                 return ['success' => false, 'message' => "Paiement introuvable."];
             }
 
-            if ($paiement['statut_paiement'] === 'annule') {
+            if ($paiement['statut_paiement'] === STATUTS::ANNULE) {
                 return ['success' => false, 'message' => "Ce paiement est déjà annulé."];
             }
 
-            $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = 'annule', motif_annulation = ?, updated_at_paiement = NOW() WHERE id_paiement = ?");
+            $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = '" . STATUTS::ANNULE . "', motif_annulation = ?, updated_at_paiement = NOW() WHERE id_paiement = ?");
             $ok = $stmtUp->execute([$motif, $paiement['id_paiement']]);
 
             if ($ok) {
@@ -192,8 +192,8 @@ class ModelPaiement extends BaseModel
     public function getListDependencies(string $activeYear): array
     {
         $db = $this->getCon();
-        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $stmtInscr = $db->prepare("
             SELECT 
@@ -210,7 +210,7 @@ class ModelPaiement extends BaseModel
             FROM " . TABLES::INSCRIPTIONS . " i
             JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
             LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
-            WHERE i.statut_inscription != 'annule'
+            WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
               AND i.annee_code = ?
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
@@ -247,7 +247,7 @@ class ModelPaiement extends BaseModel
         $db = $this->getCon();
         $targetAnnee = !empty($anneeCode) ? $anneeCode : ($sessionAnneeCode ?: '');
 
-        $whereIns = ["i.statut_inscription != 'annule'"];
+        $whereIns = ["i.statut_inscription != '" . STATUTS::ANNULE . "'"];
         $paramsIns = [];
 
         if (!empty($targetAnnee) && $targetAnnee !== 'ALL') {
@@ -290,7 +290,7 @@ class ModelPaiement extends BaseModel
                 AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
                 AND (s.annee_code = i.annee_code OR s.annee_code = '')
                 AND (s.affectation_etat = i.affectation_etat OR s.affectation_etat IS NULL OR s.affectation_etat = '')
-                AND s.statut_scolarite = 'actif'
+                AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
             )
             WHERE {$strWhereIns}
         ";
@@ -317,7 +317,7 @@ class ModelPaiement extends BaseModel
         }
 
         $wherePay = [
-            "p.statut_paiement != 'annule'",
+            "p.statut_paiement != '" . STATUTS::ANNULE . "'",
             "(p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')",
             "(p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')"
         ];
@@ -456,9 +456,9 @@ class ModelPaiement extends BaseModel
                 AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
                 AND (s.annee_code = i.annee_code OR s.annee_code = '')
                 AND (s.affectation_etat = i.affectation_etat OR s.affectation_etat IS NULL OR s.affectation_etat = '')
-                AND s.statut_scolarite = 'actif'
+                AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
             )
-            WHERE i.annee_code = ? AND i.statut_inscription != 'annule'
+            WHERE i.annee_code = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "'
         ");
         $stmtExercice->execute([$targetExerciceAnnee]);
         $totalExerciceSession = (float)$stmtExercice->fetchColumn();
@@ -497,7 +497,7 @@ class ModelPaiement extends BaseModel
     {
         $db = $this->getCon();
 
-        $where = "WHERE i.statut_inscription != 'annule' AND i.annee_code = ?";
+        $where = "WHERE i.statut_inscription != '" . STATUTS::ANNULE . "' AND i.annee_code = ?";
         $params = [$anneeCode];
 
         if ($niveauCode !== 'ALL' && !empty($niveauCode)) {
@@ -534,7 +534,7 @@ class ModelPaiement extends BaseModel
             }
         }
 
-        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = 'actif' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
+        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
         $stmtScoAll->execute([$anneeCode]);
         $scolariteGrid = $stmtScoAll->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -706,7 +706,7 @@ class ModelPaiement extends BaseModel
                        c.libelle_classe, c.filiere_code, c.niveau_code,
                        f.libelle_filiere, f.type_filiere, n.libelle_niveau, a.libelle_annee
                 FROM " . TABLES::ETUDIANTS . " e
-                LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant AND (i.annee_code = ? OR ? = '') AND (i.statut_inscription != 'annule')
+                LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant AND (i.annee_code = ? OR ? = '') AND (i.statut_inscription != '" . STATUTS::ANNULE . "')
                 LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
@@ -738,7 +738,7 @@ class ModelPaiement extends BaseModel
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
               AND (annee_code = ? OR annee_code = ? OR ? = '')
               AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
-              AND statut_scolarite = 'actif'
+              AND statut_scolarite = '" . STATUTS::ACTIF . "'
             ORDER BY (CASE WHEN annee_code = ? THEN 1 WHEN annee_code = ? THEN 2 ELSE 3 END),
                      (CASE WHEN affectation_etat = ? THEN 1 ELSE 2 END),
                      id_scolarite DESC
@@ -757,7 +757,7 @@ class ModelPaiement extends BaseModel
         $stmtPay = $db->prepare("
             SELECT * FROM " . TABLES::PAIEMENTS . " 
             WHERE inscription_code = ? 
-              AND statut_paiement != 'annule'
+              AND statut_paiement != '" . STATUTS::ANNULE . "'
               AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
               AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
             ORDER BY date_paiement ASC, id_paiement ASC
@@ -788,7 +788,7 @@ class ModelPaiement extends BaseModel
                 SELECT t.*, s.montant_scolarite as scolarite_globale
                 FROM " . TABLES::TRANCHES_SCOLARITE . " t
                 LEFT JOIN " . TABLES::SCOLARITES . " s ON s.code_scolarite = t.scolarite_code
-                WHERE t.statut_tranche = 'actif'
+                WHERE t.statut_tranche = '" . STATUTS::ACTIF . "'
                   AND (
                     t.scolarite_code = ?
                     OR (
@@ -806,7 +806,7 @@ class ModelPaiement extends BaseModel
                 SELECT t.*, s.montant_scolarite as scolarite_globale
                 FROM " . TABLES::TRANCHES_SCOLARITE . " t
                 LEFT JOIN " . TABLES::SCOLARITES . " s ON s.code_scolarite = t.scolarite_code
-                WHERE t.statut_tranche = 'actif'
+                WHERE t.statut_tranche = '" . STATUTS::ACTIF . "'
                   AND t.filiere_code = ?
                   AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
                   AND (t.annee_code = ? OR ? = '')
@@ -1021,7 +1021,7 @@ class ModelPaiement extends BaseModel
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
               AND (annee_code = ? OR ? = '')
               AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
-              AND statut_scolarite = 'actif'
+              AND statut_scolarite = '" . STATUTS::ACTIF . "'
             ORDER BY id_scolarite DESC LIMIT 1
         ");
         $stmtSco->execute([$filiereCode, $niveauCode, $anneeCode, $anneeCode, $affEtat]);
@@ -1033,7 +1033,7 @@ class ModelPaiement extends BaseModel
                 SELECT t.*
                 FROM " . TABLES::TRANCHES_SCOLARITE . " t
                 LEFT JOIN " . TABLES::SCOLARITES . " s ON s.code_scolarite = t.scolarite_code
-                WHERE t.statut_tranche = 'actif'
+                WHERE t.statut_tranche = '" . STATUTS::ACTIF . "'
                   AND (
                     t.scolarite_code = ?
                     OR (
@@ -1051,7 +1051,7 @@ class ModelPaiement extends BaseModel
                 SELECT t.*
                 FROM " . TABLES::TRANCHES_SCOLARITE . " t
                 LEFT JOIN " . TABLES::SCOLARITES . " s ON s.code_scolarite = t.scolarite_code
-                WHERE t.statut_tranche = 'actif'
+                WHERE t.statut_tranche = '" . STATUTS::ACTIF . "'
                   AND t.filiere_code = ?
                   AND (t.niveau_code = ? OR t.niveau_code = '' OR t.niveau_code IS NULL)
                   AND (t.annee_code = ? OR ? = '')
@@ -1063,7 +1063,7 @@ class ModelPaiement extends BaseModel
 
         if (empty($dbTranches)) return null;
 
-        $stmtPay = $db->prepare("SELECT * FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != 'annule'");
+        $stmtPay = $db->prepare("SELECT * FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'");
         $stmtPay->execute([$inscriptionCode]);
         $allPayments = $stmtPay->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -1174,7 +1174,7 @@ class ModelPaiement extends BaseModel
                 return ['success' => false, 'message' => "La tranche sélectionnée est introuvable."];
             }
 
-            $stmtPayTr = $db->prepare("SELECT SUM(montant_paiement) FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND tranche_code = ? AND statut_paiement != 'annule'");
+            $stmtPayTr = $db->prepare("SELECT SUM(montant_paiement) FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND tranche_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'");
             $stmtPayTr->execute([$inscriptionCode, $trancheCode]);
             $dejaPayeTr = (float)($stmtPayTr->fetchColumn() ?: 0);
             $montantMaxTr = (float)$tranche['montant_tranche'];
@@ -1249,7 +1249,7 @@ class ModelPaiement extends BaseModel
 
             $this->updateInscriptionStatusFromPayments($inscriptionCode);
 
-            $stmtCountVersem = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != 'annule'");
+            $stmtCountVersem = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'");
             $stmtCountVersem->execute([$inscriptionCode]);
             $countVersements = (int)($stmtCountVersem->fetchColumn() ?: 0);
 
@@ -1302,7 +1302,7 @@ class ModelPaiement extends BaseModel
 
             $this->updateInscriptionStatusFromPayments($inscriptionCode);
 
-            $stmtCountVersem = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != 'annule'");
+            $stmtCountVersem = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'");
             $stmtCountVersem->execute([$inscriptionCode]);
             $countVersements = (int)($stmtCountVersem->fetchColumn() ?: 0);
 
@@ -1345,7 +1345,7 @@ class ModelPaiement extends BaseModel
                 SELECT SUM(montant_paiement) 
                 FROM " . TABLES::PAIEMENTS . " 
                 WHERE inscription_code = ? 
-                  AND statut_paiement != 'annule'
+                  AND statut_paiement != '" . STATUTS::ANNULE . "'
                   AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
                   AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
             ");
@@ -1353,9 +1353,9 @@ class ModelPaiement extends BaseModel
             $totalPayeCumul = (float)($stmtTot->fetchColumn() ?: 0);
 
             if ($totalPayeCumul >= $scolariteDue && $scolariteDue > 0) {
-                $db->prepare("UPDATE " . TABLES::INSCRIPTIONS . " SET statut_inscription = 'solde' WHERE code_inscription = ?")->execute([$inscriptionCode]);
+                $db->prepare("UPDATE " . TABLES::INSCRIPTIONS . " SET statut_inscription = '" . STATUTS::SOLDE . "' WHERE code_inscription = ?")->execute([$inscriptionCode]);
             } else {
-                $db->prepare("UPDATE " . TABLES::INSCRIPTIONS . " SET statut_inscription = 'valide' WHERE code_inscription = ? AND statut_inscription = 'solde'")->execute([$inscriptionCode]);
+                $db->prepare("UPDATE " . TABLES::INSCRIPTIONS . " SET statut_inscription = '" . STATUTS::VALIDE . "' WHERE code_inscription = ? AND statut_inscription = '" . STATUTS::SOLDE . "'")->execute([$inscriptionCode]);
             }
         }
     }
@@ -1381,14 +1381,14 @@ class ModelPaiement extends BaseModel
             return ['success' => false, 'message' => "Paiement introuvable."];
         }
 
-        if ($paiement['statut_paiement'] === 'annule') {
+        if ($paiement['statut_paiement'] === STATUTS::ANNULE) {
             return ['success' => false, 'message' => "Ce versement est déjà annulé."];
         }
 
         $cancellationNote = " [ANNULATION le " . date('d/m/Y H:i') . " par " . (!empty($userName) ? $userName : $userCode) . (!empty($motif) ? " - Motif: " . $motif : "") . "]";
         $newObservations = trim(($paiement['observations'] ?? '') . $cancellationNote);
 
-        $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = 'annule', observations = ? WHERE id_paiement = ?");
+        $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = '" . STATUTS::ANNULE . "', observations = ? WHERE id_paiement = ?");
         $res = $stmtUp->execute([$newObservations, $paiement['id_paiement']]);
 
         if ($res) {
@@ -1507,7 +1507,7 @@ class ModelPaiement extends BaseModel
 
         $stmtAll = $db->prepare("
             SELECT * FROM " . TABLES::PAIEMENTS . " 
-            WHERE inscription_code = ? AND statut_paiement != 'annule'
+            WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'
             ORDER BY date_paiement ASC, id_paiement ASC
         ");
         $stmtAll->execute([$inscriptionCode]);
@@ -1638,7 +1638,7 @@ class ModelPaiement extends BaseModel
     {
         $db = $this->getCon();
 
-        $where = "WHERE i.statut_inscription != 'annule' AND i.annee_code = ?";
+        $where = "WHERE i.statut_inscription != '" . STATUTS::ANNULE . "' AND i.annee_code = ?";
         $params = [$anneeCode];
 
         if ($niveauCode !== 'ALL' && !empty($niveauCode)) {
@@ -1675,7 +1675,7 @@ class ModelPaiement extends BaseModel
             }
         }
 
-        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = 'actif' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
+        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
         $stmtScoAll->execute([$anneeCode]);
         $scolariteGrid = $stmtScoAll->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -1790,7 +1790,7 @@ class ModelPaiement extends BaseModel
     public function getPrintRegistreEncaissementsData(string $anneeCode, string $niveauCode, string $classeCode, string $canalPaiement, string $modePaiement, string $categoriePaiement, string $dateDebut, string $dateFin, string $currentUserName): array
     {
         $db = $this->getCon();
-        $where = "WHERE p.statut_paiement != 'annule'";
+        $where = "WHERE p.statut_paiement != '" . STATUTS::ANNULE . "'";
         $params = [];
 
         if (!empty($categoriePaiement) && $categoriePaiement !== 'ALL') {
@@ -1994,7 +1994,7 @@ class ModelPaiement extends BaseModel
               AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
               AND (affectation_etat = ? OR affectation_etat = ?)
-              AND statut_scolarite = 'actif'
+              AND statut_scolarite = '" . STATUTS::ACTIF . "'
             ORDER BY 
               (CASE WHEN annee_code = ? THEN 1 ELSE 2 END),
               (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END),
@@ -2017,7 +2017,7 @@ class ModelPaiement extends BaseModel
         $stmtPaiements = $db->prepare("
             SELECT * FROM " . TABLES::PAIEMENTS . "
             WHERE inscription_code = ? 
-              AND statut_paiement != 'annule'
+              AND statut_paiement != '" . STATUTS::ANNULE . "'
               AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
               AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
             ORDER BY date_paiement ASC, id_paiement ASC
@@ -2050,7 +2050,7 @@ class ModelPaiement extends BaseModel
             $stmtTr = $db->prepare("
                 SELECT code_tranche, libelle_tranche, montant_tranche, date_limite 
                 FROM " . TABLES::TRANCHES_SCOLARITE . " 
-                WHERE scolarite_code = ? AND statut_tranche = 'actif'
+                WHERE scolarite_code = ? AND statut_tranche = '" . STATUTS::ACTIF . "'
                 ORDER BY id_tranche ASC
             ");
             $stmtTr->execute([$codeScolarite]);
@@ -2061,7 +2061,7 @@ class ModelPaiement extends BaseModel
             $stmtTr = $db->prepare("
                 SELECT code_tranche, libelle_tranche, montant_tranche, date_limite 
                 FROM " . TABLES::TRANCHES_SCOLARITE . " 
-                WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL) AND statut_tranche = 'actif'
+                WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL) AND statut_tranche = '" . STATUTS::ACTIF . "'
                 ORDER BY id_tranche ASC
             ");
             $stmtTr->execute([$filiereCode, $nCode, $anneeCode]);

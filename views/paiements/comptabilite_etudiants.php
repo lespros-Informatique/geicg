@@ -88,7 +88,7 @@ $classes = $classes ?? [];
           <select id="filter_annee_code" name="annee_code" class="form-control" style="border-radius: 8px; font-weight: 700; font-size: 13px;" onchange="applyComptaFilters()">
             <?php foreach ($annees as $a): ?>
               <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($a['code_annee'] === $selectedAnneeCode) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === 'actif') ? ' (Active)' : '' ?>
+                <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' (Active)' : '' ?>
               </option>
             <?php endforeach; ?>
           </select>

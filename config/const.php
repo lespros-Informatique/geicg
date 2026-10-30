@@ -281,31 +281,47 @@ class PERMISSIONS
 
 class STATUTS
 {
+    // VALEURS SCALAIRES STANDARDISÉES
+    public const ACTIF        = 'actif';
+    public const INACTIF      = 'inactif';
+    public const VALIDE       = 'valide';
+    public const ANNULE       = 'annule';
+    public const EN_ATTENTE   = 'en_attente';
+    public const SOLDE        = 'solde';
+    public const OUVERT       = 'ouvert';
+    public const FERME        = 'ferme';
+    public const REJETE       = 'rejete';
+    public const CLOTURE      = 'cloture';
+    public const ARCHIVE      = 'archive';
+    public const PROGRAMME    = 'programme';
+    public const EN_COURS     = 'en_cours';
+    public const TERMINE      = 'termine';
+    public const JUSTIFIE     = 'justifie';
+    public const NON_JUSTIFIE = 'non_justifie';
+
     // INSCRIPTIONS
-    public const INSCRIPTIONS = ['en_attente', 'valide', 'solde', 'annule'];
+    public const INSCRIPTIONS = [self::EN_ATTENTE, self::VALIDE, self::SOLDE, self::ANNULE];
     public const CANAUX_INSCRIPTION = ['guichet', 'en_ligne'];
     public const AFFECTATIONS_ETAT = ['affecte', 'non_affecte'];
 
     // PAIEMENTS
-    public const PAIEMENTS = ['valide', 'annule', 'en_attente'];
+    public const PAIEMENTS = [self::VALIDE, self::ANNULE, self::EN_ATTENTE];
     public const CANAUX_PAIEMENT = ['guichet', 'en_ligne'];
 
     // SESSIONS DE CAISSE
-    public const SESSIONS_CAISSE = ['ouvert', 'ferme', 'valide', 'rejete'];
+    public const SESSIONS_CAISSE = [self::OUVERT, self::FERME, self::VALIDE, self::REJETE];
 
     // ANNÉES ACADÉMIQUES
-    public const ANNEES = ['actif', 'cloture', 'archive', 'inactif'];
+    public const ANNEES = [self::ACTIF, self::CLOTURE, self::ARCHIVE, self::INACTIF];
 
     // COMPOSITIONS / EXAMENS
-    public const COMPOSITIONS = ['programme', 'en_cours', 'termine', 'annule'];
+    public const COMPOSITIONS = [self::PROGRAMME, self::EN_COURS, self::TERMINE, self::ANNULE];
 
     // ABSENCES
-    public const ABSENCES = ['justifie', 'non_justifie'];
+    public const ABSENCES = [self::JUSTIFIE, self::NON_JUSTIFIE];
 
     // STATUT GÉNÉRAL D'ACTIVITÉ
-    public const ACTIF   = 'actif';
-    public const INACTIF = 'inactif';
-    public const GENERAL = ['actif', 'inactif'];
+    public const GENERAL = [self::ACTIF, self::INACTIF];
 
     // TYPES DE FILIÈRES
     public const TYPES_FILIERES = [

@@ -12,7 +12,7 @@ class ModelImpayes extends BaseModel
             $sql = "SELECT r.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, cl.libelle_classe, n.libelle_niveau 
                     FROM " . TABLES::RELANCES_IMPAYES . " r
                     LEFT JOIN " . TABLES::ETUDIANTS . " e ON r.etudiant_code = e.code_etudiant
-                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription != 'annule'))
+                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription != '" . STATUTS::ANNULE . "'))
                     LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                     LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code";
             $conditions = [];
@@ -49,7 +49,7 @@ class ModelImpayes extends BaseModel
             require_once __DIR__ . '/../frais_annexes/ModelFraisAnnexe.php';
             $modelFA = new ModelFraisAnnexe();
 
-            $where = "WHERE i.statut_inscription != 'annule'";
+            $where = "WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'";
             $params = [];
             if (!empty($anneeCode)) {
                 $where .= " AND i.annee_code = ?";
@@ -84,11 +84,11 @@ class ModelImpayes extends BaseModel
             }
 
             // Scolarités & Tranches
-            $stmtSco = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = 'actif'");
+            $stmtSco = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "'");
             $stmtSco->execute();
             $scolariteGrid = $stmtSco->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            $stmtTranches = $db->prepare("SELECT * FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE statut_tranche = 'actif' ORDER BY date_limite ASC, id_tranche ASC");
+            $stmtTranches = $db->prepare("SELECT * FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE statut_tranche = '" . STATUTS::ACTIF . "' ORDER BY date_limite ASC, id_tranche ASC");
             $stmtTranches->execute();
             $tranchesGrid = $stmtTranches->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -390,7 +390,7 @@ class ModelImpayes extends BaseModel
             SELECT inscription_code, COALESCE(SUM(montant_paiement), 0) as total_paye 
             FROM " . TABLES::PAIEMENTS . " 
             WHERE inscription_code IN ({$placeholders})
-              AND statut_paiement != 'annule'
+              AND statut_paiement != '" . STATUTS::ANNULE . "'
               AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
               AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
               AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
@@ -410,7 +410,7 @@ class ModelImpayes extends BaseModel
             SELECT SUM(montant_paiement) as total_paye 
             FROM " . TABLES::PAIEMENTS . " 
             WHERE inscription_code = ? 
-              AND statut_paiement != 'annule'
+              AND statut_paiement != '" . STATUTS::ANNULE . "'
               AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
               AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
               AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
@@ -425,7 +425,7 @@ class ModelImpayes extends BaseModel
         if (array_key_exists($cacheKey, self::$scolariteDueCache)) {
             return self::$scolariteDueCache[$cacheKey];
         }
-        $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = 'actif' LIMIT 1");
+        $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = '" . STATUTS::ACTIF . "' LIMIT 1");
         $stmt->execute([$filiereCode, $niveauCode, $anneeCode]);
         $val = $stmt->fetchColumn();
         $res = $val !== false ? (float)$val : null;

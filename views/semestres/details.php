@@ -18,7 +18,7 @@ $stats = isset($stats) ? $stats : [];
           <a href="<?= RACINE ?>semestre/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux semestres
           </a>
-          <?php if (($item['statut_semestre'] ?? '') === 'actif'): ?>
+          <?php if (($item['statut_semestre'] ?? '') === STATUTS::ACTIF): ?>
             <button class="btn btn-primary" style="background: #94A3B8; border-color: #94A3B8; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; opacity: 0.6; cursor: not-allowed;" disabled title="Impossible de modifier un semestre actif">
               <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le semestre
             </button>
@@ -66,7 +66,7 @@ $stats = isset($stats) ? $stats : [];
           <div><strong style="color: #64748B;">Date de Début :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_debut_semestre']) ? date('d/m/Y', strtotime($item['date_debut_semestre'])) : 'Non définie' ?></span></div>
           <div><strong style="color: #64748B;">Date de Fin :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_fin_semestre']) ? date('d/m/Y', strtotime($item['date_fin_semestre'])) : 'Non définie' ?></span></div>
           <div><strong style="color: #64748B;">Statut :</strong> 
-            <?php if (($item['statut_semestre'] ?? '') === 'actif'): ?>
+            <?php if (($item['statut_semestre'] ?? '') === STATUTS::ACTIF): ?>
               <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px; border-radius:10px; font-weight:700;">Actif / Ouvert</span>
             <?php else: ?>
               <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px; border-radius:10px; font-weight:700;">Clôturé</span>

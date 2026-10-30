@@ -11,7 +11,7 @@ class ModelCycle extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT f.*,
-                   (SELECT COUNT(*) FROM " . TABLES::CLASSES . " cl WHERE cl.filiere_code = f.code_filiere AND cl.cycle_code = ? AND cl.statut_classe = 'actif') as nb_classes
+                   (SELECT COUNT(*) FROM " . TABLES::CLASSES . " cl WHERE cl.filiere_code = f.code_filiere AND cl.cycle_code = ? AND cl.statut_classe = '" . STATUTS::ACTIF . "') as nb_classes
             FROM " . TABLES::FILIERES . " f
             INNER JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.filiere_code = f.code_filiere
             WHERE fc.cycle_code = ?
@@ -27,10 +27,10 @@ class ModelCycle extends BaseModel
             SELECT 
                 COUNT(DISTINCT fc.filiere_code) as total_filieres,
                 (SELECT COUNT(*) FROM " . TABLES::CLASSES . " cl 
-                 WHERE cl.cycle_code = ? AND cl.statut_classe = 'actif') as total_classes,
+                 WHERE cl.cycle_code = ? AND cl.statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
                 (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
                  JOIN " . TABLES::CLASSES . " cl2 ON cl2.code_classe = ins.classe_code
-                 WHERE cl2.cycle_code = ? AND ins.statut_inscription = 'actif') as total_etudiants
+                 WHERE cl2.cycle_code = ? AND ins.statut_inscription = '" . STATUTS::ACTIF . "') as total_etudiants
             FROM " . TABLES::FILIERE_CYCLES . " fc
             WHERE fc.cycle_code = ?
         ");

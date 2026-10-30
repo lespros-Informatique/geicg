@@ -102,7 +102,7 @@ class ModelEmploi extends BaseModel
             // 1. Recherche précise par classe_code + matiere_code via la vue v_dash_pedagogie_affectations
             $stmt = $db->prepare("
                 SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . "
-                WHERE classe_code = ? AND matiere_code = ? AND statut_enseignant_matiere = 'actif'
+                WHERE classe_code = ? AND matiere_code = ? AND statut_enseignant_matiere = '" . STATUTS::ACTIF . "'
                 LIMIT 1
             ");
             $stmt->execute([$classeCode, $matiereCode]);
@@ -112,7 +112,7 @@ class ModelEmploi extends BaseModel
             if (!$row) {
                 $stmtGlobal = $db->prepare("
                     SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . "
-                    WHERE matiere_code = ? AND statut_enseignant_matiere = 'actif'
+                    WHERE matiere_code = ? AND statut_enseignant_matiere = '" . STATUTS::ACTIF . "'
                     LIMIT 1
                 ");
                 $stmtGlobal->execute([$matiereCode]);
@@ -155,7 +155,7 @@ class ModelEmploi extends BaseModel
             $baseSql = "
                 SELECT edt.*
                 FROM " . VIEWS::EMPLOIS_TEMPS_COMPLETS . " edt
-                WHERE edt.statut_emploi = 'actif'
+                WHERE edt.statut_emploi = '" . STATUTS::ACTIF . "'
                   AND LOWER(edt.jour) = ?
                   AND (edt.heure_debut < ? AND edt.heure_fin > ?)
             ";
@@ -282,7 +282,7 @@ class ModelEmploi extends BaseModel
                 LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
                 LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
-                WHERE edt.enseignant_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
+                WHERE edt.enseignant_code = ? AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
                 ORDER BY edt.jour ASC, edt.heure_debut ASC
             ");
             $stmt->execute([$ensCode]);

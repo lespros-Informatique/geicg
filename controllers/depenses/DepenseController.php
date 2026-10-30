@@ -153,7 +153,7 @@ class DepenseController extends BaseController
         if (empty($data['periode_depense'])) {
             $data['periode_depense'] = date('Y-m-d H:i:s');
         }
-        $data['statut_depense'] = 'en_attente';
+        $data['statut_depense'] = STATUTS::EN_ATTENTE;
         $data['created_at_depense'] = date('Y-m-d H:i:s');
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
@@ -177,7 +177,7 @@ class DepenseController extends BaseController
         $item = $this->model->getById($id);
         if (!$item) { $this->error('Dépense introuvable'); return; }
 
-        if (($item['statut_depense'] ?? '') !== 'en_attente') {
+        if (($item['statut_depense'] ?? '') !== STATUTS::EN_ATTENTE) {
             $currentLabel = ($item['statut_depense'] === 'approuve') ? 'Approuvée' : 'Annulée';
             $this->error('Seule une dépense au statut "En attente" peut être modifiée. Cette dépense est actuellement : ' . $currentLabel);
             return;

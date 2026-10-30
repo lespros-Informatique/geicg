@@ -65,7 +65,7 @@ class ModelEnseignantMatiere extends BaseModel
                 SELECT COUNT(*) FROM " . TABLES::NOTES . " n
                 JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
                 JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = n.inscription_code
-                WHERE ins.classe_code = ? AND comp.matiere_code = ? AND (n.statut_note = 'actif' OR n.statut_note IS NULL)
+                WHERE ins.classe_code = ? AND comp.matiere_code = ? AND (n.statut_note = '" . STATUTS::ACTIF . "' OR n.statut_note IS NULL)
             ");
             $stmtNotes->execute([$classeCode, $matiereCode]);
             return (int)$stmtNotes->fetchColumn();

@@ -244,7 +244,7 @@
             <td class="text-right text-bold" style="color: #166534;"><?= number_format($e['total_encaisse'], 0, ',', ' ') ?></td>
             <td class="text-right text-bold" style="color: <?= $e['solde_restant'] > 0 ? '#B91C1C' : '#15803D' ?>;"><?= number_format($e['solde_restant'], 0, ',', ' ') ?></td>
             <td class="text-center">
-              <?php if ($e['statut_code'] === 'solde'): ?>
+              <?php if ($e['statut_code'] === STATUTS::SOLDE): ?>
                 <span class="status-solde">Soldé</span>
               <?php elseif ($e['statut_code'] === 'partiel'): ?>
                 <span class="status-partiel">Acompte</span>

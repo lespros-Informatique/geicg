@@ -58,7 +58,7 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
                 <option value="">-- Toutes les années --</option>
                 <?php foreach (($annees ?? []) as $a): ?>
                   <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                    <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '' ?>
                   </option>
                 <?php endforeach; ?>
               </select>
@@ -123,8 +123,8 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
               <option value="">-- Aucune année disponible --</option>
             <?php else: ?>
               <?php foreach ($annees as $a): ?>
-                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode === $a['code_annee']) || (($a['statut_annee'] ?? '') === 'actif' && empty($currentAnneeCode))) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode === $a['code_annee']) || (($a['statut_annee'] ?? '') === STATUTS::ACTIF && empty($currentAnneeCode))) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '' ?>
                 </option>
               <?php endforeach; ?>
             <?php endif; ?>
@@ -271,7 +271,7 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
           <option value="">-- Sélectionner l'année source --</option>
           <?php foreach (($annees ?? []) as $a): ?>
             <option value="<?= htmlspecialchars($a['code_annee']) ?>">
-              <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+              <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '' ?>
             </option>
           <?php endforeach; ?>
         </select>
@@ -283,7 +283,7 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
           <option value="">-- Sélectionner l'année de destination --</option>
           <?php foreach (($annees ?? []) as $a): ?>
             <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($currentAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
-              <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+              <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '' ?>
             </option>
           <?php endforeach; ?>
         </select>

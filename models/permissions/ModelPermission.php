@@ -9,7 +9,7 @@ class ModelPermission extends BaseModel
     public function getGrouped(): array
     {
         try {
-            $sql = "SELECT * FROM " . TABLES::PERMISSIONS . " WHERE statut_permission = 'actif' ORDER BY module_permission ASC, id_permission ASC";
+            $sql = "SELECT * FROM " . TABLES::PERMISSIONS . " WHERE statut_permission = '" . STATUTS::ACTIF . "' ORDER BY module_permission ASC, id_permission ASC";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute();
             $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

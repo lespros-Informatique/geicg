@@ -78,7 +78,7 @@ $isEdit = !empty($item['id_piece_fournir']);
                 </label>
                 <select name="statut_piece" class="form-select" style="border-radius: 8px; padding: 11px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <option value="actif" <?= ($item['statut_piece'] ?? 'actif') === 'actif' ? 'selected' : '' ?>>Actif (Disponible pour les cycles)</option>
-                  <option value="inactif" <?= ($item['statut_piece'] ?? '') === 'inactif' ? 'selected' : '' ?>>Inactif (Désactivé du catalogue)</option>
+                  <option value="inactif" <?= ($item['statut_piece'] ?? '') === STATUTS::INACTIF ? 'selected' : '' ?>>Inactif (Désactivé du catalogue)</option>
                 </select>
                 <span style="font-size: 12px; color: #64748B; margin-top: 4px; display: block;">
                   Un document inactif ne pourra plus être sélectionné pour de nouveaux cycles d'études.

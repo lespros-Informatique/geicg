@@ -66,7 +66,7 @@ $cours = isset($cours) ? $cours : [];
           <div>
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Statut</span>
             <div>
-              <?php if (($item['statut_enseignant'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_enseignant'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 14px; border-radius:10px; font-weight:700; font-size:12px;">Actif</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 14px; border-radius:10px; font-weight:700; font-size:12px;">Inactif</span>

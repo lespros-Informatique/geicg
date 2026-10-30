@@ -132,7 +132,7 @@ class ModelNote extends BaseModel
             LEFT JOIN " . TABLES::USERS . " u ON (u.code_user = edt.enseignant_code OR u.code_user = em.enseignant_code)
             WHERE edt.classe_code = ? 
               AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
-              AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
+              AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
             GROUP BY m.code_matiere, m.libelle_matiere, em.coefficient
             ORDER BY m.libelle_matiere ASC
         ");
@@ -153,7 +153,7 @@ class ModelNote extends BaseModel
             LEFT JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
             WHERE em.classe_code = ?
               AND (em.annee_code = ? OR ? IS NULL OR ? = '')
-              AND (em.statut_enseignant_matiere = 'actif' OR em.statut_enseignant_matiere IS NULL)
+              AND (em.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em.statut_enseignant_matiere IS NULL)
             GROUP BY m.code_matiere, m.libelle_matiere, em.coefficient
             ORDER BY m.libelle_matiere ASC
         ");
@@ -194,7 +194,7 @@ class ModelNote extends BaseModel
         $stmtAll = $this->getCon()->query("
             SELECT code_matiere, libelle_matiere, 1.00 AS coefficient, '' AS prof_nom, 0 AS is_assigned
             FROM " . TABLES::MATIERES . " 
-            WHERE statut_matiere = 'actif'
+            WHERE statut_matiere = '" . STATUTS::ACTIF . "'
             ORDER BY libelle_matiere ASC
         ");
         return $stmtAll->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -207,7 +207,7 @@ class ModelNote extends BaseModel
             SELECT i.id_inscription, i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
             FROM " . TABLES::INSCRIPTIONS . " i
             INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != 'annule' OR i.statut_inscription IS NULL)
+            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
         $stmt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
@@ -219,7 +219,7 @@ class ModelNote extends BaseModel
         $db = $this->getCon();
         $sqlNotes = "SELECT n.*, n.inscription_code 
                      FROM " . TABLES::NOTES . " n
-                     WHERE n.composition_code = ? AND n.statut_note = 'actif'";
+                     WHERE n.composition_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'";
         $stmtNotes = $db->prepare($sqlNotes);
         $stmtNotes->execute([$compositionCode]);
         $rows = $stmtNotes->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -366,7 +366,7 @@ class ModelNote extends BaseModel
             $stmtDel = $db->prepare("DELETE FROM " . TABLES::NOTES . " WHERE id_note = ?");
             $stmtUpd = $db->prepare("
                 UPDATE " . TABLES::NOTES . " 
-                SET valeur_note = ?, observations = ?, updated_at_note = NOW(), statut_note = 'actif'
+                SET valeur_note = ?, observations = ?, updated_at_note = NOW(), statut_note = '" . STATUTS::ACTIF . "'
                 WHERE id_note = ?
             ");
             $stmtIns = $db->prepare("

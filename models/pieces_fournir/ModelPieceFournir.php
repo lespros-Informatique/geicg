@@ -47,7 +47,7 @@ class ModelPieceFournir extends BaseModel
         $sql = "
             SELECT pf.*
             FROM " . TABLES::PIECES_FOURNIR . " pf
-            WHERE pf.statut_piece = 'actif'
+            WHERE pf.statut_piece = '" . STATUTS::ACTIF . "'
             ORDER BY pf.libelle_piece ASC
         ";
         try {
@@ -64,8 +64,8 @@ class ModelPieceFournir extends BaseModel
         try {
             $db = $this->getCon();
             $total = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR . "")->fetchColumn();
-            $actifs = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR . " WHERE statut_piece = 'actif'")->fetchColumn();
-            $inactifs = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR . " WHERE statut_piece = 'inactif'")->fetchColumn();
+            $actifs = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR . " WHERE statut_piece = '" . STATUTS::ACTIF . "'")->fetchColumn();
+            $inactifs = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR . " WHERE statut_piece = '" . STATUTS::INACTIF . "'")->fetchColumn();
             $utilises = (int)$db->query("SELECT COUNT(DISTINCT piece_code) FROM " . TABLES::PIECES_FOURNIR_CYCLES . "")->fetchColumn();
 
             return [
@@ -120,10 +120,10 @@ class ModelPieceFournir extends BaseModel
                    pfc.nature_document
             FROM " . TABLES::PIECES_FOURNIR . " pf
             LEFT JOIN " . TABLES::PIECES_FOURNIR_CYCLES . " pfc ON pfc.piece_code = pf.code_piece_fournir 
-                                            AND pfc.statut_piece_cycle = 'actif'
+                                            AND pfc.statut_piece_cycle = '" . STATUTS::ACTIF . "'
         ";
         $params = [];
-        $where = ["pf.statut_piece = 'actif'"];
+        $where = ["pf.statut_piece = '" . STATUTS::ACTIF . "'"];
         if (!empty($cycleCode)) {
             $where[] = "(pfc.cycle_code = ? OR pfc.cycle_code IS NULL OR pfc.cycle_code = '')";
             $params[] = $cycleCode;

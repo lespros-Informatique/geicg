@@ -373,7 +373,7 @@
       elseif ($tf === 'TERTIAIRE') $nbTertiaire++;
       else $nbToutes++;
 
-      if (($fa['statut_frais_annexe'] ?? '') === 'actif') {
+      if (($fa['statut_frais_annexe'] ?? '') === STATUTS::ACTIF) {
         $cumulMontantsActifs += (float)($fa['montant_frais_annexe'] ?? 0);
         $nbActifs++;
       }
@@ -441,7 +441,7 @@
             }
             $nivLabel = !empty($fa['libelle_niveau']) ? htmlspecialchars($fa['libelle_niveau']) : 'Tous Niveaux';
             $montant = (float)($fa['montant_frais_annexe'] ?? 0);
-            $isActif = (($fa['statut_frais_annexe'] ?? '') === 'actif');
+            $isActif = (($fa['statut_frais_annexe'] ?? '') === STATUTS::ACTIF);
           ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center" style="color: #64748B; font-weight: bold;"><?= $idx + 1 ?></td>

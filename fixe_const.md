@@ -18,7 +18,7 @@ Ce document recense l'ensemble des **variables locales redondantes**, **accès d
 | **2. Permissions codées en dur** | `PERMISSIONS::*` | **0** |
 | **3. Tables SQL codées en dur** | `TABLES::*` | **0** |
 | **4. Vues SQL codées en dur** | `TABLES::*` ou `VIEWS::*` (à ajouter dans `const.php`) | **0** |
-| **5. Statuts métier codés en dur** | `STATUTS::*` | **38** |
+| **5. Statuts métier codés en dur** | `STATUTS::*` | **0** |
 | **6. Accès directs à `$_SESSION`** | `Session::get()` / `Auth::user()` / `USERS_AUTH` | **43** |
 | **7. Variables PHP locales dans les Vues/Includes** | `BaseController` / `Auth` / `Session` | **138** |
 
@@ -44,46 +44,8 @@ Ce document recense l'ensemble des **variables locales redondantes**, **accès d
 
 ---
 
-## 5. Statuts codés en dur au lieu de `STATUTS::*` (38 fichiers)
+## 5. Statuts codés en dur au lieu de `STATUTS::*` (0 fichiers)
 
-- **`core/Auth.php`** : `'actif'` (x1)
-- **`core/BaseController.php`** : `'actif'` (x4)
-- **`core/PrincipalRoute.php`** : `'actif'` (x1)
-- **`models/ModelFiliereCycle.php`** : `'actif'` (x3)
-- **`models/absences/ModelAbsence.php`** : `'annule'` (x1)
-- **`models/accessoires/ModelAccessoire.php`** : `'actif'` (x10)
-- **`models/annees/ModelAnnee.php`** : `'annule'` (x3), `'actif'` (x2)
-- **`models/arrieres/ModelArriere.php`** : `'annule'` (x3)
-- **`models/bulletin/ModelBulletin.php`** : `'actif'` (x9)
-- **`models/caisse_annexe/ModelCaisseAnnexe.php`** : `'annule'` (x5), `'actif'` (x4)
-- **`models/classes/ModelClasse.php`** : `'actif'` (x6), `'annule'` (x1)
-- **`models/cycles/ModelCycle.php`** : `'actif'` (x3)
-- **`models/depenses/ModelDepense.php`** : `'annule'` (x3), `'en_attente'` (x2)
-- **`models/dossier_etudiant/ModelDossierEtudiant.php`** : `'actif'` (x2)
-- **`models/emplois_temps/ModelEmploi.php`** : `'actif'` (x4)
-- **`models/enseignant_matiere/ModelEnseignantMatiere.php`** : `'actif'` (x1)
-- **`models/enseignants/ModelEnseignant.php`** : `'actif'` (x3)
-- **`models/etudiants/ModelEtudiant.php`** : `'annule'` (x6), `'actif'` (x11)
-- **`models/filieres/ModelFiliere.php`** : `'actif'` (x9)
-- **`models/frais_annexes/ModelFraisAnnexe.php`** : `'actif'` (x2)
-- **`models/home/ModelHome.php`** : `'actif'` (x15), `'annule'` (x6), `'en_attente'` (x1)
-- **`models/impayes/ModelImpayes.php`** : `'annule'` (x4), `'actif'` (x3)
-- **`models/inscriptions/ModelInscription.php`** : `'annule'` (x11), `'actif'` (x13)
-- **`models/matieres/ModelMatiere.php`** : `'actif'` (x1)
-- **`models/niveaux/ModelNiveau.php`** : `'actif'` (x6)
-- **`models/notes/ModelNote.php`** : `'actif'` (x5), `'annule'` (x1)
-- **`models/paiements/ModelPaiement.php`** : `'annule'` (x19), `'actif'` (x15), `'solde'` (x2), `'valide'` (x1)
-- **`models/parents/ModelParent.php`** : `'actif'` (x1)
-- **`models/permissions/ModelPermission.php`** : `'actif'` (x1)
-- **`models/pieces_fournir/ModelPieceFournir.php`** : `'actif'` (x4), `'inactif'` (x1)
-- **`models/pieces_fournir/ModelPieceFournirCycle.php`** : `'actif'` (x3)
-- **`models/roles/ModelRole.php`** : `'actif'` (x3)
-- **`models/salles/ModelSalle.php`** : `'actif'` (x1)
-- **`models/scolarites/ModelScolarite.php`** : `'actif'` (x1)
-- **`models/semestres/ModelSemestre.php`** : `'actif'` (x1)
-- **`models/sessions_caisse/ModelSessionCaisse.php`** : `'annule'` (x2)
-- **`models/tranches_scolarite/ModelTranche.php`** : `'actif'` (x1)
-- **`models/users/ModelUser.php`** : `'actif'` (x5)
 
 ---
 

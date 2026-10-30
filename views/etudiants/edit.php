@@ -143,7 +143,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
               <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none;" name="statut_etudiant">
                 <option value="actif" <?= (($item['statut_etudiant'] ?? 'actif') === 'actif') ? 'selected' : '' ?>>Actif</option>
-                <option value="inactif" <?= (($item['statut_etudiant'] ?? '') === 'inactif') ? 'selected' : '' ?>>Inactif</option>
+                <option value="inactif" <?= (($item['statut_etudiant'] ?? '') === STATUTS::INACTIF) ? 'selected' : '' ?>>Inactif</option>
               </select>
             </div>
 

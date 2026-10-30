@@ -136,8 +136,8 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
               </label>
               <select class="form-control select2" id="wiz_annee" name="annee_code" style="width: 100%;" required>
                 <?php foreach($annees as $a): ?>
-                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif')) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($a['libelle_annee']) ?> (<?= htmlspecialchars($a['code_annee']) ?>)<?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' — Session Active' : '' ?>
+                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF)) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($a['libelle_annee']) ?> (<?= htmlspecialchars($a['code_annee']) ?>)<?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' — Session Active' : '' ?>
                   </option>
                 <?php endforeach; ?>
               </select>

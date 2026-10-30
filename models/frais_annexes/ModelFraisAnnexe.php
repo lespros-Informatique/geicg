@@ -70,7 +70,7 @@ class ModelFraisAnnexe extends BaseModel
         $sql = "
             SELECT montant_frais_annexe 
             FROM " . TABLES::FRAIS_ANNEXES . " 
-            WHERE statut_frais_annexe = 'actif'
+            WHERE statut_frais_annexe = '" . STATUTS::ACTIF . "'
               AND (type_filiere = ? OR type_filiere = 'TOUT')
               AND annee_code = ?
         ";
@@ -110,7 +110,7 @@ class ModelFraisAnnexe extends BaseModel
         $sql = "
             SELECT * 
             FROM " . TABLES::FRAIS_ANNEXES . " 
-            WHERE statut_frais_annexe = 'actif'
+            WHERE statut_frais_annexe = '" . STATUTS::ACTIF . "'
               AND (type_filiere = ? OR type_filiere = 'TOUT')
               AND annee_code = ?
         ";

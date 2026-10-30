@@ -255,7 +255,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
           <div>
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Statut Dossier</span>
             <div style="margin-top: 4px;">
-              <?php if (($item['statut_etudiant'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_etudiant'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Actif / Régulier</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Inactif</span>

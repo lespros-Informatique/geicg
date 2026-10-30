@@ -339,7 +339,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
                 foreach($annees as $a): 
               ?>
                 <option value="<?= $a['code_annee'] ?>" <?= ($selectedAnneeIns == $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' (Active)' : '' ?>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' (Active)' : '' ?>
                 </option>
               <?php endforeach; ?>
             </select>

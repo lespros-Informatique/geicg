@@ -56,7 +56,7 @@ class ModelEnseignant extends BaseModel
                    u.sexe_user AS sexe_enseignant
             FROM " . TABLES::ENSEIGNANTS . " e
             JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
-            WHERE e.statut_enseignant = 'actif' AND u.statut_user = 'actif'
+            WHERE e.statut_enseignant = '" . STATUTS::ACTIF . "' AND u.statut_user = '" . STATUTS::ACTIF . "'
             ORDER BY u.nom_user ASC, u.prenom_user ASC
         ";
         try {
@@ -139,7 +139,7 @@ class ModelEnseignant extends BaseModel
         $sql = "
             SELECT u.id_user, u.code_user, u.nom_user, u.prenom_user, u.email_user, u.telephone_user, u.sexe_user
             FROM " . TABLES::USERS . " u
-            WHERE u.statut_user = 'actif'
+            WHERE u.statut_user = '" . STATUTS::ACTIF . "'
               AND u.code_user NOT IN (SELECT code_enseignant FROM " . TABLES::ENSEIGNANTS . ")
             ORDER BY u.nom_user ASC, u.prenom_user ASC
         ";

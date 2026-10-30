@@ -122,7 +122,7 @@ class TypeDepenseController extends BaseController
 
             $totalDepenses = 0;
             foreach ($depenses as $d) {
-                if (($d['statut_depense'] ?? '') !== 'annule') {
+                if (($d['statut_depense'] ?? '') !== STATUTS::ANNULE) {
                     $totalDepenses += (float)($d['montant_depense'] ?? 0);
                 }
             }

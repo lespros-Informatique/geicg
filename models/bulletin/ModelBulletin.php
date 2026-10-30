@@ -10,7 +10,7 @@ class ModelBulletin extends BaseModel
     public function getActiveSemestres(): array
     {
         try {
-            $sql = "SELECT * FROM " . TABLES::SEMESTRES . " WHERE statut_semestre = 'actif' ORDER BY id_semestre ASC";
+            $sql = "SELECT * FROM " . TABLES::SEMESTRES . " WHERE statut_semestre = '" . STATUTS::ACTIF . "' ORDER BY id_semestre ASC";
             return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelBulletin::getActiveSemestres error: " . $e->getMessage());
@@ -34,7 +34,7 @@ class ModelBulletin extends BaseModel
                     LEFT JOIN (
                         SELECT inscription_code, COUNT(*) AS nb_notes
                         FROM " . TABLES::NOTES . "
-                        WHERE statut_note = 'actif'
+                        WHERE statut_note = '" . STATUTS::ACTIF . "'
                         GROUP BY inscription_code
                     ) n_cnt ON n_cnt.inscription_code = i.code_inscription";
 
@@ -83,7 +83,7 @@ class ModelBulletin extends BaseModel
             $stmtCheck = $db->prepare("
                 SELECT comp.semestre_code FROM " . TABLES::NOTES . " n 
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-                WHERE n.inscription_code = ? AND n.statut_note = 'actif' 
+                WHERE n.inscription_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "' 
                 LIMIT 1
             ");
             $stmtCheck->execute([$item['code_inscription']]);
@@ -104,7 +104,7 @@ class ModelBulletin extends BaseModel
             LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = comp.matiere_code AND em.classe_code = ?)
             LEFT JOIN " . TABLES::ENSEIGNANTS . " ens ON ens.code_enseignant = em.enseignant_code
             LEFT JOIN " . TABLES::USERS . " u ON u.code_user = ens.code_enseignant
-            WHERE n.inscription_code = ? AND comp.semestre_code = ? AND n.statut_note = 'actif'
+            WHERE n.inscription_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
             ORDER BY m.libelle_matiere ASC, comp.type_composition ASC
         ";
         $stmtNotes = $db->prepare($sqlNotes);
@@ -190,7 +190,7 @@ class ModelBulletin extends BaseModel
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
                 INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
                 LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = comp.matiere_code AND em.classe_code = i.classe_code)
-                WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = 'actif'
+                WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
             ";
             $stmtClass = $db->prepare($sqlClassmates);
             $stmtClass->execute([$item['classe_code'], $selectedSemestreCode]);
@@ -323,7 +323,7 @@ class ModelBulletin extends BaseModel
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
                 INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code
                 INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
-                WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = 'actif'
+                WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
                 ORDER BY m.libelle_matiere ASC
             ");
             $stmtMatNotes->execute([$selectedClasseCode, $selectedSemestreCode]);
@@ -333,7 +333,7 @@ class ModelBulletin extends BaseModel
                 $matieres = $db->query("
                     SELECT code_matiere, libelle_matiere, 1.00 as coefficient 
                     FROM " . TABLES::MATIERES . " 
-                    WHERE statut_matiere = 'actif' 
+                    WHERE statut_matiere = '" . STATUTS::ACTIF . "' 
                     ORDER BY libelle_matiere ASC
                 ")->fetchAll(PDO::FETCH_ASSOC);
             }
@@ -344,7 +344,7 @@ class ModelBulletin extends BaseModel
             SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant
             FROM " . TABLES::INSCRIPTIONS . " i
             INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND i.statut_inscription = 'actif'
+            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND i.statut_inscription = '" . STATUTS::ACTIF . "'
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
         $stmtE->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
@@ -356,7 +356,7 @@ class ModelBulletin extends BaseModel
             FROM " . TABLES::NOTES . " n
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
             INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code
-            WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = 'actif'
+            WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
             GROUP BY n.inscription_code, comp.matiere_code
         ");
         $stmtAllNotes->execute([$selectedClasseCode, $selectedSemestreCode]);

@@ -74,7 +74,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_inscription']) ? (new Validator
             <div>
               <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Statut Inscription</span>
               <div style="margin-top: 4px;">
-                <?php if (($item['statut_inscription'] ?? '') === 'actif'): ?>
+                <?php if (($item['statut_inscription'] ?? '') === STATUTS::ACTIF): ?>
                   <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Validée & Active</span>
                 <?php else: ?>
                   <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Suspendue</span>

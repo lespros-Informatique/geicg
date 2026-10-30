@@ -108,7 +108,7 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut du compte</label>
               <select class="form-control" name="actif" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;">
                 <option value="actif" <?= (($user['statut_user'] ?? 'actif') === 'actif') ? 'selected' : '' ?>>Compte Actif (Autorisé)</option>
-                <option value="inactif" <?= (($user['statut_user'] ?? '') === 'inactif') ? 'selected' : '' ?>>Compte Inactif (Bloqué)</option>
+                <option value="inactif" <?= (($user['statut_user'] ?? '') === STATUTS::INACTIF) ? 'selected' : '' ?>>Compte Inactif (Bloqué)</option>
               </select>
             </div>
             <?php endif; ?>
@@ -144,7 +144,7 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
               <?php foreach ($allAnneesList as $an): ?>
                 <?php 
-                  $isActif = (($an['statut_annee'] ?? '') === 'actif');
+                  $isActif = (($an['statut_annee'] ?? '') === STATUTS::ACTIF);
                   $curVal = $userAnneeAcces[$an['code_annee']] ?? 'none';
                 ?>
                 <div style="background: #FFFFFF; border: 1.5px solid <?= $isActif ? '#BBF7D0' : '#E2E8F0' ?>; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">

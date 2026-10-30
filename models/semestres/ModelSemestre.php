@@ -77,7 +77,7 @@ class ModelSemestre extends BaseModel
         $current = $this->getById($id);
         if (!$current) return false;
 
-        if (($current['statut_semestre'] ?? '') !== 'actif') {
+        if (($current['statut_semestre'] ?? '') !== STATUTS::ACTIF) {
             return $this->setActiveSemester($id);
         } else {
             $stmt = $this->getCon()->prepare("UPDATE " . TABLES::SEMESTRES . "` SET `statut_semestre` = 'cloture' WHERE `id_semestre` = ?");
@@ -186,7 +186,7 @@ class ModelSemestre extends BaseModel
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT 
-                    (SELECT COUNT(*) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.semestre_code = ? AND n.statut_note = 'actif') as total_notes,
+                    (SELECT COUNT(*) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "') as total_notes,
                     (SELECT COUNT(DISTINCT ins.classe_code) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = n.inscription_code WHERE c.semestre_code = ?) as total_classes_evaluees,
                     (SELECT COUNT(DISTINCT n.etudiant_code) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.semestre_code = ?) as total_etudiants_notes
             ");

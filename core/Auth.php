@@ -143,7 +143,7 @@ class Auth
                 SELECT DISTINCT rp.permission_code 
                 FROM " . TABLES::ROLE_PERMISSIONS . " rp
                 JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
-                WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
+                WHERE rp.role_code IN ($inClause) AND p.statut_permission = '" . STATUTS::ACTIF . "'
             ");
             $stmt->execute($roles);
             $perms = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];

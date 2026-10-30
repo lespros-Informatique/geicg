@@ -30,7 +30,7 @@ class ModelAccessoire extends BaseModel
     public function getDistributions(string $filter = 'all', ?string $anneeCode = null, ?string $classeCode = null): array
     {
         $db = $this->getCon();
-        $where = "WHERE (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)";
+        $where = "WHERE (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)";
         $params = [];
 
         if (!empty($anneeCode)) {
@@ -154,7 +154,7 @@ class ModelAccessoire extends BaseModel
             FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
             JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
             WHERE ai.inscription_code = ?
-              AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
+              AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
             ORDER BY a.libelle_accessoire ASC
         ");
         $stmtKits->execute([$inscriptionCode]);
@@ -193,19 +193,19 @@ class ModelAccessoire extends BaseModel
             $params[] = $anneeCode;
         }
 
-        $stmtTot = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)" . $whereAnnee);
+        $stmtTot = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR statut_accessoire_inscription IS NULL)" . $whereAnnee);
         $stmtTot->execute($params);
         $total = (int)($stmtTot->fetchColumn() ?: 0);
 
-        $stmtAtt = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'en_attente'" . $whereAnnee);
+        $stmtAtt = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'en_attente'" . $whereAnnee);
         $stmtAtt->execute($params);
         $enAttente = (int)($stmtAtt->fetchColumn() ?: 0);
 
-        $stmtRet = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'retire'" . $whereAnnee);
+        $stmtRet = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'retire'" . $whereAnnee);
         $stmtRet->execute($params);
         $retire = (int)($stmtRet->fetchColumn() ?: 0);
 
-        $totalTypes = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = 'actif'")->fetchColumn();
+        $totalTypes = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "'")->fetchColumn();
         $taux = $total > 0 ? round(($retire / $total) * 100) : 0;
 
         return [
@@ -249,7 +249,7 @@ class ModelAccessoire extends BaseModel
             UPDATE " . TABLES::ACCESSOIRE_INSCRIPTION . " 
             SET etat_retrait = ?, date_retrait = ? 
             WHERE inscription_code = ?
-              AND (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)
+              AND (statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR statut_accessoire_inscription IS NULL)
         ");
         return $stmt->execute([$targetEtat, $dateRetrait, $inscriptionCode]);
     }
@@ -265,7 +265,7 @@ class ModelAccessoire extends BaseModel
             JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
             WHERE i.etudiant_code = ?
               AND (ai.annee_code = ? OR ? = '')
-              AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
+              AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
             ORDER BY ai.id_accessoire_inscription DESC
         ");
         $stmt->execute([$etudiantCode, $anneeCode ?: '', $anneeCode ?: '']);
@@ -274,7 +274,7 @@ class ModelAccessoire extends BaseModel
 
     public function getAllActiveKits(): array
     {
-        return $this->getCon()->query("SELECT code_accessoire, libelle_accessoire FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = 'actif' ORDER BY libelle_accessoire ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->getCon()->query("SELECT code_accessoire, libelle_accessoire FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "' ORDER BY libelle_accessoire ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function getLatestInscriptionForStudent(string $etudiantCode): ?array
@@ -295,7 +295,7 @@ class ModelAccessoire extends BaseModel
             WHERE (i.etudiant_code = ? OR ai.inscription_code = ?)
               AND ai.accessoire_code = ? 
               AND (ai.annee_code = ? OR ? = '')
-              AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
+              AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
             LIMIT 1
         ");
         $stmt->execute([$etudiantCode, $insCode, $accCode, $anneeCode ?: '', $anneeCode ?: '']);

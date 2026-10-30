@@ -16,7 +16,7 @@ class ModelParent extends BaseModel
                        cl.libelle_classe
                 FROM " . TABLES::PARENTS . " p
                 LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = p.etudiant_code
-                LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.etudiant_code = e.code_etudiant AND ins.statut_inscription = 'actif')
+                LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.etudiant_code = e.code_etudiant AND ins.statut_inscription = '" . STATUTS::ACTIF . "')
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                 WHERE p.id_parent = ?
             ");

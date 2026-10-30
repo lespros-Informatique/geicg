@@ -106,7 +106,7 @@ class ModelScolarite extends BaseModel
             SELECT fc.filiere_code, fc.cycle_code, fc.niveau_code, fc.type_filiere, f.type_filiere as f_type 
             FROM " . TABLES::FILIERE_CYCLES . " fc
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = fc.filiere_code
-            WHERE (fc.statut_filiere_cycle = 'actif' OR fc.statut_filiere_cycle IS NULL)
+            WHERE (fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "' OR fc.statut_filiere_cycle IS NULL)
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         return [

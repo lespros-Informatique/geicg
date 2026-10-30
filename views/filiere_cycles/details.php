@@ -56,7 +56,7 @@ $classes = isset($classes) ? $classes : [];
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Statut</span>
             <div style="margin-top: 6px;">
-              <?php if (($item['statut_filiere_cycle'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_filiere_cycle'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Actif</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Inactif</span>

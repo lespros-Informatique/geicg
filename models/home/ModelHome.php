@@ -22,7 +22,7 @@ class ModelHome extends BaseModel
                 $anneeCode = $_SESSION['annee_active_code'] ?? null;
             }
             if (!$anneeCode) {
-                $stmtA = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
+                $stmtA = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
                 $activeRow = $stmtA ? $stmtA->fetch(PDO::FETCH_ASSOC) : null;
                 if (!$activeRow) {
                     $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
@@ -77,20 +77,20 @@ class ModelHome extends BaseModel
             try {
                 $stmtCounts = $db->query("
                     SELECT
-                        (SELECT COUNT(*) FROM " . TABLES::ENSEIGNANTS . " WHERE statut_enseignant = 'actif') AS total_enseignants,
-                        (SELECT COUNT(*) FROM " . TABLES::MATIERES . " WHERE statut_matiere = 'actif') AS total_matieres,
-                        (SELECT COUNT(*) FROM " . TABLES::SALLES . " WHERE statut_salle = 'actif') AS total_salles,
-                        (SELECT COUNT(*) FROM actualites WHERE statut_actualite = 'actif') AS total_actualites,
-                        (SELECT COUNT(*) FROM " . TABLES::EVENEMENTS . " WHERE statut_evenement = 'actif') AS total_evenements,
-                        (SELECT COUNT(*) FROM " . TABLES::DOCUMENTS . " WHERE statut_document = 'actif') AS total_documents,
-                        (SELECT COUNT(*) FROM " . TABLES::FILIERES . " WHERE statut_filiere = 'actif') AS total_filieres,
-                        (SELECT COUNT(*) FROM " . TABLES::CYCLES . " WHERE statut_cycle = 'actif') AS total_cycles,
-                        (SELECT COUNT(*) FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = 'actif') AS total_niveaux,
+                        (SELECT COUNT(*) FROM " . TABLES::ENSEIGNANTS . " WHERE statut_enseignant = '" . STATUTS::ACTIF . "') AS total_enseignants,
+                        (SELECT COUNT(*) FROM " . TABLES::MATIERES . " WHERE statut_matiere = '" . STATUTS::ACTIF . "') AS total_matieres,
+                        (SELECT COUNT(*) FROM " . TABLES::SALLES . " WHERE statut_salle = '" . STATUTS::ACTIF . "') AS total_salles,
+                        (SELECT COUNT(*) FROM actualites WHERE statut_actualite = '" . STATUTS::ACTIF . "') AS total_actualites,
+                        (SELECT COUNT(*) FROM " . TABLES::EVENEMENTS . " WHERE statut_evenement = '" . STATUTS::ACTIF . "') AS total_evenements,
+                        (SELECT COUNT(*) FROM " . TABLES::DOCUMENTS . " WHERE statut_document = '" . STATUTS::ACTIF . "') AS total_documents,
+                        (SELECT COUNT(*) FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "') AS total_filieres,
+                        (SELECT COUNT(*) FROM " . TABLES::CYCLES . " WHERE statut_cycle = '" . STATUTS::ACTIF . "') AS total_cycles,
+                        (SELECT COUNT(*) FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "') AS total_niveaux,
                         (SELECT COUNT(*) FROM " . TABLES::PARENTS . ") AS total_parents,
                         (SELECT COUNT(*) FROM ouvertures_caisse WHERE statut_ouverture = 'ouverte') AS total_sessions_caisse,
-                        (SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE statut_piece_cycle = 'actif') AS total_pieces,
-                        (SELECT COUNT(*) FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = 'actif') AS total_accessoires,
-                        (SELECT COUNT(*) FROM " . TABLES::USERS . " WHERE statut_user = 'actif') AS total_users
+                        (SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE statut_piece_cycle = '" . STATUTS::ACTIF . "') AS total_pieces,
+                        (SELECT COUNT(*) FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "') AS total_accessoires,
+                        (SELECT COUNT(*) FROM " . TABLES::USERS . " WHERE statut_user = '" . STATUTS::ACTIF . "') AS total_users
                 ");
                 $countsRow = $stmtCounts ? ($stmtCounts->fetch(PDO::FETCH_ASSOC) ?: []) : [];
             } catch (Exception $e) {}
@@ -116,7 +116,7 @@ class ModelHome extends BaseModel
                 $stmtNotes = $db->prepare("
                     SELECT COUNT(*) FROM " . TABLES::NOTES . " n 
                     INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code 
-                    WHERE i.annee_code = ? AND (n.statut_note = 'actif' OR n.statut_note IS NULL)
+                    WHERE i.annee_code = ? AND (n.statut_note = '" . STATUTS::ACTIF . "' OR n.statut_note IS NULL)
                 ");
                 $stmtNotes->execute([$anneeCode ?: '']);
                 $totalNotes = (int)$stmtNotes->fetchColumn();
@@ -240,7 +240,7 @@ class ModelHome extends BaseModel
                 FROM " . TABLES::PAIEMENTS . " p
                 JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = p.inscription_code
                 WHERE (i.annee_code = ? OR ? = '') 
-                  AND (p.statut_paiement = 'confirme' OR p.statut_paiement != 'annule')
+                  AND (p.statut_paiement = 'confirme' OR p.statut_paiement != '" . STATUTS::ANNULE . "')
                   AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
                   AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
                   AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
@@ -257,7 +257,7 @@ class ModelHome extends BaseModel
             $stmtD = $db->prepare("
                 SELECT MONTH(COALESCE(periode_depense, created_at_depense)) as mois, SUM(montant_depense) as total
                 FROM " . TABLES::DEPENSES . "
-                WHERE (annee_code = ? OR ? = '') AND (statut_depense != 'annule' OR statut_depense IS NULL)
+                WHERE (annee_code = ? OR ? = '') AND (statut_depense != '" . STATUTS::ANNULE . "' OR statut_depense IS NULL)
                 GROUP BY MONTH(COALESCE(periode_depense, created_at_depense))
             ");
             $stmtD->execute([$anneeCode, $anneeCode]);
@@ -295,7 +295,7 @@ class ModelHome extends BaseModel
                 FROM " . TABLES::INSCRIPTIONS . " i
                 JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
                 JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-                WHERE (i.annee_code = ? OR ? = '') AND (i.statut_inscription != 'annule' OR i.statut_inscription IS NULL)
+                WHERE (i.annee_code = ? OR ? = '') AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
                 GROUP BY f.code_filiere, f.libelle_filiere
                 ORDER BY total_inscrits DESC
                 LIMIT 8
@@ -336,10 +336,10 @@ class ModelHome extends BaseModel
                 LEFT JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.filiere_code = cl.filiere_code
                 JOIN " . TABLES::PIECES_FOURNIR_CYCLES . " pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
                      AND (pfc.niveau_code = cl.niveau_code OR pfc.niveau_code IS NULL OR pfc.niveau_code = '') 
-                     AND pfc.statut_piece_cycle = 'actif'
+                     AND pfc.statut_piece_cycle = '" . STATUTS::ACTIF . "'
                 LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
                 WHERE (i.annee_code = ? OR ? = '')
-                  AND (de.statut_depot IS NULL OR de.statut_depot = 'en_attente')
+                  AND (de.statut_depot IS NULL OR de.statut_depot = '" . STATUTS::EN_ATTENTE . "')
             ");
             $stmtDossiers->execute([$anneeCode, $anneeCode]);
             $dossiersIncomplets = (int)$stmtDossiers->fetchColumn();
@@ -370,7 +370,7 @@ class ModelHome extends BaseModel
         try {
             $db = $this->pdo->getCon();
             $sql = "SELECT * FROM v_dash_inscriptions_details
-                    WHERE annee_code = ? AND (statut_inscription != 'annule' OR statut_inscription IS NULL)
+                    WHERE annee_code = ? AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)
                     ORDER BY id_inscription DESC
                     LIMIT $limit";
             $stmt = $db->prepare($sql);
@@ -391,7 +391,7 @@ class ModelHome extends BaseModel
             $db = $this->pdo->getCon();
             $sql = "SELECT * FROM v_dash_paiements_details
                     WHERE (annee_code = ? OR ? = '')
-                      AND (statut_paiement = 'confirme' OR statut_paiement != 'annule')
+                      AND (statut_paiement = 'confirme' OR statut_paiement != '" . STATUTS::ANNULE . "')
                       AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
                     ORDER BY id_paiement DESC
                     LIMIT $limit";
@@ -412,7 +412,7 @@ class ModelHome extends BaseModel
         try {
             $db = $this->pdo->getCon();
             $sql = "SELECT * FROM v_dash_depenses_details
-                    WHERE (annee_code = ? OR ? = '') AND (statut_depense != 'annule' OR statut_depense IS NULL)
+                    WHERE (annee_code = ? OR ? = '') AND (statut_depense != '" . STATUTS::ANNULE . "' OR statut_depense IS NULL)
                     ORDER BY id_depense DESC
                     LIMIT $limit";
             $stmt = $db->prepare($sql);

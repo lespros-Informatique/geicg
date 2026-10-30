@@ -33,7 +33,7 @@ class ModelMatiere extends BaseModel
             SELECT 
                 COUNT(DISTINCT classe_code) as total_classes,
                 COUNT(DISTINCT COALESCE(enseignant_code, user_code)) as total_profs,
-                (SELECT COUNT(*) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.matiere_code = ? AND n.statut_note = 'actif') as total_notes
+                (SELECT COUNT(*) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.matiere_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "') as total_notes
             FROM " . TABLES::ENSEIGNANT_MATIERE . "
             WHERE matiere_code = ?
         ");

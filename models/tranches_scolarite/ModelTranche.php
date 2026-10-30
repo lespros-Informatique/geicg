@@ -98,7 +98,7 @@ class ModelTranche extends BaseModel
         }
 
         $db = $this->getCon();
-        $sql = "SELECT SUM(montant_tranche) FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE scolarite_code = ? AND statut_tranche = 'actif'";
+        $sql = "SELECT SUM(montant_tranche) FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE scolarite_code = ? AND statut_tranche = '" . STATUTS::ACTIF . "'";
         $params = [$scolariteCode];
 
         if ($excludeId !== null) {

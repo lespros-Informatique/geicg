@@ -93,20 +93,20 @@ class ModelFiliereCycle
     {
         $item = $this->getById($id);
         if (!$item) return false;
-        $newStatus = ($item['statut_filiere_cycle'] === 'actif') ? 'inactif' : 'actif';
+        $newStatus = ($item['statut_filiere_cycle'] === STATUTS::ACTIF) ? 'inactif' : 'actif';
         $stmt = $this->con->prepare("UPDATE " . TABLES::FILIERE_CYCLES . " SET statut_filiere_cycle = ? WHERE id_filiere_cycle = ?");
         return $stmt->execute([$newStatus, $id]);
     }
 
     public function getActiveFilieres(): array
     {
-        $sql = "SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC";
+        $sql = "SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC";
         return $this->con->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function getActiveCycles(): array
     {
-        $sql = "SELECT code_cycle, libelle_cycle FROM " . TABLES::CYCLES . " WHERE statut_cycle = 'actif' ORDER BY libelle_cycle ASC";
+        $sql = "SELECT code_cycle, libelle_cycle FROM " . TABLES::CYCLES . " WHERE statut_cycle = '" . STATUTS::ACTIF . "' ORDER BY libelle_cycle ASC";
         return $this->con->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
@@ -165,7 +165,7 @@ class ModelFiliereCycle
                 SELECT cl.*, n.libelle_niveau, COUNT(i.id_inscription) as nb_etudiants
                 FROM " . TABLES::CLASSES . " cl
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.classe_code = cl.code_classe AND i.statut_inscription = 'actif'
+                LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.classe_code = cl.code_classe AND i.statut_inscription = '" . STATUTS::ACTIF . "'
                 WHERE cl.filiere_code = ?
                   AND (cl.cycle_code = ? OR ? = '' OR cl.cycle_code IS NULL)
                   AND (cl.niveau_code = ? OR ? = '' OR cl.niveau_code IS NULL)

@@ -193,7 +193,7 @@ class FraisAnnexeController extends BaseController
             return;
         }
 
-        $newStatut = ($item['statut_frais_annexe'] === 'actif') ? 'inactif' : 'actif';
+        $newStatut = ($item['statut_frais_annexe'] === STATUTS::ACTIF) ? 'inactif' : 'actif';
         if ($this->model->update(['statut_frais_annexe' => $newStatut, 'updated_at_frais_annexe' => date('Y-m-d H:i:s')], $id)) {
             $this->success("Statut mis à jour avec succès (" . ucfirst($newStatut) . ")");
         } else {

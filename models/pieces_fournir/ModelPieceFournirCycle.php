@@ -84,7 +84,7 @@ class ModelPieceFournirCycle extends BaseModel
             LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = pfc.cycle_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = pfc.niveau_code
             LEFT JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
-            WHERE pfc.statut_piece_cycle = 'actif'
+            WHERE pfc.statut_piece_cycle = '" . STATUTS::ACTIF . "'
               AND (pfc.cycle_code = ? OR pfc.cycle_code = '' OR pfc.cycle_code IS NULL)
         ";
         $params = [$cycleCode];
@@ -166,12 +166,12 @@ class ModelPieceFournirCycle extends BaseModel
             $stmtTot->execute($params);
             $total = (int)$stmtTot->fetchColumn();
 
-            $condAct = array_merge($conditions, ["statut_piece_cycle = 'actif'"]);
+            $condAct = array_merge($conditions, ["statut_piece_cycle = '" . STATUTS::ACTIF . "'"]);
             $stmtAct = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE " . implode(" AND ", $condAct));
             $stmtAct->execute($params);
             $actifs = (int)$stmtAct->fetchColumn();
 
-            $condCyc = array_merge($conditions, ["statut_piece_cycle = 'actif'"]);
+            $condCyc = array_merge($conditions, ["statut_piece_cycle = '" . STATUTS::ACTIF . "'"]);
             $stmtCyc = $db->prepare("SELECT COUNT(DISTINCT cycle_code) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE " . implode(" AND ", $condCyc));
             $stmtCyc->execute($params);
             $cyclesConfigures = (int)$stmtCyc->fetchColumn();

@@ -93,7 +93,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
               <?php foreach (($annees ?? []) as $a): ?>
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '' ?>
                 </option>
               <?php endforeach; ?>
             </select>

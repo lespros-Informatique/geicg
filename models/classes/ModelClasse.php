@@ -32,12 +32,12 @@ class ModelClasse extends BaseModel
                 FROM " . TABLES::CLASSES . " c
                 INNER JOIN " . TABLES::SCOLARITES . " s ON s.filiere_code = c.filiere_code
                                        AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
-                                       AND s.statut_scolarite = 'actif'
+                                       AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
                                        AND s.annee_code = ?
                                        AND s.affectation_etat = ?
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
-                WHERE c.statut_classe = 'actif' AND c.annee_code = ?
+                WHERE c.statut_classe = '" . STATUTS::ACTIF . "' AND c.annee_code = ?
                 GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                          c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                          f.libelle_filiere, f.type_filiere, n.libelle_niveau,
@@ -58,11 +58,11 @@ class ModelClasse extends BaseModel
             FROM " . TABLES::CLASSES . " c
             INNER JOIN " . TABLES::SCOLARITES . " s ON s.filiere_code = c.filiere_code
                                    AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
-                                   AND s.statut_scolarite = 'actif'
+                                   AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
                                    AND s.annee_code = ?
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
-            WHERE c.statut_classe = 'actif' AND c.annee_code = ?
+            WHERE c.statut_classe = '" . STATUTS::ACTIF . "' AND c.annee_code = ?
             GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                      c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                      f.libelle_filiere, f.type_filiere, n.libelle_niveau,
@@ -84,7 +84,7 @@ class ModelClasse extends BaseModel
         $validator = new Validator();
 
         // 1. Récupérer toutes les classes actives de l'année source
-        $stmt = $db->prepare("SELECT * FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND statut_classe = 'actif'");
+        $stmt = $db->prepare("SELECT * FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND statut_classe = '" . STATUTS::ACTIF . "'");
         $stmt->execute([$anneeSourceCode]);
         $classesSource = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -176,7 +176,7 @@ class ModelClasse extends BaseModel
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = fc.filiere_code
             LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = fc.cycle_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = fc.niveau_code
-            WHERE fc.statut_filiere_cycle = 'actif'
+            WHERE fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "'
             ORDER BY c.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC
         ";
         return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -230,7 +230,7 @@ class ModelClasse extends BaseModel
             SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription, ins.affectation_etat
             FROM " . TABLES::ETUDIANTS . " e
             INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.etudiant_code = e.code_etudiant
-            WHERE ins.classe_code = ? AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)
+            WHERE ins.classe_code = ? AND (ins.statut_inscription != '" . STATUTS::ANNULE . "' OR ins.statut_inscription IS NULL)
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
         $stmt->execute([$classeCode]);

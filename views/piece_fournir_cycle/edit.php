@@ -96,8 +96,8 @@
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
                 <select name="statut_piece_cycle" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
-                  <option value="actif" <?= ($item['statut_piece_cycle'] ?? '') === 'actif' ? 'selected' : '' ?>>Actif</option>
-                  <option value="inactif" <?= ($item['statut_piece_cycle'] ?? '') === 'inactif' ? 'selected' : '' ?>>Inactif</option>
+                  <option value="actif" <?= ($item['statut_piece_cycle'] ?? '') === STATUTS::ACTIF ? 'selected' : '' ?>>Actif</option>
+                  <option value="inactif" <?= ($item['statut_piece_cycle'] ?? '') === STATUTS::INACTIF ? 'selected' : '' ?>>Inactif</option>
                 </select>
               </div>
             </div>

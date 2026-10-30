@@ -87,7 +87,7 @@ class ModelAbsence extends BaseModel
                 SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
                 FROM " . TABLES::INSCRIPTIONS . " i
                 INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != 'annule' OR i.statut_inscription IS NULL)
+                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
                 ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
             ");
             $stmt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);

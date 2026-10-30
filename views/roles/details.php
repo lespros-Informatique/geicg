@@ -70,7 +70,7 @@ $users = isset($users) ? $users : [];
           <div>
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Statut d'Activité</span>
             <div>
-              <?php if (($role['statut_role'] ?? '') === 'actif'): ?>
+              <?php if (($role['statut_role'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 14px; border-radius:10px; font-weight:700; font-size:12px; display: inline-block;">Actif</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 14px; border-radius:10px; font-weight:700; font-size:12px; display: inline-block;">Inactif</span>

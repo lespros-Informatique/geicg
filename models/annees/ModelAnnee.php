@@ -40,7 +40,7 @@ class ModelAnnee extends BaseModel
         if (!$current) return false;
 
         // Si l'année n'est pas active, on l'active (et clôture l'ancienne)
-        if (($current['statut_annee'] ?? '') !== 'actif') {
+        if (($current['statut_annee'] ?? '') !== STATUTS::ACTIF) {
             return $this->setActiveYear($id);
         } else {
             // Clôturer l'année active
@@ -153,7 +153,7 @@ class ModelAnnee extends BaseModel
 
             $accessible = [];
             foreach ($allAnnees as $an) {
-                $isCurrentActiveDb = (($an['statut_annee'] ?? '') === 'actif');
+                $isCurrentActiveDb = (($an['statut_annee'] ?? '') === STATUTS::ACTIF);
                 $isPlanifie = (($an['statut_annee'] ?? '') === 'planifie');
                 $canAccess = $isCurrentActiveDb || $isPlanifie || $hasGlobalView || isset($userAcces[$an['code_annee']]);
                 if ($canAccess) {
@@ -175,10 +175,10 @@ class ModelAnnee extends BaseModel
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT 
-                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ? AND (statut_inscription != 'annule' OR statut_inscription IS NULL)) as total_etudiants,
-                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = 'actif' OR statut_classe IS NULL)) as total_classes,
-                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND (statut_semestre = 'actif' OR statut_semestre IS NULL)) as total_semestres,
-                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != 'annule' OR statut_paiement IS NULL)) as total_recouvrement
+                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ? AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)) as total_etudiants,
+                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = '" . STATUTS::ACTIF . "' OR statut_classe IS NULL)) as total_classes,
+                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND (statut_semestre = '" . STATUTS::ACTIF . "' OR statut_semestre IS NULL)) as total_semestres,
+                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != '" . STATUTS::ANNULE . "' OR statut_paiement IS NULL)) as total_recouvrement
             ");
             $stmt->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [
@@ -200,7 +200,7 @@ class ModelAnnee extends BaseModel
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT cl.*, f.libelle_filiere, n.libelle_niveau,
-                       (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)) as nb_eleves
+                       (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND (ins.statut_inscription != '" . STATUTS::ANNULE . "' OR ins.statut_inscription IS NULL)) as nb_eleves
                 FROM " . TABLES::CLASSES . " cl
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code

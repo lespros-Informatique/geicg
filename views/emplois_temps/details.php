@@ -68,7 +68,7 @@ $item = isset($item) ? $item : [];
             <?php endif; ?>
           </div>
           <div><strong style="color: #64748B;">Statut du créneau :</strong> 
-            <?php if (($item['statut_emploi'] ?? '') === 'actif'): ?>
+            <?php if (($item['statut_emploi'] ?? '') === STATUTS::ACTIF): ?>
               <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px; border-radius:10px; font-weight:700;">Actif</span>
             <?php else: ?>
               <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px; border-radius:10px; font-weight:700;">Suspendu</span>

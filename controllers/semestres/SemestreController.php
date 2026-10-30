@@ -287,7 +287,7 @@ class SemestreController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item || ($item['statut_semestre'] ?? '') === 'actif') { 
+            if (!$item || ($item['statut_semestre'] ?? '') === STATUTS::ACTIF) { 
                 header('Location: ' . RACINE . 'semestre/list'); 
                 exit(); 
             }

@@ -37,7 +37,7 @@ abstract class BaseController
 
         if (empty($_SESSION['annee_active_code'])) {
             try {
-                $stmt = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
+                $stmt = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
                 $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
                 if (!$row) {
                     $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
@@ -77,7 +77,7 @@ abstract class BaseController
         }
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
+            $stmt = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = '" . STATUTS::ACTIF . "' ORDER BY id_etablissement DESC LIMIT 1");
             $code = $stmt ? $stmt->fetchColumn() : null;
             if (!$code) {
                 $stmtFb = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
@@ -116,7 +116,7 @@ abstract class BaseController
         if (empty($anneeCode)) return true;
 
         $activeAnnee = $this->getActiveAnnee();
-        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === STATUTS::ACTIF) {
             return true;
         }
 
@@ -147,7 +147,7 @@ abstract class BaseController
         if (empty($anneeCode)) return true;
 
         $activeAnnee = $this->getActiveAnnee();
-        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === STATUTS::ACTIF) {
             return true;
         }
 
@@ -177,7 +177,7 @@ abstract class BaseController
         $anneeCode = $anneeCode ?: $this->getActiveAnneeCode();
         $activeAnnee = $this->getActiveAnnee();
 
-        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === STATUTS::ACTIF) {
             return false;
         }
 
@@ -435,7 +435,7 @@ abstract class BaseController
         }
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
+            $stmt = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = '" . STATUTS::ACTIF . "' ORDER BY id_etablissement DESC LIMIT 1");
             $config = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
             if (!$config) {
                 $stmtFb = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
@@ -599,7 +599,7 @@ abstract class BaseController
                 FROM " . TABLES::ROLE_PERMISSIONS . " rp
                 JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
                 WHERE rp.role_code IN ($inClause)
-                  AND p.statut_permission = 'actif'
+                  AND p.statut_permission = '" . STATUTS::ACTIF . "'
             ";
             $stmt = $pdo->prepare($sql);
             $stmt->execute($roles);

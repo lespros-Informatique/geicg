@@ -134,7 +134,7 @@ if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['annee_active_cod
     try {
         $dbInit = (new Database())->getCon();
         if ($dbInit) {
-            $stmtInit = $dbInit->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
+            $stmtInit = $dbInit->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
             $rowInit = $stmtInit ? $stmtInit->fetch(PDO::FETCH_ASSOC) : null;
             if (!$rowInit) {
                 $stmtFallback = $dbInit->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");

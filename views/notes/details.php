@@ -66,7 +66,7 @@ $noteVal = (float)($item['note'] ?? ($item['valeur_note'] ?? 0));
         <div style="display: flex; gap: 20px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid #F1F5F9; font-size: 13px; margin-top: 14px;">
           <div><strong style="color: #64748B;">Date d'enregistrement :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['created_at_note']) ? date('d/m/Y H:i', strtotime($item['created_at_note'])) : '-' ?></span></div>
           <div><strong style="color: #64748B;">Statut :</strong> 
-            <?php if (($item['statut_note'] ?? '') === 'actif'): ?>
+            <?php if (($item['statut_note'] ?? '') === STATUTS::ACTIF): ?>
               <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px; border-radius:10px; font-weight:700;">Validée</span>
             <?php else: ?>
               <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px; border-radius:10px; font-weight:700;">Annulée</span>

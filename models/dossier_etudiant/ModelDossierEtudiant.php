@@ -30,7 +30,7 @@ class ModelDossierEtudiant extends BaseModel
             LEFT JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.filiere_code = cl.filiere_code
             JOIN " . TABLES::PIECES_FOURNIR_CYCLES . " pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
                  AND (pfc.niveau_code = cl.niveau_code OR pfc.niveau_code IS NULL OR pfc.niveau_code = '')
-                 AND pfc.statut_piece_cycle = 'actif'
+                 AND pfc.statut_piece_cycle = '" . STATUTS::ACTIF . "'
             JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
             LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
             WHERE i.code_inscription = ?
@@ -75,7 +75,7 @@ class ModelDossierEtudiant extends BaseModel
             LEFT JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.filiere_code = cl.filiere_code
             JOIN " . TABLES::PIECES_FOURNIR_CYCLES . " pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
                  AND (pfc.niveau_code = cl.niveau_code OR pfc.niveau_code IS NULL OR pfc.niveau_code = '')
-                 AND pfc.statut_piece_cycle = 'actif'
+                 AND pfc.statut_piece_cycle = '" . STATUTS::ACTIF . "'
             JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
             LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
             WHERE i.code_inscription IN ({$placeholders})

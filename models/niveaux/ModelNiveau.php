@@ -12,7 +12,7 @@ class ModelNiveau extends BaseModel
      */
     public function getActifs(): array
     {
-        $sql = "SELECT * FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = 'actif' OR statut_niveau IS NULL ORDER BY libelle_niveau ASC";
+        $sql = "SELECT * FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' OR statut_niveau IS NULL ORDER BY libelle_niveau ASC";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute();
@@ -39,7 +39,7 @@ class ModelNiveau extends BaseModel
                 FROM " . TABLES::NIVEAUX . " n
                 JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.niveau_code = n.code_niveau
                 WHERE fc.cycle_code = ?
-                  AND (n.statut_niveau = 'actif' OR n.statut_niveau IS NULL)
+                  AND (n.statut_niveau = '" . STATUTS::ACTIF . "' OR n.statut_niveau IS NULL)
                 ORDER BY n.libelle_niveau ASC
             ";
             $stmt = $this->getCon()->prepare($sql);
@@ -53,7 +53,7 @@ class ModelNiveau extends BaseModel
                     FROM " . TABLES::NIVEAUX . " n
                     JOIN " . TABLES::CLASSES . " cl ON cl.niveau_code = n.code_niveau
                     WHERE cl.cycle_code = ?
-                      AND (n.statut_niveau = 'actif' OR n.statut_niveau IS NULL)
+                      AND (n.statut_niveau = '" . STATUTS::ACTIF . "' OR n.statut_niveau IS NULL)
                     ORDER BY n.libelle_niveau ASC
                 ";
                 $stmtClasses = $this->getCon()->prepare($sqlClasses);
@@ -77,7 +77,7 @@ class ModelNiveau extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT cl.*, f.libelle_filiere,
-                   (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription = 'actif') as nb_eleves
+                   (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription = '" . STATUTS::ACTIF . "') as nb_eleves
             FROM " . TABLES::CLASSES . " cl
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             WHERE cl.niveau_code = ?
@@ -91,10 +91,10 @@ class ModelNiveau extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT 
-                (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND statut_classe = 'actif') as total_classes,
+                (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
                 (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
                  JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code 
-                 WHERE cl.niveau_code = ? AND ins.statut_inscription = 'actif') as total_etudiants
+                 WHERE cl.niveau_code = ? AND ins.statut_inscription = '" . STATUTS::ACTIF . "') as total_etudiants
         ");
         $stmt->execute([$niveauCode, $niveauCode]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total_classes' => $defaultTotalClasses, 'total_etudiants' => 0];

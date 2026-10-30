@@ -13,7 +13,7 @@ class ModelArriere extends BaseModel
         $db = $this->getCon();
         $anneeActiveCode = $anneeActiveCode ?: Session::get('annee_active_code', '');
 
-        $where = "WHERE i_orig.statut_inscription != 'annule'";
+        $where = "WHERE i_orig.statut_inscription != '" . STATUTS::ANNULE . "'";
         $params = [];
 
         if (!empty($anneeActiveCode)) {
@@ -126,7 +126,7 @@ class ModelArriere extends BaseModel
             FROM " . TABLES::INSCRIPTIONS . " i_orig
             LEFT JOIN " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . " p_sub ON p_sub.inscription_code = i_orig.code_inscription
             WHERE i_orig.annee_code != ?
-              AND i_orig.statut_inscription != 'annule'
+              AND i_orig.statut_inscription != '" . STATUTS::ANNULE . "'
             HAVING total_solde_arriere > 0
         ";
 
@@ -200,7 +200,7 @@ class ModelArriere extends BaseModel
             LEFT JOIN " . TABLES::PAIEMENTS . " p ON p.inscription_code = i.code_inscription
             WHERE i.etudiant_code = ?
               AND i.annee_code != ?
-              AND i.statut_inscription != 'annule'
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             GROUP BY i.code_inscription, i.annee_code, ann.libelle_annee, c.libelle_classe, i.montant_scolarite_inscription
             HAVING solde_restant > 0
             ORDER BY i.id_inscription ASC

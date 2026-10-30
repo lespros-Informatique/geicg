@@ -18,7 +18,7 @@
           }
           if (!$foundNav) {
               foreach ($allAnneesNav as $anNav) {
-                  if (($anNav['statut_annee'] ?? '') === 'actif') {
+                  if (($anNav['statut_annee'] ?? '') === STATUTS::ACTIF) {
                       $activeAnneeCode = $anNav['code_annee'];
                       $activeAnneeLibelle = $anNav['libelle_annee'];
                       $_SESSION['annee_active_code'] = $activeAnneeCode;
@@ -151,7 +151,7 @@
                         ?>
                         <?php foreach ($allAnneesNav as $anItem): ?>
                             <?php 
-                                $isCurrentActiveDb = (($anItem['statut_annee'] ?? '') === 'actif');
+                                $isCurrentActiveDb = (($anItem['statut_annee'] ?? '') === STATUTS::ACTIF);
                                 $isSelected = ($anItem['code_annee'] === $activeAnneeCode || $anItem['libelle_annee'] === $activeAnneeLibelle);
                                 
                                 $canAccessThisYear = $isCurrentActiveDb || $hasGlobalViewNav || isset($userAccesNav[$anItem['code_annee']]);
@@ -484,7 +484,7 @@
   if (!empty($allAnneesNav)) {
       foreach ($allAnneesNav as $aObjNav) {
           if ($aObjNav['code_annee'] === $activeAnneeCode) {
-              if (($aObjNav['statut_annee'] ?? '') !== 'actif') {
+              if (($aObjNav['statut_annee'] ?? '') !== STATUTS::ACTIF) {
                   $isPastAnneeNav = true;
               }
               break;

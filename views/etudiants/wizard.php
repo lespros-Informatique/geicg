@@ -6,7 +6,7 @@ $activeYearRow = $modelAnnee->getActiveYear();
 $activeAnneeCode = $_SESSION['annee_active_code'] ?? ($activeYearRow['code_annee'] ?? '');
 if (empty($activeAnneeCode)) {
     foreach ($annees as $a) {
-        if (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') {
+        if (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) {
             $activeAnneeCode = $a['code_annee'];
             break;
         }
@@ -218,8 +218,8 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
                 </label>
                 <select class="form-control select2" id="wiz_annee" name="annee_code" style="width: 100%;" required>
                   <?php foreach($annees as $a): ?>
-                    <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif')) ? 'selected' : '' ?>>
-                      <?= htmlspecialchars($a['libelle_annee']) ?> (<?= htmlspecialchars($a['code_annee']) ?>)<?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' — Session Active' : '' ?>
+                    <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF)) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($a['libelle_annee']) ?> (<?= htmlspecialchars($a['code_annee']) ?>)<?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' — Session Active' : '' ?>
                     </option>
                   <?php endforeach; ?>
                 </select>

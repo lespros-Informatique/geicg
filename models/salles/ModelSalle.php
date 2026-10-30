@@ -22,7 +22,7 @@ class ModelSalle extends BaseModel
                 LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
                 LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
-                WHERE edt.salle_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
+                WHERE edt.salle_code = ? AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
                 ORDER BY edt.jour ASC, edt.heure_debut ASC
             ");
             $stmt->execute([$salleCode]);

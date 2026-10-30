@@ -59,7 +59,7 @@ $nbNotes = $nbNotes ?? 0;
         <div style="display: flex; gap: 20px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #F1F5F9; font-size: 13px; margin-top: 14px;">
           <div><strong style="color: #64748B;">Évaluations / Notes Saisies :</strong> <span style="font-weight: 700; color: #0F172A;"><?= $nbNotes ?> notes enregistrées</span></div>
           <div><strong style="color: #64748B;">Statut :</strong> 
-            <?php if (($item['statut_enseignant_matiere'] ?? '') === 'actif'): ?>
+            <?php if (($item['statut_enseignant_matiere'] ?? '') === STATUTS::ACTIF): ?>
               <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px; border-radius:10px; font-weight:700;">Actif</span>
             <?php else: ?>
               <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px; border-radius:10px; font-weight:700;">Inactif</span>

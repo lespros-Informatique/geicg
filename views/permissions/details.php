@@ -32,7 +32,7 @@ $item = isset($item) ? $item : [];
             <span style="font-size: 12px; color: #64748B;">Réf ID #<?= htmlspecialchars($item['id_permission'] ?? '-') ?></span>
           </div>
           <div style="margin-left: auto;">
-            <?php if (($item['statut_permission'] ?? '') === 'actif'): ?>
+            <?php if (($item['statut_permission'] ?? '') === STATUTS::ACTIF): ?>
               <span class="badge" style="background:#DCFCE7; color:#15803D; padding:6px 14px; border-radius:14px; font-weight:700; font-size:13px;">Statut : Actif</span>
             <?php else: ?>
               <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:6px 14px; border-radius:14px; font-weight:700; font-size:13px;">Statut : Inactif</span>

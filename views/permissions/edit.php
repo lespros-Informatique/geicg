@@ -74,7 +74,7 @@ $isEdit = !empty($item['id_permission']);
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
               <select class="form-control" name="statut_permission" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
                 <option value="actif" <?= (($item['statut_permission'] ?? 'actif') === 'actif') ? 'selected' : '' ?>>Actif</option>
-                <option value="inactif" <?= (($item['statut_permission'] ?? '') === 'inactif') ? 'selected' : '' ?>>Inactif</option>
+                <option value="inactif" <?= (($item['statut_permission'] ?? '') === STATUTS::INACTIF) ? 'selected' : '' ?>>Inactif</option>
               </select>
             </div>
             <?php endif; ?>

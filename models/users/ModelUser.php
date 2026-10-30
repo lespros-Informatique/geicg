@@ -70,7 +70,7 @@ class ModelUser extends BaseModel
             $stmtDel->execute([$userCode]);
 
             if (empty($rolesData)) {
-                $stmtDef = $pdo->query("SELECT code_role FROM " . TABLES::ROLES . " WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
+                $stmtDef = $pdo->query("SELECT code_role FROM " . TABLES::ROLES . " WHERE statut_role = '" . STATUTS::ACTIF . "' ORDER BY id ASC LIMIT 1");
                 $defRole = ($stmtDef && $stmtDef->fetchColumn()) ?: ROLES::USER;
                 $rolesData = [$defRole => ['create' => 1, 'edit' => 1, 'show' => 1, 'delete' => 0]];
             }
@@ -271,7 +271,7 @@ class ModelUser extends BaseModel
     public function getDefaultRoleCode(): string
     {
         try {
-            $stmt = $this->getCon()->query("SELECT code_role FROM " . TABLES::ROLES . " WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
+            $stmt = $this->getCon()->query("SELECT code_role FROM " . TABLES::ROLES . " WHERE statut_role = '" . STATUTS::ACTIF . "' ORDER BY id ASC LIMIT 1");
             return ($stmt && ($code = $stmt->fetchColumn())) ? $code : ROLES::USER;
         } catch (Exception $e) {
             error_log("ModelUser::getDefaultRoleCode error: " . $e->getMessage());
@@ -301,7 +301,7 @@ class ModelUser extends BaseModel
     public function getEnseignantProfile(string $userCode): ?array
     {
         try {
-            $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::ENSEIGNANTS . " WHERE code_enseignant = ? AND statut_enseignant = 'actif' LIMIT 1");
+            $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::ENSEIGNANTS . " WHERE code_enseignant = ? AND statut_enseignant = '" . STATUTS::ACTIF . "' LIMIT 1");
             $stmt->execute([$userCode]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         } catch (Exception $e) {
@@ -323,7 +323,7 @@ class ModelUser extends BaseModel
             $sql = "SELECT DISTINCT rp.permission_code 
                     FROM " . TABLES::ROLE_PERMISSIONS . " rp
                     JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
-                    WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'";
+                    WHERE rp.role_code IN ($inClause) AND p.statut_permission = '" . STATUTS::ACTIF . "'";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($roleCodes);
             return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
@@ -342,7 +342,7 @@ class ModelUser extends BaseModel
             $stmt = $this->getCon()->query("
                 SELECT code_annee, libelle_annee 
                 FROM " . TABLES::ANNEES . " 
-                WHERE statut_annee = 'actif' 
+                WHERE statut_annee = '" . STATUTS::ACTIF . "' 
                 ORDER BY id_annee DESC LIMIT 1
             ");
             $active = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;

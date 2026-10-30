@@ -92,7 +92,7 @@ class ModelSessionCaisse extends BaseModel
                 FROM " . TABLES::PAIEMENTS . "
                 WHERE (session_caisse_code = ? OR (session_caisse_code IS NULL AND DATE(date_paiement) = ?))
                   AND (canal_paiement = 'guichet' OR canal_paiement IS NULL)
-                  AND statut_paiement != 'annule'
+                  AND statut_paiement != '" . STATUTS::ANNULE . "'
                 GROUP BY mode_paiement
             ");
             $stmt->execute([$sessionCode, $date]);
@@ -100,7 +100,7 @@ class ModelSessionCaisse extends BaseModel
             $stmt = $this->getCon()->prepare("
                 SELECT mode_paiement, SUM(montant_paiement) as sum_mode, COUNT(*) as count_mode
                 FROM " . TABLES::PAIEMENTS . "
-                WHERE DATE(date_paiement) = ? AND (canal_paiement = 'guichet' OR canal_paiement IS NULL) AND statut_paiement != 'annule'
+                WHERE DATE(date_paiement) = ? AND (canal_paiement = 'guichet' OR canal_paiement IS NULL) AND statut_paiement != '" . STATUTS::ANNULE . "'
                 GROUP BY mode_paiement
             ");
             $stmt->execute([$date]);

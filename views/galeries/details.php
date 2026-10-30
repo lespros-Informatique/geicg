@@ -47,7 +47,7 @@ $urlMedia = $item['url_fichier'] ?? ($item['fichier'] ?? '');
           <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Statut de visibilité</span>
             <div style="margin-top: 6px;">
-              <?php if (($item['statut_galerie'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_galerie'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">En ligne / Publié</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Masqué / Archivé</span>

@@ -52,7 +52,7 @@ $currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
               <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" tabindex="-1" readonly>
                 <?php foreach($annees as $an): ?>
                   <option value="<?= htmlspecialchars($an['code_annee']) ?>" <?= ($currentAnneeCode == $an['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($an['libelle_annee']) ?> <?= ($an['statut_annee'] === 'actif') ? '(Session Active)' : '' ?>
+                    <?= htmlspecialchars($an['libelle_annee']) ?> <?= ($an['statut_annee'] === STATUTS::ACTIF) ? '(Session Active)' : '' ?>
                   </option>
                 <?php endforeach; ?>
                 <?php if (empty($annees)): ?>

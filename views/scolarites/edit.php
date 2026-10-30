@@ -69,7 +69,7 @@ foreach ($filiereCyclesMap as $fc) {
               <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" tabindex="-1" readonly>
                 <?php foreach($annees as $a): ?>
                   <option value="<?= htmlspecialchars($a['code_annee']) ?>" data-debut="<?= htmlspecialchars($a['date_debut_annee'] ?? '') ?>" data-fin="<?= htmlspecialchars($a['date_fin_annee'] ?? '') ?>" <?= ($currentAnneeCode == $a['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === 'actif') ? '(Session Active)' : '' ?>
+                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? '(Session Active)' : '' ?>
                   </option>
                 <?php endforeach; ?>
                 <?php if (empty($annees)): ?>
