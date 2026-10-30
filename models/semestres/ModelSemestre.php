@@ -2,7 +2,7 @@
 
 class ModelSemestre extends BaseModel
 {
-    protected string $table = 'semestres';
+    protected string $table = TABLES::SEMESTRES;
     protected string $primaryKey = 'id_semestre';
     protected ?string $statusField = 'statut_semestre';
     protected ?string $createdAtField = 'created_at_semestre';
@@ -10,8 +10,8 @@ class ModelSemestre extends BaseModel
     public function getAll(?string $anneeCode = null): array
     {
         $sql = "SELECT s.*, a.libelle_annee 
-                FROM semestres s
-                LEFT JOIN annees a ON a.code_annee = s.annee_code";
+                FROM " . TABLES::SEMESTRES . " s
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = s.annee_code";
         $params = [];
         if (!empty($anneeCode)) {
             $sql .= " WHERE s.annee_code = ? ";
@@ -32,7 +32,7 @@ class ModelSemestre extends BaseModel
     {
         try {
             $field = $codeField ?? 'code_semestre';
-            $stmt = $this->getCon()->prepare("SELECT * FROM semestres WHERE `{$field}` = ?");
+            $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::SEMESTRES . " WHERE `{$field}` = ?");
             $stmt->execute([$code]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
@@ -53,10 +53,10 @@ class ModelSemestre extends BaseModel
             $db = $this->getCon();
             $db->beginTransaction();
             // Clôturer tout semestre précédemment active pour cette année
-            $stmtClose = $db->prepare("UPDATE `semestres` SET `statut_semestre` = 'cloture' WHERE `annee_code` = ? AND `statut_semestre` = 'actif'");
+            $stmtClose = $db->prepare("UPDATE " . TABLES::SEMESTRES . "` SET `statut_semestre` = 'cloture' WHERE `annee_code` = ? AND `statut_semestre` = 'actif'");
             $stmtClose->execute([$anneeCode]);
             // Activer le semestre demandé
-            $stmtAct = $db->prepare("UPDATE `semestres` SET `statut_semestre` = 'actif' WHERE `id_semestre` = ?");
+            $stmtAct = $db->prepare("UPDATE " . TABLES::SEMESTRES . "` SET `statut_semestre` = 'actif' WHERE `id_semestre` = ?");
             $stmtAct->execute([$id]);
             $db->commit();
             return true;
@@ -80,7 +80,7 @@ class ModelSemestre extends BaseModel
         if (($current['statut_semestre'] ?? '') !== 'actif') {
             return $this->setActiveSemester($id);
         } else {
-            $stmt = $this->getCon()->prepare("UPDATE `semestres` SET `statut_semestre` = 'cloture' WHERE `id_semestre` = ?");
+            $stmt = $this->getCon()->prepare("UPDATE " . TABLES::SEMESTRES . "` SET `statut_semestre` = 'cloture' WHERE `id_semestre` = ?");
             return $stmt->execute([$id]);
         }
     }

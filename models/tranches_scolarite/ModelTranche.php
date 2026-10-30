@@ -2,7 +2,7 @@
 
 class ModelTranche extends BaseModel
 {
-    protected string $table = 'tranches_scolarite';
+    protected string $table = TABLES::TRANCHES_SCOLARITE;
     protected string $primaryKey = 'id_tranche';
     protected ?string $statusField = 'statut_tranche';
     protected ?string $createdAtField = 'created_at_tranche';
@@ -40,11 +40,11 @@ class ModelTranche extends BaseModel
                    f.libelle_filiere, 
                    n.libelle_niveau, 
                    a.libelle_annee
-            FROM tranches_scolarite t
-            LEFT JOIN scolarites s ON t.scolarite_code = s.code_scolarite
-            LEFT JOIN filieres f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
-            LEFT JOIN niveaux n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
-            LEFT JOIN annees a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
+            FROM " . TABLES::TRANCHES_SCOLARITE . " t
+            LEFT JOIN " . TABLES::SCOLARITES . " s ON t.scolarite_code = s.code_scolarite
+            LEFT JOIN " . TABLES::FILIERES . " f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
+            LEFT JOIN " . TABLES::ANNEES . " a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
             {$where}
             ORDER BY f.libelle_filiere ASC, n.libelle_niveau ASC, t.date_limite ASC, t.id_tranche ASC
         ";
@@ -62,11 +62,11 @@ class ModelTranche extends BaseModel
                    f.libelle_filiere, 
                    n.libelle_niveau, 
                    a.libelle_annee
-            FROM tranches_scolarite t
-            LEFT JOIN scolarites s ON t.scolarite_code = s.code_scolarite
-            LEFT JOIN filieres f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
-            LEFT JOIN niveaux n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
-            LEFT JOIN annees a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
+            FROM " . TABLES::TRANCHES_SCOLARITE . " t
+            LEFT JOIN " . TABLES::SCOLARITES . " s ON t.scolarite_code = s.code_scolarite
+            LEFT JOIN " . TABLES::FILIERES . " f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
+            LEFT JOIN " . TABLES::ANNEES . " a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
             WHERE t.id_tranche = ? OR t.code_tranche = ?
             LIMIT 1
         ");

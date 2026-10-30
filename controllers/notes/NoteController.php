@@ -106,7 +106,7 @@ class NoteController extends BaseController
         ]);
 
         if (empty($data['code_note'])) {
-            $data['code_note'] = $this->validator->generateCode('notes', 'code_note', 'NOT-', 8);
+            $data['code_note'] = $this->validator->generateCode(TABLES::NOTES, 'code_note', 'NOT-', 8);
         }
         $data['statut_note'] = $data['statut_note'] ?? 'actif';
         $data['created_at_note'] = date('Y-m-d H:i:s');

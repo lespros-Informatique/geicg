@@ -2,7 +2,7 @@
 
 class ModelFiliere extends BaseModel
 {
-    protected string $table = 'filieres';
+    protected string $table = TABLES::FILIERES;
     protected string $primaryKey = 'id_filiere';
     protected ?string $statusField = 'statut_filiere';
     protected ?string $createdAtField = 'created_at_filiere';
@@ -13,9 +13,9 @@ class ModelFiliere extends BaseModel
     public function getFilieresAssocieesAuxCycles(): array
     {
         $sql = "SELECT DISTINCT f.* 
-                FROM filieres f
-                INNER JOIN filiere_cycles fc ON fc.filiere_code = f.code_filiere
-                INNER JOIN cycles cy ON cy.code_cycle = fc.cycle_code
+                FROM " . TABLES::FILIERES . " f
+                INNER JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.filiere_code = f.code_filiere
+                INNER JOIN " . TABLES::CYCLES . " cy ON cy.code_cycle = fc.cycle_code
                 WHERE (f.statut_filiere = 'actif' OR f.statut_filiere IS NULL)
                   AND (fc.statut_filiere_cycle = 'actif' OR fc.statut_filiere_cycle IS NULL)
                   AND (cy.statut_cycle = 'actif' OR cy.statut_cycle IS NULL)

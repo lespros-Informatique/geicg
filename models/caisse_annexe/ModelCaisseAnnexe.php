@@ -2,7 +2,7 @@
 
 class ModelCaisseAnnexe extends BaseModel
 {
-    protected string $table = 'paiements';
+    protected string $table = TABLES::PAIEMENTS;
     protected string $primaryKey = 'id_paiement';
     protected ?string $statusField = 'statut_paiement';
     protected ?string $createdAtField = 'date_paiement';
@@ -155,9 +155,9 @@ class ModelCaisseAnnexe extends BaseModel
                 cl.code_classe,
                 cl.niveau_code,
                 f.type_filiere
-            FROM inscriptions i
-            LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+            FROM " . TABLES::INSCRIPTIONS . " i
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             {$whereInscr}
         ";
         $stmtInscr = $db->prepare($sqlInscr);
@@ -167,7 +167,7 @@ class ModelCaisseAnnexe extends BaseModel
         $totalInscrits = count($inscriptions);
 
         // Récupérer la grille complète des tarifs frais annexes pour l'évaluation dynamique
-        $sqlFA = "SELECT * FROM frais_annexes WHERE statut_frais_annexe = 'actif'";
+        $sqlFA = "SELECT * FROM " . TABLES::FRAIS_ANNEXES . " WHERE statut_frais_annexe = 'actif'";
         $paramsFA = [];
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
             $sqlFA .= " AND annee_code = ?";
@@ -182,7 +182,7 @@ class ModelCaisseAnnexe extends BaseModel
             SELECT 
                 inscription_code, 
                 SUM(montant_paiement) as total_paye_fa
-            FROM paiements
+            FROM " . TABLES::PAIEMENTS . "
             WHERE (categorie_paiement = 'FRAIS_ANNEXES' OR tranche_code = 'FRAIS_ANNEXES' OR LOWER(type_paiement) LIKE '%annexe%')
               AND statut_paiement != 'annule'
             GROUP BY inscription_code
@@ -233,7 +233,7 @@ class ModelCaisseAnnexe extends BaseModel
         // Libellé de l'exercice
         $anneeExerciceLibelle = 'Session Active';
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $stmtLib = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtLib = $db->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtLib->execute([$anneeCode]);
             $anneeExerciceLibelle = $stmtLib->fetchColumn() ?: $anneeCode;
         }

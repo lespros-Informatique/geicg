@@ -2,7 +2,7 @@
 
 class ModelPieceFournirCycle extends BaseModel
 {
-    protected string $table = 'piece_fournir_cycle';
+    protected string $table = TABLES::PIECES_FOURNIR_CYCLES;
     protected string $primaryKey = 'id_piece_cycle';
     protected ?string $statusField = 'statut_piece_cycle';
     protected ?string $createdAtField = 'created_at_piece_cycle';
@@ -16,10 +16,10 @@ class ModelPieceFournirCycle extends BaseModel
                    n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
-            FROM piece_fournir_cycle pfc
-            LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
-            LEFT JOIN niveaux n ON n.code_niveau = pfc.niveau_code
-            LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
+            FROM " . TABLES::PIECES_FOURNIR_CYCLES . " pfc
+            LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = pfc.cycle_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = pfc.niveau_code
+            LEFT JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
         ";
         $conditions = [];
         $params = [];
@@ -54,10 +54,10 @@ class ModelPieceFournirCycle extends BaseModel
                    n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
-            FROM piece_fournir_cycle pfc
-            LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
-            LEFT JOIN niveaux n ON n.code_niveau = pfc.niveau_code
-            LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
+            FROM " . TABLES::PIECES_FOURNIR_CYCLES . " pfc
+            LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = pfc.cycle_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = pfc.niveau_code
+            LEFT JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
             WHERE pfc.id_piece_cycle = ?
             LIMIT 1
         ";
@@ -80,10 +80,10 @@ class ModelPieceFournirCycle extends BaseModel
                    n.libelle_niveau,
                    pf.libelle_piece,
                    pf.description_piece
-            FROM piece_fournir_cycle pfc
-            LEFT JOIN cycles c ON c.code_cycle = pfc.cycle_code
-            LEFT JOIN niveaux n ON n.code_niveau = pfc.niveau_code
-            LEFT JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
+            FROM " . TABLES::PIECES_FOURNIR_CYCLES . " pfc
+            LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = pfc.cycle_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = pfc.niveau_code
+            LEFT JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
             WHERE pfc.statut_piece_cycle = 'actif'
               AND (pfc.cycle_code = ? OR pfc.cycle_code = '' OR pfc.cycle_code IS NULL)
         ";
@@ -105,7 +105,7 @@ class ModelPieceFournirCycle extends BaseModel
 
     public function existsForCycle(string $cycleCode, string $pieceCode, ?string $niveauCode = null, ?int $excludeId = null): bool
     {
-        $sql = "SELECT COUNT(*) FROM piece_fournir_cycle WHERE cycle_code = ? AND piece_code = ?";
+        $sql = "SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE cycle_code = ? AND piece_code = ?";
         $params = [$cycleCode, $pieceCode];
         if (!empty($niveauCode)) {
             $sql .= " AND (niveau_code = ? OR niveau_code IS NULL)";
@@ -129,7 +129,7 @@ class ModelPieceFournirCycle extends BaseModel
 
     public function getAssignedPieceCodes(string $cycleCode, ?string $niveauCode = null): array
     {
-        $sql = "SELECT piece_code FROM piece_fournir_cycle WHERE cycle_code = ?";
+        $sql = "SELECT piece_code FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE cycle_code = ?";
         $params = [$cycleCode];
         if (!empty($niveauCode)) {
             $sql .= " AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '')";
@@ -162,17 +162,17 @@ class ModelPieceFournirCycle extends BaseModel
 
             $whereStr = !empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "";
 
-            $stmtTot = $db->prepare("SELECT COUNT(*) FROM piece_fournir_cycle" . $whereStr);
+            $stmtTot = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR_CYCLES . "" . $whereStr);
             $stmtTot->execute($params);
             $total = (int)$stmtTot->fetchColumn();
 
             $condAct = array_merge($conditions, ["statut_piece_cycle = 'actif'"]);
-            $stmtAct = $db->prepare("SELECT COUNT(*) FROM piece_fournir_cycle WHERE " . implode(" AND ", $condAct));
+            $stmtAct = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE " . implode(" AND ", $condAct));
             $stmtAct->execute($params);
             $actifs = (int)$stmtAct->fetchColumn();
 
             $condCyc = array_merge($conditions, ["statut_piece_cycle = 'actif'"]);
-            $stmtCyc = $db->prepare("SELECT COUNT(DISTINCT cycle_code) FROM piece_fournir_cycle WHERE " . implode(" AND ", $condCyc));
+            $stmtCyc = $db->prepare("SELECT COUNT(DISTINCT cycle_code) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE " . implode(" AND ", $condCyc));
             $stmtCyc->execute($params);
             $cyclesConfigures = (int)$stmtCyc->fetchColumn();
 

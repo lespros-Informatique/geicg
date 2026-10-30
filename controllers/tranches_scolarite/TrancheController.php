@@ -71,7 +71,7 @@ class TrancheController extends BaseController
         }
 
         if (empty($data['code_tranche'])) {
-            $data['code_tranche'] = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
+            $data['code_tranche'] = $this->validator->generateCode(TABLES::TRANCHES_SCOLARITE, 'code_tranche', 'TRA-', 8);
         }
         $data['statut_tranche'] = $data['statut_tranche'] ?? 'actif';
         $data['created_at_tranche'] = date('Y-m-d H:i:s');

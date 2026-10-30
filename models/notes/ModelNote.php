@@ -2,7 +2,7 @@
 
 class ModelNote extends BaseModel
 {
-    protected string $table = 'notes';
+    protected string $table = TABLES::NOTES;
     protected string $primaryKey = 'id_note';
     protected ?string $statusField = 'statut_note';
     protected ?string $createdAtField = 'created_at_note';
@@ -103,7 +103,7 @@ class ModelNote extends BaseModel
                        1 AS is_assigned
                 FROM " . TABLES::COMPOSITION_MATIERES . " cm
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cm.composition_code
-                INNER JOIN composition_niveau_filiere cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
+                INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
                 INNER JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
                 INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
                 LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = m.code_matiere AND em.classe_code = cl.code_classe)
@@ -170,7 +170,7 @@ class ModelNote extends BaseModel
                    '' AS prof_nom,
                    1 AS is_assigned
             FROM " . TABLES::COMPOSITION_MATIERES . " cm
-            INNER JOIN composition_niveau_filiere cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
+            INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
             INNER JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
             INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cm.composition_code
@@ -250,7 +250,7 @@ class ModelNote extends BaseModel
     ): string {
         $db = $this->getCon();
         $validator = new Validator();
-        $compositionCode = $validator->generateCode('compositions', 'code_composition', 'CMP-', 8);
+        $compositionCode = $validator->generateCode(TABLES::COMPOSITIONS, 'code_composition', 'CMP-', 8);
         $defaultLbl = ($typeEval === 'DEVOIR') ? 'Devoir Sur Table' : (($typeEval === 'INTERROGATION') ? 'Interrogation' : 'Évaluation');
         $finalLibelle = !empty($libelleEval) ? $libelleEval : $defaultLbl;
         $today = date('Y-m-d');
@@ -283,9 +283,9 @@ class ModelNote extends BaseModel
             $clRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
 
             if ($clRow && !empty($clRow['niveau_code']) && !empty($clRow['filiere_code'])) {
-                $codeCNF = $validator->generateCode('composition_niveau_filiere', 'code_composition_niveau_filiere', 'CNF-', 8);
+                $codeCNF = $validator->generateCode(TABLES::COMPOSITION_NIVEAU_FILIERE, 'code_composition_niveau_filiere', 'CNF-', 8);
                 $stmtInsCNF = $db->prepare("
-                    INSERT IGNORE INTO composition_niveau_filiere (code_composition_niveau_filiere, composition_code, niveau_code, filiere_code)
+                    INSERT IGNORE INTO " . TABLES::COMPOSITION_NIVEAU_FILIERE . " (code_composition_niveau_filiere, composition_code, niveau_code, filiere_code)
                     VALUES (?, ?, ?, ?)
                 ");
                 $stmtInsCNF->execute([$codeCNF, $compositionCode, $clRow['niveau_code'], $clRow['filiere_code']]);
@@ -407,7 +407,7 @@ class ModelNote extends BaseModel
                             ?? ($this->getEtudiantCodeByInscription($inscCode) ?: '');
                     }
 
-                    $fkErr = ForeignKeyValidator::validate($db, 'notes', [
+                    $fkErr = ForeignKeyValidator::validate($db, TABLES::NOTES, [
                         'inscription_code' => $inscCode,
                         'composition_code' => $compositionCode,
                         'etudiant_code' => $etudiantCode,
@@ -417,7 +417,7 @@ class ModelNote extends BaseModel
                         throw new Exception($fkErr);
                     }
 
-                    $codeNote = $validator->generateCode('notes', 'code_note', 'NOT-', 8);
+                    $codeNote = $validator->generateCode(TABLES::NOTES, 'code_note', 'NOT-', 8);
                     $stmtIns->execute([$codeNote, $compositionCode, $etudiantCode, $inscCode, $valNote, $obs, $userCode, $etabCode, $nowStr]);
                 }
                 $savedCount++;

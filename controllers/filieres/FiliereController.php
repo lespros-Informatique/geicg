@@ -56,7 +56,7 @@ class FiliereController extends BaseController
         $etabCode = $this->getActiveEtablissementCode();
 
         if (empty($data['code_filiere'])) {
-            $data['code_filiere'] = $this->validator->generateCode('filieres', 'code_filiere', 'FIL-', 8);
+            $data['code_filiere'] = $this->validator->generateCode(TABLES::FILIERES, 'code_filiere', 'FIL-', 8);
         }
         $data['statut_filiere'] = $data['statut_filiere'] ?? 'actif';
         $data['created_at_filiere'] = date('Y-m-d H:i:s');

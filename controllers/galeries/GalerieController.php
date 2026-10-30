@@ -42,7 +42,7 @@ class GalerieController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
         if (empty($data['code_galerie'])) {
-            $data['code_galerie'] = $this->validator->generateCode('galeries', 'code_galerie', 'GAL-', 8);
+            $data['code_galerie'] = $this->validator->generateCode(TABLES::GALERIES, 'code_galerie', 'GAL-', 8);
         }
         // Gestion upload fichier
         if (!empty($_FILES['fichier_upload']['name']) && $_FILES['fichier_upload']['error'] === UPLOAD_ERR_OK) {

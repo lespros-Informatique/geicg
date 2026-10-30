@@ -2,7 +2,7 @@
 
 class ModelNiveau extends BaseModel
 {
-    protected string $table = 'niveaux';
+    protected string $table = TABLES::NIVEAUX;
     protected string $primaryKey = 'id_niveau';
     protected ?string $statusField = 'statut_niveau';
     protected ?string $createdAtField = 'created_at_niveau';
@@ -12,7 +12,7 @@ class ModelNiveau extends BaseModel
      */
     public function getActifs(): array
     {
-        $sql = "SELECT * FROM niveaux WHERE statut_niveau = 'actif' OR statut_niveau IS NULL ORDER BY libelle_niveau ASC";
+        $sql = "SELECT * FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = 'actif' OR statut_niveau IS NULL ORDER BY libelle_niveau ASC";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute();
@@ -36,8 +36,8 @@ class ModelNiveau extends BaseModel
             // 1. Recherche via les liaisons du parcours académique (filiere_cycles)
             $sql = "
                 SELECT DISTINCT n.code_niveau, n.libelle_niveau, n.slug_niveau
-                FROM niveaux n
-                JOIN filiere_cycles fc ON fc.niveau_code = n.code_niveau
+                FROM " . TABLES::NIVEAUX . " n
+                JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.niveau_code = n.code_niveau
                 WHERE fc.cycle_code = ?
                   AND (n.statut_niveau = 'actif' OR n.statut_niveau IS NULL)
                 ORDER BY n.libelle_niveau ASC
@@ -50,8 +50,8 @@ class ModelNiveau extends BaseModel
             if (empty($niveaux)) {
                 $sqlClasses = "
                     SELECT DISTINCT n.code_niveau, n.libelle_niveau, n.slug_niveau
-                    FROM niveaux n
-                    JOIN classes cl ON cl.niveau_code = n.code_niveau
+                    FROM " . TABLES::NIVEAUX . " n
+                    JOIN " . TABLES::CLASSES . " cl ON cl.niveau_code = n.code_niveau
                     WHERE cl.cycle_code = ?
                       AND (n.statut_niveau = 'actif' OR n.statut_niveau IS NULL)
                     ORDER BY n.libelle_niveau ASC

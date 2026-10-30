@@ -56,7 +56,7 @@ class FiliereCycleController extends BaseController
         $etabCode = $this->getActiveEtablissementCode();
 
         if (empty($data['code_filiere_cycle'])) {
-            $data['code_filiere_cycle'] = $this->validator->generateCode('filiere_cycles', 'code_filiere_cycle', 'FCYC-', 8);
+            $data['code_filiere_cycle'] = $this->validator->generateCode(TABLES::FILIERE_CYCLES, 'code_filiere_cycle', 'FCYC-', 8);
         }
 
         // Auto-déduction du type de filière depuis le catalogue des filières si non renseigné

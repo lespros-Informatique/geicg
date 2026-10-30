@@ -220,7 +220,7 @@ class ScolariteController extends BaseController
                     continue;
                 }
 
-                $codeScolarite = $this->validator->generateCode('scolarites', 'code_scolarite', 'SCO-', 8);
+                $codeScolarite = $this->validator->generateCode(TABLES::SCOLARITES, 'code_scolarite', 'SCO-', 8);
 
                 $data = $_POST;
                 unset($data['csrf_token']);
@@ -257,7 +257,7 @@ class ScolariteController extends BaseController
                                 $libelle = 'Tranche';
                             }
                             $dateLimite = !empty($tData['date_limite']) ? $tData['date_limite'] : date('Y-m-d');
-                            $codeTranche = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
+                            $codeTranche = $this->validator->generateCode(TABLES::TRANCHES_SCOLARITE, 'code_tranche', 'TRA-', 8);
 
                             $newTranche = [
                                 'code_tranche' => $codeTranche,
@@ -385,7 +385,7 @@ class ScolariteController extends BaseController
                         $trancheModel->update($filteredTranche, $trancheId);
                     } else {
                         // Création d'une nouvelle tranche
-                        $codeTranche = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
+                        $codeTranche = $this->validator->generateCode(TABLES::TRANCHES_SCOLARITE, 'code_tranche', 'TRA-', 8);
                         $newTranche = [
                             'code_tranche' => $codeTranche,
                             'libelle_tranche' => $libelle,

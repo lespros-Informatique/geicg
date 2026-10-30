@@ -2,7 +2,7 @@
 
 class ModelPaiement extends BaseModel
 {
-    protected string $table = 'paiements';
+    protected string $table = TABLES::PAIEMENTS;
     protected string $primaryKey = 'id_paiement';
     protected ?string $statusField = 'statut_paiement';
     protected ?string $createdAtField = 'date_paiement';
@@ -1212,7 +1212,7 @@ class ModelPaiement extends BaseModel
             $lastPaiementId = 0;
 
             // Opération 1 : Frais Annexes
-            $codeFA = ($validator && method_exists($validator, 'generateCode')) ? $validator->generateCode('paiements', 'code_paiement', 'PAI-', 8) : ('PAI-' . strtoupper(substr(uniqid(), -8)));
+            $codeFA = ($validator && method_exists($validator, 'generateCode')) ? $validator->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'PAI-', 8) : ('PAI-' . strtoupper(substr(uniqid(), -8)));
             $stmtFA = $db->prepare("
                 INSERT INTO " . TABLES::PAIEMENTS . " (
                     code_paiement, inscription_code, etablissement_code, annee_code, tranche_code,
@@ -1230,7 +1230,7 @@ class ModelPaiement extends BaseModel
 
             // Opération 2 : Scolarité (Tranche)
             if ($montantTranche > 0) {
-                $codeTr = ($validator && method_exists($validator, 'generateCode')) ? $validator->generateCode('paiements', 'code_paiement', 'PAI-', 8) : ('PAI-' . strtoupper(substr(uniqid(), -8)));
+                $codeTr = ($validator && method_exists($validator, 'generateCode')) ? $validator->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'PAI-', 8) : ('PAI-' . strtoupper(substr(uniqid(), -8)));
                 $typeTr = !empty($tranche['libelle_tranche']) ? 'Règlement ' . $tranche['libelle_tranche'] : 'Règlement Scolarité';
                 $stmtTrIns = $db->prepare("
                     INSERT INTO " . TABLES::PAIEMENTS . " (
@@ -1276,7 +1276,7 @@ class ModelPaiement extends BaseModel
 
         // Cas standard paiement scolarité simple
         if (empty($data['code_paiement'])) {
-            $data['code_paiement'] = ($validator && method_exists($validator, 'generateCode')) ? $validator->generateCode('paiements', 'code_paiement', 'PAI-', 8) : ('PAI-' . strtoupper(substr(uniqid(), -8)));
+            $data['code_paiement'] = ($validator && method_exists($validator, 'generateCode')) ? $validator->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'PAI-', 8) : ('PAI-' . strtoupper(substr(uniqid(), -8)));
         }
 
         $data['statut_paiement'] = $data['statut_paiement'] ?? 'confirme';

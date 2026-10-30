@@ -2,7 +2,7 @@
 
 class ModelEtudiant extends BaseModel
 {
-    protected string $table = 'etudiants';
+    protected string $table = TABLES::ETUDIANTS;
     protected string $primaryKey = 'id_etudiant';
     protected ?string $statusField = 'statut_etudiant';
     protected ?string $createdAtField = 'created_at_etudiant';
@@ -24,11 +24,11 @@ class ModelEtudiant extends BaseModel
         $initiales = $lettreNom . $lettrePrenom;
 
         // 2. Ordre / Incrément last ID
-        $lastId = (int)$pdo->query("SELECT MAX(id_etudiant) FROM etudiants")->fetchColumn() ?: 0;
+        $lastId = (int)$pdo->query("SELECT MAX(id_etudiant) FROM " . TABLES::ETUDIANTS . "")->fetchColumn() ?: 0;
         $nextOrder = $lastId + 1;
 
         // 3. Sigle Établissement (dynamique depuis la base)
-        $stmtEtabSigle = $pdo->query("SELECT code_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
+        $stmtEtabSigle = $pdo->query("SELECT code_etablissement, libelle_etablissement FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement ASC LIMIT 1");
         $rowEtabSigle = $stmtEtabSigle ? $stmtEtabSigle->fetch(PDO::FETCH_ASSOC) : null;
         $sigleEtab = 'GEB';
         if (!empty($rowEtabSigle['code_etablissement']) && !is_numeric($rowEtabSigle['code_etablissement']) && strlen(trim($rowEtabSigle['code_etablissement'])) <= 6) {
@@ -45,8 +45,8 @@ class ModelEtudiant extends BaseModel
         if (!empty($classeCode)) {
             $stmtCls = $pdo->prepare("
                 SELECT f.code_filiere, f.libelle_filiere 
-                FROM classes cl 
-                JOIN filieres f ON f.code_filiere = cl.filiere_code 
+                FROM " . TABLES::CLASSES . " cl 
+                JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code 
                 WHERE cl.code_classe = ? LIMIT 1
             ");
             $stmtCls->execute([$classeCode]);
@@ -64,7 +64,7 @@ class ModelEtudiant extends BaseModel
         // 5. Deux derniers chiffres de l'année (ex: 2026 -> 26, 2025-2026 -> 26)
         $anneeSuffix = date('y');
         if (!empty($anneeCode)) {
-            $stmtAnn = $pdo->prepare("SELECT libelle_annee, date_debut_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtAnn = $pdo->prepare("SELECT libelle_annee, date_debut_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtAnn->execute([$anneeCode]);
             $annRow = $stmtAnn->fetch(PDO::FETCH_ASSOC);
             if ($annRow) {
@@ -80,7 +80,7 @@ class ModelEtudiant extends BaseModel
         $matricule = sprintf('%s-%d/%s/%s%s', $initiales, $nextOrder, $sigleEtab, $filiereCodeLetters, $anneeSuffix);
 
         // Vérifier l'unicité
-        $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM etudiants WHERE matricule_etudiant = ?");
+        $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM " . TABLES::ETUDIANTS . " WHERE matricule_etudiant = ?");
         $stmtCheck->execute([$matricule]);
         if ((int)$stmtCheck->fetchColumn() > 0) {
             $matricule = sprintf('%s-%d%02d/%s/%s%s', $initiales, $nextOrder, rand(1, 99), $sigleEtab, $filiereCodeLetters, $anneeSuffix);
@@ -166,7 +166,7 @@ class ModelEtudiant extends BaseModel
                 i.statut_inscription,
                 i.montant_scolarite_inscription,
                 i.created_at_inscription,
-                (SELECT COUNT(*) FROM paiements p WHERE p.inscription_code = i.code_inscription AND p.statut_paiement != 'annule') AS total_paiements_count,
+                (SELECT COUNT(*) FROM " . TABLES::PAIEMENTS . " p WHERE p.inscription_code = i.code_inscription AND p.statut_paiement != 'annule') AS total_paiements_count,
                 a.code_annee,
                 a.libelle_annee,
                 cl.code_classe,
@@ -177,12 +177,12 @@ class ModelEtudiant extends BaseModel
                 n.code_niveau,
                 n.libelle_niveau,
                 n.slug_niveau
-            FROM etudiants e
-            JOIN inscriptions i ON i.etudiant_code = e.code_etudiant
-            JOIN annees a ON a.code_annee = i.annee_code
-            JOIN classes cl ON cl.code_classe = i.classe_code
-            JOIN filieres f ON f.code_filiere = cl.filiere_code
-            JOIN niveaux n ON n.code_niveau = cl.niveau_code
+            FROM " . TABLES::ETUDIANTS . " e
+            JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant
+            JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
+            JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+            JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             WHERE {$whereClause}
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC, i.id_inscription DESC
         ";
@@ -413,7 +413,7 @@ class ModelEtudiant extends BaseModel
         try {
             $stmtAbs = $db->prepare("
                 SELECT abs.*, m.libelle_matiere
-                FROM absences abs
+                FROM " . TABLES::ABSENCES . " abs
                 JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = abs.inscription_code
                 LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = abs.matiere_code
                 WHERE ins.etudiant_code = ?
@@ -583,13 +583,13 @@ class ModelEtudiant extends BaseModel
         $matriculeMenet = !empty($data['matricule_menet']) ? trim($data['matricule_menet']) : null;
         $matriculeMesrs = !empty($data['matricule_mesrs']) ? trim($data['matricule_mesrs']) : null;
 
-        $codeEtudiant = $validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
+        $codeEtudiant = $validator->generateCode(TABLES::ETUDIANTS, 'code_etudiant', 'ETU-', 8);
 
         try {
             $db->beginTransaction();
 
             // 1. Insert Student into `etudiants`
-            $fkErrEtu = ForeignKeyValidator::validate($db, 'etudiants', [
+            $fkErrEtu = ForeignKeyValidator::validate($db, TABLES::ETUDIANTS, [
                 'etablissement_code' => $etabCode
             ]);
             if ($fkErrEtu !== null) {
@@ -598,7 +598,7 @@ class ModelEtudiant extends BaseModel
             }
 
             $stmtEtu = $db->prepare("
-                INSERT INTO etudiants 
+                INSERT INTO " . TABLES::ETUDIANTS . " 
                 (code_etudiant, matricule_etudiant, matricule_menet, matricule_mesrs, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
             ");
@@ -622,8 +622,8 @@ class ModelEtudiant extends BaseModel
 
             // 2. Insert Parent into `parents` if parent info provided
             if (!empty($data['nom_pere']) || !empty($data['nom_mere']) || !empty($data['nom_tuteur'])) {
-                $codeParent = $validator->generateCode('parents', 'code_parent', 'PAR-', 8);
-                $fkErrPar = ForeignKeyValidator::validate($db, 'parents', [
+                $codeParent = $validator->generateCode(TABLES::PARENTS, 'code_parent', 'PAR-', 8);
+                $fkErrPar = ForeignKeyValidator::validate($db, TABLES::PARENTS, [
                     'etudiant_code' => $codeEtudiant,
                     'etablissement_code' => $etabCode
                 ]);
@@ -633,7 +633,7 @@ class ModelEtudiant extends BaseModel
                 }
 
                 $stmtPar = $db->prepare("
-                    INSERT INTO parents 
+                    INSERT INTO " . TABLES::PARENTS . " 
                     (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, profession_mere, nom_tuteur, telephone_tuteur, profession_tuteur, user_code, etablissement_code, created_at_parent)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
@@ -661,15 +661,15 @@ class ModelEtudiant extends BaseModel
                 $regimeScol = ($affectationEtatVal === 'oui') ? 'affecte' : 'non_affecte';
                 $montantScolarite = (float)($data['montant_scolarite_inscription'] ?? 0);
                 if ($montantScolarite <= 0) {
-                    $stmtCl = $db->prepare("SELECT * FROM classes WHERE code_classe = ? LIMIT 1");
+                    $stmtCl = $db->prepare("SELECT * FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
                     $stmtCl->execute([$data['classe_code']]);
                     $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
                     if ($cl) {
-                        $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND affectation_etat = ? AND statut_scolarite = 'actif' ORDER BY id_scolarite DESC LIMIT 1");
+                        $stmtSco = $db->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND affectation_etat = ? AND statut_scolarite = 'actif' ORDER BY id_scolarite DESC LIMIT 1");
                         $stmtSco->execute([$cl['filiere_code'], $cl['niveau_code'], $anneeCode, $regimeScol]);
                         $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
                         if (!$sco) {
-                            $stmtSco2 = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? ORDER BY id_scolarite DESC LIMIT 1");
+                            $stmtSco2 = $db->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? ORDER BY id_scolarite DESC LIMIT 1");
                             $stmtSco2->execute([$cl['filiere_code'], $cl['niveau_code']]);
                             $sco = $stmtSco2->fetch(PDO::FETCH_ASSOC);
                         }
@@ -678,9 +678,9 @@ class ModelEtudiant extends BaseModel
                         }
                     }
                 }
-                $codeInscription = $validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
+                $codeInscription = $validator->generateCode(TABLES::INSCRIPTIONS, 'code_inscription', 'INS-', 8);
                 
-                $fkErrIns = ForeignKeyValidator::validate($db, 'inscriptions', [
+                $fkErrIns = ForeignKeyValidator::validate($db, TABLES::INSCRIPTIONS, [
                     'etudiant_code' => $codeEtudiant,
                     'classe_code' => $data['classe_code'],
                     'annee_code' => $anneeCode,
@@ -692,7 +692,7 @@ class ModelEtudiant extends BaseModel
                 }
 
                 $stmtIns = $db->prepare("
-                    INSERT INTO inscriptions
+                    INSERT INTO " . TABLES::INSCRIPTIONS . "
                     (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, user_code, annee_code, etablissement_code, statut_inscription, affectation_etat, created_at_inscription)
                     VALUES (?, ?, ?, ?, ?, ?, ?, 'valide', ?, NOW())
                 ");
@@ -715,14 +715,14 @@ class ModelEtudiant extends BaseModel
                     return ['success' => false, 'message' => "Opération interrompue : Une classe et une inscription sont obligatoires pour attribuer des accessoires."];
                 }
                 $stmtAcc = $db->prepare("
-                    INSERT INTO accessoire_inscription
+                    INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
                     (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
                     VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
                 ");
                 foreach ($data['accessoires'] as $accCode) {
                     if (empty($accCode)) continue;
                     
-                    $fkErrAcc = ForeignKeyValidator::validate($db, 'accessoire_inscription', [
+                    $fkErrAcc = ForeignKeyValidator::validate($db, TABLES::ACCESSOIRE_INSCRIPTION, [
                         'inscription_code' => $codeInscription,
                         'accessoire_code' => $accCode,
                         'annee_code' => $anneeCode,
@@ -733,7 +733,7 @@ class ModelEtudiant extends BaseModel
                         return ['success' => false, 'message' => $fkErrAcc];
                     }
 
-                    $codeAccIns = $validator->generateCode('accessoire_inscription', 'code_accessoire_inscription', 'ACI-', 8);
+                    $codeAccIns = $validator->generateCode(TABLES::ACCESSOIRE_INSCRIPTION, 'code_accessoire_inscription', 'ACI-', 8);
                     $stmtAcc->execute([
                         $codeAccIns,
                         $codeInscription,
@@ -747,7 +747,7 @@ class ModelEtudiant extends BaseModel
 
             // 5. Insert Documents / Checklist into `dossier_etudiant`
             $piecesFournies = !empty($data['pieces_fournies']) && is_array($data['pieces_fournies']) ? $data['pieces_fournies'] : [];
-            $allPieces = $db->query("SELECT code_piece_fournir FROM pieces_fournir WHERE statut_piece = 'actif'")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            $allPieces = $db->query("SELECT code_piece_fournir FROM " . TABLES::PIECES_FOURNIR . " WHERE statut_piece = 'actif'")->fetchAll(PDO::FETCH_COLUMN) ?: [];
 
             if (!empty($allPieces)) {
                 if (empty($codeInscription)) {
@@ -755,14 +755,14 @@ class ModelEtudiant extends BaseModel
                     return ['success' => false, 'message' => "Opération interrompue : Une inscription valide est nécessaire pour initialiser le dossier étudiant."];
                 }
                 $stmtDos = $db->prepare("
-                    INSERT INTO dossier_etudiant
+                    INSERT INTO " . TABLES::DOSSIER_ETUDIANT . "
                     (code_dossier_etudiant, inscription_code, etudiant_code, piece_code, statut_depot, date_depot, observations, user_code, etablissement_code, created_at_dossier_etudiant)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
 
                 $piecesReqMap = [];
                 try {
-                    $pfcList = $db->query("SELECT piece_code, nombre_exemplaires FROM piece_fournir_cycle WHERE statut_piece_cycle = 'actif'")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+                    $pfcList = $db->query("SELECT piece_code, nombre_exemplaires FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE statut_piece_cycle = 'actif'")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
                     $piecesReqMap = $pfcList;
                 } catch (Exception $e) {}
 
@@ -773,7 +773,7 @@ class ModelEtudiant extends BaseModel
                         ? ("Pièce déposée ({$nbEx} exemplaire" . ($nbEx > 1 ? "s" : "") . ") lors de l'inscription initiale")
                         : ("En attente de transmission ({$nbEx} exemplaire" . ($nbEx > 1 ? "s requis" : " requis") . ")");
 
-                    $fkErrDos = ForeignKeyValidator::validate($db, 'dossier_etudiant', [
+                    $fkErrDos = ForeignKeyValidator::validate($db, TABLES::DOSSIER_ETUDIANT, [
                         'inscription_code' => $codeInscription,
                         'etudiant_code' => $codeEtudiant,
                         'piece_code' => $pCode,
@@ -784,7 +784,7 @@ class ModelEtudiant extends BaseModel
                         return ['success' => false, 'message' => $fkErrDos];
                     }
 
-                    $codeDos = $validator->generateCode('dossier_etudiant', 'code_dossier_etudiant', 'DOS-', 8);
+                    $codeDos = $validator->generateCode(TABLES::DOSSIER_ETUDIANT, 'code_dossier_etudiant', 'DOS-', 8);
                     $stmtDos->execute([
                         $codeDos,
                         $codeInscription,

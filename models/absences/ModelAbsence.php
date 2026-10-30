@@ -2,7 +2,7 @@
 
 class ModelAbsence extends BaseModel
 {
-    protected string $table = 'absences';
+    protected string $table = TABLES::ABSENCES;
     protected string $primaryKey = 'id_absence';
     protected ?string $createdAtField = 'created_at_absence';
 
@@ -202,7 +202,7 @@ class ModelAbsence extends BaseModel
                     if ($existingId) {
                         $stmtUpd->execute([$dureeHeures, $justifiee, $motif, $existingId]);
                     } else {
-                        $codeAbs = $validator->generateCode('absences', 'code_absence', 'ABS-', 8);
+                        $codeAbs = $validator->generateCode(TABLES::ABSENCES, 'code_absence', 'ABS-', 8);
                         $stmtIns->execute([
                             $codeAbs,
                             $inscCode,

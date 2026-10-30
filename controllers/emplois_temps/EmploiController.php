@@ -188,7 +188,7 @@ class EmploiController extends BaseController
         }
 
         if (empty($data['code_emploi'])) {
-            $data['code_emploi'] = $this->validator->generateCode('emplois_temps', 'code_emploi', 'EMP-', 8);
+            $data['code_emploi'] = $this->validator->generateCode(TABLES::EMPLOIS_TEMPS, 'code_emploi', 'EMP-', 8);
         }
         $data['jour'] = strtolower($data['jour'] ?? 'lundi');
         $data['statut_emploi'] = $data['statut_emploi'] ?? 'actif';

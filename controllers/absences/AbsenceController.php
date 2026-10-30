@@ -84,7 +84,7 @@ class AbsenceController extends BaseController
         ]);
 
         if (empty($data['code_absence'])) {
-            $data['code_absence'] = $this->validator->generateCode('absences', 'code_absence', 'ABS-', 8);
+            $data['code_absence'] = $this->validator->generateCode(TABLES::ABSENCES, 'code_absence', 'ABS-', 8);
         }
         if (isset($data['motif_absence']) && !isset($data['motif'])) {
             $data['motif'] = $data['motif_absence'];

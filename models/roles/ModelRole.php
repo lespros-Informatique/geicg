@@ -2,7 +2,7 @@
 
 class ModelRole extends BaseModel
 {
-    protected string $table = 'roles';
+    protected string $table = TABLES::ROLES;
     protected string $primaryKey = 'id';
     protected ?string $statusField = 'statut_role';
 
@@ -12,7 +12,7 @@ class ModelRole extends BaseModel
             $sql = "SELECT r.*, 
                     GROUP_CONCAT(rp.permission_code SEPARATOR ',') as permission_codes
                     FROM {$this->table} r
-                    LEFT JOIN role_permissions rp ON r.code_role = rp.role_code
+                    LEFT JOIN " . TABLES::ROLE_PERMISSIONS . " rp ON r.code_role = rp.role_code
                     GROUP BY r.id
                     ORDER BY r.id ASC";
             $stmt = $this->getCon()->prepare($sql);
@@ -28,8 +28,8 @@ class ModelRole extends BaseModel
     {
         try {
             $sql = "SELECT p.code_permission, p.libelle_permission, p.module_permission
-                    FROM permissions p
-                    INNER JOIN role_permissions rp ON p.code_permission = rp.permission_code
+                    FROM " . TABLES::PERMISSIONS . " p
+                    INNER JOIN " . TABLES::ROLE_PERMISSIONS . " rp ON p.code_permission = rp.permission_code
                     WHERE rp.role_code = ? AND p.statut_permission = 'actif'
                     ORDER BY p.code_permission ASC";
             $stmt = $this->getCon()->prepare($sql);
@@ -53,7 +53,7 @@ class ModelRole extends BaseModel
                 return false;
             }
 
-            $sql = "INSERT INTO role_permissions (role_code, permission_code)
+            $sql = "INSERT INTO " . TABLES::ROLE_PERMISSIONS . " (role_code, permission_code)
                     VALUES (?, ?)
                     ON DUPLICATE KEY UPDATE permission_code = VALUES(permission_code)";
             $stmt = $this->getCon()->prepare($sql);
@@ -69,7 +69,7 @@ class ModelRole extends BaseModel
         try {
             $this->getCon()->beginTransaction();
 
-            $sql = "DELETE FROM role_permissions WHERE role_code = ?";
+            $sql = "DELETE FROM " . TABLES::ROLE_PERMISSIONS . " WHERE role_code = ?";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute([$roleCode]);
 

@@ -2,7 +2,7 @@
 
 class ModelDepense extends BaseModel
 {
-    protected string $table = 'depenses';
+    protected string $table = TABLES::DEPENSES;
     protected string $primaryKey = 'id_depense';
     protected ?string $statusField = 'statut_depense';
     protected ?string $createdAtField = 'created_at_depense';
@@ -35,10 +35,10 @@ class ModelDepense extends BaseModel
                    t.libelle_type_depense, 
                    CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) as auteur_nom_complet,
                    CONCAT(COALESCE(uc.nom_user, ''), ' ', COALESCE(uc.prenom_user, '')) as confirmateur_nom_complet
-            FROM depenses d
-            LEFT JOIN type_depenses t ON t.code_type_depense = d.type_depense_code
-            LEFT JOIN users u ON u.code_user = d.user_code
-            LEFT JOIN users uc ON uc.code_user = d.user_confirm
+            FROM " . TABLES::DEPENSES . " d
+            LEFT JOIN " . TABLES::TYPE_DEPENSES . " t ON t.code_type_depense = d.type_depense_code
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = d.user_code
+            LEFT JOIN " . TABLES::USERS . " uc ON uc.code_user = d.user_confirm
             {$whereSql}
             ORDER BY d.id_depense DESC
         ";
@@ -73,40 +73,40 @@ class ModelDepense extends BaseModel
 
         $db = $this->getCon();
         
-        $stmtTot = $db->prepare("SELECT SUM(montant_depense) FROM depenses WHERE statut_depense != 'annule' " . $andSql);
+        $stmtTot = $db->prepare("SELECT SUM(montant_depense) FROM " . TABLES::DEPENSES . " WHERE statut_depense != 'annule' " . $andSql);
         $stmtTot->execute($params);
         $totalMontant = (float)($stmtTot->fetchColumn() ?: 0);
 
-        $stmtApp = $db->prepare("SELECT SUM(montant_depense) FROM depenses WHERE statut_depense = 'approuve' " . $andSql);
+        $stmtApp = $db->prepare("SELECT SUM(montant_depense) FROM " . TABLES::DEPENSES . " WHERE statut_depense = 'approuve' " . $andSql);
         $stmtApp->execute($params);
         $montantApprouve = (float)($stmtApp->fetchColumn() ?: 0);
 
-        $stmtAtt = $db->prepare("SELECT SUM(montant_depense) FROM depenses WHERE statut_depense = 'en_attente' " . $andSql);
+        $stmtAtt = $db->prepare("SELECT SUM(montant_depense) FROM " . TABLES::DEPENSES . " WHERE statut_depense = 'en_attente' " . $andSql);
         $stmtAtt->execute($params);
         $montantEnAttente = (float)($stmtAtt->fetchColumn() ?: 0);
 
-        $stmtCount = $db->prepare("SELECT COUNT(*) FROM depenses " . $whereSql);
+        $stmtCount = $db->prepare("SELECT COUNT(*) FROM " . TABLES::DEPENSES . " " . $whereSql);
         $stmtCount->execute($params);
         $totalCount = (int)($stmtCount->fetchColumn() ?: 0);
 
-        $stmtCntAtt = $db->prepare("SELECT COUNT(*) FROM depenses WHERE statut_depense = 'en_attente' " . $andSql);
+        $stmtCntAtt = $db->prepare("SELECT COUNT(*) FROM " . TABLES::DEPENSES . " WHERE statut_depense = 'en_attente' " . $andSql);
         $stmtCntAtt->execute($params);
         $countEnAttente = (int)($stmtCntAtt->fetchColumn() ?: 0);
 
-        $stmtCntApp = $db->prepare("SELECT COUNT(*) FROM depenses WHERE statut_depense = 'approuve' " . $andSql);
+        $stmtCntApp = $db->prepare("SELECT COUNT(*) FROM " . TABLES::DEPENSES . " WHERE statut_depense = 'approuve' " . $andSql);
         $stmtCntApp->execute($params);
         $countApprouve = (int)($stmtCntApp->fetchColumn() ?: 0);
 
-        $stmtCntAnn = $db->prepare("SELECT COUNT(*) FROM depenses WHERE statut_depense = 'annule' " . $andSql);
+        $stmtCntAnn = $db->prepare("SELECT COUNT(*) FROM " . TABLES::DEPENSES . " WHERE statut_depense = 'annule' " . $andSql);
         $stmtCntAnn->execute($params);
         $countAnnule = (int)($stmtCntAnn->fetchColumn() ?: 0);
 
-        $stmtAnnSum = $db->prepare("SELECT SUM(montant_depense) FROM depenses WHERE statut_depense = 'annule' " . $andSql);
+        $stmtAnnSum = $db->prepare("SELECT SUM(montant_depense) FROM " . TABLES::DEPENSES . " WHERE statut_depense = 'annule' " . $andSql);
         $stmtAnnSum->execute($params);
         $montantAnnule = (float)($stmtAnnSum->fetchColumn() ?: 0);
 
         $moyenne = $totalCount > 0 ? round($totalMontant / $totalCount) : 0;
-        $totalTypes = (int)$db->query("SELECT COUNT(*) FROM type_depenses")->fetchColumn();
+        $totalTypes = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::TYPE_DEPENSES . "")->fetchColumn();
 
         return [
             'total_montant' => $totalMontant,

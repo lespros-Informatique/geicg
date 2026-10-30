@@ -2,7 +2,7 @@
 
 class ModelUser extends BaseModel
 {
-    protected string $table = 'users';
+    protected string $table = TABLES::USERS;
     protected string $primaryKey = 'id_user';
     protected ?string $statusField = 'statut_user';
 
@@ -13,8 +13,8 @@ class ModelUser extends BaseModel
     {
         try {
             $sql = "SELECT ur.*, r.libelle_role, r.module, r.groupe, r.description 
-                    FROM user_roles ur
-                    INNER JOIN roles r ON r.code_role = ur.role_code
+                    FROM " . TABLES::USER_ROLES . " ur
+                    INNER JOIN " . TABLES::ROLES . " r ON r.code_role = ur.role_code
                     WHERE ur.user_code = ?
                     ORDER BY CASE 
                         WHEN ur.role_code = '" . ROLES::SUPER_ADMIN . "' THEN 1 
@@ -66,17 +66,17 @@ class ModelUser extends BaseModel
             $pdo->beginTransaction();
 
             // Supprimer les rôles actuels
-            $stmtDel = $pdo->prepare("DELETE FROM user_roles WHERE user_code = ?");
+            $stmtDel = $pdo->prepare("DELETE FROM " . TABLES::USER_ROLES . " WHERE user_code = ?");
             $stmtDel->execute([$userCode]);
 
             if (empty($rolesData)) {
-                $stmtDef = $pdo->query("SELECT code_role FROM roles WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
+                $stmtDef = $pdo->query("SELECT code_role FROM " . TABLES::ROLES . " WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
                 $defRole = ($stmtDef && $stmtDef->fetchColumn()) ?: ROLES::USER;
                 $rolesData = [$defRole => ['create' => 1, 'edit' => 1, 'show' => 1, 'delete' => 0]];
             }
 
             $stmtIns = $pdo->prepare("
-                INSERT INTO user_roles (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission) 
+                INSERT INTO " . TABLES::USER_ROLES . " (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission) 
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
 
@@ -96,7 +96,7 @@ class ModelUser extends BaseModel
                 }
 
                 if (!empty($roleCode)) {
-                    $fkErr = ForeignKeyValidator::validate($pdo, 'user_roles', [
+                    $fkErr = ForeignKeyValidator::validate($pdo, TABLES::USER_ROLES, [
                         'user_code' => $userCode,
                         'role_code' => $roleCode
                     ]);
@@ -139,7 +139,7 @@ class ModelUser extends BaseModel
     public function updatePassword(string $hashPassword, int $userId): bool
     {
         try {
-            $sql = "UPDATE users SET password_user = ?, updated_at_user = ? WHERE id_user = ?";
+            $sql = "UPDATE " . TABLES::USERS . " SET password_user = ?, updated_at_user = ? WHERE id_user = ?";
             $stmt = $this->getCon()->prepare($sql);
             return $stmt->execute([$hashPassword, date('Y-m-d H:i:s'), $userId]);
         } catch (Exception $e) {
@@ -155,7 +155,7 @@ class ModelUser extends BaseModel
     public function getUserAnneeAcces(string $userCode): array
     {
         try {
-            $stmt = $this->getCon()->prepare("SELECT annee_code, niveau_acces FROM user_annee_acces WHERE user_code = ?");
+            $stmt = $this->getCon()->prepare("SELECT annee_code, niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ?");
             $stmt->execute([$userCode]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $res = [];
@@ -178,14 +178,14 @@ class ModelUser extends BaseModel
     {
         try {
             $pdo = $this->getCon();
-            $stmtDel = $pdo->prepare("DELETE FROM user_annee_acces WHERE user_code = ?");
+            $stmtDel = $pdo->prepare("DELETE FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ?");
             $stmtDel->execute([$userCode]);
 
             if (empty($accesList)) {
                 return true;
             }
 
-            $stmtIns = $pdo->prepare("INSERT INTO user_annee_acces (user_code, annee_code, niveau_acces) VALUES (?, ?, ?)");
+            $stmtIns = $pdo->prepare("INSERT INTO " . TABLES::USER_ANNEE_ACCES . " (user_code, annee_code, niveau_acces) VALUES (?, ?, ?)");
             foreach ($accesList as $anneeCode => $niveau) {
                 $anneeCode = trim($anneeCode);
                 $niveau = strtolower(trim($niveau));

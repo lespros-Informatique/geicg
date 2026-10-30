@@ -40,7 +40,7 @@ class SessionCaisseController extends BaseController
         // Latest session for reference
         $latestSession = $this->model->getLatestSession();
         
-        // Today's live collection totals from paiements
+        // Totaux d'encaissement du jour
         $dailyTotals = $this->model->getDailyFinancialTotals($today);
 
         $this->loadView('../views/sessions_caisse/list.php', [

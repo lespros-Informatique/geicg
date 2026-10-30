@@ -2,7 +2,7 @@
 
 class ModelFraisAnnexe extends BaseModel
 {
-    protected string $table = 'frais_annexes';
+    protected string $table = TABLES::FRAIS_ANNEXES;
     protected string $primaryKey = 'id_frais_annexe';
     protected ?string $statusField = 'statut_frais_annexe';
     protected ?string $createdAtField = 'created_at_frais_annexe';
@@ -11,9 +11,9 @@ class ModelFraisAnnexe extends BaseModel
     {
         $sql = "
             SELECT fa.*, a.libelle_annee, n.libelle_niveau
-            FROM frais_annexes fa
-            LEFT JOIN annees a ON fa.annee_code = a.code_annee
-            LEFT JOIN niveaux n ON fa.niveau_code = n.code_niveau
+            FROM " . TABLES::FRAIS_ANNEXES . " fa
+            LEFT JOIN " . TABLES::ANNEES . " a ON fa.annee_code = a.code_annee
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON fa.niveau_code = n.code_niveau
         ";
         $conditions = [];
         $params = [];
@@ -47,9 +47,9 @@ class ModelFraisAnnexe extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT fa.*, a.libelle_annee, n.libelle_niveau
-            FROM frais_annexes fa
-            LEFT JOIN annees a ON fa.annee_code = a.code_annee
-            LEFT JOIN niveaux n ON fa.niveau_code = n.code_niveau
+            FROM " . TABLES::FRAIS_ANNEXES . " fa
+            LEFT JOIN " . TABLES::ANNEES . " a ON fa.annee_code = a.code_annee
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON fa.niveau_code = n.code_niveau
             WHERE fa.id_frais_annexe = ? OR fa.code_frais_annexe = ?
             LIMIT 1
         ");
@@ -69,7 +69,7 @@ class ModelFraisAnnexe extends BaseModel
 
         $sql = "
             SELECT montant_frais_annexe 
-            FROM frais_annexes 
+            FROM " . TABLES::FRAIS_ANNEXES . " 
             WHERE statut_frais_annexe = 'actif'
               AND (type_filiere = ? OR type_filiere = 'TOUT')
               AND annee_code = ?
@@ -109,7 +109,7 @@ class ModelFraisAnnexe extends BaseModel
     {
         $sql = "
             SELECT * 
-            FROM frais_annexes 
+            FROM " . TABLES::FRAIS_ANNEXES . " 
             WHERE statut_frais_annexe = 'actif'
               AND (type_filiere = ? OR type_filiere = 'TOUT')
               AND annee_code = ?
@@ -146,7 +146,7 @@ class ModelFraisAnnexe extends BaseModel
     public function checkDuplicate(string $anneeCode, string $typeFiliere, ?string $niveauCode, ?string $categorie = null, ?int $excludeId = null): ?array
     {
         // Contrôle d'unicité sur la combinaison (type_filiere x niveau_code x categorie_frais_annexe x annee_code)
-        $sql = "SELECT * FROM frais_annexes WHERE annee_code = ? AND type_filiere = ?";
+        $sql = "SELECT * FROM " . TABLES::FRAIS_ANNEXES . " WHERE annee_code = ? AND type_filiere = ?";
         $params = [$anneeCode, $typeFiliere];
         if (empty($niveauCode) || $niveauCode === 'TOUT') {
             $sql .= " AND (niveau_code IS NULL OR niveau_code = '' OR niveau_code = 'TOUT')";

@@ -48,7 +48,7 @@ class MatiereController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_matiere'])) {
-            $data['code_matiere'] = $this->validator->generateCode('matieres', 'code_matiere', 'MAT-', 8);
+            $data['code_matiere'] = $this->validator->generateCode(TABLES::MATIERES, 'code_matiere', 'MAT-', 8);
         }
         $data['statut_matiere'] = $data['statut_matiere'] ?? 'actif';
         $data['created_at_matiere'] = date('Y-m-d H:i:s');

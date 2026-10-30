@@ -43,7 +43,7 @@ class DocumentController extends BaseController
         unset($data['csrf_token']);
 
         if (empty($data['code_document'])) {
-            $data['code_document'] = $this->validator->generateCode('documents', 'code_document', 'DOC-', 8);
+            $data['code_document'] = $this->validator->generateCode(TABLES::DOCUMENTS, 'code_document', 'DOC-', 8);
         }
 
         // Support chemin_fichier alias to lien_document

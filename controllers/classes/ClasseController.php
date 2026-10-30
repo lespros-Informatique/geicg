@@ -103,7 +103,7 @@ class ClasseController extends BaseController
 
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_classe'])) {
-            $data['code_classe'] = $this->validator->generateCode('classes', 'code_classe', 'CLA-', 8);
+            $data['code_classe'] = $this->validator->generateCode(TABLES::CLASSES, 'code_classe', 'CLA-', 8);
         }
         $data['statut_classe'] = (!empty($data['statut_classe']) && in_array($data['statut_classe'], ['actif', 'inactif'], true)) ? $data['statut_classe'] : 'actif';
         $data['created_at_classe'] = date('Y-m-d H:i:s');

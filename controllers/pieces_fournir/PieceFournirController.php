@@ -91,7 +91,7 @@ class PieceFournirController extends BaseController
 
                 $seenInBatch[] = $libelleLower;
 
-                $code = $this->validator->generateCode('pieces_fournir', 'code_piece_fournir', 'DOC-', 8);
+                $code = $this->validator->generateCode(TABLES::PIECES_FOURNIR, 'code_piece_fournir', 'DOC-', 8);
                 $save = [
                     'code_piece_fournir' => $code,
                     'libelle_piece' => $libelle,
@@ -135,7 +135,7 @@ class PieceFournirController extends BaseController
             return;
         }
 
-        $code = $this->validator->generateCode('pieces_fournir', 'code_piece_fournir', 'DOC-', 8);
+        $code = $this->validator->generateCode(TABLES::PIECES_FOURNIR, 'code_piece_fournir', 'DOC-', 8);
         $saveData = [
             'code_piece_fournir' => $code,
             'libelle_piece' => $libelle,

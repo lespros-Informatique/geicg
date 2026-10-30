@@ -46,7 +46,7 @@ class TypeDepenseController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_type_depense'])) {
-            $data['code_type_depense'] = $this->validator->generateCode('type_depenses', 'code_type_depense', 'TYP-', 8);
+            $data['code_type_depense'] = $this->validator->generateCode(TABLES::TYPE_DEPENSES, 'code_type_depense', 'TYP-', 8);
         }
         $data['statut_type_depense'] = $data['statut_type_depense'] ?? 'actif';
         $data['created_at_type_depense'] = date('Y-m-d H:i:s');

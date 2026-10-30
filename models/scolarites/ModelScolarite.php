@@ -2,7 +2,7 @@
 
 class ModelScolarite extends BaseModel
 {
-    protected string $table = 'scolarites';
+    protected string $table = TABLES::SCOLARITES;
     protected string $primaryKey = 'id_scolarite';
     protected ?string $statusField = 'statut_scolarite';
     protected ?string $createdAtField = 'created_at_scolarite';
@@ -11,10 +11,10 @@ class ModelScolarite extends BaseModel
     {
         $sql = "
             SELECT s.*, f.libelle_filiere, f.slug_filiere, n.libelle_niveau, n.slug_niveau, a.libelle_annee
-            FROM scolarites s
-            LEFT JOIN filieres f ON s.filiere_code = f.code_filiere
-            LEFT JOIN niveaux n ON s.niveau_code = n.code_niveau
-            LEFT JOIN annees a ON s.annee_code = a.code_annee
+            FROM " . TABLES::SCOLARITES . " s
+            LEFT JOIN " . TABLES::FILIERES . " f ON s.filiere_code = f.code_filiere
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON s.niveau_code = n.code_niveau
+            LEFT JOIN " . TABLES::ANNEES . " a ON s.annee_code = a.code_annee
         ";
         $conditions = [];
         $params = [];
@@ -39,7 +39,7 @@ class ModelScolarite extends BaseModel
             $params[] = $statut;
         }
         if (!empty($classeCode)) {
-            $sql .= " LEFT JOIN classes cl ON cl.code_classe = ? ";
+            $sql .= " LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ? ";
             $params[] = $classeCode;
             $conditions[] = "(s.niveau_code = cl.niveau_code AND (s.filiere_code = cl.filiere_code OR s.filiere_code IS NULL OR s.filiere_code = ''))";
         }
@@ -57,10 +57,10 @@ class ModelScolarite extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT s.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
-            FROM scolarites s
-            LEFT JOIN filieres f ON s.filiere_code = f.code_filiere
-            LEFT JOIN niveaux n ON s.niveau_code = n.code_niveau
-            LEFT JOIN annees a ON s.annee_code = a.code_annee
+            FROM " . TABLES::SCOLARITES . " s
+            LEFT JOIN " . TABLES::FILIERES . " f ON s.filiere_code = f.code_filiere
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON s.niveau_code = n.code_niveau
+            LEFT JOIN " . TABLES::ANNEES . " a ON s.annee_code = a.code_annee
             WHERE s.id_scolarite = ? OR s.code_scolarite = ?
             LIMIT 1
         ");

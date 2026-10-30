@@ -2,7 +2,7 @@
 
 class ModelAnnee extends BaseModel
 {
-    protected string $table = 'annees';
+    protected string $table = TABLES::ANNEES;
     protected string $primaryKey = 'id_annee';
     protected ?string $statusField = 'statut_annee';
     protected ?string $createdAtField = 'created_at_annee';
@@ -16,9 +16,9 @@ class ModelAnnee extends BaseModel
             $db = $this->getCon();
             $db->beginTransaction();
             // Clôturer toute année précédemment active
-            $db->exec("UPDATE `annees` SET `statut_annee` = 'cloture' WHERE `statut_annee` = 'actif'");
+            $db->exec("UPDATE " . TABLES::ANNEES . "` SET `statut_annee` = 'cloture' WHERE `statut_annee` = 'actif'");
             // Activer l'année demandée
-            $stmt = $db->prepare("UPDATE `annees` SET `statut_annee` = 'actif' WHERE `id_annee` = ?");
+            $stmt = $db->prepare("UPDATE " . TABLES::ANNEES . "` SET `statut_annee` = 'actif' WHERE `id_annee` = ?");
             $stmt->execute([$id]);
             $db->commit();
             return true;
@@ -44,7 +44,7 @@ class ModelAnnee extends BaseModel
             return $this->setActiveYear($id);
         } else {
             // Clôturer l'année active
-            $stmt = $this->getCon()->prepare("UPDATE `annees` SET `statut_annee` = 'cloture' WHERE `id_annee` = ?");
+            $stmt = $this->getCon()->prepare("UPDATE " . TABLES::ANNEES . "` SET `statut_annee` = 'cloture' WHERE `id_annee` = ?");
             return $stmt->execute([$id]);
         }
     }
@@ -99,11 +99,11 @@ class ModelAnnee extends BaseModel
     public function getActiveYear(): ?array
     {
         try {
-            $stmt = $this->getCon()->query("SELECT * FROM `annees` WHERE `statut_annee` = 'actif' LIMIT 1");
+            $stmt = $this->getCon()->query("SELECT * FROM " . TABLES::ANNEES . "` WHERE `statut_annee` = 'actif' LIMIT 1");
             $res = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
             if (!$res) {
                 // Fallback sur la plus récente si aucune n'est active
-                $stmt2 = $this->getCon()->query("SELECT * FROM `annees` ORDER BY `id_annee` DESC LIMIT 1");
+                $stmt2 = $this->getCon()->query("SELECT * FROM " . TABLES::ANNEES . "` ORDER BY `id_annee` DESC LIMIT 1");
                 $res = $stmt2 ? $stmt2->fetch(PDO::FETCH_ASSOC) : null;
             }
             return $res ?: null;
@@ -116,7 +116,7 @@ class ModelAnnee extends BaseModel
     {
         try {
             $field = $codeField ?? 'code_annee';
-            $stmt = $this->getCon()->prepare("SELECT * FROM annees WHERE `{$field}` = ?");
+            $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::ANNEES . " WHERE `{$field}` = ?");
             $stmt->execute([$code]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
@@ -133,7 +133,7 @@ class ModelAnnee extends BaseModel
             $db = $this->getCon();
             if (!$db) return [];
 
-            $allAnnees = $db->query("SELECT * FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $allAnnees = $db->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             if (empty($allAnnees)) return [];
 
             $userCode = Auth::code();

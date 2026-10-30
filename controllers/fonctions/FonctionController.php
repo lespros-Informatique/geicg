@@ -47,7 +47,7 @@ class FonctionController extends BaseController
         }
 
         if (empty($data['code_fonction'])) {
-            $data['code_fonction'] = $this->validator->generateCode('fonctions', 'code_fonction', 'FCT-', 8);
+            $data['code_fonction'] = $this->validator->generateCode(TABLES::FONCTIONS, 'code_fonction', 'FCT-', 8);
         }
         $data['statut_fonction'] = $data['statut_fonction'] ?? 'actif';
         $data['created_at_fonction'] = date('Y-m-d H:i:s');

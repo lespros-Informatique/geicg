@@ -2,7 +2,7 @@
 
 class ModelPieceFournir extends BaseModel
 {
-    protected string $table = 'pieces_fournir';
+    protected string $table = TABLES::PIECES_FOURNIR;
     protected string $primaryKey = 'id_piece_fournir';
     protected ?string $statusField = 'statut_piece';
     protected ?string $createdAtField = 'created_at_piece';
@@ -11,8 +11,8 @@ class ModelPieceFournir extends BaseModel
     {
         $sql = "
             SELECT pf.*,
-                   (SELECT COUNT(*) FROM piece_fournir_cycle pfc WHERE pfc.piece_code = pf.code_piece_fournir) AS nb_cycles_utilises
-            FROM pieces_fournir pf
+                   (SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " pfc WHERE pfc.piece_code = pf.code_piece_fournir) AS nb_cycles_utilises
+            FROM " . TABLES::PIECES_FOURNIR . " pf
             ORDER BY pf.id_piece_fournir DESC
         ";
         try {
@@ -28,7 +28,7 @@ class ModelPieceFournir extends BaseModel
     {
         $sql = "
             SELECT pf.*
-            FROM pieces_fournir pf
+            FROM " . TABLES::PIECES_FOURNIR . " pf
             WHERE pf.id_piece_fournir = ?
             LIMIT 1
         ";
@@ -46,7 +46,7 @@ class ModelPieceFournir extends BaseModel
     {
         $sql = "
             SELECT pf.*
-            FROM pieces_fournir pf
+            FROM " . TABLES::PIECES_FOURNIR . " pf
             WHERE pf.statut_piece = 'actif'
             ORDER BY pf.libelle_piece ASC
         ";
@@ -63,10 +63,10 @@ class ModelPieceFournir extends BaseModel
     {
         try {
             $db = $this->getCon();
-            $total = (int)$db->query("SELECT COUNT(*) FROM pieces_fournir")->fetchColumn();
-            $actifs = (int)$db->query("SELECT COUNT(*) FROM pieces_fournir WHERE statut_piece = 'actif'")->fetchColumn();
-            $inactifs = (int)$db->query("SELECT COUNT(*) FROM pieces_fournir WHERE statut_piece = 'inactif'")->fetchColumn();
-            $utilises = (int)$db->query("SELECT COUNT(DISTINCT piece_code) FROM piece_fournir_cycle")->fetchColumn();
+            $total = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR . "")->fetchColumn();
+            $actifs = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR . " WHERE statut_piece = 'actif'")->fetchColumn();
+            $inactifs = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR . " WHERE statut_piece = 'inactif'")->fetchColumn();
+            $utilises = (int)$db->query("SELECT COUNT(DISTINCT piece_code) FROM " . TABLES::PIECES_FOURNIR_CYCLES . "")->fetchColumn();
 
             return [
                 'total' => $total,
@@ -83,7 +83,7 @@ class ModelPieceFournir extends BaseModel
     {
         $sql = "
             SELECT pf.*
-            FROM pieces_fournir pf
+            FROM " . TABLES::PIECES_FOURNIR . " pf
             WHERE LOWER(TRIM(pf.libelle_piece)) = LOWER(TRIM(?))
         ";
         $params = [trim($libelle)];
@@ -118,8 +118,8 @@ class ModelPieceFournir extends BaseModel
             SELECT pf.*,
                    COALESCE(pfc.nombre_exemplaires, 1) AS nombre_exemplaires,
                    pfc.nature_document
-            FROM pieces_fournir pf
-            LEFT JOIN piece_fournir_cycle pfc ON pfc.piece_code = pf.code_piece_fournir 
+            FROM " . TABLES::PIECES_FOURNIR . " pf
+            LEFT JOIN " . TABLES::PIECES_FOURNIR_CYCLES . " pfc ON pfc.piece_code = pf.code_piece_fournir 
                                             AND pfc.statut_piece_cycle = 'actif'
         ";
         $params = [];

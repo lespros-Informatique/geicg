@@ -2,7 +2,7 @@
 
 class ModelImpayes extends BaseModel
 {
-    protected string $table = 'relances_impayes';
+    protected string $table = TABLES::RELANCES_IMPAYES;
     protected string $primaryKey = 'id_relance';
     protected ?string $createdAtField = 'created_at_relance';
 
@@ -10,11 +10,11 @@ class ModelImpayes extends BaseModel
     {
         try {
             $sql = "SELECT r.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, cl.libelle_classe, n.libelle_niveau 
-                    FROM relances_impayes r
-                    LEFT JOIN etudiants e ON r.etudiant_code = e.code_etudiant
-                    LEFT JOIN inscriptions ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription != 'annule'))
-                    LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-                    LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code";
+                    FROM " . TABLES::RELANCES_IMPAYES . " r
+                    LEFT JOIN " . TABLES::ETUDIANTS . " e ON r.etudiant_code = e.code_etudiant
+                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription != 'annule'))
+                    LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                    LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code";
             $conditions = [];
             $params = [];
             if (!empty($anneeCode)) {
@@ -84,11 +84,11 @@ class ModelImpayes extends BaseModel
             }
 
             // Scolarités & Tranches
-            $stmtSco = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM scolarites WHERE statut_scolarite = 'actif'");
+            $stmtSco = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = 'actif'");
             $stmtSco->execute();
             $scolariteGrid = $stmtSco->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            $stmtTranches = $db->prepare("SELECT * FROM tranches_scolarite WHERE statut_tranche = 'actif' ORDER BY date_limite ASC, id_tranche ASC");
+            $stmtTranches = $db->prepare("SELECT * FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE statut_tranche = 'actif' ORDER BY date_limite ASC, id_tranche ASC");
             $stmtTranches->execute();
             $tranchesGrid = $stmtTranches->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -300,7 +300,7 @@ class ModelImpayes extends BaseModel
             $moyenneJoursRetard = ($kpiTotalEtudiantsRetard > 0) ? round($totalJoursAccumules / $kpiTotalEtudiantsRetard) : 0;
 
             // Nombre de relances effectuées le mois courant
-            $stmtCountRelances = $db->prepare("SELECT COUNT(*) as cnt FROM relances_impayes WHERE MONTH(created_at_relance) = MONTH(CURRENT_DATE()) AND YEAR(created_at_relance) = YEAR(CURRENT_DATE())");
+            $stmtCountRelances = $db->prepare("SELECT COUNT(*) as cnt FROM " . TABLES::RELANCES_IMPAYES . " WHERE MONTH(created_at_relance) = MONTH(CURRENT_DATE()) AND YEAR(created_at_relance) = YEAR(CURRENT_DATE())");
             $stmtCountRelances->execute();
             $relancesMois = (int)($stmtCountRelances->fetchColumn() ?: 0);
 

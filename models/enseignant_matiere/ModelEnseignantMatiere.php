@@ -2,7 +2,7 @@
 
 class ModelEnseignantMatiere extends BaseModel
 {
-    protected string $table = 'enseignant_matiere';
+    protected string $table = TABLES::ENSEIGNANT_MATIERE;
     protected string $primaryKey = 'id_enseignant_matiere';
     
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array

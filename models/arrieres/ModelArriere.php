@@ -2,7 +2,7 @@
 
 class ModelArriere extends BaseModel
 {
-    protected string $table = 'arrieres';
+    protected string $table = TABLES::ARRIERES;
     protected string $primaryKey = 'id_arriere';
 
     /**
@@ -55,14 +55,14 @@ class ModelArriere extends BaseModel
                         (i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye, 0))
                     ) ORDER BY i_orig.id_inscription ASC SEPARATOR '|||'
                 ) as details_arrieres
-            FROM inscriptions i_orig
-            INNER JOIN etudiants e ON e.code_etudiant = i_orig.etudiant_code
-            LEFT JOIN classes c_orig ON c_orig.code_classe = i_orig.classe_code
-            LEFT JOIN annees ann_orig ON ann_orig.code_annee = i_orig.annee_code
-            LEFT JOIN inscriptions i_act ON i_act.etudiant_code = e.code_etudiant AND i_act.id_inscription = (
-                SELECT MAX(id_inscription) FROM inscriptions WHERE etudiant_code = e.code_etudiant
+            FROM " . TABLES::INSCRIPTIONS . " i_orig
+            INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i_orig.etudiant_code
+            LEFT JOIN " . TABLES::CLASSES . " c_orig ON c_orig.code_classe = i_orig.classe_code
+            LEFT JOIN " . TABLES::ANNEES . " ann_orig ON ann_orig.code_annee = i_orig.annee_code
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i_act ON i_act.etudiant_code = e.code_etudiant AND i_act.id_inscription = (
+                SELECT MAX(id_inscription) FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = e.code_etudiant
             )
-            LEFT JOIN classes c_act ON c_act.code_classe = i_act.classe_code
+            LEFT JOIN " . TABLES::CLASSES . " c_act ON c_act.code_classe = i_act.classe_code
             LEFT JOIN (
                 SELECT inscription_code, total_paye_confirme_scolarite AS total_paye
                 FROM v_bilan_paiements_inscriptions
@@ -123,7 +123,7 @@ class ModelArriere extends BaseModel
                 SUM(i_orig.montant_scolarite_inscription) as total_initial_du,
                 SUM(COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_recouvre,
                 SUM(i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_solde_arriere
-            FROM inscriptions i_orig
+            FROM " . TABLES::INSCRIPTIONS . " i_orig
             LEFT JOIN v_bilan_paiements_inscriptions p_sub ON p_sub.inscription_code = i_orig.code_inscription
             WHERE i_orig.annee_code != ?
               AND i_orig.statut_inscription != 'annule'
@@ -194,10 +194,10 @@ class ModelArriere extends BaseModel
                   AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
                   AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
                 THEN p.montant_paiement ELSE 0 END), 0)) as solde_restant
-            FROM inscriptions i
-            LEFT JOIN annees ann ON ann.code_annee = i.annee_code
-            LEFT JOIN classes c ON c.code_classe = i.classe_code
-            LEFT JOIN paiements p ON p.inscription_code = i.code_inscription
+            FROM " . TABLES::INSCRIPTIONS . " i
+            LEFT JOIN " . TABLES::ANNEES . " ann ON ann.code_annee = i.annee_code
+            LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::PAIEMENTS . " p ON p.inscription_code = i.code_inscription
             WHERE i.etudiant_code = ?
               AND i.annee_code != ?
               AND i.statut_inscription != 'annule'

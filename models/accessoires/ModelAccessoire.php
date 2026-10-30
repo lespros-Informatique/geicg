@@ -2,7 +2,7 @@
 
 class ModelAccessoire extends BaseModel
 {
-    protected string $table = 'accessoires';
+    protected string $table = TABLES::ACCESSOIRES;
     protected string $primaryKey = 'id_accessoire';
     protected ?string $statusField = 'statut_accessoire';
     protected ?string $createdAtField = 'created_at_accessoire';
@@ -13,8 +13,8 @@ class ModelAccessoire extends BaseModel
             SELECT a.*,
                    n.libelle_niveau,
                    n.slug_niveau
-            FROM accessoires a
-            LEFT JOIN niveaux n ON n.code_niveau = a.niveau_code
+            FROM " . TABLES::ACCESSOIRES . " a
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = a.niveau_code
             ORDER BY a.id_accessoire DESC
         ";
         try {
@@ -66,11 +66,11 @@ class ModelAccessoire extends BaseModel
                            COALESCE(ai.accessoire_code, '')
                        ) ORDER BY ai.id_accessoire_inscription ASC SEPARATOR '|||'
                    ) as kits_details
-            FROM accessoire_inscription ai
-            LEFT JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
-            LEFT JOIN inscriptions i ON i.code_inscription = ai.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN classes c ON c.code_classe = i.classe_code
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            LEFT JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
+            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
             {$where}
             GROUP BY i.code_inscription, e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.photo_etudiant, e.telephone_etudiant, c.libelle_classe
         ";
@@ -127,11 +127,11 @@ class ModelAccessoire extends BaseModel
                 cl.libelle_classe, cl.filiere_code,
                 a.libelle_annee,
                 et.libelle_etablissement AS nom_etablissement, et.logo_etablissement, et.telephone_etablissement, et.adresse_etablissement
-            FROM inscriptions i
-            JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            JOIN classes cl ON cl.code_classe = i.classe_code
-            LEFT JOIN annees a ON a.code_annee = i.annee_code
-            LEFT JOIN etablissements et ON et.code_etablissement = i.etablissement_code
+            FROM " . TABLES::INSCRIPTIONS . " i
+            JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+            JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
+            LEFT JOIN " . TABLES::ETABLISSEMENTS . " et ON et.code_etablissement = i.etablissement_code
             WHERE i.code_inscription = ?
             LIMIT 1
         ");
@@ -151,8 +151,8 @@ class ModelAccessoire extends BaseModel
                 DATE_FORMAT(ai.date_retrait, '%d/%m/%Y %H:%i') as date_retrait_formatee,
                 DATE_FORMAT(ai.created_at_accessoire_inscription, '%d/%m/%Y') as date_attribution_formatee,
                 a.libelle_accessoire
-            FROM accessoire_inscription ai
-            JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
             WHERE ai.inscription_code = ?
               AND (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)
             ORDER BY a.libelle_accessoire ASC
@@ -193,19 +193,19 @@ class ModelAccessoire extends BaseModel
             $params[] = $anneeCode;
         }
 
-        $stmtTot = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)" . $whereAnnee);
+        $stmtTot = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)" . $whereAnnee);
         $stmtTot->execute($params);
         $total = (int)($stmtTot->fetchColumn() ?: 0);
 
-        $stmtAtt = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'en_attente'" . $whereAnnee);
+        $stmtAtt = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'en_attente'" . $whereAnnee);
         $stmtAtt->execute($params);
         $enAttente = (int)($stmtAtt->fetchColumn() ?: 0);
 
-        $stmtRet = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'retire'" . $whereAnnee);
+        $stmtRet = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'retire'" . $whereAnnee);
         $stmtRet->execute($params);
         $retire = (int)($stmtRet->fetchColumn() ?: 0);
 
-        $totalTypes = (int)$db->query("SELECT COUNT(*) FROM accessoires WHERE statut_accessoire = 'actif'")->fetchColumn();
+        $totalTypes = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = 'actif'")->fetchColumn();
         $taux = $total > 0 ? round(($retire / $total) * 100) : 0;
 
         return [

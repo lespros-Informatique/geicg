@@ -2,7 +2,7 @@
 
 class ModelComposition extends BaseModel
 {
-    protected string $table = 'compositions';
+    protected string $table = TABLES::COMPOSITIONS;
     protected string $primaryKey = 'id_composition';
     protected ?string $statusField = 'statut_composition';
     protected ?string $createdAtField = 'created_at_composition';
@@ -14,12 +14,12 @@ class ModelComposition extends BaseModel
                    s.libelle_semestre,
                    GROUP_CONCAT(DISTINCT CONCAT(f.libelle_filiere, ' (', n.libelle_niveau, ')') ORDER BY f.libelle_filiere SEPARATOR ', ') AS filieres_cible_names,
                    GROUP_CONCAT(DISTINCT cl.libelle_classe ORDER BY cl.libelle_classe SEPARATOR ', ') AS classes_cible_names
-            FROM compositions comp
-            LEFT JOIN semestres s ON s.code_semestre = comp.semestre_code
-            LEFT JOIN composition_niveau_filiere cnf ON cnf.composition_code = comp.code_composition
-            LEFT JOIN niveaux n ON n.code_niveau = cnf.niveau_code
-            LEFT JOIN filieres f ON f.code_filiere = cnf.filiere_code
-            LEFT JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+            FROM " . TABLES::COMPOSITIONS . " comp
+            LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+            LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cnf.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cnf.filiere_code
+            LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
         ";
         $conditions = [];
         $params = [];
@@ -58,20 +58,20 @@ class ModelComposition extends BaseModel
     {
         try {
             $db = $this->getCon();
-            $stmtDel = $db->prepare("DELETE FROM composition_niveau_filiere WHERE composition_code = ?");
+            $stmtDel = $db->prepare("DELETE FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " WHERE composition_code = ?");
             $stmtDel->execute([$compositionCode]);
 
             if (empty($targetItems)) return true;
 
             $validator = new Validator();
             $stmtIns = $db->prepare("
-                INSERT IGNORE INTO composition_niveau_filiere (code_composition_niveau_filiere, composition_code, niveau_code, filiere_code)
+                INSERT IGNORE INTO " . TABLES::COMPOSITION_NIVEAU_FILIERE . " (code_composition_niveau_filiere, composition_code, niveau_code, filiere_code)
                 VALUES (?, ?, ?, ?)
             ");
 
             foreach ($targetItems as $item) {
                 if (empty($item['niveau_code']) || empty($item['filiere_code'])) continue;
-                $codeCible = $validator->generateCode('composition_niveau_filiere', 'code_composition_niveau_filiere', 'CNF-', 8);
+                $codeCible = $validator->generateCode(TABLES::COMPOSITION_NIVEAU_FILIERE, 'code_composition_niveau_filiere', 'CNF-', 8);
                 $stmtIns->execute([
                     $codeCible,
                     $compositionCode,
@@ -92,13 +92,13 @@ class ModelComposition extends BaseModel
             $stmt = $this->getCon()->prepare("
                 SELECT cnf.*, n.libelle_niveau, f.libelle_filiere, cl.code_classe, cl.libelle_classe,
                        (SELECT COUNT(*) 
-                        FROM composition_matieres cm 
+                        FROM " . TABLES::COMPOSITION_MATIERES . " cm 
                         WHERE cm.composition_code = cnf.composition_code 
                           AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere) AS nb_matieres
-                FROM composition_niveau_filiere cnf
-                LEFT JOIN niveaux n ON n.code_niveau = cnf.niveau_code
-                LEFT JOIN filieres f ON f.code_filiere = cnf.filiere_code
-                LEFT JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cnf.niveau_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cnf.filiere_code
+                LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
                 WHERE cnf.composition_code = ?
                 GROUP BY cnf.code_composition_niveau_filiere
                 ORDER BY n.libelle_niveau ASC, f.libelle_filiere ASC
@@ -120,10 +120,10 @@ class ModelComposition extends BaseModel
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT cnf.*, n.libelle_niveau, f.libelle_filiere, cl.code_classe, cl.libelle_classe
-                FROM composition_niveau_filiere cnf
-                LEFT JOIN niveaux n ON n.code_niveau = cnf.niveau_code
-                LEFT JOIN filieres f ON f.code_filiere = cnf.filiere_code
-                LEFT JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cnf.niveau_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cnf.filiere_code
+                LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
                 WHERE cnf.composition_code IN ({$placeholders})
                 GROUP BY cnf.code_composition_niveau_filiere, cl.code_classe
                 ORDER BY n.libelle_niveau ASC, f.libelle_filiere ASC
@@ -145,19 +145,19 @@ class ModelComposition extends BaseModel
     {
         try {
             $db = $this->getCon();
-            $stmtDel = $db->prepare("DELETE FROM composition_matieres WHERE composition_code = ? AND composition_niveau_filiere_code = ?");
+            $stmtDel = $db->prepare("DELETE FROM " . TABLES::COMPOSITION_MATIERES . " WHERE composition_code = ? AND composition_niveau_filiere_code = ?");
             $stmtDel->execute([$compositionCode, $compositionNiveauFiliereCode]);
 
             if (empty($matiereCodes)) return true;
 
             $stmtIns = $db->prepare("
-                INSERT INTO composition_matieres (composition_code, composition_niveau_filiere_code, matiere_code)
+                INSERT INTO " . TABLES::COMPOSITION_MATIERES . " (composition_code, composition_niveau_filiere_code, matiere_code)
                 VALUES (?, ?, ?)
             ");
 
             foreach ($matiereCodes as $mCode) {
                 if (!empty($mCode)) {
-                    $fkErr = ForeignKeyValidator::validate($db, 'composition_matieres', [
+                    $fkErr = ForeignKeyValidator::validate($db, TABLES::COMPOSITION_MATIERES, [
                         'composition_code' => $compositionCode,
                         'matiere_code' => $mCode
                     ]);
@@ -181,8 +181,8 @@ class ModelComposition extends BaseModel
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT cm.*, m.libelle_matiere
-                FROM composition_matieres cm
-                LEFT JOIN matieres m ON m.code_matiere = cm.matiere_code
+                FROM " . TABLES::COMPOSITION_MATIERES . " cm
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
                 WHERE cm.composition_code = ? AND cm.composition_niveau_filiere_code = ?
             ");
             $stmt->execute([$compositionCode, $compositionNiveauFiliereCode]);
@@ -201,7 +201,7 @@ class ModelComposition extends BaseModel
         try {
             $db = $this->getCon();
             // 1. Fetch target class (niveau and filiere)
-            $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, niveau_code, filiere_code FROM classes WHERE code_classe = ?");
+            $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, niveau_code, filiere_code FROM " . TABLES::CLASSES . " WHERE code_classe = ?");
             $stmtCl->execute([$classeCode]);
             $classeRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
 
@@ -212,11 +212,11 @@ class ModelComposition extends BaseModel
                        ? AS libelle_classe,
                        m.libelle_matiere, 
                        s.libelle_semestre
-                FROM compositions comp
-                INNER JOIN composition_niveau_filiere cnf ON cnf.composition_code = comp.code_composition
-                INNER JOIN composition_matieres cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
-                LEFT JOIN matieres m ON m.code_matiere = cm.matiere_code
-                LEFT JOIN semestres s ON s.code_semestre = comp.semestre_code
+                FROM " . TABLES::COMPOSITIONS . " comp
+                INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
+                INNER JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
+                LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
                 WHERE cnf.niveau_code = ? AND cnf.filiere_code = ? AND cm.matiere_code = ?
             ";
             $params = [$classeRow['libelle_classe'], $classeRow['niveau_code'], $classeRow['filiere_code'], $matiereCode];
@@ -243,10 +243,10 @@ class ModelComposition extends BaseModel
                            ? AS libelle_classe,
                            m.libelle_matiere, 
                            s.libelle_semestre
-                    FROM compositions comp
-                    INNER JOIN composition_niveau_filiere cnf ON cnf.composition_code = comp.code_composition
-                    LEFT JOIN matieres m ON m.code_matiere = ?
-                    LEFT JOIN semestres s ON s.code_semestre = comp.semestre_code
+                    FROM " . TABLES::COMPOSITIONS . " comp
+                    INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
+                    LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = ?
+                    LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
                     WHERE cnf.niveau_code = ? AND cnf.filiere_code = ?
                 ";
                 $paramsFb = [$classeRow['libelle_classe'], $matiereCode, $classeRow['niveau_code'], $classeRow['filiere_code']];
@@ -278,7 +278,7 @@ class ModelComposition extends BaseModel
             if (!$item) return false;
             $current = $item['statut_composition'] ?? 'programme';
             $newStatus = ($current === 'programme' || $current === 'actif') ? 'termine' : 'programme';
-            $stmt = $this->getCon()->prepare("UPDATE compositions SET statut_composition = ? WHERE id_composition = ?");
+            $stmt = $this->getCon()->prepare("UPDATE " . TABLES::COMPOSITIONS . " SET statut_composition = ? WHERE id_composition = ?");
             return $stmt->execute([$newStatus, $id]);
         } catch (Exception $e) {
             error_log("Toggle composition status error: " . $e->getMessage());
@@ -291,10 +291,10 @@ class ModelComposition extends BaseModel
         try {
             $sql = "
                 SELECT DISTINCT cl.niveau_code, cl.filiere_code, n.libelle_niveau, f.libelle_filiere
-                FROM emplois_temps edt
-                INNER JOIN classes cl ON cl.code_classe = edt.classe_code
-                INNER JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                INNER JOIN filieres f ON f.code_filiere = cl.filiere_code
+                FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                INNER JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+                INNER JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                INNER JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             ";
             $params = [];
             if (!empty($anneeCode)) {
@@ -379,7 +379,7 @@ class ModelComposition extends BaseModel
     public function findClasseForTargetNiveauFiliere(string $compositionNiveauFiliereCode): ?string
     {
         $db = $this->getCon();
-        $stmtCible = $db->prepare("SELECT niveau_code, filiere_code FROM composition_niveau_filiere WHERE code_composition_niveau_filiere = ?");
+        $stmtCible = $db->prepare("SELECT niveau_code, filiere_code FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " WHERE code_composition_niveau_filiere = ?");
         $stmtCible->execute([$compositionNiveauFiliereCode]);
         $targetRow = $stmtCible->fetch(PDO::FETCH_ASSOC);
         if ($targetRow) {

@@ -127,7 +127,7 @@ class EtablissementController extends BaseController
                 }
             }
         } else {
-            $filteredData['code_etablissement'] = $this->validator->generateCode('etablissements', 'code_etablissement', 'ETA-', 8);
+            $filteredData['code_etablissement'] = $this->validator->generateCode(TABLES::ETABLISSEMENTS, 'code_etablissement', 'ETA-', 8);
             $filteredData['statut_etablissement'] = 'actif';
             $filteredData['created_at_etablissement'] = date('Y-m-d H:i:s');
             if ($this->model->create($filteredData)) {

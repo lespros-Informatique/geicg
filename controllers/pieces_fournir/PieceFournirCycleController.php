@@ -142,7 +142,7 @@ class PieceFournirCycleController extends BaseController
                 $seenInRequest[] = $pieceCode;
                 $nbEx = max(1, (int)($item['nombre_exemplaires'] ?? 1));
                 $nature = in_array($item['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique', 'aucun']) ? $item['nature_document'] : 'photocopie_simple';
-                $code = $this->validator->generateCode('piece_fournir_cycle', 'code_piece_cycle', 'PFC-', 8);
+                $code = $this->validator->generateCode(TABLES::PIECES_FOURNIR_CYCLES, 'code_piece_cycle', 'PFC-', 8);
 
                 $saveData = [
                     'code_piece_cycle' => $code,
@@ -194,7 +194,7 @@ class PieceFournirCycleController extends BaseController
 
         $nbEx = max(1, (int)($data['nombre_exemplaires'] ?? 1));
         $nature = in_array($data['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique', 'aucun']) ? $data['nature_document'] : 'photocopie_simple';
-        $code = $this->validator->generateCode('piece_fournir_cycle', 'code_piece_cycle', 'PFC-', 8);
+        $code = $this->validator->generateCode(TABLES::PIECES_FOURNIR_CYCLES, 'code_piece_cycle', 'PFC-', 8);
 
         $saveData = [
             'code_piece_cycle' => $code,

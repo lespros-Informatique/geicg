@@ -79,7 +79,7 @@ class AnneeController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_annee'])) {
-            $data['code_annee'] = $this->validator->generateCode('annees', 'code_annee', 'ANN-', 8);
+            $data['code_annee'] = $this->validator->generateCode(TABLES::ANNEES, 'code_annee', 'ANN-', 8);
         }
         
         // Toute nouvelle année académique est créée avec le statut 'planifie' par défaut (En préparation)

@@ -57,7 +57,7 @@ class CycleController extends BaseController
         $etabCode = $this->getActiveEtablissementCode();
 
         if (empty($data['code_cycle'])) {
-            $data['code_cycle'] = $this->validator->generateCode('cycles', 'code_cycle', 'CYC-', 8);
+            $data['code_cycle'] = $this->validator->generateCode(TABLES::CYCLES, 'code_cycle', 'CYC-', 8);
         }
         $data['statut_cycle'] = $data['statut_cycle'] ?? 'actif';
         $data['created_at_cycle'] = date('Y-m-d H:i:s');

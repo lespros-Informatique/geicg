@@ -148,7 +148,7 @@ class DepenseController extends BaseController
         ]);
 
         if (empty($data['code_depense'])) {
-            $data['code_depense'] = $this->validator->generateCode('depenses', 'code_depense', 'DEP-', 8);
+            $data['code_depense'] = $this->validator->generateCode(TABLES::DEPENSES, 'code_depense', 'DEP-', 8);
         }
         if (empty($data['periode_depense'])) {
             $data['periode_depense'] = date('Y-m-d H:i:s');

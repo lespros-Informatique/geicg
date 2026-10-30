@@ -51,7 +51,7 @@ class NiveauController extends BaseController
         $etabCode = $this->getActiveEtablissementCode();
 
         if (empty($data['code_niveau'])) {
-            $data['code_niveau'] = $this->validator->generateCode('niveaux', 'code_niveau', 'NIV-', 8);
+            $data['code_niveau'] = $this->validator->generateCode(TABLES::NIVEAUX, 'code_niveau', 'NIV-', 8);
         }
         $data['statut_niveau'] = $data['statut_niveau'] ?? 'actif';
         $data['created_at_niveau'] = date('Y-m-d H:i:s');

@@ -2,7 +2,7 @@
 
 class ModelDossierEtudiant extends BaseModel
 {
-    protected string $table = 'dossier_etudiant';
+    protected string $table = TABLES::DOSSIER_ETUDIANT;
     protected string $primaryKey = 'id_dossier_etudiant';
     protected ?string $statusField = null;
     protected ?string $createdAtField = 'created_at_dossier_etudiant';
@@ -24,15 +24,15 @@ class ModelDossierEtudiant extends BaseModel
                 de.fichier_joint,
                 de.observations,
                 de.created_at_dossier_etudiant
-            FROM inscriptions i
-            JOIN classes cl ON cl.code_classe = i.classe_code
-            JOIN niveaux n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN filiere_cycles fc ON fc.filiere_code = cl.filiere_code
-            JOIN piece_fournir_cycle pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
+            FROM " . TABLES::INSCRIPTIONS . " i
+            JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.filiere_code = cl.filiere_code
+            JOIN " . TABLES::PIECES_FOURNIR_CYCLES . " pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
                  AND (pfc.niveau_code = cl.niveau_code OR pfc.niveau_code IS NULL OR pfc.niveau_code = '')
                  AND pfc.statut_piece_cycle = 'actif'
-            JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
-            LEFT JOIN dossier_etudiant de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
+            JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
+            LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
             WHERE i.code_inscription = ?
             GROUP BY pfc.piece_code
             ORDER BY pf.libelle_piece ASC
@@ -69,15 +69,15 @@ class ModelDossierEtudiant extends BaseModel
                 de.fichier_joint,
                 de.observations,
                 de.created_at_dossier_etudiant
-            FROM inscriptions i
-            JOIN classes cl ON cl.code_classe = i.classe_code
-            JOIN niveaux n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN filiere_cycles fc ON fc.filiere_code = cl.filiere_code
-            JOIN piece_fournir_cycle pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
+            FROM " . TABLES::INSCRIPTIONS . " i
+            JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN " . TABLES::FILIERE_CYCLES . " fc ON fc.filiere_code = cl.filiere_code
+            JOIN " . TABLES::PIECES_FOURNIR_CYCLES . " pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
                  AND (pfc.niveau_code = cl.niveau_code OR pfc.niveau_code IS NULL OR pfc.niveau_code = '')
                  AND pfc.statut_piece_cycle = 'actif'
-            JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
-            LEFT JOIN dossier_etudiant de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
+            JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
+            LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
             WHERE i.code_inscription IN ({$placeholders})
             GROUP BY i.code_inscription, pfc.piece_code
             ORDER BY pf.libelle_piece ASC
@@ -114,7 +114,7 @@ class ModelDossierEtudiant extends BaseModel
         $etabCode = Session::get('etablissement_active_code') ?? '';
         if (empty($etabCode)) {
             try {
-                $stmtEtab = $this->getCon()->query("SELECT code_etablissement FROM etablissements ORDER BY id_etablissement DESC LIMIT 1");
+                $stmtEtab = $this->getCon()->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
                 $etabCode = $stmtEtab ? (string)$stmtEtab->fetchColumn() : '';
             } catch (Exception $e) {
                 $etabCode = '';
@@ -134,7 +134,7 @@ class ModelDossierEtudiant extends BaseModel
         }
 
         $sql = "
-            INSERT INTO dossier_etudiant (
+            INSERT INTO " . TABLES::DOSSIER_ETUDIANT . " (
                 code_dossier_etudiant, inscription_code, etudiant_code, piece_code,
                 statut_depot, date_depot, fichier_joint, observations, user_code, etablissement_code, created_at_dossier_etudiant
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
@@ -148,7 +148,7 @@ class ModelDossierEtudiant extends BaseModel
                 updated_at_dossier_etudiant = NOW()
         ";
         try {
-            $codeDossier = (new Validator())->generateCode('dossier_etudiant', 'code_dossier_etudiant', 'DOS-', 8);
+            $codeDossier = (new Validator())->generateCode(TABLES::DOSSIER_ETUDIANT, 'code_dossier_etudiant', 'DOS-', 8);
             $dateDepot = ($statut === 'depose') ? date('Y-m-d H:i:s') : null;
             $stmt = $this->getCon()->prepare($sql);
             return $stmt->execute([
@@ -189,9 +189,9 @@ class ModelDossierEtudiant extends BaseModel
                     cl.code_classe,
                     cl.libelle_classe,
                     cl.filiere_code
-                FROM inscriptions i
-                JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-                JOIN classes cl ON cl.code_classe = i.classe_code
+                FROM " . TABLES::INSCRIPTIONS . " i
+                JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+                JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
                 WHERE 1=1
             ";
 
@@ -229,11 +229,11 @@ class ModelDossierEtudiant extends BaseModel
                     cl.libelle_classe, cl.filiere_code,
                     a.libelle_annee,
                     et.libelle_etablissement AS nom_etablissement, et.logo_etablissement, et.telephone_etablissement, et.adresse_etablissement
-                FROM inscriptions i
-                JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-                JOIN classes cl ON cl.code_classe = i.classe_code
-                LEFT JOIN annees a ON a.code_annee = i.annee_code
-                LEFT JOIN etablissements et ON et.code_etablissement = i.etablissement_code
+                FROM " . TABLES::INSCRIPTIONS . " i
+                JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+                JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
+                LEFT JOIN " . TABLES::ETABLISSEMENTS . " et ON et.code_etablissement = i.etablissement_code
                 WHERE i.code_inscription = ?
                 LIMIT 1
             ");

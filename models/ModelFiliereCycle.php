@@ -25,10 +25,10 @@ class ModelFiliereCycle
         $sql = "
             SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau,
                    COALESCE(fc.type_filiere, f.type_filiere) AS type_filiere
-            FROM filiere_cycles fc
-            LEFT JOIN filieres f ON fc.filiere_code = f.code_filiere
-            LEFT JOIN cycles c ON fc.cycle_code = c.code_cycle
-            LEFT JOIN niveaux n ON fc.niveau_code = n.code_niveau
+            FROM " . TABLES::FILIERE_CYCLES . " fc
+            LEFT JOIN " . TABLES::FILIERES . " f ON fc.filiere_code = f.code_filiere
+            LEFT JOIN " . TABLES::CYCLES . " c ON fc.cycle_code = c.code_cycle
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON fc.niveau_code = n.code_niveau
             ORDER BY c.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC
         ";
         return $this->con->query($sql)->fetchAll(PDO::FETCH_ASSOC);
@@ -39,10 +39,10 @@ class ModelFiliereCycle
         $stmt = $this->con->prepare("
             SELECT fc.*, f.libelle_filiere, c.libelle_cycle, n.libelle_niveau,
                    COALESCE(fc.type_filiere, f.type_filiere) AS type_filiere
-            FROM filiere_cycles fc
-            LEFT JOIN filieres f ON fc.filiere_code = f.code_filiere
-            LEFT JOIN cycles c ON fc.cycle_code = c.code_cycle
-            LEFT JOIN niveaux n ON fc.niveau_code = n.code_niveau
+            FROM " . TABLES::FILIERE_CYCLES . " fc
+            LEFT JOIN " . TABLES::FILIERES . " f ON fc.filiere_code = f.code_filiere
+            LEFT JOIN " . TABLES::CYCLES . " c ON fc.cycle_code = c.code_cycle
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON fc.niveau_code = n.code_niveau
             WHERE fc.id_filiere_cycle = ? 
             LIMIT 1
         ");
@@ -55,7 +55,7 @@ class ModelFiliereCycle
         unset($data['id']);
         unset($data['id_filiere_cycle']);
 
-        $fkErr = ForeignKeyValidator::validate($this->con, 'filiere_cycles', $data);
+        $fkErr = ForeignKeyValidator::validate($this->con, TABLES::FILIERE_CYCLES, $data);
         if ($fkErr !== null) {
             $this->lastError = $fkErr;
             error_log('[ModelFiliereCycle::create] FK Error: ' . $fkErr);
@@ -63,7 +63,7 @@ class ModelFiliereCycle
         }
 
         $cols = array_keys($data);
-        $sql = "INSERT INTO filiere_cycles (" . implode(', ', array_map(function($c){ return "`$c`"; }, $cols)) . ") 
+        $sql = "INSERT INTO " . TABLES::FILIERE_CYCLES . " (" . implode(', ', array_map(function($c){ return "`$c`"; }, $cols)) . ") 
                 VALUES (" . implode(', ', array_fill(0, count($cols), '?')) . ")";
         $stmt = $this->con->prepare($sql);
         try {
@@ -84,7 +84,7 @@ class ModelFiliereCycle
             $params[] = $val;
         }
         $params[] = $id;
-        $sql = "UPDATE filiere_cycles SET " . implode(', ', $sets) . " WHERE id_filiere_cycle = ?";
+        $sql = "UPDATE " . TABLES::FILIERE_CYCLES . " SET " . implode(', ', $sets) . " WHERE id_filiere_cycle = ?";
         $stmt = $this->con->prepare($sql);
         return $stmt->execute($params);
     }
@@ -94,7 +94,7 @@ class ModelFiliereCycle
         $item = $this->getById($id);
         if (!$item) return false;
         $newStatus = ($item['statut_filiere_cycle'] === 'actif') ? 'inactif' : 'actif';
-        $stmt = $this->con->prepare("UPDATE filiere_cycles SET statut_filiere_cycle = ? WHERE id_filiere_cycle = ?");
+        $stmt = $this->con->prepare("UPDATE " . TABLES::FILIERE_CYCLES . " SET statut_filiere_cycle = ? WHERE id_filiere_cycle = ?");
         return $stmt->execute([$newStatus, $id]);
     }
 
@@ -142,9 +142,9 @@ class ModelFiliereCycle
         try {
             $stmt = $this->con->prepare("
                 SELECT fc.*, f.libelle_filiere, c.libelle_cycle
-                FROM filiere_cycles fc
-                LEFT JOIN filieres f ON f.code_filiere = fc.filiere_code
-                LEFT JOIN cycles c ON c.code_cycle = fc.cycle_code
+                FROM " . TABLES::FILIERE_CYCLES . " fc
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = fc.filiere_code
+                LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = fc.cycle_code
                 WHERE fc.id_filiere_cycle = ?
             ");
             $stmt->execute([$id]);
@@ -163,9 +163,9 @@ class ModelFiliereCycle
             $niveauVal = $niveauCode ?? '';
             $stmt = $this->con->prepare("
                 SELECT cl.*, n.libelle_niveau, COUNT(i.id_inscription) as nb_etudiants
-                FROM classes cl
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN inscriptions i ON i.classe_code = cl.code_classe AND i.statut_inscription = 'actif'
+                FROM " . TABLES::CLASSES . " cl
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.classe_code = cl.code_classe AND i.statut_inscription = 'actif'
                 WHERE cl.filiere_code = ?
                   AND (cl.cycle_code = ? OR ? = '' OR cl.cycle_code IS NULL)
                   AND (cl.niveau_code = ? OR ? = '' OR cl.niveau_code IS NULL)

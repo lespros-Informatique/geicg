@@ -2,7 +2,7 @@
 
 class ModelEnseignant extends BaseModel
 {
-    protected string $table = 'enseignants';
+    protected string $table = TABLES::ENSEIGNANTS;
     protected string $primaryKey = 'id_enseignant';
     protected ?string $statusField = 'statut_enseignant';
     protected ?string $createdAtField = 'created_at_enseignant';
@@ -24,8 +24,8 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant
-            FROM enseignants e
-            JOIN users u ON u.code_user = e.code_enseignant
+            FROM " . TABLES::ENSEIGNANTS . " e
+            JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
             ORDER BY e.id_enseignant DESC
         ";
         try {
@@ -54,8 +54,8 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant
-            FROM enseignants e
-            JOIN users u ON u.code_user = e.code_enseignant
+            FROM " . TABLES::ENSEIGNANTS . " e
+            JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
             WHERE e.statut_enseignant = 'actif' AND u.statut_user = 'actif'
             ORDER BY u.nom_user ASC, u.prenom_user ASC
         ";
@@ -86,8 +86,8 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant
-            FROM enseignants e
-            JOIN users u ON u.code_user = e.code_enseignant
+            FROM " . TABLES::ENSEIGNANTS . " e
+            JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
             WHERE e.id_enseignant = ?
             LIMIT 1
         ";
@@ -119,8 +119,8 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant
-            FROM enseignants e
-            JOIN users u ON u.code_user = e.code_enseignant
+            FROM " . TABLES::ENSEIGNANTS . " e
+            JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
             WHERE e.code_enseignant = ?
             LIMIT 1
         ";
@@ -138,9 +138,9 @@ class ModelEnseignant extends BaseModel
     {
         $sql = "
             SELECT u.id_user, u.code_user, u.nom_user, u.prenom_user, u.email_user, u.telephone_user, u.sexe_user
-            FROM users u
+            FROM " . TABLES::USERS . " u
             WHERE u.statut_user = 'actif'
-              AND u.code_user NOT IN (SELECT code_enseignant FROM enseignants)
+              AND u.code_user NOT IN (SELECT code_enseignant FROM " . TABLES::ENSEIGNANTS . ")
             ORDER BY u.nom_user ASC, u.prenom_user ASC
         ";
         try {
@@ -239,7 +239,7 @@ class ModelEnseignant extends BaseModel
             return null;
         }
 
-        $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
+        $fkErrRole = ForeignKeyValidator::validate($db, TABLES::USER_ROLES, [
             'user_code' => $codeUser,
             'role_code' => ROLES::ENSEIGNANT
         ]);
@@ -248,7 +248,7 @@ class ModelEnseignant extends BaseModel
             return null;
         }
 
-        $fkErrEns = ForeignKeyValidator::validate($db, 'enseignants', [
+        $fkErrEns = ForeignKeyValidator::validate($db, TABLES::ENSEIGNANTS, [
             'etablissement_code' => $etabCode
         ]);
         if ($fkErrEns !== null) {
@@ -300,7 +300,7 @@ class ModelEnseignant extends BaseModel
         $rawPassword = !empty($userData['password_raw']) ? trim($userData['password_raw']) : ('ENS' . rand(100000, 999999));
         $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
 
-        $fkErrUser = ForeignKeyValidator::validate($db, 'users', [
+        $fkErrUser = ForeignKeyValidator::validate($db, TABLES::USERS, [
             'etablissement_code' => $etabCode
         ]);
         if ($fkErrUser !== null) {
@@ -308,7 +308,7 @@ class ModelEnseignant extends BaseModel
             return null;
         }
 
-        $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
+        $fkErrRole = ForeignKeyValidator::validate($db, TABLES::USER_ROLES, [
             'user_code' => $codeUser,
             'role_code' => ROLES::ENSEIGNANT
         ]);
@@ -317,7 +317,7 @@ class ModelEnseignant extends BaseModel
             return null;
         }
 
-        $fkErrEns = ForeignKeyValidator::validate($db, 'enseignants', [
+        $fkErrEns = ForeignKeyValidator::validate($db, TABLES::ENSEIGNANTS, [
             'etablissement_code' => $etabCode
         ]);
         if ($fkErrEns !== null) {

@@ -46,7 +46,7 @@ class SalleController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_salle'])) {
-            $data['code_salle'] = $this->validator->generateCode('salles', 'code_salle', 'SAL-', 8);
+            $data['code_salle'] = $this->validator->generateCode(TABLES::SALLES, 'code_salle', 'SAL-', 8);
         }
         $data['statut_salle'] = $data['statut_salle'] ?? 'actif';
         $data['created_at_salle'] = date('Y-m-d H:i:s');

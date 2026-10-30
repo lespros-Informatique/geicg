@@ -6,7 +6,7 @@
 
   try {
       $dbNav = (new Database())->getCon();
-      $allAnneesNav = $dbNav ? $dbNav->query("SELECT * FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) : [];
+      $allAnneesNav = $dbNav ? $dbNav->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) : [];
       if (!empty($allAnneesNav)) {
           $foundNav = false;
           foreach ($allAnneesNav as $anNav) {
@@ -141,7 +141,7 @@
                             $userAccesNav = [];
                             if (!$hasGlobalViewNav && !empty($userCodeNav) && $dbNav) {
                                 try {
-                                    $stNav = $dbNav->prepare("SELECT annee_code, niveau_acces FROM user_annee_acces WHERE user_code = ?");
+                                    $stNav = $dbNav->prepare("SELECT annee_code, niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ?");
                                     $stNav->execute([$userCodeNav]);
                                     foreach ($stNav->fetchAll(PDO::FETCH_ASSOC) as $rNav) {
                                         $userAccesNav[$rNav['annee_code']] = $rNav['niveau_acces'];
@@ -499,7 +499,7 @@
 
       if (!$hasEditPermBanner && !empty($uCodeBanner) && isset($dbNav)) {
           try {
-              $stChk = $dbNav->prepare("SELECT niveau_acces FROM user_annee_acces WHERE user_code = ? AND annee_code = ? LIMIT 1");
+              $stChk = $dbNav->prepare("SELECT niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ? AND annee_code = ? LIMIT 1");
               $stChk->execute([$uCodeBanner, $activeAnneeCode]);
               $lvlNav = $stChk->fetchColumn();
               if ($lvlNav !== 'ecriture') {

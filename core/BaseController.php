@@ -23,7 +23,7 @@ abstract class BaseController
 
         // Vérifier si l'année en session existe toujours en base
         if (!empty($code)) {
-            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtCheck->execute([$code]);
             $exists = $stmtCheck->fetch(PDO::FETCH_ASSOC);
             if (!$exists) {
@@ -37,10 +37,10 @@ abstract class BaseController
 
         if (empty($_SESSION['annee_active_code'])) {
             try {
-                $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
+                $stmt = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
                 $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
                 if (!$row) {
-                    $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+                    $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
                     $row = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
                 }
                 if ($row) {
@@ -77,10 +77,10 @@ abstract class BaseController
         }
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->query("SELECT code_etablissement FROM etablissements WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
+            $stmt = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
             $code = $stmt ? $stmt->fetchColumn() : null;
             if (!$code) {
-                $stmtFb = $db->query("SELECT code_etablissement FROM etablissements ORDER BY id_etablissement DESC LIMIT 1");
+                $stmtFb = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
                 $code = $stmtFb ? $stmtFb->fetchColumn() : null;
             }
             if ($code) {
@@ -99,7 +99,7 @@ abstract class BaseController
         $code = $this->getActiveAnneeCode();
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmt->execute([$code]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
@@ -129,7 +129,7 @@ abstract class BaseController
 
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->prepare("SELECT niveau_acces FROM user_annee_acces WHERE user_code = ? AND annee_code = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ? AND annee_code = ? LIMIT 1");
             $stmt->execute([$userCode, $anneeCode]);
             $level = $stmt->fetchColumn();
             return !empty($level) && in_array($level, ['lecture', 'ecriture'], true);
@@ -160,7 +160,7 @@ abstract class BaseController
 
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->prepare("SELECT niveau_acces FROM user_annee_acces WHERE user_code = ? AND annee_code = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ? AND annee_code = ? LIMIT 1");
             $stmt->execute([$userCode, $anneeCode]);
             $level = $stmt->fetchColumn();
             return $level === 'ecriture';
@@ -435,10 +435,10 @@ abstract class BaseController
         }
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->query("SELECT * FROM etablissements WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
+            $stmt = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
             $config = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
             if (!$config) {
-                $stmtFb = $db->query("SELECT * FROM etablissements ORDER BY id_etablissement DESC LIMIT 1");
+                $stmtFb = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
                 $config = $stmtFb ? $stmtFb->fetch(PDO::FETCH_ASSOC) : [];
             }
             $_SESSION['etablissement_config'] = $config ?: [];
@@ -596,8 +596,8 @@ abstract class BaseController
             $inClause = implode(',', array_fill(0, count($roles), '?'));
             $sql = "
                 SELECT DISTINCT rp.permission_code 
-                FROM role_permissions rp
-                JOIN permissions p ON rp.permission_code = p.code_permission
+                FROM " . TABLES::ROLE_PERMISSIONS . " rp
+                JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
                 WHERE rp.role_code IN ($inClause)
                   AND p.statut_permission = 'actif'
             ";

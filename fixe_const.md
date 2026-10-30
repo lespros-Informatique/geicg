@@ -16,7 +16,7 @@ Ce document recense l'ensemble des **variables locales redondantes**, **accès d
 | :--- | :--- | :---: |
 | **1. Rôles codés en dur** | `ROLES::*` | **0** |
 | **2. Permissions codées en dur** | `PERMISSIONS::*` | **0** |
-| **3. Tables SQL codées en dur** | `TABLES::*` | **35** |
+| **3. Tables SQL codées en dur** | `TABLES::*` | **0** |
 | **4. Vues SQL codées en dur** | `TABLES::*` ou `VIEWS::*` (à ajouter dans `const.php`) | **11** |
 | **5. Statuts métier codés en dur** | `STATUTS::*` | **38** |
 | **6. Accès directs à `$_SESSION`** | `Session::get()` / `Auth::user()` / `USERS_AUTH` | **43** |
@@ -34,43 +34,8 @@ Ce document recense l'ensemble des **variables locales redondantes**, **accès d
 
 ---
 
-## 3. Noms de Tables SQL en dur au lieu de `TABLES::*` (35 fichiers)
+## 3. Noms de Tables SQL en dur au lieu de `TABLES::*` (0 fichiers)
 
-- **`controllers/sessions_caisse/SessionCaisseController.php`** : `TABLES::PAIEMENTS` (`paiements`) (x1)
-- **`core/Auth.php`** : `TABLES::PERMISSIONS` (`permissions`) (x1), `TABLES::ROLE_PERMISSIONS` (`role_permissions`) (x1)
-- **`core/BaseController.php`** : `TABLES::ETABLISSEMENTS` (`etablissements`) (x4), `TABLES::PERMISSIONS` (`permissions`) (x1), `TABLES::ROLE_PERMISSIONS` (`role_permissions`) (x1), `TABLES::USER_ANNEE_ACCES` (`user_annee_acces`) (x2), `TABLES::ANNEES` (`annees`) (x4)
-- **`core/PrincipalRoute.php`** : `TABLES::ANNEES` (`annees`) (x2)
-- **`models/ModelFiliereCycle.php`** : `TABLES::CYCLES` (`cycles`) (x3), `TABLES::FILIERES` (`filieres`) (x3), `TABLES::FILIERE_CYCLES` (`filiere_cycles`) (x6), `TABLES::NIVEAUX` (`niveaux`) (x3), `TABLES::CLASSES` (`classes`) (x1), `TABLES::INSCRIPTIONS` (`inscriptions`) (x1)
-- **`models/accessoires/ModelAccessoire.php`** : `TABLES::ETABLISSEMENTS` (`etablissements`) (x1), `TABLES::ANNEES` (`annees`) (x1), `TABLES::NIVEAUX` (`niveaux`) (x1), `TABLES::CLASSES` (`classes`) (x2), `TABLES::ETUDIANTS` (`etudiants`) (x2), `TABLES::INSCRIPTIONS` (`inscriptions`) (x2), `TABLES::ACCESSOIRES` (`accessoires`) (x4), `TABLES::ACCESSOIRE_INSCRIPTION` (`accessoire_inscription`) (x5)
-- **`models/annees/ModelAnnee.php`** : `TABLES::ANNEES` (`annees`) (x7)
-- **`models/arrieres/ModelArriere.php`** : `TABLES::ANNEES` (`annees`) (x2), `TABLES::CLASSES` (`classes`) (x3), `TABLES::ETUDIANTS` (`etudiants`) (x1), `TABLES::INSCRIPTIONS` (`inscriptions`) (x5), `TABLES::PAIEMENTS` (`paiements`) (x1)
-- **`models/bulletin/ModelBulletin.php`** : `TABLES::USERS` (`users`) (x1), `TABLES::ANNEES` (`annees`) (x1), `TABLES::FILIERES` (`filieres`) (x1), `TABLES::NIVEAUX` (`niveaux`) (x1), `TABLES::CLASSES` (`classes`) (x2), `TABLES::SEMESTRES` (`semestres`) (x1), `TABLES::MATIERES` (`matieres`) (x5), `TABLES::ETUDIANTS` (`etudiants`) (x2), `TABLES::INSCRIPTIONS` (`inscriptions`) (x5), `TABLES::ENSEIGNANTS` (`enseignants`) (x1), `TABLES::ENSEIGNANT_MATIERE` (`enseignant_matiere`) (x3), `TABLES::NOTES` (`notes`) (x6), `TABLES::ABSENCES` (`absences`) (x1), `TABLES::COMPOSITIONS` (`compositions`) (x5)
-- **`models/caisse_annexe/ModelCaisseAnnexe.php`** : `TABLES::ANNEES` (`annees`) (x1), `TABLES::FILIERES` (`filieres`) (x1), `TABLES::CLASSES` (`classes`) (x1), `TABLES::INSCRIPTIONS` (`inscriptions`) (x1), `TABLES::PAIEMENTS` (`paiements`) (x1), `TABLES::FRAIS_ANNEXES` (`frais_annexes`) (x1)
-- **`models/classes/ModelClasse.php`** : `TABLES::FILIERES` (`filieres`) (x2), `TABLES::NIVEAUX` (`niveaux`) (x2), `TABLES::CLASSES` (`classes`) (x5), `TABLES::SCOLARITES` (`scolarites`) (x2)
-- **`models/compositions/ModelComposition.php`** : `TABLES::FILIERES` (`filieres`) (x4), `TABLES::NIVEAUX` (`niveaux`) (x4), `TABLES::CLASSES` (`classes`) (x5), `TABLES::SEMESTRES` (`semestres`) (x3), `TABLES::MATIERES` (`matieres`) (x3), `TABLES::EMPLOIS_TEMPS` (`emplois_temps`) (x1), `TABLES::COMPOSITIONS` (`compositions`) (x4), `TABLES::COMPOSITION_MATIERES` (`composition_matieres`) (x5)
-- **`models/depenses/ModelDepense.php`** : `TABLES::USERS` (`users`) (x2), `TABLES::DEPENSES` (`depenses`) (x9), `TABLES::TYPE_DEPENSES` (`type_depenses`) (x2)
-- **`models/documents/ModelDocument.php`** : `TABLES::FILIERES` (`filieres`) (x1), `TABLES::NIVEAUX` (`niveaux`) (x1), `TABLES::DOCUMENTS` (`documents`) (x1)
-- **`models/dossier_etudiant/ModelDossierEtudiant.php`** : `TABLES::ETABLISSEMENTS` (`etablissements`) (x2), `TABLES::ANNEES` (`annees`) (x1), `TABLES::FILIERE_CYCLES` (`filiere_cycles`) (x2), `TABLES::NIVEAUX` (`niveaux`) (x2), `TABLES::CLASSES` (`classes`) (x4), `TABLES::ETUDIANTS` (`etudiants`) (x2), `TABLES::INSCRIPTIONS` (`inscriptions`) (x4), `TABLES::DOSSIER_ETUDIANT` (`dossier_etudiant`) (x3), `TABLES::PIECES_FOURNIR` (`pieces_fournir`) (x2)
-- **`models/enseignants/ModelEnseignant.php`** : `TABLES::USERS` (`users`) (x5), `TABLES::ENSEIGNANTS` (`enseignants`) (x5)
-- **`models/etudiants/ModelEtudiant.php`** : `TABLES::ETABLISSEMENTS` (`etablissements`) (x1), `TABLES::ANNEES` (`annees`) (x2), `TABLES::FILIERES` (`filieres`) (x2), `TABLES::NIVEAUX` (`niveaux`) (x1), `TABLES::CLASSES` (`classes`) (x3), `TABLES::ETUDIANTS` (`etudiants`) (x5), `TABLES::PARENTS` (`parents`) (x2), `TABLES::INSCRIPTIONS` (`inscriptions`) (x3), `TABLES::ACCESSOIRE_INSCRIPTION` (`accessoire_inscription`) (x2), `TABLES::DOSSIER_ETUDIANT` (`dossier_etudiant`) (x2), `TABLES::PIECES_FOURNIR` (`pieces_fournir`) (x1), `TABLES::SCOLARITES` (`scolarites`) (x2), `TABLES::PAIEMENTS` (`paiements`) (x1), `TABLES::ABSENCES` (`absences`) (x1)
-- **`models/filieres/ModelFiliere.php`** : `TABLES::CYCLES` (`cycles`) (x1), `TABLES::FILIERES` (`filieres`) (x1), `TABLES::FILIERE_CYCLES` (`filiere_cycles`) (x1)
-- **`models/fonctions/ModelFonction.php`** : `TABLES::USERS` (`users`) (x1), `TABLES::ROLES` (`roles`) (x1), `TABLES::USER_ROLES` (`user_roles`) (x1)
-- **`models/frais_annexes/ModelFraisAnnexe.php`** : `TABLES::ANNEES` (`annees`) (x2), `TABLES::NIVEAUX` (`niveaux`) (x2), `TABLES::FRAIS_ANNEXES` (`frais_annexes`) (x5)
-- **`models/home/ModelHome.php`** : `TABLES::USERS` (`users`) (x1), `TABLES::ANNEES` (`annees`) (x2), `TABLES::CYCLES` (`cycles`) (x1), `TABLES::FILIERES` (`filieres`) (x2), `TABLES::FILIERE_CYCLES` (`filiere_cycles`) (x1), `TABLES::NIVEAUX` (`niveaux`) (x1), `TABLES::CLASSES` (`classes`) (x2), `TABLES::MATIERES` (`matieres`) (x1), `TABLES::SALLES` (`salles`) (x1), `TABLES::PARENTS` (`parents`) (x1), `TABLES::INSCRIPTIONS` (`inscriptions`) (x6), `TABLES::ACCESSOIRES` (`accessoires`) (x1), `TABLES::ACCESSOIRE_INSCRIPTION` (`accessoire_inscription`) (x1), `TABLES::DOSSIER_ETUDIANT` (`dossier_etudiant`) (x1), `TABLES::PAIEMENTS` (`paiements`) (x2), `TABLES::DEPENSES` (`depenses`) (x1), `TABLES::ENSEIGNANTS` (`enseignants`) (x2), `TABLES::NOTES` (`notes`) (x1), `TABLES::ABSENCES` (`absences`) (x1), `TABLES::DOCUMENTS` (`documents`) (x1), `TABLES::EVENEMENTS` (`evenements`) (x1)
-- **`models/impayes/ModelImpayes.php`** : `TABLES::NIVEAUX` (`niveaux`) (x1), `TABLES::CLASSES` (`classes`) (x1), `TABLES::ETUDIANTS` (`etudiants`) (x1), `TABLES::INSCRIPTIONS` (`inscriptions`) (x1), `TABLES::SCOLARITES` (`scolarites`) (x1), `TABLES::TRANCHES_SCOLARITE` (`tranches_scolarite`) (x1)
-- **`models/inscriptions/ModelInscription.php`** : `TABLES::ETUDIANTS` (`etudiants`) (x1), `TABLES::PARENTS` (`parents`) (x1), `TABLES::INSCRIPTIONS` (`inscriptions`) (x1), `TABLES::ACCESSOIRES` (`accessoires`) (x2), `TABLES::ACCESSOIRE_INSCRIPTION` (`accessoire_inscription`) (x1), `TABLES::SCOLARITES` (`scolarites`) (x3), `TABLES::TRANCHES_SCOLARITE` (`tranches_scolarite`) (x3)
-- **`models/niveaux/ModelNiveau.php`** : `TABLES::FILIERE_CYCLES` (`filiere_cycles`) (x1), `TABLES::NIVEAUX` (`niveaux`) (x3), `TABLES::CLASSES` (`classes`) (x1)
-- **`models/parents/ModelParent.php`** : `TABLES::CLASSES` (`classes`) (x1), `TABLES::ETUDIANTS` (`etudiants`) (x1), `TABLES::PARENTS` (`parents`) (x1), `TABLES::INSCRIPTIONS` (`inscriptions`) (x1)
-- **`models/permissions/ModelPermission.php`** : `TABLES::PERMISSIONS` (`permissions`) (x1)
-- **`models/pieces_fournir/ModelPieceFournir.php`** : `TABLES::PIECES_FOURNIR` (`pieces_fournir`) (x8)
-- **`models/pieces_fournir/ModelPieceFournirCycle.php`** : `TABLES::CYCLES` (`cycles`) (x3), `TABLES::NIVEAUX` (`niveaux`) (x3), `TABLES::PIECES_FOURNIR` (`pieces_fournir`) (x3)
-- **`models/roles/ModelRole.php`** : `TABLES::PERMISSIONS` (`permissions`) (x1), `TABLES::ROLE_PERMISSIONS` (`role_permissions`) (x4)
-- **`models/scolarites/ModelScolarite.php`** : `TABLES::ANNEES` (`annees`) (x2), `TABLES::FILIERES` (`filieres`) (x2), `TABLES::NIVEAUX` (`niveaux`) (x2), `TABLES::CLASSES` (`classes`) (x1), `TABLES::SCOLARITES` (`scolarites`) (x2)
-- **`models/semestres/ModelSemestre.php`** : `TABLES::ANNEES` (`annees`) (x1), `TABLES::SEMESTRES` (`semestres`) (x5)
-- **`models/sessions_caisse/ModelSessionCaisse.php`** : `TABLES::USERS` (`users`) (x5), `TABLES::PAIEMENTS` (`paiements`) (x2), `TABLES::SESSIONS_CAISSE` (`sessions_caisse`) (x3)
-- **`models/tranches_scolarite/ModelTranche.php`** : `TABLES::ANNEES` (`annees`) (x2), `TABLES::FILIERES` (`filieres`) (x2), `TABLES::NIVEAUX` (`niveaux`) (x2), `TABLES::SCOLARITES` (`scolarites`) (x2), `TABLES::TRANCHES_SCOLARITE` (`tranches_scolarite`) (x2)
-- **`models/users/ModelUser.php`** : `TABLES::USERS` (`users`) (x1), `TABLES::ROLES` (`roles`) (x2), `TABLES::USER_ROLES` (`user_roles`) (x3), `TABLES::USER_ANNEE_ACCES` (`user_annee_acces`) (x3)
-- **`public/inc/nav.php`** : `TABLES::USER_ANNEE_ACCES` (`user_annee_acces`) (x2), `TABLES::ANNEES` (`annees`) (x1)
 
 ---
 

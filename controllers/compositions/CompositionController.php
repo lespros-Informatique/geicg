@@ -115,7 +115,7 @@ class CompositionController extends BaseController
         $data['annee_code'] = $anneeCode;
 
         if (empty($data['code_composition'])) {
-            $data['code_composition'] = $this->validator->generateCode('compositions', 'code_composition', 'CMP-', 8);
+            $data['code_composition'] = $this->validator->generateCode(TABLES::COMPOSITIONS, 'code_composition', 'CMP-', 8);
         }
 
         // Resolve target items (niveau, filiere)

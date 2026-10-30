@@ -141,8 +141,8 @@ class Auth
             $inClause = implode(',', array_fill(0, count($roles), '?'));
             $stmt = $db->prepare("
                 SELECT DISTINCT rp.permission_code 
-                FROM role_permissions rp
-                JOIN permissions p ON rp.permission_code = p.code_permission
+                FROM " . TABLES::ROLE_PERMISSIONS . " rp
+                JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
                 WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
             ");
             $stmt->execute($roles);

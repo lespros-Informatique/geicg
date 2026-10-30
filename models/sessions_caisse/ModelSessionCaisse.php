@@ -2,7 +2,7 @@
 
 class ModelSessionCaisse extends BaseModel
 {
-    protected string $table = 'sessions_caisse';
+    protected string $table = TABLES::SESSIONS_CAISSE;
     protected string $primaryKey = 'id_session';
 
     /**
@@ -17,9 +17,9 @@ class ModelSessionCaisse extends BaseModel
                    u.email_user as caissier_email,
                    u.telephone_user as caissier_contact,
                    CONCAT(COALESCE(uv.nom_user, ''), ' ', COALESCE(uv.prenom_user, '')) as superviseur_nom
-            FROM sessions_caisse s
-            LEFT JOIN users u ON u.code_user = s.user_code
-            LEFT JOIN users uv ON uv.code_user = s.user_validation
+            FROM " . TABLES::SESSIONS_CAISSE . " s
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = s.user_code
+            LEFT JOIN " . TABLES::USERS . " uv ON uv.code_user = s.user_validation
         ";
         if (!empty($anneeCode)) {
             $sql .= " WHERE s.annee_code = ? ";
@@ -47,9 +47,9 @@ class ModelSessionCaisse extends BaseModel
                    u.email_user as caissier_email,
                    u.telephone_user as caissier_contact,
                    CONCAT(COALESCE(uv.nom_user, ''), ' ', COALESCE(uv.prenom_user, '')) as superviseur_nom
-            FROM sessions_caisse s
-            LEFT JOIN users u ON u.code_user = s.user_code
-            LEFT JOIN users uv ON uv.code_user = s.user_validation
+            FROM " . TABLES::SESSIONS_CAISSE . " s
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = s.user_code
+            LEFT JOIN " . TABLES::USERS . " uv ON uv.code_user = s.user_validation
             WHERE s.id_session = ?
             LIMIT 1
         ";
@@ -72,8 +72,8 @@ class ModelSessionCaisse extends BaseModel
         $stmt = $this->getCon()->prepare("
             SELECT s.*, 
                    CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) as caissier_nom
-            FROM sessions_caisse s
-            LEFT JOIN users u ON u.code_user = s.user_code
+            FROM " . TABLES::SESSIONS_CAISSE . " s
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = s.user_code
             WHERE s.date_session = ? AND s.statut_session = 'ouverte'
             ORDER BY s.id_session DESC LIMIT 1
         ");
@@ -89,7 +89,7 @@ class ModelSessionCaisse extends BaseModel
         if (!empty($sessionCode)) {
             $stmt = $this->getCon()->prepare("
                 SELECT mode_paiement, SUM(montant_paiement) as sum_mode, COUNT(*) as count_mode
-                FROM paiements
+                FROM " . TABLES::PAIEMENTS . "
                 WHERE (session_caisse_code = ? OR (session_caisse_code IS NULL AND DATE(date_paiement) = ?))
                   AND (canal_paiement = 'guichet' OR canal_paiement IS NULL)
                   AND statut_paiement != 'annule'
@@ -99,7 +99,7 @@ class ModelSessionCaisse extends BaseModel
         } else {
             $stmt = $this->getCon()->prepare("
                 SELECT mode_paiement, SUM(montant_paiement) as sum_mode, COUNT(*) as count_mode
-                FROM paiements
+                FROM " . TABLES::PAIEMENTS . "
                 WHERE DATE(date_paiement) = ? AND (canal_paiement = 'guichet' OR canal_paiement IS NULL) AND statut_paiement != 'annule'
                 GROUP BY mode_paiement
             ");

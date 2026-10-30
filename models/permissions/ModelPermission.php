@@ -2,14 +2,14 @@
 
 class ModelPermission extends BaseModel
 {
-    protected string $table = 'permissions';
+    protected string $table = TABLES::PERMISSIONS;
     protected string $primaryKey = 'id_permission';
     protected ?string $statusField = 'statut_permission';
 
     public function getGrouped(): array
     {
         try {
-            $sql = "SELECT * FROM permissions WHERE statut_permission = 'actif' ORDER BY module_permission ASC, id_permission ASC";
+            $sql = "SELECT * FROM " . TABLES::PERMISSIONS . " WHERE statut_permission = 'actif' ORDER BY module_permission ASC, id_permission ASC";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute();
             $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

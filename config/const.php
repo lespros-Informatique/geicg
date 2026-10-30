@@ -68,7 +68,8 @@ class TABLES
     public const ACCESSOIRE_INSCRIPTION = 'accessoire_inscription';
     public const DOSSIER_ETUDIANT = 'dossier_etudiant';
     public const PIECES_FOURNIR = 'pieces_fournir';
-    public const PIECES_FOURNIR_CYCLES = 'pieces_fournir_cycles';
+    public const PIECES_FOURNIR_CYCLES = 'piece_fournir_cycle';
+    public const PIECE_FOURNIR_CYCLE = 'piece_fournir_cycle';
 
     // FINANCE & CAISSE
     public const SCOLARITES = 'scolarites';
@@ -82,6 +83,7 @@ class TABLES
     public const TYPE_DEPENSES = 'type_depenses';
     public const ARRIERES = 'arrieres';
     public const IMPAYES = 'impayes';
+    public const RELANCES_IMPAYES = 'relances_impayes';
 
     // PÉDAGOGIE & ÉVALUATIONS
     public const ENSEIGNANTS = 'enseignants';
@@ -91,6 +93,7 @@ class TABLES
     public const ABSENCES = 'absences';
     public const COMPOSITIONS = 'compositions';
     public const COMPOSITION_MATIERES = 'composition_matieres';
+    public const COMPOSITION_NIVEAU_FILIERE = 'composition_niveau_filiere';
     public const BULLETINS = 'bulletins';
 
     // COMMUNICATION & MÉDIAS
@@ -98,6 +101,7 @@ class TABLES
     public const EVENEMENTS = 'evenements';
     public const GALERIES = 'galeries';
     public const GALERIE_MEDIAS = 'galerie_medias';
+    public const MESSAGES = 'messages';
 }
 
 class ROLES

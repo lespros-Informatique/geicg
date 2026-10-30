@@ -2,7 +2,7 @@
 
 class ModelParent extends BaseModel
 {
-    protected string $table = 'parents';
+    protected string $table = TABLES::PARENTS;
     protected string $primaryKey = 'id_parent';
     protected ?string $statusField = 'statut_parent';
     protected ?string $createdAtField = 'created_at_parent';
@@ -14,10 +14,10 @@ class ModelParent extends BaseModel
                 SELECT p.*, 
                        e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
                        cl.libelle_classe
-                FROM parents p
-                LEFT JOIN etudiants e ON e.code_etudiant = p.etudiant_code
-                LEFT JOIN inscriptions ins ON (ins.etudiant_code = e.code_etudiant AND ins.statut_inscription = 'actif')
-                LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
+                FROM " . TABLES::PARENTS . " p
+                LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = p.etudiant_code
+                LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.etudiant_code = e.code_etudiant AND ins.statut_inscription = 'actif')
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                 WHERE p.id_parent = ?
             ");
             $stmt->execute([$id]);

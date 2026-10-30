@@ -2,7 +2,7 @@
 
 class ModelClasse extends BaseModel
 {
-    protected string $table = 'classes';
+    protected string $table = TABLES::CLASSES;
     protected string $primaryKey = 'id_classe';
     protected ?string $statusField = 'statut_classe';
     protected ?string $createdAtField = 'created_at_classe';
@@ -29,14 +29,14 @@ class ModelClasse extends BaseModel
                                 c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                                 f.libelle_filiere, f.type_filiere, n.libelle_niveau,
                                 s.montant_scolarite, s.code_scolarite, s.affectation_etat
-                FROM classes c
-                INNER JOIN scolarites s ON s.filiere_code = c.filiere_code
+                FROM " . TABLES::CLASSES . " c
+                INNER JOIN " . TABLES::SCOLARITES . " s ON s.filiere_code = c.filiere_code
                                        AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
                                        AND s.statut_scolarite = 'actif'
                                        AND s.annee_code = ?
                                        AND s.affectation_etat = ?
-                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
                 WHERE c.statut_classe = 'actif' AND c.annee_code = ?
                 GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                          c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
@@ -55,13 +55,13 @@ class ModelClasse extends BaseModel
                             c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                             f.libelle_filiere, f.type_filiere, n.libelle_niveau,
                             s.montant_scolarite, s.code_scolarite, s.affectation_etat
-            FROM classes c
-            INNER JOIN scolarites s ON s.filiere_code = c.filiere_code
+            FROM " . TABLES::CLASSES . " c
+            INNER JOIN " . TABLES::SCOLARITES . " s ON s.filiere_code = c.filiere_code
                                    AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
                                    AND s.statut_scolarite = 'actif'
                                    AND s.annee_code = ?
-            LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-            LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
             WHERE c.statut_classe = 'actif' AND c.annee_code = ?
             GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                      c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
@@ -84,7 +84,7 @@ class ModelClasse extends BaseModel
         $validator = new Validator();
 
         // 1. Récupérer toutes les classes actives de l'année source
-        $stmt = $db->prepare("SELECT * FROM classes WHERE annee_code = ? AND statut_classe = 'actif'");
+        $stmt = $db->prepare("SELECT * FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND statut_classe = 'actif'");
         $stmt->execute([$anneeSourceCode]);
         $classesSource = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -99,9 +99,9 @@ class ModelClasse extends BaseModel
         $createdCount = 0;
         $skippedCount = 0;
 
-        $stmtCheck = $db->prepare("SELECT id_classe FROM classes WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
+        $stmtCheck = $db->prepare("SELECT id_classe FROM " . TABLES::CLASSES . " WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
         $stmtInsert = $db->prepare("
-            INSERT INTO classes 
+            INSERT INTO " . TABLES::CLASSES . " 
             (code_classe, libelle_classe, capacite_max_classe, cycle_code, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
         ");
@@ -115,7 +115,7 @@ class ModelClasse extends BaseModel
             }
 
             // Générer un nouveau code unique
-            $newCode = $validator->generateCode('classes', 'code_classe', 'CLA-', 8);
+            $newCode = $validator->generateCode(TABLES::CLASSES, 'code_classe', 'CLA-', 8);
             
             $inserted = $stmtInsert->execute([
                 $newCode,

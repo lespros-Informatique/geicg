@@ -80,7 +80,7 @@ class EnseignantController extends BaseController
             return;
         }
 
-        $codeUser = $this->validator->generateCode('users', 'code_user', 'ENS-', 8);
+        $codeUser = $this->validator->generateCode(TABLES::USERS, 'code_user', 'ENS-', 8);
         $userData = [
             'code_user' => $codeUser,
             'nom' => $nom,

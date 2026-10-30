@@ -49,7 +49,7 @@ class ParentController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_parent'])) {
-            $data['code_parent'] = $this->validator->generateCode('parents', 'code_parent', 'PAR-', 8);
+            $data['code_parent'] = $this->validator->generateCode(TABLES::PARENTS, 'code_parent', 'PAR-', 8);
         }
         $data['statut_parent'] = $data['statut_parent'] ?? 'actif';
         $data['created_at_parent'] = date('Y-m-d H:i:s');

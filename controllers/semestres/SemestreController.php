@@ -151,7 +151,7 @@ class SemestreController extends BaseController
         }
 
         if (empty($data['code_semestre'])) {
-            $data['code_semestre'] = $this->validator->generateCode('semestres', 'code_semestre', 'SEM-', 8);
+            $data['code_semestre'] = $this->validator->generateCode(TABLES::SEMESTRES, 'code_semestre', 'SEM-', 8);
         }
         $data['statut_semestre'] = (!empty($data['statut_semestre']) && in_array($data['statut_semestre'], ['planifie', 'cloture'], true)) ? $data['statut_semestre'] : 'planifie';
         $data['created_at_semestre'] = date('Y-m-d H:i:s');
