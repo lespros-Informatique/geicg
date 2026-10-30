@@ -322,14 +322,14 @@
     </script>
 
     <?php
-    $currentUserCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-    $currentRoleCode = $_SESSION[USERS_AUTH]['role_code'] ?? '';
+    $currentUserCode = Auth::code() ?? '';
+    $currentRoleCode = Auth::role() ?? '';
     $currentRoles = [];
     $isSuperAdmin = false;
 
     if ($currentUserCode !== '') {
         try {
-            $userRoles = $_SESSION[USERS_AUTH]['roles'] ?? (!empty($currentRoleCode) ? [$currentRoleCode] : []);
+            $userRoles = Auth::roles();
             if (empty($userRoles)) {
                 $userRoles = (new ModelUser())->getUserRoleCodes($currentUserCode);
             }
@@ -340,9 +340,9 @@
         }
     }
 
-    $currentUserName  = $_SESSION[USERS_AUTH]['nom_user'] ?? ($_SESSION[USERS_AUTH]['nom'] ?? ($_SESSION[USERS_AUTH]['login_user'] ?? 'Utilisateur'));
-    $currentUserEmail = $_SESSION[USERS_AUTH]['email_user'] ?? ($_SESSION[USERS_AUTH]['email'] ?? '');
-    $currentUserPhoto = !empty($_SESSION[USERS_AUTH]['photo_user']) ? RACINE . 'public/assets/images/users/' . $_SESSION[USERS_AUTH]['photo_user'] : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
+    $currentUserName  = Auth::user('nom_user') ?? (Auth::user('nom') ?? (Auth::user('login_user') ?? 'Utilisateur'));
+    $currentUserEmail = Auth::user('email_user') ?? (Auth::user('email') ?? '');
+    $currentUserPhoto = !empty(Auth::user('photo_user')) ? RACINE . 'public/assets/images/users/' . Auth::user('photo_user') : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
 
     $recentAdminNotifs = [];
     $unreadNotifsCount = 0;

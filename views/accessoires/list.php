@@ -4,7 +4,7 @@ $etudiants = (new ModelEtudiant())->getAll();
 $accessoires = (new ModelAccessoire())->getAll();
 $stats = $stats ?? (new ModelAccessoire())->getStats();
 $annees = $annees ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

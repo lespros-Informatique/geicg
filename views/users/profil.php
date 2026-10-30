@@ -19,15 +19,15 @@
           <div class="info-list">
             <div class="info-item">
               <span class="info-label">Nom</span>
-              <span class="info-value"><?= htmlspecialchars($_SESSION[USERS_AUTH]['nom'] ?? '-') ?></span>
+              <span class="info-value"><?= htmlspecialchars(Auth::user('nom') ?? (Auth::user('nom_user') ?? '-')) ?></span>
             </div>
             <div class="info-item">
               <span class="info-label">Email</span>
-              <span class="info-value"><?= htmlspecialchars($_SESSION[USERS_AUTH]['email'] ?? '-') ?></span>
+              <span class="info-value"><?= htmlspecialchars(Auth::user('email') ?? (Auth::user('email_user') ?? '-')) ?></span>
             </div>
             <div class="info-item">
               <span class="info-label">Téléphone</span>
-              <span class="info-value"><?= htmlspecialchars($_SESSION[USERS_AUTH]['tel'] ?? '-') ?></span>
+              <span class="info-value"><?= htmlspecialchars(Auth::user('tel') ?? (Auth::user('telephone_user') ?? '-')) ?></span>
             </div>
           </div>
         </div>

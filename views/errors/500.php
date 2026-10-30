@@ -4,7 +4,7 @@ if (!headers_sent()) {
 }
 require_once __DIR__ . '/../../public/inc/header.php';
 $message = $message ?? "Une anomalie imprévue est survenue lors de l'exécution de la requête.";
-$auth = $_SESSION[USERS_AUTH] ?? [];
+$auth = Auth::user() ?: [];
 ?>
 <div class="app-layout">
   <?php if (isset($auth['id_user'])): ?>

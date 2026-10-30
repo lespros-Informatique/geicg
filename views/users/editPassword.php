@@ -1,6 +1,6 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php'; 
-$user = isset($user) ? $user : ($_SESSION[USERS_AUTH] ?? []);
+$user = isset($user) ? $user : (Auth::user() ?: []);
 ?>
 
 <div class="app-layout">

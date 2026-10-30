@@ -130,7 +130,7 @@ require_once __DIR__ . '/../models/ModelFiliereCycle.php';
 require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.php';
 
 // Auto-initialisation de l'année académique active en session (avec fallback si aucune marquée active)
-if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['annee_active_code'])) {
+if (session_status() === PHP_SESSION_ACTIVE && empty(Session::get('annee_active_code'))) {
     try {
         $dbInit = (new Database())->getCon();
         if ($dbInit) {
@@ -141,8 +141,8 @@ if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['annee_active_cod
                 $rowInit = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
             }
             if ($rowInit) {
-                $_SESSION['annee_active_code'] = $rowInit['code_annee'];
-                $_SESSION['annee_active_libelle'] = $rowInit['libelle_annee'];
+                Session::set('annee_active_code', $rowInit['code_annee']);
+                Session::set('annee_active_libelle', $rowInit['libelle_annee']);
             }
         }
     } catch (Exception $e) {}

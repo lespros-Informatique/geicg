@@ -87,7 +87,7 @@ $encryptedClasseCode = $encryptedClasseCode ?? '';
           <div style="text-align: right;">
             <div style="font-size: 16px; font-weight: 800; color: #0F172A;">PROCES-VERBAL DE DÉLIBÉRATION</div>
             <div style="font-size: 13px; color: #64748B; font-weight: 600; margin-top: 2px;">
-              Année Académique : <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? '-') ?>
+              Année Académique : <?= htmlspecialchars(Session::get('annee_active_libelle', '-')) ?>
             </div>
           </div>
         </div>

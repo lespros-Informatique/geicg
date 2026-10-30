@@ -3,7 +3,7 @@
 $annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
 $classes = $classes ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 $matieres = $matieres ?? (new ModelMatiere())->getAll();
 $enseignants = $enseignants ?? (new ModelEnseignant())->getActifs();
 ?>

@@ -4,7 +4,7 @@ $annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
 $classes = $classes ?? [];
 $matieres = $matieres ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

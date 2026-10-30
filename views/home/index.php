@@ -3,16 +3,16 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
 $stats = $stats ?? [];
 $annees = $annees ?? [];
-$auth = $auth ?? ($_SESSION[USERS_AUTH] ?? []);
+$auth = $auth ?? (Auth::user() ?: []);
 $recentInscriptions = $recentInscriptions ?? [];
 $recentPaiements = $recentPaiements ?? [];
 $recentDepenses = $recentDepenses ?? [];
 $teacherCourses = $teacherCourses ?? [];
 
 // Récupération dynamique des permissions utilisateur (100% RBAC - Basé uniquement sur les permissions)
-$rawPerms = $_SESSION['permissions'] ?? [];
-if (empty($rawPerms) && isset($_SESSION[USERS_AUTH]['permissions']) && is_array($_SESSION[USERS_AUTH]['permissions']) && !isset($_SESSION[USERS_AUTH]['permissions']['create'])) {
-    $rawPerms = $_SESSION[USERS_AUTH]['permissions'];
+$rawPerms = Session::get('permissions', []);
+if (empty($rawPerms) && isset($auth['permissions']) && is_array($auth['permissions']) && !isset($auth['permissions']['create'])) {
+    $rawPerms = $auth['permissions'];
 }
 $userPermissions = is_array($rawPerms) ? $rawPerms : [];
 

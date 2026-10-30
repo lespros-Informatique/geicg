@@ -58,8 +58,8 @@ foreach ($filiereCyclesMap as $fc) {
             
             <!-- Année Académique (Sélection Readonly / Verrouillée sur l'année active) -->
             <?php 
-              $currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
-              $currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
+              $currentAnneeCode = $item['annee_code'] ?? (Session::get('annee_active_code', ''));
+              $currentAnneeLibelle = Session::get('annee_active_libelle', 'Session Active');
             ?>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">

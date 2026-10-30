@@ -5,20 +5,20 @@
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       
-      <?php if (!empty($_SESSION['flash_success'])): ?>
+      <?php if (Session::has('flash_success')): ?>
         <div class="alert alert-success" style="background: #DCFCE7; color: #15803D; padding: 14px 18px; border-radius: 8px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
           <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
-          <span><?= htmlspecialchars($_SESSION['flash_success']) ?></span>
+          <span><?= htmlspecialchars(Session::get('flash_success')) ?></span>
         </div>
-        <?php unset($_SESSION['flash_success']); ?>
+        <?php Session::remove('flash_success'); ?>
       <?php endif; ?>
 
-      <?php if (!empty($_SESSION['flash_error'])): ?>
+      <?php if (Session::has('flash_error')): ?>
         <div class="alert alert-danger" style="background: #FEE2E2; color: #B91C1C; padding: 14px 18px; border-radius: 8px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
           <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
-          <span><?= htmlspecialchars($_SESSION['flash_error']) ?></span>
+          <span><?= htmlspecialchars(Session::get('flash_error')) ?></span>
         </div>
-        <?php unset($_SESSION['flash_error']); ?>
+        <?php Session::remove('flash_error'); ?>
       <?php endif; ?>
 
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">

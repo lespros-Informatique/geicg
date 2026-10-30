@@ -26,7 +26,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
           </div>
           <div style="text-align: right; font-size: 11px; color: #475569;">
             <div>Date d'impression : <strong><?= date('d/m/Y H:i') ?></strong></div>
-            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim(($_SESSION['prenom_utilisateur'] ?? $_SESSION['nom_utilisateur'] ?? 'Caissier'))) ?></strong></div>
+            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim((Auth::fullName() ?: 'Caissier'))) ?></strong></div>
           </div>
         </div>
         
@@ -276,7 +276,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
               <span id="kpi-total-exercice"><?= number_format((float)($stats['total_exercice_session'] ?? ($stats['total_scolarite_attendue'] ?? 0)), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? ($_SESSION['annee_active_libelle'] ?? 'En session')) ?></strong>
+              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? (Session::get('annee_active_libelle', 'En session'))) ?></strong>
             </div>
           </div>
           <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -452,7 +452,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
               <i data-lucide="user-check" style="width: 15px; height: 15px; color: #1E3A5F;"></i> 1. Rechercher l'étudiant / Dossier d'inscription <span class="text-danger">*</span>
             </label>
             <span style="font-size: 11px; font-weight: 700; color: #16A34A; background: #DCFCE7; border: 1px solid #86EFAC; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-              <i data-lucide="calendar-check" style="width: 12px; height: 12px;"></i> Année en session : <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'En cours') ?>
+              <i data-lucide="calendar-check" style="width: 12px; height: 12px;"></i> Année en session : <?= htmlspecialchars(Session::get('annee_active_libelle', 'En cours')) ?>
             </span>
           </div>
           <select id="modal_select_inscription" name="inscription_code" class="form-control" style="width: 100%;" required>

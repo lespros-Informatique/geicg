@@ -1,7 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$anneeCode = $anneeCode ?? ($_SESSION['annee_active_code'] ?? '');
-$anneeLibelle = $anneeLibelle ?? ($_SESSION['annee_active_libelle'] ?? $anneeCode);
+$anneeCode = $anneeCode ?? (Session::get('annee_active_code', ''));
+$anneeLibelle = $anneeLibelle ?? (Session::get('annee_active_libelle') ?? $anneeCode);
 $classes = $classes ?? [];
 $matieres = $matieres ?? [];
 $semestres = $semestres ?? [];

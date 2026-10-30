@@ -1,7 +1,7 @@
 <?php
   // Récupération dynamique de l'année académique active
-  $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
-  $activeAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Aucune année';
+  $activeAnneeCode = (string)Session::get('annee_active_code', '');
+  $activeAnneeLibelle = (string)Session::get('annee_active_libelle', 'Aucune année');
   $dbNav = null;
 
   try {
@@ -21,8 +21,8 @@
                   if (($anNav['statut_annee'] ?? '') === STATUTS::ACTIF) {
                       $activeAnneeCode = $anNav['code_annee'];
                       $activeAnneeLibelle = $anNav['libelle_annee'];
-                      $_SESSION['annee_active_code'] = $activeAnneeCode;
-                      $_SESSION['annee_active_libelle'] = $activeAnneeLibelle;
+                      Session::set('annee_active_code', $activeAnneeCode);
+                      Session::set('annee_active_libelle', $activeAnneeLibelle);
                       $foundNav = true;
                       break;
                   }
@@ -30,25 +30,25 @@
               if (!$foundNav) {
                   $activeAnneeCode = '';
                   $activeAnneeLibelle = 'Aucune';
-                  $_SESSION['annee_active_code'] = '';
-                  $_SESSION['annee_active_libelle'] = 'Aucune';
+                  Session::set('annee_active_code', '');
+                  Session::set('annee_active_libelle', 'Aucune');
               }
           }
       } else {
           $activeAnneeCode = '';
           $activeAnneeLibelle = 'Aucune année';
-          $_SESSION['annee_active_code'] = '';
-          $_SESSION['annee_active_libelle'] = 'Aucune année';
+          Session::set('annee_active_code', '');
+          Session::set('annee_active_libelle', 'Aucune année');
       }
   } catch(Exception $e) {
       $allAnneesNav = [];
   }
 ?>
-<?php if (!empty($_SESSION['flash_success'])): ?>
+<?php if (Session::has('flash_success')): ?>
   <script>
     (function() {
       function fireFlashSuccess() {
-        var msg = <?= json_encode($_SESSION['flash_success']) ?>;
+        var msg = <?= json_encode(Session::get('flash_success')) ?>;
         if (typeof showToast === 'function') {
           showToast(msg, 'success');
         } else if (typeof toastr !== 'undefined') {
@@ -62,14 +62,14 @@
       }
     })();
   </script>
-  <?php unset($_SESSION['flash_success']); ?>
+  <?php Session::remove('flash_success'); ?>
 <?php endif; ?>
 
-<?php if (!empty($_SESSION['flash_error'])): ?>
+<?php if (Session::has('flash_error')): ?>
   <script>
     (function() {
       function fireFlashError() {
-        var msg = <?= json_encode($_SESSION['flash_error']) ?>;
+        var msg = <?= json_encode(Session::get('flash_error')) ?>;
         if (typeof showToast === 'function') {
           showToast(msg, 'error');
         } else if (typeof toastr !== 'undefined') {
@@ -83,7 +83,7 @@
       }
     })();
   </script>
-  <?php unset($_SESSION['flash_error']); ?>
+  <?php Session::remove('flash_error'); ?>
 <?php endif; ?>
 
 <header class="topbar">
@@ -134,8 +134,8 @@
                 <div style="max-height: 270px; overflow-y: auto; padding-right: 2px;">
                     <?php if (!empty($allAnneesNav)): ?>
                         <?php 
-                            $userCodeNav = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-                            $userPermsNav = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+                            $userCodeNav = Auth::code() ?? '';
+                            $userPermsNav = Auth::user('permissions') ?? [];
                             $hasGlobalViewNav = in_array('*', $userPermsNav, true) || in_array(PERMISSIONS::VIEW_ANNEES_ANTERIEURES, $userPermsNav, true);
                             
                             $userAccesNav = [];
@@ -454,9 +454,9 @@
                         <strong><?= htmlspecialchars($currentUserName ?? 'Utilisateur') ?></strong>
                         <small style="color: #64748B; display: block;"><?= htmlspecialchars($currentUserEmail ?? '') ?></small>
                         <?php 
-                          $navRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];
-                          if (empty($navRoles) && !empty($_SESSION[USERS_AUTH]['role_code'])) {
-                              $navRoles = [$_SESSION[USERS_AUTH]['role_code']];
+                          $navRoles = Auth::getRoles();
+                          if (empty($navRoles) && !empty(Auth::getRoleCode())) {
+                              $navRoles = [Auth::getRoleCode()];
                           }
                           if (!empty($navRoles)):
                         ?>
@@ -493,8 +493,8 @@
   }
 
   if ($isPastAnneeNav) {
-      $uCodeBanner = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-      $uPermsBanner = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+      $uCodeBanner = Auth::code() ?? '';
+      $uPermsBanner = Auth::user('permissions') ?? [];
       $hasEditPermBanner = in_array('*', $uPermsBanner, true) || in_array(PERMISSIONS::EDIT_ANNEES_ANTERIEURES, $uPermsBanner, true);
 
       if (!$hasEditPermBanner && !empty($uCodeBanner) && isset($dbNav)) {

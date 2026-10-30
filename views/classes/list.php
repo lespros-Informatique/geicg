@@ -5,7 +5,7 @@ $filieres = array_filter($rawFilieres, function($f) {
     return (($f['statut_filiere'] ?? 'actif') === 'actif');
 });
 $niveaux = $niveaux ?? (new ModelNiveau())->getActifs();
-$currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$currentAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 $canEditClasse = (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_CLASSES])));
 $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_CLASSES])));
 ?>
@@ -65,7 +65,7 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
             </div>
             <?php if (!empty($currentAnneeCode)): ?>
               <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 20px;">
-                Année active : <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Active') ?>
+                Année active : <?= htmlspecialchars(Session::get('annee_active_libelle', 'Active')) ?>
               </span>
             <?php endif; ?>
           </div>

@@ -3,7 +3,7 @@
 $annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
 $classes = $classes ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 $stats = $stats ?? ['nb_etudiants' => 0, 'total_du' => 0, 'total_recouvre' => 0, 'total_solde' => 0, 'taux_recouvrement' => 0];
 ?>
 <div class="app-layout">

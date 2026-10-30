@@ -19,7 +19,7 @@ abstract class BaseController
     protected function getActiveAnneeCode(): string
     {
         $db = (new Database())->getCon();
-        $code = $_SESSION['annee_active_code'] ?? '';
+        $code = (string)Session::get('annee_active_code', '');
 
         // Vérifier si l'année en session existe toujours en base
         if (!empty($code)) {
@@ -27,15 +27,15 @@ abstract class BaseController
             $stmtCheck->execute([$code]);
             $exists = $stmtCheck->fetch(PDO::FETCH_ASSOC);
             if (!$exists) {
-                unset($_SESSION['annee_active_code']);
-                unset($_SESSION['annee_active_libelle']);
+                Session::remove('annee_active_code');
+                Session::remove('annee_active_libelle');
                 $code = '';
             } else {
-                $_SESSION['annee_active_libelle'] = $exists['libelle_annee'];
+                Session::set('annee_active_libelle', $exists['libelle_annee']);
             }
         }
 
-        if (empty($_SESSION['annee_active_code'])) {
+        if (!Session::has('annee_active_code') || empty(Session::get('annee_active_code'))) {
             try {
                 $stmt = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
                 $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
@@ -44,18 +44,18 @@ abstract class BaseController
                     $row = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
                 }
                 if ($row) {
-                    $_SESSION['annee_active_code'] = $row['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $row['libelle_annee'];
+                    Session::set('annee_active_code', $row['code_annee']);
+                    Session::set('annee_active_libelle', $row['libelle_annee']);
                 } else {
-                    $_SESSION['annee_active_code'] = '';
-                    $_SESSION['annee_active_libelle'] = 'Aucune';
+                    Session::set('annee_active_code', '');
+                    Session::set('annee_active_libelle', 'Aucune');
                 }
             } catch (Exception $e) {
-                $_SESSION['annee_active_code'] = '';
-                $_SESSION['annee_active_libelle'] = 'Aucune';
+                Session::set('annee_active_code', '');
+                Session::set('annee_active_libelle', 'Aucune');
             }
         }
-        return $_SESSION['annee_active_code'] ?? '';
+        return (string)Session::get('annee_active_code', '');
     }
 
     /**
@@ -64,7 +64,7 @@ abstract class BaseController
     protected function getActiveAnneeLibelle(): string
     {
         $this->getActiveAnneeCode();
-        return $_SESSION['annee_active_libelle'] ?? 'Aucune année';
+        return (string)Session::get('annee_active_libelle', 'Aucune année');
     }
 
     /**
@@ -72,8 +72,8 @@ abstract class BaseController
      */
     protected function getActiveEtablissementCode(): string
     {
-        if (!empty($_SESSION['etablissement_active_code'])) {
-            return $_SESSION['etablissement_active_code'];
+        if (!empty(Session::get('etablissement_active_code'))) {
+            return (string)Session::get('etablissement_active_code');
         }
         try {
             $db = (new Database())->getCon();
@@ -84,7 +84,7 @@ abstract class BaseController
                 $code = $stmtFb ? $stmtFb->fetchColumn() : null;
             }
             if ($code) {
-                $_SESSION['etablissement_active_code'] = (string)$code;
+                Session::set('etablissement_active_code', (string)$code);
                 return (string)$code;
             }
         } catch (Exception $e) {}
@@ -124,7 +124,7 @@ abstract class BaseController
             return true;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
         if (empty($userCode)) return false;
 
         try {
@@ -155,7 +155,7 @@ abstract class BaseController
             return true;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
         if (empty($userCode)) return false;
 
         try {
@@ -285,7 +285,7 @@ abstract class BaseController
 
     protected function unsetSession(): void
     {
-        $_SESSION = [];
+        Session::destroy();
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_unset();
             @session_destroy();
@@ -332,12 +332,12 @@ abstract class BaseController
     {
         $extraData = is_array($extra) ? $extra : ['redirect' => (string)$extra];
         if (!empty($extraData['redirect'])) {
-            $_SESSION['flash_success'] = $message;
+            Session::set('flash_success', $message);
         }
         if ($this->isAjax()) {
             $this->json(array_merge(['status' => 1, 'message' => $message], $extraData));
         } else {
-            $_SESSION['flash_success'] = $message;
+            Session::set('flash_success', $message);
             $redirect = $extraData['redirect'] ?? ($extraData['url'] ?? ($_SERVER['HTTP_REFERER'] ?? RACINE));
             header('Location: ' . $redirect);
             exit;
@@ -358,13 +358,13 @@ abstract class BaseController
         }
 
         if (!empty($redirect)) {
-            $_SESSION['flash_error'] = $message;
+            Session::set('flash_error', $message);
         }
 
         if ($this->isAjax()) {
             $this->json(['status' => 0, 'message' => $message], $httpCode);
         } else {
-            $_SESSION['flash_error'] = $message;
+            Session::set('flash_error', $message);
             $target = $redirect ?? ($_SERVER['HTTP_REFERER'] ?? RACINE);
             header('Location: ' . $target);
             exit;
@@ -430,8 +430,8 @@ abstract class BaseController
      */
     protected function getEtablissementConfig(): array
     {
-        if (isset($_SESSION['etablissement_config']) && is_array($_SESSION['etablissement_config'])) {
-            return $_SESSION['etablissement_config'];
+        if (is_array(Session::get('etablissement_config'))) {
+            return Session::get('etablissement_config');
         }
         try {
             $db = (new Database())->getCon();
@@ -441,8 +441,8 @@ abstract class BaseController
                 $stmtFb = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
                 $config = $stmtFb ? $stmtFb->fetch(PDO::FETCH_ASSOC) : [];
             }
-            $_SESSION['etablissement_config'] = $config ?: [];
-            return $_SESSION['etablissement_config'];
+            Session::set('etablissement_config', $config ?: []);
+            return Session::get('etablissement_config', []);
         } catch (Exception $e) {
             return [];
         }
@@ -536,14 +536,14 @@ abstract class BaseController
 
     protected function getCurrentUserCode(): ?string
     {
-        return $_SESSION[USERS_AUTH]['code_user'] ?? null;
+        return Auth::code();
     }
 
     protected function getCurrentUserRoles(): array
     {
-        $roles = $_SESSION[USERS_AUTH]['roles'] ?? [];
+        $roles = Auth::roles();
         if (empty($roles)) {
-            $roleCode = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? '');
+            $roleCode = Auth::role() ?? (string)Session::get('role_code', '');
             if ($roleCode !== '') {
                 $roles = [$roleCode];
             }
@@ -629,7 +629,7 @@ abstract class BaseController
      */
     protected function hasActionPermission(string $action): bool
     {
-        $perms = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+        $perms = Auth::user('permissions') ?? [];
         if (!empty($perms[$action])) {
             return true;
         }

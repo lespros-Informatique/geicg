@@ -19,7 +19,7 @@ class ModelHome extends BaseModel
             $db = $this->pdo->getCon();
 
             if (!$anneeCode) {
-                $anneeCode = $_SESSION['annee_active_code'] ?? null;
+                $anneeCode = Session::get('annee_active_code');
             }
             if (!$anneeCode) {
                 $stmtA = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
@@ -30,8 +30,8 @@ class ModelHome extends BaseModel
                 }
                 if ($activeRow) {
                     $anneeCode = $activeRow['code_annee'];
-                    $_SESSION['annee_active_code'] = $activeRow['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $activeRow['libelle_annee'];
+                    Session::set('annee_active_code', $activeRow['code_annee']);
+                    Session::set('annee_active_libelle', $activeRow['libelle_annee']);
                 }
             }
 
@@ -230,7 +230,7 @@ class ModelHome extends BaseModel
     {
         try {
             $db = $this->pdo->getCon();
-            $anneeCode = $anneeCode ?: ($_SESSION['annee_active_code'] ?? '');
+            $anneeCode = $anneeCode ?: (Session::get('annee_active_code', ''));
 
             $encaissements = array_fill(1, 12, 0);
             $depenses = array_fill(1, 12, 0);
@@ -288,7 +288,7 @@ class ModelHome extends BaseModel
     {
         try {
             $db = $this->pdo->getCon();
-            $anneeCode = $anneeCode ?: ($_SESSION['annee_active_code'] ?? '');
+            $anneeCode = $anneeCode ?: (Session::get('annee_active_code', ''));
 
             $stmt = $db->prepare("
                 SELECT f.libelle_filiere, COUNT(DISTINCT i.code_inscription) as total_inscrits
@@ -327,7 +327,7 @@ class ModelHome extends BaseModel
     {
         try {
             $db = $this->pdo->getCon();
-            $anneeCode = $anneeCode ?: ($_SESSION['annee_active_code'] ?? '');
+            $anneeCode = $anneeCode ?: (Session::get('annee_active_code', ''));
 
             $stmtDossiers = $db->prepare("
                 SELECT COUNT(DISTINCT i.code_inscription)

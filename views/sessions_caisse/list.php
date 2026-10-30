@@ -6,7 +6,7 @@ $totalSessions = $totalSessions ?? 0;
 $totalOuvertes = $totalOuvertes ?? 0;
 $totalCloturees = $totalCloturees ?? 0;
 $annees = $annees ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

@@ -18,7 +18,7 @@ if ($dateDebutFmt && $dateFinFmt) {
     $periodeTexte = "Jusqu'au {$dateFinFmt}";
 }
 
-$agentNom = trim(($_SESSION['nom_user'] ?? '') . ' ' . ($_SESSION['prenom_user'] ?? ''));
+$agentNom = trim(Auth::fullName());
 if (empty($agentNom)) {
     $agentNom = 'Service Comptabilité & Caisse GEICG';
 }

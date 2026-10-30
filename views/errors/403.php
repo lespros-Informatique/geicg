@@ -5,7 +5,7 @@ if (!headers_sent()) {
 require_once __DIR__ . '/../../public/inc/header.php';
 $message = $message ?? "Vous ne disposez pas des privilèges suffisants pour accéder à ce module ou exécuter cette action.";
 $permissionCode = $permissionCode ?? '';
-$auth = $_SESSION[USERS_AUTH] ?? [];
+$auth = Auth::user() ?: [];
 ?>
 <div class="app-layout">
   <?php if (isset($auth['id_user'])): ?>

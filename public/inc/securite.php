@@ -1,5 +1,5 @@
 <?php
 
-if (!(isset($_SESSION['client']))) {
+if (!(Session::has('client'))) {
     header('location: '.RACINE);
 }

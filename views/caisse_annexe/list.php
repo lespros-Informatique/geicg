@@ -25,7 +25,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
           </div>
           <div style="text-align: right; font-size: 11px; color: #475569;">
             <div>Date d'impression : <strong><?= date('d/m/Y H:i') ?></strong></div>
-            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim(($_SESSION['prenom_utilisateur'] ?? $_SESSION['nom_utilisateur'] ?? 'Caissier'))) ?></strong></div>
+            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim((Auth::fullName() ?: 'Caissier'))) ?></strong></div>
           </div>
         </div>
         
@@ -300,7 +300,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
               <span id="kpi-total-frais-annexes-attendus"><?= number_format((float)($stats['total_frais_annexes_attendus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
             <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? ($_SESSION['annee_active_libelle'] ?? 'En session')) ?></strong>
+              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? (Session::get('annee_active_libelle', 'En session'))) ?></strong>
             </div>
           </div>
           <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">

@@ -2,10 +2,10 @@
 <?php
 $stats = $stats ?? (new ModelDepense())->getStats();
 $annees = $annees ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$selectedAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 $typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
-$canValidate = $canValidate ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_array(PERMISSIONS::VALIDATE_DEPENSES, $_SESSION[USERS_AUTH]['permissions']));
-$canRecord = $canRecord ?? (isset($_SESSION[USERS_AUTH]['permissions']) && in_array(PERMISSIONS::RECORD_DEPENSES, $_SESSION[USERS_AUTH]['permissions']));
+$canValidate = $canValidate ?? Auth::can(PERMISSIONS::VALIDATE_DEPENSES);
+$canRecord = $canRecord ?? Auth::can(PERMISSIONS::RECORD_DEPENSES);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

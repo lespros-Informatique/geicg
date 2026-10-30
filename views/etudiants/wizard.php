@@ -3,7 +3,7 @@
 $annees = (new ModelAnnee())->getAccessibleAnnees();
 $modelAnnee = new ModelAnnee();
 $activeYearRow = $modelAnnee->getActiveYear();
-$activeAnneeCode = $_SESSION['annee_active_code'] ?? ($activeYearRow['code_annee'] ?? '');
+$activeAnneeCode = Session::getActiveAnneeCode() ?: ($activeYearRow['code_annee'] ?? '');
 if (empty($activeAnneeCode)) {
     foreach ($annees as $a) {
         if (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) {

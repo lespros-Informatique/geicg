@@ -19,7 +19,7 @@ Ce document recense l'ensemble des **variables locales redondantes**, **accès d
 | **3. Tables SQL codées en dur** | `TABLES::*` | **0** |
 | **4. Vues SQL codées en dur** | `TABLES::*` ou `VIEWS::*` (à ajouter dans `const.php`) | **0** |
 | **5. Statuts métier codés en dur** | `STATUTS::*` | **0** |
-| **6. Accès directs à `$_SESSION`** | `Session::get()` / `Auth::user()` / `USERS_AUTH` | **43** |
+| **6. Accès directs à `$_SESSION`** | `Session::get()` / `Auth::user()` / `USERS_AUTH` | **0** |
 | **7. Variables PHP locales dans les Vues/Includes** | `BaseController` / `Auth` / `Session` | **138** |
 
 ---
@@ -49,51 +49,8 @@ Ce document recense l'ensemble des **variables locales redondantes**, **accès d
 
 ---
 
-## 6. Variables de Session accédées en dur (`$_SESSION[...]`) au lieu de `Session::*` / `Auth::*` (43 fichiers)
+## 6. Variables de Session accédées en dur (`$_SESSION[...]`) au lieu de `Session::*` / `Auth::*` (0 fichiers)
 
-- **`core/BaseController.php`** : `$_SESSION['annee_active_code']` (x7), `$_SESSION['annee_active_libelle']` (x6), `$_SESSION['etablissement_active_code']` (x3), `$_SESSION[USERS_AUTH]` (x6), `$_SESSION['flash_success']` (x2), `$_SESSION['flash_error']` (x2), `$_SESSION['etablissement_config']` (x5), `$_SESSION['role_code']` (x1)
-- **`core/PrincipalRoute.php`** : `$_SESSION['annee_active_code']` (x2), `$_SESSION['annee_active_libelle']` (x1)
-- **`models/Validator.php`** : `$_SESSION['roles']` (x1), `$_SESSION['csrf_token']` (x8), `$_SESSION['csrf_token_time']` (x4), `$_SESSION[USERS_AUTH]` (x2)
-- **`models/home/ModelHome.php`** : `$_SESSION['annee_active_code']` (x5), `$_SESSION['annee_active_libelle']` (x1)
-- **`public/inc/header.php`** : `$_SESSION[USERS_AUTH]` (x10)
-- **`public/inc/nav.php`** : `$_SESSION['annee_active_code']` (x4), `$_SESSION['annee_active_libelle']` (x4), `$_SESSION['flash_success']` (x3), `$_SESSION['flash_error']` (x3), `$_SESSION[USERS_AUTH]` (x7)
-- **`public/inc/securite.php`** : `$_SESSION['client']` (x1)
-- **`public/inc/sidbar.php`** : `$_SESSION['annee_active_libelle']` (x3)
-- **`views/absences/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/accessoires/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/accessoires/registre.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/arrieres/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/bulletin/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/bulletin/pv_classe.php`** : `$_SESSION['annee_active_libelle']` (x1)
-- **`views/caisse_annexe/list.php`** : `$_SESSION['prenom_utilisateur']` (x1), `$_SESSION['nom_utilisateur']` (x1), `$_SESSION['annee_active_libelle']` (x1)
-- **`views/caisse_annexe/print.php`** : `$_SESSION['nom_user']` (x1), `$_SESSION['prenom_user']` (x1)
-- **`views/classes/edit.php`** : `$_SESSION['annee_active_code']` (x1), `$_SESSION['annee_active_libelle']` (x1)
-- **`views/classes/list.php`** : `$_SESSION['annee_active_code']` (x1), `$_SESSION['annee_active_libelle']` (x1)
-- **`views/compositions/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/depenses/list.php`** : `$_SESSION['annee_active_code']` (x1), `$_SESSION[USERS_AUTH]` (x4)
-- **`views/dossier_etudiant/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/emplois_temps/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/enseignant_matiere/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/errors/403.php`** : `$_SESSION[USERS_AUTH]` (x1)
-- **`views/errors/404.php`** : `$_SESSION[USERS_AUTH]` (x1)
-- **`views/errors/500.php`** : `$_SESSION[USERS_AUTH]` (x1)
-- **`views/etablissements/config.php`** : `$_SESSION['flash_success']` (x3), `$_SESSION['flash_error']` (x3)
-- **`views/etudiants/wizard.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/home/index.php`** : `$_SESSION[USERS_AUTH]` (x5), `$_SESSION['permissions']` (x1)
-- **`views/impayes/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/inscriptions/edit.php`** : `$_SESSION['annee_active_libelle']` (x1), `$_SESSION['annee_active_code']` (x1)
-- **`views/inscriptions/list.php`** : `$_SESSION['annee_active_libelle']` (x1)
-- **`views/inscriptions/prise_de_vue.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/inscriptions/sans_photo.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/notes/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/notes/saisie_classe.php`** : `$_SESSION['annee_active_code']` (x1), `$_SESSION['annee_active_libelle']` (x1)
-- **`views/paiements/comptabilite_etudiants.php`** : `$_SESSION['annee_active_libelle']` (x1)
-- **`views/paiements/list.php`** : `$_SESSION['prenom_utilisateur']` (x1), `$_SESSION['nom_utilisateur']` (x1), `$_SESSION['annee_active_libelle']` (x2)
-- **`views/scolarites/edit.php`** : `$_SESSION['annee_active_code']` (x1), `$_SESSION['annee_active_libelle']` (x1)
-- **`views/semestres/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/sessions_caisse/list.php`** : `$_SESSION['annee_active_code']` (x1)
-- **`views/users/editPassword.php`** : `$_SESSION[USERS_AUTH]` (x1)
-- **`views/users/profil.php`** : `$_SESSION[USERS_AUTH]` (x3)
 
 ---
 

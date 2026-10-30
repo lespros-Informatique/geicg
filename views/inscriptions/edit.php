@@ -29,7 +29,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
           <div style="display: flex; align-items: center; gap: 10px;">
             <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Bureau d\'Inscription : Guichet de Réinscription Étudiant' ?></h1>
             <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 8px;">
-              Session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'en cours') ?>
+              Session <?= htmlspecialchars(Session::get('annee_active_libelle', 'en cours')) ?>
             </span>
           </div>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Contrôle du quitus financier N-1, progression académique et émission de la Fiche Navette pour le Bureau des Versements</p>
@@ -335,7 +335,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
             </label>
             <select class="form-control select2" id="sel_annee_inscription" style="width: 100%; box-sizing: border-box;" name="annee_code" required>
               <?php 
-                $selectedAnneeIns = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
+                $selectedAnneeIns = $item['annee_code'] ?? (Session::get('annee_active_code', ''));
                 foreach($annees as $a): 
               ?>
                 <option value="<?= $a['code_annee'] ?>" <?= ($selectedAnneeIns == $a['code_annee']) ? 'selected' : '' ?>>

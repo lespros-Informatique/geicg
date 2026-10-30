@@ -33,7 +33,7 @@ class Validator
 
     public function hasRole($role)
     {
-        return in_array($role, $_SESSION['roles'] ?? []);
+        return in_array($role, Session::get('roles', []));
     }
 
     public function verif($table, $field, $value)
@@ -435,23 +435,24 @@ class Validator
 
     public static function generateCsrfToken(): string
     {
-        if (!isset($_SESSION['csrf_token']) || empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-            $_SESSION['csrf_token_time'] = time();
+        if (empty(Session::get('csrf_token'))) {
+            Session::set('csrf_token', bin2hex(random_bytes(32)));
+            Session::set('csrf_token_time', time());
         }
-        return $_SESSION['csrf_token'];
+        return (string)Session::get('csrf_token');
     }
 
     public static function validateCsrfToken(?string $token): bool
     {
-        if (!isset($_SESSION['csrf_token']) || empty($_SESSION['csrf_token'])) {
+        if (empty(Session::get('csrf_token'))) {
             return false;
         }
-        if (!isset($_SESSION['csrf_token_time']) || (time() - $_SESSION['csrf_token_time']) > 3600) {
-            unset($_SESSION['csrf_token'], $_SESSION['csrf_token_time']);
+        if (!Session::has('csrf_token_time') || (time() - (int)Session::get('csrf_token_time', 0)) > 3600) {
+            Session::remove('csrf_token');
+            Session::remove('csrf_token_time');
             return false;
         }
-        return hash_equals($_SESSION['csrf_token'], (string)$token);
+        return hash_equals((string)Session::get('csrf_token', ''), (string)$token);
     }
 
     public static function csrfField(): string
@@ -684,7 +685,7 @@ class Validator
 
     public static function isConnected(): bool
     {
-        return isset($_SESSION[USERS_AUTH]['code_user']) && !empty($_SESSION[USERS_AUTH]['code_user']);
+        return !empty(Auth::code());
     }
 
     public static function hashPassword(string $password): string
@@ -734,11 +735,11 @@ class Validator
         if (is_array($data)) {
             if (sizeof($data) > 0 && !empty($entity)) {
                 foreach ($data as $key => $value) {
-                    $_SESSION[$entity][$key] = $value;
+                    Session::set($entity . '.' . $key, $value);
                 }
             }
         } else {
-            $_SESSION[$entity] = $data;
+            Session::set($entity, $data);
         }
     }
 
@@ -785,12 +786,10 @@ class Validator
     public static function getSesion(string $entity, string $field = "")
     {
         if (!empty($field) && !empty($entity)) {
-            if (isset($_SESSION[$entity]) && key_exists($field, $_SESSION[$entity])) {
-                return $_SESSION[$entity][$field];
-            } else {
-                if (isset($_SESSION[$entity])) {
-                    return $_SESSION[$entity];
-                }
+            if (Session::has($entity . '.' . $field)) {
+                return Session::get($entity . '.' . $field);
+            } elseif (Session::has($entity)) {
+                return Session::get($entity);
             }
         }
         return null;

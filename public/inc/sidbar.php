@@ -69,11 +69,11 @@
         <div class="full-badge w-100 text-center d-flex flex-column align-items-center justify-content-center">
             <div class="text-uppercase text-muted text-center" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-align: center; width: 100%;">Année Académique</div>
             <div class="fw-bold text-primary text-center" style="font-size: 13px; text-align: center; width: 100%;">
-                <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>
+                <?= htmlspecialchars(Session::get('annee_active_libelle', 'Aucune')) ?>
             </div>
         </div>
-        <div class="mini-badge text-center" title="Année <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>" style="text-align: center; width: 100%;">
-            <?= htmlspecialchars(substr($_SESSION['annee_active_libelle'] ?? 'Aucune', -5)) ?>
+        <div class="mini-badge text-center" title="Année <?= htmlspecialchars(Session::get('annee_active_libelle', 'Aucune')) ?>" style="text-align: center; width: 100%;">
+            <?= htmlspecialchars(substr(Session::get('annee_active_libelle', 'Aucune'), -5)) ?>
         </div>
     </div>
 

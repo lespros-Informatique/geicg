@@ -18,8 +18,8 @@ if (!empty($item['filiere_code'])) {
 }
 $niveaux = (new ModelNiveau())->getAll();
 $annees = (new ModelAnnee())->getAll();
-$currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
-$currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
+$currentAnneeCode = $item['annee_code'] ?? (Session::get('annee_active_code', ''));
+$currentAnneeLibelle = Session::get('annee_active_libelle', 'Session Active');
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>

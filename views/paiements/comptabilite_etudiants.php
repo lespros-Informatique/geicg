@@ -25,7 +25,7 @@ $classes = $classes ?? [];
       </div>
       <div style="text-align: right;">
         <h3 style="margin:0; font-size: 16px; font-weight: 800;">SUIVI COMPTABLE DES ÉTUDIANTS</h3>
-        <p style="margin: 3px 0 0 0; font-size: 11px; color: #555;">Année Académique: <strong id="print-annee-label"><?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'En Cours') ?></strong></p>
+        <p style="margin: 3px 0 0 0; font-size: 11px; color: #555;">Année Académique: <strong id="print-annee-label"><?= htmlspecialchars(Session::get('annee_active_libelle', 'En Cours')) ?></strong></p>
         <p style="margin: 1px 0 0 0; font-size: 10px; color: #666;">Édité le: <?= date('d/m/Y H:i') ?></p>
       </div>
     </div>

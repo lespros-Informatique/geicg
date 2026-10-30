@@ -4,7 +4,7 @@ if (!headers_sent()) {
 }
 require_once __DIR__ . '/../../public/inc/header.php';
 $message = $message ?? "La page ou la ressource que vous recherchez n'existe pas ou a été déplacée.";
-$auth = $_SESSION[USERS_AUTH] ?? [];
+$auth = Auth::user() ?: [];
 ?>
 <div class="app-layout">
   <?php if (isset($auth['id_user'])): ?>
