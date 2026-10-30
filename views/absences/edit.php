@@ -112,49 +112,13 @@ $selectedEtudiantCode = $item['etudiant_code'] ?? '';
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-
-  var studentsByClass = <?= json_encode($studentsByClass) ?>;
-  var selectedEtudCode = <?= json_encode($selectedEtudiantCode) ?>;
-
-  if ($.fn.select2) {
-    $('#sel_classe_ab, #sel_mat_ab').select2({ width: '100%' });
-  }
-
-  function loadStudentsForClasse(classeCode, keepSelected) {
-    var $el = $('#sel_etud_ab');
-    $el.empty();
-    
-    if (!classeCode || !studentsByClass[classeCode]) {
-      $el.append('<option value="">-- Veuillez d\'abord choisir une classe --</option>');
-      $el.prop('disabled', true);
-    } else {
-      $el.append('<option value="">-- Choisir un élève de la classe --</option>');
-      var list = studentsByClass[classeCode];
-      $.each(list, function(i, st) {
-        var isSelected = (keepSelected && st.code_etudiant === selectedEtudCode) ? 'selected' : '';
-        $el.append('<option value="' + st.code_etudiant + '" ' + isSelected + '>' + st.nom_affiche + '</option>');
-      });
-      $el.prop('disabled', false);
-    }
-    
-    if ($.fn.select2) {
-      $el.select2({ placeholder: "-- Choisir un élève --", width: '100%' });
-    }
-  }
-
-  $('#sel_classe_ab').on('change', function() {
-    loadStudentsForClasse($(this).val(), false);
-  });
-
-  var initialClasse = $('#sel_classe_ab').val();
-  if (initialClasse) {
-    loadStudentsForClasse(initialClasse, true);
-  } else {
-    loadStudentsForClasse('', false);
-  }
-});
+<script type="application/json" id="absences-edit-config">
+<?= json_encode([
+    'studentsByClass' => $studentsByClass ?? [],
+    'selectedEtudiantCode' => $selectedEtudiantCode ?? ''
+]) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+$pageScripts = ['public/assets/js/modules/absences_edit.js'];
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

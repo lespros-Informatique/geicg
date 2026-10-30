@@ -1,39 +1,34 @@
 <?php
-$viewsDir = 'c:/wamp64/www/geicg/views';
-
-$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($viewsDir));
-$viewsWithJs = [];
-
-foreach ($iterator as $file) {
-    if ($file->isFile() && $file->getExtension() === 'php') {
-        $path = $file->getPathname();
-        $content = file_get_contents($path);
-        if (preg_match_all('/<script\b[^>]*>(.*?)<\/script>/is', $content, $matches)) {
-            $scripts = [];
-            foreach ($matches[1] as $idx => $scriptBody) {
-                $trimmed = trim($scriptBody);
-                if (!empty($trimmed)) {
-                    $scripts[] = [
-                        'lines' => count(explode("\n", $trimmed)),
-                        'preview' => substr($trimmed, 0, 150)
-                    ];
-                }
-            }
-            if (!empty($scripts)) {
-                $relPath = str_replace('\\', '/', str_replace($viewsDir . DIRECTORY_SEPARATOR, '', $path));
-                $viewsWithJs[$relPath] = $scripts;
-            }
+$viewsDir = __DIR__ . '/../views';
+$rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($viewsDir));
+$results = [];
+foreach ($rii as $file) {
+    if ($file->isDir() || $file->getExtension() !== 'php') continue;
+    $content = file_get_contents($file->getPathname());
+    if (preg_match_all('/<script(?![^>]*\b(?:src\s*=|type\s*=\s*["\']application\/json["\']))[^>]*>(.*?)<\/script>/is', $content, $matches)) {
+        $relPath = str_replace('\\', '/', substr($file->getPathname(), strlen($viewsDir) + 1));
+        $totalLines = 0;
+        $snippets = [];
+        foreach ($matches[1] as $idx => $js) {
+            $lines = substr_count(trim($js), "\n") + 1;
+            $totalLines += $lines;
+            $snippets[] = [
+                'lines' => $lines,
+                'preview' => substr(preg_replace('/\s+/', ' ', trim($js)), 0, 80)
+            ];
         }
+        $results[$relPath] = [
+            'count' => count($matches[0]),
+            'lines' => $totalLines,
+            'snippets' => $snippets
+        ];
     }
 }
-
-echo "Total views with inline JS: " . count($viewsWithJs) . "\n\n";
-
-foreach ($viewsWithJs as $view => $scripts) {
-    $totalLines = array_sum(array_column($scripts, 'lines'));
-    echo "[$view] : " . count($scripts) . " script(s), ~$totalLines lines\n";
-    foreach ($scripts as $s) {
-        $oneLinePreview = str_replace(["\r", "\n", "  "], ' ', substr($s['preview'], 0, 80));
-        echo "    - ({$s['lines']} lines): $oneLinePreview\n";
+ksort($results);
+echo "Total views with executable inline JS: " . count($results) . "\n\n";
+foreach ($results as $path => $info) {
+    echo "[$path] : {$info['count']} script(s), ~{$info['lines']} lines\n";
+    foreach ($info['snippets'] as $s) {
+        echo "    - ({$s['lines']} lines): {$s['preview']}\n";
     }
 }
