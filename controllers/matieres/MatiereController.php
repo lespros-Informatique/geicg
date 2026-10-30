@@ -10,14 +10,14 @@ class MatiereController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_MATIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_MATIERES);
         $this->loadView('../views/matieres/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_MATIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_MATIERES);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,7 +35,7 @@ class MatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $data = $_POST;
         unset($data['csrf_token']);
         unset($data['id_matiere']);
@@ -72,7 +72,7 @@ class MatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $id = (int)$this->post('id_matiere');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -98,7 +98,7 @@ class MatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $id = $this->post('id') ?: $this->post('id_matiere');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -114,7 +114,7 @@ class MatiereController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_MATIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_MATIERES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -138,7 +138,7 @@ class MatiereController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -153,7 +153,7 @@ class MatiereController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $this->loadView('../views/matieres/edit.php', ['item' => []]);
     }
 }

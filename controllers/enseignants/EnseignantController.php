@@ -10,14 +10,14 @@ class EnseignantController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ENSEIGNANTS');
+        $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
         $this->loadView('../views/enseignants/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ENSEIGNANTS');
+        $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,7 +35,7 @@ class EnseignantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ENSEIGNANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ENSEIGNANTS);
         $currentUserCode = Auth::code();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
@@ -115,7 +115,7 @@ class EnseignantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ENSEIGNANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ENSEIGNANTS);
         $id = (int)$this->post('id_enseignant');
         if (!$id) { $this->error('Identifiant invalide'); return; }
 
@@ -172,7 +172,7 @@ class EnseignantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ENSEIGNANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ENSEIGNANTS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -188,7 +188,7 @@ class EnseignantController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ENSEIGNANTS');
+        $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
         try {
             $id = $this->validator->decrypter($details);
             if (!$id || !is_numeric($id)) $id = is_numeric($details) ? (int)$details : 0;
@@ -211,7 +211,7 @@ class EnseignantController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ENSEIGNANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ENSEIGNANTS);
         try {
             $id = $this->validator->decrypter($details);
             if (!$id || !is_numeric($id)) $id = is_numeric($details) ? (int)$details : 0;
@@ -233,7 +233,7 @@ class EnseignantController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ENSEIGNANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ENSEIGNANTS);
         $availableUsers = $this->model->getUsersAvailableForTeacher();
         $this->loadView('../views/enseignants/edit.php', [
             'item' => [],

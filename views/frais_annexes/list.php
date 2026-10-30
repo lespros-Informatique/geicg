@@ -10,7 +10,7 @@
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des barèmes de frais annexes par type de filière et session académique</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['PRINT_FRAIS_ANNEXES', 'VIEW_FRAIS_ANNEXES', 'MANAGE_FRAIS_ANNEXES', 'PRINT_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE']))): ?>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::PRINT_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::PRINT_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]))): ?>
             <a href="<?= RACINE ?>fraisAnnexe/imprimerPdf" id="btn-print-frais" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
               <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer la Grille Tarifaire (PDF)
             </a>

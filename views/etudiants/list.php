@@ -24,7 +24,7 @@ $anneeActive = $anneeActive ?? '';
           <a href="<?= RACINE ?>etudiant/imprimerPdf" id="btn-print-etudiants" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer la liste des étudiants en PDF">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </a>
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_ETUDIANTS', 'MANAGE_INSCRIPTIONS']))): ?>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::MANAGE_INSCRIPTIONS]))): ?>
           <a href="<?= RACINE ?>etudiant/wizard" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Dossier Étudiant
           </a>
@@ -244,9 +244,9 @@ $anneeActive = $anneeActive ?? '';
 
 <script type="application/json" id="etudiants-list-config">
 <?= json_encode([
-    'canChangerClasse' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['CHANGER_CLASSE_ETUDIANT', 'MANAGE_ETUDIANTS']))),
-    'canEditEtudiant' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['EDIT_ETUDIANT', 'MANAGE_ETUDIANTS']))),
-    'canAnnulerInscription' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['ANNULER_INSCRIPTION', 'MANAGE_INSCRIPTIONS']))),
+    'canChangerClasse' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::CHANGER_CLASSE_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]))),
+    'canEditEtudiant' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]))),
+    'canAnnulerInscription' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::ANNULER_INSCRIPTION, PERMISSIONS::MANAGE_INSCRIPTIONS]))),
     'useSlugFiliere' => !empty($useSlugFiliere),
     'useSlugNiveau' => !empty($useSlugNiveau),
     'anneeActive' => $anneeActive ?? '',

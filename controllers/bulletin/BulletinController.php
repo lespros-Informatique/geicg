@@ -10,7 +10,7 @@ class BulletinController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -27,7 +27,7 @@ class BulletinController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code') ?? null;
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -60,7 +60,7 @@ class BulletinController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         try {
             $id = $this->validator->decrypter($details);
             $selectedSemestreCode = $_GET['semestre'] ?? '';
@@ -80,7 +80,7 @@ class BulletinController extends BaseController
     public function imprimerBulletinPdf($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_BULLETINS', 'GENERATE_BULLETINS', 'VIEW_NOTES']);
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         try {
@@ -174,7 +174,7 @@ class BulletinController extends BaseController
     public function pvClasse($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_BULLETINS', 'VIEW_NOTES']);
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
 
         $classes = (new ModelClasse())->getAll();
         $semestres = $this->model->getActiveSemestres();
@@ -208,7 +208,7 @@ class BulletinController extends BaseController
     public function imprimerPvPdf($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_BULLETINS', 'GENERATE_BULLETINS', 'VIEW_NOTES']);
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $selectedClasseCode = $_GET['classe_code'] ?? '';

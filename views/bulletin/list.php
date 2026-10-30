@@ -16,7 +16,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Génération, consultation et impression des relevés de notes et Procès-Verbaux de délibération par classe</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['VIEW_BULLETINS', 'VIEW_NOTES']))): ?>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]))): ?>
             <a href="<?= RACINE ?>bulletin/pvClasse" id="btn-pv-classe" class="btn btn-outline-primary" style="border-color: #1E3A5F; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
               <i data-lucide="file-spreadsheet" style="width: 18px; height: 18px;"></i> Procès-Verbal (PV) de Classe
             </a>

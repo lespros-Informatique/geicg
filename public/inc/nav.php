@@ -136,7 +136,7 @@
                         <?php 
                             $userCodeNav = $_SESSION[USERS_AUTH]['code_user'] ?? '';
                             $userPermsNav = $_SESSION[USERS_AUTH]['permissions'] ?? [];
-                            $hasGlobalViewNav = in_array('*', $userPermsNav, true) || in_array('VIEW_ANNEES_ANTERIEURES', $userPermsNav, true);
+                            $hasGlobalViewNav = in_array('*', $userPermsNav, true) || in_array(PERMISSIONS::VIEW_ANNEES_ANTERIEURES, $userPermsNav, true);
                             
                             $userAccesNav = [];
                             if (!$hasGlobalViewNav && !empty($userCodeNav) && $dbNav) {
@@ -495,7 +495,7 @@
   if ($isPastAnneeNav) {
       $uCodeBanner = $_SESSION[USERS_AUTH]['code_user'] ?? '';
       $uPermsBanner = $_SESSION[USERS_AUTH]['permissions'] ?? [];
-      $hasEditPermBanner = in_array('*', $uPermsBanner, true) || in_array('EDIT_ANNEES_ANTERIEURES', $uPermsBanner, true);
+      $hasEditPermBanner = in_array('*', $uPermsBanner, true) || in_array(PERMISSIONS::EDIT_ANNEES_ANTERIEURES, $uPermsBanner, true);
 
       if (!$hasEditPermBanner && !empty($uCodeBanner) && isset($dbNav)) {
           try {

@@ -26,7 +26,7 @@ class EtudiantController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ETUDIANTS');
+        $this->requirePermission(PERMISSIONS::VIEW_ETUDIANTS);
         $anneeCode = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
         if ($anneeCode === '' || $anneeCode === null) {
             $anneeCode = $this->getActiveAnneeCode();
@@ -68,7 +68,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ETUDIANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
         $data = $_POST;
         unset($data['csrf_token']);
         $this->cleanPhoneFields($data);
@@ -126,7 +126,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['EDIT_ETUDIANT', 'MANAGE_ETUDIANTS']);
+        $this->requirePermission([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]);
         $id = (int)$this->post('id_etudiant');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -186,7 +186,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ETUDIANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -202,7 +202,7 @@ class EtudiantController extends BaseController
     public function changerClassePage($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['CHANGER_CLASSE_ETUDIANT', PERMISSIONS::MANAGE_ETUDIANTS]);
+        $this->requirePermission([PERMISSIONS::CHANGER_CLASSE_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]);
 
         try {
             $id = $this->validator->decrypter($details);
@@ -241,7 +241,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['CHANGER_CLASSE_ETUDIANT', PERMISSIONS::MANAGE_ETUDIANTS]);
+        $this->requirePermission([PERMISSIONS::CHANGER_CLASSE_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]);
 
         $codeInscription = trim($_POST['code_inscription'] ?? '');
         $codeEtudiant = trim($_POST['code_etudiant'] ?? '');
@@ -320,7 +320,7 @@ class EtudiantController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['EDIT_ETUDIANT', 'MANAGE_ETUDIANTS']);
+        $this->requirePermission([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -335,14 +335,14 @@ class EtudiantController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ETUDIANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
         $this->loadView('../views/etudiants/edit.php', ['item' => []]);
     }
 
     public function wizard()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ETUDIANTS');
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
         $this->loadView('../views/etudiants/wizard.php');
     }
 
@@ -371,7 +371,7 @@ class EtudiantController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_ETUDIANTS', 'MANAGE_ETUDIANTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::MANAGE_ETUDIANTS]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
@@ -489,7 +489,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['ANNULER_INSCRIPTION', PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $this->requirePermission([PERMISSIONS::ANNULER_INSCRIPTION, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $idInscription = (int)$this->post('id_inscription');
         $codeInscription = trim($this->post('code_inscription') ?? '');

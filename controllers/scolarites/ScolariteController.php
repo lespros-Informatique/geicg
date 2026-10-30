@@ -573,7 +573,7 @@ class ScolariteController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE', 'MANAGE_FRAIS_SCOLARITE']);
+        $this->requirePermission([PERMISSIONS::PRINT_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
         require_once __DIR__ . '/../../models/tranches_scolarite/ModelTranche.php';

@@ -10,7 +10,7 @@ class SemestreController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
         $annees = $this->getAccessibleAnnees();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
@@ -35,7 +35,7 @@ class SemestreController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $items = $this->model->getAll($anneeCode);
         $data = [];
@@ -108,7 +108,7 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -170,7 +170,7 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $id = (int)$this->post('id_semestre');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         
@@ -226,7 +226,7 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $id = (int)$this->post('id');
         $item = $id ? $this->model->getById($id) : null;
         if ($item) {
@@ -259,7 +259,7 @@ class SemestreController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getSemestreWithAnnee($id);
@@ -283,7 +283,7 @@ class SemestreController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -301,7 +301,7 @@ class SemestreController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $this->loadView('../views/semestres/edit.php', ['item' => []]);
     }
 

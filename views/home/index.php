@@ -21,13 +21,13 @@ $hasPerm = function(string $code) use ($userPermissions): bool {
     return in_array('*', $userPermissions, true) || in_array($code, $userPermissions, true);
 };
 
-$isAdminOrDG = $hasPerm('VIEW_DASHBOARD_EXECUTIVE');
-$isFinance = $hasPerm('VIEW_DASHBOARD_FINANCE');
-$isPedagogie = $hasPerm('VIEW_DASHBOARD_PEDAGOGIE');
-$isScolarite = $hasPerm('VIEW_DASHBOARD_SCOLARITE');
-$isEnseignant = $hasPerm('VIEW_DASHBOARD_ENSEIGNANT');
-$isCommunication = $hasPerm('VIEW_DASHBOARD_COMMUNICATION');
-$canViewActions = $hasPerm('VIEW_DASHBOARD_ACTIONS');
+$isAdminOrDG = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_EXECUTIVE);
+$isFinance = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_FINANCE);
+$isPedagogie = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_PEDAGOGIE);
+$isScolarite = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_SCOLARITE);
+$isEnseignant = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_ENSEIGNANT);
+$isCommunication = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_COMMUNICATION);
+$canViewActions = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_ACTIONS);
 
 $monthlyFinancials = $stats['monthly_financials'] ?? ['labels' => [], 'encaissements' => [], 'depenses' => []];
 $filieresDistribution = $stats['filieres_distribution'] ?? ['labels' => [], 'series' => []];
@@ -76,7 +76,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
       <?php if (($isAdminOrDG || $isScolarite || $isFinance) && ($guichetAlerts['dossiers_incomplets'] > 0 || $guichetAlerts['kits_en_attente'] > 0 || ($stats['reliquat_impayes'] ?? 0) > 0)): ?>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px;">
           
-          <?php if ($guichetAlerts['dossiers_incomplets'] > 0 && ($hasPerm('MANAGE_DEPOT_DOSSIERS') || $isScolarite || $isAdminOrDG)): ?>
+          <?php if ($guichetAlerts['dossiers_incomplets'] > 0 && ($hasPerm(PERMISSIONS::MANAGE_DEPOT_DOSSIERS) || $isScolarite || $isAdminOrDG)): ?>
             <a href="<?= RACINE ?>dossier_etudiant/list" class="dash-card" style="text-decoration: none; border-left: 4px solid #EA580C; background: #FFF7ED; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: #FFEDD5; color: #C2410C; display: flex; align-items: center; justify-content: center;">
@@ -91,7 +91,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
             </a>
           <?php endif; ?>
 
-          <?php if ($guichetAlerts['kits_en_attente'] > 0 && ($hasPerm('MANAGE_REMISE_KITS') || $isScolarite || $isAdminOrDG)): ?>
+          <?php if ($guichetAlerts['kits_en_attente'] > 0 && ($hasPerm(PERMISSIONS::MANAGE_REMISE_KITS) || $isScolarite || $isAdminOrDG)): ?>
             <a href="<?= RACINE ?>accessoire_inscription/registre" class="dash-card" style="text-decoration: none; border-left: 4px solid #D97706; background: #FFFBEB; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
@@ -106,7 +106,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
             </a>
           <?php endif; ?>
 
-          <?php if (($stats['reliquat_impayes'] ?? 0) > 0 && ($hasPerm('MANAGE_IMPAYES') || $isFinance || $isAdminOrDG)): ?>
+          <?php if (($stats['reliquat_impayes'] ?? 0) > 0 && ($hasPerm(PERMISSIONS::MANAGE_IMPAYES) || $isFinance || $isAdminOrDG)): ?>
             <a href="<?= RACINE ?>impayes/list" class="dash-card" style="text-decoration: none; border-left: 4px solid #DC2626; background: #FEF2F2; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEE2E2; color: #991B1B; display: flex; align-items: center; justify-content: center;">
@@ -342,11 +342,11 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
       <!-- ========================================================================= -->
       <?php if ($canViewActions): ?>
         <?php
-          $canGroup1 = $hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS') || $hasPerm('MANAGE_DEPOT_DOSSIERS') || $hasPerm('VIEW_DEPOT_DOSSIERS') || $hasPerm('MANAGE_REMISE_KITS') || $hasPerm('VIEW_REMISE_KITS') || $hasPerm('MANAGE_ACCESSOIRES') || $hasPerm('VIEW_ETUDIANTS') || $hasPerm('MANAGE_ETUDIANTS');
-          $canGroup2 = $hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS') || $hasPerm('OUVERTURE_CAISSE') || $hasPerm('CLOTURE_CAISSE') || $hasPerm('MANAGE_CAISSE') || $hasPerm('MANAGE_IMPAYES') || $hasPerm('VIEW_IMPAYES') || $hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES');
-          $canGroup3 = $hasPerm('VIEW_NOTES') || $hasPerm('ENTER_NOTES') || $hasPerm('VIEW_BULLETINS') || $hasPerm('GENERATE_BULLETINS') || $hasPerm('VIEW_ABSENCES') || $hasPerm('MANAGE_ABSENCES') || $hasPerm('VIEW_ENSEIGNANTS') || $hasPerm('MANAGE_ENSEIGNANTS');
-          $canGroup4 = $hasPerm('VIEW_CLASSES') || $hasPerm('MANAGE_CLASSES') || $hasPerm('VIEW_FILIERES') || $hasPerm('MANAGE_FILIERES') || $hasPerm('VIEW_MATIERES') || $hasPerm('MANAGE_MATIERES');
-          $canGroup5 = $hasPerm('VIEW_USERS') || $hasPerm('MANAGE_USERS') || $hasPerm('MANAGE_ROLES');
+          $canGroup1 = $hasPerm(PERMISSIONS::VIEW_INSCRIPTIONS) || $hasPerm(PERMISSIONS::MANAGE_INSCRIPTIONS) || $hasPerm(PERMISSIONS::MANAGE_DEPOT_DOSSIERS) || $hasPerm(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || $hasPerm(PERMISSIONS::MANAGE_REMISE_KITS) || $hasPerm(PERMISSIONS::VIEW_REMISE_KITS) || $hasPerm(PERMISSIONS::MANAGE_ACCESSOIRES) || $hasPerm(PERMISSIONS::VIEW_ETUDIANTS) || $hasPerm(PERMISSIONS::MANAGE_ETUDIANTS);
+          $canGroup2 = $hasPerm(PERMISSIONS::VIEW_PAIEMENTS) || $hasPerm(PERMISSIONS::RECORD_PAIEMENTS) || $hasPerm(PERMISSIONS::OUVERTURE_CAISSE) || $hasPerm(PERMISSIONS::CLOTURE_CAISSE) || $hasPerm(PERMISSIONS::MANAGE_CAISSE) || $hasPerm(PERMISSIONS::MANAGE_IMPAYES) || $hasPerm(PERMISSIONS::VIEW_IMPAYES) || $hasPerm(PERMISSIONS::VIEW_DEPENSES) || $hasPerm(PERMISSIONS::RECORD_DEPENSES);
+          $canGroup3 = $hasPerm(PERMISSIONS::VIEW_NOTES) || $hasPerm(PERMISSIONS::ENTER_NOTES) || $hasPerm(PERMISSIONS::VIEW_BULLETINS) || $hasPerm(PERMISSIONS::GENERATE_BULLETINS) || $hasPerm(PERMISSIONS::VIEW_ABSENCES) || $hasPerm(PERMISSIONS::MANAGE_ABSENCES) || $hasPerm(PERMISSIONS::VIEW_ENSEIGNANTS) || $hasPerm(PERMISSIONS::MANAGE_ENSEIGNANTS);
+          $canGroup4 = $hasPerm(PERMISSIONS::VIEW_CLASSES) || $hasPerm(PERMISSIONS::MANAGE_CLASSES) || $hasPerm(PERMISSIONS::VIEW_FILIERES) || $hasPerm(PERMISSIONS::MANAGE_FILIERES) || $hasPerm(PERMISSIONS::VIEW_MATIERES) || $hasPerm(PERMISSIONS::MANAGE_MATIERES);
+          $canGroup5 = $hasPerm(PERMISSIONS::VIEW_USERS) || $hasPerm(PERMISSIONS::MANAGE_USERS) || $hasPerm(PERMISSIONS::MANAGE_ROLES);
         ?>
 
         <div style="margin-bottom: 36px;">
@@ -376,7 +376,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
               </div>
 
               <div class="dash-module-grid">
-                <?php if ($hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_INSCRIPTIONS) || $hasPerm(PERMISSIONS::MANAGE_INSCRIPTIONS)): ?>
                   <a href="<?= RACINE ?>reinscription/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -397,7 +397,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('MANAGE_DEPOT_DOSSIERS') || $hasPerm('VIEW_DEPOT_DOSSIERS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
+                <?php if ($hasPerm(PERMISSIONS::MANAGE_DEPOT_DOSSIERS) || $hasPerm(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || $hasPerm(PERMISSIONS::MANAGE_INSCRIPTIONS)): ?>
                   <a href="<?= RACINE ?>dossier_etudiant/list" class="dash-module-card" style="border-left: 4px solid #EA580C;">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -418,7 +418,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('MANAGE_REMISE_KITS') || $hasPerm('VIEW_REMISE_KITS') || $hasPerm('MANAGE_ACCESSOIRES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::MANAGE_REMISE_KITS) || $hasPerm(PERMISSIONS::VIEW_REMISE_KITS) || $hasPerm(PERMISSIONS::MANAGE_ACCESSOIRES)): ?>
                   <a href="<?= RACINE ?>accessoire_inscription/registre" class="dash-module-card" style="border-left: 4px solid #15803D;">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -439,7 +439,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('VIEW_ETUDIANTS') || $hasPerm('MANAGE_ETUDIANTS')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_ETUDIANTS) || $hasPerm(PERMISSIONS::MANAGE_ETUDIANTS)): ?>
                   <a href="<?= RACINE ?>etudiant/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -480,7 +480,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
               </div>
 
               <div class="dash-module-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
-                <?php if ($hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_PAIEMENTS) || $hasPerm(PERMISSIONS::RECORD_PAIEMENTS)): ?>
                   <a href="<?= RACINE ?>paiement/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -501,7 +501,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('OUVERTURE_CAISSE') || $hasPerm('CLOTURE_CAISSE') || $hasPerm('MANAGE_CAISSE')): ?>
+                <?php if ($hasPerm(PERMISSIONS::OUVERTURE_CAISSE) || $hasPerm(PERMISSIONS::CLOTURE_CAISSE) || $hasPerm(PERMISSIONS::MANAGE_CAISSE)): ?>
                   <a href="<?= RACINE ?>session_caisse/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -522,7 +522,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('MANAGE_IMPAYES') || $hasPerm('VIEW_IMPAYES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::MANAGE_IMPAYES) || $hasPerm(PERMISSIONS::VIEW_IMPAYES)): ?>
                   <a href="<?= RACINE ?>impayes/list" class="dash-module-card" style="border-left: 4px solid #DC2626;">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -543,7 +543,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('VIEW_DEPENSES') || $hasPerm('RECORD_DEPENSES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_DEPENSES) || $hasPerm(PERMISSIONS::RECORD_DEPENSES)): ?>
                   <a href="<?= RACINE ?>depense/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -584,7 +584,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
               </div>
 
               <div class="dash-module-grid">
-                <?php if ($hasPerm('VIEW_NOTES') || $hasPerm('ENTER_NOTES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_NOTES) || $hasPerm(PERMISSIONS::ENTER_NOTES)): ?>
                   <a href="<?= RACINE ?>composition/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -624,7 +624,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('VIEW_BULLETINS') || $hasPerm('GENERATE_BULLETINS')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_BULLETINS) || $hasPerm(PERMISSIONS::GENERATE_BULLETINS)): ?>
                   <a href="<?= RACINE ?>bulletin/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -645,7 +645,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('VIEW_ABSENCES') || $hasPerm('MANAGE_ABSENCES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_ABSENCES) || $hasPerm(PERMISSIONS::MANAGE_ABSENCES)): ?>
                   <a href="<?= RACINE ?>absence/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -666,7 +666,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('VIEW_ENSEIGNANTS') || $hasPerm('MANAGE_ENSEIGNANTS')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_ENSEIGNANTS) || $hasPerm(PERMISSIONS::MANAGE_ENSEIGNANTS)): ?>
                   <a href="<?= RACINE ?>enseignant/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -707,7 +707,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
               </div>
 
               <div class="dash-module-grid">
-                <?php if ($hasPerm('VIEW_CLASSES') || $hasPerm('MANAGE_CLASSES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_CLASSES) || $hasPerm(PERMISSIONS::MANAGE_CLASSES)): ?>
                   <a href="<?= RACINE ?>classe/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -728,7 +728,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('VIEW_FILIERES') || $hasPerm('MANAGE_FILIERES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_FILIERES) || $hasPerm(PERMISSIONS::MANAGE_FILIERES)): ?>
                   <a href="<?= RACINE ?>filiere_cycle/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -749,7 +749,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
                   </a>
                 <?php endif; ?>
 
-                <?php if ($hasPerm('VIEW_MATIERES') || $hasPerm('MANAGE_MATIERES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_MATIERES) || $hasPerm(PERMISSIONS::MANAGE_MATIERES)): ?>
                   <a href="<?= RACINE ?>matiere/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -790,7 +790,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
               </div>
 
               <div class="dash-module-grid">
-                <?php if ($hasPerm('VIEW_USERS') || $hasPerm('MANAGE_USERS') || $hasPerm('MANAGE_ROLES')): ?>
+                <?php if ($hasPerm(PERMISSIONS::VIEW_USERS) || $hasPerm(PERMISSIONS::MANAGE_USERS) || $hasPerm(PERMISSIONS::MANAGE_ROLES)): ?>
                   <a href="<?= RACINE ?>user/list" class="dash-module-card">
                     <div>
                       <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -823,7 +823,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px;">
         
         <!-- Table 1 : Inscriptions Récentes -->
-        <?php if ($hasPerm('VIEW_INSCRIPTIONS') || $hasPerm('MANAGE_INSCRIPTIONS')): ?>
+        <?php if ($hasPerm(PERMISSIONS::VIEW_INSCRIPTIONS) || $hasPerm(PERMISSIONS::MANAGE_INSCRIPTIONS)): ?>
           <div class="dash-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
               <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -864,7 +864,7 @@ $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu)
         <?php endif; ?>
 
         <!-- Table 2 : Derniers Encaissés -->
-        <?php if ($hasPerm('VIEW_PAIEMENTS') || $hasPerm('RECORD_PAIEMENTS')): ?>
+        <?php if ($hasPerm(PERMISSIONS::VIEW_PAIEMENTS) || $hasPerm(PERMISSIONS::RECORD_PAIEMENTS)): ?>
           <div class="dash-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
               <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">

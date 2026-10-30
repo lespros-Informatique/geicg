@@ -13,7 +13,7 @@
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Répertoire central des pièces administratives</p>
         </div>
-        <?php if (isset($canAccess) && $canAccess(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE'])): ?>
+        <?php if (isset($canAccess) && $canAccess([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
         <a href="<?= RACINE ?>piece_fournir/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Document
         </a>
@@ -53,7 +53,7 @@
 
 <?php
 $piecesFournirListConfig = [
-  'canManagePieces' => (isset($canAccess) && $canAccess(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']))
+  'canManagePieces' => (isset($canAccess) && $canAccess([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]))
 ];
 ?>
 <script type="application/json" id="pieces-fournir-list-config"><?= json_encode($piecesFournirListConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?></script>

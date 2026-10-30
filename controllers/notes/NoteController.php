@@ -10,7 +10,7 @@ class NoteController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_NOTES');
+        $this->requirePermission(PERMISSIONS::VIEW_NOTES);
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -39,7 +39,7 @@ class NoteController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_NOTES');
+        $this->requirePermission(PERMISSIONS::VIEW_NOTES);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -60,7 +60,7 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -124,7 +124,7 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
         $id = (int)$this->post('id_note');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -156,7 +156,7 @@ class NoteController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_NOTES');
+        $this->requirePermission(PERMISSIONS::VIEW_NOTES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getByIdWithDetails($id);
@@ -173,7 +173,7 @@ class NoteController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
@@ -197,7 +197,7 @@ class NoteController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
@@ -219,7 +219,7 @@ class NoteController extends BaseController
     public function getMatieresByClasseApi()
     {
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
         $classeCode = trim($_POST['classe_code'] ?? ($_GET['classe_code'] ?? ''));
         $compositionCode = trim($_POST['composition_code'] ?? ($_GET['composition_code'] ?? ''));
         $anneeCode = $this->getActiveAnneeCode();
@@ -247,7 +247,7 @@ class NoteController extends BaseController
     public function getStudentsByClasse()
     {
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
         $classeCode = trim($_POST['classe_code'] ?? ($_GET['classe_code'] ?? ''));
         $anneeCode = $this->getActiveAnneeCode();
 
@@ -263,7 +263,7 @@ class NoteController extends BaseController
     public function saisieClasse()
     {
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
@@ -368,7 +368,7 @@ class NoteController extends BaseController
     public function getGrilleAjax()
     {
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
 
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
@@ -446,7 +446,7 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('ENTER_NOTES');
+        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
 
         $csrf = $this->post('csrf_token');
         if (!Validator::validateCsrfToken($csrf)) {

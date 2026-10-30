@@ -10,7 +10,7 @@ class TrancheController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_FRAIS_SCOLARITE');
+        $this->requirePermission(PERMISSIONS::VIEW_FRAIS_SCOLARITE);
         header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
         exit();
     }
@@ -18,7 +18,7 @@ class TrancheController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_FRAIS_SCOLARITE');
+        $this->requirePermission(PERMISSIONS::VIEW_FRAIS_SCOLARITE);
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
             $aRow = $this->model->getAnneeByCode($getAnnee);
@@ -54,7 +54,7 @@ class TrancheController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FRAIS_SCOLARITE');
+        $this->requirePermission(PERMISSIONS::MANAGE_FRAIS_SCOLARITE);
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -90,7 +90,7 @@ class TrancheController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FRAIS_SCOLARITE');
+        $this->requirePermission(PERMISSIONS::MANAGE_FRAIS_SCOLARITE);
         $id = (int)$this->post('id_tranche');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -117,7 +117,7 @@ class TrancheController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FRAIS_SCOLARITE');
+        $this->requirePermission(PERMISSIONS::MANAGE_FRAIS_SCOLARITE);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -133,7 +133,7 @@ class TrancheController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_FRAIS_SCOLARITE');
+        $this->requirePermission(PERMISSIONS::VIEW_FRAIS_SCOLARITE);
         try {
             $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
             if (!$id && is_numeric($details)) {
@@ -156,7 +156,7 @@ class TrancheController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FRAIS_SCOLARITE');
+        $this->requirePermission(PERMISSIONS::MANAGE_FRAIS_SCOLARITE);
         try {
             $id = is_numeric($details) ? (int)$details : $this->validator->decrypter($details);
             if (!$id && is_numeric($details)) {
@@ -178,7 +178,7 @@ class TrancheController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FRAIS_SCOLARITE');
+        $this->requirePermission(PERMISSIONS::MANAGE_FRAIS_SCOLARITE);
         $this->loadView('../views/tranches_scolarite/edit.php', ['item' => []]);
     }
 }

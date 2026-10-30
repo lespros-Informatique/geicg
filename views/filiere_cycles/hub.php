@@ -60,7 +60,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <h2 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0;">Catalogue Général des Filières</h2>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <?php if (isset($canAccess) && $canAccess(['PRINT_FILIERES', 'VIEW_FILIERES', 'PRINT_OFFRE_ACADEMIQUE'])): ?>
+            <?php if (isset($canAccess) && $canAccess([PERMISSIONS::PRINT_FILIERES, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE])): ?>
               <a href="<?= RACINE ?>filiere/imprimerPdf" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none;">
                 <i data-lucide="printer" style="width: 15px; height: 15px;"></i> Imprimer les Filières (PDF)
               </a>

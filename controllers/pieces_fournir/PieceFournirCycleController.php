@@ -10,7 +10,7 @@ class PieceFournirCycleController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $cycles = (new ModelCycle())->getAll();
         $niveaux = (new ModelNiveau())->getActifs();
         
@@ -30,7 +30,7 @@ class PieceFournirCycleController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
         $niveauCode = isset($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $items = $this->model->getAll($cycleCode, $niveauCode);
@@ -49,7 +49,7 @@ class PieceFournirCycleController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
         $niveauCode = isset($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $summary = $this->model->getSummaryCounts($cycleCode, $niveauCode);
@@ -59,7 +59,7 @@ class PieceFournirCycleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $cycles = (new ModelCycle())->getAll();
         $niveaux = (new ModelNiveau())->getActifs();
         $pieces = (new ModelPieceFournir())->getActifs();
@@ -74,7 +74,7 @@ class PieceFournirCycleController extends BaseController
     public function edition($idParam)
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $id = $this->validator->decrypter($idParam);
         if (!$id || !is_numeric($id)) {
             $id = is_numeric($idParam) ? (int)$idParam : 0;
@@ -102,7 +102,7 @@ class PieceFournirCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $userCode = Auth::code() ?? '';
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
@@ -221,7 +221,7 @@ class PieceFournirCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -268,7 +268,7 @@ class PieceFournirCycleController extends BaseController
     public function changer()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $id = $_POST['id'] ?? null;
         $statut = $_POST['statut'] ?? null;
 
@@ -293,7 +293,7 @@ class PieceFournirCycleController extends BaseController
     public function supprimer($idParam)
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $id = $this->validator->decrypter($idParam);
         if (!$id || !is_numeric($id)) {
             $id = is_numeric($idParam) ? (int)$idParam : 0;
@@ -311,7 +311,7 @@ class PieceFournirCycleController extends BaseController
     public function getByCycleApi()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $cycleCode = trim($_GET['cycle_code'] ?? ($_POST['cycle_code'] ?? ''));
         $niveauCode = trim($_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''));
         $niveauParam = !empty($niveauCode) ? $niveauCode : null;

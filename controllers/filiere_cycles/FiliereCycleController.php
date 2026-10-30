@@ -35,7 +35,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES, PERMISSIONS::MANAGE_CLASSES]);
         $data = $_POST;
         unset($data['csrf_token']);
         unset($data['id_filiere_cycle']);
@@ -88,7 +88,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES, PERMISSIONS::MANAGE_CLASSES]);
         $id = (int)$this->post('id_filiere_cycle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -131,7 +131,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES]);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -175,7 +175,7 @@ class FiliereCycleController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -197,7 +197,7 @@ class FiliereCycleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES]);
         $filieresList = $this->model->getActiveFilieres();
         $cyclesList = $this->model->getActiveCycles();
         $this->loadView('../views/filiere_cycles/edit.php', [
@@ -213,7 +213,7 @@ class FiliereCycleController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_OFFRE_ACADEMIQUE', 'VIEW_FILIERES', 'VIEW_CYCLES']);
+        $this->requirePermission([PERMISSIONS::PRINT_OFFRE_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_CYCLES]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
         require_once __DIR__ . '/../../models/cycles/ModelCycle.php';

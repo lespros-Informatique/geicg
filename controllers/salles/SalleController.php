@@ -10,14 +10,14 @@ class SalleController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SALLES');
+        $this->requirePermission(PERMISSIONS::VIEW_SALLES);
         $this->loadView('../views/salles/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SALLES');
+        $this->requirePermission(PERMISSIONS::VIEW_SALLES);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,7 +35,7 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SALLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SALLES);
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_salle'])) {
@@ -73,7 +73,7 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SALLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SALLES);
         $id = (int)$this->post('id_salle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -102,7 +102,7 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SALLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SALLES);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -118,7 +118,7 @@ class SalleController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SALLES');
+        $this->requirePermission(PERMISSIONS::VIEW_SALLES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -157,7 +157,7 @@ class SalleController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_SALLES', 'VIEW_SALLES', 'PRINT_OFFRE_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::PRINT_SALLES, PERMISSIONS::VIEW_SALLES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
 

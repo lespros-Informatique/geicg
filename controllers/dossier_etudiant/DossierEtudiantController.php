@@ -10,7 +10,7 @@ class DossierEtudiantController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS]);
 
         $annees = $this->getAccessibleAnnees();
 
@@ -40,7 +40,7 @@ class DossierEtudiantController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS]);
 
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code') ?? '';
         $classeCode = $_GET['classe_code'] ?? '';
@@ -108,7 +108,7 @@ class DossierEtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'MANAGE_PIECES', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::MANAGE_PIECES, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $inscriptionCode = trim($_POST['inscription_code'] ?? '');
         $etudiantCode = trim($_POST['etudiant_code'] ?? '');
@@ -178,7 +178,7 @@ class DossierEtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'MANAGE_PIECES', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::MANAGE_PIECES, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $inscriptionCode = trim($_POST['inscription_code'] ?? '');
         $etudiantCode = trim($_POST['etudiant_code'] ?? '');
@@ -214,7 +214,7 @@ class DossierEtudiantController extends BaseController
     public function getRecepisseData()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_DEPOT_DOSSIERS', 'VIEW_DEPOT_DOSSIERS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS]);
 
         $inscriptionCode = trim($_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? ''));
         if (empty($inscriptionCode)) {

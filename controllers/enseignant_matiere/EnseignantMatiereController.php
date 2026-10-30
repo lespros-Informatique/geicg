@@ -10,7 +10,7 @@ class EnseignantMatiereController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_AFFECTATIONS');
+        $this->requirePermission(PERMISSIONS::VIEW_AFFECTATIONS);
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -39,7 +39,7 @@ class EnseignantMatiereController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_AFFECTATIONS');
+        $this->requirePermission(PERMISSIONS::VIEW_AFFECTATIONS);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -60,7 +60,7 @@ class EnseignantMatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_AFFECTATIONS');
+        $this->requirePermission(PERMISSIONS::MANAGE_AFFECTATIONS);
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -90,7 +90,7 @@ class EnseignantMatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_AFFECTATIONS');
+        $this->requirePermission(PERMISSIONS::MANAGE_AFFECTATIONS);
         $id = (int)$this->post('id_enseignant_matiere');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -113,7 +113,7 @@ class EnseignantMatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_AFFECTATIONS');
+        $this->requirePermission(PERMISSIONS::MANAGE_AFFECTATIONS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -129,7 +129,7 @@ class EnseignantMatiereController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_AFFECTATIONS');
+        $this->requirePermission(PERMISSIONS::VIEW_AFFECTATIONS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getDetailsById((int)$id);

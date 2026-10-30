@@ -120,7 +120,7 @@ abstract class BaseController
             return true;
         }
 
-        if ($this->hasPermission('VIEW_ANNEES_ANTERIEURES') || $this->hasPermission('*')) {
+        if ($this->hasPermission(PERMISSIONS::VIEW_ANNEES_ANTERIEURES) || $this->hasPermission('*')) {
             return true;
         }
 
@@ -151,7 +151,7 @@ abstract class BaseController
             return true;
         }
 
-        if ($this->hasPermission('EDIT_ANNEES_ANTERIEURES') || $this->hasPermission('*')) {
+        if ($this->hasPermission(PERMISSIONS::EDIT_ANNEES_ANTERIEURES) || $this->hasPermission('*')) {
             return true;
         }
 

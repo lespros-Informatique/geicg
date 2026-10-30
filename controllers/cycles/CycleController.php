@@ -41,7 +41,7 @@ class CycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CYCLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CYCLES);
         $data = $_POST;
         unset($data['csrf_token'], $data['id_cycle'], $data['id']);
 
@@ -82,7 +82,7 @@ class CycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CYCLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CYCLES);
         $id = (int)$this->post('id_cycle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;

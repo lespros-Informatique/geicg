@@ -248,7 +248,7 @@ class UserController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_USERS');
+        $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         $id = $this->post('id');
         if (isset($id) && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -264,7 +264,7 @@ class UserController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_USERS');
+        $this->requirePermission(PERMISSIONS::VIEW_USERS);
         try {
             $userId = $this->validator->decrypter($details);
             $userProfile = $this->model->getById($userId);
@@ -291,7 +291,7 @@ class UserController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_USERS');
+        $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         $roles = (new ModelRole())->getAll();
         $fonctions = (new ModelFonction())->getAll();
         $allAnneesList = (new ModelAnnee())->getAll();
@@ -310,7 +310,7 @@ class UserController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_USERS');
+        $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         try {
             $decryptedId = $this->validator->decrypter($details);
             $userProfile = $this->model->getById($decryptedId);

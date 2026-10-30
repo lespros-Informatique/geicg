@@ -10,14 +10,14 @@ class TypeDepenseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         $this->loadView('../views/type_depenses/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,7 +35,7 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_type_depense'])) {
@@ -70,7 +70,7 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $id = (int)$this->post('id_type_depense');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -96,7 +96,7 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -112,7 +112,7 @@ class TypeDepenseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);

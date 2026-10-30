@@ -6,8 +6,8 @@ $filieres = array_filter($rawFilieres, function($f) {
 });
 $niveaux = $niveaux ?? (new ModelNiveau())->getActifs();
 $currentAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
-$canEditClasse = (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_CLASSES'])));
-$canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_CLASSES'])));
+$canEditClasse = (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_CLASSES])));
+$canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_CLASSES])));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -20,7 +20,7 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre des classes d'étudiants</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['PRINT_CLASSES', 'VIEW_CLASSES', 'PRINT_OFFRE_ACADEMIQUE']))): ?>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]))): ?>
             <a href="<?= RACINE ?>classe/imprimerPdf" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
               <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Répertoire (PDF)
             </a>

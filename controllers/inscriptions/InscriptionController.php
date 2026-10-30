@@ -99,7 +99,7 @@ class InscriptionController extends BaseController
     public function getTuitionByClass()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_INSCRIPTIONS', 'MANAGE_ETUDIANTS', 'VIEW_CLASSES', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         $anneeCodeReq = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
         $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? 'non_affecte'));
@@ -161,7 +161,7 @@ class InscriptionController extends BaseController
         // 2. CAS RÉINSCRIPTION ÉTUDIANT EXISTANT
         $currentUser = Auth::user();
         $agentName = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
-        $hasDerogationPermission = $this->hasPermission('MANAGE_DEROGATION_INSCRIPTION');
+        $hasDerogationPermission = $this->hasPermission(PERMISSIONS::MANAGE_DEROGATION_INSCRIPTION);
 
         $res = $this->model->processReinscription($data, $userCode, $etabCode, $anneeCode, $this->validator, $hasDerogationPermission, $agentName);
         if ($res['success']) {
@@ -211,7 +211,7 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_INSCRIPTIONS');
+        $this->requirePermission(PERMISSIONS::MANAGE_INSCRIPTIONS);
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -267,7 +267,7 @@ class InscriptionController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_INSCRIPTIONS');
+        $this->requirePermission(PERMISSIONS::MANAGE_INSCRIPTIONS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -276,15 +276,15 @@ class InscriptionController extends BaseController
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'inscription/list'); exit();
         }
-        $canDerogate = $this->hasPermission('MANAGE_DEROGATION_INSCRIPTION');
+        $canDerogate = $this->hasPermission(PERMISSIONS::MANAGE_DEROGATION_INSCRIPTION);
         $this->loadView('../views/inscriptions/edit.php', ['item' => $item, 'encryptedId' => $encryptedId, 'canDerogate' => $canDerogate]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_INSCRIPTIONS');
-        $canDerogate = $this->hasPermission('MANAGE_DEROGATION_INSCRIPTION');
+        $this->requirePermission(PERMISSIONS::MANAGE_INSCRIPTIONS);
+        $canDerogate = $this->hasPermission(PERMISSIONS::MANAGE_DEROGATION_INSCRIPTION);
         $this->loadView('../views/inscriptions/edit.php', ['item' => [], 'canDerogate' => $canDerogate]);
     }
 
@@ -296,7 +296,7 @@ class InscriptionController extends BaseController
     public function priseDeVue()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $activeAnneeCode = $this->getActiveAnneeCode();
         $annees = $this->getAccessibleAnnees();
@@ -313,7 +313,7 @@ class InscriptionController extends BaseController
     public function imprimerFiche($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_ETUDIANTS', 'MANAGE_ETUDIANTS', 'VIEW_INSCRIPTIONS', 'MANAGE_INSCRIPTIONS', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_INSCRIPTIONS, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $data = [];
@@ -354,7 +354,7 @@ class InscriptionController extends BaseController
     public function apiPriseDeVue()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
         $filiereCode = $_GET['filiere_code'] ?? '';
@@ -388,7 +388,7 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $idInscription = (int)($_POST['id_inscription'] ?? 0);
         $codeInscription = trim($_POST['code_inscription'] ?? '');

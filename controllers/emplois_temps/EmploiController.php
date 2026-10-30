@@ -10,7 +10,7 @@ class EmploiController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -39,7 +39,7 @@ class EmploiController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -74,7 +74,7 @@ class EmploiController extends BaseController
     public function apiSlots()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -149,7 +149,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -220,7 +220,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $id = (int)$this->post('id_emploi');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -259,7 +259,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -275,7 +275,7 @@ class EmploiController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getDetailsById((int)$id);
@@ -290,7 +290,7 @@ class EmploiController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -321,7 +321,7 @@ class EmploiController extends BaseController
     public function getTeacherSchedule()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         $ensCode = trim($_GET['enseignant_code'] ?? ($_POST['enseignant_code'] ?? ''));
         if (empty($ensCode)) {
             $this->json(['status' => 1, 'data' => []]);
@@ -334,7 +334,7 @@ class EmploiController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $selectedClasseCode = $_GET['classe_code'] ?? Session::get('last_emploi_classe_code', '');
         $activeClasseLibelle = '';
 
@@ -357,7 +357,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $rawId = $_POST['id'] ?? ($_GET['id'] ?? $this->post('id'));
         $id = (int)$rawId;
 
@@ -380,7 +380,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $classeCode = trim($this->post('classe_code') ?? ($_GET['classe_code'] ?? ''));
         if (empty($classeCode)) {
             $this->error('Classe non spécifiée');
@@ -396,7 +396,7 @@ class EmploiController extends BaseController
     public function getClassScheduleMatrix()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         if (empty($classeCode)) {
             $this->json(['status' => 0, 'message' => 'Classe non spécifiée']);

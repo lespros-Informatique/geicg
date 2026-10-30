@@ -6,7 +6,7 @@ $encryptedSessionId = $encryptedSessionId ?? '';
 $canRecord = $canRecord ?? false;
 $canOpenCaisse = $canOpenCaisse ?? false;
 $canCloseCaisse = $canCloseCaisse ?? false;
-$canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS']));
+$canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($canAccess) && $canAccess([PERMISSIONS::CANCEL_PAIEMENTS]));
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -700,7 +700,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
 </div>
 <?php
 $paiementsListConfig = [
-    'canCancelPaiement' => (bool)(!empty($canCancelPaiement) || (isset($canAccess) && is_callable($canAccess) && $canAccess(['CANCEL_PAIEMENTS']))),
+    'canCancelPaiement' => (bool)(!empty($canCancelPaiement) || (isset($canAccess) && is_callable($canAccess) && $canAccess([PERMISSIONS::CANCEL_PAIEMENTS]))),
     'isCaisseOuverte' => (bool)(!empty($isCaisseOuverte)),
     'csrfToken' => Validator::generateCsrfToken()
 ];

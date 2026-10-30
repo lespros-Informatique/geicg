@@ -10,7 +10,7 @@ class ClasseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_CLASSES');
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
 
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
@@ -35,7 +35,7 @@ class ClasseController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_CLASSES');
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
 
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
@@ -64,7 +64,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -124,7 +124,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $id = (int)$this->post('id_classe');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -179,7 +179,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -195,7 +195,7 @@ class ClasseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_CLASSES');
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getClasseWithDetails($id);
@@ -224,7 +224,7 @@ class ClasseController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -239,14 +239,14 @@ class ClasseController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $this->loadView('../views/classes/edit.php', ['item' => []]);
     }
 
     public function getClassesWithScolarite()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_CLASSES', 'MANAGE_ETUDIANTS', 'VIEW_INSCRIPTIONS', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::VIEW_CLASSES, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $anneeCode = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
         $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? ''));
@@ -271,7 +271,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
 
         $anneeSourceCode = trim($_POST['annee_source_code'] ?? '');
         $anneeCibleCode = trim($_POST['annee_cible_code'] ?? '');
@@ -304,7 +304,7 @@ class ClasseController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_CLASSES', 'VIEW_CLASSES', 'PRINT_OFFRE_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
@@ -341,7 +341,7 @@ class ClasseController extends BaseController
     public function imprimerListe($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_CLASSES', 'VIEW_CLASSES', 'VIEW_ETUDIANTS', 'MANAGE_CLASSES']);
+        $this->requirePermission([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::MANAGE_CLASSES]);
         try {
             $id = $this->validator->decrypter($details);
             if (empty($id)) $id = $details;

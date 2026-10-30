@@ -10,7 +10,7 @@ class DepenseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
 
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
@@ -27,8 +27,8 @@ class DepenseController extends BaseController
 
         $typeDepenses = (new ModelTypeDepense())->getAll();
 
-        $canValidate = $this->hasPermission('VALIDATE_DEPENSES');
-        $canRecord = $this->hasPermission('RECORD_DEPENSES');
+        $canValidate = $this->hasPermission(PERMISSIONS::VALIDATE_DEPENSES);
+        $canRecord = $this->hasPermission(PERMISSIONS::RECORD_DEPENSES);
 
         $this->loadView('../views/depenses/list.php', [
             'annees' => $annees,
@@ -43,7 +43,7 @@ class DepenseController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $typeCode = !empty($_GET['type_depense_code']) ? trim($_GET['type_depense_code']) : null;
         $dateDebut = !empty($_GET['date_debut']) ? trim($_GET['date_debut']) : null;
@@ -56,7 +56,7 @@ class DepenseController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
             $aRow = $this->model->getAnneeByCode($getAnnee);
@@ -122,7 +122,7 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('RECORD_DEPENSES');
+        $this->requirePermission(PERMISSIONS::RECORD_DEPENSES);
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -170,7 +170,7 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('RECORD_DEPENSES');
+        $this->requirePermission(PERMISSIONS::RECORD_DEPENSES);
         $id = (int)$this->post('id_depense');
         if (!$id) { $this->error('Identifiant invalide'); return; }
 
@@ -207,7 +207,7 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('VALIDATE_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VALIDATE_DEPENSES);
         $id = (int)$this->post('id');
         $statut = trim($this->post('statut') ?: $this->post('status') ?: '');
 
@@ -244,7 +244,7 @@ class DepenseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getDetailsById((int)$id);
@@ -259,7 +259,7 @@ class DepenseController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('RECORD_DEPENSES');
+        $this->requirePermission(PERMISSIONS::RECORD_DEPENSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -274,7 +274,7 @@ class DepenseController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('RECORD_DEPENSES');
+        $this->requirePermission(PERMISSIONS::RECORD_DEPENSES);
         $this->loadView('../views/depenses/edit.php', ['item' => []]);
     }
 }

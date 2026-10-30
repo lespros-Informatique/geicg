@@ -138,7 +138,7 @@ class ModelAnnee extends BaseModel
 
             $userCode = Auth::code();
             $userPerms = Auth::permissions();
-            $hasGlobalView = in_array('*', $userPerms, true) || in_array('VIEW_ANNEES_ANTERIEURES', $userPerms, true);
+            $hasGlobalView = in_array('*', $userPerms, true) || in_array(PERMISSIONS::VIEW_ANNEES_ANTERIEURES, $userPerms, true);
 
             $userAcces = [];
             if (!$hasGlobalView && !empty($userCode)) {
