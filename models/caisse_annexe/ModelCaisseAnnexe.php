@@ -23,23 +23,23 @@ class ModelCaisseAnnexe extends BaseModel
         $params = [];
 
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $where .= " AND (p.annee_code = ? OR ins.annee_code = ?)";
+            $where .= " AND (p.annee_code = ? OR p.inscription_annee_code = ?)";
             $params[] = $anneeCode;
             $params[] = $anneeCode;
         }
 
         if (!empty($niveauCode) && $niveauCode !== 'ALL') {
-            $where .= " AND cl.niveau_code = ?";
+            $where .= " AND p.niveau_code = ?";
             $params[] = $niveauCode;
         }
 
         if (!empty($classeCode) && $classeCode !== 'ALL') {
-            $where .= " AND ins.classe_code = ?";
+            $where .= " AND p.classe_code = ?";
             $params[] = $classeCode;
         }
 
         if (!empty($typeFiliere) && $typeFiliere !== 'ALL') {
-            $where .= " AND f.type_filiere = ?";
+            $where .= " AND p.type_filiere = ?";
             $params[] = $typeFiliere;
         }
 
@@ -59,36 +59,8 @@ class ModelCaisseAnnexe extends BaseModel
         }
 
         $sql = "
-            SELECT 
-                p.*,
-                e.nom_etudiant, 
-                e.prenom_etudiant, 
-                e.matricule_etudiant,
-                e.telephone_etudiant,
-                e.email_etudiant,
-                e.photo_etudiant,
-                ins.photo_inscription,
-                ins.affectation_etat,
-                TRIM(CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, ''))) as etudiant_nom,
-                cl.libelle_classe, 
-                cl.code_classe,
-                cl.niveau_code,
-                f.libelle_filiere,
-                f.code_filiere,
-                f.type_filiere,
-                n.libelle_niveau,
-                a.libelle_annee,
-                u.nom_user as nom_caissier, 
-                u.prenom_user as prenom_caissier,
-                u.code_user as caissier_code
-            FROM paiements p
-            LEFT JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
-            LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN annees a ON (a.code_annee = p.annee_code OR a.code_annee = ins.annee_code)
-            LEFT JOIN users u ON u.code_user = p.user_code
+            SELECT p.*
+            FROM v_paiements_complets p
             {$where}
             ORDER BY p.date_paiement DESC, p.id_paiement DESC
         ";

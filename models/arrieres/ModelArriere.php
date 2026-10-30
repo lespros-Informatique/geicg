@@ -64,13 +64,8 @@ class ModelArriere extends BaseModel
             )
             LEFT JOIN classes c_act ON c_act.code_classe = i_act.classe_code
             LEFT JOIN (
-                SELECT inscription_code, SUM(montant_paiement) as total_paye
-                FROM " . TABLES::PAIEMENTS . "
-                WHERE statut_paiement = 'confirme'
-                  AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
-                  AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
-                  AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
-                GROUP BY inscription_code
+                SELECT inscription_code, total_paye_confirme_scolarite AS total_paye
+                FROM v_bilan_paiements_inscriptions
             ) p_sub ON p_sub.inscription_code = i_orig.code_inscription
             {$where}
             GROUP BY e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.photo_etudiant, e.telephone_etudiant, c_act.libelle_classe
@@ -126,18 +121,10 @@ class ModelArriere extends BaseModel
             SELECT 
                 COUNT(DISTINCT i_orig.etudiant_code) as nb_etudiants_debiteurs,
                 SUM(i_orig.montant_scolarite_inscription) as total_initial_du,
-                SUM(COALESCE(p_sub.total_paye, 0)) as total_recouvre,
-                SUM(i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye, 0)) as total_solde_arriere
+                SUM(COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_recouvre,
+                SUM(i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_solde_arriere
             FROM inscriptions i_orig
-            LEFT JOIN (
-                SELECT inscription_code, SUM(montant_paiement) as total_paye
-                FROM " . TABLES::PAIEMENTS . "
-                WHERE statut_paiement = 'confirme'
-                  AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
-                  AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
-                  AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
-                GROUP BY inscription_code
-            ) p_sub ON p_sub.inscription_code = i_orig.code_inscription
+            LEFT JOIN v_bilan_paiements_inscriptions p_sub ON p_sub.inscription_code = i_orig.code_inscription
             WHERE i_orig.annee_code != ?
               AND i_orig.statut_inscription != 'annule'
             HAVING total_solde_arriere > 0

@@ -9,47 +9,25 @@ class ModelNote extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "
-            SELECT n.*, 
-                   CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) as nom_etudiant,
-                   e.matricule_etudiant,
-                   m.libelle_matiere,
-                   comp.matiere_code,
-                   cl.libelle_classe,
-                   niv.libelle_niveau,
-                   s.libelle_semestre,
-                   comp.semestre_code,
-                   comp.libelle_composition,
-                   comp.type_composition,
-                   comp.type_composition AS type_evaluation_code,
-                   comp.coefficient
-            FROM notes n
-            INNER JOIN compositions comp ON comp.code_composition = n.composition_code
-            LEFT JOIN etudiants e ON e.code_etudiant = n.etudiant_code
-            LEFT JOIN inscriptions ins ON ins.code_inscription = n.inscription_code
-            LEFT JOIN classes cl ON cl.code_classe = COALESCE(comp.classe_code, ins.classe_code)
-            LEFT JOIN niveaux niv ON niv.code_niveau = cl.niveau_code
-            LEFT JOIN matieres m ON m.code_matiere = comp.matiere_code
-            LEFT JOIN semestres s ON s.code_semestre = comp.semestre_code
-        ";
+        $sql = "SELECT * FROM v_notes_completes";
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "ins.annee_code = ?";
+            $conditions[] = "annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "cl.niveau_code = ?";
+            $conditions[] = "niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "ins.classe_code = ?";
+            $conditions[] = "inscription_classe_code = ?";
             $params[] = $classeCode;
         }
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
-        $sql .= " ORDER BY n.id_note DESC ";
+        $sql .= " ORDER BY id_note DESC ";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
@@ -97,26 +75,14 @@ class ModelNote extends BaseModel
     public function getByIdWithDetails($id): ?array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT n.*, 
-                   e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant,
-                   m.libelle_matiere, comp.matiere_code,
-                   cl.libelle_classe, f.libelle_filiere, niv.libelle_niveau,
-                   s.libelle_semestre, comp.semestre_code, a.libelle_annee,
-                   comp.libelle_composition, comp.type_composition, comp.type_composition AS type_evaluation_code,
-                   comp.classe_code, ins.classe_code AS inscription_classe_code,
-                   COALESCE(em.coefficient, comp.coefficient, 1.0) as coef_cours
-            FROM " . TABLES::NOTES . " n
-            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = n.etudiant_code
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = n.inscription_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = COALESCE(comp.classe_code, ins.classe_code)
-            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN " . TABLES::NIVEAUX . " niv ON niv.code_niveau = cl.niveau_code
-            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
-            LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = COALESCE(comp.annee_code, ins.annee_code)
-            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.classe_code = cl.code_classe AND em.matiere_code = comp.matiere_code)
-            WHERE n.id_note = ? OR n.code_note = ?
+            SELECT vn.*,
+                   vn.etu_nom AS nom_etudiant,
+                   vn.etu_prenom AS prenom_etudiant,
+                   vn.composition_classe_code AS classe_code,
+                   COALESCE(em.coefficient, vn.coefficient, 1.0) AS coef_cours
+            FROM v_notes_completes vn
+            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.classe_code = vn.code_classe AND em.matiere_code = vn.matiere_code)
+            WHERE vn.id_note = ? OR vn.code_note = ?
             LIMIT 1
         ");
         $stmt->execute([$id, (string)$id]);

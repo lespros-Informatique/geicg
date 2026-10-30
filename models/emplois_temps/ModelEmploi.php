@@ -9,39 +9,25 @@ class ModelEmploi extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "
-            SELECT edt.*, 
-                   cl.libelle_classe, 
-                   n.libelle_niveau,
-                   m.libelle_matiere, 
-                   s.libelle_salle, 
-                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
-            FROM emplois_temps edt
-            LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
-            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-            LEFT JOIN salles s ON s.code_salle = edt.salle_code
-            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-            LEFT JOIN users u ON u.code_user = edt.enseignant_code
-        ";
+        $sql = "SELECT * FROM v_emplois_temps_complets";
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "edt.annee_code = ?";
+            $conditions[] = "annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "cl.niveau_code = ?";
+            $conditions[] = "niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "edt.classe_code = ?";
+            $conditions[] = "classe_code = ?";
             $params[] = $classeCode;
         }
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
-        $sql .= " ORDER BY edt.jour ASC, edt.heure_debut ASC ";
+        $sql .= " ORDER BY jour ASC, heure_debut ASC ";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
@@ -113,17 +99,10 @@ class ModelEmploi extends BaseModel
     {
         try {
             $db = $this->getCon();
-            // 1. Recherche précise par classe_code + matiere_code
+            // 1. Recherche précise par classe_code + matiere_code via la vue v_dash_pedagogie_affectations
             $stmt = $db->prepare("
-                SELECT em.*, 
-                       u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
-                       m.libelle_matiere, cl.libelle_classe
-                FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
-                JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = em.classe_code
-                WHERE em.classe_code = ? AND em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
+                SELECT * FROM v_dash_pedagogie_affectations
+                WHERE classe_code = ? AND matiere_code = ? AND statut_enseignant_matiere = 'actif'
                 LIMIT 1
             ");
             $stmt->execute([$classeCode, $matiereCode]);
@@ -132,14 +111,8 @@ class ModelEmploi extends BaseModel
             // 2. Recherche de secours par matière
             if (!$row) {
                 $stmtGlobal = $db->prepare("
-                    SELECT em.*, 
-                           u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
-                           m.libelle_matiere
-                    FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                    JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
-                    JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
-                    LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-                    WHERE em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
+                    SELECT * FROM v_dash_pedagogie_affectations
+                    WHERE matiere_code = ? AND statut_enseignant_matiere = 'actif'
                     LIMIT 1
                 ");
                 $stmtGlobal->execute([$matiereCode]);
@@ -180,17 +153,8 @@ class ModelEmploi extends BaseModel
             $db = $this->getCon();
 
             $baseSql = "
-                SELECT edt.*, 
-                       cl.libelle_classe, 
-                       m.libelle_matiere, 
-                       s.libelle_salle, 
-                       CONCAT(u.nom_user, ' ', COALESCE(u.prenom_user, '')) AS nom_prof
-                FROM " . TABLES::EMPLOIS_TEMPS . " edt
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
-                LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
-                LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
-                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+                SELECT edt.*
+                FROM v_emplois_temps_complets edt
                 WHERE edt.statut_emploi = 'actif'
                   AND LOWER(edt.jour) = ?
                   AND (edt.heure_debut < ? AND edt.heure_fin > ?)

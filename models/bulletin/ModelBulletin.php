@@ -70,22 +70,7 @@ class ModelBulletin extends BaseModel
     public function calculateBulletinData(int $id, ?string $selectedSemestreCode = null): ?array
     {
         $db = $this->getCon();
-        $stmt = $db->prepare("
-            SELECT i.*, 
-                   e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant,
-                   e.date_naissance_etudiant, e.lieu_naissance_etudiant, e.telephone_etudiant,
-                   e.email_etudiant, e.photo_etudiant, e.lieu_residence_etudiant,
-                   cl.libelle_classe, cl.code_classe,
-                   f.libelle_filiere, niv.libelle_niveau,
-                   a.libelle_annee, a.code_annee
-            FROM inscriptions i
-            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN niveaux niv ON niv.code_niveau = cl.niveau_code
-            LEFT JOIN annees a ON a.code_annee = i.annee_code
-            WHERE i.id_inscription = ?
-        ");
+        $stmt = $db->prepare("SELECT * FROM v_inscriptions_completes WHERE id_inscription = ? LIMIT 1");
         $stmt->execute([$id]);
         $item = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$item) {

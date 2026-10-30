@@ -12,16 +12,16 @@ class ModelPaiement extends BaseModel
         $where = "WHERE (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES') AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')";
         $params = [];
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $where .= " AND (p.annee_code = ? OR ins.annee_code = ?)";
+            $where .= " AND (p.annee_code = ? OR p.inscription_annee_code = ?)";
             $params[] = $anneeCode;
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode) && $niveauCode !== 'ALL') {
-            $where .= " AND cl.niveau_code = ?";
+            $where .= " AND p.niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($classeCode) && $classeCode !== 'ALL') {
-            $where .= " AND ins.classe_code = ?";
+            $where .= " AND p.classe_code = ?";
             $params[] = $classeCode;
         }
         if (!empty($canalPaiement) && $canalPaiement !== 'ALL') {
@@ -38,16 +38,8 @@ class ModelPaiement extends BaseModel
         }
 
         $sql = "
-            SELECT p.*, 
-                   e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant,
-                   TRIM(CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, ''))) as etudiant_nom,
-                   cl.libelle_classe, cl.niveau_code,
-                   t.libelle_tranche, t.montant_tranche
-            FROM paiements p
-            LEFT JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
-            LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-            LEFT JOIN tranches_scolarite t ON t.code_tranche = p.tranche_code
+            SELECT p.*
+            FROM v_paiements_complets p
             {$where}
             ORDER BY p.id_paiement DESC
         ";
@@ -59,24 +51,8 @@ class ModelPaiement extends BaseModel
     public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT p.*, 
-                   e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant, e.photo_etudiant, e.code_etudiant,
-                   ins.affectation_etat, ins.photo_inscription,
-                   TRIM(CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, ''))) as etudiant_nom,
-                   cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
-                   a.libelle_annee,
-                   u.nom_user as nom_caissier, u.prenom_user as prenom_caissier,
-                   ins.montant_scolarite_inscription,
-                   t.libelle_tranche, t.montant_tranche, t.date_limite as date_limite_tranche
-            FROM paiements p
-            LEFT JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
-            LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN annees a ON (a.code_annee = p.annee_code OR a.code_annee = ins.annee_code)
-            LEFT JOIN users u ON u.code_user = p.user_code
-            LEFT JOIN tranches_scolarite t ON t.code_tranche = p.tranche_code
+            SELECT p.*
+            FROM v_paiements_complets p
             WHERE p.id_paiement = ? OR p.code_paiement = ?
             LIMIT 1
         ");
@@ -525,7 +501,7 @@ class ModelPaiement extends BaseModel
         $params = [$anneeCode];
 
         if ($niveauCode !== 'ALL' && !empty($niveauCode)) {
-            $where .= " AND c.niveau_code = ?";
+            $where .= " AND i.niveau_code = ?";
             $params[] = $niveauCode;
         }
         if ($classeCode !== 'ALL' && !empty($classeCode)) {
@@ -541,51 +517,21 @@ class ModelPaiement extends BaseModel
         }
 
         $sql = "
-            SELECT 
-                i.id_inscription,
-                i.code_inscription,
-                i.statut_inscription,
-                i.affectation_etat,
-                i.montant_scolarite_inscription,
-                i.photo_inscription,
-                e.code_etudiant,
-                e.matricule_etudiant,
-                e.nom_etudiant,
-                e.prenom_etudiant,
-                e.telephone_etudiant,
-                e.photo_etudiant,
-                c.code_classe,
-                c.libelle_classe,
-                c.filiere_code,
-                c.niveau_code,
-                f.libelle_filiere,
-                f.type_filiere,
-                n.libelle_niveau
-            FROM " . TABLES::INSCRIPTIONS . " i
-            JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
-            LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
-            LEFT JOIN " . TABLES::FILIERES . " f ON c.filiere_code = f.code_filiere
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON c.niveau_code = n.code_niveau
-            {$where}
-            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            SELECT i.*
+            FROM v_inscriptions_completes i
+            {$where} AND i.code_etudiant IS NOT NULL
+            ORDER BY i.nom_etudiant ASC, i.prenom_etudiant ASC
         ";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $inscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $stmtPay = $db->prepare("
-            SELECT inscription_code, SUM(montant_paiement) as total_paye
-            FROM " . TABLES::PAIEMENTS . "
-            WHERE statut_paiement != 'annule'
-              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
-              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
-              AND (annee_code = ? OR inscription_code IN (SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ?))
-            GROUP BY inscription_code
-        ");
-        $stmtPay->execute([$anneeCode, $anneeCode]);
+        $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM v_bilan_paiements_inscriptions");
         $paymentsGrouped = [];
-        foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $rowP) {
-            $paymentsGrouped[$rowP['inscription_code']] = (float)$rowP['total_paye'];
+        if ($stmtPay) {
+            foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $rowP) {
+                $paymentsGrouped[$rowP['inscription_code']] = (float)$rowP['total_paye'];
+            }
         }
 
         $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = 'actif' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
@@ -1546,20 +1492,8 @@ class ModelPaiement extends BaseModel
     {
         $db = $this->getCon();
         $stmtPai = $db->prepare("
-            SELECT p.*,
-                   i.code_inscription, i.statut_inscription, i.montant_scolarite_inscription, i.affectation_etat, i.photo_inscription,
-                   e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.photo_etudiant,
-                   cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee,
-                   u.nom_user as nom_caissier, u.prenom_user as prenom_caissier
-            FROM " . TABLES::PAIEMENTS . " p
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = p.inscription_code
-            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = p.annee_code
-            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = p.user_code
-            WHERE p.id_paiement = ? OR p.code_paiement = ?
+            SELECT * FROM v_paiements_complets
+            WHERE id_paiement = ? OR code_paiement = ?
             LIMIT 1
         ");
         $stmtPai->execute([$id, $id]);
@@ -1708,7 +1642,7 @@ class ModelPaiement extends BaseModel
         $params = [$anneeCode];
 
         if ($niveauCode !== 'ALL' && !empty($niveauCode)) {
-            $where .= " AND c.niveau_code = ?";
+            $where .= " AND i.niveau_code = ?";
             $params[] = $niveauCode;
         }
         if ($classeCode !== 'ALL' && !empty($classeCode)) {
@@ -1724,46 +1658,21 @@ class ModelPaiement extends BaseModel
         }
 
         $sql = "
-            SELECT 
-                i.code_inscription,
-                i.statut_inscription,
-                i.affectation_etat,
-                i.montant_scolarite_inscription,
-                e.matricule_etudiant,
-                e.nom_etudiant,
-                e.prenom_etudiant,
-                c.code_classe,
-                c.libelle_classe,
-                c.filiere_code,
-                c.niveau_code,
-                f.libelle_filiere,
-                f.type_filiere,
-                n.libelle_niveau
-            FROM " . TABLES::INSCRIPTIONS . " i
-            JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
-            LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
-            LEFT JOIN " . TABLES::FILIERES . " f ON c.filiere_code = f.code_filiere
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON c.niveau_code = n.code_niveau
-            {$where}
-            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            SELECT i.*
+            FROM v_inscriptions_completes i
+            {$where} AND i.code_etudiant IS NOT NULL
+            ORDER BY i.nom_etudiant ASC, i.prenom_etudiant ASC
         ";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $inscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $stmtPay = $db->prepare("
-            SELECT inscription_code, SUM(montant_paiement) as total_paye
-            FROM " . TABLES::PAIEMENTS . "
-            WHERE statut_paiement != 'annule'
-              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
-              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
-              AND (annee_code = ? OR inscription_code IN (SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ?))
-            GROUP BY inscription_code
-        ");
-        $stmtPay->execute([$anneeCode, $anneeCode]);
+        $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM v_bilan_paiements_inscriptions");
         $paymentsGrouped = [];
-        foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $rowP) {
-            $paymentsGrouped[$rowP['inscription_code']] = (float)$rowP['total_paye'];
+        if ($stmtPay) {
+            foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $rowP) {
+                $paymentsGrouped[$rowP['inscription_code']] = (float)$rowP['total_paye'];
+            }
         }
 
         $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = 'actif' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
@@ -1896,18 +1805,18 @@ class ModelPaiement extends BaseModel
         }
 
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $where .= " AND (p.annee_code = ? OR i.annee_code = ?)";
+            $where .= " AND (p.annee_code = ? OR p.inscription_annee_code = ?)";
             $params[] = $anneeCode;
             $params[] = $anneeCode;
         }
 
         if (!empty($niveauCode) && $niveauCode !== 'ALL') {
-            $where .= " AND cl.niveau_code = ?";
+            $where .= " AND p.niveau_code = ?";
             $params[] = $niveauCode;
         }
 
         if (!empty($classeCode) && $classeCode !== 'ALL') {
-            $where .= " AND i.classe_code = ?";
+            $where .= " AND p.classe_code = ?";
             $params[] = $classeCode;
         }
 
@@ -1932,19 +1841,8 @@ class ModelPaiement extends BaseModel
         }
 
         $sql = "
-            SELECT 
-                p.id_paiement, p.code_paiement, p.montant_paiement, p.date_paiement, p.statut_paiement,
-                p.reference_paiement, p.type_paiement, p.categorie_paiement, p.mode_paiement, p.canal_paiement, p.tranche_code,
-                i.code_inscription, i.affectation_etat,
-                e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant,
-                cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
-            FROM " . TABLES::PAIEMENTS . " p
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = p.inscription_code
-            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = p.annee_code OR a.code_annee = i.annee_code
+            SELECT p.*
+            FROM v_paiements_complets p
             {$where}
             ORDER BY p.date_paiement DESC, p.id_paiement DESC
         ";

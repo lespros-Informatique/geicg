@@ -187,17 +187,8 @@ class ModelInscription extends BaseModel
         $db = $this->getCon();
         try {
             $stmt = $db->prepare("
-                SELECT ins.*, 
-                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant, e.sexe_etudiant, e.date_naissance_etudiant,
-                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
-                       a.libelle_annee
-                FROM " . TABLES::INSCRIPTIONS . " ins
-                LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = ins.etudiant_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
-                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = ins.annee_code
-                WHERE ins.id_inscription = ? OR ins.code_inscription = ?
+                SELECT * FROM v_inscriptions_completes
+                WHERE id_inscription = ? OR code_inscription = ?
                 LIMIT 1
             ");
             $numericId = is_numeric($idOrCode) ? (int)$idOrCode : 0;
@@ -1070,17 +1061,8 @@ class ModelInscription extends BaseModel
         $id = $param;
 
         $stmtIns = $db->prepare("
-            SELECT i.*, 
-                   e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.matricule_mesrs, 
-                   e.date_naissance_etudiant, e.lieu_naissance_etudiant, e.nationalite_etudiant, e.sexe_etudiant, e.photo_etudiant,
-                   cl.libelle_classe, f.libelle_filiere, f.slug_filiere, n.libelle_niveau, n.slug_niveau, a.libelle_annee
-            FROM " . TABLES::INSCRIPTIONS . " i
-            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-            WHERE i.id_inscription = ? OR i.code_inscription = ? OR e.code_etudiant = ? OR e.matricule_etudiant = ? OR e.id_etudiant = ?
+            SELECT * FROM v_inscriptions_completes
+            WHERE id_inscription = ? OR code_inscription = ? OR code_etudiant = ? OR matricule_etudiant = ? OR id_etudiant = ?
             LIMIT 1
         ");
         $stmtIns->execute([$id, $id, $id, $id, $id]);

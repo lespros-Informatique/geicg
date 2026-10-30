@@ -7,36 +7,25 @@ class ModelEnseignantMatiere extends BaseModel
     
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "SELECT em.*, 
-                       m.libelle_matiere,
-                       cl.libelle_classe,
-                       n.libelle_niveau,
-                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom,
-                       e.code_enseignant
-                FROM enseignant_matiere em
-                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
-                LEFT JOIN classes cl ON cl.code_classe = em.classe_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN users u ON u.code_user = em.enseignant_code";
+        $sql = "SELECT * FROM v_dash_pedagogie_affectations";
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
-            $conditions[] = "em.annee_code = ?";
+            $conditions[] = "annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "cl.niveau_code = ?";
+            $conditions[] = "niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "em.classe_code = ?";
+            $conditions[] = "classe_code = ?";
             $params[] = $classeCode;
         }
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
-        $sql .= " ORDER BY em.id_enseignant_matiere DESC";
+        $sql .= " ORDER BY id_enseignant_matiere DESC";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
@@ -54,24 +43,9 @@ class ModelEnseignantMatiere extends BaseModel
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT em.*, 
-                       m.libelle_matiere,
-                       cl.libelle_classe,
-                       f.libelle_filiere,
-                       n.libelle_niveau,
-                       u.nom_user AS nom_prof,
-                       u.prenom_user AS prenom_prof,
-                       e.grade_enseignant,
-                       u.email_user AS email_enseignant,
-                       u.telephone_user AS telephone_enseignant
-                FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = em.classe_code
-                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
-                WHERE em.id_enseignant_matiere = ?
+                SELECT * FROM v_dash_pedagogie_affectations
+                WHERE id_enseignant_matiere = ?
+                LIMIT 1
             ");
             $stmt->execute([$id]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
