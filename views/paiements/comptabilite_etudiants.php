@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $isCaisseOuverte = $isCaisseOuverte ?? false;
 $activeSession = $activeSession ?? null;
@@ -139,80 +139,68 @@ $classes = $classes ?? [];
   </div>
 
   <!-- INDICATEURS COMPTABLES (KPI BAR) -->
-  <div class="card-kpi-container no-print" style="margin-bottom: 24px;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+  <div class="card-kpi-container no-print" style="margin-bottom: 24px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
 
-      <!-- KPI 1 : Effectif Total Inscrit -->
-      <div class="kpi-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Inscrits</div>
-            <div id="kpi-total-etudiants" style="font-size: 24px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; color: #475569;">
-            <i data-lucide="users" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Comptes actifs filtrés</div>
+    <!-- KPI 1 : Effectif Total Inscrit -->
+    <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Inscrits</div>
+        <div id="kpi-total-etudiants" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
+        <div style="font-size: 11.5px; color: #64748B; margin-top: 4px;">Comptes actifs filtrés</div>
       </div>
-
-      <!-- KPI 2 : Total Scolarités Dues -->
-      <div class="kpi-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Scolarités Dues</div>
-            <div id="kpi-total-scolarites" style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 FCFA</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #E0F2FE; display: flex; align-items: center; justify-content: center; color: #0284C7;">
-            <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Total scolarités théoriques</div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; color: #475569; flex-shrink: 0;">
+        <i data-lucide="users" style="width: 20px; height: 20px;"></i>
       </div>
-
-      <!-- KPI 3 : Taux de Recouvrement Global -->
-      <div class="kpi-card" style="border-left: 4px solid #3B82F6;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Taux de Recouvrement</div>
-            <div id="kpi-taux-recouvrement" style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 %</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; color: #2563EB;">
-            <i data-lucide="percent" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Progression des encaissements</div>
-      </div>
-
-      <!-- KPI 5 : Total Encaissé -->
-      <div class="kpi-card" style="border-left: 4px solid #16A34A; background: #F0FDF4;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé (Paiements)</div>
-            <div id="kpi-total-encaisse" style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 4px;">0 FCFA</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #DCFCE7; display: flex; align-items: center; justify-content: center; color: #16A34A;">
-            <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #16A34A; margin-top: 8px; font-weight: 700;">Somme reçue en caisse</div>
-      </div>
-
-      <!-- KPI 6 : Reste à Recouvrer -->
-      <div class="kpi-card" style="border-left: 4px solid #DC2626; background: #FEF2F2;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Solde Restant (Créances)</div>
-            <div id="kpi-reste-recouvrer" style="font-size: 20px; font-weight: 900; color: #DC2626; margin-top: 4px;">0 FCFA</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #FEE2E2; display: flex; align-items: center; justify-content: center; color: #DC2626;">
-            <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #B91C1C; margin-top: 8px; font-weight: 700;">Créances dues non réglées</div>
-      </div>
-
     </div>
+
+    <!-- KPI 2 : Total Scolarités Dues -->
+    <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E0F2FE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Scolarités Dues</div>
+        <div id="kpi-total-scolarites" style="font-size: 19px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 FCFA</div>
+        <div style="font-size: 11.5px; color: #64748B; margin-top: 4px;">Total scolarités théoriques</div>
+      </div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; display: flex; align-items: center; justify-content: center; color: #0284C7; flex-shrink: 0;">
+        <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
+    <!-- KPI 3 : Taux de Recouvrement Global -->
+    <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #DBEAFE; border-left: 4px solid #3B82F6; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Taux de Recouvrement</div>
+        <div id="kpi-taux-recouvrement" style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 %</div>
+        <div style="font-size: 11.5px; color: #64748B; margin-top: 4px;">Progression des encaissements</div>
+      </div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; color: #2563EB; flex-shrink: 0;">
+        <i data-lucide="percent" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
+    <!-- KPI 5 : Total Encaissé -->
+    <div class="card kpi-card" style="background: #F0FDF4; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; border-left: 4px solid #16A34A; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé (Paiements)</div>
+        <div id="kpi-total-encaisse" style="font-size: 19px; font-weight: 900; color: #15803D; margin-top: 4px;">0 FCFA</div>
+        <div style="font-size: 11.5px; color: #16A34A; margin-top: 4px; font-weight: 700;">Somme reçue en caisse</div>
+      </div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; display: flex; align-items: center; justify-content: center; color: #16A34A; flex-shrink: 0;">
+        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
+    <!-- KPI 6 : Reste à Recouvrer -->
+    <div class="card kpi-card" style="background: #FEF2F2; border-radius: 12px; padding: 16px 18px; border: 1px solid #FECACA; border-left: 4px solid #DC2626; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Solde Restant (Créances)</div>
+        <div id="kpi-reste-recouvrer" style="font-size: 19px; font-weight: 900; color: #DC2626; margin-top: 4px;">0 FCFA</div>
+        <div style="font-size: 11.5px; color: #B91C1C; margin-top: 4px; font-weight: 700;">Créances dues non réglées</div>
+      </div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEE2E2; display: flex; align-items: center; justify-content: center; color: #DC2626; flex-shrink: 0;">
+        <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
   </div>
 
   <!-- TABLEAU DES COMPTES ÉTUDIANTS -->

@@ -45,65 +45,66 @@ $canRecordPayment = $canRecordPayment ?? true;
       </div>
 
       <!-- BANDEAU DE CARTES SYNTHÈSE KPIS -->
+      <!-- BANDEAU DE CARTES SYNTHÈSE KPIS -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
         <!-- Card 1: Total Impayés Échus -->
-        <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #DC2626;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Impayés Échus</span>
-            <div style="width: 34px; height: 34px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="banknote" style="width: 18px; height: 18px;"></i>
-            </div>
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #DC2626; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Impayés Échus</div>
+            <div id="kpi-total-impayes" style="font-size: 20px; font-weight: 900; color: #DC2626; margin-top: 4px;">0 FCFA</div>
+            <div style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;">Cumul des tranches dépassées</div>
           </div>
-          <div id="kpi-total-impayes" style="font-size: 22px; font-weight: 900; color: #DC2626; margin-top: 10px;">0 FCFA</div>
-          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Cumul des tranches dépassées</div>
+          <div class="kpi-icon-box" style="width: 38px; height: 38px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="banknote" style="width: 18px; height: 18px;"></i>
+          </div>
         </div>
 
         <!-- Card 2: Étudiants en Retard -->
-        <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #EA580C;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total en Retard</span>
-            <div style="width: 34px; height: 34px; border-radius: 8px; background: #FFEDD5; color: #EA580C; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-            </div>
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #EA580C; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total en Retard</div>
+            <div id="kpi-total-etudiants" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
+            <div style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;">Dossiers avec solde échu</div>
           </div>
-          <div id="kpi-total-etudiants" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 10px;">0</div>
-          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Dossiers avec solde échu</div>
+          <div class="kpi-icon-box" style="width: 38px; height: 38px; border-radius: 8px; background: #FFEDD5; color: #EA580C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+          </div>
         </div>
 
         <!-- Card 3: Nombre d'Affectés -->
-        <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #2563EB;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Affectés</span>
-            <div style="width: 34px; height: 34px; border-radius: 8px; background: #DBEAFE; color: #2563EB; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
-            </div>
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #2563EB; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Affectés</div>
+            <div id="kpi-total-affectes" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
+            <div style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;">Bénéficiaires État / Affectés</div>
           </div>
-          <div id="kpi-total-affectes" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 10px;">0</div>
-          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Bénéficiaires État / Affectés</div>
+          <div class="kpi-icon-box" style="width: 38px; height: 38px; border-radius: 8px; background: #DBEAFE; color: #2563EB; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
+          </div>
         </div>
 
         <!-- Card 4: Nombre de Non Affectés -->
-        <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #9333EA;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés (Privés)</span>
-            <div style="width: 34px; height: 34px; border-radius: 8px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="user-x" style="width: 18px; height: 18px;"></i>
-            </div>
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #9333EA; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Non Affectés (Privés)</div>
+            <div id="kpi-total-non-affectes" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
+            <div style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;">Régulier / Direct privé</div>
           </div>
-          <div id="kpi-total-non-affectes" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 10px;">0</div>
-          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Régulier / Direct privé</div>
+          <div class="kpi-icon-box" style="width: 38px; height: 38px; border-radius: 8px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="user-x" style="width: 18px; height: 18px;"></i>
+          </div>
         </div>
 
         <!-- Card 5: Relances Effectuées Ce Mois -->
-        <div class="kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #059669;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Relances Ce Mois</span>
-            <div style="width: 34px; height: 34px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="send" style="width: 18px; height: 18px;"></i>
-            </div>
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #059669; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Relances Ce Mois</div>
+            <div id="kpi-relances-mois" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
+            <div style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;">Rappels émis aux parents</div>
           </div>
-          <div id="kpi-relances-mois" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 10px;">0</div>
-          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Rappels émis aux parents</div>
+          <div class="kpi-icon-box" style="width: 38px; height: 38px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+          </div>
         </div>
       </div>
 
