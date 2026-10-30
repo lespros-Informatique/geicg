@@ -38,6 +38,7 @@
                 url: dtLang
             },
             pageLength: 25,
+            autoWidth: false,
             order: [[0, 'asc']],
             dom: '<"row no-print"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row no-print"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
             columns: [
@@ -45,23 +46,23 @@
                     var initStr = d.initiales || 'E';
                     var avatarHtml = '';
                     if (d.has_photo && d.photo) {
-                        avatarHtml = '<img src="' + d.photo + '" class="student-avatar" alt="Photo" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline-flex\';">' +
-                                     '<div class="student-avatar-initials" style="display:none;">' + initStr + '</div>';
+                        avatarHtml = '<img src="' + d.photo + '" class="student-avatar" alt="Photo" style="flex-shrink:0;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline-flex\';">' +
+                                     '<div class="student-avatar-initials" style="display:none; flex-shrink:0;">' + initStr + '</div>';
                     } else {
-                        avatarHtml = '<div class="student-avatar-initials">' + initStr + '</div>';
+                        avatarHtml = '<div class="student-avatar-initials" style="flex-shrink:0;">' + initStr + '</div>';
                     }
-                    return '<div style="display: flex; align-items: center; gap: 10px;">' +
+                    return '<div style="display: flex; align-items: center; gap: 8px; min-width: 170px; white-space: normal;">' +
                                 avatarHtml +
-                                '<div>' +
-                                    '<div style="font-weight: 800; color: #0F172A;">' + (d.nom_complet || '') + '</div>' +
-                                    '<div style="font-size: 11.5px; color: #64748B;">Matricule: <strong style="color: #1E3A5F;">' + (d.matricule || '') + '</strong></div>' +
+                                '<div style="line-height: 1.25;">' +
+                                    '<div style="font-weight: 800; color: #0F172A; word-break: break-word;">' + (d.nom_complet || '') + '</div>' +
+                                    '<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Mat: <strong style="color: #1E3A5F;">' + (d.matricule || '') + '</strong></div>' +
                                 '</div>' +
                             '</div>';
                 }},
                 { data: null, render: function(d) {
-                    return '<div>' +
-                                '<div style="font-weight: 700; color: #1E3A5F;">' + (d.classe || '') + '</div>' +
-                                '<div style="font-size: 11px; color: #64748B;">Niveau: ' + (d.niveau || '') + '</div>' +
+                    return '<div style="min-width: 110px; max-width: 170px; white-space: normal; line-height: 1.25;">' +
+                                '<div style="font-weight: 700; color: #1E3A5F; word-break: break-word;">' + (d.classe || '') + '</div>' +
+                                '<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Niveau: ' + (d.niveau || '') + '</div>' +
                             '</div>';
                 }},
                 { data: null, className: 'text-center', render: function(d) {
@@ -73,7 +74,7 @@
                 { data: 'solde_restant', className: 'text-end font-monospace text-danger fw-bold', render: function(v) { return formatFCFA(v); }},
                 { data: null, className: 'text-center', render: function(d) {
                     var barColor = (d.taux_reglement >= 100) ? '#16A34A' : ((d.taux_reglement > 0) ? '#D97706' : '#DC2626');
-                    return '<div style="min-width: 80px;">' +
+                    return '<div style="min-width: 64px;">' +
                                 '<div style="font-size: 11px; font-weight: 800; margin-bottom: 2px;">' + d.taux_reglement + '%</div>' +
                                 '<div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden;">' +
                                     '<div style="width: ' + d.taux_reglement + '%; height: 100%; background: ' + barColor + ';"></div>' +

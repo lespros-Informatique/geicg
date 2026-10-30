@@ -489,6 +489,26 @@ table.dataTable .badge {
   display: inline-block !important;
 }
 
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ajustement responsive spécifique pour le tableau à 9 colonnes de Comptabilité Étudiants */
+#table-comptabilite-etudiants thead th {
+  padding: 10px 8px !important;
+  font-size: 11px !important;
+}
+#table-comptabilite-etudiants tbody td {
+  padding: 10px 8px !important;
+  font-size: 12.5px !important;
+}
+#table-comptabilite-etudiants tbody td:nth-child(1),
+#table-comptabilite-etudiants tbody td:nth-child(2) {
+  white-space: normal !important;
+}
+
 /* Classes d'impression PV et Bons */
 @media print {
   .btn-no-print { display: none !important; }

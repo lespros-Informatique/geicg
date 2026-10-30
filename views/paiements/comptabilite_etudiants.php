@@ -204,9 +204,9 @@ $classes = $classes ?? [];
   </div>
 
   <!-- TABLEAU DES COMPTES ÉTUDIANTS -->
-  <div class="card" style="background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+  <div class="card" style="background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;" class="no-print">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;" class="no-print">
       <div>
         <h2 style="font-size: 16px; font-weight: 900; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="table" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Relevé Comptable Individuel des Étudiants
@@ -218,22 +218,22 @@ $classes = $classes ?? [];
       </div>
     </div>
 
-    <div class="table-responsive">
-      <table id="table-comptabilite-etudiants" class="table table-hover align-middle" style="width: 100%;">
+    <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+      <table id="table-comptabilite-etudiants" class="table table-hover align-middle" style="width: 100%; max-width: 100%; border-collapse: collapse;">
         <thead>
           <tr style="background: #F8FAFC; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
-            <th style="padding: 12px; font-weight: 800;">Étudiant & Matricule</th>
-            <th style="padding: 12px; font-weight: 800;">Classe / Niveau</th>
-            <th style="padding: 12px; font-weight: 800; text-align: center;">Régime</th>
-            <th style="padding: 12px; font-weight: 800; text-align: right;">Scolarité Due</th>
-            <th style="padding: 12px; font-weight: 800; text-align: right;">Total Encaissé</th>
-            <th style="padding: 12px; font-weight: 800; text-align: right;">Solde Dû</th>
-            <th style="padding: 12px; font-weight: 800; text-align: center;">Taux %</th>
-            <th style="padding: 12px; font-weight: 800; text-align: center;">Statut</th>
-            <th style="padding: 12px; font-weight: 800; text-align: center;" class="no-print">Actions</th>
+            <th style="padding: 10px 8px; font-weight: 800;">Étudiant & Matricule</th>
+            <th style="padding: 10px 8px; font-weight: 800;">Classe / Niveau</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: center;">Régime</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: right;">Scolarité Due</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: right;">Total Encaissé</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: right;">Solde Dû</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: center;">Taux %</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: center;">Statut</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: center;" class="no-print">Actions</th>
           </tr>
         </thead>
-        <tbody style="font-size: 13px;">
+        <tbody style="font-size: 12.5px;">
           <!-- Chargé dynamiquement en AJAX -->
         </tbody>
       </table>
