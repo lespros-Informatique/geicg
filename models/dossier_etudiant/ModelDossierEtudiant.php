@@ -48,6 +48,58 @@ class ModelDossierEtudiant extends BaseModel
     }
 
     /**
+     * Récupère en lot (1 seule requête SQL) les dossiers complets pour une liste d'inscriptions
+     */
+    public function getDossiersByInscriptions(array $inscriptionCodes): array
+    {
+        if (empty($inscriptionCodes)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($inscriptionCodes), '?'));
+        $sql = "
+            SELECT 
+                i.code_inscription,
+                pfc.piece_code,
+                pf.libelle_piece,
+                pf.description_piece,
+                de.id_dossier_etudiant,
+                de.code_dossier_etudiant,
+                COALESCE(de.statut_depot, 'en_attente') AS statut_depot,
+                de.date_depot,
+                de.fichier_joint,
+                de.observations,
+                de.created_at_dossier_etudiant
+            FROM inscriptions i
+            JOIN classes cl ON cl.code_classe = i.classe_code
+            JOIN niveaux n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN filiere_cycles fc ON fc.filiere_code = cl.filiere_code
+            JOIN piece_fournir_cycle pfc ON (pfc.cycle_code = fc.cycle_code OR pfc.cycle_code IS NULL OR pfc.cycle_code = '') 
+                 AND (pfc.niveau_code = cl.niveau_code OR pfc.niveau_code IS NULL OR pfc.niveau_code = '')
+                 AND pfc.statut_piece_cycle = 'actif'
+            JOIN pieces_fournir pf ON pf.code_piece_fournir = pfc.piece_code
+            LEFT JOIN dossier_etudiant de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
+            WHERE i.code_inscription IN ({$placeholders})
+            GROUP BY i.code_inscription, pfc.piece_code
+            ORDER BY pf.libelle_piece ASC
+        ";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute(array_values($inscriptionCodes));
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $grouped = [];
+            foreach ($rows as $row) {
+                $inscCode = $row['code_inscription'];
+                unset($row['code_inscription']);
+                $grouped[$inscCode][] = $row;
+            }
+            return $grouped;
+        } catch (Exception $e) {
+            error_log("ModelDossierEtudiant::getDossiersByInscriptions error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Met à jour ou insère le statut de dépôt d'une pièce avec observations et fichier joint éventuel
      */
     public function saveStatutPiece(

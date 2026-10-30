@@ -121,17 +121,19 @@ class ModelScolarite extends BaseModel
     public function getStats(?string $activeYear): array
     {
         $db = $this->getCon();
-        $stmtTot = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE (annee_code = ? OR ? = '')");
-        $stmtTot->execute([$activeYear, $activeYear]);
-        $totalScolarites = (int)$stmtTot->fetchColumn();
-
-        $stmtAff = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE affectation_etat = 'affecte' AND (annee_code = ? OR ? = '')");
-        $stmtAff->execute([$activeYear, $activeYear]);
-        $totalAffectes = (int)$stmtAff->fetchColumn();
-
-        $stmtNonAff = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE (affectation_etat = 'non_affecte' OR affectation_etat IS NULL OR affectation_etat = '') AND (annee_code = ? OR ? = '')");
-        $stmtNonAff->execute([$activeYear, $activeYear]);
-        $totalNonAffectes = (int)$stmtNonAff->fetchColumn();
+        $stmtSco = $db->prepare("
+            SELECT 
+                COUNT(*) AS total_scolarites,
+                COALESCE(SUM(CASE WHEN affectation_etat = 'affecte' THEN 1 ELSE 0 END), 0) AS total_affectes,
+                COALESCE(SUM(CASE WHEN affectation_etat = 'non_affecte' OR affectation_etat IS NULL OR affectation_etat = '' THEN 1 ELSE 0 END), 0) AS total_non_affectes
+            FROM " . TABLES::SCOLARITES . "
+            WHERE (annee_code = ? OR ? = '')
+        ");
+        $stmtSco->execute([$activeYear, $activeYear]);
+        $scoRow = $stmtSco->fetch(PDO::FETCH_ASSOC) ?: [];
+        $totalScolarites = (int)($scoRow['total_scolarites'] ?? 0);
+        $totalAffectes = (int)($scoRow['total_affectes'] ?? 0);
+        $totalNonAffectes = (int)($scoRow['total_non_affectes'] ?? 0);
 
         $stmtTr = $db->prepare("SELECT COUNT(*) FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE (annee_code = ? OR ? = '')");
         $stmtTr->execute([$activeYear, $activeYear]);

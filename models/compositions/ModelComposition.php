@@ -111,6 +111,36 @@ class ModelComposition extends BaseModel
         }
     }
 
+    public function getTargetClassesByCompositions(array $compositionCodes): array
+    {
+        if (empty($compositionCodes)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($compositionCodes), '?'));
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT cnf.*, n.libelle_niveau, f.libelle_filiere, cl.code_classe, cl.libelle_classe
+                FROM composition_niveau_filiere cnf
+                LEFT JOIN niveaux n ON n.code_niveau = cnf.niveau_code
+                LEFT JOIN filieres f ON f.code_filiere = cnf.filiere_code
+                LEFT JOIN classes cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                WHERE cnf.composition_code IN ({$placeholders})
+                GROUP BY cnf.code_composition_niveau_filiere, cl.code_classe
+                ORDER BY n.libelle_niveau ASC, f.libelle_filiere ASC
+            ");
+            $stmt->execute(array_values($compositionCodes));
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $grouped = [];
+            foreach ($rows as $r) {
+                $grouped[$r['composition_code']][] = $r;
+            }
+            return $grouped;
+        } catch (Exception $e) {
+            error_log("Get target classes batch error: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function saveCompositionMatieres(string $compositionCode, string $compositionNiveauFiliereCode, array $matiereCodes): bool
     {
         try {

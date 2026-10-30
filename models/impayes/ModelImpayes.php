@@ -475,6 +475,32 @@ class ModelImpayes extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    private static array $scolariteDueCache = [];
+
+    public function getTotalPayeByInscriptions(array $inscriptionCodes): array
+    {
+        if (empty($inscriptionCodes)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($inscriptionCodes), '?'));
+        $stmt = $this->getCon()->prepare("
+            SELECT inscription_code, COALESCE(SUM(montant_paiement), 0) as total_paye 
+            FROM " . TABLES::PAIEMENTS . " 
+            WHERE inscription_code IN ({$placeholders})
+              AND statut_paiement != 'annule'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+              AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
+            GROUP BY inscription_code
+        ");
+        $stmt->execute(array_values($inscriptionCodes));
+        $map = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $map[$r['inscription_code']] = (float)$r['total_paye'];
+        }
+        return $map;
+    }
+
     public function getTotalPayeByInscription(string $inscriptionCode): float
     {
         $stmt = $this->getCon()->prepare("
@@ -492,10 +518,16 @@ class ModelImpayes extends BaseModel
 
     public function getScolariteDue(string $filiereCode, string $niveauCode, ?string $anneeCode = null): ?float
     {
+        $cacheKey = "{$filiereCode}|{$niveauCode}|" . ($anneeCode ?? '');
+        if (array_key_exists($cacheKey, self::$scolariteDueCache)) {
+            return self::$scolariteDueCache[$cacheKey];
+        }
         $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = 'actif' LIMIT 1");
         $stmt->execute([$filiereCode, $niveauCode, $anneeCode]);
         $val = $stmt->fetchColumn();
-        return $val !== false ? (float)$val : null;
+        $res = $val !== false ? (float)$val : null;
+        self::$scolariteDueCache[$cacheKey] = $res;
+        return $res;
     }
 }
 

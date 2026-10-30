@@ -354,9 +354,11 @@ class ImpayesController extends BaseController
         ]);
 
         $htmlPages = [];
+        $inscCodesMasse = array_column($inscriptions, 'code_inscription');
+        $totauxPayesMap = $this->model->getTotalPayeByInscriptions($inscCodesMasse);
 
         foreach ($inscriptions as $ins) {
-            $totalPaye = $this->model->getTotalPayeByInscription($ins['code_inscription']);
+            $totalPaye = $totauxPayesMap[$ins['code_inscription']] ?? 0.0;
 
             $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
             $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $ins['annee_code'], $ins['niveau_code'], 'inscription');

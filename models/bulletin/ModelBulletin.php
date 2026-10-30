@@ -26,11 +26,17 @@ class ModelBulletin extends BaseModel
                            e.matricule_etudiant,
                            cl.libelle_classe AS classe_nom,
                            a.libelle_annee AS annee_nom,
-                           (SELECT COUNT(*) FROM notes n WHERE n.inscription_code = i.code_inscription AND n.statut_note = 'actif') AS nb_notes
+                           COALESCE(n_cnt.nb_notes, 0) AS nb_notes
                     FROM inscriptions i
                     LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
                     LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-                    LEFT JOIN annees a ON a.code_annee = i.annee_code";
+                    LEFT JOIN annees a ON a.code_annee = i.annee_code
+                    LEFT JOIN (
+                        SELECT inscription_code, COUNT(*) AS nb_notes
+                        FROM notes
+                        WHERE statut_note = 'actif'
+                        GROUP BY inscription_code
+                    ) n_cnt ON n_cnt.inscription_code = i.code_inscription";
 
             $conditions = [];
             $params = [];

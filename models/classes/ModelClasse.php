@@ -99,9 +99,15 @@ class ModelClasse extends BaseModel
         $createdCount = 0;
         $skippedCount = 0;
 
+        $stmtCheck = $db->prepare("SELECT id_classe FROM classes WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
+        $stmtInsert = $db->prepare("
+            INSERT INTO classes 
+            (code_classe, libelle_classe, capacite_max_classe, cycle_code, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
+        ");
+
         foreach ($classesSource as $cls) {
             // Vérifier si la classe existe déjà dans l'année de destination
-            $stmtCheck = $db->prepare("SELECT id_classe FROM classes WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
             $stmtCheck->execute([$cls['libelle_classe'], $anneeCibleCode]);
             if ($stmtCheck->fetch()) {
                 $skippedCount++;
@@ -110,12 +116,6 @@ class ModelClasse extends BaseModel
 
             // Générer un nouveau code unique
             $newCode = $validator->generateCode('classes', 'code_classe', 'CLA-', 8);
-            
-            $stmtInsert = $db->prepare("
-                INSERT INTO classes 
-                (code_classe, libelle_classe, capacite_max_classe, cycle_code, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
-            ");
             
             $inserted = $stmtInsert->execute([
                 $newCode,

@@ -285,8 +285,10 @@ class NoteController extends BaseController
 
         $compModel = new ModelComposition();
         $tousExamens = $compModel->getAll($anneeCode, null, null, 'EXAMEN');
+        $examCodes = array_column($tousExamens, 'code_composition');
+        $targetsByComp = $compModel->getTargetClassesByCompositions($examCodes);
         foreach ($tousExamens as &$exam) {
-            $targetCls = $compModel->getTargetClasses($exam['code_composition']);
+            $targetCls = $targetsByComp[$exam['code_composition']] ?? [];
             $exam['target_classes'] = array_values(array_filter(array_map(function($tc) {
                 return !empty($tc['code_classe']) ? [
                     'code_classe' => $tc['code_classe'],

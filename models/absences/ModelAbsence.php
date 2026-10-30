@@ -184,43 +184,55 @@ class ModelAbsence extends BaseModel
         $db->beginTransaction();
 
         try {
+            $matCodeNorm = $matiereCode ?? '';
+            $stmtCheck = $db->prepare("
+                SELECT id_absence FROM " . TABLES::ABSENCES . " 
+                WHERE inscription_code = ? AND date_absence = ? AND (matiere_code = ? OR (matiere_code = '' AND ? = ''))
+            ");
+            $stmtUpd = $db->prepare("
+                UPDATE " . TABLES::ABSENCES . " 
+                SET duree_heures = ?, justifiee = ?, motif = ?
+                WHERE id_absence = ?
+            ");
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::ABSENCES . " (
+                    code_absence, inscription_code, emploi_code, matiere_code, date_absence, 
+                    duree_heures, justifiee, motif, annee_code, etablissement_code, created_at_absence
+                ) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+            $stmtDel = $db->prepare("DELETE FROM " . TABLES::ABSENCES . " WHERE id_absence = ?");
+
+            // Pré-chargement en 1 seule requête des inscriptions de la classe
+            $inscriptionsByEtudiant = [];
+            if (!empty($classeCode)) {
+                foreach ($this->getStudentsByClasse($classeCode, $anneeCode) as $st) {
+                    $inscriptionsByEtudiant[$st['code_etudiant']] = $st['code_inscription'];
+                }
+            }
+
             foreach ($absencesData as $etudiantCode => $info) {
                 $isAbsent = !empty($info['is_absent']);
                 $justifiee = !empty($info['justifiee']) ? $info['justifiee'] : 'non';
                 $motif = trim($info['motif'] ?? ($info['motif_absence'] ?? ''));
 
-                $inscCode = $this->getInscriptionCodeByEtudiant($etudiantCode, $classeCode, $anneeCode);
+                $inscCode = $inscriptionsByEtudiant[$etudiantCode]
+                    ?? $this->getInscriptionCodeByEtudiant($etudiantCode, $classeCode, $anneeCode);
                 if (empty($inscCode)) {
                     continue;
                 }
 
-                $stmtCheck = $db->prepare("
-                    SELECT id_absence FROM " . TABLES::ABSENCES . " 
-                    WHERE inscription_code = ? AND date_absence = ? AND (matiere_code = ? OR (matiere_code = '' AND ? = ''))
-                ");
-                $stmtCheck->execute([$inscCode, $dateAbsence, $matiereCode ?? '', $matiereCode ?? '']);
+                $stmtCheck->execute([$inscCode, $dateAbsence, $matCodeNorm, $matCodeNorm]);
                 $existingId = $stmtCheck->fetchColumn();
 
                 if ($isAbsent) {
                     if ($existingId) {
-                        $stmtUpd = $db->prepare("
-                            UPDATE " . TABLES::ABSENCES . " 
-                            SET duree_heures = ?, justifiee = ?, motif = ?
-                            WHERE id_absence = ?
-                        ");
                         $stmtUpd->execute([$dureeHeures, $justifiee, $motif, $existingId]);
                     } else {
                         $codeAbs = $validator->generateCode('absences', 'code_absence', 'ABS-', 8);
-                        $stmtIns = $db->prepare("
-                            INSERT INTO " . TABLES::ABSENCES . " (
-                                code_absence, inscription_code, emploi_code, matiere_code, date_absence, 
-                                duree_heures, justifiee, motif, annee_code, etablissement_code, created_at_absence
-                            ) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, NOW())
-                        ");
                         $stmtIns->execute([
                             $codeAbs,
                             $inscCode,
-                            $matiereCode ?? '',
+                            $matCodeNorm,
                             $dateAbsence,
                             $dureeHeures,
                             $justifiee,
@@ -231,7 +243,6 @@ class ModelAbsence extends BaseModel
                     }
                 } else {
                     if ($existingId) {
-                        $stmtDel = $db->prepare("DELETE FROM " . TABLES::ABSENCES . " WHERE id_absence = ?");
                         $stmtDel->execute([$existingId]);
                     }
                 }

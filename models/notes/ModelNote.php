@@ -381,23 +381,45 @@ class ModelNote extends BaseModel
             $savedCount = 0;
             $deletedCount = 0;
 
+            // Pré-chargement en 1 seule requête des notes existantes pour cette composition
+            $existingNotesMap = [];
+            $stmtExistAll = $db->prepare("SELECT inscription_code, id_note FROM " . TABLES::NOTES . " WHERE composition_code = ?");
+            $stmtExistAll->execute([$compositionCode]);
+            foreach ($stmtExistAll->fetchAll(PDO::FETCH_ASSOC) as $enRow) {
+                $existingNotesMap[$enRow['inscription_code']] = $enRow['id_note'];
+            }
+
+            // Pré-chargement en 1 seule requête des codes étudiants de la classe
+            $etudiantsByInsc = [];
+            if (!empty($classeCode)) {
+                foreach ($this->getStudentsByClasse($classeCode, $anneeCode) as $st) {
+                    $etudiantsByInsc[$st['code_inscription']] = $st['code_etudiant'];
+                }
+            }
+
+            $stmtDel = $db->prepare("DELETE FROM " . TABLES::NOTES . " WHERE id_note = ?");
+            $stmtUpd = $db->prepare("
+                UPDATE " . TABLES::NOTES . " 
+                SET valeur_note = ?, observations = ?, updated_at_note = NOW(), statut_note = 'actif'
+                WHERE id_note = ?
+            ");
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::NOTES . " (code_note, composition_code, etudiant_code, inscription_code, valeur_note, observations, statut_note, user_code, etablissement_code, created_at_note)
+                VALUES (?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?)
+            ");
+            $nowStr = date('Y-m-d H:i:s');
+
             foreach ($notesData as $inscCode => $info) {
                 $valNoteStr = trim($info['valeur_note'] ?? '');
                 $obs = trim($info['observations'] ?? '');
 
-                $stmtCheck = $db->prepare("
-                    SELECT id_note FROM " . TABLES::NOTES . " 
-                    WHERE inscription_code = ? AND composition_code = ?
-                ");
-                $stmtCheck->execute([$inscCode, $compositionCode]);
-                $existingId = $stmtCheck->fetchColumn();
+                $existingId = $existingNotesMap[$inscCode] ?? false;
 
                 if ($valNoteStr === '') {
                     if (!empty($obs) && stripos($obs, 'absent') !== false) {
                         $valNote = 0.00;
                     } else {
                         if ($existingId) {
-                            $stmtDel = $db->prepare("DELETE FROM " . TABLES::NOTES . " WHERE id_note = ?");
                             $stmtDel->execute([$existingId]);
                             $deletedCount++;
                         }
@@ -411,16 +433,12 @@ class ModelNote extends BaseModel
                 }
 
                 if ($existingId) {
-                    $stmtUpd = $db->prepare("
-                        UPDATE " . TABLES::NOTES . " 
-                        SET valeur_note = ?, observations = ?, updated_at_note = NOW(), statut_note = 'actif'
-                        WHERE id_note = ?
-                    ");
                     $stmtUpd->execute([$valNote, $obs, $existingId]);
                 } else {
                     $etudiantCode = trim($info['etudiant_code'] ?? '');
                     if (empty($etudiantCode)) {
-                        $etudiantCode = $this->getEtudiantCodeByInscription($inscCode) ?: '';
+                        $etudiantCode = $etudiantsByInsc[$inscCode]
+                            ?? ($this->getEtudiantCodeByInscription($inscCode) ?: '');
                     }
 
                     $fkErr = ForeignKeyValidator::validate($db, 'notes', [
@@ -434,11 +452,7 @@ class ModelNote extends BaseModel
                     }
 
                     $codeNote = $validator->generateCode('notes', 'code_note', 'NOT-', 8);
-                    $stmtIns = $db->prepare("
-                        INSERT INTO " . TABLES::NOTES . " (code_note, composition_code, etudiant_code, inscription_code, valeur_note, observations, statut_note, user_code, etablissement_code, created_at_note)
-                        VALUES (?, ?, ?, ?, ?, ?, 'actif', ?, ?, ?)
-                    ");
-                    $stmtIns->execute([$codeNote, $compositionCode, $etudiantCode, $inscCode, $valNote, $obs, $userCode, $etabCode, date('Y-m-d H:i:s')]);
+                    $stmtIns->execute([$codeNote, $compositionCode, $etudiantCode, $inscCode, $valNote, $obs, $userCode, $etabCode, $nowStr]);
                 }
                 $savedCount++;
             }

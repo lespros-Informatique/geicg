@@ -196,6 +196,7 @@ class ForeignKeyValidator
     ];
 
     private static array $tableColsCache = [];
+    private static array $keyExistenceCache = [];
 
     private static function getTableColumns(PDO $pdo, string $table): array
     {
@@ -316,14 +317,20 @@ class ForeignKeyValidator
         $targetField = $info['field'];
         $label = $customLabel ?? $info['label'];
 
-        try {
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM `{$targetTable}` WHERE `{$targetField}` = ?");
-            $stmt->execute([$val]);
-            $count = (int)$stmt->fetchColumn();
+        $cacheKey = "{$targetTable}.{$targetField}={$val}";
+        if (isset(self::$keyExistenceCache[$cacheKey])) {
+            return null;
+        }
 
-            if ($count === 0) {
+        try {
+            $stmt = $pdo->prepare("SELECT 1 FROM `{$targetTable}` WHERE `{$targetField}` = ? LIMIT 1");
+            $stmt->execute([$val]);
+            $exists = (bool)$stmt->fetchColumn();
+
+            if (!$exists) {
                 return "Opération interrompue : La référence '{$label}' ('{$val}') est introuvable ou n'existe pas dans le système (table {$targetTable}).";
             }
+            self::$keyExistenceCache[$cacheKey] = true;
         } catch (Exception $e) {
             error_log("ForeignKeyValidator error checking {$fkCol}='{$val}': " . $e->getMessage());
             return "Opération interrompue : Erreur lors de la vérification de la clé étrangère '{$label}'.";

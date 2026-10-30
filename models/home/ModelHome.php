@@ -45,29 +45,25 @@ class ModelHome extends BaseModel
             $caAttendu = (float)($synthese['total_scolarite_attendue'] ?? 0);
             $totalDepenses = (float)($synthese['total_depenses'] ?? 0);
 
-            // Encaissements Scolarité (strictement dissociés des frais annexes)
-            $stmtEncScol = $db->prepare("
-                SELECT COALESCE(SUM(p.montant_paiement), 0)
+            // Encaissements Scolarité & Caisse Annexe en 1 seule passe SQL
+            $stmtEnc = $db->prepare("
+                SELECT 
+                    COALESCE(SUM(CASE 
+                        WHEN (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
+                         AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
+                         AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
+                        THEN p.montant_paiement ELSE 0 END), 0) AS scolarite,
+                    COALESCE(SUM(CASE 
+                        WHEN (p.categorie_paiement = 'FRAIS_ANNEXES' OR p.tranche_code = 'FRAIS_ANNEXES' OR p.type_paiement LIKE '%Frais Annexe%')
+                        THEN p.montant_paiement ELSE 0 END), 0) AS annexes
                 FROM paiements p
                 WHERE (p.annee_code = ? OR ? = '')
                   AND p.statut_paiement = 'confirme'
-                  AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
-                  AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
-                  AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
             ");
-            $stmtEncScol->execute([$anneeCode ?: '', $anneeCode ?: '']);
-            $caEncaisseScolarite = (float)$stmtEncScol->fetchColumn();
-
-            // Encaissements Caisse Annexe (frais annexes dissociés)
-            $stmtEncAnnexe = $db->prepare("
-                SELECT COALESCE(SUM(p.montant_paiement), 0)
-                FROM paiements p
-                WHERE (p.annee_code = ? OR ? = '')
-                  AND p.statut_paiement = 'confirme'
-                  AND (p.categorie_paiement = 'FRAIS_ANNEXES' OR p.tranche_code = 'FRAIS_ANNEXES' OR p.type_paiement LIKE '%Frais Annexe%')
-            ");
-            $stmtEncAnnexe->execute([$anneeCode ?: '', $anneeCode ?: '']);
-            $caEncaisseAnnexes = (float)$stmtEncAnnexe->fetchColumn();
+            $stmtEnc->execute([$anneeCode ?: '', $anneeCode ?: '']);
+            $encRow = $stmtEnc->fetch(PDO::FETCH_ASSOC) ?: [];
+            $caEncaisseScolarite = (float)($encRow['scolarite'] ?? 0);
+            $caEncaisseAnnexes = (float)($encRow['annexes'] ?? 0);
 
             $totalEncaisseGlobal = $caEncaisseScolarite + $caEncaisseAnnexes;
             $caEncaisse = $caEncaisseScolarite;
@@ -76,11 +72,44 @@ class ModelHome extends BaseModel
             $soldeNetScolarite = $caEncaisseScolarite - $totalDepenses;
             $tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisseScolarite / $caAttendu) * 100, 1)) : 0;
 
-            // 2. Compteurs Pédagogiques
-            $totalEnseignants = (int)$db->query("SELECT COUNT(*) FROM enseignants WHERE statut_enseignant = 'actif'")->fetchColumn();
-            $totalMatieres = (int)$db->query("SELECT COUNT(*) FROM matieres WHERE statut_matiere = 'actif'")->fetchColumn();
-            $totalSalles = (int)$db->query("SELECT COUNT(*) FROM salles WHERE statut_salle = 'actif'")->fetchColumn();
-            
+            // 2. Compteurs Pédagogiques & Modules Complémentaires consolidés en 1 requête
+            $countsRow = [];
+            try {
+                $stmtCounts = $db->query("
+                    SELECT
+                        (SELECT COUNT(*) FROM enseignants WHERE statut_enseignant = 'actif') AS total_enseignants,
+                        (SELECT COUNT(*) FROM matieres WHERE statut_matiere = 'actif') AS total_matieres,
+                        (SELECT COUNT(*) FROM salles WHERE statut_salle = 'actif') AS total_salles,
+                        (SELECT COUNT(*) FROM actualites WHERE statut_actualite = 'actif') AS total_actualites,
+                        (SELECT COUNT(*) FROM evenements WHERE statut_evenement = 'actif') AS total_evenements,
+                        (SELECT COUNT(*) FROM documents WHERE statut_document = 'actif') AS total_documents,
+                        (SELECT COUNT(*) FROM filieres WHERE statut_filiere = 'actif') AS total_filieres,
+                        (SELECT COUNT(*) FROM cycles WHERE statut_cycle = 'actif') AS total_cycles,
+                        (SELECT COUNT(*) FROM niveaux WHERE statut_niveau = 'actif') AS total_niveaux,
+                        (SELECT COUNT(*) FROM parents) AS total_parents,
+                        (SELECT COUNT(*) FROM ouvertures_caisse WHERE statut_ouverture = 'ouverte') AS total_sessions_caisse,
+                        (SELECT COUNT(*) FROM piece_fournir_cycle WHERE statut_piece_cycle = 'actif') AS total_pieces,
+                        (SELECT COUNT(*) FROM accessoires WHERE statut_accessoire = 'actif') AS total_accessoires,
+                        (SELECT COUNT(*) FROM users WHERE statut_user = 'actif') AS total_users
+                ");
+                $countsRow = $stmtCounts ? ($stmtCounts->fetch(PDO::FETCH_ASSOC) ?: []) : [];
+            } catch (Exception $e) {}
+
+            $totalEnseignants = (int)($countsRow['total_enseignants'] ?? 0);
+            $totalMatieres = (int)($countsRow['total_matieres'] ?? 0);
+            $totalSalles = (int)($countsRow['total_salles'] ?? 0);
+            $totalActualites = (int)($countsRow['total_actualites'] ?? 0);
+            $totalEvenements = (int)($countsRow['total_evenements'] ?? 0);
+            $totalDocuments = (int)($countsRow['total_documents'] ?? 0);
+            $totalFilieres = (int)($countsRow['total_filieres'] ?? 0);
+            $totalCycles = (int)($countsRow['total_cycles'] ?? 0);
+            $totalNiveaux = (int)($countsRow['total_niveaux'] ?? 0);
+            $totalParents = (int)($countsRow['total_parents'] ?? 0);
+            $totalSessionsCaisse = (int)($countsRow['total_sessions_caisse'] ?? 0);
+            $totalPieces = (int)($countsRow['total_pieces'] ?? 0);
+            $totalAccessoires = (int)($countsRow['total_accessoires'] ?? 0);
+            $totalUsers = (int)($countsRow['total_users'] ?? 0);
+
             // Notes & Absences de l'année
             $totalNotes = 0;
             try {
@@ -120,62 +149,6 @@ class ModelHome extends BaseModel
                     $teacherClassesCount = (int)($resTC[1] ?? 0);
                 } catch (Exception $e) {}
             }
-
-            // 4. Stats pour les Modules Complémentaires
-            $totalActualites = 0;
-            try {
-                $totalActualites = (int)$db->query("SELECT COUNT(*) FROM actualites WHERE statut_actualite = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalEvenements = 0;
-            try {
-                $totalEvenements = (int)$db->query("SELECT COUNT(*) FROM evenements WHERE statut_evenement = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalDocuments = 0;
-            try {
-                $totalDocuments = (int)$db->query("SELECT COUNT(*) FROM documents WHERE statut_document = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalFilieres = 0;
-            try {
-                $totalFilieres = (int)$db->query("SELECT COUNT(*) FROM filieres WHERE statut_filiere = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalCycles = 0;
-            try {
-                $totalCycles = (int)$db->query("SELECT COUNT(*) FROM cycles WHERE statut_cycle = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalNiveaux = 0;
-            try {
-                $totalNiveaux = (int)$db->query("SELECT COUNT(*) FROM niveaux WHERE statut_niveau = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalParents = 0;
-            try {
-                $totalParents = (int)$db->query("SELECT COUNT(*) FROM parents")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalSessionsCaisse = 0;
-            try {
-                $totalSessionsCaisse = (int)$db->query("SELECT COUNT(*) FROM ouvertures_caisse WHERE statut_ouverture = 'ouverte'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalPieces = 0;
-            try {
-                $totalPieces = (int)$db->query("SELECT COUNT(*) FROM piece_fournir_cycle WHERE statut_piece_cycle = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalAccessoires = 0;
-            try {
-                $totalAccessoires = (int)$db->query("SELECT COUNT(*) FROM accessoires WHERE statut_accessoire = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
-
-            $totalUsers = 0;
-            try {
-                $totalUsers = (int)$db->query("SELECT COUNT(*) FROM users WHERE statut_user = 'actif'")->fetchColumn();
-            } catch (Exception $e) {}
 
             $monthlyFinancials = $this->getMonthlyFinancials($anneeCode);
             $filieresDistribution = $this->getFilieresDistribution($anneeCode);

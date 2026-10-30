@@ -48,10 +48,12 @@ class DossierEtudiantController extends BaseController
 
         try {
             $rows = $this->model->getInscriptionsForDossiers($anneeCode, $classeCode);
+            $inscCodes = array_column($rows, 'code_inscription');
+            $dossiersByInsc = $this->model->getDossiersByInscriptions($inscCodes);
 
             $data = [];
             foreach ($rows as $r) {
-                $dossierItems = $this->model->getDossierByInscription($r['code_inscription']);
+                $dossierItems = $dossiersByInsc[$r['code_inscription']] ?? [];
                 
                 $totalPieces = count($dossierItems);
                 $deposeesCount = 0;

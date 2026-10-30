@@ -58,8 +58,15 @@ class ModelFraisAnnexe extends BaseModel
         return $row ?: [];
     }
 
+    private static array $montantCache = [];
+
     public function getMontantByTypeFiliere(string $typeFiliere, string $anneeCode, ?string $niveauCode = null, ?string $categorie = null): float
     {
+        $cacheKey = "{$typeFiliere}|{$anneeCode}|" . ($niveauCode ?? '') . "|" . ($categorie ?? '');
+        if (array_key_exists($cacheKey, self::$montantCache)) {
+            return self::$montantCache[$cacheKey];
+        }
+
         $sql = "
             SELECT montant_frais_annexe 
             FROM frais_annexes 
@@ -93,7 +100,9 @@ class ModelFraisAnnexe extends BaseModel
         $stmt = $this->getCon()->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ? (float)$row['montant_frais_annexe'] : 0.0;
+        $montant = $row ? (float)$row['montant_frais_annexe'] : 0.0;
+        self::$montantCache[$cacheKey] = $montant;
+        return $montant;
     }
 
     public function getFraisAnnexeDetails(string $typeFiliere, string $anneeCode, ?string $niveauCode = null, ?string $categorie = null): ?array
