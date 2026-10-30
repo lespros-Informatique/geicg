@@ -17,14 +17,14 @@ class ModelUser extends BaseModel
                     INNER JOIN roles r ON r.code_role = ur.role_code
                     WHERE ur.user_code = ?
                     ORDER BY CASE 
-                        WHEN ur.role_code = 'ROLE_SUPERADMIN' THEN 1 
-                        WHEN ur.role_code = 'ROLE_DIR_GENERAL' THEN 2
-                        WHEN ur.role_code = 'ROLE_DIR_ETUDES' THEN 3
-                        WHEN ur.role_code = 'ROLE_CHEF_DEP' THEN 4
-                        WHEN ur.role_code = 'ROLE_COMPTABLE' THEN 5
-                        WHEN ur.role_code = 'ROLE_SCOLARITE' THEN 6
-                        WHEN ur.role_code = 'ROLE_CAISSIER' THEN 7
-                        WHEN ur.role_code = 'ROLE_ENSEIGNANT' THEN 8
+                        WHEN ur.role_code = '" . ROLES::SUPER_ADMIN . "' THEN 1 
+                        WHEN ur.role_code = '" . ROLES::DIR_GENERAL . "' THEN 2
+                        WHEN ur.role_code = '" . ROLES::DIR_ETUDES . "' THEN 3
+                        WHEN ur.role_code = '" . ROLES::CHEF_DEP . "' THEN 4
+                        WHEN ur.role_code = '" . ROLES::COMPTABLE . "' THEN 5
+                        WHEN ur.role_code = '" . ROLES::SCOLARITE . "' THEN 6
+                        WHEN ur.role_code = '" . ROLES::CAISSIER . "' THEN 7
+                        WHEN ur.role_code = '" . ROLES::ENSEIGNANT . "' THEN 8
                         ELSE 9 END, ur.id ASC";
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute([$userCode]);
@@ -71,7 +71,7 @@ class ModelUser extends BaseModel
 
             if (empty($rolesData)) {
                 $stmtDef = $pdo->query("SELECT code_role FROM roles WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
-                $defRole = ($stmtDef && $stmtDef->fetchColumn()) ?: 'ROLE_USER';
+                $defRole = ($stmtDef && $stmtDef->fetchColumn()) ?: ROLES::USER;
                 $rolesData = [$defRole => ['create' => 1, 'edit' => 1, 'show' => 1, 'delete' => 0]];
             }
 
@@ -272,10 +272,10 @@ class ModelUser extends BaseModel
     {
         try {
             $stmt = $this->getCon()->query("SELECT code_role FROM " . TABLES::ROLES . " WHERE statut_role = 'actif' ORDER BY id ASC LIMIT 1");
-            return ($stmt && ($code = $stmt->fetchColumn())) ? $code : 'ROLE_USER';
+            return ($stmt && ($code = $stmt->fetchColumn())) ? $code : ROLES::USER;
         } catch (Exception $e) {
             error_log("ModelUser::getDefaultRoleCode error: " . $e->getMessage());
-            return 'ROLE_USER';
+            return ROLES::USER;
         }
     }
 

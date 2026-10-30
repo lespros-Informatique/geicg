@@ -136,7 +136,7 @@ class ModelHome extends BaseModel
             // 3. Stats pour le Corps Enseignant (si profil Enseignant)
             $teacherCoursesCount = 0;
             $teacherClassesCount = 0;
-            if ($roleCode === 'ROLE_ENSEIGNANT' && $userCode) {
+            if ($roleCode === ROLES::ENSEIGNANT && $userCode) {
                 try {
                     $stmtTeach = $db->prepare("SELECT code_enseignant FROM enseignants WHERE user_code = ? OR code_enseignant = ?");
                     $stmtTeach->execute([$userCode, $userCode]);

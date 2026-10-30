@@ -116,9 +116,8 @@ class Auth
 
         $roles = self::roles();
         return in_array(ROLES::SUPER_ADMIN, $roles, true)
-            || in_array('ROLE_SUPERADMIN', $roles, true)
             || in_array('superadmin', $roles, true)
-            || in_array('all_control', $roles, true);
+            || in_array(ROLES::ALL_CONTROL, $roles, true);
     }
 
     /**

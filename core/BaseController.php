@@ -459,7 +459,7 @@ abstract class BaseController
         $data['isSuperAdmin'] = $this->isSuperAdmin();
         $data['currentUserName'] = $data['currentUserName'] ?? (Auth::user('nom_user') ?? (Auth::user('nom') ?? 'Utilisateur'));
         $data['currentUserEmail'] = $data['currentUserEmail'] ?? (Auth::user('email_user') ?? (Auth::user('email') ?? ''));
-        $data['currentUserRole'] = Auth::role() ?? 'ROLE_USER';
+        $data['currentUserRole'] = Auth::role() ?? ROLES::USER;
 
         $rawLogo = $etabCfg['logo_etablissement'] ?? '';
         $etabNom = $etabCfg['libelle_etablissement'] ?? ($etabCfg['nom_etablissement'] ?? 'GEICG');
@@ -566,7 +566,7 @@ abstract class BaseController
 
     protected function isSuperAdmin(): bool
     {
-        return $this->hasAnyRole(['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
+        return $this->hasAnyRole([ROLES::SUPER_ADMIN, ROLES::DIR_GENERAL]);
     }
 
     /**
@@ -577,7 +577,7 @@ abstract class BaseController
         $this->requireAuth();
         if (!$this->isSuperAdmin()) {
             $msg = !empty($customMessage) ? $customMessage : "Cette action est réservée exclusivement à la Direction Générale et à l'Administration Système.";
-            $this->renderForbidden($msg, 'ROLE_SUPERADMIN');
+            $this->renderForbidden($msg, ROLES::SUPER_ADMIN);
         }
     }
 

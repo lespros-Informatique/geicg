@@ -334,7 +334,7 @@
                 $userRoles = (new ModelUser())->getUserRoleCodes($currentUserCode);
             }
             $currentRoles = $userRoles;
-            $isSuperAdmin = in_array('ROLE_SUPERADMIN', $currentRoles, true) || in_array('ROLE_DIR_GENERAL', $currentRoles, true);
+            $isSuperAdmin = in_array(ROLES::SUPER_ADMIN, $currentRoles, true) || in_array(ROLES::DIR_GENERAL, $currentRoles, true);
         } catch (\Throwable $e) {
             $currentRoles = [];
         }

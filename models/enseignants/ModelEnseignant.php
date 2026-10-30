@@ -241,7 +241,7 @@ class ModelEnseignant extends BaseModel
 
         $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
             'user_code' => $codeUser,
-            'role_code' => 'ROLE_ENSEIGNANT'
+            'role_code' => ROLES::ENSEIGNANT
         ]);
         if ($fkErrRole !== null) {
             $errorMsg = $fkErrRole;
@@ -260,7 +260,7 @@ class ModelEnseignant extends BaseModel
         try {
             $stmtRole = $db->prepare("
                 INSERT IGNORE INTO " . TABLES::USER_ROLES . " (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
-                VALUES (?, 'ROLE_ENSEIGNANT', 1, 1, 1, 0)
+                VALUES (?, '" . ROLES::ENSEIGNANT . "', 1, 1, 1, 0)
             ");
             $stmtRole->execute([$codeUser]);
 
@@ -310,7 +310,7 @@ class ModelEnseignant extends BaseModel
 
         $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
             'user_code' => $codeUser,
-            'role_code' => 'ROLE_ENSEIGNANT'
+            'role_code' => ROLES::ENSEIGNANT
         ]);
         if ($fkErrRole !== null) {
             $errorMsg = $fkErrRole;
@@ -347,7 +347,7 @@ class ModelEnseignant extends BaseModel
 
             $stmtRole = $db->prepare("
                 INSERT INTO " . TABLES::USER_ROLES . " (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
-                VALUES (?, 'ROLE_ENSEIGNANT', 1, 1, 1, 0)
+                VALUES (?, '" . ROLES::ENSEIGNANT . "', 1, 1, 1, 0)
             ");
             $stmtRole->execute([$codeUser]);
 
