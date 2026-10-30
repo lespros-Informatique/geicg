@@ -142,7 +142,7 @@ class ModelHome extends BaseModel
                     $stmtTeach->execute([$userCode, $userCode]);
                     $teacherCode = $stmtTeach->fetchColumn() ?: $userCode;
 
-                    $stmtTC = $db->prepare("SELECT COUNT(*), COUNT(DISTINCT classe_code) FROM v_dash_pedagogie_affectations WHERE (enseignant_code = ? OR enseignant_code = ?)");
+                    $stmtTC = $db->prepare("SELECT COUNT(*), COUNT(DISTINCT classe_code) FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . " WHERE (enseignant_code = ? OR enseignant_code = ?)");
                     $stmtTC->execute([$teacherCode, $userCode]);
                     $resTC = $stmtTC->fetch(PDO::FETCH_NUM);
                     $teacherCoursesCount = (int)($resTC[0] ?? 0);
@@ -432,7 +432,7 @@ class ModelHome extends BaseModel
         try {
             $db = $this->pdo->getCon();
             $stmt = $db->prepare("
-                SELECT * FROM v_dash_pedagogie_affectations 
+                SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . " 
                 WHERE enseignant_code = ?
                 ORDER BY libelle_matiere ASC
                 LIMIT $limit

@@ -9,7 +9,7 @@ class ModelNote extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "SELECT * FROM v_notes_completes";
+        $sql = "SELECT * FROM " . VIEWS::NOTES_COMPLETES . "";
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
@@ -80,7 +80,7 @@ class ModelNote extends BaseModel
                    vn.etu_prenom AS prenom_etudiant,
                    vn.composition_classe_code AS classe_code,
                    COALESCE(em.coefficient, vn.coefficient, 1.0) AS coef_cours
-            FROM v_notes_completes vn
+            FROM " . VIEWS::NOTES_COMPLETES . " vn
             LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.classe_code = vn.code_classe AND em.matiere_code = vn.matiere_code)
             WHERE vn.id_note = ? OR vn.code_note = ?
             LIMIT 1

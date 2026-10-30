@@ -9,7 +9,7 @@ class ModelEmploi extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "SELECT * FROM v_emplois_temps_complets";
+        $sql = "SELECT * FROM " . VIEWS::EMPLOIS_TEMPS_COMPLETS . "";
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
@@ -101,7 +101,7 @@ class ModelEmploi extends BaseModel
             $db = $this->getCon();
             // 1. Recherche précise par classe_code + matiere_code via la vue v_dash_pedagogie_affectations
             $stmt = $db->prepare("
-                SELECT * FROM v_dash_pedagogie_affectations
+                SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . "
                 WHERE classe_code = ? AND matiere_code = ? AND statut_enseignant_matiere = 'actif'
                 LIMIT 1
             ");
@@ -111,7 +111,7 @@ class ModelEmploi extends BaseModel
             // 2. Recherche de secours par matière
             if (!$row) {
                 $stmtGlobal = $db->prepare("
-                    SELECT * FROM v_dash_pedagogie_affectations
+                    SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . "
                     WHERE matiere_code = ? AND statut_enseignant_matiere = 'actif'
                     LIMIT 1
                 ");
@@ -154,7 +154,7 @@ class ModelEmploi extends BaseModel
 
             $baseSql = "
                 SELECT edt.*
-                FROM v_emplois_temps_complets edt
+                FROM " . VIEWS::EMPLOIS_TEMPS_COMPLETS . " edt
                 WHERE edt.statut_emploi = 'actif'
                   AND LOWER(edt.jour) = ?
                   AND (edt.heure_debut < ? AND edt.heure_fin > ?)

@@ -104,6 +104,17 @@ class TABLES
     public const MESSAGES = 'messages';
 }
 
+class VIEWS
+{
+    public const DASH_PEDAGOGIE_AFFECTATIONS  = 'v_dash_pedagogie_affectations';
+    public const INSCRIPTIONS_COMPLETES       = 'v_inscriptions_completes';
+    public const PAIEMENTS_COMPLETS           = 'v_paiements_complets';
+    public const BILAN_PAIEMENTS_INSCRIPTIONS = 'v_bilan_paiements_inscriptions';
+    public const NOTES_COMPLETES              = 'v_notes_completes';
+    public const ABSENCES_COMPLETES           = 'v_absences_completes';
+    public const EMPLOIS_TEMPS_COMPLETS       = 'v_emplois_temps_complets';
+}
+
 class ROLES
 {
     public const SUPER_ADMIN    = 'ROLE_SUPERADMIN';

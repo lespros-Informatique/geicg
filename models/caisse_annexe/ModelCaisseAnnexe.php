@@ -60,7 +60,7 @@ class ModelCaisseAnnexe extends BaseModel
 
         $sql = "
             SELECT p.*
-            FROM v_paiements_complets p
+            FROM " . VIEWS::PAIEMENTS_COMPLETS . " p
             {$where}
             ORDER BY p.date_paiement DESC, p.id_paiement DESC
         ";

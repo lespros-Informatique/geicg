@@ -187,7 +187,7 @@ class ModelInscription extends BaseModel
         $db = $this->getCon();
         try {
             $stmt = $db->prepare("
-                SELECT * FROM v_inscriptions_completes
+                SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
                 WHERE id_inscription = ? OR code_inscription = ?
                 LIMIT 1
             ");
@@ -1061,7 +1061,7 @@ class ModelInscription extends BaseModel
         $id = $param;
 
         $stmtIns = $db->prepare("
-            SELECT * FROM v_inscriptions_completes
+            SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
             WHERE id_inscription = ? OR code_inscription = ? OR code_etudiant = ? OR matricule_etudiant = ? OR id_etudiant = ?
             LIMIT 1
         ");

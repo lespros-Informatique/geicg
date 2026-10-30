@@ -39,7 +39,7 @@ class ModelPaiement extends BaseModel
 
         $sql = "
             SELECT p.*
-            FROM v_paiements_complets p
+            FROM " . VIEWS::PAIEMENTS_COMPLETS . " p
             {$where}
             ORDER BY p.id_paiement DESC
         ";
@@ -52,7 +52,7 @@ class ModelPaiement extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT p.*
-            FROM v_paiements_complets p
+            FROM " . VIEWS::PAIEMENTS_COMPLETS . " p
             WHERE p.id_paiement = ? OR p.code_paiement = ?
             LIMIT 1
         ");
@@ -518,7 +518,7 @@ class ModelPaiement extends BaseModel
 
         $sql = "
             SELECT i.*
-            FROM v_inscriptions_completes i
+            FROM " . VIEWS::INSCRIPTIONS_COMPLETES . " i
             {$where} AND i.code_etudiant IS NOT NULL
             ORDER BY i.nom_etudiant ASC, i.prenom_etudiant ASC
         ";
@@ -526,7 +526,7 @@ class ModelPaiement extends BaseModel
         $stmt->execute($params);
         $inscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM v_bilan_paiements_inscriptions");
+        $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . "");
         $paymentsGrouped = [];
         if ($stmtPay) {
             foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $rowP) {
@@ -1492,7 +1492,7 @@ class ModelPaiement extends BaseModel
     {
         $db = $this->getCon();
         $stmtPai = $db->prepare("
-            SELECT * FROM v_paiements_complets
+            SELECT * FROM " . VIEWS::PAIEMENTS_COMPLETS . "
             WHERE id_paiement = ? OR code_paiement = ?
             LIMIT 1
         ");
@@ -1659,7 +1659,7 @@ class ModelPaiement extends BaseModel
 
         $sql = "
             SELECT i.*
-            FROM v_inscriptions_completes i
+            FROM " . VIEWS::INSCRIPTIONS_COMPLETES . " i
             {$where} AND i.code_etudiant IS NOT NULL
             ORDER BY i.nom_etudiant ASC, i.prenom_etudiant ASC
         ";
@@ -1667,7 +1667,7 @@ class ModelPaiement extends BaseModel
         $stmt->execute($params);
         $inscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM v_bilan_paiements_inscriptions");
+        $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . "");
         $paymentsGrouped = [];
         if ($stmtPay) {
             foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $rowP) {
@@ -1842,7 +1842,7 @@ class ModelPaiement extends BaseModel
 
         $sql = "
             SELECT p.*
-            FROM v_paiements_complets p
+            FROM " . VIEWS::PAIEMENTS_COMPLETS . " p
             {$where}
             ORDER BY p.date_paiement DESC, p.id_paiement DESC
         ";

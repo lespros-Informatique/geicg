@@ -7,7 +7,7 @@ class ModelEnseignantMatiere extends BaseModel
     
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "SELECT * FROM v_dash_pedagogie_affectations";
+        $sql = "SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . "";
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
@@ -43,7 +43,7 @@ class ModelEnseignantMatiere extends BaseModel
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT * FROM v_dash_pedagogie_affectations
+                SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . "
                 WHERE id_enseignant_matiere = ?
                 LIMIT 1
             ");

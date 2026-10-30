@@ -70,7 +70,7 @@ class ModelBulletin extends BaseModel
     public function calculateBulletinData(int $id, ?string $selectedSemestreCode = null): ?array
     {
         $db = $this->getCon();
-        $stmt = $db->prepare("SELECT * FROM v_inscriptions_completes WHERE id_inscription = ? LIMIT 1");
+        $stmt = $db->prepare("SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . " WHERE id_inscription = ? LIMIT 1");
         $stmt->execute([$id]);
         $item = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$item) {

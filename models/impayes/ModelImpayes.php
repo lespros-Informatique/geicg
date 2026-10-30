@@ -66,7 +66,7 @@ class ModelImpayes extends BaseModel
 
             $sqlInscr = "
                 SELECT i.*
-                FROM v_inscriptions_completes i
+                FROM " . VIEWS::INSCRIPTIONS_COMPLETES . " i
                 WHERE i.code_etudiant IS NOT NULL AND " . substr($where, 6) . "
                 ORDER BY i.nom_etudiant ASC, i.prenom_etudiant ASC
             ";
@@ -75,7 +75,7 @@ class ModelImpayes extends BaseModel
             $inscriptions = $stmtInscr->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             // Totaux paiements de scolarité effectués via la vue d'agrégation v_bilan_paiements_inscriptions
-            $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM v_bilan_paiements_inscriptions");
+            $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . "");
             $paymentsGrouped = [];
             if ($stmtPay) {
                 foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $pRow) {
@@ -355,7 +355,7 @@ class ModelImpayes extends BaseModel
     public function getInscriptionDetailsForRappel($idOrCode): ?array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT * FROM v_inscriptions_completes
+            SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
             WHERE id_inscription = ? OR code_inscription = ?
             LIMIT 1
         ");
@@ -369,7 +369,7 @@ class ModelImpayes extends BaseModel
         if (empty($ids)) return [];
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->getCon()->prepare("
-            SELECT * FROM v_inscriptions_completes
+            SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
             WHERE id_inscription IN ({$placeholders}) OR code_inscription IN ({$placeholders})
             ORDER BY nom_etudiant ASC
         ");

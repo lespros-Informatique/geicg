@@ -8,7 +8,7 @@ class ModelAbsence extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "SELECT * FROM v_absences_completes";
+        $sql = "SELECT * FROM " . VIEWS::ABSENCES_COMPLETES . "";
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
@@ -68,7 +68,7 @@ class ModelAbsence extends BaseModel
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT *, etu_nom AS nom_etudiant, etu_prenom AS prenom_etudiant
-                FROM v_absences_completes
+                FROM " . VIEWS::ABSENCES_COMPLETES . "
                 WHERE id_absence = ? OR code_absence = ?
                 LIMIT 1
             ");

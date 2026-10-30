@@ -65,7 +65,7 @@ class ModelArriere extends BaseModel
             LEFT JOIN " . TABLES::CLASSES . " c_act ON c_act.code_classe = i_act.classe_code
             LEFT JOIN (
                 SELECT inscription_code, total_paye_confirme_scolarite AS total_paye
-                FROM v_bilan_paiements_inscriptions
+                FROM " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . "
             ) p_sub ON p_sub.inscription_code = i_orig.code_inscription
             {$where}
             GROUP BY e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.photo_etudiant, e.telephone_etudiant, c_act.libelle_classe
@@ -124,7 +124,7 @@ class ModelArriere extends BaseModel
                 SUM(COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_recouvre,
                 SUM(i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_solde_arriere
             FROM " . TABLES::INSCRIPTIONS . " i_orig
-            LEFT JOIN v_bilan_paiements_inscriptions p_sub ON p_sub.inscription_code = i_orig.code_inscription
+            LEFT JOIN " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . " p_sub ON p_sub.inscription_code = i_orig.code_inscription
             WHERE i_orig.annee_code != ?
               AND i_orig.statut_inscription != 'annule'
             HAVING total_solde_arriere > 0

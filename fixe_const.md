@@ -17,7 +17,7 @@ Ce document recense l'ensemble des **variables locales redondantes**, **accès d
 | **1. Rôles codés en dur** | `ROLES::*` | **0** |
 | **2. Permissions codées en dur** | `PERMISSIONS::*` | **0** |
 | **3. Tables SQL codées en dur** | `TABLES::*` | **0** |
-| **4. Vues SQL codées en dur** | `TABLES::*` ou `VIEWS::*` (à ajouter dans `const.php`) | **11** |
+| **4. Vues SQL codées en dur** | `TABLES::*` ou `VIEWS::*` (à ajouter dans `const.php`) | **0** |
 | **5. Statuts métier codés en dur** | `STATUTS::*` | **38** |
 | **6. Accès directs à `$_SESSION`** | `Session::get()` / `Auth::user()` / `USERS_AUTH` | **43** |
 | **7. Variables PHP locales dans les Vues/Includes** | `BaseController` / `Auth` / `Session` | **138** |
@@ -39,19 +39,8 @@ Ce document recense l'ensemble des **variables locales redondantes**, **accès d
 
 ---
 
-## 4. Vues SQL (`v_*`) en dur à intégrer dans `config/const.php` (11 fichiers)
+## 4. Vues SQL (`v_*`) en dur à intégrer dans `config/const.php` (0 fichiers)
 
-- **`models/absences/ModelAbsence.php`** : `v_absences_completes` → `VIEWS::ABSENCES_COMPLETES` (x2)
-- **`models/arrieres/ModelArriere.php`** : `v_bilan_paiements_inscriptions` → `VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS` (x2)
-- **`models/bulletin/ModelBulletin.php`** : `v_inscriptions_completes` → `VIEWS::INSCRIPTIONS_COMPLETES` (x1)
-- **`models/caisse_annexe/ModelCaisseAnnexe.php`** : `v_paiements_complets` → `VIEWS::PAIEMENTS_COMPLETS` (x1)
-- **`models/emplois_temps/ModelEmploi.php`** : `v_dash_pedagogie_affectations` → `VIEWS::DASH_PEDAGOGIE_AFFECTATIONS` (x2), `v_emplois_temps_complets` → `VIEWS::EMPLOIS_TEMPS_COMPLETS` (x2)
-- **`models/enseignant_matiere/ModelEnseignantMatiere.php`** : `v_dash_pedagogie_affectations` → `VIEWS::DASH_PEDAGOGIE_AFFECTATIONS` (x2)
-- **`models/home/ModelHome.php`** : `v_dash_pedagogie_affectations` → `VIEWS::DASH_PEDAGOGIE_AFFECTATIONS` (x2)
-- **`models/impayes/ModelImpayes.php`** : `v_inscriptions_completes` → `VIEWS::INSCRIPTIONS_COMPLETES` (x3), `v_bilan_paiements_inscriptions` → `VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS` (x1)
-- **`models/inscriptions/ModelInscription.php`** : `v_inscriptions_completes` → `VIEWS::INSCRIPTIONS_COMPLETES` (x2)
-- **`models/notes/ModelNote.php`** : `v_notes_completes` → `VIEWS::NOTES_COMPLETES` (x2)
-- **`models/paiements/ModelPaiement.php`** : `v_inscriptions_completes` → `VIEWS::INSCRIPTIONS_COMPLETES` (x2), `v_paiements_complets` → `VIEWS::PAIEMENTS_COMPLETS` (x4), `v_bilan_paiements_inscriptions` → `VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS` (x2)
 
 ---
 
