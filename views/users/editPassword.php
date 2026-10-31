@@ -89,6 +89,6 @@ $user = isset($user) ? $user : (Auth::user() ?: []);
 </div>
 
 <?php
-ViewContext::setScripts(['public/assets/js/modules/users_edit_password.js']);
+ViewContext::setScripts(['public/assets/js/modules/users.js']);
 require_once __DIR__ . '/../../public/inc/footer.php';
 ?>

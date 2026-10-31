@@ -200,6 +200,6 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
 ]) ?>
 </script>
 <?php
-ViewContext::setScripts(['public/assets/js/modules/users_edit.js']);
+ViewContext::setScripts(['public/assets/js/modules/users.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>
