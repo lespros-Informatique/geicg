@@ -140,5 +140,5 @@ $soldeTheorique = $fondInitial + $totalGeneral;
   </main>
 </div>
 
-<?php ViewContext::setScripts(['public/assets/js/modules/sessions_caisse.js']); ?>
+<?php ViewContext::setScripts(['public/assets/js/modules/paiements.js']); ?>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
