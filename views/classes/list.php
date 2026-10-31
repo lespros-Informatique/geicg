@@ -310,6 +310,6 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
 ]) ?>
 </script>
 <?php
-ViewContext::setScripts(['public/assets/js/modules/classes_list.js']);
+ViewContext::setScripts(['public/assets/js/modules/classes.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

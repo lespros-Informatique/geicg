@@ -110,6 +110,6 @@ $currentAnneeLibelle = Session::get('annee_active_libelle', 'Session Active');
   </main>
 </div>
 <?php
-ViewContext::setScripts(['public/assets/js/modules/classes_edit.js']);
+ViewContext::setScripts(['public/assets/js/modules/classes.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>
