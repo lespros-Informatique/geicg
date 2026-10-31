@@ -379,6 +379,6 @@ $stats = $stats ?? (new ModelAccessoire())->getStats();
 </div>
 
 <?php 
-ViewContext::setScripts(['public/assets/js/modules/accessoires_registre.js']);
+ViewContext::setScripts(['public/assets/js/modules/accessoires.js']);
 require_once __DIR__ . '/../../public/inc/footer.php'; 
 ?>

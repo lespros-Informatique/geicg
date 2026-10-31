@@ -266,6 +266,6 @@ $depensesListConfig = [
 <?= json_encode($depensesListConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
 </script>
 <?php 
-ViewContext::setScripts(['public/assets/js/modules/depenses_list.js']);
+ViewContext::setScripts(['public/assets/js/modules/depenses.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>
