@@ -1259,3 +1259,63 @@ table.dataTable th.col-piece {
   width: 14px !important;
   height: 14px !important;
 }
+
+
+/* ==========================================================================
+   MODALES : SCROLL LOCK ARRIÈRE-PLAN & DÉFILEMENT UNIVERSEL DU CONTENU
+   ========================================================================== */
+
+/* 1. Verrouillage strict du défilement de l'arrière-plan de la page */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+}
+
+/* 2. L'overlay modal est le conteneur scrollable principal */
+.modal-overlay,
+.modal,
+.modal-custom,
+[id^="modal-"],
+[id^="modal_"],
+[id*="Modal"] {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box !important;
+}
+
+/* 3. Pour toute modale visible en flex : alignement fluide pour permettre le scroll de haut en bas sans coupure */
+.modal-overlay[style*="display: flex"],
+.modal-overlay[style*="display:flex"],
+.modal[style*="display: flex"],
+.modal[style*="display:flex"],
+.modal-custom[style*="display: flex"],
+.modal-custom[style*="display:flex"],
+[id^="modal-"][style*="display: flex"],
+[id^="modal-"][style*="display:flex"],
+[id^="modal_"][style*="display: flex"],
+[id^="modal_"][style*="display:flex"],
+[id*="Modal"][style*="display: flex"],
+[id*="Modal"][style*="display:flex"],
+.modal-overlay.active,
+.modal.show {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding: 30px 16px !important;
+}
+
+/* 4. Le dialogue interne se centre automatiquement en hauteur quand l'écran le permet,
+      et défile naturellement si le contenu dépasse l'écran */
+.modal-overlay > div,
+.modal > div,
+.modal-custom > div,
+[id^="modal-"] > div,
+[id^="modal_"] > div,
+[id*="Modal"] > div,
+.modal-dialog {
+  margin: auto !important;
+  max-width: 100%;
+  overscroll-behavior: contain !important;
+}

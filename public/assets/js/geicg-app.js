@@ -420,11 +420,106 @@
     }
   };
 
+  // 12. Gestionnaire centralisé du Scroll Lock & Confinement pour les modales
+  GEICG.initModalScrollLock = function() {
+    var modalSelector = '.modal-overlay, .modal, .modal-custom, [id^="modal-"], [id^="modal_"], [id*="Modal"]';
+
+    function isModalOverlay(el) {
+      if (!el || el.nodeType !== 1) return false;
+      var tag = el.tagName.toLowerCase();
+      // Exclure les champs de formulaire, titres ou boutons internes
+      if (tag === 'input' || tag === 'select' || tag === 'textarea' || tag === 'button' || tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'span' || tag === 'p' || tag === 'label') {
+        return false;
+      }
+      var style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+        return false;
+      }
+      var pos = style.position;
+      if (pos !== 'fixed' && pos !== 'absolute') {
+        return false;
+      }
+      // Un conteneur modal de premier plan couvre une zone significative
+      return el.offsetWidth > 150 && el.offsetHeight > 150;
+    }
+
+    function syncScrollLock() {
+      var candidateModals = document.querySelectorAll(modalSelector);
+      var anyVisible = false;
+      for (var i = 0; i < candidateModals.length; i++) {
+        if (isModalOverlay(candidateModals[i])) {
+          anyVisible = true;
+          break;
+        }
+      }
+
+      if (anyVisible) {
+        if (!document.body.classList.contains('modal-open')) {
+          document.body.classList.add('modal-open');
+          document.documentElement.classList.add('modal-open');
+        }
+      } else {
+        if (document.body.classList.contains('modal-open')) {
+          document.body.classList.remove('modal-open');
+          document.documentElement.classList.remove('modal-open');
+        }
+      }
+    }
+
+    // Détection automatique en temps réel via MutationObserver
+    if (window.MutationObserver) {
+      var observer = new MutationObserver(function() {
+        syncScrollLock();
+      });
+
+      observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['style', 'class', 'hidden'],
+        subtree: true,
+        childList: true
+      });
+    }
+
+    // Événements Bootstrap standards
+    $(document).on('shown.bs.modal hidden.bs.modal', function() {
+      syncScrollLock();
+    });
+
+
+
+    // Fermeture universelle au clavier par la touche Échap
+    $(document).on('keydown', function(e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        var visibleModals = [];
+        var candidateModals = document.querySelectorAll(modalSelector);
+        for (var i = 0; i < candidateModals.length; i++) {
+          if (isModalOverlay(candidateModals[i])) {
+            visibleModals.push(candidateModals[i]);
+          }
+        }
+        if (visibleModals.length) {
+          var topModal = visibleModals[visibleModals.length - 1];
+          var $closeBtn = $(topModal).find('.btn-close-modal, .btn-close, [class*="btn-close-modal"], [data-bs-dismiss="modal"]').first();
+          if ($closeBtn.length) {
+            $closeBtn.trigger('click');
+          } else {
+            $(topModal).hide();
+            syncScrollLock();
+          }
+        }
+      }
+    });
+
+    // Synchronisation immédiate
+    syncScrollLock();
+  };
+
   // Auto-démarrage au chargement du DOM
   $(document).ready(function() {
     GEICG.initUI();
     GEICG.bindToggleStatus();
     GEICG.initSidebar();
+    GEICG.initModalScrollLock();
   });
 
   // Rafraîchissement automatique des icônes et select2 à l'ouverture de toute modale Bootstrap
