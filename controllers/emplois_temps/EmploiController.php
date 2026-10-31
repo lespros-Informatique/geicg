@@ -7,13 +7,53 @@ class EmploiController extends BaseController
         return new ModelEmploi();
     }
 
+    /**
+     * Détermine le contexte de l'utilisateur : gestionnaire ou enseignant en consultation restreinte
+     */
+    protected function getTeacherContext(): array
+    {
+        $canManage = Auth::can(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
+        $userCode = Auth::code();
+        $teacherCodes = [];
+        $isTeacherOnly = false;
+
+        if (!$canManage) {
+            $teacherCodes = [$userCode];
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT code_enseignant, user_code FROM " . TABLES::ENSEIGNANTS . " WHERE user_code = ? OR code_enseignant = ?");
+                $stmt->execute([$userCode, $userCode]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if (!empty($row['code_enseignant'])) $teacherCodes[] = $row['code_enseignant'];
+                    if (!empty($row['user_code'])) $teacherCodes[] = $row['user_code'];
+                }
+                $teacherCodes = array_values(array_unique(array_filter($teacherCodes)));
+            } catch (Exception $e) {}
+
+            if (Auth::hasRole(ROLES::ENSEIGNANT) || count($teacherCodes) > 1) {
+                $isTeacherOnly = true;
+            }
+        }
+
+        return [
+            'canManage' => $canManage,
+            'isTeacherOnly' => $isTeacherOnly,
+            'teacherCodes' => $teacherCodes
+        ];
+    }
+
     public function list()
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
@@ -28,11 +68,19 @@ class EmploiController extends BaseController
             $selectedAnneeCode = Session::get('annee_active_code');
         }
 
+        if ($isTeacherOnly) {
+            $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+        } else {
+            $classes = (new ModelClasse())->getAll();
+        }
+
         $this->loadView('../views/emplois_temps/list.php', [
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'canManage' => $canManage,
+            'isTeacherOnly' => $isTeacherOnly
         ]);
     }
 
@@ -40,11 +88,21 @@ class EmploiController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
 
-        $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
+        if ($isTeacherOnly) {
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $anneeCode, $niveauCode, $classeCode);
+        } else {
+            $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
+        }
 
         $data = [];
         foreach ($classesWithEmploi as $i) {
@@ -397,18 +455,25 @@ class EmploiController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $ctx = $this->getTeacherContext();
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         if (empty($classeCode)) {
             $this->json(['status' => 0, 'message' => 'Classe non spécifiée']);
             return;
         }
 
-        $matrix = $this->model->getClassScheduleMatrix($classeCode);
+        $filterTeachers = $isTeacherOnly ? $teacherCodes : null;
+        $matrix = $this->model->getClassScheduleMatrix($classeCode, $filterTeachers);
 
         $this->json([
             'status' => 1,
             'classe' => $matrix['classe'],
-            'slots' => $matrix['slots']
+            'slots' => $matrix['slots'],
+            'isTeacherOnly' => $isTeacherOnly
         ]);
     }
 }

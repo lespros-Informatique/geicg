@@ -16,6 +16,14 @@
   function initEmploisTempsListModule() {
     if (!$('#table-emplois_temps').length) return;
 
+  var configEl = document.getElementById('emplois-temps-list-config');
+  var config = {};
+  if (configEl) {
+    try { config = JSON.parse(configEl.textContent); } catch (e) {}
+  }
+  var canManage = (config.canManage === true);
+  var isTeacherOnly = (config.isTeacherOnly === true);
+
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
     $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
@@ -95,8 +103,9 @@
         render: function(d, t, r) { 
           var matList = r.matieres_noms ? r.matieres_noms : 'Aucune matière';
           if (matList.length > 45) matList = matList.substring(0, 42) + '...';
+          var headerSubtitle = isTeacherOnly ? (d + ' matière(s) dispensée(s)') : (d + ' matière(s) • ' + r.nb_profs + ' enseignant(s)');
           return '<div style="display:flex; flex-direction:column; gap:3px;">' +
-                   '<span style="font-size:12px; font-weight:700; color:#334155;">' + d + ' matière(s) • ' + r.nb_profs + ' enseignant(s)</span>' +
+                   '<span style="font-size:12px; font-weight:700; color:#334155;">' + headerSubtitle + '</span>' +
                    '<span style="font-size:11px; color:#64748B; font-style:italic;" title="' + (r.matieres_noms || '') + '">' + matList + '</span>' +
                  '</div>'; 
         } 
@@ -127,17 +136,25 @@
         render: function(d) {
           var codeEsc = encodeURIComponent(d.code_classe);
           var libEsc = $('<div>').text(d.libelle_classe).html();
-          return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap;">' +
-                   '<a href="' + window.RACINE + 'emploi/formulaire?classe_code=' + codeEsc + '" class="btn btn-sm btn-action-planning" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(30,58,95,0.2);" title="Gérer le planning">' +
-                     '<i data-lucide="calendar-plus" style="width:14px; height:14px;"></i> Planning' +
-                   '</a>' +
-                   '<button type="button" class="btn btn-sm btn-action-grille btn-view-matrix" data-code="' + d.code_classe + '" data-libelle="' + libEsc + '" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;" title="Visualiser l\'emploi du temps">' +
-                     '<i data-lucide="eye" style="width:14px; height:14px;"></i> Grille' +
-                   '</button>' +
-                   '<button type="button" class="btn btn-sm btn-action-reset btn-reset-classe" data-code="' + d.code_classe + '" data-libelle="' + libEsc + '" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(220,38,38,0.08);" title="Vider le planning de cette classe">' +
-                     '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Vider' +
-                   '</button>' +
-                 '</div>';
+          var btns = '';
+
+          if (canManage) {
+            btns += '<a href="' + window.RACINE + 'emploi/formulaire?classe_code=' + codeEsc + '" class="btn btn-sm btn-action-planning" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(30,58,95,0.2);" title="Gérer le planning">' +
+                      '<i data-lucide="calendar-plus" style="width:14px; height:14px;"></i> Planning' +
+                    '</a>';
+          }
+
+          btns += '<button type="button" class="btn btn-sm btn-action-grille btn-view-matrix" data-code="' + d.code_classe + '" data-libelle="' + libEsc + '" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;" title="Visualiser l\'emploi du temps">' +
+                    '<i data-lucide="eye" style="width:14px; height:14px;"></i> ' + (canManage ? 'Grille' : 'Mon Planning') +
+                  '</button>';
+
+          if (canManage) {
+            btns += '<button type="button" class="btn btn-sm btn-action-reset btn-reset-classe" data-code="' + d.code_classe + '" data-libelle="' + libEsc + '" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; border-radius: 6px; font-weight: 700; padding: 6px 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(220,38,38,0.08);" title="Vider le planning de cette classe">' +
+                      '<i data-lucide="trash-2" style="width:14px; height:14px;"></i> Vider' +
+                    '</button>';
+          }
+
+          return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap;">' + btns + '</div>';
         } 
       }
     ],
@@ -162,8 +179,8 @@
     var classeCode = $(this).data('code');
     var classeLibelle = $(this).data('libelle');
     
-    $('#modal-classe-title').text(classeLibelle);
-    $('#print-classe-name').text(classeLibelle);
+    $('#modal-classe-title').text(classeLibelle + (isTeacherOnly ? ' (Mes cours)' : ''));
+    $('#print-classe-name').text(classeLibelle + (isTeacherOnly ? ' (Mes cours)' : ''));
     $('#modal-niveau-subtitle').text('Code Classe: ' + classeCode);
     $('#schedule-matrix-loader').show();
     $('#schedule-matrix-content').hide().empty();

@@ -13,13 +13,17 @@ $niveaux = $niveaux ?? [];
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="calendar-days" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
-            Emplois du Temps
+            <?= !empty($isTeacherOnly) ? 'Mon Emploi du Temps' : 'Emplois du Temps' ?>
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Registre et suivi des plannings de cours de l'année académique active</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">
+            <?= !empty($isTeacherOnly) ? 'Consultation de mes créneaux et cours hebdomadaires par classe' : 'Registre et suivi des plannings de cours de l\'année académique active' ?>
+          </p>
         </div>
+        <?php if (!empty($canManage)): ?>
         <a href="<?= RACINE ?>emploi/formulaire" id="btn-add-emploi" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Programmer un Emploi du Temps
         </a>
+        <?php endif; ?>
       </div>
 
       <!-- Filtres Multi-Critères -->
@@ -72,7 +76,7 @@ $niveaux = $niveaux ?? [];
                 <th style="padding: 12px 14px; width: 50px;">#</th>
                 <th style="padding: 12px 14px;">Classe & Niveau</th>
                 <th style="padding: 12px 14px;">Volume & Créneaux</th>
-                <th style="padding: 12px 14px;">Matières & Enseignants</th>
+                <th style="padding: 12px 14px;"><?= !empty($isTeacherOnly) ? 'Matière(s) dispensée(s)' : 'Matières & Enseignants' ?></th>
                 <th style="padding: 12px 14px;">Statut Planning</th>
                 <th style="padding: 12px 14px;">Dernière MàJ</th>
                 <th style="padding: 12px 14px; text-align: right;">Actions</th>
@@ -131,6 +135,14 @@ $niveaux = $niveaux ?? [];
   </div>
 </div>
 
+<script type="application/json" id="emplois-temps-list-config">
+<?= json_encode([
+    'racine' => RACINE,
+    'canManage' => !empty($canManage),
+    'isTeacherOnly' => !empty($isTeacherOnly),
+    'csrfToken' => Validator::generateCsrfToken()
+]) ?>
+</script>
 <?php
 ViewContext::setScripts(['public/assets/js/modules/emplois_temps.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';

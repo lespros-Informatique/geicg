@@ -93,6 +93,91 @@ class ModelEmploi extends BaseModel
     }
 
     /**
+     * Résumé des emplois du temps restreint à un enseignant spécifique
+     */
+    public function getClassesSummaryForTeacher(array $teacherCodes, ?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
+    {
+        if (empty($teacherCodes)) {
+            return [];
+        }
+        $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+        $sql = "
+            SELECT 
+                cl.code_classe,
+                cl.libelle_classe,
+                n.libelle_niveau,
+                COUNT(edt.id_emploi) AS nb_creneaux,
+                COUNT(DISTINCT edt.jour) AS nb_jours,
+                COUNT(DISTINCT edt.matiere_code) AS nb_matieres,
+                1 AS nb_profs,
+                GROUP_CONCAT(DISTINCT m.libelle_matiere ORDER BY m.libelle_matiere SEPARATOR ', ') AS matieres_noms,
+                MAX(edt.created_at_emploi) AS last_update,
+                SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600 AS total_heures
+            FROM " . TABLES::EMPLOIS_TEMPS . " edt
+            INNER JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            WHERE edt.enseignant_code IN ($inCodes)
+        ";
+        $params = $teacherCodes;
+
+        if (!empty($anneeCode)) {
+            $sql .= " AND edt.annee_code = ?";
+            $params[] = $anneeCode;
+        }
+        if (!empty($niveauCode)) {
+            $sql .= " AND cl.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if (!empty($classeCode)) {
+            $sql .= " AND edt.classe_code = ?";
+            $params[] = $classeCode;
+        }
+
+        $sql .= " GROUP BY cl.code_classe, cl.libelle_classe, n.libelle_niveau ORDER BY cl.libelle_classe ASC ";
+
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEmploi getClassesSummaryForTeacher error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Liste des classes associées à un enseignant pour l'année sélectionnée
+     */
+    public function getClassesForTeacher(array $teacherCodes, ?string $anneeCode = null): array
+    {
+        if (empty($teacherCodes)) {
+            return [];
+        }
+        $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+        $sql = "
+            SELECT DISTINCT cl.code_classe, cl.libelle_classe, cl.niveau_code
+            FROM " . TABLES::CLASSES . " cl
+            INNER JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON edt.classe_code = cl.code_classe
+            WHERE edt.enseignant_code IN ($inCodes)
+        ";
+        $params = $teacherCodes;
+        if (!empty($anneeCode)) {
+            $sql .= " AND edt.annee_code = ?";
+            $params[] = $anneeCode;
+        }
+        $sql .= " ORDER BY cl.libelle_classe ASC";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEmploi getClassesForTeacher error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Recherche l'enseignant affecté à une classe et matière
      */
     public function getAssignedTeacher(string $classeCode, string $matiereCode): ?array
@@ -308,9 +393,9 @@ class ModelEmploi extends BaseModel
     }
 
     /**
-     * Matrice des créneaux pour une classe donnée avec informations de la classe
+     * Matrice des créneaux pour une classe donnée avec informations de la classe (filtrable par enseignant)
      */
-    public function getClassScheduleMatrix(string $classeCode): array
+    public function getClassScheduleMatrix(string $classeCode, ?array $teacherCodes = null): array
     {
         try {
             $db = $this->getCon();
@@ -323,7 +408,7 @@ class ModelEmploi extends BaseModel
             $stmtCls->execute([$classeCode]);
             $classeInfo = $stmtCls->fetch(PDO::FETCH_ASSOC) ?: null;
 
-            $stmt = $db->prepare("
+            $sqlSlots = "
                 SELECT edt.*, 
                        m.libelle_matiere, 
                        s.libelle_salle, 
@@ -334,9 +419,19 @@ class ModelEmploi extends BaseModel
                 LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
                 WHERE edt.classe_code = ?
-                ORDER BY edt.jour ASC, edt.heure_debut ASC
-            ");
-            $stmt->execute([$classeCode]);
+            ";
+            $params = [$classeCode];
+
+            if (!empty($teacherCodes)) {
+                $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+                $sqlSlots .= " AND edt.enseignant_code IN ($inCodes)";
+                $params = array_merge($params, $teacherCodes);
+            }
+
+            $sqlSlots .= " ORDER BY edt.jour ASC, edt.heure_debut ASC";
+
+            $stmt = $db->prepare($sqlSlots);
+            $stmt->execute($params);
             $slots = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             return [
