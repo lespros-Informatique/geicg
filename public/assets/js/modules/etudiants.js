@@ -1,5 +1,5 @@
 /**
- * Module JS Unifié : Étudiants & Dossiers Scolaires
+ * Module JS Unifié : Étudiants, Dossiers Scolaires & Parents / Tuteurs
  * GEICG - Application Web
  */
 (function(window, $) {
@@ -2257,6 +2257,47 @@
 
   }
 
+  // 7. VUE : LISTE DES PARENTS & TUTEURS (views/parents/list.php)
+  function initParentsList() {
+    if (!$('#table-parents').length) return;
+    var dtLang = (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage) ? GEICG.dataTableLanguage : { url: racine + 'json/datatables-i18n-fr-FR.json' };
+
+    $('#table-parents').DataTable({
+      ajax: racine + 'parent/apiList',
+      processing: true,
+      autoWidth: false,
+      columns: [
+        { data: null, width: '50px', render: function(d, type, row, meta) {
+          return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+        }},
+        { data: 'etudiant_code', defaultContent: '-' },
+        { data: 'nom_pere', defaultContent: '-' },
+        { data: 'telephone_pere', defaultContent: '-' },
+        { data: 'nom_mere', defaultContent: '-' },
+        { data: 'telephone_mere', defaultContent: '-' },
+        { data: 'nom_tuteur', defaultContent: '-' },
+        { data: null, orderable: false, render: function(d) {
+          return '<a href="' + racine + 'parent/edition/' + (d.editId || d.id_parent) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+                 '<a href="' + racine + 'parent/details/' + (d.editId || d.id_parent) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+        }, className: 'text-end' }
+      ],
+      language: dtLang,
+      drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+    });
+  }
+
+  // 8. VUE : ÉDITION PARENT / TUTEUR (views/parents/edit.php)
+  function initParentsEdit() {
+    if (!$('form[action*="parent/"]').length && !$('select[name="etudiant_code"]').length) return;
+    if ($.fn.select2) {
+      $('select[name="etudiant_code"]').select2({
+        placeholder: "-- Rechercher / Choisir un étudiant --",
+        allowClear: true,
+        width: '100%'
+      });
+    }
+  }
+
   $(document).ready(function() {
     initEtudiantsList();
     initEtudiantsEdit();
@@ -2264,6 +2305,8 @@
     initEtudiantsChangerClasse();
     initEtudiantsWizard();
     initDossierEtudiant();
+    initParentsList();
+    initParentsEdit();
     if (window.lucide) lucide.createIcons();
   });
 })(window, jQuery);
