@@ -451,6 +451,6 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
 </div>
 
 <?php 
-ViewContext::setScripts(['public/assets/js/modules/paiements_details.js']);
+ViewContext::setScripts(['public/assets/js/modules/paiements.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

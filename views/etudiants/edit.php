@@ -180,6 +180,6 @@ $etudiantsEditConfig = [
 ?>
 <script type="application/json" id="etudiants-edit-config"><?= json_encode($etudiantsEditConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?></script>
 <?php 
-ViewContext::setScripts(['public/assets/js/modules/etudiants_edit.js']);
+ViewContext::setScripts(['public/assets/js/modules/etudiants.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>

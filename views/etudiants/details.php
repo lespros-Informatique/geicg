@@ -475,6 +475,6 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
 </div>
 
 <?php 
-ViewContext::setScripts(['public/assets/js/modules/etudiants_details.js']);
+ViewContext::setScripts(['public/assets/js/modules/etudiants.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php'; 
 ?>
