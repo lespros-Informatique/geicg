@@ -239,5 +239,5 @@ $stats = $stats ?? ['nb_etudiants' => 0, 'total_du' => 0, 'total_recouvre' => 0,
   </div>
 </div>
 
-<?php ViewContext::setScripts(['public/assets/js/modules/arrieres.js']); ?>
+<?php ViewContext::setScripts(['public/assets/js/modules/paiements.js']); ?>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

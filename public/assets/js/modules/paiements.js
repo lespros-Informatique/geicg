@@ -1,5 +1,5 @@
 /**
- * Module JS Unifié : Paiements (Liste des Règlements, Comptabilité Étudiants, Détails / Reçus)
+ * Module JS Unifié : Paiements, Arriérés & Impayés (Règlements, Comptabilité, Détails, Arriérés, Relances Impayés)
  * GEICG - Application Web
  */
 (function(window, document, $) {
@@ -1506,6 +1506,832 @@ $(document).ready(function() {
 
 })(window, document, jQuery);
 
+    })();
+  }
+
+
+  // =========================================================================
+  // 4. SECTION : GESTION DES ARRIÉRÉS & ENCAISSEMENTS (views/arrieres/list.php)
+  // =========================================================================
+  if ($('#table-arrieres').length) {
+    (function() {
+      var GEICG = window.GEICG || {};
+function initArrieresModule() {
+    var $table = $('#table-arrieres');
+    if (!$table.length) return;
+
+    var table;
+    var currentStudentData = null;
+
+    function formatMoney(amount) {
+      return (GEICG.formatMoney ? GEICG.formatMoney(amount, ' FCFA') : (new Intl.NumberFormat('fr-FR').format(amount || 0) + ' FCFA'));
+    }
+
+    function escapeHtml(text) {
+      return GEICG.escapeHtml ? GEICG.escapeHtml(text) : String(text || '');
+    }
+
+    if ($.fn.dataTable) {
+      $.fn.dataTable.ext.errMode = 'none';
+    }
+
+    if ($.fn.select2) {
+      $('#filter-annee-origine, #filter-niveau, #filter-classe').select2({ width: '100%' });
+    }
+
+    // Filtrage en cascade Niveau -> Classe
+    $('#filter-niveau').on('change', function() {
+      var niveauCode = $(this).val();
+      $('#filter-classe option').each(function() {
+        var optNiveau = $(this).data('niveau');
+        if (!niveauCode || !optNiveau || optNiveau === niveauCode || $(this).val() === '') {
+          $(this).prop('disabled', false);
+        } else {
+          $(this).prop('disabled', true);
+        }
+      });
+      $('#filter-classe').trigger('change.select2');
+    });
+
+    function initTable() {
+      table = $table.DataTable({
+        ajax: {
+          url: GEICG.url('arriere/apiList'),
+          type: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          data: function(d) {
+            d.annee_origine_code = $('#filter-annee-origine').val();
+            d.classe_code = $('#filter-classe').val();
+          },
+          error: function(xhr, error, thrown) {
+            console.error("Erreur de chargement des arriérés:", error, thrown);
+          },
+          dataSrc: function(json) {
+            return json.data || [];
+          }
+        },
+        columns: [
+          {
+            data: null,
+            render: function(d) {
+              var rawName = (d.nom_complet ? d.nom_complet.trim() : '') || 
+                            ((d.nom_etudiant || '') + ' ' + (d.prenom_etudiant || '')).trim() || 
+                            'Étudiant non identifié';
+              
+              var parts = rawName.split(' ').filter(function(p) { return p.length > 0; });
+              var initials = 'ET';
+              if (parts.length >= 2) {
+                initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+              } else if (parts.length === 1 && parts[0].length >= 2) {
+                initials = parts[0].substring(0, 2).toUpperCase();
+              }
+
+              var photoPath = d.photo_etudiant ? String(d.photo_etudiant).trim() : '';
+              var initialsDiv = '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0; box-shadow: 0 2px 4px rgba(30,58,95,0.15);">' + escapeHtml(initials) + '</div>';
+
+              var avatarHtml = initialsDiv;
+              if (photoPath !== '') {
+                var photoUrl = (photoPath.indexOf('http') === 0) ? photoPath : GEICG.url(photoPath.replace(/^\//, ''));
+                avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.style.display=\'none\'; if(this.nextElementSibling) this.nextElementSibling.style.display=\'flex\';">' +
+                             '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0;">' + escapeHtml(initials) + '</div>';
+              }
+
+              var phone = (d.telephone_etudiant && d.telephone_etudiant !== '-') ? d.telephone_etudiant : null;
+              var phoneHtml = phone ? '<div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Tél : ' + escapeHtml(phone) + '</div>' : '<div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Tél : -</div>';
+
+              return '<div style="display: flex; align-items: center; gap: 12px; min-width: 180px;">' +
+                       avatarHtml +
+                       '<div style="min-width: 0;">' +
+                         '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px; line-height: 1.3;">' + escapeHtml(rawName) + '</div>' +
+                         phoneHtml +
+                       '</div>' +
+                     '</div>';
+            }
+          },
+          {
+            data: null,
+            render: function(d) {
+              return '<div>' +
+                       '<span class="badge bg-light text-dark font-monospace border" style="font-size: 11.5px; font-weight: 700; padding: 4px 8px;">' + escapeHtml(d.matricule_etudiant || '-') + '</span>' +
+                       '<div style="font-weight: 700; color: #1E3A5F; font-size: 12px; margin-top: 3px;">' + escapeHtml(d.classe_actuelle || 'Non assignée') + '</div>' +
+                     '</div>';
+            }
+          },
+          {
+            data: null,
+            render: function(d) {
+              var items = d.items || [];
+              if (items.length === 0) return '<span class="text-muted" style="font-size: 12px;">Aucun détail</span>';
+
+              var html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
+              items.forEach(function(it) {
+                html += '<div style="font-size: 11.5px; font-weight: 700;">' +
+                          '<span class="badge bg-danger" style="padding: 3px 6px; font-size: 10.5px;">' + escapeHtml(it.libelle_annee) + '</span> ' +
+                          '<span style="color: #475569;">' + escapeHtml(it.libelle_classe) + '</span> : ' +
+                          '<strong style="color: #DC2626;">' + formatMoney(it.solde_restant) + '</strong>' +
+                        '</div>';
+              });
+              html += '</div>';
+              return html;
+            }
+          },
+          {
+            data: 'total_initial_du',
+            className: 'text-end',
+            render: function(d) {
+              return '<span style="font-weight: 700; color: #475569; font-size: 13px;">' + formatMoney(d) + '</span>';
+            }
+          },
+          {
+            data: 'total_deja_paye',
+            className: 'text-end',
+            render: function(d) {
+              return '<span style="font-weight: 700; color: #16A34A; font-size: 13px;">' + formatMoney(d) + '</span>';
+            }
+          },
+          {
+            data: 'total_solde_arriere',
+            className: 'text-end',
+            render: function(d) {
+              return '<span class="badge bg-danger text-white" style="font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 8px;">' +
+                       formatMoney(d) +
+                     '</span>';
+            }
+          },
+          {
+            data: null,
+            className: 'text-end',
+            render: function(d) {
+              var totalRegle = parseFloat(d.total_deja_paye) || 0;
+              var isZeroRegle = (totalRegle <= 0);
+
+              if (isZeroRegle) {
+                return '<div style="display: flex; justify-content: flex-end; gap: 6px;">' +
+                         '<button type="button" class="btn btn-sm" disabled style="font-weight: 700; border-radius: 8px; padding: 6px 12px; background: #E2E8F0; color: #94A3B8; border: 1px solid #CBD5E1; cursor: not-allowed; opacity: 0.65;" title="Total réglé égal à 0 : Encaissement désactivé">' +
+                           '<i data-lucide="ban" style="width: 14px; height: 14px; margin-right: 4px;"></i> Encaisser Arriéré' +
+                         '</button>' +
+                       '</div>';
+              }
+
+              return '<div style="display: flex; justify-content: flex-end; gap: 6px;">' +
+                       '<button type="button" class="btn btn-sm btn-success btn-open-reglement" style="font-weight: 700; border-radius: 8px; padding: 6px 12px; background: #15803D; border: none;" title="Encaisser les arriérés de cet étudiant">' +
+                         '<i data-lucide="banknote" style="width: 14px; height: 14px; margin-right: 4px;"></i> Encaisser Arriéré' +
+                       '</button>' +
+                     '</div>';
+            }
+          }
+        ],
+        drawCallback: function() {
+          if (window.lucide) lucide.createIcons();
+        },
+        language: GEICG.dataTableLanguage
+      });
+    }
+
+    initTable();
+
+    // Filtrage interactif
+    $('#filter-annee-origine, #filter-classe').on('change', function() {
+      table.ajax.reload();
+      refreshKpis();
+    });
+
+    $('#btn-refresh-data').on('click', function() {
+      table.ajax.reload();
+      refreshKpis();
+    });
+
+    function refreshKpis() {
+      $.ajax({
+        url: GEICG.url('arriere/apiStats'),
+        type: 'GET',
+        dataType: 'json',
+        success: function(res) {
+          var s = res.stats || {};
+          $('#kpi-total-solde').text(formatMoney(s.total_solde || 0));
+          $('#kpi-nb-etudiants').text(s.nb_etudiants || 0);
+          $('#kpi-total-recouvre').text(formatMoney(s.total_recouvre || 0));
+          $('#kpi-taux').text((s.taux_recouvrement || 0) + '%');
+        }
+      });
+    }
+
+    // Ouvrir le modal d'encaissement d'arriéré
+    $table.on('click', '.btn-open-reglement', function() {
+      var rowData = table.row($(this).closest('tr')).data();
+      if (!rowData || (parseFloat(rowData.total_deja_paye) || 0) <= 0) {
+        return;
+      }
+      currentStudentData = rowData;
+      openReglementModal(rowData);
+    });
+
+    function openReglementModal(d) {
+      $('#modal-student-info').text(d.nom_complet + ' | Matricule : ' + d.matricule_etudiant + ' | Classe : ' + d.classe_actuelle);
+      
+      var $container = $('#container-inscriptions-arrieres');
+      $container.empty();
+
+      var items = d.items || [];
+      if (items.length === 0) {
+        $container.html('<div class="alert alert-info">Aucun arriéré restant sur cet étudiant.</div>');
+      } else {
+        items.forEach(function(it, idx) {
+          var isChecked = (idx === 0) ? 'checked' : '';
+          var html = '<label style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s;" class="item-arriere-option">' +
+                       '<div style="display: flex; align-items: center; gap: 12px;">' +
+                         '<input type="radio" name="inscription_code" value="' + escapeHtml(it.inscription_code) + '" data-solde="' + it.solde_restant + '" ' + isChecked + ' style="width: 18px; height: 18px; accent-color: #15803D;">' +
+                         '<div>' +
+                           '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">Année Académique : ' + escapeHtml(it.libelle_annee) + ' (' + escapeHtml(it.libelle_classe) + ')</div>' +
+                           '<div style="font-size: 11.5px; color: #64748B;">Scolarité Initiale : ' + formatMoney(it.montant_initial) + ' | Déjà payé : ' + formatMoney(it.total_paye) + '</div>' +
+                         '</div>' +
+                       '</div>' +
+                       '<div style="text-align: right;">' +
+                         '<span class="badge bg-danger text-white" style="font-size: 12.5px; font-weight: 800; padding: 5px 10px;">Solde : ' + formatMoney(it.solde_restant) + '</span>' +
+                       '</div>' +
+                     '</label>';
+          $container.append(html);
+        });
+      }
+
+      updateSoldeDispoHelp();
+      $('#modal-encaisser-arriere').css('display', 'flex');
+    }
+
+    $(document).on('change', 'input[name="inscription_code"]', function() {
+      updateSoldeDispoHelp();
+    });
+
+    function updateSoldeDispoHelp() {
+      var $sel = $('input[name="inscription_code"]:checked');
+      if ($sel.length > 0) {
+        var solde = parseFloat($sel.data('solde')) || 0;
+        $('#lbl-solde-dispo').text(formatMoney(solde));
+        $('#input-montant-arriere').attr('max', solde);
+        $('#input-montant-arriere').val(solde);
+      } else {
+        $('#lbl-solde-dispo').text('0 FCFA');
+        $('#input-montant-arriere').val('');
+      }
+    }
+
+    // Fermer les modals
+    $('.btn-close-modal-arriere').on('click', function() {
+      $('#modal-encaisser-arriere').hide();
+    });
+    $('.btn-close-modal-recu').on('click', function() {
+      $('#modal-recu-arriere').hide();
+    });
+
+    // Soumission du formulaire de règlement
+    $('#form-reglement-arriere').on('submit', function(e) {
+      e.preventDefault();
+      
+      var $btn = $('#btn-submit-reglement-arriere');
+      $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-2"></span> Traitement...');
+
+      $.ajax({
+        url: GEICG.url('arriere/enregistrerReglement'),
+        type: 'POST',
+        data: $(this).serialize(),
+        dataType: 'json',
+        success: function(res) {
+          $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
+          if (window.lucide) lucide.createIcons();
+
+          if (res.status === 1) {
+            $('#modal-encaisser-arriere').hide();
+            table.ajax.reload();
+            refreshKpis();
+
+            if (window.Swal) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Règlement Réussi !',
+                text: res.message,
+                confirmButtonColor: '#15803D'
+              });
+            }
+
+            // Afficher le reçu d'apurement
+            showRecuModal(res, currentStudentData);
+          } else {
+            if (window.Swal) Swal.fire({ icon: 'error', title: 'Erreur', text: res.message });
+            else alert(res.message);
+          }
+        },
+        error: function(xhr, status, error) {
+          $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider & Encaisser');
+          if (window.lucide) lucide.createIcons();
+          if (window.Swal) Swal.fire({ icon: 'error', title: 'Erreur Serveur', text: 'Une erreur est survenue lors de l\'enregistrement.' });
+        }
+      });
+    });
+
+    function showRecuModal(res, studentData) {
+      var codePaiement = res.code_paiement || 'PAI-ARR-000';
+      var montantPaye = formatMoney(res.montant || 0);
+      var soldeApres = formatMoney(res.solde_apres || 0);
+      var dateFr = new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+
+      var html = '<div style="border: 2px dashed #CBD5E1; padding: 24px; border-radius: 12px; background: #FFFFFF;">' +
+                   '<div style="text-align: center; border-bottom: 2px solid #1E3A5F; padding-bottom: 14px; margin-bottom: 18px;">' +
+                     '<h2 style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">REÇU DE RÈGLEMENT D\'ARRIÉRÉ</h2>' +
+                     '<div style="font-size: 12px; color: #64748B; margin-top: 4px;">Grand Établissement d\'Enseignement Supérieur (GEICG)</div>' +
+                     '<div style="font-size: 11px; font-weight: 700; color: #0284C7; margin-top: 4px;">N° REÇU : ' + escapeHtml(codePaiement) + ' | Date : ' + dateFr + '</div>' +
+                   '</div>' +
+                   
+                   '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; font-size: 13px;">' +
+                     '<div><strong>Étudiant :</strong> ' + escapeHtml(studentData ? studentData.nom_complet : '-') + '</div>' +
+                     '<div><strong>Matricule :</strong> ' + escapeHtml(studentData ? studentData.matricule_etudiant : '-') + '</div>' +
+                     '<div><strong>Classe Actuelle :</strong> ' + escapeHtml(studentData ? studentData.classe_actuelle : '-') + '</div>' +
+                     '<div><strong>Type d\'Encaissement :</strong> Règlement d\'Arriéré Antérieur</div>' +
+                   '</div>' +
+
+                   '<div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: center;">' +
+                     '<div style="font-size: 12px; font-weight: 800; color: #166534; text-transform: uppercase;">MONTANT ENCAISSÉ SUR ARRIÉRÉ</div>' +
+                     '<div style="font-size: 26px; font-weight: 900; color: #15803D; margin-top: 4px;">' + montantPaye + '</div>' +
+                     '<div style="font-size: 12px; font-weight: 700; color: #475569; margin-top: 6px;">Solde Arriéré Restant Après Règlement : <span style="color:#DC2626;">' + soldeApres + '</span></div>' +
+                   '</div>' +
+
+                   '<div style="display: flex; justify-content: space-between; margin-top: 30px; padding-top: 16px; border-top: 1px solid #E2E8F0; font-size: 11px; text-align: center;">' +
+                     '<div style="width: 200px;">' +
+                       '<strong>L\'Étudiant / Le Tuteur</strong>' +
+                       '<div style="height: 45px;"></div>' +
+                       '<div style="color:#94A3B8;">Signature</div>' +
+                     '</div>' +
+                     '<div style="width: 200px;">' +
+                       '<strong>Le Caissier / Agent Comptable</strong>' +
+                       '<div style="height: 45px;"></div>' +
+                       '<div style="color:#94A3B8;">Cachet & Signature</div>' +
+                     '</div>' +
+                   '</div>' +
+                 '</div>';
+
+      $('#printable-recu-arriere').html(html);
+      $('#modal-recu-arriere').css('display', 'flex');
+    }
+
+    $('#btn-print-recu-action').on('click', function() {
+      var content = $('#printable-recu-arriere').html();
+      var win = window.open('', '', 'width=800,height=600');
+      win.document.write('<html><head><title>Imprimer Reçu d\'Arriéré</title>');
+      win.document.write('<style>body{font-family:sans-serif; padding:20px;}</style></head><body>');
+      win.document.write(content);
+      win.document.write('</body></html>');
+      win.document.close();
+      win.focus();
+      win.print();
+      win.close();
+    });
+  }
+
+  
+      $(document).ready(initArrieresModule);
+    })();
+  }
+
+
+  // =========================================================================
+  // 5. SECTION : GESTION DES IMPAYÉS & RELANCES (views/impayes/list.php)
+  // =========================================================================
+  if ($('#table-impayes').length) {
+    (function() {
+      var GEICG = window.GEICG || {};
+function initImpayesModule() {
+    var $table = $('#table-impayes');
+    if (!$table.length) return;
+
+    if (window.lucide) lucide.createIcons();
+    if ($.fn.select2) {
+      $('#filter-annee, #filter-niveau, #filter-classe, #filter-severite').select2({ width: '100%' });
+    }
+
+    function formatFCFA(val) {
+      return Number(val || 0).toLocaleString('fr-FR') + ' FCFA';
+    }
+
+    function updatePrintUrl() {
+      var url = GEICG.url('impayes/imprimerListeImpayes') +
+        '?annee_code=' + encodeURIComponent($('#filter-annee').val() || '') +
+        '&niveau_code=' + encodeURIComponent($('#filter-niveau').val() || 'ALL') +
+        '&classe_code=' + encodeURIComponent($('#filter-classe').val() || 'ALL') +
+        '&severite=' + encodeURIComponent($('#filter-severite').val() || 'ALL');
+      $('#btn-print-impayes-list').attr('href', url);
+    }
+
+    // Filtrage en cascade Niveau -> Classe
+    $('#filter-niveau').on('change', function() {
+      var niveauCode = $(this).val();
+      $('#filter-classe option').each(function() {
+        var optNiveau = $(this).data('niveau');
+        if (!niveauCode || niveauCode === 'ALL' || !optNiveau || optNiveau === niveauCode || $(this).val() === 'ALL') {
+          $(this).prop('disabled', false);
+        } else {
+          $(this).prop('disabled', true);
+        }
+      });
+      if ($('#filter-classe option:selected').prop('disabled')) {
+        $('#filter-classe').val('ALL').trigger('change.select2');
+      } else {
+        $('#filter-classe').select2({ width: '100%' });
+      }
+      updatePrintUrl();
+      if (table) table.ajax.reload();
+    });
+
+    $('#filter-classe, #filter-annee, #filter-severite').on('change', function() {
+      updatePrintUrl();
+      if (table) table.ajax.reload();
+    });
+
+    updatePrintUrl();
+
+    var selectedRowsData = [];
+
+    var table = $table.DataTable({
+      ajax: {
+        url: GEICG.url('impayes/apiList'),
+        type: 'GET',
+        data: function(d) {
+          d.annee_code = $('#filter-annee').val();
+          d.niveau_code = $('#filter-niveau').val();
+          d.classe_code = $('#filter-classe').val();
+          d.severite = $('#filter-severite').val();
+        },
+        dataSrc: function(json) {
+          if (json.kpis) {
+            $('#kpi-total-impayes').text(formatFCFA(json.kpis.total_impayes_echus));
+            $('#kpi-total-etudiants').text(json.kpis.total_etudiants_retard || 0);
+            $('#kpi-total-affectes').text(json.kpis.total_affectes || 0);
+            $('#kpi-total-non-affectes').text(json.kpis.total_non_affectes || 0);
+            $('#kpi-relances-mois').text(json.kpis.total_relances_mois || 0);
+          }
+          $('#check-all-impayes').prop('checked', false);
+          return json.data || [];
+        }
+      },
+      processing: true,
+      autoWidth: false,
+      columns: [
+        { 
+          data: null, 
+          orderable: false, 
+          className: 'text-center', 
+          width: '36px', 
+          render: function(d) {
+            return `<input type="checkbox" class="check-impaye-row" 
+                      data-id="${d.id_inscription}" 
+                      data-etudiant-code="${d.code_etudiant}" 
+                      data-inscription-code="${d.code_inscription}" 
+                      data-phone="${(d.telephone_parent || '').replace(/"/g, '&quot;')}" 
+                      data-montant-echu="${d.montant_echu}" 
+                      data-student-name="${(d.nom_complet || '').replace(/"/g, '&quot;')}" 
+                      data-classe="${(d.classe || '').replace(/"/g, '&quot;')}" 
+                      style="width: 17px; height: 17px; cursor: pointer; vertical-align: middle;">`;
+          }
+        },
+        { data: null, className: 'text-center', width: '40px', render: function(d, type, row, meta) {
+          return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+        }},
+        { 
+          data: null,
+          render: function(d) {
+            var photoPath = d.photo ? String(d.photo).trim() : '';
+            if (photoPath && !photoPath.startsWith('http') && !photoPath.startsWith('data:') && !photoPath.startsWith('/')) {
+              photoPath = GEICG.url(photoPath);
+            }
+
+            var photoHtml = photoPath 
+              ? `<div style="position: relative; width: 38px; height: 38px; flex-shrink: 0; display: inline-flex;">
+                  <img src="${photoPath}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid #CBD5E1;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                  <div style="display: none; width: 38px; height: 38px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-weight: 800; font-size: 13px; align-items: center; justify-content: center;">${d.initiales}</div>
+                 </div>`
+              : `<div style="width: 38px; height: 38px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">${d.initiales}</div>`;
+
+            return `<div style="display: flex; align-items: center; gap: 10px;">
+                      ${photoHtml}
+                      <div>
+                        <div style="font-weight: 800; color: #0F172A; font-size: 13px;">${d.nom_complet}</div>
+                        <div style="font-size: 11.5px; color: #64748B; font-family: monospace; font-weight: 700;">${d.matricule}</div>
+                      </div>
+                    </div>`;
+          }
+        },
+        { 
+          data: null,
+          render: function(d) {
+            return `<div>
+                      <div style="font-size: 12.5px; font-weight: 700; color: #1E293B;">${d.nom_parent}</div>
+                      <div style="font-size: 11.5px; color: #2563EB; font-weight: 700; font-family: monospace;">📞 ${d.telephone_parent}</div>
+                    </div>`;
+          }
+        },
+        { 
+          data: null,
+          render: function(d) {
+            var regBadge = d.regime === 'Affecté' ? 'background: #EFF6FF; color: #1D4ED8;' : 'background: #F1F5F9; color: #475569;';
+            return `<div>
+                      <div style="font-weight: 700; color: #0F172A; font-size: 12.5px;">${d.classe}</div>
+                      <span style="${regBadge} font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px;">${d.regime}</span>
+                    </div>`;
+          }
+        },
+        { 
+          data: 'echeance_libelle',
+          render: function(v) {
+            return `<div style="font-weight: 800; color: #0F172A; font-size: 12.5px;">${v || '-'}</div>`;
+          }
+        },
+        { 
+          data: 'echeance_date', className: 'text-center',
+          render: function(v) {
+            return `<span style="font-weight: 800; color: #1E293B; font-size: 12.5px;">${v || '-'}</span>`;
+          }
+        },
+        { 
+          data: 'total_paye', className: 'text-end font-monospace',
+          render: function(v) {
+            return `<div style="font-size: 12.5px; font-weight: 700; color: #16A34A;">${formatFCFA(v)}</div>`;
+          }
+        },
+        { 
+          data: 'solde_restant', className: 'text-end font-monospace',
+          render: function(v) {
+            return `<strong style="font-size: 13px; color: #DC2626; background: #FEF2F2; padding: 4px 8px; border-radius: 6px; border: 1px solid #FCA5A5;">${formatFCFA(v)}</strong>`;
+          }
+        },
+        { 
+          data: null, orderable: false, className: 'text-center',
+          render: function(d) {
+            var btnPrint = `<a href="${GEICG.url('impayes/imprimerRappelPdf/' + d.encrypted_id)}" target="_blank" 
+                              class="btn btn-sm" style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #1E3A5F; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Imprimer la Lettre de Rappel PDF">
+                              <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
+                            </a>`;
+            
+            var btnRelancer = `<button type="button" class="btn btn-sm btn-relancer-impaye" 
+                                data-etudiant-code="${d.code_etudiant}"
+                                data-inscription-code="${d.code_inscription}"
+                                data-student-name="${(d.nom_complet || '').replace(/"/g, '&quot;')}"
+                                data-classe="${(d.classe || '').replace(/"/g, '&quot;')}"
+                                data-phone="${(d.telephone_parent || '').replace(/"/g, '&quot;')}"
+                                data-montant-echu="${d.montant_echu}"
+                                style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #EA580C; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Émettre une Relance (SMS / WhatsApp / Email)">
+                                <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                              </button>`;
+
+            var btnPaiement = `<a href="${GEICG.url('paiement/comptabilite_etudiants?annee_code=' + d.annee_code + '&classe_code=' + d.code_classe)}" 
+                                class="btn btn-sm" style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #16A34A; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Encaisser en Caisse">
+                                <i data-lucide="credit-card" style="width: 16px; height: 16px;"></i>
+                              </a>`;
+
+            return `<div style="display: flex; gap: 4px; justify-content: center;">
+                      ${btnPrint}
+                      ${btnRelancer}
+                      ${btnPaiement}
+                    </div>`;
+          }
+        }
+      ],
+      language: GEICG.dataTableLanguage,
+      drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+    });
+
+    // Check all / Check row events
+    $(document).on('change', '#check-all-impayes', function() {
+      $('.check-impaye-row').prop('checked', $(this).prop('checked'));
+    });
+
+    // Ouvre le modal de relance individuelle
+    $(document).on('click', '.btn-relancer-impaye', function() {
+      var etudiantCode = $(this).data('etudiant-code');
+      var inscriptionCode = $(this).data('inscription-code');
+      var studentName = $(this).data('student-name');
+      var classe = $(this).data('classe');
+      var phone = $(this).data('phone');
+      var montantEchu = $(this).data('montant-echu');
+
+      $('#relance_etudiant_code').val(etudiantCode);
+      $('#relance_inscription_code').val(inscriptionCode);
+      $('#relance_student_name').text(studentName);
+      $('#relance_student_meta').text('Classe : ' + classe);
+      $('#relance_telephone_destinataire').val(phone || '');
+      $('#relance_montant_impaye').val(montantEchu || 0);
+
+      window.updateRelanceTemplate();
+      $('#modalRelanceImpaye').css('display', 'flex');
+    });
+
+    $(document).on('click', '.btn-close-modal-relance', function() {
+      $('#modalRelanceImpaye').hide();
+    });
+
+    $('#modalRelanceImpaye').on('click', function(e) {
+      if ($(e.target).is('#modalRelanceImpaye')) {
+        $('#modalRelanceImpaye').hide();
+      }
+    });
+
+    window.updateRelanceTemplate = function() {
+      var studentName = $('#relance_student_name').text();
+      var montant = formatFCFA($('#relance_montant_impaye').val());
+      var type = $('#relance_niveau_relance').val();
+
+      var msg = "";
+      if (type === 'rappel_amiable') {
+        msg = "GROUPE EICG - Rappel Amiable : Cher parent, nous vous rappelons que la tranche de scolarité de " + studentName + " s'élevant à " + montant + " est arrivée à échéance. Merci de régulariser à la caisse de l'établissement.";
+      } else if (type === 'relance_ferme') {
+        msg = "GROUPE EICG - Relance de Scolarité : Cher parent, sauf erreur de notre part, le montant de " + montant + " concernant l'élève " + studentName + " demeure impayé. Veuillez régulariser sous 48h afin d'éviter l'interruption des cours.";
+      } else {
+        msg = "GROUPE EICG - MISE EN DEMEURE : M./Mme le Tuteur de " + studentName + ", un reliquat impayé de " + montant + " est échu. Nous vous prions de vous présenter d'urgence à la caisse de l'école.";
+      }
+      $('#relance_message_relance').val(msg);
+    };
+
+    // LOGIQUE RELANCE GROUPÉE PAR SMS
+    $('#btn-open-group-sms-modal').on('click', function() {
+      selectedRowsData = [];
+      var totalAmount = 0;
+
+      $('.check-impaye-row:checked').each(function() {
+        var etudiantCode = $(this).data('etudiant-code');
+        var inscriptionCode = $(this).data('inscription-code');
+        var studentName = $(this).data('student-name');
+        var classe = $(this).data('classe');
+        var phone = $(this).data('phone');
+        var montantEchu = parseFloat($(this).data('montant-echu')) || 0;
+
+        totalAmount += montantEchu;
+        selectedRowsData.push({
+          etudiant_code: etudiantCode,
+          inscription_code: inscriptionCode,
+          student_name: studentName,
+          classe: classe,
+          phone: phone,
+          montant_echu: montantEchu
+        });
+      });
+
+      if (selectedRowsData.length === 0) {
+        if (window.toastr) toastr.warning('Veuillez cocher au moins un étudiant dans la liste pour envoyer la relance SMS groupée.');
+        return;
+      }
+
+      $('#group_sms_count').text(selectedRowsData.length + ' Étudiant(s) Sélectionné(s)');
+      $('#group_sms_total_amount').text(formatFCFA(totalAmount));
+
+      window.updateGroupSMSTemplate();
+      $('#modalRelanceGroupSMS').css('display', 'flex');
+    });
+
+    // LOGIQUE RELANCE GROUPÉE PAR WHATSAPP
+    $('#btn-open-group-whatsapp-modal').on('click', function() {
+      selectedRowsData = [];
+      var totalAmount = 0;
+
+      $('.check-impaye-row:checked').each(function() {
+        var etudiantCode = $(this).data('etudiant-code');
+        var inscriptionCode = $(this).data('inscription-code');
+        var studentName = $(this).data('student-name');
+        var classe = $(this).data('classe');
+        var phone = $(this).data('phone');
+        var montantEchu = parseFloat($(this).data('montant-echu')) || 0;
+
+        totalAmount += montantEchu;
+        selectedRowsData.push({
+          etudiant_code: etudiantCode,
+          inscription_code: inscriptionCode,
+          student_name: studentName,
+          classe: classe,
+          phone: phone,
+          montant_echu: montantEchu
+        });
+      });
+
+      if (selectedRowsData.length === 0) {
+        if (window.toastr) toastr.warning('Veuillez cocher au moins un étudiant dans la liste pour envoyer les relances WhatsApp.');
+        return;
+      }
+
+      $('#group_sms_count').text(selectedRowsData.length + ' Étudiant(s) Sélectionné(s)');
+      $('#group_sms_total_amount').text(formatFCFA(totalAmount));
+      $('#group_canal_relance').val('whatsapp');
+
+      window.updateGroupSMSTemplate();
+      $('#modalRelanceGroupSMS').css('display', 'flex');
+    });
+
+    // LOGIQUE IMPRESSION EN MASSE
+    $('#btn-imprimer-en-masse').on('click', function() {
+      var selectedIds = [];
+      $('.check-impaye-row:checked').each(function() {
+        var id = $(this).data('id') || $(this).data('inscription-code');
+        if (id) selectedIds.push(id);
+      });
+
+      if (selectedIds.length === 0) {
+        if (window.toastr) toastr.warning('Veuillez cocher au moins un étudiant dans la liste pour l\'impression en masse des relances.');
+        return;
+      }
+
+      var url = GEICG.url('impayes/imprimerRappelsMasse?ids=' + encodeURIComponent(selectedIds.join(',')));
+      window.open(url, '_blank');
+    });
+
+    $(document).on('click', '.btn-close-modal-group-sms', function() {
+      $('#modalRelanceGroupSMS').hide();
+    });
+
+    $('#modalRelanceGroupSMS').on('click', function(e) {
+      if ($(e.target).is('#modalRelanceGroupSMS')) {
+        $('#modalRelanceGroupSMS').hide();
+      }
+    });
+
+    window.updateGroupSMSTemplate = function() {
+      var type = $('#group_niveau_relance').val();
+      var msg = "";
+
+      if (type === 'rappel_amiable') {
+        msg = "GROUPE EICG - Rappel Amiable : Cher parent, nous vous rappelons que la tranche de scolarité de {NOM_ETUDIANT} s'élevant à {MONTANT_ECHU} est arrivée à échéance. Merci de régulariser à la caisse de l'établissement.";
+      } else if (type === 'relance_ferme') {
+        msg = "GROUPE EICG - Relance de Scolarité : Cher parent, sauf erreur de notre part, le montant de {MONTANT_ECHU} concernant l'élève {NOM_ETUDIANT} ({CLASSE}) demeure impayé. Veuillez régulariser sous 48h afin d'éviter l'interruption des cours.";
+      } else {
+        msg = "GROUPE EICG - MISE EN DEMEURE : M./Mme le Tuteur de {NOM_ETUDIANT}, un reliquat impayé de {MONTANT_ECHU} est échu. Nous vous prions de vous présenter d'urgence à la caisse de l'école.";
+      }
+      $('#group_message_relance').val(msg);
+    };
+
+    // Soumission Relance Individuelle
+    $('#formRelanceImpaye').on('submit', function(e) {
+      e.preventDefault();
+      var formData = $(this).serialize();
+
+      $.ajax({
+        url: GEICG.url('impayes/add'),
+        type: 'POST',
+        data: formData,
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(res) {
+          if (res.status === 1 || res.success) {
+            if (window.toastr) toastr.success(res.message || 'Relance enregistrée avec succès!');
+            $('#modalRelanceImpaye').hide();
+            table.ajax.reload(null, false);
+          } else {
+            if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          }
+        },
+        error: function() {
+          if (window.toastr) toastr.error('Erreur réseau lors de l\'envoi');
+        }
+      });
+    });
+
+    // Soumission Relance Groupée
+    $('#formRelanceGroupSMS').on('submit', function(e) {
+      e.preventDefault();
+      if (selectedRowsData.length === 0) {
+        if (window.toastr) toastr.warning('Aucun étudiant sélectionné.');
+        return;
+      }
+
+      var niveauRelance = $('#group_niveau_relance').val();
+      var canalRelance = $('#group_canal_relance').val();
+      var messageTemplate = $('#group_message_relance').val();
+      var csrfToken = $('input[name="csrf_token"]', this).val();
+
+      $.ajax({
+        url: GEICG.url('impayes/addGrouped'),
+        type: 'POST',
+        data: {
+          csrf_token: csrfToken,
+          niveau_relance: niveauRelance,
+          canal_relance: canalRelance,
+          message_relance: messageTemplate,
+          items: JSON.stringify(selectedRowsData)
+        },
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(res) {
+          if (res.status === 1 || res.success) {
+            if (window.toastr) toastr.success(res.message || 'Relances groupées transmises avec succès!');
+            $('#modalRelanceGroupSMS').hide();
+            $('#check-all-impayes').prop('checked', false);
+            table.ajax.reload(null, false);
+          } else {
+            if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'envoi des relances groupées');
+          }
+        },
+        error: function() {
+          if (window.toastr) toastr.error('Erreur réseau lors de l\'envoi groupé');
+        }
+      });
+    });
+  }
+
+  
+      $(document).ready(initImpayesModule);
     })();
   }
 
