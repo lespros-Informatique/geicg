@@ -114,3 +114,74 @@ Dans toute opération de refactorisation ou d'évolution du code, l'architecture
 7. **Sécurisation par Middlewares & Filtrage d'Accès** :
    - Les contrôleurs doivent systématiser la vérification de l'authentification (`Auth::check()`) et le contrôle RBAC (`Auth::can(...)` ou `$this->requirePermission(...)`) dès l'initialisation des actions.
    - Toute soumission de formulaire critique doit intégrer la validation CSRF.
+
+---
+
+## 6. RÈGLE D'ARCHITECTURE JAVASCRIPT MODULAIRE & UNIFIÉ (FRONT-END STANDARDS)
+
+Afin d'éviter la prolifération de fichiers JavaScript atomiques ou isolés et de simplifier la maintenance :
+
+1. **Unification par Domaine Métier (One Module JS per Domain)** :
+   - Tous les scripts relatifs à une entité métier ou à ses fonctionnalités connexes doivent être regroupés dans un **fichier JavaScript unique** placé dans `public/assets/js/modules/<module>.js` (ex: `etudiants.js` regroupe liste, édition, détails, wizard et parents ; `paiements.js` regroupe règlements, détails, compta, arriérés, impayés et sessions de caisse ; `annees.js` regroupe années et semestres ; `documents.js` regroupe documents et galeries ; `accessoires.js` regroupe accessoires et pièces à fournir ; etc.).
+   - Ne **JAMAIS** créer de fichiers JavaScript distincts et dispersés pour des sous-actions (proscrire `*_list.js`, `*_edit.js`, `*_details.js` dès lors qu'un module unifié `<module>.js` existe).
+
+2. **Garde d'Exécution et Isolation de Portée Obligatoires (Element Presence Guards & IIFE)** :
+   - Chaque sous-partie ou écran au sein du module unifié doit impérativement être encapsulée dans une IIFE protégée par une condition vérifiant l'existence de ses éléments cibles dans le DOM :
+     ```javascript
+     // Exemple d'isolation pour une section :
+     if ($('#table-xyz, #xyz-config').length) {
+       (function() {
+         // Logique spécifique à cette interface
+       })();
+     }
+     ```
+   - Cette règle prévient formellement tout plantage JavaScript ou initialisation superflue (DataTables, écouteurs d'événements, etc.) sur les vues du module qui ne contiennent pas ces composants.
+
+3. **Exposition des Fonctions Invoquées Inline (Window Scoping)** :
+   - Si une vue utilise des attributs d'événements HTML inline (ex: `onclick="switchTab(...)"`), les fonctions correspondantes doivent obligatoirement être attachées à l'objet global `window` (`window.switchTab = switchTab;`), ou converties en délégation d'événements jQuery (`$(document).on(...)`).
+
+4. **Suppression Systématique des Anciens Fichiers Remplacés** :
+   - Dès qu'un fichier JavaScript est intégré dans un module unifié et que les vues correspondantes sont mises à jour, supprimer immédiatement les anciens scripts individuels afin d'éviter les doublons et les régressions de maintenance.
+
+---
+
+## 7. PROTOCOLE D'ÉCHANGE DE DONNÉES & CONFIGURATIONS PHP $\rightarrow$ JS (ZERO INLINE SCRIPT)
+
+1. **Injection Déclarative via ViewContext** :
+   - L'inclusion des scripts front-end dans les vues PHP doit s'effectuer exclusivement via l'helper applicatif, positionné en bas de vue juste avant l'inclusion de `footer-link.php` :
+     ```php
+     ViewContext::setScripts(['public/assets/js/modules/<module>.js']);
+     require_once __DIR__ . '/../../public/inc/footer-link.php';
+     ```
+   - Ne **JAMAIS** insérer de balise `<script src="...">` en dur dans le corps des gabarits HTML.
+
+2. **Passage de Configuration Sécurisé par Balises JSON (Zero PHP dans le JS)** :
+   - Proscrire l'injection de variables PHP au sein de blocs JavaScript (`var racine = '<?= RACINE ?>';`).
+   - Toutes les métadonnées serveur nécessaires au script (jeton CSRF, URL racine, identifiants chiffrés, états initiaux) doivent être encapsulées dans une balise JSON typée :
+     ```html
+     <script type="application/json" id="<module>-config">
+     <?= json_encode([
+         'racine' => RACINE,
+         'csrfToken' => Validator::generateCsrfToken(),
+         // ... autres paramètres dynamiques
+     ]) ?>
+     </script>
+     ```
+   - Le module JavaScript lit cette configuration proprement via `JSON.parse(document.getElementById('<module>-config').textContent)`.
+
+---
+
+## 8. PROTOCOLE DE VALIDATION TECHNIQUE ET CONTRÔLE DE SYNTAXE (LINTING)
+
+Après toute refactorisation de fichier ou regroupement de modules :
+
+1. **Validation Systématique du JavaScript** :
+   - Vérifier l'intégrité syntaxique de chaque fichier JS créé ou modifié à l'aide du compilateur Node.js :
+     `node -c <chemin_du_fichier.js>`
+   - Aucune erreur de syntaxe ou parenthèse/accolade manquante ne doit subsister.
+
+2. **Validation Systématique des Vues PHP** :
+   - Vérifier la validité syntaxique de chaque vue PHP éditée à l'aide du linting PHP CLI :
+     `php -l <chemin_de_la_vue.php>`
+   - Le statut retourné doit obligatoirement être `No syntax errors detected`.
+
