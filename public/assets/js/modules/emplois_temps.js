@@ -68,6 +68,45 @@
     $('#print-filter-summary-text').html('Année : ' + anneeText + ' &bull; Niveau : ' + (niveau ? niveauText : 'Tous') + ' &bull; Classe : ' + (classe ? classeText : 'Toutes'));
   }
 
+  function updateKpis(data) {
+    var rows = data || [];
+    var totalClasses = rows.length;
+    var totalHeures = 0;
+    var complets = 0;
+    var brouillons = 0;
+    var totalCreneaux = 0;
+    var allMatieres = {};
+
+    rows.forEach(function(r) {
+      totalHeures += (parseFloat(r.total_heures) || 0);
+      totalCreneaux += (parseInt(r.nb_creneaux, 10) || 0);
+      if (r.statut_planning === 'Complet') {
+        complets++;
+      } else {
+        brouillons++;
+      }
+      if (r.matieres_noms) {
+        var parts = r.matieres_noms.split(',');
+        for (var i = 0; i < parts.length; i++) {
+          var trimmed = parts[i].trim();
+          if (trimmed) allMatieres[trimmed] = true;
+        }
+      }
+    });
+
+    var totalMin = Math.round(totalHeures * 60);
+    var h = Math.floor(totalMin / 60);
+    var m = totalMin % 60;
+    var formattedHeures = h + 'h' + (m < 10 ? '0' : '') + m;
+
+    $('#kpi-total-classes').text(totalClasses);
+    $('#kpi-total-heures').text(formattedHeures);
+    $('#kpi-plannings-complets').text(complets);
+    $('#kpi-plannings-brouillons').text(brouillons);
+    $('#kpi-total-creneaux').text(totalCreneaux);
+    $('#kpi-total-matieres').text(Object.keys(allMatieres).length);
+  }
+
   $('#filter-classe, #filter-annee').on('change', function() {
     var cls = $('#filter-classe').val();
     if (cls) {
@@ -89,6 +128,11 @@
         d.annee_code = $('#filter-annee').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
+      },
+      dataSrc: function(json) {
+        var data = (json && json.data) ? json.data : [];
+        updateKpis(data);
+        return data;
       }
     },
     processing: true,

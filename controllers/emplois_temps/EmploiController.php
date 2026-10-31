@@ -70,9 +70,46 @@ class EmploiController extends BaseController
 
         if ($isTeacherOnly) {
             $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $selectedAnneeCode);
         } else {
             $classes = (new ModelClasse())->getAll();
+            $classesWithEmploi = $this->model->getClassesSummary($selectedAnneeCode);
         }
+
+        // Statistiques globales pour les cartes KPI
+        $stats = [
+            'total_classes' => count($classesWithEmploi),
+            'total_heures' => 0,
+            'total_creneaux' => 0,
+            'plannings_complets' => 0,
+            'plannings_brouillons' => 0,
+            'total_matieres' => 0
+        ];
+
+        $matieresSet = [];
+        foreach ($classesWithEmploi as $item) {
+            $stats['total_heures'] += (float)($item['total_heures'] ?? 0);
+            $stats['total_creneaux'] += (int)($item['nb_creneaux'] ?? 0);
+            if ((int)($item['nb_jours'] ?? 0) >= 5) {
+                $stats['plannings_complets']++;
+            } else {
+                $stats['plannings_brouillons']++;
+            }
+            if (!empty($item['matieres_noms'])) {
+                $parts = explode(',', $item['matieres_noms']);
+                foreach ($parts as $p) {
+                    $trimmed = trim($p);
+                    if ($trimmed !== '') {
+                        $matieresSet[$trimmed] = true;
+                    }
+                }
+            }
+        }
+        $stats['total_matieres'] = count($matieresSet);
+        $totalMin = round($stats['total_heures'] * 60);
+        $h = floor($totalMin / 60);
+        $m = $totalMin % 60;
+        $stats['total_heures_formatted'] = sprintf("%dh%02d", $h, $m);
 
         $this->loadView('../views/emplois_temps/list.php', [
             'annees' => $annees,
@@ -80,7 +117,8 @@ class EmploiController extends BaseController
             'classes' => $classes,
             'selectedAnneeCode' => $selectedAnneeCode,
             'canManage' => $canManage,
-            'isTeacherOnly' => $isTeacherOnly
+            'isTeacherOnly' => $isTeacherOnly,
+            'stats' => $stats
         ]);
     }
 
@@ -120,6 +158,7 @@ class EmploiController extends BaseController
                 'nb_matieres' => (int)$i['nb_matieres'],
                 'nb_profs' => (int)$i['nb_profs'],
                 'matieres_noms' => $i['matieres_noms'] ?: '',
+                'total_heures' => (float)($i['total_heures'] ?? 0),
                 'total_heures_formatted' => $volHoraire,
                 'last_update' => $i['last_update'] ? date('d/m/Y H:i', strtotime($i['last_update'])) : '-',
                 'statut_planning' => ((int)$i['nb_jours'] >= 5) ? 'Complet' : 'Brouillon'

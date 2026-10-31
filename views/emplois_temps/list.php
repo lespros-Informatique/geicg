@@ -91,6 +91,103 @@ $niveaux = $niveaux ?? [];
         </div>
       </div>
 
+      <!-- CARTES KPI DE STATISTIQUES DES EMPLOIS DU TEMPS -->
+      <div class="kpi-section no-print" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+        
+        <!-- Carte 1 : Classes -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="<?= !empty($isTeacherOnly) ? 'graduation-cap' : 'calendar-days' ?>" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">
+              <?= !empty($isTeacherOnly) ? 'Mes Classes' : 'Classes Planifiées' ?>
+            </div>
+            <div style="font-size: 20px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-classes">
+              <?= (int)($stats['total_classes'] ?? 0) ?>
+            </div>
+            <small style="font-size: 11px; color: #94A3B8; font-weight: 600;">
+              <?= !empty($isTeacherOnly) ? 'Classes assignées' : 'Classes avec planning' ?>
+            </small>
+          </div>
+        </div>
+
+        <!-- Carte 2 : Volume Horaire -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="clock" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">
+              <?= !empty($isTeacherOnly) ? 'Mon Volume Horaire' : 'Volume Horaire Total' ?>
+            </div>
+            <div style="font-size: 20px; font-weight: 900; color: #4338CA; margin-top: 2px;" id="kpi-total-heures">
+              <?= htmlspecialchars($stats['total_heures_formatted'] ?? '0h00') ?>
+            </div>
+            <small style="font-size: 11px; color: #94A3B8; font-weight: 600;">Heures / semaine</small>
+          </div>
+        </div>
+
+        <?php if (!empty($isTeacherOnly)): ?>
+        <!-- Carte 3 Enseignant : Créneaux -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="calendar-check-2" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Créneaux de Cours</div>
+            <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-total-creneaux">
+              <?= (int)($stats['total_creneaux'] ?? 0) ?>
+            </div>
+            <small style="font-size: 11px; color: #94A3B8; font-weight: 600;">Séances hebdomadaires</small>
+          </div>
+        </div>
+
+        <!-- Carte 4 Enseignant : Matières -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="book-open" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Matières Dispensées</div>
+            <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 2px;" id="kpi-total-matieres">
+              <?= (int)($stats['total_matieres'] ?? 0) ?>
+            </div>
+            <small style="font-size: 11px; color: #94A3B8; font-weight: 600;">Matières distinctes</small>
+          </div>
+        </div>
+        <?php else: ?>
+        <!-- Carte 3 Gestionnaire : Plannings Complets -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="check-circle-2" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Plannings Complets</div>
+            <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-plannings-complets">
+              <?= (int)($stats['plannings_complets'] ?? 0) ?>
+            </div>
+            <small style="font-size: 11px; color: #94A3B8; font-weight: 600;">&ge; 5 jours planifiés</small>
+          </div>
+        </div>
+
+        <!-- Carte 4 Gestionnaire : Plannings en Cours -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="hourglass" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">En Cours de Saisie</div>
+            <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 2px;" id="kpi-plannings-brouillons">
+              <?= (int)($stats['plannings_brouillons'] ?? 0) ?>
+            </div>
+            <small style="font-size: 11px; color: #94A3B8; font-weight: 600;">Plannings partiels</small>
+          </div>
+        </div>
+        <?php endif; ?>
+
+      </div>
+
       <!-- Datatable classes créées cette année -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
