@@ -1260,9 +1260,8 @@ table.dataTable th.col-piece {
   height: 14px !important;
 }
 
-
 /* ==========================================================================
-   MODALES : SCROLL LOCK ARRIÈRE-PLAN & DÉFILEMENT UNIVERSEL DU CONTENU
+   MODALES : SCROLL LOCK ARRIÈRE-PLAN & CONTENU SCROLLABLE UNIVERSEL
    ========================================================================== */
 
 /* 1. Verrouillage strict du défilement de l'arrière-plan de la page */
@@ -1271,7 +1270,7 @@ body.modal-open {
   overflow: hidden !important;
 }
 
-/* 2. L'overlay modal est le conteneur scrollable principal */
+/* 2. L'overlay modal : centrage sécurisé et scroll global au besoin */
 .modal-overlay,
 .modal,
 .modal-custom,
@@ -1285,29 +1284,9 @@ body.modal-open {
   box-sizing: border-box !important;
 }
 
-/* 3. Pour toute modale visible en flex : alignement fluide pour permettre le scroll de haut en bas sans coupure */
-.modal-overlay[style*="display: flex"],
-.modal-overlay[style*="display:flex"],
-.modal[style*="display: flex"],
-.modal[style*="display:flex"],
-.modal-custom[style*="display: flex"],
-.modal-custom[style*="display:flex"],
-[id^="modal-"][style*="display: flex"],
-[id^="modal-"][style*="display:flex"],
-[id^="modal_"][style*="display: flex"],
-[id^="modal_"][style*="display:flex"],
-[id*="Modal"][style*="display: flex"],
-[id*="Modal"][style*="display:flex"],
-.modal-overlay.active,
-.modal.show {
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: center !important;
-  padding: 30px 16px !important;
-}
-
-/* 4. Le dialogue interne se centre automatiquement en hauteur quand l'écran le permet,
-      et défile naturellement si le contenu dépasse l'écran */
+/* 3. La boîte de dialogue modale (carte blanche) :
+      - Elle ne dépasse JAMAIS la hauteur de l'écran (max-height: calc(100vh - 40px))
+      - Elle s'organise en flex colonne (en-tête fixe en haut, contenu scrollable au milieu) */
 .modal-overlay > div,
 .modal > div,
 .modal-custom > div,
@@ -1315,7 +1294,74 @@ body.modal-open {
 [id^="modal_"] > div,
 [id*="Modal"] > div,
 .modal-dialog {
+  max-height: calc(100vh - 40px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
   margin: auto !important;
   max-width: 100%;
   overscroll-behavior: contain !important;
+}
+
+/* 4. En-tête de la modale : reste toujours visible et ancré en haut */
+.modal-overlay > div > div:first-child,
+.modal > div > div:first-child,
+.modal-custom > div > div:first-child,
+[id^="modal-"] > div > div:first-child,
+[id^="modal_"] > div > div:first-child,
+[id*="Modal"] > div > div:first-child,
+.modal-header {
+  flex-shrink: 0 !important;
+}
+
+/* 5. Corps de la modale (Formulaire ou Contenu) : DÉFILEMENT FLUIDE & SCROLLABLE */
+.modal-overlay > div > form,
+.modal-overlay > div > div:nth-child(2),
+.modal > div > form,
+.modal > div > div:nth-child(2),
+.modal-custom > div > form,
+.modal-custom > div > div:nth-child(2),
+[id^="modal-"] > div > form,
+[id^="modal-"] > div > div:nth-child(2),
+[id^="modal_"] > div > form,
+[id^="modal_"] > div > div:nth-child(2),
+[id*="Modal"] > div > form,
+[id*="Modal"] > div > div:nth-child(2),
+.modal-body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 6. Barre de défilement élégante et discrète pour le contenu de la modale */
+.modal-overlay > div > form::-webkit-scrollbar,
+.modal-overlay > div > div:nth-child(2)::-webkit-scrollbar,
+[id^="modal-"] > div > form::-webkit-scrollbar,
+[id^="modal-"] > div > div:nth-child(2)::-webkit-scrollbar,
+[id^="modal_"] > div > form::-webkit-scrollbar,
+[id^="modal_"] > div > div:nth-child(2)::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-overlay > div > form::-webkit-scrollbar-thumb,
+.modal-overlay > div > div:nth-child(2)::-webkit-scrollbar-thumb,
+[id^="modal-"] > div > form::-webkit-scrollbar-thumb,
+[id^="modal-"] > div > div:nth-child(2)::-webkit-scrollbar-thumb,
+[id^="modal_"] > div > form::-webkit-scrollbar-thumb,
+[id^="modal_"] > div > div:nth-child(2)::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+.modal-overlay > div > form::-webkit-scrollbar-thumb:hover,
+.modal-overlay > div > div:nth-child(2)::-webkit-scrollbar-thumb:hover,
+[id^="modal-"] > div > form::-webkit-scrollbar-thumb:hover,
+[id^="modal-"] > div > div:nth-child(2)::-webkit-scrollbar-thumb:hover,
+[id^="modal_"] > div > form::-webkit-scrollbar-thumb:hover,
+[id^="modal_"] > div > div:nth-child(2)::-webkit-scrollbar-thumb:hover,
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }
