@@ -1,5 +1,5 @@
 /**
- * Module JS Unifié : Utilisateurs Système (Liste, Édition & Rôles, Changement de mot de passe)
+ * Module JS Unifié : Utilisateurs Système, Rôles & Permissions RBAC
  * GEICG - Application Web
  */
 (function(window, document, $) {
@@ -345,10 +345,329 @@
 
   }
 
+  // --- Fonctions globales de gestion des Rôles & Permissions ---
+// Toggle ouvrir / réduire un module avec rotation du chevron
+window.toggleAccordion = function(grpId) {
+  var $body = $('#body-' + grpId);
+  var $wrap = $('#chevron-wrap-' + grpId);
+  if ($body.is(':visible')) {
+    $body.slideUp(180);
+    $wrap.css('transform', 'rotate(-90deg)');
+  } else {
+    $body.slideDown(180);
+    $wrap.css('transform', 'rotate(0deg)');
+  }
+};
+
+// Déplier ou replier tous les modules
+window.toggleAllGroups = function(open) {
+  if (open) {
+    $('.module-body').slideDown(180);
+    $('[id^="chevron-wrap-"]').css('transform', 'rotate(0deg)');
+  } else {
+    $('.module-body').slideUp(180);
+    $('[id^="chevron-wrap-"]').css('transform', 'rotate(-90deg)');
+  }
+};
+
+// Cocher ou décocher toutes les permissions d'un module spécifique
+window.checkModulePerms = function(grpId, checked, evt) {
+  if (evt) evt.stopPropagation();
+  $('.perm-group-' + grpId).prop('checked', checked);
+  var total = $('.perm-group-' + grpId).length;
+  updateGroupBadge(grpId, total);
+};
+
+// Cocher ou décocher globalement toutes les permissions
+window.checkAllGlobal = function(checked) {
+  $('.perm-checkbox').prop('checked', checked);
+  $('[id^="box-"]').each(function() {
+    var grpId = $(this).attr('id').replace('box-', '');
+    var total = $('.perm-group-' + grpId).length;
+    updateGroupBadge(grpId, total);
+  });
+};
+
+// Mise à jour en temps réel du badge "X / Y cochées"
+window.updateGroupBadge = function(grpId, total) {
+  var checkedCount = $('.perm-group-' + grpId + ':checked').length;
+  $('#badge-' + grpId).text(checkedCount + ' / ' + total + ' cochées');
+  if (checkedCount === total) {
+    $('#badge-' + grpId).css({'background': '#DCFCE7', 'color': '#15803D', 'borderColor': '#86EFAC'});
+  } else if (checkedCount > 0) {
+    $('#badge-' + grpId).css({'background': '#EFF6FF', 'color': '#1E3A5F', 'borderColor': '#BFDBFE'});
+  } else {
+    $('#badge-' + grpId).css({'background': '#F1F5F9', 'color': '#64748B', 'borderColor': '#CBD5E1'});
+  }
+};
+
+var isCustomModule = false;
+window.toggleModuleInput = function() {
+  isCustomModule = !isCustomModule;
+  if (isCustomModule) {
+    $('#bloc-select-module').hide();
+    $('#bloc-text-module').show();
+    $('#input_nouveau_module').focus();
+    $('#btn-toggle-module').html('<i data-lucide="list" style="width:14px;height:14px;"></i> Choisir un module existant');
+    $('#help-module').text('Saisissez le nom en lettres majuscules (ex: BIBLIOTHEQUE).');
+  } else {
+    $('#bloc-text-module').hide();
+    $('#input_nouveau_module').val('');
+    $('#bloc-select-module').show();
+    $('#btn-toggle-module').html('<i data-lucide="plus-circle" style="width:14px;height:14px;"></i> + Créer un nouveau module');
+    $('#help-module').text('Choisissez parmi les modules existants ou cliquez ci-dessus pour en créer un nouveau.');
+  }
+  if (window.lucide) lucide.createIcons();
+};
+
+  // =========================================================================
+  // 4. VUE : LISTE & GESTION DES RÔLES RBAC (views/roles/list.php)
+  // =========================================================================
+  function initRolesListModule() {
+    if (!$('#table-roles, #roles-list-config').length) return;
+
+  var configEl = document.getElementById('roles-list-config');
+  var config = {};
+  if (configEl) {
+    try { config = JSON.parse(configEl.textContent); } catch (e) {}
+  }
+  var racine = config.racine || window.RACINE || '/';
+  var csrfToken = config.csrfToken || '';
+
+  var table = $('#table-roles').DataTable({
+    ajax: racine + 'role/apiList',
+    processing: true,
+    autoWidth: false,
+    columns: [
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
+      { data: 'code_role', width: '130px', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
+      }},
+      { data: 'libelle_role', render: function(d, type) {
+        if (type !== 'display') return d || '';
+        return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
+      }},
+      { data: 'groupe', render: function(d, type, row) {
+        if (type !== 'display') return d || row.module || '';
+        return '<span style="color:#334155; font-weight:500;">' + (d || row.module || 'Général') + '</span>';
+      }},
+      { data: 'nb_users', width: '90px', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || 0;
+        return '<span style="font-weight:700; color:#1E3A5F; background:#EFF6FF; padding:3px 10px; border-radius:10px; font-size:12px;">' + (d || 0) + ' users</span>';
+      }},
+      { data: 'nb_permissions', width: '100px', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || 0;
+        return '<span style="font-weight:700; color:#15803D; background:#DCFCE7; padding:3px 10px; border-radius:10px; font-size:12px;">' + (d || 0) + ' droits</span>';
+      }},
+      { data: 'statut_role', width: '90px', className: 'text-center', render: function(d, type, row) {
+        var isActif = (d === 'actif');
+        var checkedAttr = isActif ? 'checked' : '';
+        return '<div style="display:flex; justify-content:center; align-items:center;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+               '<input type="checkbox" class="toggle-statut-role" data-id="' + row.id + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+               '</span>' +
+               '</label>' +
+               '</div>';
+      } },
+      { data: null, width: '160px', orderable: false, render: function(d) {
+        return '<a href="' + racine + 'role/edition/' + (d.editId || d.id) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+               '<a href="' + racine + 'role/details/' + (d.editId || d.id) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      }, className: 'text-end' }
+    ],
+    language: { url: racine + 'json/datatables-i18n-fr-FR.json' },
+    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $(document).on('change', '.toggle-statut-role', function() {
+    var id = $(this).data('id');
+    var isChecked = $(this).is(':checked');
+    var $input = $(this);
+
+    $.ajax({
+      url: racine + 'role/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        csrf_token: csrfToken
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          $input.prop('checked', !isChecked);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        $input.prop('checked', !isChecked);
+      }
+    });
+  });
+
+  }
+
+  // =========================================================================
+  // 5. VUE : CRÉATION / MODIFICATION D'UN RÔLE RBAC (views/roles/edit.php)
+  // =========================================================================
+  function initRolesEditModule() {
+    if (!$('#btn-save-role, #roles-edit-config, .perm-checkbox').length) return;
+ 
+  var racine = window.RACINE || '/';
+  if (window.lucide) lucide.createIcons(); 
+
+  // Soumission AJAX du formulaire avec retour dynamique et redirection
+  $('form').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $btn = $('#btn-save-role');
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Enregistrement en cours...');
+
+    $.ajax({
+      url: $form.attr('action'),
+      type: 'POST',
+      data: $form.serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (typeof showToast === 'function') showToast(res.message || 'Rôle enregistré avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Rôle enregistré avec succès');
+          setTimeout(function() {
+            window.location.href = res.redirect || (racine + 'role/list');
+          }, 600);
+        } else {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Rôle & Permissions');
+          if (window.lucide) lucide.createIcons();
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Rôle & Permissions');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur réseau ou serveur';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json && json.message) msg = json.message;
+        } catch(e) {}
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
+      }
+    });
+  });
+  }
+
+  // =========================================================================
+  // 6. VUE : LISTE & GESTION DES PERMISSIONS GRANULAIRES (views/permissions/list.php)
+  // =========================================================================
+  function initPermissionsListModule() {
+    if (!$('#table-permissions, #permissions-list-config').length) return;
+
+  var configEl = document.getElementById('permissions-list-config');
+  var config = {};
+  if (configEl) {
+    try { config = JSON.parse(configEl.textContent); } catch (e) {}
+  }
+  var racine = config.racine || window.RACINE || '/';
+  var csrfToken = config.csrfToken || '';
+
+  var table = $('#table-permissions').DataTable({
+    ajax: racine + 'permission/apiList',
+    processing: true,
+    autoWidth: false,
+    columns: [
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
+      { data: 'code_permission', render: function(d) {
+        return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
+      } },
+      { data: 'libelle_permission', render: function(d) {
+        return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
+      } },
+      { data: 'module_permission', render: function(d) {
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:700; padding:4px 8px; border-radius:6px;">' + (d || '-') + '</span>';
+      } },
+      { data: 'statut_permission', width: '90px', className: 'text-center', render: function(d, type, row) {
+        var isActif = (d === 'actif');
+        var checkedAttr = isActif ? 'checked' : '';
+        return '<div style="display:flex; justify-content:center; align-items:center;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+               '<input type="checkbox" class="toggle-statut-permission" data-id="' + row.id_permission + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+               '</span>' +
+               '</label>' +
+               '</div>';
+      } },
+      { data: null, orderable: false, render: function(d) {
+        return '<a href="' + racine + 'permission/edition/' + (d.editId || d.id_permission) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+               '<a href="' + racine + 'permission/details/' + (d.editId || d.id_permission) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      }, className: 'text-end' }
+    ],
+    language: { url: racine + 'json/datatables-i18n-fr-FR.json' },
+    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $(document).on('change', '.toggle-statut-permission', function() {
+    var id = $(this).data('id');
+    var isChecked = $(this).is(':checked');
+    var $input = $(this);
+
+    $.ajax({
+      url: racine + 'permission/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        csrf_token: csrfToken
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          $input.prop('checked', !isChecked);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        $input.prop('checked', !isChecked);
+      }
+    });
+  });
+
+  }
+
+  // =========================================================================
+  // 7. VUE : CRÉATION / MODIFICATION D'UNE PERMISSION (views/permissions/edit.php)
+  // =========================================================================
+  function initPermissionsEditModule() {
+    if (!$('#btn-toggle-module, #bloc-select-module').length) return;
+ 
+  if (window.lucide) lucide.createIcons();
+
+  }
+
   $(document).ready(function() {
     initUsersListModule();
     initUsersEditModule();
     initUsersEditPasswordModule();
+    initRolesListModule();
+    initRolesEditModule();
+    initPermissionsListModule();
+    initPermissionsEditModule();
     if (window.lucide) lucide.createIcons();
   });
 

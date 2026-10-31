@@ -91,6 +91,6 @@ $isEdit = !empty($item['id_permission']);
 </div>
 
 <?php
-ViewContext::setScripts(['public/assets/js/modules/permissions_edit.js']);
+ViewContext::setScripts(['public/assets/js/modules/users.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>
