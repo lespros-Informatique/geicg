@@ -162,7 +162,7 @@ $enseignants = (new ModelEnseignant())->getAll();
 ]) ?>
 </script>
 <?php
-ViewContext::setScripts(['public/assets/js/modules/documents_edit.js']);
+ViewContext::setScripts(['public/assets/js/modules/documents.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>
 
