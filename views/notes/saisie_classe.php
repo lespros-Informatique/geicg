@@ -239,6 +239,6 @@ $typeEvals = [
 ]) ?>
 </script>
 <?php
-ViewContext::setScripts(['public/assets/js/modules/notes_saisie_classe.js']);
+ViewContext::setScripts(['public/assets/js/modules/notes.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>
