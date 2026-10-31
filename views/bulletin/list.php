@@ -79,6 +79,6 @@ $niveaux = $niveaux ?? [];
 </div>
 
 <?php
-ViewContext::setScripts(['public/assets/js/modules/bulletin_list.js']);
+ViewContext::setScripts(['public/assets/js/modules/notes.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>
