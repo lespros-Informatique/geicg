@@ -182,5 +182,5 @@
     </div>
   </main>
 </div>
-<?php ViewContext::setScripts(['public/assets/js/modules/scolarites_list.js']); ?>
+<?php ViewContext::setScripts(['public/assets/js/modules/scolarites.js']); ?>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
