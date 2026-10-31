@@ -14,13 +14,13 @@ $matieres = $matieres ?? [];
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="award" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
-            Programmation Compositions & Examens
+            Programmation des Examens
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Planning et calendrier des épreuves écrites, compositions semestrielles et examens</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Planning et calendrier des épreuves d'examens semestriels et finaux</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-          <a href="<?= RACINE ?>composition/formulaire" id="btn-add-composition" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
-            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Programmer une Composition / Examen
+          <a href="<?= RACINE ?>composition/formulaire?type=EXAMEN" id="btn-add-composition" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
+            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Programmer un Examen
           </a>
         </div>
       </div>
@@ -64,38 +64,40 @@ $matieres = $matieres ?? [];
             </select>
           </div>
         </div>
-      <!-- CARTES KPI DE STATISTIQUES DES COMPOSITIONS -->
+      </div>
+
+      <!-- CARTES KPI DE STATISTIQUES DES EXAMENS -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
         
-        <!-- Total Épreuves -->
+        <!-- Total Examens -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
           <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="award" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Épreuves</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Examens</div>
             <div style="font-size: 20px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-compositions">0</div>
           </div>
         </div>
 
-        <!-- Programmées -->
+        <!-- Programmés -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
           <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="clock" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Épreuves Programmées</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Programmés</div>
             <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 2px;" id="kpi-programme-compositions">0</div>
           </div>
         </div>
 
-        <!-- Terminées -->
+        <!-- Terminés -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
           <div style="width: 44px; height: 44px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="check-circle" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Épreuves Terminées</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Terminés</div>
             <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-termine-compositions">0</div>
           </div>
         </div>

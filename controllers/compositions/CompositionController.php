@@ -32,7 +32,7 @@ class CompositionController extends BaseController
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
-        $typeComposition = $_GET['type_composition'] ?? null;
+        $typeComposition = 'EXAMEN';
 
         $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $typeComposition);
         $data = [];

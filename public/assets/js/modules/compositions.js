@@ -44,9 +44,9 @@ $(document).ready(function() {
   $('#filter-classe, #filter-annee').on('change', function() {
     var cls = $('#filter-classe').val();
     if (cls) {
-      $('#btn-add-composition').attr('href', window.RACINE + 'composition/formulaire?classe_code=' + encodeURIComponent(cls));
+      $('#btn-add-composition').attr('href', window.RACINE + 'composition/formulaire?type=EXAMEN&classe_code=' + encodeURIComponent(cls));
     } else {
-      $('#btn-add-composition').attr('href', window.RACINE + 'composition/formulaire');
+      $('#btn-add-composition').attr('href', window.RACINE + 'composition/formulaire?type=EXAMEN');
     }
     table.ajax.reload();
   });
@@ -59,6 +59,7 @@ $(document).ready(function() {
         d.annee_code = $('#filter-annee').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
+        d.type_composition = 'EXAMEN';
       }
     },
     processing: true,

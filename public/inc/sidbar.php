@@ -247,8 +247,8 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::ENTER_NOTES, PERMISSIONS::VIEW_NOTES, PERMISSIONS::LOCK_NOTES, PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS])): ?>
-                <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= $isActiveRoute('/composition/') ?>" data-title="Planning Compositions & Examens">
-                    <i data-lucide="award"></i> <span>Planning Compositions & Examens</span>
+                <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= $isActiveRoute('/composition/') ?>" data-title="Planning des Examens">
+                    <i data-lucide="award"></i> <span>Planning des Examens</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::ENTER_NOTES, PERMISSIONS::VIEW_NOTES, PERMISSIONS::LOCK_NOTES])): ?>
