@@ -457,6 +457,7 @@ $route->addRoute('/emploi/delete', [$emploiController, 'delete']);
 $route->addRoute('/emploi/resetClasseSchedule', [$emploiController, 'resetClasseSchedule']);
 $route->addRoute('/emploi/getClassScheduleMatrix', [$emploiController, 'getClassScheduleMatrix']);
 $route->addRoute('/emploi/apiSlots', [$emploiController, 'apiSlots']);
+$route->addRoute('/emploi/imprimerPdf', [$emploiController, 'imprimerPdf']);
 
 
 

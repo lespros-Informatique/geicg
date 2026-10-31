@@ -476,5 +476,70 @@ class EmploiController extends BaseController
             'isTeacherOnly' => $isTeacherOnly
         ]);
     }
+
+    /**
+     * Impression du Répertoire des Emplois du Temps via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+
+        if ($isTeacherOnly) {
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $anneeCode, $niveauCode, $classeCode);
+        } else {
+            $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+                $stmt->execute([$anneeCode]);
+                $lbl = $stmt->fetchColumn();
+                if ($lbl) $anneeLibelle = $lbl;
+            } catch (Exception $e) {}
+        }
+
+        $editeurNom = Auth::fullName();
+        if (empty($editeurNom)) {
+            $editeurNom = $isTeacherOnly ? 'Enseignant' : 'Direction des Études';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'classes' => $classesWithEmploi,
+            'isTeacherOnly' => $isTeacherOnly,
+            'canManage' => $canManage
+        ];
+
+        $html = PdfService::renderTemplate('repertoire_emplois_temps.php', $data);
+        $filename = ($isTeacherOnly ? 'Mon_Emploi_Temps_' : 'Repertoire_Emplois_Temps_') . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => ($isTeacherOnly ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps') . ' - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 10
+        ]);
+    }
 }
 

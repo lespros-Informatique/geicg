@@ -45,8 +45,28 @@
     } else {
       $('#filter-classe').select2({ width: '100%' });
     }
+    updatePrintLink();
     table.ajax.reload();
   });
+
+  function updatePrintLink() {
+    var params = {};
+    var annee = $('#filter-annee').val();
+    var niveau = $('#filter-niveau').val();
+    var classe = $('#filter-classe').val();
+    if (annee) params.annee_code = annee;
+    if (niveau) params.niveau_code = niveau;
+    if (classe) params.classe_code = classe;
+
+    var qs = $.param(params);
+    var url = window.RACINE + 'emploi/imprimerPdf' + (qs ? ('?' + qs) : '');
+    $('#btn-print-emplois').attr('href', url);
+
+    var anneeText = $('#filter-annee option:selected').text().trim() || 'Active';
+    var niveauText = $('#filter-niveau option:selected').text().trim() || 'Tous';
+    var classeText = $('#filter-classe option:selected').text().trim() || 'Toutes';
+    $('#print-filter-summary-text').html('Année : ' + anneeText + ' &bull; Niveau : ' + (niveau ? niveauText : 'Tous') + ' &bull; Classe : ' + (classe ? classeText : 'Toutes'));
+  }
 
   $('#filter-classe, #filter-annee').on('change', function() {
     var cls = $('#filter-classe').val();
@@ -55,8 +75,11 @@
     } else {
       $('#btn-add-emploi').attr('href', window.RACINE + 'emploi/formulaire');
     }
+    updatePrintLink();
     table.ajax.reload();
   });
+
+  updatePrintLink();
 
   var table = $('#table-emplois_temps').DataTable({
     ajax: {
