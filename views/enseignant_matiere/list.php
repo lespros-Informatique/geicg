@@ -162,6 +162,6 @@ $enseignants = $enseignants ?? (new ModelEnseignant())->getActifs();
 ]) ?>
 </script>
 <?php
-ViewContext::setScripts(['public/assets/js/modules/enseignant_matiere_list.js']);
+ViewContext::setScripts(['public/assets/js/modules/emplois_temps.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

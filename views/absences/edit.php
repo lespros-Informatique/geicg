@@ -118,6 +118,6 @@ $selectedEtudiantCode = $item['etudiant_code'] ?? '';
 ]) ?>
 </script>
 <?php
-ViewContext::setScripts(['public/assets/js/modules/absences_edit.js']);
+ViewContext::setScripts(['public/assets/js/modules/emplois_temps.js']);
 require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

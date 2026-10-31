@@ -1,5 +1,5 @@
 /**
- * Module JS Unifié : Emplois du Temps (Listing & Matrice Interactive, Édition & Détection de Conflits)
+ * Module JS Unifié : Emplois du Temps, Absences & Affectations Enseignant-Matière
  * GEICG - Application Web
  */
 (function(window, document, $) {
@@ -798,9 +798,483 @@
 
   }
 
+  
+  // =========================================================================
+  // 3. VUE : LISTE DES ABSENCES (views/absences/list.php)
+  // =========================================================================
+  function initAbsencesListModule() {
+    if (!$('#table-absences, #absences-list-config').length) return;
+
+  var cfg = {};
+  try {
+    var cfgEl = document.getElementById('absences-list-config');
+    if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+  } catch (e) {}
+  var csrfToken = cfg.csrfToken || '';
+
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
+  }
+
+  // Filtrage en cascade Niveau -> Classe
+  $('#filter-niveau').on('change', function() {
+    var niveauCode = $(this).val();
+    $('#filter-classe option').each(function() {
+      var optNiveau = $(this).data('niveau');
+      if (!niveauCode || !optNiveau || optNiveau === niveauCode || $(this).val() === '') {
+        $(this).prop('disabled', false);
+      } else {
+        $(this).prop('disabled', true);
+      }
+    });
+    if ($('#filter-classe option:selected').prop('disabled')) {
+      $('#filter-classe').val('').trigger('change.select2');
+    } else {
+      $('#filter-classe').select2({ width: '100%' });
+    }
+    table.ajax.reload();
+  });
+
+  $('#filter-classe, #filter-annee').on('change', function() {
+    table.ajax.reload();
+  });
+
+  var table = $('#table-absences').DataTable({
+    ajax: {
+      url: window.RACINE + 'absence/apiList',
+      type: 'GET',
+      data: function(d) {
+        d.annee_code = $('#filter-annee').val();
+        d.niveau_code = $('#filter-niveau').val();
+        d.classe_code = $('#filter-classe').val();
+      }
+    },
+    processing: true,
+    autoWidth: false,
+    columns: [
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
+      { data: 'nom_etudiant', defaultContent: '', render: function(d, t, r) {
+        var name = (d && d.trim()) ? d : (r.etudiant_code || r.inscription_code || '-');
+        var mat = r.matricule_etudiant ? ' <small style="color:#64748B;">(' + r.matricule_etudiant + ')</small>' : '';
+        return '<strong>' + name + '</strong>' + mat;
+      }},
+      { data: 'libelle_matiere', defaultContent: '', render: function(d, t, r) { return d || r.matiere_code || '-'; } },
+      { data: 'date_absence', defaultContent: '-', width: '110px', render: function(d) {
+        return d ? '<strong>' + new Date(d).toLocaleDateString('fr-FR') + '</strong>' : '-';
+      } },
+      { data: 'duree_heures', defaultContent: '-', width: '80px', render: function(d) {
+        return '<strong style="color:#0F172A;">' + (d || '0') + ' h</strong>';
+      } },
+      { data: 'justifiee', width: '90px', className: 'text-center', render: function(d, type, row) {
+        var isJustifiee = (d === 'oui');
+        var checkedAttr = isJustifiee ? 'checked' : '';
+        return '<div style="display:flex; justify-content:center; align-items:center;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isJustifiee ? 'Justifiée - Cliquez pour marquer non justifiée' : 'Non justifiée - Cliquez pour justifier') + '">' +
+               '<input type="checkbox" class="toggle-statut-absence" data-id="' + row.id_absence + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isJustifiee ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isJustifiee ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+               '</span>' +
+               '</label>' +
+               '</div>';
+      } },
+      { data: null, width: '160px', orderable: false, render: function(d) {
+        return '<a href="' + window.RACINE + 'absence/edition/' + (d.editId || d.id_absence) + '" class="btn btn-sm btn-secondary" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>'
+             + '<a href="' + window.RACINE + 'absence/details/' + (d.editId || d.id_absence) + '" class="btn btn-sm btn-info" style="font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      }, className: 'text-end' }
+    ],
+    language: { url: window.RACINE + 'json/datatables-i18n-fr-FR.json' },
+    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $(document).on('change', '.toggle-statut-absence', function() {
+    var id = $(this).data('id');
+    var isChecked = $(this).is(':checked');
+    var $input = $(this);
+
+    $.ajax({
+      url: window.RACINE + 'absence/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        statut: isChecked ? 'oui' : 'non',
+        csrf_token: csrfToken
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          $input.prop('checked', !isChecked);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        $input.prop('checked', !isChecked);
+      }
+    });
+  });
+
+  }
+
+  // =========================================================================
+  // 4. VUE : ÉDITION UNITAIRE D'UNE ABSENCE (views/absences/edit.php)
+  // =========================================================================
+  function initAbsencesEditModule() {
+    if (!$('#sel_classe_ab, #absences-edit-config').length) return;
+
+  if (window.lucide) lucide.createIcons();
+
+  var cfg = {};
+  try {
+    var cfgEl = document.getElementById('absences-edit-config');
+    if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+  } catch (e) {}
+
+  var studentsByClass = cfg.studentsByClass || {};
+  var selectedEtudCode = cfg.selectedEtudiantCode || '';
+
+  if ($.fn.select2) {
+    $('#sel_classe_ab, #sel_mat_ab').select2({ width: '100%' });
+  }
+
+  function loadStudentsForClasse(classeCode, keepSelected) {
+    var $el = $('#sel_etud_ab');
+    $el.empty();
+    
+    if (!classeCode || !studentsByClass[classeCode]) {
+      $el.append('<option value="">-- Veuillez d\'abord choisir une classe --</option>');
+      $el.prop('disabled', true);
+    } else {
+      $el.append('<option value="">-- Choisir un élève de la classe --</option>');
+      var list = studentsByClass[classeCode];
+      $.each(list, function(i, st) {
+        var isSelected = (keepSelected && st.code_etudiant === selectedEtudCode) ? 'selected' : '';
+        $el.append('<option value="' + st.code_etudiant + '" ' + isSelected + '>' + st.nom_affiche + '</option>');
+      });
+      $el.prop('disabled', false);
+    }
+    
+    if ($.fn.select2) {
+      $el.select2({ placeholder: "-- Choisir un élève --", width: '100%' });
+    }
+  }
+
+  $('#sel_classe_ab').on('change', function() {
+    loadStudentsForClasse($(this).val(), false);
+  });
+
+  var initialClasse = $('#sel_classe_ab').val();
+  if (initialClasse) {
+    loadStudentsForClasse(initialClasse, true);
+  } else {
+    loadStudentsForClasse('', false);
+  }
+
+  }
+
+  // =========================================================================
+  // 5. VUE : SAISIE DES ABSENCES PAR CLASSE (views/absences/saisie_classe.php)
+  // =========================================================================
+  function initAbsencesSaisieClasseModule() {
+    if (!$('#form-save-batch-absences, .check-absent').length) return;
+
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('.select2').select2({ width: '100%' });
+  }
+
+  $(document).on('change', '.check-absent', function() {
+    var isAbsent = $(this).is(':checked');
+    var $row = $(this).closest('tr');
+    var $badge = $row.find('.badge-status');
+    var $justSelect = $row.find('.select-justifiee');
+    var $motifInput = $row.find('.input-motif');
+
+    if (isAbsent) {
+      $badge.text('ABSENT').css({ 'background': '#FEE2E2', 'color': '#991B1B' });
+      $justSelect.prop('disabled', false);
+      $motifInput.prop('disabled', false);
+    } else {
+      $badge.text('PRÉSENT').css({ 'background': '#DCFCE7', 'color': '#166534' });
+      $justSelect.prop('disabled', true);
+      $motifInput.prop('disabled', true);
+    }
+  });
+
+  $('#btn-all-present').on('click', function() {
+    $('.check-absent').prop('checked', false).trigger('change');
+  });
+
+  $('#form-save-batch-absences').on('submit', function(e) {
+    e.preventDefault();
+    var $btn = $(this).find('button[type="submit"]');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" class="spin"></i> Enregistrement en cours...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: window.RACINE + 'absence/saveBatch',
+      type: 'POST',
+      data: $(this).serialize(),
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Registre des absences enregistré avec succès !');
+          setTimeout(function() { window.location.href = window.RACINE + 'absence/list'; }, 1000);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          $btn.prop('disabled', false).html('<i data-lucide="check-circle-2"></i> Enregistrer le Registre des Absences');
+          if (window.lucide) lucide.createIcons();
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur de connexion au serveur');
+        $btn.prop('disabled', false).html('<i data-lucide="check-circle-2"></i> Enregistrer le Registre des Absences');
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+  });
+
+  }
+
+  // =========================================================================
+  // 6. VUE : LISTE DES AFFECTATIONS ENSEIGNANT-MATIÈRE (views/enseignant_matiere/list.php)
+  // =========================================================================
+  function initEnseignantMatiereListModule() {
+    if (!$('#table-enseignant_matiere, #enseignant-matiere-list-config').length) return;
+
+  var cfg = {};
+  try {
+    var cfgEl = document.getElementById('enseignant-matiere-list-config');
+    if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+  } catch (e) {}
+  var csrfToken = cfg.csrfToken || '';
+
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
+  }
+
+  // Filtrage en cascade Niveau -> Classe
+  $('#filter-niveau').on('change', function() {
+    var niveauCode = $(this).val();
+    $('#filter-classe option').each(function() {
+      var optNiveau = $(this).data('niveau');
+      if (!niveauCode || !optNiveau || optNiveau === niveauCode || $(this).val() === '') {
+        $(this).prop('disabled', false);
+      } else {
+        $(this).prop('disabled', true);
+      }
+    });
+    if ($('#filter-classe option:selected').prop('disabled')) {
+      $('#filter-classe').val('').trigger('change.select2');
+    } else {
+      $('#filter-classe').select2({ width: '100%' });
+    }
+    table.ajax.reload();
+  });
+
+  $('#filter-classe, #filter-annee').on('change', function() {
+    table.ajax.reload();
+  });
+
+  var table = $('#table-enseignant_matiere').DataTable({
+    ajax: {
+      url: window.RACINE + 'enseignant_matiere/apiList',
+      type: 'GET',
+      data: function(d) {
+        d.annee_code = $('#filter-annee').val();
+        d.niveau_code = $('#filter-niveau').val();
+        d.classe_code = $('#filter-classe').val();
+      }
+    },
+    processing: true,
+    autoWidth: false,
+    columns: [
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
+      { data: 'enseignant_nom', render: function(d, type, row) {
+        if (type !== 'display') return d || row.enseignant_code || '';
+        var nom = (d && d.trim().length > 0) ? d : row.enseignant_code;
+        return '<strong style="color:#0F172A;">' + (nom || '-') + '</strong>';
+      }},
+      { data: 'libelle_matiere', render: function(d, type, row) {
+        if (type !== 'display') return d || row.matiere_code || '';
+        return '<span style="color:#1E3A5F; font-weight:600;">' + (d || row.matiere_code || '-') + '</span>';
+      }},
+      { data: 'libelle_classe', render: function(d, type, row) {
+        if (type !== 'display') return d || row.classe_code || '';
+        return '<span style="color:#334155; font-weight:500;">' + (d || row.classe_code || '<span style="color:#94A3B8; font-style:italic;">Non assignée</span>') + '</span>';
+      }},
+      { data: 'coefficient', width: '90px', className: 'text-center', render: function(d, type) {
+        if (type !== 'display') return d || 1;
+        return '<span style="display:inline-block; padding: 3px 10px; border-radius: 6px; font-size: 13px; font-weight: 800; background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;">' + (d || '1.0') + '</span>';
+      }},
+      { data: 'statut_enseignant_matiere', width: '90px', className: 'text-center', render: function(d, type, row) {
+        var isActif = (d === 'actif');
+        var checkedAttr = isActif ? 'checked' : '';
+        return '<div style="display:flex; justify-content:center; align-items:center;">' +
+               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+               '<input type="checkbox" class="toggle-statut-em" data-id="' + row.id_enseignant_matiere + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+               '</span>' +
+               '</label>' +
+               '</div>';
+      }},
+      { data: null, width: '160px', orderable: false, render: function(d) {
+        return '<button type="button" class="btn btn-sm btn-secondary btn-edit-em" data-id="' + (d.id_enseignant_matiere) + '" data-enseignant="' + (d.enseignant_code || '') + '" data-matiere="' + (d.matiere_code || '') + '" data-classe="' + (d.classe_code || '') + '" data-coef="' + (d.coefficient || '1.0') + '" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>'
+             + '<a href="' + window.RACINE + 'enseignant_matiere/details/' + (d.editId || d.id_enseignant_matiere) + '" class="btn btn-sm btn-info" style="font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+      }, className: 'text-end' }
+    ],
+    language: { url: window.RACINE + 'json/datatables-i18n-fr-FR.json' },
+    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+  });
+
+  $(document).on('change', '.toggle-statut-em', function() {
+    var id = $(this).data('id');
+    var isChecked = $(this).is(':checked');
+    var $input = $(this);
+
+    $.ajax({
+      url: window.RACINE + 'enseignant_matiere/changer',
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: {
+        id: id,
+        csrf_token: csrfToken
+      },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+          table.ajax.reload(null, false);
+        } else {
+          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+          $input.prop('checked', !isChecked);
+        }
+      },
+      error: function() {
+        if (window.toastr) toastr.error('Erreur réseau');
+        $input.prop('checked', !isChecked);
+      }
+    });
+  });
+
+  // GESTION MODALE AJOUT / ÉDITION AFFECTATION ENSEIGNANT-MATIÈRE
+  $(document).on('click', '.btn-add-em', function(e) {
+    e.preventDefault();
+    $('#form-em')[0].reset();
+    $('#em_id').val('');
+    $('#em_coef').val('1.0');
+    $('#modal-em-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Affectation Matière / Enseignant');
+    $('#modal-em').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { $('#em_enseignant').focus(); }, 100);
+  });
+
+  $(document).on('click', '.btn-edit-em', function(e) {
+    e.preventDefault();
+    $('#form-em')[0].reset();
+    var id = $(this).data('id');
+    var ens = $(this).data('enseignant');
+    var mat = $(this).data('matiere');
+    var cls = $(this).data('classe');
+    var coef = $(this).data('coef');
+
+    $('#em_id').val(id);
+    $('#em_enseignant').val(ens);
+    $('#em_matiere').val(mat);
+    $('#em_classe').val(cls);
+    $('#em_coef').val(coef || '1.0');
+
+    $('#modal-em-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Affectation');
+    $('#modal-em').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+  });
+
+  $('.btn-close-modal-em').on('click', function() {
+    $('#modal-em').hide();
+  });
+
+  $(window).on('click', function(e) {
+    if ($(e.target).is('#modal-em')) {
+      $('#modal-em').hide();
+    }
+  });
+
+  $('#form-em').on('submit', function(e) {
+    e.preventDefault();
+    var id = $('#em_id').val();
+    var url = window.RACINE + (id ? 'enseignant_matiere/edit' : 'enseignant_matiere/add');
+    var $btn = $('#btn-submit-em');
+    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;" class="lucide-spin"></i> Enregistrement...');
+    if (window.lucide) lucide.createIcons();
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      dataType: 'json',
+      success: function(res) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+        if (res.status === 1 || res.success) {
+          if (typeof showToast === 'function') showToast(res.message || 'Affectation enregistrée avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Affectation enregistrée avec succès');
+          $('#modal-em').hide();
+          table.ajax.reload(null, false);
+        } else {
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de l\'enregistrement', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html('<i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer');
+        if (window.lucide) lucide.createIcons();
+        var msg = 'Erreur lors de l\'enregistrement';
+        try {
+          var json = JSON.parse(xhr.responseText);
+          if (json.message) msg = json.message;
+        } catch(e) {}
+        if (typeof showToast === 'function') showToast(msg, 'error');
+        else if (window.toastr) toastr.error(msg);
+      }
+    });
+  });
+
+  }
+
+  // =========================================================================
+  // 7. VUE : ÉDITION UNITAIRE AFFECTATION ENSEIGNANT-MATIÈRE (views/enseignant_matiere/edit.php)
+  // =========================================================================
+  function initEnseignantMatiereEditModule() {
+    if (!$('#sel_ens_em, #sel_mat_em, #sel_cls_em').length) return;
+
+  if (window.lucide) lucide.createIcons();
+  if ($.fn.select2) {
+    $('#sel_ens_em').select2({ placeholder: "-- Rechercher un enseignant --", allowClear: true, width: '100%' });
+    $('#sel_mat_em').select2({ placeholder: "-- Rechercher une matière --", allowClear: true, width: '100%' });
+    $('#sel_cls_em').select2({ placeholder: "-- Rechercher une classe --", allowClear: true, width: '100%' });
+  }
+
+  }
+
   $(document).ready(function() {
     initEmploisTempsListModule();
     initEmploisTempsEditModule();
+    initAbsencesListModule();
+    initAbsencesEditModule();
+    initAbsencesSaisieClasseModule();
+    initEnseignantMatiereListModule();
+    initEnseignantMatiereEditModule();
     if (window.lucide) lucide.createIcons();
   });
 
