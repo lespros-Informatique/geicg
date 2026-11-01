@@ -468,12 +468,23 @@ class ModelNote extends BaseModel
         if (empty($classeCode)) return [];
         $db = $this->getCon();
 
+        $dedup = function(array $list): array {
+            $unique = [];
+            foreach ($list as $item) {
+                $c = $item['code_matiere'] ?? '';
+                if (!empty($c) && !isset($unique[$c])) {
+                    $unique[$c] = $item;
+                }
+            }
+            return array_values($unique);
+        };
+
         // 1. Si une composition est spécifiée
         if (!empty($compositionCode)) {
             $stmtCompMat = $db->prepare("
                 SELECT DISTINCT m.code_matiere, m.libelle_matiere, 
-                       COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient,
-                       TRIM(CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, ''))) AS prof_nom,
+                       COALESCE(MAX(em.coefficient), MAX(comp.coefficient), 1.00) AS coefficient,
+                       TRIM(GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ')) AS prof_nom,
                        1 AS is_assigned
                 FROM " . TABLES::COMPOSITION_MATIERES . " cm
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cm.composition_code
@@ -484,20 +495,20 @@ class ModelNote extends BaseModel
                 LEFT JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON (edt.classe_code = cl.code_classe AND edt.matiere_code = m.code_matiere)
                 LEFT JOIN " . TABLES::USERS . " u ON (u.code_user = em.enseignant_code OR u.code_user = edt.enseignant_code)
                 WHERE cm.composition_code = ? AND cl.code_classe = ?
-                GROUP BY m.code_matiere, m.libelle_matiere, coefficient, prof_nom
+                GROUP BY m.code_matiere, m.libelle_matiere
                 ORDER BY m.libelle_matiere ASC
             ");
             $stmtCompMat->execute([$compositionCode, $classeCode]);
             $compItems = $stmtCompMat->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($compItems)) {
-                return $compItems;
+                return $dedup($compItems);
             }
         }
 
         // 2. Matières selon l'emploi du temps
         $stmtEdt = $db->prepare("
             SELECT DISTINCT m.code_matiere, m.libelle_matiere,
-                   COALESCE(em.coefficient, 1.00) AS coefficient,
+                   COALESCE(MAX(em.coefficient), 1.00) AS coefficient,
                    TRIM(GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ')) AS prof_nom,
                    1 AS is_assigned
             FROM " . TABLES::EMPLOIS_TEMPS . " edt
@@ -507,19 +518,19 @@ class ModelNote extends BaseModel
             WHERE edt.classe_code = ? 
               AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
               AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
-            GROUP BY m.code_matiere, m.libelle_matiere, em.coefficient
+            GROUP BY m.code_matiere, m.libelle_matiere
             ORDER BY m.libelle_matiere ASC
         ");
-        $stmtEdt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
+            $stmtEdt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
         $edtItems = $stmtEdt->fetchAll(PDO::FETCH_ASSOC);
         if (!empty($edtItems)) {
-            return $edtItems;
+            return $dedup($edtItems);
         }
 
         // 3. Matières affectées à la classe via enseignant_matiere
         $stmtEm = $db->prepare("
             SELECT DISTINCT m.code_matiere, m.libelle_matiere,
-                   COALESCE(em.coefficient, 1.00) AS coefficient,
+                   COALESCE(MAX(em.coefficient), 1.00) AS coefficient,
                    TRIM(GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ')) AS prof_nom,
                    1 AS is_assigned
             FROM " . TABLES::ENSEIGNANT_MATIERE . " em
@@ -528,19 +539,19 @@ class ModelNote extends BaseModel
             WHERE em.classe_code = ?
               AND (em.annee_code = ? OR ? IS NULL OR ? = '')
               AND (em.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em.statut_enseignant_matiere IS NULL)
-            GROUP BY m.code_matiere, m.libelle_matiere, em.coefficient
+            GROUP BY m.code_matiere, m.libelle_matiere
             ORDER BY m.libelle_matiere ASC
         ");
         $stmtEm->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
         $emItems = $stmtEm->fetchAll(PDO::FETCH_ASSOC);
         if (!empty($emItems)) {
-            return $emItems;
+            return $dedup($emItems);
         }
 
         // 4. Matières liées au Niveau & Filière (composition_niveau_filiere)
         $stmtCnf = $db->prepare("
             SELECT DISTINCT m.code_matiere, m.libelle_matiere,
-                   COALESCE(comp.coefficient, 1.00) AS coefficient,
+                   COALESCE(MAX(comp.coefficient), 1.00) AS coefficient,
                    '' AS prof_nom,
                    1 AS is_assigned
             FROM " . TABLES::COMPOSITION_MATIERES . " cm
@@ -550,17 +561,17 @@ class ModelNote extends BaseModel
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cm.composition_code
             WHERE cl.code_classe = ?
               AND (comp.annee_code = ? OR ? IS NULL OR ? = '')
-            GROUP BY m.code_matiere, m.libelle_matiere, comp.coefficient
+            GROUP BY m.code_matiere, m.libelle_matiere
             ORDER BY m.libelle_matiere ASC
         ");
         $stmtCnf->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
         $cnfItems = $stmtCnf->fetchAll(PDO::FETCH_ASSOC);
         if (!empty($cnfItems)) {
-            return $cnfItems;
+            return $dedup($cnfItems);
         }
 
         // 5. Repli : Catalogue des matières actives
-        return $this->getActiveMatieresCatalogue();
+        return $dedup($this->getActiveMatieresCatalogue());
     }
 
     public function getActiveMatieresCatalogue(): array
