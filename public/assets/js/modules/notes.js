@@ -92,7 +92,7 @@ $(document).ready(function() {
     columns: [
       { 
         data: null, 
-        width: '50px', 
+        width: '45px', 
         render: function(d, type, row, meta) {
           return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
         }
@@ -110,7 +110,15 @@ $(document).ready(function() {
         data: 'libelle_composition', 
         defaultContent: '',
         render: function(d, t, r) {
-          var typ = (r && r.type_composition) ? r.type_composition : 'EXAMEN';
+          return '<strong style="color:#0F172A; font-size:13px;">' + (d || r.code_composition || '-') + '</strong>';
+        }
+      },
+      { 
+        data: 'type_composition', 
+        defaultContent: 'EXAMEN',
+        className: 'text-center',
+        render: function(d) {
+          var typ = d || 'EXAMEN';
           var badgeStyle = 'background:#EFF6FF; color:#1D4ED8;';
           var badgeText = 'EXAMEN';
           if (typ === 'DEVOIR') {
@@ -123,17 +131,14 @@ $(document).ready(function() {
             badgeStyle = 'background:#F1F5F9; color:#475569;';
             badgeText = typ;
           }
-          var typeBadge = '<span style="font-size:10px; font-weight:800; ' + badgeStyle + ' padding:2px 7px; border-radius:4px; margin-right:6px; display:inline-block;">' + badgeText + '</span>';
-          return '<div>' + typeBadge + '<strong style="color:#0F172A; font-size:13px;">' + (d || r.code_composition || '-') + '</strong></div>';
+          return '<span class="badge" style="font-size:11px; font-weight:800; ' + badgeStyle + ' padding:4px 9px; border-radius:6px; display:inline-block;">' + badgeText + '</span>';
         }
       },
       { 
         data: 'libelle_matiere', 
         defaultContent: '-', 
-        render: function(d, t, r) {
-          var mat = d || '-';
-          var coef = r.coefficient ? ' <span class="badge" style="background:#F1F5F9; color:#475569; font-size:10px; padding:2px 6px;">Coef ' + parseFloat(r.coefficient).toFixed(2) + '</span>' : '';
-          return '<span style="font-size:13px; color:#334155; font-weight:600;">' + mat + '</span>' + coef;
+        render: function(d) {
+          return '<span style="font-size:13px; color:#334155; font-weight:700;">' + (d || '-') + '</span>';
         } 
       },
       { 
@@ -141,6 +146,16 @@ $(document).ready(function() {
         defaultContent: '-',
         render: function(d) {
           return '<span style="font-size:13px; color:#0284C7; font-weight:700;">' + (d || '-') + '</span>';
+        }
+      },
+      { 
+        data: 'coefficient', 
+        defaultContent: '1.00',
+        className: 'text-center',
+        width: '70px',
+        render: function(d) {
+          var val = d ? parseFloat(d).toFixed(2) : '1.00';
+          return '<span class="badge" style="background:#F1F5F9; color:#334155; font-size:12px; font-weight:700; padding:4px 8px; border-radius:6px;">' + val + '</span>';
         }
       },
       { 
@@ -177,7 +192,7 @@ $(document).ready(function() {
       },
       { 
         data: null, 
-        width: '180px', 
+        width: '90px', 
         orderable: false, 
         className: 'text-end',
         render: function(d) {
@@ -189,11 +204,11 @@ $(document).ready(function() {
                         + '&type_evaluation_code=' + encodeURIComponent(d.type_composition || '');
           
           return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">' +
-                   '<button type="button" class="btn btn-sm btn-details-session" data-classe="' + (d.code_classe || '') + '" data-compo="' + (d.code_composition || '') + '" data-matiere="' + (d.matiere_code || '') + '" style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Consulter les notes de la classe">' +
-                     '<i data-lucide="eye" style="width:14px; height:14px;"></i> Détails' +
+                   '<button type="button" class="btn btn-sm btn-details-session" data-classe="' + (d.code_classe || '') + '" data-compo="' + (d.code_composition || '') + '" data-matiere="' + (d.matiere_code || '') + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; cursor:pointer;" title="Consulter les détails">' +
+                     '<i data-lucide="eye" style="width:16px; height:16px;"></i>' +
                    '</button>' +
-                   '<a href="' + saisieUrl + '" class="btn btn-sm" style="background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Saisir ou modifier les notes">' +
-                     '<i data-lucide="edit-3" style="width:14px; height:14px;"></i> Noter' +
+                   '<a href="' + saisieUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Modifier les notes">' +
+                     '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
                    '</a>' +
                  '</div>';
         }

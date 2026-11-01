@@ -178,14 +178,16 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
           <table id="table-notes" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-                <th style="padding: 12px 14px; width: 50px;">#</th>
+                <th style="padding: 12px 14px; width: 45px;">#</th>
                 <th style="padding: 12px 14px;">Classe</th>
                 <th style="padding: 12px 14px;">Évaluation / Compo</th>
+                <th style="padding: 12px 14px; text-align: center;">Type Évaluation</th>
                 <th style="padding: 12px 14px;">Matière</th>
                 <th style="padding: 12px 14px;">Semestre</th>
+                <th style="padding: 12px 14px; text-align: center; width: 70px;">Coef</th>
                 <th style="padding: 12px 14px; text-align: center;">Progression Saisie</th>
                 <th style="padding: 12px 14px; text-align: center;">Moyenne Classe</th>
-                <th style="padding: 12px 14px; text-align: right;">Actions</th>
+                <th style="padding: 12px 14px; text-align: right; width: 90px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
