@@ -286,6 +286,25 @@ class ModelComposition extends BaseModel
         }
     }
 
+    public function updateStatus(int $id, string $status, ?string $statusCol = null): bool
+    {
+        try {
+            $allowed = ['programme', 'termine', 'annule', 'cloture', 'actif'];
+            if (!in_array($status, $allowed, true)) {
+                return false;
+            }
+            if ($status === 'cloture') {
+                $status = 'termine';
+            } elseif ($status === 'actif') {
+                $status = 'programme';
+            }
+            return parent::updateStatus($id, $status, $statusCol);
+        } catch (Exception $e) {
+            error_log("Update composition status error: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function getEdtActiveTargets(?string $anneeCode = null): array
     {
         try {

@@ -116,8 +116,8 @@ $matieres = $matieres ?? [];
                 <th style="padding: 12px 14px; text-align: center;">Coef</th>
                 <th style="padding: 12px 14px;">Date Début</th>
                 <th style="padding: 12px 14px;">Date Fin</th>
-                <th style="padding: 12px 14px; text-align: center; width: 90px;">Statut</th>
-                <th style="padding: 12px 14px; text-align: right; width: 120px;">Actions</th>
+                <th style="padding: 12px 14px; text-align: center; width: 100px;">Statut</th>
+                <th style="padding: 12px 14px; text-align: right; width: 180px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>

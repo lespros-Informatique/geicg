@@ -141,26 +141,24 @@ $(document).ready(function() {
       { 
         data: 'statut_composition', 
         defaultContent: 'programme',
-        width: '90px', 
+        width: '100px', 
         className: 'text-center', 
-        render: function(d, type, row) {
-          var isActif = (d === 'programme' || d === 'actif');
-          var checkedAttr = isActif ? 'checked' : '';
-          return '<div style="display:flex; justify-content:center; align-items:center;">' +
-                 '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Programmé - Cliquez pour terminer' : 'Terminé - Cliquez pour programmer') + '">' +
-                 '<input type="checkbox" class="toggle-statut-composition" data-id="' + (row ? row.id_composition : '') + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-                 '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-                 '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-                 '</span>' +
-                 '</label>' +
-                 '</div>';
+        render: function(d) {
+          var st = (d || 'programme').toString().toLowerCase();
+          if (st === 'termine' || st === 'cloture') {
+            return '<span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; font-size:11.5px; font-weight:800; padding:4px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:12px;height:12px;"></i> Clôturé</span>';
+          } else if (st === 'annule') {
+            return '<span class="badge" style="background:#FEE2E2; color:#B91C1C; border:1px solid #FECACA; font-size:11.5px; font-weight:800; padding:4px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> Annulé</span>';
+          } else {
+            return '<span class="badge" style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; font-size:11.5px; font-weight:800; padding:4px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> Programmé</span>';
+          }
         }
       },
       { 
         data: null, 
         defaultContent: '',
         orderable: false, 
-        width: '120px',
+        width: '180px',
         className: 'text-end',
         render: function(d) {
           if (!d) return '';
@@ -170,18 +168,23 @@ $(document).ready(function() {
           
           var compoStatut = (d.statut_composition || '').toString().toLowerCase();
           var isLocked = (compoStatut === 'cloture' || compoStatut === 'termine' || compoStatut === 'annule');
-          var lockTitle = (compoStatut === 'annule') 
+          var isTermine = (compoStatut === 'cloture' || compoStatut === 'termine');
+          var isAnnule = (compoStatut === 'annule');
+          var compoId = d.id || d.id_composition || '';
+          var compoNom = escapeHtml(d.libelle_composition || d.code_composition || 'cette épreuve');
+
+          var lockTitle = isAnnule 
             ? 'Épreuve annulée (Saisie des notes désactivée)' 
-            : 'Épreuve clôturée ou terminée (Saisie des notes verrouillée)';
+            : 'Épreuve clôturée (Saisie des notes verrouillée)';
 
           var actionsHtml = '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">';
           
-          // Bouton Détails (œil)
+          // 1. Bouton Détails (œil)
           actionsHtml += '<a href="' + detailsUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; text-decoration:none; cursor:pointer;" title="Voir les détails de l\'épreuve">' +
                            '<i data-lucide="eye" style="width:16px; height:16px;"></i>' +
                          '</a>';
 
-          // Bouton Noter (crayon ou cadenas si verrouillé)
+          // 2. Bouton Noter (crayon ou cadenas si verrouillé)
           if (isLocked) {
             actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="' + lockTitle + '">' +
                              '<i data-lucide="lock" style="width:16px; height:16px;"></i>' +
@@ -192,10 +195,32 @@ $(document).ready(function() {
                            '</a>';
           }
 
-          // Bouton Éditer (crayon d'édition)
+          // 3. Bouton Éditer (crayon d'édition)
           actionsHtml += '<a href="' + editUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Modifier la programmation">' +
                            '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
                          '</a>';
+
+          // 4. Bouton Statut : Clôturer (ou Rouvrir si déjà clôturée)
+          if (isTermine) {
+            actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="programme" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FEF3C7; color:#B45309; border:1px solid #FDE68A; border-radius:6px; cursor:pointer;" title="Épreuve clôturée (Cliquez pour rouvrir)">' +
+                             '<i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i>' +
+                           '</button>';
+          } else {
+            actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="termine" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; border-radius:6px; cursor:pointer;" title="Clôturer cette épreuve">' +
+                             '<i data-lucide="check-circle" style="width:16px; height:16px;"></i>' +
+                           '</button>';
+          }
+
+          // 5. Bouton Statut : Annuler (ou Réactiver si déjà annulée)
+          if (isAnnule) {
+            actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="programme" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FEE2E2; color:#B91C1C; border:1px solid #FECACA; border-radius:6px; cursor:pointer;" title="Épreuve annulée (Cliquez pour réactiver)">' +
+                             '<i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i>' +
+                           '</button>';
+          } else {
+            actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="annule" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FFF1F2; color:#E11D48; border:1px solid #FECDD3; border-radius:6px; cursor:pointer;" title="Annuler cette épreuve">' +
+                             '<i data-lucide="ban" style="width:16px; height:16px;"></i>' +
+                           '</button>';
+          }
 
           actionsHtml += '</div>';
           return actionsHtml;
@@ -227,35 +252,94 @@ $(document).ready(function() {
     }
   });
 
-  // Bascule de statut instantanée via Ajax
-  $(document).on('change', '.toggle-statut-composition', function() {
+  // Gestion des actions de statut (Clôturer / Annuler / Reprogrammer)
+  $(document).on('click', '.btn-statut-action', function(e) {
+    e.preventDefault();
     var id = $(this).data('id');
-    var isChecked = $(this).is(':checked');
-    var $input = $(this);
+    var targetStatut = $(this).data('target');
+    var compoName = $(this).data('name') || 'cette épreuve';
 
-    $.ajax({
-      url: window.RACINE + 'composition/changer',
-      type: 'POST',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      data: {
-        id: id,
-        csrf_token: csrfToken
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
-          table.ajax.reload(null, false);
-        } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
-          $input.prop('checked', !isChecked);
+    if (!id || !targetStatut) return;
+
+    var title = '';
+    var text = '';
+    var confirmText = '';
+    var confirmColor = '#1E3A5F';
+
+    if (targetStatut === 'termine') {
+      title = 'Clôturer l\'épreuve ?';
+      text = 'Voulez-vous clôturer « ' + compoName + ' » ? La saisie des notes sera alors verrouillée.';
+      confirmText = 'Oui, clôturer';
+      confirmColor = '#4338CA';
+    } else if (targetStatut === 'annule') {
+      title = 'Annuler l\'épreuve ?';
+      text = 'Voulez-vous vraiment annuler « ' + compoName + ' » ? L\'épreuve ne sera plus active.';
+      confirmText = 'Oui, annuler';
+      confirmColor = '#DC2626';
+    } else if (targetStatut === 'programme') {
+      title = 'Reprogrammer l\'épreuve ?';
+      text = 'Voulez-vous réactiver / rouvrir « ' + compoName + ' » au statut programmé ?';
+      confirmText = 'Oui, reprogrammer';
+      confirmColor = '#16A34A';
+    }
+
+    var doChange = function() {
+      $.ajax({
+        url: window.RACINE + 'composition/changer',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: {
+          id: id,
+          statut: targetStatut,
+          csrf_token: csrfToken
+        },
+        dataType: 'json',
+        success: function(res) {
+          if (res.status === 1 || res.success) {
+            if (window.toastr) {
+              toastr.success(res.message || 'Statut mis à jour avec succès.');
+            } else if (window.Swal) {
+              Swal.fire({ icon: 'success', title: 'Succès', text: res.message || 'Statut mis à jour.', timer: 1500, showConfirmButton: false });
+            }
+            table.ajax.reload(null, false);
+          } else {
+            if (window.Swal) {
+              Swal.fire({ icon: 'error', title: 'Erreur', text: res.message || 'Impossible de modifier le statut.' });
+            } else if (window.toastr) {
+              toastr.error(res.message || 'Erreur lors de la modification.');
+            }
+          }
+        },
+        error: function() {
+          if (window.Swal) {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: 'Erreur serveur lors de la mise à jour.' });
+          } else if (window.toastr) {
+            toastr.error('Erreur serveur.');
+          }
         }
-      },
-      error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
-        $input.prop('checked', !isChecked);
+      });
+    };
+
+    if (window.Swal) {
+      Swal.fire({
+        title: title,
+        text: text,
+        icon: targetStatut === 'annule' ? 'warning' : 'question',
+        showCancelButton: true,
+        confirmButtonColor: confirmColor,
+        cancelButtonColor: '#64748B',
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Annuler'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          doChange();
+        }
+      });
+    } else {
+      if (confirm(text)) {
+        doChange();
       }
-    });
+    }
   });
 
   }

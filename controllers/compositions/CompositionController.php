@@ -385,14 +385,31 @@ class CompositionController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $id = (int)$this->post('id');
+        $statut = trim($this->post('statut') ?? '');
+
         if ($id && $this->model->getById($id)) {
-            if ($this->model->toggleStatus($id)) {
-                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+            $res = false;
+            if (!empty($statut)) {
+                $res = $this->model->updateStatus($id, $statut);
             } else {
-                $this->error('Erreur lors de la mise à jour du statut');
+                $res = $this->model->toggleStatus($id);
+            }
+
+            if ($res) {
+                $msg = 'Statut mis à jour avec succès !';
+                if ($statut === 'termine' || $statut === 'cloture') {
+                    $msg = 'Épreuve clôturée avec succès !';
+                } elseif ($statut === 'annule') {
+                    $msg = 'Épreuve annulée avec succès !';
+                } elseif ($statut === 'programme') {
+                    $msg = 'Épreuve reprogrammée avec succès !';
+                }
+                $this->success($msg, ['reload' => true]);
+            } else {
+                $this->error('Erreur lors de la mise à jour du statut.');
             }
         } else {
-            $this->error('Composition introuvable');
+            $this->error('Composition introuvable.');
         }
     }
 }
