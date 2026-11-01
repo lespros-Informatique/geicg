@@ -535,12 +535,6 @@ class EmploiController extends BaseController
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
 
-        if ($isTeacherOnly) {
-            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $anneeCode, $niveauCode, $classeCode);
-        } else {
-            $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
-        }
-
         $etablissement = $this->getEtablissementConfig();
         
         $anneeLibelle = $this->getActiveAnneeLibelle();
@@ -557,6 +551,56 @@ class EmploiController extends BaseController
         $editeurNom = Auth::fullName();
         if (empty($editeurNom)) {
             $editeurNom = $isTeacherOnly ? 'Enseignant' : 'Direction des Études';
+        }
+
+        // Cas 1 : Impression de l'Emploi du Temps officiel d'une classe spécifique
+        $isSingleClasse = !empty($classeCode) && $classeCode !== 'ALL';
+        if ($isSingleClasse) {
+            require_once __DIR__ . '/../../models/classes/ModelClasse.php';
+            $modelClasse = new ModelClasse();
+            $classeInfo = $modelClasse->getClasseWithDetails($classeCode);
+            if (!$classeInfo) {
+                $classeInfo = ['code_classe' => $classeCode, 'libelle_classe' => $classeCode];
+            }
+            $nbEtudiants = count($modelClasse->getEtudiantsForClasse($classeCode));
+
+            $filterTeachers = $isTeacherOnly ? $teacherCodes : null;
+            $matrix = $this->model->getClassScheduleMatrix($classeCode, $filterTeachers);
+            $slots = $matrix['slots'] ?? [];
+
+            $anneeAff = !empty($classeInfo['libelle_annee']) ? $classeInfo['libelle_annee'] : $anneeLibelle;
+
+            $data = [
+                'etablissement' => $etablissement,
+                'annee_libelle' => $anneeAff,
+                'editeur_nom' => $editeurNom,
+                'classe' => $classeInfo,
+                'nb_etudiants' => $nbEtudiants,
+                'slots' => $slots,
+                'isTeacherOnly' => $isTeacherOnly,
+                'canManage' => $canManage
+            ];
+
+            $html = PdfService::renderTemplate('emploi_temps_classe.php', $data);
+            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classeInfo['libelle_classe'] ?? $classeCode);
+            $filename = 'Emploi_Temps_' . $cleanName . '_' . date('Ymd_His') . '.pdf';
+            PdfService::generate($html, $filename, [
+                'orientation' => 'L',
+                'format' => 'A4',
+                'title' => 'Emploi du Temps - ' . ($classeInfo['libelle_classe'] ?? $classeCode),
+                'margin_left' => 8,
+                'margin_right' => 8,
+                'margin_top' => 8,
+                'margin_bottom' => 8
+            ]);
+            return;
+        }
+
+        // Cas 2 : Impression du Répertoire Général des Emplois du Temps
+        if ($isTeacherOnly) {
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $anneeCode, $niveauCode, $classeCode);
+        } else {
+            $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
         }
 
         $data = [
