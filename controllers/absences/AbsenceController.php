@@ -245,10 +245,20 @@ class AbsenceController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
 
-        $csrf = $this->post('csrf_token');
+        $csrf = $this->post('csrf_token') ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
         if (!Validator::validateCsrfToken($csrf)) {
-            $this->error('Jeton CSRF invalide ou session expirée. Veuillez recharger la page.');
-            return;
+            Auth::logout();
+            if ($this->isAjax()) {
+                $this->json([
+                    'status' => 0,
+                    'session_expired' => true,
+                    'redirect' => RACINE . 'user/connexion?expired=1',
+                    'message' => 'Session expirée. Veuillez vous reconnecter.'
+                ], 401);
+                return;
+            }
+            header('Location: ' . RACINE . 'user/connexion?expired=1');
+            exit();
         }
 
         $classeCode = $this->post('classe_code');

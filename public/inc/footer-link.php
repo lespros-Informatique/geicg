@@ -22,6 +22,19 @@
                 }
             });
         }
+        $(document).ajaxError(function(event, jqXHR) {
+            if (jqXHR.status === 401 || jqXHR.status === 419) {
+                var res = {};
+                try { res = JSON.parse(jqXHR.responseText || '{}'); } catch(e) {}
+                var targetUrl = res.redirect || (window.RACINE || '/') + 'user/connexion?expired=1';
+                if (window.toastr) {
+                    toastr.warning('Votre session a expiré. Redirection vers la page de connexion...', 'Déconnexion');
+                }
+                setTimeout(function() {
+                    window.location.href = targetUrl;
+                }, 800);
+            }
+        });
     }
 </script>
 

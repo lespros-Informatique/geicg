@@ -203,21 +203,43 @@ abstract class BaseController
         }
 
         if ($checkCsrf && !Validator::validateCsrfToken($_POST['csrf_token'] ?? null)) {
+            Auth::logout();
             if ($this->isAjax()) {
-                $this->json(['status' => 0, 'message' => 'Session ou jeton de sécurité expiré. Veuillez réactualiser la page.'], 419);
+                $this->json([
+                    'status' => 0, 
+                    'session_expired' => true,
+                    'redirect' => RACINE . 'user/connexion?expired=1',
+                    'message' => 'Session expirée. Redirection vers la page de connexion...'
+                ], 401);
             } else {
-                $this->renderError('Jeton de sécurité CSRF expiré ou invalide. Veuillez rafraîchir la page et réessayer.', 419);
+                header('Location: ' . RACINE . 'user/connexion?expired=1');
+                exit();
             }
         }
     }
 
     protected function requireAuth(): void
     {
+        // Déconnexion automatique après 2 heures (7200s) d'inactivité
+        if (Auth::check()) {
+            $lastActivity = (int)Session::get('last_activity_time', 0);
+            if ($lastActivity > 0 && (time() - $lastActivity) > 7200) {
+                Auth::logout();
+            } else {
+                Session::set('last_activity_time', time());
+            }
+        }
+
         if (!Auth::check()) {
             if ($this->isAjax()) {
-                $this->json(['status' => 0, 'message' => 'Authentification requise pour cette opération'], 401);
+                $this->json([
+                    'status' => 0, 
+                    'session_expired' => true,
+                    'redirect' => RACINE . 'user/connexion?expired=1',
+                    'message' => 'Session expirée. Veuillez vous reconnecter.'
+                ], 401);
             } else {
-                header('Location: ' . RACINE . 'user/connexion');
+                header('Location: ' . RACINE . 'user/connexion?expired=1');
                 exit();
             }
         }

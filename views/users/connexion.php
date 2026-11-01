@@ -21,6 +21,12 @@ $loginLogo = $loginLogo ?? '';
       </div>
 
       <div class="auth-body">
+        <?php if (!empty($_GET['expired'])): ?>
+          <div style="background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; padding: 12px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="clock" style="width: 18px; height: 18px; flex-shrink: 0; color: #D97706;"></i>
+            <span>Votre session a expiré après une période d'inactivité. Veuillez vous reconnecter.</span>
+          </div>
+        <?php endif; ?>
         <form class="formConnexion" method="POST">
           <?= Validator::csrfField() ?>
 
