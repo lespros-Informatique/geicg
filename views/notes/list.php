@@ -117,10 +117,19 @@ $canManageCompos = isset($canManageCompos) ? (bool)$canManageCompos : true;
               <i data-lucide="file-text" style="width: 14px; height: 14px; color: #64748B;"></i> Libellé Compo
             </label>
             <select id="filter-compo" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les compos --</option>
+              <option value="" data-statut="">-- Toutes les compos --</option>
               <?php foreach ($compositions as $cp): ?>
-                <option value="<?= htmlspecialchars($cp['code_composition']) ?>" data-type="<?= htmlspecialchars($cp['type_composition'] ?? '') ?>">
-                  <?= htmlspecialchars($cp['libelle_composition']) ?> (<?= htmlspecialchars($cp['type_composition'] ?? 'Évaluation') ?>)
+                <?php 
+                  $cpStatut = strtolower($cp['statut_composition'] ?? '');
+                  $statutLabel = '';
+                  if ($cpStatut === 'annule') {
+                      $statutLabel = ' [Annulée]';
+                  } elseif ($cpStatut === 'cloture' || $cpStatut === 'termine') {
+                      $statutLabel = ' [Clôturée]';
+                  }
+                ?>
+                <option value="<?= htmlspecialchars($cp['code_composition']) ?>" data-type="<?= htmlspecialchars($cp['type_composition'] ?? '') ?>" data-statut="<?= htmlspecialchars($cpStatut) ?>">
+                  <?= htmlspecialchars($cp['libelle_composition']) ?> (<?= htmlspecialchars($cp['type_composition'] ?? 'Évaluation') ?>)<?= $statutLabel ?>
                 </option>
               <?php endforeach; ?>
             </select>

@@ -21,6 +21,7 @@ class ModelNote extends BaseModel
                 comp.code_composition,
                 comp.libelle_composition,
                 comp.type_composition,
+                comp.statut_composition,
                 comp.semestre_code,
                 s.libelle_semestre,
                 s.statut_semestre,

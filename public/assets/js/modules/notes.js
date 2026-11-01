@@ -73,12 +73,23 @@ $(document).ready(function() {
   $('#filter-classe, #filter-annee, #filter-matiere, #filter-semestre, #filter-compo').on('change', function() {
     var cls = $('#filter-classe').val();
     var semStatut = ($('#filter-semestre option:selected').data('statut') || '').toString().toLowerCase();
+    var compoStatut = ($('#filter-compo option:selected').data('statut') || '').toString().toLowerCase();
 
-    if (semStatut === 'cloture') {
+    var isSemestreBlocked = (semStatut === 'cloture');
+    var isCompoBlocked = (compoStatut === 'cloture' || compoStatut === 'termine' || compoStatut === 'annule');
+    var isBlocked = isSemestreBlocked || isCompoBlocked;
+
+    if (isBlocked) {
+      var lockMsg = isSemestreBlocked 
+        ? 'Le semestre sélectionné est clôturé : la saisie des notes est désactivée.' 
+        : (compoStatut === 'annule' 
+            ? 'L\'évaluation sélectionnée est annulée : la saisie des notes est désactivée.' 
+            : 'L\'évaluation sélectionnée est clôturée : la saisie des notes est désactivée.');
+
       $('#btn-saisie-classe')
         .addClass('disabled')
         .attr('href', 'javascript:void(0);')
-        .attr('title', 'Le semestre sélectionné est clôturé : la saisie des notes est désactivée.')
+        .attr('title', lockMsg)
         .css({
           'background': '#CBD5E1',
           'border': '1px solid #CBD5E1',
@@ -87,7 +98,7 @@ $(document).ready(function() {
           'pointer-events': 'none',
           'box-shadow': 'none'
         })
-        .html('<i data-lucide="lock" style="width: 18px; height: 18px;"></i> Saisie Clôturée');
+        .html('<i data-lucide="lock" style="width: 18px; height: 18px;"></i> Saisie Verrouillée');
     } else {
       var targetUrl = cls ? (window.RACINE + 'note/saisieClasse?classe_code=' + encodeURIComponent(cls)) : (window.RACINE + 'note/saisieClasse');
       $('#btn-saisie-classe')
@@ -145,7 +156,15 @@ $(document).ready(function() {
         data: 'libelle_composition', 
         defaultContent: '',
         render: function(d, t, r) {
-          return '<strong style="color:#0F172A; font-size:13px;">' + (d || r.code_composition || '-') + '</strong>';
+          var compoNom = d || (r && r.code_composition) || '-';
+          var cpStatut = (r && r.statut_composition ? String(r.statut_composition).toLowerCase() : '');
+          var statusBadge = '';
+          if (cpStatut === 'annule') {
+            statusBadge = '<span class="badge" style="background:#FEE2E2; color:#B91C1C; font-size:10px; font-weight:800; padding:2px 5px; border-radius:4px; margin-left:6px;" title="Évaluation annulée">Annulée</span>';
+          } else if (cpStatut === 'cloture' || cpStatut === 'termine') {
+            statusBadge = '<span class="badge" style="background:#F1F5F9; color:#475569; font-size:10px; font-weight:800; padding:2px 5px; border-radius:4px; margin-left:6px;" title="Évaluation clôturée / terminée">Clôturée</span>';
+          }
+          return '<div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;"><strong style="color:#0F172A; font-size:13px;">' + compoNom + '</strong>' + statusBadge + '</div>';
         }
       },
       { 
@@ -258,8 +277,18 @@ $(document).ready(function() {
           }
           if (canEnterNotes) {
             var isSemestreCloture = (d.statut_semestre ? String(d.statut_semestre).toLowerCase() === 'cloture' : false);
-            if (isSemestreCloture) {
-              actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="Semestre clôturé (Saisie et modification désactivées)">' +
+            var compoStatut = (d.statut_composition ? String(d.statut_composition).toLowerCase() : '');
+            var isCompoClotureOuAnnule = (compoStatut === 'cloture' || compoStatut === 'termine' || compoStatut === 'annule');
+            var isLocked = isSemestreCloture || isCompoClotureOuAnnule;
+
+            if (isLocked) {
+              var lockTitle = isSemestreCloture 
+                ? 'Semestre clôturé (Saisie et modification désactivées)' 
+                : (compoStatut === 'annule' 
+                    ? 'Évaluation annulée (Saisie et modification désactivées)' 
+                    : 'Évaluation clôturée (Saisie et modification désactivées)');
+
+              actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="' + lockTitle + '">' +
                                '<i data-lucide="lock" style="width:16px; height:16px;"></i>' +
                              '</button>';
             } else {
@@ -345,9 +374,20 @@ $(document).ready(function() {
             ? 'background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;' 
             : (typeEval === 'DEVOIR' ? 'background:#FEF3C7; color:#B45309; border:1px solid #FDE68A;' : 'background:#F1F5F9; color:#475569; border:1px solid #E2E8F0;');
           
+          var compoStatut = (info.statut_composition ? String(info.statut_composition).toLowerCase() : '');
+          var isCompoClotureOuAnnule = (compoStatut === 'cloture' || compoStatut === 'termine' || compoStatut === 'annule');
+
+          var badgeCompoStatus = '';
+          if (compoStatut === 'annule') {
+            badgeCompoStatus = ' <span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:5px; text-transform:uppercase; background:#FEE2E2; color:#B91C1C; border:1px solid #FECACA;">Annulée</span>';
+          } else if (compoStatut === 'cloture' || compoStatut === 'termine') {
+            badgeCompoStatus = ' <span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:5px; text-transform:uppercase; background:#F1F5F9; color:#475569; border:1px solid #CBD5E1;">Clôturée</span>';
+          }
+
           $('#modal-compo-title').html(
             escapeHtml(compoLibelle) + ' ' +
-            '<span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:5px; text-transform:uppercase; ' + badgeTypeStyle + '">' + escapeHtml(typeEval) + '</span>'
+            '<span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:5px; text-transform:uppercase; ' + badgeTypeStyle + '">' + escapeHtml(typeEval) + '</span>' +
+            badgeCompoStatus
           );
 
           var isSemestreCloture = (info.statut_semestre ? String(info.statut_semestre).toLowerCase() === 'cloture' : false);
@@ -434,11 +474,23 @@ $(document).ready(function() {
                         + '&matiere_code=' + encodeURIComponent(info.matiere_code || '')
                         + '&type_evaluation_code=' + encodeURIComponent(info.type_composition || '');
 
-          if (isSemestreCloture) {
+          var isLocked = isSemestreCloture || isCompoClotureOuAnnule;
+
+          if (isLocked) {
+            var lockTitle = isSemestreCloture 
+              ? 'Le semestre est clôturé : la saisie et la modification des notes sont verrouillées.' 
+              : (compoStatut === 'annule' 
+                  ? 'Cette évaluation est annulée : la saisie et la modification des notes sont désactivées.' 
+                  : 'Cette évaluation est clôturée / terminée : la saisie et la modification des notes sont verrouillées.');
+            
+            var lockLabel = isSemestreCloture 
+              ? 'Semestre Clôturé' 
+              : (compoStatut === 'annule' ? 'Évaluation Annulée' : 'Évaluation Clôturée');
+
             $('#md-btn-go-saisie')
               .attr('href', 'javascript:void(0);')
               .addClass('disabled')
-              .attr('title', 'Le semestre est clôturé : la saisie et la modification des notes sont verrouillées.')
+              .attr('title', lockTitle)
               .css({
                 'background': '#CBD5E1',
                 'border-color': '#CBD5E1',
@@ -447,7 +499,7 @@ $(document).ready(function() {
                 'pointer-events': 'none',
                 'box-shadow': 'none'
               })
-              .html('<i data-lucide="lock" style="width: 16px; height: 16px;"></i> Semestre Clôturé');
+              .html('<i data-lucide="lock" style="width: 16px; height: 16px;"></i> ' + lockLabel);
           } else {
             $('#md-btn-go-saisie')
               .attr('href', saisieUrl)
