@@ -51,14 +51,14 @@ class ModelNote extends BaseModel
                 MAX(n_entry.created_at_note) AS date_enregistrement_note,
                 COALESCE(MAX(n_entry.created_at_note), comp.date_composition, comp.created_at_composition) AS date_enregistrement
             FROM (
-                -- Source 1: composition_matieres
+                -- Source 1: composition_matieres (liaison stricte par cible niveau/filiere)
                 SELECT 
                     cm.composition_code,
                     cl.code_classe,
                     cm.matiere_code
                 FROM " . TABLES::COMPOSITION_MATIERES . " cm
-                LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code OR cnf.composition_code = cm.composition_code)
-                LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
+                INNER JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
                 WHERE cl.code_classe IS NOT NULL AND cm.matiere_code IS NOT NULL AND cm.matiere_code != ''
 
                 UNION
@@ -113,6 +113,7 @@ class ModelNote extends BaseModel
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = base_pairs.code_composition
                 INNER JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON em.classe_code = base_pairs.classe_code
                 WHERE (comp.matiere_code IS NULL OR comp.matiere_code = '')
+                  AND comp.type_composition != 'EXAMEN'
                   AND NOT EXISTS (SELECT 1 FROM " . TABLES::COMPOSITION_MATIERES . " cm2 WHERE cm2.composition_code = comp.code_composition)
             ) AS triplets
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = triplets.composition_code
