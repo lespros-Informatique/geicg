@@ -55,6 +55,7 @@ require_once __DIR__ . '/../models/emplois_temps/ModelEmploi.php';
 require_once __DIR__ . '/../models/absences/ModelAbsence.php';
 require_once __DIR__ . '/../models/notes/ModelNote.php';
 require_once __DIR__ . '/../models/compositions/ModelComposition.php';
+require_once __DIR__ . '/../models/maquettes/ModelMaquette.php';
 
 
 // Médias & Communication Models
@@ -80,6 +81,7 @@ require_once __DIR__ . '/../controllers/classes/ClasseController.php';
 require_once __DIR__ . '/../controllers/semestres/SemestreController.php';
 
 require_once __DIR__ . '/../controllers/matieres/MatiereController.php';
+require_once __DIR__ . '/../controllers/maquettes/MaquetteController.php';
 require_once __DIR__ . '/../controllers/salles/SalleController.php';
 
 // Finance & Scolarité Controllers

@@ -15,6 +15,7 @@ $anneeController = new AnneeController();
 $classeController = new ClasseController();
 $semestreController = new SemestreController();
 $matiereController = new MatiereController();
+$maquetteController = new MaquetteController();
 $scolariteController = new ScolariteController();
 $fraisAnnexeController = new FraisAnnexeController();
 $trancheController = new TrancheController();
@@ -191,6 +192,16 @@ $route->addRoute('/matiere/changer', [$matiereController, 'changer']);
 $route->addRoute('/matiere/details/{param}', [$matiereController, 'details']);
 $route->addRoute('/matiere/edition/{param}', [$matiereController, 'edition']);
 $route->addRoute('/matiere/formulaire', [$matiereController, 'formulaire']);
+
+// Module: maquette (MaquetteController)
+$route->addRoute('/maquette/list', [$maquetteController, 'list']);
+$route->addRoute('/maquette/apiList', [$maquetteController, 'apiList']);
+$route->addRoute('/maquette/apiGetMaquetteForFiliere', [$maquetteController, 'apiGetMaquetteForFiliere']);
+$route->addRoute('/maquette/add', [$maquetteController, 'add']);
+$route->addRoute('/maquette/edit', [$maquetteController, 'edit']);
+$route->addRoute('/maquette/changer', [$maquetteController, 'changer']);
+$route->addRoute('/maquette/delete', [$maquetteController, 'delete']);
+$route->addRoute('/maquette/dupliquer', [$maquetteController, 'dupliquer']);
 
 // Module: scolarite (ScolariteController)
 $route->addRoute('/scolarite/list', [$scolariteController, 'list']);

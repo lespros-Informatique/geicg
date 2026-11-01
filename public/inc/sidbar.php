@@ -104,9 +104,9 @@
                     <i data-lucide="graduation-cap"></i> <span>Classes</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($canAccess([PERMISSIONS::MANAGE_UE, PERMISSIONS::VIEW_UE, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
-                <a href="<?= RACINE ?>ue/list" class="nav-item sub <?= $isActiveRoute(['/ue/', '/unites_enseignement/']) ?>" data-title="Unités d'Enseignement (UE)">
-                    <i data-lucide="layers"></i> <span>Unités d'Enseignement (UE)</span>
+                <?php if ($canAccess([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES])): ?>
+                <a href="<?= RACINE ?>maquette/list" class="nav-item sub <?= $isActiveRoute('/maquette/') ?>" data-title="Maquettes Pédagogiques & Coefficients">
+                    <i data-lucide="book-marked"></i> <span>Maquettes & Coefs</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_MATIERES, PERMISSIONS::VIEW_MATIERES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>

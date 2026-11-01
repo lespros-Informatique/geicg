@@ -155,13 +155,15 @@ class ModelBulletin extends BaseModel
         $sqlNotes = "
             SELECT n.*, 
                    m.libelle_matiere, 
-                   COALESCE(comp.coefficient, 1.00) AS coefficient, 
+                   COALESCE(mq.coefficient, comp.coefficient, 1.00) AS coefficient, 
+                   COALESCE(mq.categorie_matiere, 'GENERALE') AS categorie_matiere,
                    COALESCE(comp.matiere_code, cm.matiere_code) AS matiere_code,
                    comp.type_composition AS type_evaluation_code,
                    CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_enseignant
             FROM " . TABLES::NOTES . " n
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
             LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ?
+            LEFT JOIN " . TABLES::MAQUETTES_PEDAGOGIQUES . " mq ON (mq.filiere_code = cl.filiere_code AND mq.niveau_code = cl.niveau_code AND mq.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND (mq.annee_code = ? OR mq.annee_code = '' OR mq.annee_code IS NULL) AND (mq.statut_maquette = 'actif' OR mq.statut_maquette IS NULL))
             LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
             LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
@@ -169,10 +171,10 @@ class ModelBulletin extends BaseModel
             LEFT JOIN " . TABLES::USERS . " u ON (u.code_user = edt.enseignant_code OR u.code_user = comp.user_code)
             WHERE n.inscription_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
               AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
-            ORDER BY m.libelle_matiere ASC, comp.type_composition ASC
+            ORDER BY CASE WHEN mq.categorie_matiere = 'GENERALE' THEN 1 ELSE 2 END ASC, m.libelle_matiere ASC, comp.type_composition ASC
         ";
         $stmtNotes = $db->prepare($sqlNotes);
-        $stmtNotes->execute([$item['classe_code'], $item['code_inscription'], $selectedSemestreCode]);
+        $stmtNotes->execute([$item['classe_code'], $item['annee_code'] ?? '', $item['code_inscription'], $selectedSemestreCode]);
         $rawNotes = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
 
         $matieresNotes = [];
@@ -180,8 +182,10 @@ class ModelBulletin extends BaseModel
             $matCode = $n['matiere_code'] ?: 'MAT_INCONNUE';
             if (!isset($matieresNotes[$matCode])) {
                 $matieresNotes[$matCode] = [
+                    'matiere_code' => $matCode,
                     'libelle' => $n['libelle_matiere'] ?: 'Matière sans nom',
                     'coefficient' => (float)($n['coefficient'] ?? 1),
+                    'categorie_matiere' => strtoupper($n['categorie_matiere'] ?? 'GENERALE'),
                     'prof' => trim($n['nom_enseignant'] ?? '') ?: 'Non assigné',
                     'evaluations' => [],
                     'notes' => []
@@ -210,6 +214,7 @@ class ModelBulletin extends BaseModel
             elseif ($m['moyenne'] >= 8)  $m['appreciation'] = 'Insuffisant';
             else $m['appreciation'] = 'Très Insuffisant';
 
+            $m['rang_matiere'] = '-';
             $totalPoints += $m['points'];
             $totalCoefficients += $m['coefficient'];
         }
@@ -238,7 +243,11 @@ class ModelBulletin extends BaseModel
             }
         }
 
+        $sexeEleve = strtoupper($item['sexe_etudiant'] ?? 'M');
         $rang = 1;
+        $rangFr = '1er';
+        $rangGeneralesFr = '1er';
+        $rangProFr = '1er';
         $totalElevesClasse = 1;
         $moyenneMinClasse = $moyenneGenerale;
         $moyenneMaxClasse = $moyenneGenerale;
@@ -247,12 +256,15 @@ class ModelBulletin extends BaseModel
         if (!empty($item['classe_code']) && !empty($selectedSemestreCode)) {
             $sqlClassmates = "
                 SELECT i.code_inscription,
+                       COALESCE(comp.matiere_code, cm.matiere_code) AS matiere_code,
+                       COALESCE(mq.categorie_matiere, 'GENERALE') AS categorie_matiere,
                        n.valeur_note,
-                       COALESCE(comp.coefficient, 1.00) AS coefficient
+                       COALESCE(mq.coefficient, comp.coefficient, 1.00) AS coefficient
                 FROM " . TABLES::INSCRIPTIONS . " i
                 INNER JOIN " . TABLES::NOTES . " n ON n.inscription_code = i.code_inscription
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                LEFT JOIN " . TABLES::MAQUETTES_PEDAGOGIQUES . " mq ON (mq.filiere_code = cl.filiere_code AND mq.niveau_code = cl.niveau_code AND mq.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND (mq.annee_code = i.annee_code OR mq.annee_code = '' OR mq.annee_code IS NULL) AND (mq.statut_maquette = 'actif' OR mq.statut_maquette IS NULL))
                 LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
                 LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
                 INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
@@ -264,42 +276,146 @@ class ModelBulletin extends BaseModel
             $stmtClass->execute([$item['classe_code'], $selectedSemestreCode]);
             $classNotes = $stmtClass->fetchAll(PDO::FETCH_ASSOC);
 
-            $etudiantsMoyennes = [];
+            // 1. Agrégation par étudiant & par matière
+            $etudiantsNotesByMatiere = []; // [insc][matCode] = ['notes' => [], 'coef' => X, 'cat' => Y]
             foreach ($classNotes as $cn) {
                 $insc = $cn['code_inscription'];
-                if (!isset($etudiantsMoyennes[$insc])) {
-                    $etudiantsMoyennes[$insc] = ['total_pts' => 0, 'total_coef' => 0];
+                $mat = $cn['matiere_code'] ?: 'MAT_INCONNUE';
+                if (!isset($etudiantsNotesByMatiere[$insc])) {
+                    $etudiantsNotesByMatiere[$insc] = [];
                 }
-                $etudiantsMoyennes[$insc]['total_pts'] += ($cn['valeur_note'] * $cn['coefficient']);
-                $etudiantsMoyennes[$insc]['total_coef'] += $cn['coefficient'];
+                if (!isset($etudiantsNotesByMatiere[$insc][$mat])) {
+                    $etudiantsNotesByMatiere[$insc][$mat] = [
+                        'notes' => [],
+                        'coefficient' => (float)$cn['coefficient'],
+                        'categorie' => strtoupper($cn['categorie_matiere'] ?? 'GENERALE')
+                    ];
+                }
+                $etudiantsNotesByMatiere[$insc][$mat]['notes'][] = (float)$cn['valeur_note'];
             }
 
-            if (!empty($etudiantsMoyennes)) {
-                $classeMoyennesArray = [];
-                foreach ($etudiantsMoyennes as $inscCode => $stats) {
-                    if ($stats['total_coef'] > 0) {
-                        $classeMoyennesArray[$inscCode] = round($stats['total_pts'] / $stats['total_coef'], 2);
+            // 2. Moyennes globales et par catégorie pour chaque étudiant
+            $classeMoyennesGlobales = [];
+            $classeMoyennesGenerales = [];
+            $classeMoyennesPro = [];
+            $classeMoyennesParMatiere = []; // [matCode][insc] = moy
+
+            foreach ($etudiantsNotesByMatiere as $insc => $mats) {
+                $ptsGlob = 0; $coefGlob = 0;
+                $ptsGen = 0;  $coefGen = 0;
+                $ptsPro = 0;  $coefPro = 0;
+
+                foreach ($mats as $matCode => $info) {
+                    $c = $info['coefficient'];
+                    $mVal = count($info['notes']) > 0 ? (array_sum($info['notes']) / count($info['notes'])) : 0;
+
+                    $ptsGlob += ($mVal * $c);
+                    $coefGlob += $c;
+
+                    if ($info['categorie'] === 'GENERALE') {
+                        $ptsGen += ($mVal * $c);
+                        $coefGen += $c;
+                    } else {
+                        $ptsPro += ($mVal * $c);
+                        $coefPro += $c;
                     }
+
+                    if (!isset($classeMoyennesParMatiere[$matCode])) {
+                        $classeMoyennesParMatiere[$matCode] = [];
+                    }
+                    $classeMoyennesParMatiere[$matCode][$insc] = round($mVal, 2);
                 }
 
-                if (!empty($classeMoyennesArray)) {
-                    arsort($classeMoyennesArray);
-                    $totalElevesClasse = count($classeMoyennesArray);
-                    $moyenneMaxClasse = max($classeMoyennesArray);
-                    $moyenneMinClasse = min($classeMoyennesArray);
-                    $moyenneMoyClasse = round(array_sum($classeMoyennesArray) / $totalElevesClasse, 2);
+                if ($coefGlob > 0) $classeMoyennesGlobales[$insc] = round($ptsGlob / $coefGlob, 2);
+                if ($coefGen > 0)  $classeMoyennesGenerales[$insc] = round($ptsGen / $coefGen, 2);
+                if ($coefPro > 0)  $classeMoyennesPro[$insc] = round($ptsPro / $coefPro, 2);
+            }
 
+            // 3. Calcul du rang général
+            if (!empty($classeMoyennesGlobales)) {
+                arsort($classeMoyennesGlobales);
+                $totalElevesClasse = count($classeMoyennesGlobales);
+                $moyenneMaxClasse = max($classeMoyennesGlobales);
+                $moyenneMinClasse = min($classeMoyennesGlobales);
+                $moyenneMoyClasse = round(array_sum($classeMoyennesGlobales) / $totalElevesClasse, 2);
+
+                $pos = 1;
+                foreach ($classeMoyennesGlobales as $inscCode => $moyVal) {
+                    if ($inscCode === $item['code_inscription']) {
+                        $rang = $pos;
+                        $rangFr = ($pos === 1) ? (($sexeEleve === 'F') ? '1ère' : '1er') : ($pos . 'ème');
+                        break;
+                    }
+                    $pos++;
+                }
+            }
+
+            // 4. Calcul du rang dans les matières générales
+            if (!empty($classeMoyennesGenerales)) {
+                arsort($classeMoyennesGenerales);
+                $pos = 1;
+                foreach ($classeMoyennesGenerales as $inscCode => $moyVal) {
+                    if ($inscCode === $item['code_inscription']) {
+                        $rangGeneralesFr = ($pos === 1) ? (($sexeEleve === 'F') ? '1ère' : '1er') : ($pos . 'ème');
+                        break;
+                    }
+                    $pos++;
+                }
+            }
+
+            // 5. Calcul du rang dans les matières professionnelles
+            if (!empty($classeMoyennesPro)) {
+                arsort($classeMoyennesPro);
+                $pos = 1;
+                foreach ($classeMoyennesPro as $inscCode => $moyVal) {
+                    if ($inscCode === $item['code_inscription']) {
+                        $rangProFr = ($pos === 1) ? (($sexeEleve === 'F') ? '1ère' : '1er') : ($pos . 'ème');
+                        break;
+                    }
+                    $pos++;
+                }
+            }
+
+            // 6. Calcul du rang pour chaque matière individuelle
+            foreach ($matieresNotes as $mCode => &$mInfo) {
+                if (isset($classeMoyennesParMatiere[$mCode])) {
+                    arsort($classeMoyennesParMatiere[$mCode]);
                     $pos = 1;
-                    foreach ($classeMoyennesArray as $inscCode => $moy) {
+                    foreach ($classeMoyennesParMatiere[$mCode] as $inscCode => $mVal) {
                         if ($inscCode === $item['code_inscription']) {
-                            $rang = $pos;
+                            $mInfo['rang_matiere'] = ($pos === 1) ? (($sexeEleve === 'F') ? '1ère' : '1er') : ($pos . 'ème');
                             break;
                         }
                         $pos++;
                     }
                 }
             }
+            unset($mInfo);
         }
+
+        // Séparation bimanuelle : MATIÈRES GÉNÉRALES vs MATIÈRES PROFESSIONNELLES
+        $matieresGenerales = [];
+        $matieresPro = [];
+        $totalPointsGenerales = 0; $totalCoefficientsGenerales = 0;
+        $totalPointsPro = 0;       $totalCoefficientsPro = 0;
+
+        foreach ($matieresNotes as $mCode => $m) {
+            if ($m['categorie_matiere'] === 'PROFESSIONNELLE') {
+                $matieresPro[] = $m;
+                $totalPointsPro += $m['points'];
+                $totalCoefficientsPro += $m['coefficient'];
+            } else {
+                $matieresGenerales[] = $m;
+                $totalPointsGenerales += $m['points'];
+                $totalCoefficientsGenerales += $m['coefficient'];
+            }
+        }
+
+        $moyenneGenerales = $totalCoefficientsGenerales > 0 ? round($totalPointsGenerales / $totalCoefficientsGenerales, 2) : 0;
+        $moyennePro = $totalCoefficientsPro > 0 ? round($totalPointsPro / $totalCoefficientsPro, 2) : 0;
+
+        $apprGen = ($moyenneGenerales >= 16) ? 'Très Bien' : (($moyenneGenerales >= 14) ? 'Bien' : (($moyenneGenerales >= 12) ? 'Assez Bien' : (($moyenneGenerales >= 10) ? 'Passable' : (($moyenneGenerales >= 8) ? 'Insuffisant' : 'Très Insuffisant'))));
+        $apprPro = ($moyennePro >= 16) ? 'Très Bien' : (($moyennePro >= 14) ? 'Bien' : (($moyennePro >= 12) ? 'Assez Bien' : (($moyennePro >= 10) ? 'Passable' : (($moyennePro >= 8) ? 'Insuffisant' : 'Très Insuffisant'))));
 
         // Calcul dynamique des absences de l'étudiant
         $stmtAbs = $db->prepare("
@@ -325,6 +441,19 @@ class ModelBulletin extends BaseModel
             'mention' => $mention,
             'decision' => $decision,
             'rang' => $rang,
+            'rangFr' => $rangFr,
+            'matieresGenerales' => $matieresGenerales,
+            'matieresPro' => $matieresPro,
+            'totalPointsGenerales' => $totalPointsGenerales,
+            'totalCoefficientsGenerales' => $totalCoefficientsGenerales,
+            'moyenneGenerales' => $moyenneGenerales,
+            'rangGeneralesFr' => $rangGeneralesFr,
+            'appreciationGenerales' => $apprGen,
+            'totalPointsPro' => $totalPointsPro,
+            'totalCoefficientsPro' => $totalCoefficientsPro,
+            'moyennePro' => $moyennePro,
+            'rangProFr' => $rangProFr,
+            'appreciationPro' => $apprPro,
             'totalElevesClasse' => $totalElevesClasse,
             'moyenneMinClasse' => $moyenneMinClasse,
             'moyenneMaxClasse' => $moyenneMaxClasse,

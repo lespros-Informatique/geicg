@@ -166,42 +166,135 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
                   </td>
                 </tr>
               <?php else: ?>
-                <?php foreach ($matieresNotes as $m): ?>
-                  <tr>
-                    <td style="font-weight: 600; color: #0F172A;">
-                      <?= htmlspecialchars($m['libelle']) ?>
-                    </td>
-                    <td style="text-align: center; font-weight: 600; color: #334155;">
-                      <?= $m['coefficient'] ?>
-                    </td>
-                    <td>
-                      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                        <?php foreach ($m['evaluations'] as $ev): ?>
-                          <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155;">
-                            <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
-                          </span>
-                        <?php endforeach; ?>
-                      </div>
-                    </td>
-                    <td style="text-align: center; font-weight: 800; color: <?= $m['moyenne'] >= 10 ? '#15803D' : '#B91C1C' ?>;">
-                      <?= number_format($m['moyenne'], 2, ',', ' ') ?>
-                    </td>
-                    <td style="text-align: center; font-weight: 700; color: #0F172A;">
-                      <?= number_format($m['points'], 2, ',', ' ') ?>
-                    </td>
-                    <td style="text-align: right; font-weight: 600; font-size: 12px; color: <?= $m['moyenne'] >= 10 ? '#15803D' : '#B91C1C' ?>;">
-                      <?= htmlspecialchars($m['appreciation']) ?>
-                    </td>
-                  </tr>
-                <?php endforeach; ?>
+                <?php 
+                  $hasGen = !empty($matieresGenerales) && is_array($matieresGenerales);
+                  $hasPr = !empty($matieresPro) && is_array($matieresPro);
+                ?>
+
+                <?php if ($hasGen || $hasPr): ?>
+                  <!-- SECTION 1 : MATIÈRES GÉNÉRALES -->
+                  <?php if ($hasGen): ?>
+                    <tr style="background:#EFF6FF; border-left: 4px solid #1D4ED8;">
+                      <td colspan="6" style="font-weight: 800; color: #1D4ED8; text-transform: uppercase; font-size: 12px; padding: 8px 12px;">
+                        <i data-lucide="book" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Matières Générales
+                      </td>
+                    </tr>
+                    <?php foreach ($matieresGenerales as $m): ?>
+                      <tr>
+                        <td style="font-weight: 600; color: #0F172A;">
+                          <?= htmlspecialchars($m['libelle']) ?>
+                          <?php if (!empty($m['rang_matiere']) && $m['rang_matiere'] !== '-'): ?>
+                            <span class="badge" style="background:#F1F5F9; color:#475569; font-size:10px; margin-left:6px;">Rang: <?= htmlspecialchars($m['rang_matiere']) ?></span>
+                          <?php endif; ?>
+                        </td>
+                        <td style="text-align: center; font-weight: 600; color: #334155;"><?= $m['coefficient'] ?></td>
+                        <td>
+                          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            <?php foreach ($m['evaluations'] as $ev): ?>
+                              <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155;">
+                                <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
+                              </span>
+                            <?php endforeach; ?>
+                          </div>
+                        </td>
+                        <td style="text-align: center; font-weight: 800; color: <?= $m['moyenne'] >= 10 ? '#15803D' : '#B91C1C' ?>;">
+                          <?= number_format($m['moyenne'], 2, ',', ' ') ?>
+                        </td>
+                        <td style="text-align: center; font-weight: 700; color: #0F172A;"><?= number_format($m['points'], 2, ',', ' ') ?></td>
+                        <td style="text-align: right; font-weight: 600; font-size: 12px; color: <?= $m['moyenne'] >= 10 ? '#15803D' : '#B91C1C' ?>;">
+                          <?= htmlspecialchars($m['appreciation']) ?>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                    <tr style="background: #F8FAFC; font-weight: 800; border-top: 1px solid #CBD5E1; border-bottom: 2px solid #E2E8F0;">
+                      <td style="text-transform: uppercase; color: #1E3A5F; font-weight: 800;">TOTAL MATIÈRES GÉNÉRALES</td>
+                      <td style="text-align: center; color: #1E3A5F; font-weight: 800;"><?= $totalCoefficientsGenerales ?? 0 ?></td>
+                      <td style="color: #64748B; font-size: 12px;">Rang dans les générales : <strong style="color: #1E3A5F;"><?= htmlspecialchars($rangGeneralesFr ?? '-') ?></strong></td>
+                      <td style="text-align: center; font-size: 14px; color: #1E3A5F; font-weight: 800;"><?= number_format((float)($moyenneGenerales ?? 0), 2, ',', ' ') ?> / 20</td>
+                      <td style="text-align: center; font-size: 14px; color: #1E3A5F; font-weight: 800;"><?= number_format((float)($totalPointsGenerales ?? 0), 2, ',', ' ') ?></td>
+                      <td style="text-align: right; color: <?= ($moyenneGenerales ?? 0) >= 10 ? '#15803D' : '#B91C1C' ?>; font-weight: 800;"><?= htmlspecialchars($appreciationGenerales ?? '-') ?></td>
+                    </tr>
+                  <?php endif; ?>
+
+                  <!-- SECTION 2 : MATIÈRES PROFESSIONNELLES -->
+                  <?php if ($hasPr): ?>
+                    <tr style="background:#FFFBEB; border-left: 4px solid #B45309;">
+                      <td colspan="6" style="font-weight: 800; color: #B45309; text-transform: uppercase; font-size: 12px; padding: 8px 12px;">
+                        <i data-lucide="briefcase" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Matières Professionnelles
+                      </td>
+                    </tr>
+                    <?php foreach ($matieresPro as $m): ?>
+                      <tr>
+                        <td style="font-weight: 600; color: #0F172A;">
+                          <?= htmlspecialchars($m['libelle']) ?>
+                          <?php if (!empty($m['rang_matiere']) && $m['rang_matiere'] !== '-'): ?>
+                            <span class="badge" style="background:#F1F5F9; color:#475569; font-size:10px; margin-left:6px;">Rang: <?= htmlspecialchars($m['rang_matiere']) ?></span>
+                          <?php endif; ?>
+                        </td>
+                        <td style="text-align: center; font-weight: 600; color: #334155;"><?= $m['coefficient'] ?></td>
+                        <td>
+                          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            <?php foreach ($m['evaluations'] as $ev): ?>
+                              <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155;">
+                                <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
+                              </span>
+                            <?php endforeach; ?>
+                          </div>
+                        </td>
+                        <td style="text-align: center; font-weight: 800; color: <?= $m['moyenne'] >= 10 ? '#15803D' : '#B91C1C' ?>;">
+                          <?= number_format($m['moyenne'], 2, ',', ' ') ?>
+                        </td>
+                        <td style="text-align: center; font-weight: 700; color: #0F172A;"><?= number_format($m['points'], 2, ',', ' ') ?></td>
+                        <td style="text-align: right; font-weight: 600; font-size: 12px; color: <?= $m['moyenne'] >= 10 ? '#15803D' : '#B91C1C' ?>;">
+                          <?= htmlspecialchars($m['appreciation']) ?>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                    <tr style="background: #F8FAFC; font-weight: 800; border-top: 1px solid #CBD5E1; border-bottom: 2px solid #E2E8F0;">
+                      <td style="text-transform: uppercase; color: #B45309; font-weight: 800;">TOTAL MATIÈRES PROFESSIONNELLES</td>
+                      <td style="text-align: center; color: #B45309; font-weight: 800;"><?= $totalCoefficientsPro ?? 0 ?></td>
+                      <td style="color: #64748B; font-size: 12px;">Rang dans les professionnelles : <strong style="color: #B45309;"><?= htmlspecialchars($rangProFr ?? '-') ?></strong></td>
+                      <td style="text-align: center; font-size: 14px; color: #B45309; font-weight: 800;"><?= number_format((float)($moyennePro ?? 0), 2, ',', ' ') ?> / 20</td>
+                      <td style="text-align: center; font-size: 14px; color: #B45309; font-weight: 800;"><?= number_format((float)($totalPointsPro ?? 0), 2, ',', ' ') ?></td>
+                      <td style="text-align: right; color: <?= ($moyennePro ?? 0) >= 10 ? '#15803D' : '#B91C1C' ?>; font-weight: 800;"><?= htmlspecialchars($appreciationPro ?? '-') ?></td>
+                    </tr>
+                  <?php endif; ?>
+
+                <?php else: ?>
+                  <?php foreach ($matieresNotes as $m): ?>
+                    <tr>
+                      <td style="font-weight: 600; color: #0F172A;">
+                        <?= htmlspecialchars($m['libelle']) ?>
+                      </td>
+                      <td style="text-align: center; font-weight: 600; color: #334155;"><?= $m['coefficient'] ?></td>
+                      <td>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                          <?php foreach ($m['evaluations'] as $ev): ?>
+                            <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155;">
+                              <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
+                            </span>
+                          <?php endforeach; ?>
+                        </div>
+                      </td>
+                      <td style="text-align: center; font-weight: 800; color: <?= $m['moyenne'] >= 10 ? '#15803D' : '#B91C1C' ?>;">
+                        <?= number_format($m['moyenne'], 2, ',', ' ') ?>
+                      </td>
+                      <td style="text-align: center; font-weight: 700; color: #0F172A;"><?= number_format($m['points'], 2, ',', ' ') ?></td>
+                      <td style="text-align: right; font-weight: 600; font-size: 12px; color: <?= $m['moyenne'] >= 10 ? '#15803D' : '#B91C1C' ?>;">
+                        <?= htmlspecialchars($m['appreciation']) ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+
                 <!-- Total Row -->
-                <tr style="background: #F8FAFC; font-weight: 800; border-top: 2px solid #CBD5E1;">
-                  <td style="text-transform: uppercase; color: #0F172A;">TOTAL GÉNÉRAL PONDÉRÉ</td>
-                  <td style="text-align: center; color: #0F172A;"><?= $totalCoefficients ?></td>
+                <tr style="background: #EFF6FF; font-weight: 800; border-top: 2px solid #1E3A5F;">
+                  <td style="text-transform: uppercase; color: #1E3A5F; font-weight: 900;">BILAN GÉNÉRAL PONDÉRÉ</td>
+                  <td style="text-align: center; color: #1E3A5F; font-weight: 900;"><?= $totalCoefficients ?></td>
                   <td style="color: #64748B; font-size: 12px;"><?= count($matieresNotes) ?> matière(s) évaluée(s)</td>
-                  <td style="text-align: center; font-size: 15px; color: #1E3A5F;"><?= number_format($moyenneGenerale, 2, ',', ' ') ?> / 20</td>
-                  <td style="text-align: center; font-size: 15px; color: #1E3A5F;"><?= number_format($totalPoints, 2, ',', ' ') ?></td>
-                  <td style="text-align: right; color: <?= $moyenneGenerale >= 10 ? '#15803D' : '#B91C1C' ?>;"><?= htmlspecialchars($mention) ?></td>
+                  <td style="text-align: center; font-size: 15px; color: #1E3A5F; font-weight: 900;"><?= number_format($moyenneGenerale, 2, ',', ' ') ?> / 20</td>
+                  <td style="text-align: center; font-size: 15px; color: #1E3A5F; font-weight: 900;"><?= number_format($totalPoints, 2, ',', ' ') ?></td>
+                  <td style="text-align: right; color: <?= $moyenneGenerale >= 10 ? '#15803D' : '#B91C1C' ?>; font-weight: 900;"><?= htmlspecialchars($mention) ?></td>
                 </tr>
               <?php endif; ?>
             </tbody>

@@ -137,6 +137,77 @@ $stats = isset($stats) ? $stats : [];
         <?php endif; ?>
       </div>
 
+      <!-- CARD 3 (COL-12) : PROGRAMME & MAQUETTE PÉDAGOGIQUE -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 24px; width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="book-marked" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Maquette Pédagogique & Coefficients (<?= count($maquetteMatieres ?? []) ?>)
+            </h3>
+            <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Matières Générales et Professionnelles programmées pour l'année active</p>
+          </div>
+          <a href="<?= RACINE ?>maquette/list" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="sliders" style="width: 14px; height: 14px;"></i> Gérer les Maquettes
+          </a>
+        </div>
+
+        <?php if (empty($maquetteMatieres)): ?>
+          <div style="text-align: center; padding: 30px 0;">
+            <p style="color: #94A3B8; font-style: italic; margin-bottom: 12px;">Aucune matière n'a encore été configurée dans la maquette pour cette filière.</p>
+            <a href="<?= RACINE ?>maquette/list" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px;">
+              + Configurer la maquette de la filière
+            </a>
+          </div>
+        <?php else: ?>
+          <div style="width: 100%; overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px;">
+                  <th style="padding: 10px;">Matière</th>
+                  <th style="padding: 10px;">Niveau</th>
+                  <th style="padding: 10px; text-align: center;">Catégorie Bulletin</th>
+                  <th style="padding: 10px; text-align: center;">Coefficient</th>
+                  <th style="padding: 10px; text-align: center;">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($maquetteMatieres as $mq): ?>
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 10px; font-weight: 700; color: #0F172A;">
+                      <?= htmlspecialchars($mq['libelle_matiere'] ?? '-') ?>
+                    </td>
+                    <td style="padding: 10px; color: #334155;">
+                      <span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; padding: 2px 8px; border-radius: 6px; font-weight: 600;">
+                        <?= htmlspecialchars($mq['libelle_niveau'] ?? '-') ?>
+                      </span>
+                    </td>
+                    <td style="padding: 10px; text-align: center;">
+                      <?php if (($mq['categorie_matiere'] ?? '') === 'GENERALE'): ?>
+                        <span class="badge" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px;">GÉNÉRALE</span>
+                      <?php else: ?>
+                        <span class="badge" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px;">PROFESSIONNELLE</span>
+                      <?php endif; ?>
+                    </td>
+                    <td style="padding: 10px; text-align: center;">
+                      <span style="display: inline-block; padding: 2px 10px; border-radius: 6px; font-weight: 800; background: #F8FAFC; color: #0F172A; border: 1px solid #CBD5E1;">
+                        <?= number_format((float)($mq['coefficient'] ?? 1), 1, ',', ' ') ?>
+                      </span>
+                    </td>
+                    <td style="padding: 10px; text-align: center;">
+                      <?php if (($mq['statut_maquette'] ?? 'actif') === 'actif'): ?>
+                        <span class="badge" style="background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Actif</span>
+                      <?php else: ?>
+                        <span class="badge" style="background: #FEE2E2; color: #B91C1C; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Inactif</span>
+                      <?php endif; ?>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif; ?>
+      </div>
+
     </div>
   </main>
 </div>

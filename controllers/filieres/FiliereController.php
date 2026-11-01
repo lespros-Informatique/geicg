@@ -154,6 +154,7 @@ class FiliereController extends BaseController
             $cycles = $this->model->getCyclesForFiliere($filiereCode);
             $classes = $this->model->getClassesForFiliere($filiereCode);
             $stats = $this->model->getStatsForFiliere($filiereCode, count($classes));
+            $maquetteMatieres = (new ModelMaquette())->getFilteredList(Session::get('annee_active_code', ''), $filiereCode);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
@@ -164,6 +165,7 @@ class FiliereController extends BaseController
             'cycles' => $cycles,
             'classes' => $classes,
             'stats' => $stats,
+            'maquetteMatieres' => $maquetteMatieres ?? [],
             'encryptedId' => $encryptedId
         ]);
     }

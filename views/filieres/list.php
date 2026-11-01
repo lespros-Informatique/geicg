@@ -41,6 +41,9 @@ $niveaux = (new ModelNiveau())->getActifs();
         <button type="button" class="tab-btn" data-tab="tab-niveaux" style="padding: 10px 20px; font-weight: 700; font-size: 14px; border: none; background: transparent; color: #64748B; border-bottom: 3px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="graduation-cap" style="width: 16px; height: 16px;"></i> 4. Niveaux d'Études
         </button>
+        <a href="<?= RACINE ?>maquette/list" style="margin-left: auto; text-decoration: none; font-weight: 700; border-radius: 8px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; background: #EFF6FF; border: 1.5px solid #BFDBFE; color: #1E3A5F;">
+          <i data-lucide="book-marked" style="width: 16px; height: 16px; color: #1D4ED8;"></i> Maquettes Pédagogiques & Coefficients &rarr;
+        </a>
       </div>
 
       <!-- CONTENU DU TAB 1 : ASSIGNATIONS PARCOURS PIVOTS -->

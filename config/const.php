@@ -101,6 +101,7 @@ class TABLES
     public const RELANCES_IMPAYES = 'relances_impayes';
 
     // PÉDAGOGIE & ÉVALUATIONS
+    public const MAQUETTES_PEDAGOGIQUES = 'maquettes_pedagogiques';
     public const ENSEIGNANTS = 'enseignants';
     public const EMPLOIS_TEMPS = 'emplois_temps';
     public const NOTES = 'notes';

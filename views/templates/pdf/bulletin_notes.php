@@ -278,44 +278,112 @@
   <table class="notes-table">
     <thead>
       <tr>
-        <th style="width: 44%; text-align: left;">MATIÈRES</th>
-        <th style="width: 8%;">Moyenne /20</th>
-        <th style="width: 8%;">Coefficient</th>
-        <th style="width: 10%;">Points Pondérés</th>
-        <th style="width: 15%;">Enseignant</th>
-        <th style="width: 15%;">Appréciation</th>
+        <th style="width: 36%; text-align: left;">MATIERES</th>
+        <th style="width: 8%;">Moy</th>
+        <th style="width: 7%;">Coef</th>
+        <th style="width: 10%;">MOY Coef</th>
+        <th style="width: 9%;">Rang</th>
+        <th style="width: 17%;">Enseignants</th>
+        <th style="width: 13%;">Appréciation</th>
       </tr>
     </thead>
     <tbody>
-      <?php if (!empty($matieres_notes) && is_array($matieres_notes)): ?>
+      <?php 
+        $hasGenerales = !empty($matieresGenerales) && is_array($matieresGenerales);
+        $hasPro = !empty($matieresPro) && is_array($matieresPro);
+      ?>
+
+      <?php if ($hasGenerales || $hasPro): ?>
+
+        <!-- SECTION 1 : MATIERES GENERALES -->
+        <?php if ($hasGenerales): ?>
+          <?php foreach ($matieresGenerales as $m): ?>
+            <tr>
+              <td><?= htmlspecialchars($m['matiere'] ?? ($m['libelle'] ?? '-')) ?></td>
+              <td style="text-align: center; font-weight: 700;"><?= isset($m['moyenne']) ? number_format((float)$m['moyenne'], 2, ',', ' ') : '-' ?></td>
+              <td style="text-align: center;"><?= isset($m['coefficient']) ? number_format((float)$m['coefficient'], 0) : '-' ?></td>
+              <td style="text-align: center; font-weight: 700;"><?= isset($m['points']) ? number_format((float)$m['points'], 2, ',', ' ') : '-' ?></td>
+              <td style="text-align: center;"><?= htmlspecialchars($m['rang_matiere'] ?? '-') ?></td>
+              <td><?= htmlspecialchars($m['prof'] ?? ($m['enseignant'] ?? '-')) ?></td>
+              <td style="text-align: center; font-size: 8.5px;"><?= htmlspecialchars($m['appreciation'] ?? ($m['appr'] ?? '-')) ?></td>
+            </tr>
+          <?php endforeach; ?>
+          <tr class="subtotal-row" style="background: #EAECEF; font-weight: bold;">
+            <td style="font-weight: 800; text-transform: uppercase;">TOTAL MATIERES GENERALES :</td>
+            <td style="text-align: center; font-weight: 800;"><?= number_format((float)($moyenneGenerales ?? 0), 2, ',', ' ') ?></td>
+            <td style="text-align: center; font-weight: 800;"><?= number_format((float)($totalCoefficientsGenerales ?? 0), 0) ?></td>
+            <td style="text-align: center; font-weight: 800;"><?= number_format((float)($totalPointsGenerales ?? 0), 2, ',', ' ') ?></td>
+            <td style="text-align: center; font-weight: 800;"><?= htmlspecialchars($rangGeneralesFr ?? '-') ?></td>
+            <td></td>
+            <td style="text-align: center; font-weight: 800; font-size: 8.5px;"><?= htmlspecialchars($appreciationGenerales ?? '-') ?></td>
+          </tr>
+        <?php endif; ?>
+
+        <!-- SECTION 2 : MATIERES PROFESSIONNELLES -->
+        <?php if ($hasPro): ?>
+          <?php foreach ($matieresPro as $m): ?>
+            <tr>
+              <td><?= htmlspecialchars($m['matiere'] ?? ($m['libelle'] ?? '-')) ?></td>
+              <td style="text-align: center; font-weight: 700;"><?= isset($m['moyenne']) ? number_format((float)$m['moyenne'], 2, ',', ' ') : '-' ?></td>
+              <td style="text-align: center;"><?= isset($m['coefficient']) ? number_format((float)$m['coefficient'], 0) : '-' ?></td>
+              <td style="text-align: center; font-weight: 700;"><?= isset($m['points']) ? number_format((float)$m['points'], 2, ',', ' ') : '-' ?></td>
+              <td style="text-align: center;"><?= htmlspecialchars($m['rang_matiere'] ?? '-') ?></td>
+              <td><?= htmlspecialchars($m['prof'] ?? ($m['enseignant'] ?? '-')) ?></td>
+              <td style="text-align: center; font-size: 8.5px;"><?= htmlspecialchars($m['appreciation'] ?? ($m['appr'] ?? '-')) ?></td>
+            </tr>
+          <?php endforeach; ?>
+          <tr class="subtotal-row" style="background: #EAECEF; font-weight: bold;">
+            <td style="font-weight: 800; text-transform: uppercase;">TOTAL MATIERES PROFESSIONNELLES :</td>
+            <td style="text-align: center; font-weight: 800;"><?= number_format((float)($moyennePro ?? 0), 2, ',', ' ') ?></td>
+            <td style="text-align: center; font-weight: 800;"><?= number_format((float)($totalCoefficientsPro ?? 0), 0) ?></td>
+            <td style="text-align: center; font-weight: 800;"><?= number_format((float)($totalPointsPro ?? 0), 2, ',', ' ') ?></td>
+            <td style="text-align: center; font-weight: 800;"><?= htmlspecialchars($rangProFr ?? '-') ?></td>
+            <td></td>
+            <td style="text-align: center; font-weight: 800; font-size: 8.5px;"><?= htmlspecialchars($appreciationPro ?? '-') ?></td>
+          </tr>
+        <?php endif; ?>
+
+        <!-- LIGNE BILAN GLOBAL -->
+        <tr class="bilan-row" style="background: #BDD7EE; font-weight: 800;">
+          <td style="font-weight: 800; font-size: 10.5px; text-align: center;">Bilan</td>
+          <td style="text-align: center; font-weight: 800; font-size: 10.5px;"><?= number_format((float)($moyenneGenerale ?? 0), 2, ',', ' ') ?></td>
+          <td style="text-align: center; font-weight: 800; font-size: 10.5px;"><?= number_format((float)($totalCoefficients ?? 0), 0) ?></td>
+          <td style="text-align: center; font-weight: 800; font-size: 10.5px;"><?= number_format((float)($totalPoints ?? 0), 2, ',', ' ') ?></td>
+          <td style="text-align: center; font-weight: 800; font-size: 10.5px;"><?= htmlspecialchars($rangFr ?? ($rang ?? '-')) ?></td>
+          <td></td>
+          <td style="text-align: center; font-weight: 800; font-size: 9px;"><?= htmlspecialchars($mention ?? '-') ?></td>
+        </tr>
+
+      <?php elseif (!empty($matieres_notes) && is_array($matieres_notes)): ?>
+
+        <!-- FALLBACK SI PAS ENCORE DE CATÉGORISATION DANS LA MAQUETTE -->
         <?php foreach ($matieres_notes as $m): ?>
           <tr>
             <td><?= htmlspecialchars($m['matiere'] ?? ($m['libelle'] ?? '-')) ?></td>
-            <td style="text-align: center; font-weight: 700;"><?= isset($m['moyenne']) ? number_format((float)$m['moyenne'], 2, ',', ' ') : (htmlspecialchars($m['moy'] ?? '-')) ?></td>
-            <td style="text-align: center;"><?= isset($m['coefficient']) ? number_format((float)$m['coefficient'], 2, ',', ' ') : (htmlspecialchars($m['coef'] ?? '-')) ?></td>
-            <td style="text-align: center; font-weight: 700;"><?= isset($m['points']) ? number_format((float)$m['points'], 2, ',', ' ') : (htmlspecialchars($m['total'] ?? '-')) ?></td>
+            <td style="text-align: center; font-weight: 700;"><?= isset($m['moyenne']) ? number_format((float)$m['moyenne'], 2, ',', ' ') : '-' ?></td>
+            <td style="text-align: center;"><?= isset($m['coefficient']) ? number_format((float)$m['coefficient'], 0) : '-' ?></td>
+            <td style="text-align: center; font-weight: 700;"><?= isset($m['points']) ? number_format((float)$m['points'], 2, ',', ' ') : '-' ?></td>
+            <td style="text-align: center;"><?= htmlspecialchars($m['rang_matiere'] ?? '-') ?></td>
             <td><?= htmlspecialchars($m['prof'] ?? ($m['enseignant'] ?? '-')) ?></td>
-            <td style="text-align: center;"><?= htmlspecialchars($m['appreciation'] ?? ($m['appr'] ?? '-')) ?></td>
+            <td style="text-align: center; font-size: 8.5px;"><?= htmlspecialchars($m['appreciation'] ?? ($m['appr'] ?? '-')) ?></td>
           </tr>
         <?php endforeach; ?>
+        <tr class="bilan-row" style="background: #BDD7EE; font-weight: 800;">
+          <td style="font-weight: 800; font-size: 10.5px; text-align: center;">Bilan</td>
+          <td style="text-align: center; font-weight: 800; font-size: 10.5px;"><?= number_format((float)($moyenneGenerale ?? 0), 2, ',', ' ') ?></td>
+          <td style="text-align: center; font-weight: 800; font-size: 10.5px;"><?= number_format((float)($totalCoefficients ?? 0), 0) ?></td>
+          <td style="text-align: center; font-weight: 800; font-size: 10.5px;"><?= number_format((float)($totalPoints ?? 0), 2, ',', ' ') ?></td>
+          <td style="text-align: center; font-weight: 800; font-size: 10.5px;"><?= htmlspecialchars($rangFr ?? ($rang ?? '-')) ?></td>
+          <td></td>
+          <td style="text-align: center; font-weight: 800; font-size: 9px;"><?= htmlspecialchars($mention ?? '-') ?></td>
+        </tr>
+
       <?php else: ?>
         <tr>
-          <td colspan="6" style="text-align: center; padding: 12px; color: #64748B; font-style: italic;">
+          <td colspan="7" style="text-align: center; padding: 12px; color: #64748B; font-style: italic;">
             Aucune note enregistrée pour cette période.
           </td>
         </tr>
-      <?php endif; ?>
-
-      <!-- LIGNE TOTAUX / BILAN -->
-      <?php if (!empty($totalCoefficients) && $totalCoefficients > 0): ?>
-      <tr class="bilan-row">
-        <td style="text-align: right; font-weight: bold;">TOTAL & BILAN GÉNÉRAL :</td>
-        <td style="text-align: center; font-size: 11px;"><?= number_format((float)($moyenneGenerale ?? 0), 2, ',', ' ') ?> /20</td>
-        <td style="text-align: center; font-size: 11px;"><?= number_format((float)($totalCoefficients ?? 0), 2, ',', ' ') ?></td>
-        <td style="text-align: center; font-size: 11px;"><?= number_format((float)($totalPoints ?? 0), 2, ',', ' ') ?></td>
-        <td></td>
-        <td style="text-align: center; font-size: 11px;"><?= htmlspecialchars($mention ?? '-') ?></td>
-      </tr>
       <?php endif; ?>
     </tbody>
   </table>

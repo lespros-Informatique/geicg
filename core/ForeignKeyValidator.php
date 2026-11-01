@@ -158,6 +158,7 @@ class ForeignKeyValidator
         'absences' => ['etudiant_code', 'classe_code', 'annee_code', 'etablissement_code'],
         'notes' => ['composition_code', 'etudiant_code', 'inscription_code', 'etablissement_code'],
         'classes' => ['filiere_code', 'niveau_code', 'annee_code', 'etablissement_code'],
+        'maquettes_pedagogiques' => ['filiere_code', 'niveau_code', 'matiere_code', 'annee_code', 'etablissement_code'],
         'annees' => ['etablissement_code'],
         'emplois_temps' => ['classe_code', 'matiere_code', 'enseignant_code', 'annee_code', 'etablissement_code'],
         'filiere_cycles' => ['filiere_code', 'cycle_code', 'niveau_code', 'etablissement_code'],
