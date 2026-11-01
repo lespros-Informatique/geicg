@@ -7,6 +7,10 @@ $matieres = $matieres ?? [];
 $semestres = $semestres ?? [];
 $compositions = $compositions ?? [];
 $selectedAnneeCode = $selectedAnneeCode ?? '';
+$isTeacherOnly = !empty($isTeacherOnly);
+$canEnterNotes = isset($canEnterNotes) ? (bool)$canEnterNotes : true;
+$canViewNotes = isset($canViewNotes) ? (bool)$canViewNotes : true;
+$canManageCompos = isset($canManageCompos) ? (bool)$canManageCompos : true;
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -17,17 +21,26 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
       <!-- Page Header -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <i data-lucide="award" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
             Registre des Évaluations
+            <?php if ($isTeacherOnly): ?>
+              <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
+                <i data-lucide="user-check" style="width: 14px; height: 14px;"></i> Mes Classes & Matières
+              </span>
+            <?php endif; ?>
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Synthèse des sessions d'évaluations par classe </p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">
+            <?= $isTeacherOnly ? "Sessions d'évaluations de vos classes et matières assignées" : "Synthèse des sessions d'évaluations par classe" ?>
+          </p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::ENTER_NOTES]))): ?>
+          <?php if ($canEnterNotes): ?>
           <a href="<?= RACINE ?>note/saisieClasse" id="btn-saisie-classe" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
             <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie des Notes
           </a>
+          <?php endif; ?>
+          <?php if ($canManageCompos): ?>
           <a href="<?= RACINE ?>composition/formulaire?type=EXAMEN" class="btn btn-outline-secondary" style="border-color: #CBD5E1; color: #334155; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; background: #FFFFFF;">
             <i data-lucide="calendar-plus" style="width: 18px; height: 18px;"></i> Planifier un Examen
           </a>
@@ -309,12 +322,16 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
         Fermer
       </button>
       <div style="display: flex; gap: 10px; align-items: center;">
+        <?php if ($canViewNotes): ?>
         <a href="#" id="md-btn-go-print" target="_blank" class="btn btn-outline-secondary" style="border: 1px solid #CBD5E1; color: #1E293B; background: #FFFFFF; border-radius: 8px; font-weight: 700; padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px;" title="Imprimer la fiche de notes (PDF)">
           <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer (PDF)
         </a>
+        <?php endif; ?>
+        <?php if ($canEnterNotes): ?>
         <a href="#" id="md-btn-go-saisie" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; border-radius: 8px; font-weight: 700; padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px; color: #FFFFFF; text-decoration: none;">
           <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Saisir / Modifier les Notes
         </a>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -323,7 +340,10 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
 
 <script type="application/json" id="notes-list-config">
 <?= json_encode([
-    'csrfToken' => Validator::generateCsrfToken()
+    'csrfToken' => Validator::generateCsrfToken(),
+    'canEnterNotes' => (bool)$canEnterNotes,
+    'canViewNotes' => (bool)$canViewNotes,
+    'isTeacherOnly' => (bool)$isTeacherOnly
 ]) ?>
 </script>
 <?php

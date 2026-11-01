@@ -7,14 +7,54 @@ class NoteController extends BaseController
         return new ModelNote();
     }
 
+    protected function getTeacherContext(): array
+    {
+        $userCode = Auth::code();
+        $teacherCodes = [];
+        $isTeacherOnly = false;
+
+        $hasFullAcademicAccess = Auth::isSuperAdmin()
+            || Auth::hasRole([ROLES::SUPER_ADMIN, ROLES::DIR_GENERAL, ROLES::DIR_ETUDES])
+            || Auth::can([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::LOCK_NOTES, PERMISSIONS::CONFIG_SYSTEM]);
+
+        if (!$hasFullAcademicAccess) {
+            $teacherCodes = [$userCode];
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT code_enseignant, user_code FROM " . TABLES::ENSEIGNANTS . " WHERE user_code = ? OR code_enseignant = ?");
+                $stmt->execute([$userCode, $userCode]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if (!empty($row['code_enseignant'])) $teacherCodes[] = $row['code_enseignant'];
+                    if (!empty($row['user_code'])) $teacherCodes[] = $row['user_code'];
+                }
+                $teacherCodes = array_values(array_unique(array_filter($teacherCodes)));
+            } catch (Exception $e) {}
+
+            $sessionUser = Session::get('user') ?? [];
+            $isEnseignantFlag = !empty($sessionUser['is_enseignant']) || !empty($sessionUser['code_enseignant']);
+
+            if (Auth::hasRole(ROLES::ENSEIGNANT) || $isEnseignantFlag || count($teacherCodes) > 1) {
+                $isTeacherOnly = true;
+            }
+        }
+
+        return [
+            'isTeacherOnly' => $isTeacherOnly,
+            'teacherCodes' => $isTeacherOnly ? $teacherCodes : []
+        ];
+    }
+
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::VIEW_NOTES);
+        $this->requirePermission([PERMISSIONS::VIEW_NOTES, PERMISSIONS::ENTER_NOTES]);
+
+        $teacherCtx = $this->getTeacherContext();
+        $isTeacherOnly = $teacherCtx['isTeacherOnly'];
+        $teacherCodes = $teacherCtx['teacherCodes'];
+
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
-        $matieres = (new ModelMatiere())->getAll();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
@@ -29,8 +69,20 @@ class NoteController extends BaseController
             $selectedAnneeCode = Session::get('annee_active_code');
         }
 
+        if ($isTeacherOnly && !empty($teacherCodes)) {
+            $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+            $matieres = $this->model->getMatieresForTeacher($teacherCodes, $selectedAnneeCode);
+        } else {
+            $classes = (new ModelClasse())->getAll();
+            $matieres = (new ModelMatiere())->getAll();
+        }
+
         $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
         $compositions = (new ModelComposition())->getAll($selectedAnneeCode);
+
+        $canEnterNotes = Auth::can(PERMISSIONS::ENTER_NOTES) || $isTeacherOnly;
+        $canViewNotes = Auth::can(PERMISSIONS::VIEW_NOTES) || $isTeacherOnly;
+        $canManageCompos = Auth::can([PERMISSIONS::MANAGE_EXAMENS, PERMISSIONS::CONFIG_ACADEMIQUE]) && !$isTeacherOnly;
 
         $this->loadView('../views/notes/list.php', [
             'annees' => $annees,
@@ -39,14 +91,18 @@ class NoteController extends BaseController
             'matieres' => $matieres,
             'semestres' => $semestres,
             'compositions' => $compositions,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'isTeacherOnly' => $isTeacherOnly,
+            'canEnterNotes' => $canEnterNotes,
+            'canViewNotes' => $canViewNotes,
+            'canManageCompos' => $canManageCompos
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::VIEW_NOTES);
+        $this->requirePermission([PERMISSIONS::VIEW_NOTES, PERMISSIONS::ENTER_NOTES]);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -54,7 +110,20 @@ class NoteController extends BaseController
         $matiereCode = $_GET['matiere_code'] ?? null;
         $semestreCode = $_GET['semestre_code'] ?? null;
         $compositionCode = $_GET['composition_code'] ?? null;
-        $items = $this->model->getSessionsByClasseCompo($anneeCode, $niveauCode, $classeCode, $typeComposition, $matiereCode, $semestreCode, $compositionCode);
+
+        $teacherCtx = $this->getTeacherContext();
+        $teacherCodes = $teacherCtx['isTeacherOnly'] ? $teacherCtx['teacherCodes'] : null;
+
+        $items = $this->model->getSessionsByClasseCompo(
+            $anneeCode,
+            $niveauCode,
+            $classeCode,
+            $typeComposition,
+            $matiereCode,
+            $semestreCode,
+            $compositionCode,
+            $teacherCodes
+        );
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_composition'];

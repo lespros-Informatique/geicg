@@ -24,6 +24,8 @@ $(document).ready(function() {
     if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
   } catch (e) {}
   var csrfToken = cfg.csrfToken || '';
+  var canEnterNotes = cfg.canEnterNotes !== false;
+  var canViewNotes = cfg.canViewNotes !== false;
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
@@ -212,17 +214,24 @@ $(document).ready(function() {
                        + '&composition_code=' + encodeURIComponent(d.code_composition || '')
                        + '&matiere_code=' + encodeURIComponent(d.matiere_code || '');
           
-          return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">' +
-                   '<button type="button" class="btn btn-sm btn-details-session" data-classe="' + (d.code_classe || '') + '" data-compo="' + (d.code_composition || '') + '" data-matiere="' + (d.matiere_code || '') + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; cursor:pointer;" title="Consulter les détails">' +
-                     '<i data-lucide="eye" style="width:16px; height:16px;"></i>' +
-                   '</button>' +
-                   '<a href="' + saisieUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Modifier les notes">' +
-                     '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
-                   '</a>' +
-                   '<a href="' + printUrl + '" target="_blank" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Imprimer la fiche de notes (PDF)">' +
-                     '<i data-lucide="printer" style="width:16px; height:16px;"></i>' +
-                   '</a>' +
-                 '</div>';
+          var actionsHtml = '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">';
+          if (canViewNotes) {
+            actionsHtml += '<button type="button" class="btn btn-sm btn-details-session" data-classe="' + (d.code_classe || '') + '" data-compo="' + (d.code_composition || '') + '" data-matiere="' + (d.matiere_code || '') + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; cursor:pointer;" title="Consulter les détails">' +
+                             '<i data-lucide="eye" style="width:16px; height:16px;"></i>' +
+                           '</button>';
+          }
+          if (canEnterNotes) {
+            actionsHtml += '<a href="' + saisieUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Modifier les notes">' +
+                             '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
+                           '</a>';
+          }
+          if (canViewNotes) {
+            actionsHtml += '<a href="' + printUrl + '" target="_blank" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Imprimer la fiche de notes (PDF)">' +
+                             '<i data-lucide="printer" style="width:16px; height:16px;"></i>' +
+                           '</a>';
+          }
+          actionsHtml += '</div>';
+          return actionsHtml;
         }
       }
     ],

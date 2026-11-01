@@ -12,7 +12,7 @@ class ModelNote extends BaseModel
         return $this->getSessionsByClasseCompo($anneeCode, $niveauCode, $classeCode);
     }
 
-    public function getSessionsByClasseCompo(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $typeComposition = null, ?string $matiereCode = null, ?string $semestreCode = null, ?string $compositionCode = null): array
+    public function getSessionsByClasseCompo(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $typeComposition = null, ?string $matiereCode = null, ?string $semestreCode = null, ?string $compositionCode = null, ?array $teacherCodes = null): array
     {
         $db = $this->getCon();
         $sql = "
@@ -151,6 +151,30 @@ class ModelNote extends BaseModel
             $conditions[] = "comp.code_composition = ?";
             $params[] = $compositionCode;
         }
+        if (!empty($teacherCodes)) {
+            $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+            $conditions[] = "(
+                em.enseignant_code IN ($inCodes)
+                OR comp.user_code IN ($inCodes)
+                OR EXISTS (
+                    SELECT 1 FROM " . TABLES::ENSEIGNANT_MATIERE . " em_flt
+                    WHERE em_flt.classe_code = triplets.code_classe
+                      AND em_flt.matiere_code = triplets.matiere_code
+                      AND em_flt.enseignant_code IN ($inCodes)
+                      AND (em_flt.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em_flt.statut_enseignant_matiere IS NULL)
+                )
+                OR EXISTS (
+                    SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt_flt
+                    WHERE edt_flt.classe_code = triplets.code_classe
+                      AND edt_flt.matiere_code = triplets.matiere_code
+                      AND edt_flt.enseignant_code IN ($inCodes)
+                )
+            )";
+            foreach ($teacherCodes as $tc) { $params[] = $tc; }
+            foreach ($teacherCodes as $tc) { $params[] = $tc; }
+            foreach ($teacherCodes as $tc) { $params[] = $tc; }
+            foreach ($teacherCodes as $tc) { $params[] = $tc; }
+        }
 
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
@@ -164,6 +188,82 @@ class ModelNote extends BaseModel
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelNote::getSessionsByClasseCompo error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getClassesForTeacher(array $teacherCodes, ?string $anneeCode = null): array
+    {
+        if (empty($teacherCodes)) {
+            return [];
+        }
+        $db = $this->getCon();
+        $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+        $sql = "
+            SELECT DISTINCT cl.code_classe, cl.libelle_classe, cl.niveau_code, cl.filiere_code
+            FROM " . TABLES::CLASSES . " cl
+            WHERE (
+                EXISTS (
+                    SELECT 1 FROM " . TABLES::ENSEIGNANT_MATIERE . " em
+                    WHERE em.classe_code = cl.code_classe
+                      AND em.enseignant_code IN ($inCodes)
+                      AND (em.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em.statut_enseignant_matiere IS NULL)
+                      AND (em.annee_code = ? OR ? IS NULL OR ? = '')
+                )
+                OR EXISTS (
+                    SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                    WHERE edt.classe_code = cl.code_classe
+                      AND edt.enseignant_code IN ($inCodes)
+                      AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
+                )
+            )
+            ORDER BY cl.libelle_classe ASC
+        ";
+        $params = array_merge($teacherCodes, [$anneeCode, $anneeCode, $anneeCode], $teacherCodes, [$anneeCode, $anneeCode, $anneeCode]);
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelNote::getClassesForTeacher error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getMatieresForTeacher(array $teacherCodes, ?string $anneeCode = null): array
+    {
+        if (empty($teacherCodes)) {
+            return [];
+        }
+        $db = $this->getCon();
+        $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+        $sql = "
+            SELECT DISTINCT m.code_matiere, m.libelle_matiere
+            FROM " . TABLES::MATIERES . " m
+            WHERE (
+                EXISTS (
+                    SELECT 1 FROM " . TABLES::ENSEIGNANT_MATIERE . " em
+                    WHERE em.matiere_code = m.code_matiere
+                      AND em.enseignant_code IN ($inCodes)
+                      AND (em.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em.statut_enseignant_matiere IS NULL)
+                      AND (em.annee_code = ? OR ? IS NULL OR ? = '')
+                )
+                OR EXISTS (
+                    SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                    WHERE edt.matiere_code = m.code_matiere
+                      AND edt.enseignant_code IN ($inCodes)
+                      AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
+                )
+            )
+            ORDER BY m.libelle_matiere ASC
+        ";
+        $params = array_merge($teacherCodes, [$anneeCode, $anneeCode, $anneeCode], $teacherCodes, [$anneeCode, $anneeCode, $anneeCode]);
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelNote::getMatieresForTeacher error: " . $e->getMessage());
             return [];
         }
     }
