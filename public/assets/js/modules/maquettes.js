@@ -8,7 +8,7 @@
     if (!$('#table-maquette').length) return;
 
     var config = window.MAQUETTE_CONFIG || {};
-    var racine = config.racine || window.RACINE || '/';
+    var racine = window.RACINE || config.racine || '/geicg/';
     var csrfToken = config.csrfToken || '';
 
     if (window.lucide) lucide.createIcons();
@@ -128,7 +128,7 @@
           }
         }
       ],
-      language: { url: racine + 'json/datatables-i18n-fr-FR.json' },
+      language: { url: racine + 'public/json/datatables-i18n-fr-FR.json' },
       drawCallback: function() {
         if (window.lucide) lucide.createIcons();
       }
@@ -140,7 +140,8 @@
     });
 
     // Ouvrir Modale Ajout
-    $('.btn-add-maquette').on('click', function() {
+    $(document).on('click', '.btn-add-maquette', function(e) {
+      e.preventDefault();
       $('#form-maquette')[0].reset();
       $('#maq_id').val('');
       $('#modal-maquette-title').html('<i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Ajouter Matière à la Maquette');
@@ -154,11 +155,20 @@
       if (currentNiveau) $('#maq_niveau').val(currentNiveau).trigger('change.select2');
 
       $('#modal-maquette').css('display', 'flex');
-      if (window.lucide) lucide.createIcons();
+      setTimeout(function() {
+        if ($.fn.select2) {
+          $('#maq_annee, #maq_filiere, #maq_niveau, #maq_matiere').select2({
+            dropdownParent: $('#modal-maquette'),
+            width: '100%'
+          });
+        }
+        if (window.lucide) lucide.createIcons();
+      }, 50);
     });
 
     // Ouvrir Modale Édition
-    $(document).on('click', '.btn-edit-maq', function() {
+    $(document).on('click', '.btn-edit-maq', function(e) {
+      e.preventDefault();
       var id = $(this).data('id');
       var annee = $(this).data('annee');
       var filiere = $(this).data('filiere');
@@ -177,18 +187,28 @@
 
       $('#modal-maquette-title').html('<i data-lucide="edit" style="width:18px;height:18px;"></i> Modifier Matière de la Maquette');
       $('#modal-maquette').css('display', 'flex');
-      if (window.lucide) lucide.createIcons();
+      setTimeout(function() {
+        if ($.fn.select2) {
+          $('#maq_annee, #maq_filiere, #maq_niveau, #maq_matiere').select2({
+            dropdownParent: $('#modal-maquette'),
+            width: '100%'
+          });
+        }
+        if (window.lucide) lucide.createIcons();
+      }, 50);
     });
 
     // Fermer Modales
-    $('.btn-close-modal-maquette').on('click', function() {
+    $(document).on('click', '.btn-close-modal-maquette', function(e) {
+      e.preventDefault();
       $('#modal-maquette').css('display', 'none');
     });
     $('#modal-maquette').on('click', function(e) {
       if ($(e.target).is('#modal-maquette')) $(this).css('display', 'none');
     });
 
-    $('.btn-close-modal-dup').on('click', function() {
+    $(document).on('click', '.btn-close-modal-dup', function(e) {
+      e.preventDefault();
       $('#modal-dupliquer-maquette').css('display', 'none');
     });
     $('#modal-dupliquer-maquette').on('click', function(e) {
@@ -196,9 +216,18 @@
     });
 
     // Ouvrir Modale Duplication
-    $('.btn-duplicate-maquette').on('click', function() {
+    $(document).on('click', '.btn-duplicate-maquette', function(e) {
+      e.preventDefault();
       $('#modal-dupliquer-maquette').css('display', 'flex');
-      if (window.lucide) lucide.createIcons();
+      setTimeout(function() {
+        if ($.fn.select2) {
+          $('#dup_source_annee, #dup_target_annee, #dup_filiere').select2({
+            dropdownParent: $('#modal-dupliquer-maquette'),
+            width: '100%'
+          });
+        }
+        if (window.lucide) lucide.createIcons();
+      }, 50);
     });
 
     // Soumission Enregistrement Matière dans Maquette

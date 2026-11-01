@@ -1,4 +1,7 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php 
+require_once __DIR__ . '/../../public/inc/header.php'; 
+ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
+?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -95,8 +98,8 @@
 </div>
 
 <!-- MODAL : AJOUTER / MODIFIER MATIÈRE DANS MAQUETTE -->
-<div id="modal-maquette" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(15,23,42,0.6); align-items:center; justify-content:center;">
-  <div class="modal-dialog" style="max-width:580px; width:92%; background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden;">
+<div id="modal-maquette" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(2px); z-index:9999; justify-content:center; align-items:center; padding:16px;">
+  <div style="max-width:580px; width:92%; background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden;">
     <div style="padding:18px 24px; background:#F8FAFC; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
       <h3 id="modal-maquette-title" style="margin:0; font-size:16px; font-weight:800; color:#1E3A5F; display:flex; align-items:center; gap:8px;">
         <i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Ajouter Matière à la Maquette
@@ -176,8 +179,8 @@
 </div>
 
 <!-- MODAL : RECONDUCTION / DUPLICATION MAQUETTE -->
-<div id="modal-dupliquer-maquette" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(15,23,42,0.6); align-items:center; justify-content:center;">
-  <div class="modal-dialog" style="max-width:520px; width:92%; background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden;">
+<div id="modal-dupliquer-maquette" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(2px); z-index:9999; justify-content:center; align-items:center; padding:16px;">
+  <div style="max-width:520px; width:92%; background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden;">
     <div style="padding:18px 24px; background:#F8FAFC; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0; font-size:16px; font-weight:800; color:#1E3A5F; display:flex; align-items:center; gap:8px;">
         <i data-lucide="copy" style="width:18px;height:18px;"></i> Reconduire une Maquette
@@ -231,12 +234,20 @@
   </div>
 </div>
 
+<script type="application/json" id="maquette-list-config">
+<?= json_encode([
+    'racine' => RACINE,
+    'csrfToken' => Session::getCsrfToken()
+]) ?>
+</script>
 <script>
   window.MAQUETTE_CONFIG = {
     racine: '<?= RACINE ?>',
     csrfToken: '<?= Session::getCsrfToken() ?>'
   };
 </script>
-<script src="<?= RACINE ?>assets/js/modules/maquettes.js"></script>
-<?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>
 
