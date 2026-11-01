@@ -190,6 +190,7 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
                 <th style="padding: 12px 14px; width: 45px;">#</th>
                 <th style="padding: 12px 14px; width: 140px;">Matricule</th>
                 <th style="padding: 12px 14px;">Étudiant</th>
+                <th style="padding: 12px 14px; text-align: center; width: 60px;">Sexe</th>
                 <th style="padding: 12px 14px; text-align: center;">Moyenne Semestre</th>
                 <th style="padding: 12px 14px; text-align: center;">Décision</th>
                 <th style="padding: 12px 14px; text-align: right; width: 160px;">Actions</th>

@@ -1650,7 +1650,6 @@ $(document).ready(function() {
           data: 'etudiant_nom',
           render: function(d, type, r) {
             var nom = d || '-';
-            var sexe = r.sexe_etudiant || '';
             var photo = r.photo_etudiant ? String(r.photo_etudiant).trim() : '';
 
             var inits = '';
@@ -1673,15 +1672,24 @@ $(document).ready(function() {
               avatarHtml = '<div style="width:36px; height:36px; border-radius:50%; background:#EFF6FF; color:#1E3A5F; border:1px solid #DBEAFE; font-weight:800; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">' + inits + '</div>';
             }
 
-            var sexeBadge = sexe ? '<span style="font-size:10px; font-weight:800; color:#64748B; background:#F1F5F9; padding:1px 5px; border-radius:4px; margin-left:6px;">' + sexe + '</span>' : '';
-
             return '<div style="display:flex; align-items:center; gap:10px;">' +
                      avatarHtml +
-                     '<div style="display:flex; align-items:center;">' +
-                       '<strong style="color:#0F172A; font-size:13.5px;">' + nom + '</strong>' +
-                       sexeBadge +
-                     '</div>' +
+                     '<strong style="color:#0F172A; font-size:13.5px;">' + nom + '</strong>' +
                    '</div>';
+          }
+        },
+        { 
+          data: 'sexe_etudiant',
+          className: 'text-center',
+          width: '60px',
+          render: function(d) {
+            var sexe = String(d || '').toUpperCase().trim();
+            if (sexe === 'M' || sexe === 'MASCULIN') {
+              return '<span class="badge" style="background:#EFF6FF; color:#1D4ED8; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">M</span>';
+            } else if (sexe === 'F' || sexe === 'FEMININ') {
+              return '<span class="badge" style="background:#FDF2F8; color:#BE185D; font-weight:800; font-size:11px; padding:3px 8px; border-radius:6px;">F</span>';
+            }
+            return '<span style="color:#94A3B8;">-</span>';
           }
         },
         { 
