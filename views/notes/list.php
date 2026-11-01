@@ -69,9 +69,12 @@ $canManageCompos = isset($canManageCompos) ? (bool)$canManageCompos : true;
               <i data-lucide="clock" style="width: 14px; height: 14px; color: #64748B;"></i> Semestre
             </label>
             <select id="filter-semestre" class="form-control select2" style="width: 100%;">
-              <option value="">-- Tous les semestres --</option>
+              <option value="" data-statut="">-- Tous les semestres --</option>
               <?php foreach ($semestres as $s): ?>
-                <option value="<?= htmlspecialchars($s['code_semestre']) ?>"><?= htmlspecialchars($s['libelle_semestre']) ?></option>
+                <?php $isCloture = (($s['statut_semestre'] ?? '') === 'cloture'); ?>
+                <option value="<?= htmlspecialchars($s['code_semestre']) ?>" data-statut="<?= htmlspecialchars($s['statut_semestre'] ?? '') ?>">
+                  <?= htmlspecialchars($s['libelle_semestre']) ?><?= $isCloture ? ' (Clôturé)' : '' ?>
+                </option>
               <?php endforeach; ?>
             </select>
           </div>

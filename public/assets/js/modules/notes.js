@@ -72,11 +72,39 @@ $(document).ready(function() {
 
   $('#filter-classe, #filter-annee, #filter-matiere, #filter-semestre, #filter-compo').on('change', function() {
     var cls = $('#filter-classe').val();
-    if (cls) {
-      $('#btn-saisie-classe').attr('href', window.RACINE + 'note/saisieClasse?classe_code=' + encodeURIComponent(cls));
+    var semStatut = ($('#filter-semestre option:selected').data('statut') || '').toString().toLowerCase();
+
+    if (semStatut === 'cloture') {
+      $('#btn-saisie-classe')
+        .addClass('disabled')
+        .attr('href', 'javascript:void(0);')
+        .attr('title', 'Le semestre sélectionné est clôturé : la saisie des notes est désactivée.')
+        .css({
+          'background': '#CBD5E1',
+          'border': '1px solid #CBD5E1',
+          'color': '#64748B',
+          'cursor': 'not-allowed',
+          'pointer-events': 'none',
+          'box-shadow': 'none'
+        })
+        .html('<i data-lucide="lock" style="width: 18px; height: 18px;"></i> Saisie Clôturée');
     } else {
-      $('#btn-saisie-classe').attr('href', window.RACINE + 'note/saisieClasse');
+      var targetUrl = cls ? (window.RACINE + 'note/saisieClasse?classe_code=' + encodeURIComponent(cls)) : (window.RACINE + 'note/saisieClasse');
+      $('#btn-saisie-classe')
+        .removeClass('disabled')
+        .attr('href', targetUrl)
+        .removeAttr('title')
+        .css({
+          'background': 'linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%)',
+          'border': 'none',
+          'color': '#FFFFFF',
+          'cursor': 'pointer',
+          'pointer-events': 'auto',
+          'box-shadow': '0 4px 12px rgba(30,58,95,0.25)'
+        })
+        .html('<i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie des Notes');
     }
+    if (window.lucide) lucide.createIcons();
     table.ajax.reload();
   });
 
@@ -151,8 +179,16 @@ $(document).ready(function() {
       { 
         data: 'libelle_semestre', 
         defaultContent: '-',
-        render: function(d) {
-          return '<span style="font-size:13px; color:#0284C7; font-weight:700;">' + (d || '-') + '</span>';
+        render: function(d, t, r) {
+          var semNom = d || '-';
+          var isCloture = (r && r.statut_semestre ? String(r.statut_semestre).toLowerCase() === 'cloture' : false);
+          if (isCloture) {
+            return '<div style="display:inline-flex; align-items:center; gap:6px;">' +
+                     '<span style="font-size:13px; color:#64748B; font-weight:700;">' + semNom + '</span>' +
+                     '<span class="badge" style="background:#FEE2E2; color:#B91C1C; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px;" title="Semestre clôturé">Clôturé</span>' +
+                   '</div>';
+          }
+          return '<span style="font-size:13px; color:#0284C7; font-weight:700;">' + semNom + '</span>';
         }
       },
       { 
@@ -221,9 +257,16 @@ $(document).ready(function() {
                            '</button>';
           }
           if (canEnterNotes) {
-            actionsHtml += '<a href="' + saisieUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Modifier les notes">' +
-                             '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
-                           '</a>';
+            var isSemestreCloture = (d.statut_semestre ? String(d.statut_semestre).toLowerCase() === 'cloture' : false);
+            if (isSemestreCloture) {
+              actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="Semestre clôturé (Saisie et modification désactivées)">' +
+                               '<i data-lucide="lock" style="width:16px; height:16px;"></i>' +
+                             '</button>';
+            } else {
+              actionsHtml += '<a href="' + saisieUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Modifier les notes">' +
+                               '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
+                             '</a>';
+            }
           }
           if (canViewNotes) {
             actionsHtml += '<a href="' + printUrl + '" target="_blank" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Imprimer la fiche de notes (PDF)">' +
@@ -307,10 +350,16 @@ $(document).ready(function() {
             '<span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:5px; text-transform:uppercase; ' + badgeTypeStyle + '">' + escapeHtml(typeEval) + '</span>'
           );
 
+          var isSemestreCloture = (info.statut_semestre ? String(info.statut_semestre).toLowerCase() === 'cloture' : false);
+          var badgeSemestre = '<span style="background:#F0FDF4; color:#15803D; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="calendar" style="width:13px;height:13px;color:#22C55E;"></i> ' + escapeHtml(info.libelle_semestre || '-') + '</span>';
+          if (isSemestreCloture) {
+            badgeSemestre = '<span style="background:#FEE2E2; color:#B91C1C; border:1px solid #FECACA; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:4px;" title="Ce semestre est clôturé"><i data-lucide="lock" style="width:13px;height:13px;"></i> ' + escapeHtml(info.libelle_semestre || '-') + ' (Clôturé)</span>';
+          }
+
           $('#modal-compo-subtitle').html(
             '<span style="background:#F1F5F9; color:#334155; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="graduation-cap" style="width:13px;height:13px;color:#64748B;"></i> Classe : ' + escapeHtml(info.libelle_classe || '-') + '</span>' +
             '<span style="background:#EEF2FF; color:#4338CA; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="book-open" style="width:13px;height:13px;color:#6366F1;"></i> Matière : ' + escapeHtml(info.libelle_matiere || 'Session globale') + '</span>' +
-            '<span style="background:#F0FDF4; color:#15803D; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="calendar" style="width:13px;height:13px;color:#22C55E;"></i> ' + escapeHtml(info.libelle_semestre || '-') + '</span>' +
+            badgeSemestre +
             '<span style="background:#FEF3C7; color:#B45309; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="scale" style="width:13px;height:13px;color:#F59E0B;"></i> Coef : ' + parseFloat(info.coefficient || 1.00).toFixed(2) + '</span>'
           );
 
@@ -384,7 +433,36 @@ $(document).ready(function() {
                         + '&semestre_code=' + encodeURIComponent(info.semestre_code || '')
                         + '&matiere_code=' + encodeURIComponent(info.matiere_code || '')
                         + '&type_evaluation_code=' + encodeURIComponent(info.type_composition || '');
-          $('#md-btn-go-saisie').attr('href', saisieUrl);
+
+          if (isSemestreCloture) {
+            $('#md-btn-go-saisie')
+              .attr('href', 'javascript:void(0);')
+              .addClass('disabled')
+              .attr('title', 'Le semestre est clôturé : la saisie et la modification des notes sont verrouillées.')
+              .css({
+                'background': '#CBD5E1',
+                'border-color': '#CBD5E1',
+                'color': '#64748B',
+                'cursor': 'not-allowed',
+                'pointer-events': 'none',
+                'box-shadow': 'none'
+              })
+              .html('<i data-lucide="lock" style="width: 16px; height: 16px;"></i> Semestre Clôturé');
+          } else {
+            $('#md-btn-go-saisie')
+              .attr('href', saisieUrl)
+              .removeClass('disabled')
+              .removeAttr('title')
+              .css({
+                'background': '#1E3A5F',
+                'border-color': '#1E3A5F',
+                'color': '#FFFFFF',
+                'cursor': 'pointer',
+                'pointer-events': 'auto',
+                'box-shadow': 'none'
+              })
+              .html('<i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Saisir / Modifier les Notes');
+          }
 
           // Bouton Imprimer
           var printUrl = window.RACINE + 'note/imprimerPdf?classe_code=' + encodeURIComponent(info.classe_code || classeCode)

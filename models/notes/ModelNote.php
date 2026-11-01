@@ -23,6 +23,7 @@ class ModelNote extends BaseModel
                 comp.type_composition,
                 comp.semestre_code,
                 s.libelle_semestre,
+                s.statut_semestre,
                 triplets.matiere_code,
                 m.libelle_matiere,
                 COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient,
@@ -273,7 +274,7 @@ class ModelNote extends BaseModel
         $db = $this->getCon();
         try {
             $stmtInfo = $db->prepare("
-                SELECT comp.*, s.libelle_semestre, m.libelle_matiere, cl.libelle_classe, n.libelle_niveau, f.libelle_filiere,
+                SELECT comp.*, s.libelle_semestre, s.statut_semestre, m.libelle_matiere, cl.libelle_classe, n.libelle_niveau, f.libelle_filiere,
                        COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
                 FROM " . TABLES::COMPOSITIONS . " comp
                 LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
