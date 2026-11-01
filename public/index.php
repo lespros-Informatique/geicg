@@ -476,6 +476,7 @@ $route->addRoute('/absence/formulaire', [$absenceController, 'formulaire']);
 // Module: note (NoteController)
 $route->addRoute('/note/list', [$noteController, 'list']);
 $route->addRoute('/note/apiList', [$noteController, 'apiList']);
+$route->addRoute('/note/apiDetailsClasse', [$noteController, 'apiDetailsClasse']);
 $route->addRoute('/note/saisieClasse', [$noteController, 'saisieClasse']);
 $route->addRoute('/note/saveBatch', [$noteController, 'saveBatch']);
 $route->addRoute('/note/getStudentsByClasse', [$noteController, 'getStudentsByClasse']);

@@ -14,6 +14,7 @@ class NoteController extends BaseController
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
+        $matieres = (new ModelMatiere())->getAll();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
@@ -32,6 +33,7 @@ class NoteController extends BaseController
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
+            'matieres' => $matieres,
             'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
@@ -43,10 +45,12 @@ class NoteController extends BaseController
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
-        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
+        $typeComposition = $_GET['type_composition'] ?? null;
+        $matiereCode = $_GET['matiere_code'] ?? null;
+        $items = $this->model->getSessionsByClasseCompo($anneeCode, $niveauCode, $classeCode, $typeComposition, $matiereCode);
         $data = [];
         foreach ($items as $i) {
-            $id = $i['id_note'];
+            $id = $i['id_composition'];
             $idCrypte = $this->validator->crypter($id);
             $data[] = array_merge($i, [
                 'id' => $id,
@@ -54,6 +58,29 @@ class NoteController extends BaseController
             ]);
         }
         $this->json(['data' => $data]);
+    }
+
+    public function apiDetailsClasse()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_NOTES);
+        $classeCode = trim($_GET['classe_code'] ?? '');
+        $compositionCode = trim($_GET['composition_code'] ?? '');
+        $matiereCode = trim($_GET['matiere_code'] ?? '');
+
+        if (empty($classeCode) || empty($compositionCode)) {
+            $this->json(['status' => 0, 'message' => 'Paramètres invalides (classe ou composition manquante).']);
+            return;
+        }
+
+        $anneeCode = $this->getActiveAnneeCode();
+        $data = $this->model->getDetailsClasseCompo($classeCode, $compositionCode, $matiereCode, $anneeCode);
+        if (!$data) {
+            $this->json(['status' => 0, 'message' => 'Session d\'évaluation introuvable.']);
+            return;
+        }
+
+        $this->json(['status' => 1, 'data' => $data]);
     }
 
     public function add()

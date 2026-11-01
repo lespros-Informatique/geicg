@@ -22,7 +22,7 @@ $(document).ready(function() {
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
+    $('#filter-annee, #filter-niveau, #filter-classe, #filter-type-eval, #filter-matiere').select2({ width: '100%' });
   }
 
   // Filtrage en cascade Niveau -> Classe
@@ -44,13 +44,11 @@ $(document).ready(function() {
     table.ajax.reload();
   });
 
-  $('#filter-classe, #filter-annee').on('change', function() {
+  $('#filter-classe, #filter-annee, #filter-type-eval, #filter-matiere').on('change', function() {
     var cls = $('#filter-classe').val();
     if (cls) {
-      $('#btn-add-note').attr('href', window.RACINE + 'note/formulaire?classe_code=' + encodeURIComponent(cls));
       $('#btn-saisie-classe').attr('href', window.RACINE + 'note/saisieClasse?classe_code=' + encodeURIComponent(cls));
     } else {
-      $('#btn-add-note').attr('href', window.RACINE + 'note/formulaire');
       $('#btn-saisie-classe').attr('href', window.RACINE + 'note/saisieClasse');
     }
     table.ajax.reload();
@@ -64,43 +62,255 @@ $(document).ready(function() {
         d.annee_code = $('#filter-annee').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
+        d.type_composition = $('#filter-type-eval').val();
+        d.matiere_code = $('#filter-matiere').val();
       }
     },
     processing: true,
     autoWidth: false,
     columns: [
-      { data: null, width: '50px', render: function(d, type, row, meta) {
-        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-      }},
-      { data: 'nom_etudiant', defaultContent: '', render: function(d, t, r) {
-        var name = (d && d.trim()) ? d : (r.inscription_code || '-');
-        var mat = r.matricule_etudiant ? ' <small style="color:#64748B;">(' + r.matricule_etudiant + ')</small>' : '';
-        return '<strong>' + name + '</strong>' + mat;
-      }},
-      { data: 'libelle_matiere', defaultContent: '', render: function(d, t, r) { return d || r.matiere_code || '-'; } },
-      { data: 'type_evaluation_code', defaultContent: '-', width: '110px' },
-      { data: 'valeur_note', defaultContent: '-', width: '80px', render: function(d) {
-        return '<strong style="color:#0F172A;">' + (d || '0') + '/20</strong>';
-      } },
-      { data: 'statut_note', width: '90px', className: 'text-center', render: function(d, type, row) {
-        var isActif = (d === 'actif');
-        var checkedAttr = isActif ? 'checked' : '';
-        return '<div style="display:flex; justify-content:center; align-items:center;">' +
-               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
-               '<input type="checkbox" class="toggle-statut-note" data-id="' + row.id_note + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-               '</span>' +
-               '</label>' +
-               '</div>';
-      }},
-      { data: null, width: '160px', orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'note/edition/' + (d.editId || d.id_note) + '" class="btn btn-sm btn-secondary" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>'
-             + '<a href="' + window.RACINE + 'note/details/' + (d.editId || d.id_note) + '" class="btn btn-sm btn-info" style="font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
-      }, className: 'text-end' }
+      { 
+        data: null, 
+        width: '50px', 
+        render: function(d, type, row, meta) {
+          return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+        }
+      },
+      { 
+        data: 'libelle_classe', 
+        defaultContent: '',
+        render: function(d, t, r) {
+          var cls = d || r.code_classe || '-';
+          var niv = r.libelle_niveau ? '<div style="font-size:11px; color:#64748B; margin-top:2px;">' + r.libelle_niveau + '</div>' : '';
+          return '<div><strong style="color:#0F172A; font-size:13px;">' + cls + '</strong>' + niv + '</div>';
+        }
+      },
+      { 
+        data: 'libelle_composition', 
+        defaultContent: '',
+        render: function(d, t, r) {
+          var typ = (r && r.type_composition) ? r.type_composition : 'EXAMEN';
+          var badgeStyle = 'background:#EFF6FF; color:#1D4ED8;';
+          var badgeText = 'EXAMEN';
+          if (typ === 'DEVOIR') {
+            badgeStyle = 'background:#FEF3C7; color:#B45309;';
+            badgeText = 'DEVOIR';
+          } else if (typ === 'INTERROGATION') {
+            badgeStyle = 'background:#DCFCE7; color:#15803D;';
+            badgeText = 'INTERRO';
+          } else if (typ !== 'EXAMEN') {
+            badgeStyle = 'background:#F1F5F9; color:#475569;';
+            badgeText = typ;
+          }
+          var typeBadge = '<span style="font-size:10px; font-weight:800; ' + badgeStyle + ' padding:2px 7px; border-radius:4px; margin-right:6px; display:inline-block;">' + badgeText + '</span>';
+          return '<div>' + typeBadge + '<strong style="color:#0F172A; font-size:13px;">' + (d || r.code_composition || '-') + '</strong></div>';
+        }
+      },
+      { 
+        data: 'libelle_matiere', 
+        defaultContent: '-', 
+        render: function(d, t, r) {
+          var mat = d || '-';
+          var coef = r.coefficient ? ' <span class="badge" style="background:#F1F5F9; color:#475569; font-size:10px; padding:2px 6px;">Coef ' + parseFloat(r.coefficient).toFixed(2) + '</span>' : '';
+          return '<span style="font-size:13px; color:#334155; font-weight:600;">' + mat + '</span>' + coef;
+        } 
+      },
+      { 
+        data: 'libelle_semestre', 
+        defaultContent: '-',
+        render: function(d) {
+          return '<span style="font-size:13px; color:#0284C7; font-weight:700;">' + (d || '-') + '</span>';
+        }
+      },
+      { 
+        data: 'nb_notes', 
+        width: '130px', 
+        className: 'text-center',
+        render: function(d, type, row) {
+          var nb = parseInt(d || 0, 10);
+          var tot = parseInt(row.total_etudiants || 0, 10);
+          if (tot === 0 && nb === 0) {
+            return '<span class="badge" style="background:#F1F5F9; color:#64748B; font-weight:700; padding:4px 8px; border-radius:6px; font-size:11px;">0 inscrit</span>';
+          }
+          if (tot > 0 && nb >= tot) {
+            return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:800; padding:4px 10px; border-radius:6px; font-size:12px;">' + nb + ' / ' + tot + ' (Complet)</span>';
+          }
+          if (nb > 0) {
+            return '<span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:800; padding:4px 10px; border-radius:6px; font-size:12px;">' + nb + ' / ' + tot + '</span>';
+          }
+          return '<span class="badge" style="background:#FEE2E2; color:#B91C1C; font-weight:800; padding:4px 10px; border-radius:6px; font-size:12px;">0 / ' + tot + ' (Non noté)</span>';
+        }
+      },
+      { 
+        data: 'moyenne_classe', 
+        width: '120px', 
+        className: 'text-center', 
+        render: function(d) {
+          if (d !== null && d !== undefined && d !== '') {
+            var val = parseFloat(d);
+            var col = val >= 10 ? '#15803D' : '#DC2626';
+            return '<strong style="font-size:14px; font-weight:800; color:' + col + ';">' + val.toFixed(2) + ' / 20</strong>';
+          }
+          return '<span style="color:#94A3B8; font-size:12px; font-style:italic;">En attente</span>';
+        }
+      },
+      { 
+        data: null, 
+        width: '180px', 
+        orderable: false, 
+        className: 'text-end',
+        render: function(d) {
+          if (!d) return '';
+          var saisieUrl = window.RACINE + 'note/saisieClasse?classe_code=' + encodeURIComponent(d.code_classe || '')
+                        + '&composition_code=' + encodeURIComponent(d.code_composition || '')
+                        + '&semestre_code=' + encodeURIComponent(d.semestre_code || '')
+                        + '&matiere_code=' + encodeURIComponent(d.matiere_code || '')
+                        + '&type_evaluation_code=' + encodeURIComponent(d.type_composition || '');
+          
+          return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">' +
+                   '<button type="button" class="btn btn-sm btn-details-session" data-classe="' + (d.code_classe || '') + '" data-compo="' + (d.code_composition || '') + '" data-matiere="' + (d.matiere_code || '') + '" style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Consulter les notes de la classe">' +
+                     '<i data-lucide="eye" style="width:14px; height:14px;"></i> Détails' +
+                   '</button>' +
+                   '<a href="' + saisieUrl + '" class="btn btn-sm" style="background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Saisir ou modifier les notes">' +
+                     '<i data-lucide="edit-3" style="width:14px; height:14px;"></i> Noter' +
+                   '</a>' +
+                 '</div>';
+        }
+      }
     ],
-    language: { url: window.RACINE + 'json/datatables-i18n-fr-FR.json' },
-    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+    language: { url: window.RACINE + 'public/json/datatables-i18n-fr-FR.json' },
+    drawCallback: function() { 
+      if (window.lucide) lucide.createIcons();
+      try {
+        var api = this.api();
+        var rows = api.rows({ search: 'applied' }).data().toArray();
+        var total = rows.length;
+        var examens = 0;
+        var controles = 0;
+        var complets = 0;
+        rows.forEach(function(r) {
+          if (r) {
+            if (r.type_composition === 'EXAMEN') examens++;
+            else controles++;
+            var nb = parseInt(r.nb_notes || 0, 10);
+            var tot = parseInt(r.total_etudiants || 0, 10);
+            if (tot > 0 && nb >= tot) complets++;
+          }
+        });
+        $('#kpi-total-sessions').text(total);
+        $('#kpi-total-examens').text(examens);
+        $('#kpi-total-controles').text(controles);
+        $('#kpi-total-complets').text(complets);
+      } catch (e) {}
+    }
+  });
+
+  // GESTION DU CLIC SUR LE BOUTON DETAILS (AFFICHE LA MODALE)
+  $(document).on('click', '.btn-details-session', function() {
+    var classeCode = $(this).data('classe');
+    var compoCode = $(this).data('compo');
+    var matiereCode = $(this).data('matiere') || '';
+    if (!classeCode || !compoCode) return;
+
+    var $modal = $('#modal-details-notes');
+    $('#modal-loading-spinner').show();
+    $('#modal-details-content').hide();
+    $('#md-students-list').empty();
+
+    if ($modal.modal) {
+      $modal.modal('show');
+    } else {
+      $modal.show();
+    }
+
+    $.ajax({
+      url: window.RACINE + 'note/apiDetailsClasse',
+      type: 'GET',
+      data: { classe_code: classeCode, composition_code: compoCode, matiere_code: matiereCode },
+      dataType: 'json',
+      success: function(res) {
+        $('#modal-loading-spinner').hide();
+        if (res.status === 1 && res.data) {
+          var d = res.data;
+          var info = d.info || {};
+          var stats = d.stats || {};
+          var students = d.students || [];
+
+          // Header
+          $('#modal-compo-title').text((info.libelle_composition || 'Évaluation') + ' [' + (info.type_composition || 'EXAMEN') + ']');
+          $('#modal-compo-subtitle').html(
+            'Classe : <strong>' + (info.libelle_classe || '-') + '</strong> &bull; ' +
+            'Matière : <strong>' + (info.libelle_matiere || 'Session globale') + '</strong> &bull; ' +
+            (info.libelle_semestre || '-') + ' &bull; Coef: ' + (info.coefficient || '1.00')
+          );
+
+          // KPIs
+          $('#md-total-etudiants').text(stats.total_etudiants || 0);
+          $('#md-nb-notes').text(stats.nb_notes || 0);
+          if (stats.moyenne_classe !== null && stats.moyenne_classe !== undefined) {
+            $('#md-moyenne-classe').text(parseFloat(stats.moyenne_classe).toFixed(2) + ' / 20');
+          } else {
+            $('#md-moyenne-classe').text('-');
+          }
+          $('#md-taux-reussite').text(stats.nb_notes > 0 ? (stats.taux_reussite + '%') : '-');
+
+          // Tableau des étudiants
+          var rowsHtml = '';
+          if (students.length === 0) {
+            rowsHtml = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#64748B;">Aucun étudiant inscrit dans cette classe.</td></tr>';
+          } else {
+            students.forEach(function(st, idx) {
+              var noteHtml = '-';
+              if (st.valeur_note !== null && st.valeur_note !== '') {
+                var v = parseFloat(st.valeur_note);
+                var color = v >= 10 ? '#15803D' : '#DC2626';
+                noteHtml = '<strong style="color:' + color + '; font-size:14px;">' + v.toFixed(2) + '</strong>';
+              } else {
+                noteHtml = '<span class="badge" style="background:#F1F5F9; color:#64748B;">Non noté</span>';
+              }
+
+              var mentionBadge = '<span style="font-size:11px; color:#64748B;">' + (st.mention || '-') + '</span>';
+              if (st.mention === 'Très Bien' || st.mention === 'Bien') {
+                mentionBadge = '<span class="badge" style="background:#DCFCE7; color:#15803D;">' + st.mention + '</span>';
+              } else if (st.mention === 'Assez Bien' || st.mention === 'Passable') {
+                mentionBadge = '<span class="badge" style="background:#EFF6FF; color:#1D4ED8;">' + st.mention + '</span>';
+              } else if (st.mention === 'Insuffisant' || st.mention === 'Très Insuffisant') {
+                mentionBadge = '<span class="badge" style="background:#FEE2E2; color:#B91C1C;">' + st.mention + '</span>';
+              }
+
+              rowsHtml += '<tr style="border-bottom:1px solid #F1F5F9;">' +
+                            '<td style="padding:10px 14px; font-weight:700; color:#64748B;">' + (idx + 1) + '</td>' +
+                            '<td style="padding:10px 14px; font-family:monospace; font-size:12px; color:#1E3A5F; font-weight:700;">' + (st.matricule_etudiant || '-') + '</td>' +
+                            '<td style="padding:10px 14px; font-weight:700; color:#0F172A;">' + (st.nom_etudiant || '-') + '</td>' +
+                            '<td style="padding:10px 14px; text-align:center;">' + noteHtml + '</td>' +
+                            '<td style="padding:10px 14px; text-align:center;">' + mentionBadge + '</td>' +
+                            '<td style="padding:10px 14px; color:#64748B; font-size:12px;">' + (st.observations || '-') + '</td>' +
+                          '</tr>';
+            });
+          }
+          $('#md-students-list').html(rowsHtml);
+
+          // Bouton Saisir / Modifier
+          var saisieUrl = window.RACINE + 'note/saisieClasse?classe_code=' + encodeURIComponent(info.classe_code || classeCode)
+                        + '&composition_code=' + encodeURIComponent(info.code_composition || compoCode)
+                        + '&semestre_code=' + encodeURIComponent(info.semestre_code || '')
+                        + '&matiere_code=' + encodeURIComponent(info.matiere_code || '')
+                        + '&type_evaluation_code=' + encodeURIComponent(info.type_composition || '');
+          $('#md-btn-go-saisie').attr('href', saisieUrl);
+
+          $('#modal-details-content').show();
+          if (window.lucide) lucide.createIcons();
+        } else {
+          $('#md-students-list').html('<tr><td colspan="6" style="text-align:center; padding:20px; color:#DC2626;">Erreur de chargement des détails.</td></tr>');
+          $('#modal-details-content').show();
+        }
+      },
+      error: function() {
+        $('#modal-loading-spinner').hide();
+        $('#md-students-list').html('<tr><td colspan="6" style="text-align:center; padding:20px; color:#DC2626;">Erreur de communication avec le serveur.</td></tr>');
+        $('#modal-details-content').show();
+      }
+    });
   });
 
   $(document).on('change', '.toggle-statut-note', function() {

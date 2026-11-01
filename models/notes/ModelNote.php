@@ -9,32 +9,253 @@ class ModelNote extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "SELECT * FROM " . VIEWS::NOTES_COMPLETES . "";
+        return $this->getSessionsByClasseCompo($anneeCode, $niveauCode, $classeCode);
+    }
+
+    public function getSessionsByClasseCompo(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $typeComposition = null, ?string $matiereCode = null, ?string $semestreCode = null, ?string $compositionCode = null): array
+    {
+        $db = $this->getCon();
+        $sql = "
+            SELECT 
+                comp.id_composition,
+                comp.code_composition,
+                comp.libelle_composition,
+                comp.type_composition,
+                comp.semestre_code,
+                s.libelle_semestre,
+                triplets.matiere_code,
+                m.libelle_matiere,
+                COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient,
+                COALESCE(comp.annee_code, ?) AS annee_code,
+                cl.code_classe,
+                cl.libelle_classe,
+                cl.niveau_code,
+                cl.filiere_code,
+                n.libelle_niveau,
+                f.libelle_filiere,
+                (
+                    SELECT COUNT(DISTINCT ins_c.code_inscription) 
+                    FROM " . TABLES::INSCRIPTIONS . " ins_c 
+                    WHERE ins_c.classe_code = cl.code_classe 
+                      AND (ins_c.statut_inscription != '" . STATUTS::ANNULE . "' OR ins_c.statut_inscription IS NULL)
+                      AND (ins_c.annee_code = comp.annee_code OR comp.annee_code IS NULL OR comp.annee_code = '' OR ins_c.annee_code = ?)
+                ) AS total_etudiants,
+                COUNT(DISTINCT n_entry.id_note) AS nb_notes,
+                ROUND(AVG(n_entry.valeur_note), 2) AS moyenne_classe,
+                MIN(n_entry.valeur_note) AS note_min,
+                MAX(n_entry.valeur_note) AS note_max
+            FROM (
+                -- Source 1: composition_matieres
+                SELECT 
+                    cm.composition_code,
+                    cl.code_classe,
+                    cm.matiere_code
+                FROM " . TABLES::COMPOSITION_MATIERES . " cm
+                LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code OR cnf.composition_code = cm.composition_code)
+                LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                WHERE cl.code_classe IS NOT NULL AND cm.matiere_code IS NOT NULL AND cm.matiere_code != ''
+
+                UNION
+
+                -- Source 2: Direct classe_code & matiere_code sur compositions
+                SELECT 
+                    comp.code_composition,
+                    comp.classe_code,
+                    comp.matiere_code
+                FROM " . TABLES::COMPOSITIONS . " comp
+                WHERE comp.classe_code IS NOT NULL AND comp.classe_code != ''
+                  AND comp.matiere_code IS NOT NULL AND comp.matiere_code != ''
+
+                UNION
+
+                -- Source 3: Via composition_niveau_filiere avec matiere_code sur compositions
+                SELECT 
+                    cnf.composition_code,
+                    cl.code_classe,
+                    comp.matiere_code
+                FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf
+                INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cnf.composition_code
+                INNER JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                WHERE comp.matiere_code IS NOT NULL AND comp.matiere_code != ''
+
+                UNION
+
+                -- Source 4: Notes existantes
+                SELECT 
+                    n.composition_code,
+                    ins.classe_code,
+                    comp.matiere_code
+                FROM " . TABLES::NOTES . " n
+                INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = n.inscription_code
+                INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+                WHERE n.statut_note = '" . STATUTS::ACTIF . "' AND comp.matiere_code IS NOT NULL AND comp.matiere_code != ''
+
+                UNION
+
+                -- Source 5: Matières de la classe via enseignant_matiere si compo sans matière définie
+                SELECT 
+                    base_pairs.code_composition,
+                    base_pairs.classe_code,
+                    em.matiere_code
+                FROM (
+                    SELECT code_composition, classe_code FROM " . TABLES::COMPOSITIONS . " WHERE classe_code IS NOT NULL AND classe_code != ''
+                    UNION
+                    SELECT cnf.composition_code, cl2.code_classe 
+                    FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf
+                    INNER JOIN " . TABLES::CLASSES . " cl2 ON (cl2.niveau_code = cnf.niveau_code AND cl2.filiere_code = cnf.filiere_code)
+                ) AS base_pairs
+                INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = base_pairs.code_composition
+                INNER JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON em.classe_code = base_pairs.classe_code
+                WHERE (comp.matiere_code IS NULL OR comp.matiere_code = '')
+                  AND NOT EXISTS (SELECT 1 FROM " . TABLES::COMPOSITION_MATIERES . " cm2 WHERE cm2.composition_code = comp.code_composition)
+            ) AS triplets
+            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = triplets.composition_code
+            INNER JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = triplets.code_classe
+            INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = triplets.matiere_code
+            LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = triplets.matiere_code AND em.classe_code = triplets.code_classe)
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON (i.classe_code = cl.code_classe AND (i.annee_code = comp.annee_code OR comp.annee_code IS NULL OR comp.annee_code = '' OR i.annee_code = ?))
+            LEFT JOIN " . TABLES::NOTES . " n_entry ON (n_entry.composition_code = comp.code_composition AND n_entry.inscription_code = i.code_inscription AND n_entry.statut_note = '" . STATUTS::ACTIF . "')
+        ";
+
         $conditions = [];
-        $params = [];
+        $params = [$anneeCode, $anneeCode, $anneeCode];
+
         if (!empty($anneeCode)) {
-            $conditions[] = "annee_code = ?";
+            $conditions[] = "(comp.annee_code = ? OR comp.annee_code IS NULL OR comp.annee_code = '')";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "niveau_code = ?";
+            $conditions[] = "cl.niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "inscription_classe_code = ?";
+            $conditions[] = "cl.code_classe = ?";
             $params[] = $classeCode;
         }
+        if (!empty($typeComposition)) {
+            $conditions[] = "comp.type_composition = ?";
+            $params[] = $typeComposition;
+        }
+        if (!empty($matiereCode)) {
+            $conditions[] = "triplets.matiere_code = ?";
+            $params[] = $matiereCode;
+        }
+        if (!empty($semestreCode)) {
+            $conditions[] = "comp.semestre_code = ?";
+            $params[] = $semestreCode;
+        }
+        if (!empty($compositionCode)) {
+            $conditions[] = "comp.code_composition = ?";
+            $params[] = $compositionCode;
+        }
+
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
-        $sql .= " ORDER BY id_note DESC ";
+
+        $sql .= " GROUP BY comp.code_composition, cl.code_classe, triplets.matiere_code ORDER BY comp.id_composition DESC, cl.libelle_classe ASC, m.libelle_matiere ASC";
+
         try {
-            $stmt = $this->getCon()->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
-            error_log("Get all notes: " . $e->getMessage());
+            error_log("ModelNote::getSessionsByClasseCompo error: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function getDetailsClasseCompo(string $classeCode, string $compositionCode, ?string $matiereCode = null, ?string $anneeCode = null): ?array
+    {
+        $db = $this->getCon();
+        try {
+            $stmtInfo = $db->prepare("
+                SELECT comp.*, s.libelle_semestre, m.libelle_matiere, cl.libelle_classe, n.libelle_niveau, f.libelle_filiere,
+                       COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
+                FROM " . TABLES::COMPOSITIONS . " comp
+                LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(?, comp.matiere_code)
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ?
+                LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = COALESCE(?, comp.matiere_code) AND em.classe_code = ?)
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                WHERE comp.code_composition = ?
+            ");
+            $stmtInfo->execute([$matiereCode, $classeCode, $matiereCode, $classeCode, $compositionCode]);
+            $info = $stmtInfo->fetch(PDO::FETCH_ASSOC);
+            if (!$info) return null;
+
+            if (!empty($matiereCode)) {
+                $info['matiere_code'] = $matiereCode;
+            }
+
+            $stmtStudents = $db->prepare("
+                SELECT 
+                    i.code_inscription,
+                    e.code_etudiant,
+                    e.matricule_etudiant,
+                    CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) AS nom_etudiant,
+                    n.id_note,
+                    n.valeur_note,
+                    n.observations,
+                    n.created_at_note,
+                    n.statut_note
+                FROM " . TABLES::INSCRIPTIONS . " i
+                INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+                LEFT JOIN " . TABLES::NOTES . " n ON (n.composition_code = ? AND n.inscription_code = i.code_inscription AND n.statut_note = '" . STATUTS::ACTIF . "')
+                WHERE i.classe_code = ? 
+                  AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
+                  AND (i.annee_code = ? OR ? IS NULL OR ? = '')
+                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            ");
+            $stmtStudents->execute([$compositionCode, $classeCode, $anneeCode, $anneeCode, $anneeCode]);
+            $students = $stmtStudents->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $notesVals = [];
+            $admisCount = 0;
+            foreach ($students as &$s) {
+                if ($s['valeur_note'] !== null && $s['valeur_note'] !== '') {
+                    $v = (float)$s['valeur_note'];
+                    $notesVals[] = $v;
+                    if ($v >= 10) $admisCount++;
+                    
+                    if ($v >= 16) $s['mention'] = 'Très Bien';
+                    elseif ($v >= 14) $s['mention'] = 'Bien';
+                    elseif ($v >= 12) $s['mention'] = 'Assez Bien';
+                    elseif ($v >= 10) $s['mention'] = 'Passable';
+                    elseif ($v >= 8)  $s['mention'] = 'Insuffisant';
+                    else $s['mention'] = 'Très Insuffisant';
+                } else {
+                    $s['mention'] = 'Non noté';
+                }
+            }
+            unset($s);
+
+            $nbNotes = count($notesVals);
+            $moyenne = $nbNotes > 0 ? round(array_sum($notesVals) / $nbNotes, 2) : null;
+            $noteMin = $nbNotes > 0 ? min($notesVals) : null;
+            $noteMax = $nbNotes > 0 ? max($notesVals) : null;
+            $tauxReussite = $nbNotes > 0 ? round(($admisCount / $nbNotes) * 100, 1) : 0;
+
+            return [
+                'info' => $info,
+                'students' => $students,
+                'stats' => [
+                    'total_etudiants' => count($students),
+                    'nb_notes' => $nbNotes,
+                    'moyenne_classe' => $moyenne,
+                    'note_min' => $noteMin,
+                    'note_max' => $noteMax,
+                    'admis_count' => $admisCount,
+                    'taux_reussite' => $tauxReussite
+                ]
+            ];
+        } catch (Exception $e) {
+            error_log("ModelNote::getDetailsClasseCompo error: " . $e->getMessage());
+            return null;
         }
     }
 
