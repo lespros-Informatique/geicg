@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#18385F">
+    <meta name="csrf-token" content="<?= Validator::generateCsrfToken() ?>">
     <title><?= htmlspecialchars(TITLE) ?></title>
     <link rel="icon" type="image/png" href="<?= RACINE ?>public/assets/images/logo/logo_eicg.jpg">
     <link rel="apple-touch-icon" href="<?= RACINE ?>public/assets/images/logo/logo_eicg.jpg">

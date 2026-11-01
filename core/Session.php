@@ -12,6 +12,13 @@ class Session
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
+            ini_set('session.gc_maxlifetime', '7200');
+            session_set_cookie_params([
+                'lifetime' => 7200,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
             session_start();
         }
     }

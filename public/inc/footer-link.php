@@ -13,6 +13,16 @@
     window.addEventListener('error', function(e) {
         console.error('[global error]', e.message, 'at', e.filename + ':' + e.lineno);
     });
+    if (window.jQuery) {
+        var metaCsrf = document.querySelector('meta[name="csrf-token"]');
+        if (metaCsrf && metaCsrf.content) {
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': metaCsrf.content
+                }
+            });
+        }
+    }
 </script>
 
 <?php foreach (ViewContext::resolveScripts($pageScripts ?? []) as $scriptUrl): ?>

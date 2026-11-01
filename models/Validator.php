@@ -435,24 +435,42 @@ class Validator
 
     public static function generateCsrfToken(): string
     {
-        if (empty(Session::get('csrf_token'))) {
-            Session::set('csrf_token', bin2hex(random_bytes(32)));
+        $token = Session::get('csrf_token');
+        $time = (int)Session::get('csrf_token_time', 0);
+        // Durée de validité glissante : 7200s (2 heures)
+        if (empty($token) || empty($time) || (time() - $time) > 7200) {
+            $token = bin2hex(random_bytes(32));
+            Session::set('csrf_token', $token);
+            Session::set('csrf_token_time', time());
+        } else {
+            // Renouvellement glissant de l'activité sur la page
             Session::set('csrf_token_time', time());
         }
-        return (string)Session::get('csrf_token');
+        return (string)$token;
     }
 
-    public static function validateCsrfToken(?string $token): bool
+    public static function validateCsrfToken(?string $token = null): bool
     {
-        if (empty(Session::get('csrf_token'))) {
+        if (empty($token)) {
+            $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+        }
+        $sessionToken = Session::get('csrf_token');
+        if (empty($sessionToken) || empty($token)) {
             return false;
         }
-        if (!Session::has('csrf_token_time') || (time() - (int)Session::get('csrf_token_time', 0)) > 3600) {
+        // Durée glissante de 7200s (2 heures d'inactivité)
+        $tokenTime = (int)Session::get('csrf_token_time', 0);
+        if ($tokenTime > 0 && (time() - $tokenTime) > 7200) {
             Session::remove('csrf_token');
             Session::remove('csrf_token_time');
             return false;
         }
-        return hash_equals((string)Session::get('csrf_token', ''), (string)$token);
+        if (hash_equals((string)$sessionToken, (string)$token)) {
+            // Renouvellement glissant lors d'une validation réussie
+            Session::set('csrf_token_time', time());
+            return true;
+        }
+        return false;
     }
 
     public static function csrfField(): string
