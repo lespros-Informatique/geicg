@@ -242,12 +242,13 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 5%;">N°</th>
-        <th style="width: 15%;">MATRICULE</th>
-        <th style="width: 38%; text-align: left;">NOM & PRÉNOM(S)</th>
-        <th style="width: 12%;">NOTE / 20</th>
-        <th style="width: 15%;">MENTION</th>
-        <th style="width: 15%;">OBSERVATIONS</th>
+        <th style="width: 4%;">N°</th>
+        <th style="width: 14%;">MATRICULE</th>
+        <th style="width: 33%; text-align: left;">NOM & PRÉNOM(S)</th>
+        <th style="width: 11%;">NOTE / 20</th>
+        <th style="width: 11%;">RANG</th>
+        <th style="width: 13%;">MENTION</th>
+        <th style="width: 14%;">OBSERVATIONS</th>
       </tr>
     </thead>
     <tbody>
@@ -265,6 +266,9 @@
             <td class="text-center text-bold" style="font-size: 9pt; color: <?= $noteColor ?>;">
               <?= $hasNote ? number_format($val, 2, '.', '') : '<span style="color:#94A3B8; font-style:italic;">Non noté</span>' ?>
             </td>
+            <td class="text-center text-bold" style="color: #1E3A5F; font-size: 8.5pt;">
+              <?= $st['rang'] ?? '-' ?>
+            </td>
             <td class="text-center">
               <?= htmlspecialchars($st['mention'] ?? '-') ?>
             </td>
@@ -275,7 +279,7 @@
         <?php endforeach; ?>
       <?php else: ?>
         <tr>
-          <td colspan="6" class="text-center" style="padding: 20px; color: #64748B; font-style: italic;">
+          <td colspan="7" class="text-center" style="padding: 20px; color: #64748B; font-style: italic;">
             Aucun étudiant inscrit dans cette classe pour cette évaluation.
           </td>
         </tr>

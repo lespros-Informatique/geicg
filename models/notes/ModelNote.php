@@ -240,6 +240,52 @@ class ModelNote extends BaseModel
             $noteMax = $nbNotes > 0 ? max($notesVals) : null;
             $tauxReussite = $nbNotes > 0 ? round(($admisCount / $nbNotes) * 100, 1) : 0;
 
+            // Calcul des rangs avec gestion des ex-æquo
+            $notesMap = [];
+            foreach ($students as $st) {
+                if ($st['valeur_note'] !== null && $st['valeur_note'] !== '') {
+                    $notesMap[$st['code_inscription']] = (float)$st['valeur_note'];
+                }
+            }
+            arsort($notesMap);
+
+            $noteCounts = [];
+            foreach ($notesMap as $v) {
+                $k = (string)round($v, 2);
+                $noteCounts[$k] = ($noteCounts[$k] ?? 0) + 1;
+            }
+
+            $ranksMap = [];
+            $pos = 1;
+            $prevVal = null;
+            $currentRankDisplay = '';
+            foreach ($notesMap as $inscCode => $v) {
+                $k = (string)round($v, 2);
+                $isEx = ($noteCounts[$k] > 1);
+                if ($prevVal === null || round($v, 2) !== round($prevVal, 2)) {
+                    $rankNum = $pos;
+                    $suffix = ($rankNum === 1) ? 'er' : 'e';
+                    $currentRankDisplay = $rankNum . '<sup>' . $suffix . '</sup>' . ($isEx ? ' ex' : '');
+                    $prevVal = $v;
+                }
+                $ranksMap[$inscCode] = [
+                    'rank_num' => $pos,
+                    'display' => $currentRankDisplay
+                ];
+                $pos++;
+            }
+
+            foreach ($students as &$s) {
+                if (isset($ranksMap[$s['code_inscription']])) {
+                    $s['rang'] = $ranksMap[$s['code_inscription']]['display'];
+                    $s['rang_num'] = $ranksMap[$s['code_inscription']]['rank_num'];
+                } else {
+                    $s['rang'] = '-';
+                    $s['rang_num'] = 999999;
+                }
+            }
+            unset($s);
+
             return [
                 'info' => $info,
                 'students' => $students,

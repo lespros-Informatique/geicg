@@ -253,6 +253,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
                   <th style="padding: 10px 14px;">Matricule</th>
                   <th style="padding: 10px 14px;">Nom & Prénom(s)</th>
                   <th style="padding: 10px 14px; text-align: center;">Note / 20</th>
+                  <th style="padding: 10px 14px; text-align: center;">Rang</th>
                   <th style="padding: 10px 14px; text-align: center;">Mention</th>
                   <th style="padding: 10px 14px;">Observations</th>
                 </tr>

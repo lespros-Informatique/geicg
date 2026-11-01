@@ -300,7 +300,7 @@ $(document).ready(function() {
           // Tableau des étudiants
           var rowsHtml = '';
           if (students.length === 0) {
-            rowsHtml = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#64748B;">Aucun étudiant inscrit dans cette classe.</td></tr>';
+            rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748B;">Aucun étudiant inscrit dans cette classe.</td></tr>';
           } else {
             students.forEach(function(st, idx) {
               var noteHtml = '-';
@@ -311,6 +311,8 @@ $(document).ready(function() {
               } else {
                 noteHtml = '<span class="badge" style="background:#F1F5F9; color:#64748B;">Non noté</span>';
               }
+
+              var rangHtml = '<strong style="color:#1E3A5F; font-size:12px;">' + (st.rang || '-') + '</strong>';
 
               var mentionBadge = '<span style="font-size:11px; color:#64748B;">' + (st.mention || '-') + '</span>';
               if (st.mention === 'Très Bien' || st.mention === 'Bien') {
@@ -326,6 +328,7 @@ $(document).ready(function() {
                             '<td style="padding:10px 14px; font-family:monospace; font-size:12px; color:#1E3A5F; font-weight:700;">' + (st.matricule_etudiant || '-') + '</td>' +
                             '<td style="padding:10px 14px; font-weight:700; color:#0F172A;">' + (st.nom_etudiant || '-') + '</td>' +
                             '<td style="padding:10px 14px; text-align:center;">' + noteHtml + '</td>' +
+                            '<td style="padding:10px 14px; text-align:center;">' + rangHtml + '</td>' +
                             '<td style="padding:10px 14px; text-align:center;">' + mentionBadge + '</td>' +
                             '<td style="padding:10px 14px; color:#64748B; font-size:12px;">' + (st.observations || '-') + '</td>' +
                           '</tr>';
@@ -350,13 +353,13 @@ $(document).ready(function() {
           $('#modal-details-content').show();
           if (window.lucide) lucide.createIcons();
         } else {
-          $('#md-students-list').html('<tr><td colspan="6" style="text-align:center; padding:20px; color:#DC2626;">Erreur de chargement des détails.</td></tr>');
+          $('#md-students-list').html('<tr><td colspan="7" style="text-align:center; padding:20px; color:#DC2626;">Erreur de chargement des détails.</td></tr>');
           $('#modal-details-content').show();
         }
       },
       error: function() {
         $('#modal-loading-spinner').hide();
-        $('#md-students-list').html('<tr><td colspan="6" style="text-align:center; padding:20px; color:#DC2626;">Erreur de communication avec le serveur.</td></tr>');
+        $('#md-students-list').html('<tr><td colspan="7" style="text-align:center; padding:20px; color:#DC2626;">Erreur de communication avec le serveur.</td></tr>');
         $('#modal-details-content').show();
       }
     });
