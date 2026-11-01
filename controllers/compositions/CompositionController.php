@@ -16,12 +16,14 @@ class CompositionController extends BaseController
         $matieres = (new ModelMatiere())->getAll();
         
         $selectedAnneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
 
         $this->loadView('../views/compositions/list.php', [
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
             'matieres' => $matieres,
+            'semestres' => $semestres,
             'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
@@ -32,9 +34,12 @@ class CompositionController extends BaseController
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
-        $typeComposition = 'EXAMEN';
+        $semestreCode = $_GET['semestre_code'] ?? null;
+        $statutComposition = $_GET['statut_composition'] ?? null;
+        $matiereCode = $_GET['matiere_code'] ?? null;
+        $typeComposition = $_GET['type_composition'] ?? 'EXAMEN';
 
-        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $typeComposition);
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $typeComposition, $semestreCode, $statutComposition, $matiereCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_composition'];

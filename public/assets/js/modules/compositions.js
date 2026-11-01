@@ -19,7 +19,7 @@ $(document).ready(function() {
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
+    $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe, #filter-matiere, #filter-statut').select2({ width: '100%' });
   }
 
   // Filtrage Niveau -> Classe
@@ -41,13 +41,15 @@ $(document).ready(function() {
     table.ajax.reload();
   });
 
-  $('#filter-classe, #filter-annee').on('change', function() {
+  $('#filter-classe, #filter-annee, #filter-semestre, #filter-matiere, #filter-statut').on('change', function() {
     var cls = $('#filter-classe').val();
-    if (cls) {
-      $('#btn-add-composition').attr('href', window.RACINE + 'composition/formulaire?type=EXAMEN&classe_code=' + encodeURIComponent(cls));
-    } else {
-      $('#btn-add-composition').attr('href', window.RACINE + 'composition/formulaire?type=EXAMEN');
-    }
+    var sem = $('#filter-semestre').val();
+    var mat = $('#filter-matiere').val();
+    var params = ['type=EXAMEN'];
+    if (cls) params.push('classe_code=' + encodeURIComponent(cls));
+    if (sem) params.push('semestre_code=' + encodeURIComponent(sem));
+    if (mat) params.push('matiere_code=' + encodeURIComponent(mat));
+    $('#btn-add-composition').attr('href', window.RACINE + 'composition/formulaire?' + params.join('&'));
     table.ajax.reload();
   });
 
@@ -57,8 +59,11 @@ $(document).ready(function() {
       type: 'GET',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
+        d.semestre_code = $('#filter-semestre').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
+        d.matiere_code = $('#filter-matiere').val();
+        d.statut_composition = $('#filter-statut').val();
         d.type_composition = 'EXAMEN';
       }
     },
@@ -238,16 +243,23 @@ $(document).ready(function() {
         var total = rows.length;
         var programme = 0;
         var termine = 0;
+        var annule = 0;
         rows.forEach(function(r) {
-          if (r && (r.statut_composition === 'termine')) {
-            termine++;
-          } else {
-            programme++;
+          if (r) {
+            var st = (r.statut_composition || 'programme').toString().toLowerCase();
+            if (st === 'termine' || st === 'cloture') {
+              termine++;
+            } else if (st === 'annule') {
+              annule++;
+            } else {
+              programme++;
+            }
           }
         });
         $('#kpi-total-compositions').text(total);
         $('#kpi-programme-compositions').text(programme);
         $('#kpi-termine-compositions').text(termine);
+        $('#kpi-annule-compositions').text(annule);
       } catch (e) {}
     }
   });

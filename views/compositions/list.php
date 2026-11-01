@@ -1,7 +1,11 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $niveaux = $niveaux ?? [];
+$classes = $classes ?? [];
+$annees = $annees ?? [];
 $matieres = $matieres ?? [];
+$semestres = $semestres ?? [];
+$selectedAnneeCode = $selectedAnneeCode ?? '';
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -27,7 +31,7 @@ $matieres = $matieres ?? [];
 
       <!-- Filtres Multi-Critères -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: center;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: center;">
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="calendar" style="width: 14px; height: 14px; color: #64748B;"></i> Année Académique
@@ -38,6 +42,17 @@ $matieres = $matieres ?? [];
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
                   <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
                 </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="clock" style="width: 14px; height: 14px; color: #64748B;"></i> Semestre
+            </label>
+            <select id="filter-semestre" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les semestres --</option>
+              <?php foreach ($semestres as $s): ?>
+                <option value="<?= htmlspecialchars($s['code_semestre']) ?>"><?= htmlspecialchars($s['libelle_semestre']) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -63,6 +78,28 @@ $matieres = $matieres ?? [];
               <?php endforeach; ?>
             </select>
           </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="book-open" style="width: 14px; height: 14px; color: #64748B;"></i> Matière
+            </label>
+            <select id="filter-matiere" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les matières --</option>
+              <?php foreach ($matieres as $m): ?>
+                <option value="<?= htmlspecialchars($m['code_matiere']) ?>"><?= htmlspecialchars($m['libelle_matiere']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="tag" style="width: 14px; height: 14px; color: #64748B;"></i> Statut
+            </label>
+            <select id="filter-statut" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les statuts --</option>
+              <option value="programme">Programmé</option>
+              <option value="termine">Clôturé / Terminé</option>
+              <option value="annule">Annulé</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -82,23 +119,34 @@ $matieres = $matieres ?? [];
 
         <!-- Programmés -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; color: #4338CA; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="clock" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Programmés</div>
-            <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 2px;" id="kpi-programme-compositions">0</div>
+            <div style="font-size: 20px; font-weight: 900; color: #4338CA; margin-top: 2px;" id="kpi-programme-compositions">0</div>
           </div>
         </div>
 
-        <!-- Terminés -->
+        <!-- Clôturés / Terminés -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
           <div style="width: 44px; height: 44px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="check-circle" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Terminés</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Clôturés</div>
             <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-termine-compositions">0</div>
+          </div>
+        </div>
+
+        <!-- Annulés -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="ban" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Annulés</div>
+            <div style="font-size: 20px; font-weight: 900; color: #B91C1C; margin-top: 2px;" id="kpi-annule-compositions">0</div>
           </div>
         </div>
 

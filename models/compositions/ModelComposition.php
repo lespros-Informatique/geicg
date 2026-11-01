@@ -7,19 +7,21 @@ class ModelComposition extends BaseModel
     protected ?string $statusField = 'statut_composition';
     protected ?string $createdAtField = 'created_at_composition';
 
-    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $typeComposition = null): array
+    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $typeComposition = null, ?string $semestreCode = null, ?string $statutComposition = null, ?string $matiereCode = null): array
     {
         $sql = "
             SELECT comp.*, 
                    s.libelle_semestre,
+                   m.libelle_matiere,
                    GROUP_CONCAT(DISTINCT CONCAT(f.libelle_filiere, ' (', n.libelle_niveau, ')') ORDER BY f.libelle_filiere SEPARATOR ', ') AS filieres_cible_names,
                    GROUP_CONCAT(DISTINCT cl.libelle_classe ORDER BY cl.libelle_classe SEPARATOR ', ') AS classes_cible_names
             FROM " . TABLES::COMPOSITIONS . " comp
             LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
             LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cnf.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cnf.filiere_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+            LEFT JOIN " . TABLES::CLASSES . " cl ON ((cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code) OR cl.code_classe = comp.classe_code)
         ";
         $conditions = [];
         $params = [];
@@ -32,12 +34,30 @@ class ModelComposition extends BaseModel
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "cl.code_classe = ?";
+            $conditions[] = "(cl.code_classe = ? OR comp.classe_code = ?)";
+            $params[] = $classeCode;
             $params[] = $classeCode;
         }
         if (!empty($typeComposition)) {
             $conditions[] = "comp.type_composition = ?";
             $params[] = $typeComposition;
+        }
+        if (!empty($semestreCode)) {
+            $conditions[] = "comp.semestre_code = ?";
+            $params[] = $semestreCode;
+        }
+        if (!empty($statutComposition)) {
+            if ($statutComposition === 'termine' || $statutComposition === 'cloture') {
+                $conditions[] = "(comp.statut_composition = 'termine' OR comp.statut_composition = 'cloture')";
+            } else {
+                $conditions[] = "comp.statut_composition = ?";
+                $params[] = $statutComposition;
+            }
+        }
+        if (!empty($matiereCode)) {
+            $conditions[] = "(comp.matiere_code = ? OR EXISTS (SELECT 1 FROM " . TABLES::COMPOSITION_MATIERES . " cm WHERE cm.composition_code = comp.code_composition AND cm.matiere_code = ?))";
+            $params[] = $matiereCode;
+            $params[] = $matiereCode;
         }
 
         if (!empty($conditions)) {
