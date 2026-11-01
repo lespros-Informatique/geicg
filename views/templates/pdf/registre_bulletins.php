@@ -196,11 +196,10 @@
   <!-- CARTOUCHE DES FILTRES APPLIQUÉS -->
   <table class="meta-box-table">
     <tr>
-      <td style="width: 20%;"><span class="meta-label">Année Académique :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['annee'] ?? 'Toutes') ?></span></td>
-      <td style="width: 20%;"><span class="meta-label">Semestre :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['semestre'] ?? 'Tous') ?></span></td>
-      <td style="width: 20%;"><span class="meta-label">Niveau d'Études :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['niveau'] ?? 'Tous') ?></span></td>
-      <td style="width: 20%;"><span class="meta-label">Classe Cible :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['classe'] ?? 'Toutes') ?></span></td>
-      <td style="width: 20%;"><span class="meta-label">Statut Notes :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['statut_notes'] ?? 'Tous') ?></span></td>
+      <td style="width: 25%;"><span class="meta-label">Année Académique :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['annee'] ?? 'Toutes') ?></span></td>
+      <td style="width: 25%;"><span class="meta-label">Semestre :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['semestre'] ?? 'Tous') ?></span></td>
+      <td style="width: 25%;"><span class="meta-label">Niveau d'Études :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['niveau'] ?? 'Tous') ?></span></td>
+      <td style="width: 25%;"><span class="meta-label">Classe Cible :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['classe'] ?? 'Toutes') ?></span></td>
     </tr>
   </table>
 

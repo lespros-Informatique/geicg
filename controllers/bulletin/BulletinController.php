@@ -394,8 +394,7 @@ class BulletinController extends BaseController
             'annee' => $anneeLibelle,
             'niveau' => 'Tous les niveaux',
             'classe' => 'Toutes les classes',
-            'semestre' => 'Tous les semestres',
-            'statut_notes' => 'Tous les étudiants'
+            'semestre' => 'Tous les semestres'
         ];
         if (!empty($niveauCode)) {
             $niv = (new ModelNiveau())->getByCode($niveauCode);
@@ -408,11 +407,6 @@ class BulletinController extends BaseController
         if (!empty($semestreCode)) {
             $sem = (new ModelSemestre())->getByCode($semestreCode);
             if ($sem) $filtresLabels['semestre'] = $sem['libelle_semestre'] ?? $semestreCode;
-        }
-        if ($statutNotes === 'avec_notes') {
-            $filtresLabels['statut_notes'] = 'Avec notes uniquement';
-        } elseif ($statutNotes === 'sans_notes') {
-            $filtresLabels['statut_notes'] = 'Sans notes uniquement';
         }
 
         $totalInscrits = count($items);

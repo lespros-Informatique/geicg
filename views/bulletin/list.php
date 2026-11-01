@@ -165,18 +165,6 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
             </select>
           </div>
 
-          <!-- Statut des Notes -->
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="filter" style="width: 14px; height: 14px; color: #64748B;"></i> État d'Évaluation
-            </label>
-            <select id="filter-statut-notes" class="form-control select2" style="width: 100%;">
-              <option value="">-- Tous les étudiants --</option>
-              <option value="avec_notes">Ayant des notes saisies</option>
-              <option value="sans_notes">Sans aucune note</option>
-            </select>
-          </div>
-
         </div>
       </div>
 
@@ -201,8 +189,6 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
               <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
                 <th style="padding: 12px 14px; width: 45px;">#</th>
                 <th style="padding: 12px 14px;">Étudiant</th>
-                <th style="padding: 12px 14px;">Classe & Filière</th>
-                <th style="padding: 12px 14px; text-align: center;">Statut Inscription</th>
                 <th style="padding: 12px 14px; text-align: center;">Notes Saisies</th>
                 <th style="padding: 12px 14px; text-align: center;">Moyenne Semestre</th>
                 <th style="padding: 12px 14px; text-align: center;">Décision</th>

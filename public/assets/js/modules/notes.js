@@ -1533,7 +1533,7 @@ $(document).ready(function() {
   // =========================================================================
   if ($('#table-bulletin').length) {
     if ($.fn.select2) {
-      $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe, #filter-statut-notes').select2({ width: '100%' });
+      $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe').select2({ width: '100%' });
     }
 
     // Helper pour mettre à jour les URLs d'impression et du PV de classe
@@ -1542,7 +1542,6 @@ $(document).ready(function() {
       var sem = $('#filter-semestre').val();
       var niv = $('#filter-niveau').val();
       var cls = $('#filter-classe').val();
-      var stNotes = $('#filter-statut-notes').val();
 
       if (!cls) {
         // Aucune classe sélectionnée : désactiver les boutons et afficher l'alerte
@@ -1568,7 +1567,6 @@ $(document).ready(function() {
           pvParams.push('semestre_code=' + encodeURIComponent(sem));
         }
         if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
-        if (stNotes) params.push('statut_notes=' + encodeURIComponent(stNotes));
 
         var printUrl = window.RACINE + 'bulletin/imprimerRegistrePdf?' + params.join('&');
         $('#btn-print-registre-bulletin')
@@ -1588,7 +1586,7 @@ $(document).ready(function() {
     updateBulletinUrls();
 
     // Cascades & événements filtres
-    $('#filter-classe, #filter-annee, #filter-semestre, #filter-statut-notes').on('change', function() {
+    $('#filter-classe, #filter-annee, #filter-semestre').on('change', function() {
       updateBulletinUrls();
       table.ajax.reload();
     });
@@ -1621,7 +1619,6 @@ $(document).ready(function() {
           d.semestre_code = $('#filter-semestre').val();
           d.niveau_code = $('#filter-niveau').val();
           d.classe_code = $('#filter-classe').val();
-          d.statut_notes = $('#filter-statut-notes').val();
         },
         dataSrc: function(json) {
           var cls = $('#filter-classe').val();
@@ -1683,37 +1680,6 @@ $(document).ready(function() {
                        '</div>' +
                      '</div>' +
                    '</div>';
-          }
-        },
-        { 
-          data: 'classe_nom', 
-          render: function(d, type, r) {
-            var cls = d || r.code_classe || '-';
-            var niv = r.niveau_nom || '';
-            var fil = r.filiere_nom || '';
-            var sub = (niv && fil) ? (niv + ' &bull; ' + fil) : (niv || fil || '');
-            return '<div>' +
-                     '<strong style="color:#0F172A; font-size:13px;">' + cls + '</strong>' +
-                     (sub ? '<div style="font-size:11px; color:#64748B; margin-top:2px; max-width:240px; white-space:normal;">' + sub + '</div>' : '') +
-                   '</div>';
-          }
-        },
-        { 
-          data: 'statut_inscription', 
-          className: 'text-center',
-          render: function(d, type, r) {
-            var st = String(d || 'valide').toLowerCase();
-            var badgeStyle = 'background:#EFF6FF; color:#1D4ED8;';
-            var label = 'Valide';
-            if (st === 'solde') {
-              badgeStyle = 'background:#DCFCE7; color:#15803D;';
-              label = 'Soldé';
-            } else if (st === 'en_attente') {
-              badgeStyle = 'background:#FEF3C7; color:#B45309;';
-              label = 'En attente';
-            }
-            var affecteHtml = (r.affectation_etat === 'oui') ? '<div style="margin-top:3px;"><span style="font-size:10px; font-weight:800; background:#F3E8FF; color:#7E22CE; padding:1px 6px; border-radius:4px;">Affecté(e)</span></div>' : '';
-            return '<span class="badge" style="font-size:11px; font-weight:800; padding:4px 8px; border-radius:6px; ' + badgeStyle + '">' + label + '</span>' + affecteHtml;
           }
         },
         { 
