@@ -29,11 +29,16 @@ class NoteController extends BaseController
             $selectedAnneeCode = Session::get('annee_active_code');
         }
 
+        $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
+        $compositions = (new ModelComposition())->getAll($selectedAnneeCode);
+
         $this->loadView('../views/notes/list.php', [
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
             'matieres' => $matieres,
+            'semestres' => $semestres,
+            'compositions' => $compositions,
             'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
@@ -47,7 +52,9 @@ class NoteController extends BaseController
         $classeCode = $_GET['classe_code'] ?? null;
         $typeComposition = $_GET['type_composition'] ?? null;
         $matiereCode = $_GET['matiere_code'] ?? null;
-        $items = $this->model->getSessionsByClasseCompo($anneeCode, $niveauCode, $classeCode, $typeComposition, $matiereCode);
+        $semestreCode = $_GET['semestre_code'] ?? null;
+        $compositionCode = $_GET['composition_code'] ?? null;
+        $items = $this->model->getSessionsByClasseCompo($anneeCode, $niveauCode, $classeCode, $typeComposition, $matiereCode, $semestreCode, $compositionCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_composition'];

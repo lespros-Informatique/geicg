@@ -4,6 +4,8 @@ $niveaux = $niveaux ?? [];
 $classes = $classes ?? [];
 $annees = $annees ?? [];
 $matieres = $matieres ?? [];
+$semestres = $semestres ?? [];
+$compositions = $compositions ?? [];
 $selectedAnneeCode = $selectedAnneeCode ?? '';
 ?>
 <div class="app-layout">
@@ -17,14 +19,14 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="award" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
-            Registre des Notes & Évaluations par Classe
+            Registre des Évaluations
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Synthèse des sessions d'évaluations par classe (Examens, Devoirs, Interrogations) et suivi des moyennes</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Synthèse des sessions d'évaluations par classe </p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::ENTER_NOTES]))): ?>
           <a href="<?= RACINE ?>note/saisieClasse" id="btn-saisie-classe" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
-            <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie des Notes par Classe
+            <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie des Notes
           </a>
           <a href="<?= RACINE ?>composition/formulaire?type=EXAMEN" class="btn btn-outline-secondary" style="border-color: #CBD5E1; color: #334155; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; background: #FFFFFF;">
             <i data-lucide="calendar-plus" style="width: 18px; height: 18px;"></i> Planifier un Examen
@@ -35,7 +37,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
 
       <!-- Filtres Multi-Critères -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: center;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: center;">
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="calendar" style="width: 14px; height: 14px; color: #64748B;"></i> Année Académique
@@ -46,6 +48,17 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
                   <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
                 </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="clock" style="width: 14px; height: 14px; color: #64748B;"></i> Semestre
+            </label>
+            <select id="filter-semestre" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les semestres --</option>
+              <?php foreach ($semestres as $s): ?>
+                <option value="<?= htmlspecialchars($s['code_semestre']) ?>"><?= htmlspecialchars($s['libelle_semestre']) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -73,7 +86,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
           </div>
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="tag" style="width: 14px; height: 14px; color: #64748B;"></i> Type d'Évaluation
+              <i data-lucide="tag" style="width: 14px; height: 14px; color: #64748B;"></i> Type Évaluation
             </label>
             <select id="filter-type-eval" class="form-control select2" style="width: 100%;">
               <option value="">-- Tous les types --</option>
@@ -81,6 +94,19 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
               <option value="DEVOIR">Devoirs Surveillés</option>
               <option value="INTERROGATION">Interrogations Écrites</option>
               <option value="AUTRE">Autres Évaluations</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="file-text" style="width: 14px; height: 14px; color: #64748B;"></i> Libellé Compo
+            </label>
+            <select id="filter-compo" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les compos --</option>
+              <?php foreach ($compositions as $cp): ?>
+                <option value="<?= htmlspecialchars($cp['code_composition']) ?>" data-type="<?= htmlspecialchars($cp['type_composition'] ?? '') ?>">
+                  <?= htmlspecialchars($cp['libelle_composition']) ?> (<?= htmlspecialchars($cp['type_composition'] ?? 'Évaluation') ?>)
+                </option>
+              <?php endforeach; ?>
             </select>
           </div>
           <div>

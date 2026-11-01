@@ -22,7 +22,7 @@ $(document).ready(function() {
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-annee, #filter-niveau, #filter-classe, #filter-type-eval, #filter-matiere').select2({ width: '100%' });
+    $('#filter-annee, #filter-niveau, #filter-classe, #filter-type-eval, #filter-matiere, #filter-semestre, #filter-compo').select2({ width: '100%' });
   }
 
   // Filtrage en cascade Niveau -> Classe
@@ -44,7 +44,26 @@ $(document).ready(function() {
     table.ajax.reload();
   });
 
-  $('#filter-classe, #filter-annee, #filter-type-eval, #filter-matiere').on('change', function() {
+  // Filtrage en cascade Type Éval -> Libellé Compo
+  $('#filter-type-eval').on('change', function() {
+    var typ = $(this).val();
+    $('#filter-compo option').each(function() {
+      var optType = $(this).data('type');
+      if (!typ || !optType || optType === typ || $(this).val() === '') {
+        $(this).prop('disabled', false);
+      } else {
+        $(this).prop('disabled', true);
+      }
+    });
+    if ($('#filter-compo option:selected').prop('disabled')) {
+      $('#filter-compo').val('').trigger('change.select2');
+    } else {
+      $('#filter-compo').select2({ width: '100%' });
+    }
+    table.ajax.reload();
+  });
+
+  $('#filter-classe, #filter-annee, #filter-matiere, #filter-semestre, #filter-compo').on('change', function() {
     var cls = $('#filter-classe').val();
     if (cls) {
       $('#btn-saisie-classe').attr('href', window.RACINE + 'note/saisieClasse?classe_code=' + encodeURIComponent(cls));
@@ -64,6 +83,8 @@ $(document).ready(function() {
         d.classe_code = $('#filter-classe').val();
         d.type_composition = $('#filter-type-eval').val();
         d.matiere_code = $('#filter-matiere').val();
+        d.semestre_code = $('#filter-semestre').val();
+        d.composition_code = $('#filter-compo').val();
       }
     },
     processing: true,
