@@ -130,6 +130,9 @@ class ModelNote extends BaseModel
         $conditions = [];
         $params = [$anneeCode, $anneeCode, $anneeCode];
 
+        // Exclusion des évaluations annulées
+        $conditions[] = "(comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')";
+
         if (!empty($anneeCode)) {
             $conditions[] = "(comp.annee_code = ? OR comp.annee_code IS NULL OR comp.annee_code = '')";
             $params[] = $anneeCode;

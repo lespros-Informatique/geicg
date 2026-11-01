@@ -79,6 +79,9 @@ class NoteController extends BaseController
 
         $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
         $compositions = (new ModelComposition())->getAll($selectedAnneeCode);
+        $compositions = array_values(array_filter($compositions, function ($cp) {
+            return strtolower(trim($cp['statut_composition'] ?? '')) !== STATUTS::ANNULE;
+        }));
 
         $canEnterNotes = Auth::can(PERMISSIONS::ENTER_NOTES) || $isTeacherOnly;
         $canViewNotes = Auth::can(PERMISSIONS::VIEW_NOTES) || $isTeacherOnly;

@@ -137,11 +137,12 @@ $canManageCompos = isset($canManageCompos) ? (bool)$canManageCompos : true;
               <option value="" data-statut="">-- Toutes les compos --</option>
               <?php foreach ($compositions as $cp): ?>
                 <?php 
-                  $cpStatut = strtolower($cp['statut_composition'] ?? '');
+                  $cpStatut = strtolower(trim($cp['statut_composition'] ?? ''));
+                  if ($cpStatut === STATUTS::ANNULE) {
+                      continue;
+                  }
                   $statutLabel = '';
-                  if ($cpStatut === 'annule') {
-                      $statutLabel = ' [Annulée]';
-                  } elseif ($cpStatut === 'cloture' || $cpStatut === 'termine') {
+                  if ($cpStatut === 'cloture' || $cpStatut === 'termine') {
                       $statutLabel = ' [Clôturée]';
                   }
                 ?>
