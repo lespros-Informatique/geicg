@@ -19,37 +19,16 @@ $(document).ready(function() {
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe, #filter-matiere, #filter-statut, #filter-type-compo').select2({ width: '100%' });
+    $('#filter-annee, #filter-semestre, #filter-niveau, #filter-statut, #filter-type-compo').select2({ width: '100%' });
   }
 
-  // Filtrage Niveau -> Classe
-  $('#filter-niveau').on('change', function() {
-    var niveauCode = $(this).val();
-    $('#filter-classe option').each(function() {
-      var optNiveau = $(this).data('niveau');
-      if (!niveauCode || !optNiveau || optNiveau === niveauCode || $(this).val() === '') {
-        $(this).prop('disabled', false);
-      } else {
-        $(this).prop('disabled', true);
-      }
-    });
-    if ($('#filter-classe option:selected').prop('disabled')) {
-      $('#filter-classe').val('').trigger('change.select2');
-    } else {
-      $('#filter-classe').select2({ width: '100%' });
-    }
-    table.ajax.reload();
-  });
-
-  $('#filter-classe, #filter-annee, #filter-semestre, #filter-matiere, #filter-statut, #filter-type-compo').on('change', function() {
-    var cls = $('#filter-classe').val();
+  $('#filter-annee, #filter-semestre, #filter-niveau, #filter-statut, #filter-type-compo').on('change', function() {
     var sem = $('#filter-semestre').val();
-    var mat = $('#filter-matiere').val();
+    var niv = $('#filter-niveau').val();
     var typ = $('#filter-type-compo').val() || 'EXAMEN';
     var params = ['type=' + encodeURIComponent(typ)];
-    if (cls) params.push('classe_code=' + encodeURIComponent(cls));
     if (sem) params.push('semestre_code=' + encodeURIComponent(sem));
-    if (mat) params.push('matiere_code=' + encodeURIComponent(mat));
+    if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
     $('#btn-add-composition').attr('href', window.RACINE + 'composition/formulaire?' + params.join('&'));
     table.ajax.reload();
   });
@@ -62,8 +41,6 @@ $(document).ready(function() {
         d.annee_code = $('#filter-annee').val();
         d.semestre_code = $('#filter-semestre').val();
         d.niveau_code = $('#filter-niveau').val();
-        d.classe_code = $('#filter-classe').val();
-        d.matiere_code = $('#filter-matiere').val();
         d.statut_composition = $('#filter-statut').val();
         d.type_composition = $('#filter-type-compo').val() || '';
       }

@@ -69,28 +69,6 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
           </div>
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #64748B;"></i> Classe
-            </label>
-            <select id="filter-classe" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les classes --</option>
-              <?php foreach ($classes as $c): ?>
-                <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="book-open" style="width: 14px; height: 14px; color: #64748B;"></i> Matière
-            </label>
-            <select id="filter-matiere" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les matières --</option>
-              <?php foreach ($matieres as $m): ?>
-                <option value="<?= htmlspecialchars($m['code_matiere']) ?>"><?= htmlspecialchars($m['libelle_matiere']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="bookmark" style="width: 14px; height: 14px; color: #64748B;"></i> Type Compo
             </label>
             <select id="filter-type-compo" class="form-control select2" style="width: 100%;">
@@ -124,7 +102,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
             <i data-lucide="award" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Examens</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Évaluations</div>
             <div style="font-size: 20px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-compositions">0</div>
           </div>
         </div>
@@ -135,7 +113,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
             <i data-lucide="clock" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Programmés</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Évaluations Programmés</div>
             <div style="font-size: 20px; font-weight: 900; color: #4338CA; margin-top: 2px;" id="kpi-programme-compositions">0</div>
           </div>
         </div>
@@ -146,7 +124,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
             <i data-lucide="check-circle" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Clôturés</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Évaluations Clôturés</div>
             <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-termine-compositions">0</div>
           </div>
         </div>
@@ -157,7 +135,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
             <i data-lucide="ban" style="width: 22px; height: 22px;"></i>
           </div>
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Examens Annulés</div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Évaluations Annulés</div>
             <div style="font-size: 20px; font-weight: 900; color: #B91C1C; margin-top: 2px;" id="kpi-annule-compositions">0</div>
           </div>
         </div>
