@@ -19,7 +19,7 @@ $(document).ready(function() {
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe, #filter-matiere, #filter-statut').select2({ width: '100%' });
+    $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe, #filter-matiere, #filter-statut, #filter-type-compo').select2({ width: '100%' });
   }
 
   // Filtrage Niveau -> Classe
@@ -41,11 +41,12 @@ $(document).ready(function() {
     table.ajax.reload();
   });
 
-  $('#filter-classe, #filter-annee, #filter-semestre, #filter-matiere, #filter-statut').on('change', function() {
+  $('#filter-classe, #filter-annee, #filter-semestre, #filter-matiere, #filter-statut, #filter-type-compo').on('change', function() {
     var cls = $('#filter-classe').val();
     var sem = $('#filter-semestre').val();
     var mat = $('#filter-matiere').val();
-    var params = ['type=EXAMEN'];
+    var typ = $('#filter-type-compo').val() || 'EXAMEN';
+    var params = ['type=' + encodeURIComponent(typ)];
     if (cls) params.push('classe_code=' + encodeURIComponent(cls));
     if (sem) params.push('semestre_code=' + encodeURIComponent(sem));
     if (mat) params.push('matiere_code=' + encodeURIComponent(mat));
@@ -64,7 +65,7 @@ $(document).ready(function() {
         d.classe_code = $('#filter-classe').val();
         d.matiere_code = $('#filter-matiere').val();
         d.statut_composition = $('#filter-statut').val();
-        d.type_composition = 'EXAMEN';
+        d.type_composition = $('#filter-type-compo').val() || '';
       }
     },
     processing: true,
@@ -82,22 +83,30 @@ $(document).ready(function() {
         data: 'libelle_composition', 
         defaultContent: '',
         render: function(d, t, r) { 
-          var typ = (r && r.type_composition) ? r.type_composition : 'EXAMEN';
-          var badgeStyle = 'background:#EFF6FF; color:#1D4ED8;';
+          return '<strong style="font-size:13px; color:#0F172A;">' + (d || r.code_composition || '-') + '</strong>'; 
+        } 
+      },
+      { 
+        data: 'type_composition', 
+        defaultContent: 'EXAMEN',
+        width: '100px',
+        className: 'text-center',
+        render: function(d) {
+          var typ = (d || 'EXAMEN').toUpperCase();
+          var badgeStyle = 'background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;';
           var badgeText = 'EXAMEN';
           if (typ === 'DEVOIR') {
-            badgeStyle = 'background:#FEF3C7; color:#B45309;';
+            badgeStyle = 'background:#FEF3C7; color:#B45309; border:1px solid #FDE68A;';
             badgeText = 'DEVOIR';
           } else if (typ === 'INTERROGATION') {
-            badgeStyle = 'background:#F0FDF4; color:#15803D;';
+            badgeStyle = 'background:#DCFCE7; color:#15803D; border:1px solid #BBF7D0;';
             badgeText = 'INTERRO';
           } else if (typ !== 'EXAMEN') {
-            badgeStyle = 'background:#F1F5F9; color:#475569;';
+            badgeStyle = 'background:#F1F5F9; color:#475569; border:1px solid #CBD5E1;';
             badgeText = typ;
           }
-          var typeBadge = '<span style="font-size:10px; font-weight:800; ' + badgeStyle + ' padding:2px 7px; border-radius:4px; margin-right:6px; display:inline-block;">' + badgeText + '</span>';
-          return '<div>' + typeBadge + '<strong style="font-size:13px; color:#0F172A;">' + (d || r.code_composition || '-') + '</strong></div>'; 
-        } 
+          return '<span class="badge" style="font-size:11px; font-weight:800; ' + badgeStyle + ' padding:4px 9px; border-radius:6px; display:inline-block;">' + badgeText + '</span>';
+        }
       },
       { 
         data: 'libelle_semestre', 

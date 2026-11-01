@@ -37,7 +37,7 @@ class CompositionController extends BaseController
         $semestreCode = $_GET['semestre_code'] ?? null;
         $statutComposition = $_GET['statut_composition'] ?? null;
         $matiereCode = $_GET['matiere_code'] ?? null;
-        $typeComposition = $_GET['type_composition'] ?? 'EXAMEN';
+        $typeComposition = !empty($_GET['type_composition']) ? trim($_GET['type_composition']) : null;
 
         $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $typeComposition, $semestreCode, $statutComposition, $matiereCode);
         $data = [];

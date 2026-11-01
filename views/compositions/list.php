@@ -91,6 +91,18 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
           </div>
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="bookmark" style="width: 14px; height: 14px; color: #64748B;"></i> Type Compo
+            </label>
+            <select id="filter-type-compo" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les types --</option>
+              <option value="EXAMEN">Examens / Compositions</option>
+              <option value="DEVOIR">Devoirs Surveillés</option>
+              <option value="INTERROGATION">Interrogations Écrites</option>
+              <option value="AUTRE">Autres Évaluations</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="tag" style="width: 14px; height: 14px; color: #64748B;"></i> Statut
             </label>
             <select id="filter-statut" class="form-control select2" style="width: 100%;">
@@ -160,6 +172,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
               <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
                 <th style="padding: 12px 14px; width: 50px;">#</th>
                 <th style="padding: 12px 14px;">Intitulé</th>
+                <th style="padding: 12px 14px; text-align: center; width: 95px;">Type Compo</th>
                 <th style="padding: 12px 14px;">Semestre</th>
                 <th style="padding: 12px 14px; text-align: center;">Coef</th>
                 <th style="padding: 12px 14px;">Date Début</th>
