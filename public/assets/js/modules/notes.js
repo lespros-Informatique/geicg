@@ -221,6 +221,24 @@ $(document).ready(function() {
         }
       },
       { 
+        data: 'date_enregistrement', 
+        defaultContent: '',
+        className: 'text-center',
+        width: '115px',
+        render: function(d, type, row) { 
+          var dateStr = d || (row ? (row.date_enregistrement_note || row.date_composition || row.created_at_composition) : null);
+          if (!dateStr || dateStr === '0000-00-00 00:00:00' || dateStr === '0000-00-00') {
+            return '<span style="color:#94A3B8;">-</span>';
+          }
+          var cleanDate = dateStr.split(' ')[0];
+          var parts = cleanDate.split('-');
+          if (parts.length === 3) {
+            return '<span style="font-weight:700; color:#1E3A5F; font-size:12.5px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="calendar" style="width:13px;height:13px;color:#64748B;"></i> ' + parts[2] + '/' + parts[1] + '/' + parts[0] + '</span>';
+          }
+          return '<span style="font-weight:700; color:#1E3A5F; font-size:12.5px;">' + cleanDate + '</span>';
+        } 
+      },
+      { 
         data: 'nb_notes', 
         width: '130px', 
         className: 'text-center',

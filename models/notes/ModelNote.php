@@ -23,6 +23,8 @@ class ModelNote extends BaseModel
                 comp.type_composition,
                 comp.statut_composition,
                 comp.semestre_code,
+                comp.date_composition,
+                comp.created_at_composition,
                 s.libelle_semestre,
                 s.statut_semestre,
                 triplets.matiere_code,
@@ -45,7 +47,9 @@ class ModelNote extends BaseModel
                 COUNT(DISTINCT n_entry.id_note) AS nb_notes,
                 ROUND(AVG(n_entry.valeur_note), 2) AS moyenne_classe,
                 MIN(n_entry.valeur_note) AS note_min,
-                MAX(n_entry.valeur_note) AS note_max
+                MAX(n_entry.valeur_note) AS note_max,
+                MAX(n_entry.created_at_note) AS date_enregistrement_note,
+                COALESCE(MAX(n_entry.created_at_note), comp.date_composition, comp.created_at_composition) AS date_enregistrement
             FROM (
                 -- Source 1: composition_matieres
                 SELECT 

@@ -210,6 +210,7 @@ $canManageCompos = isset($canManageCompos) ? (bool)$canManageCompos : true;
                 <th style="padding: 12px 14px;">Matière</th>
                 <th style="padding: 12px 14px;">Semestre</th>
                 <th style="padding: 12px 14px; text-align: center; width: 70px;">Coef</th>
+                <th style="padding: 12px 14px; text-align: center; width: 115px;"> Enr</th>
                 <th style="padding: 12px 14px; text-align: center;">Progression</th>
                 <th style="padding: 12px 14px; text-align: center;">Moy CLasse</th>
                 <th style="padding: 12px 14px; text-align: right; width: 130px;">Actions</th>
