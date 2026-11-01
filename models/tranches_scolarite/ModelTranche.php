@@ -42,9 +42,9 @@ class ModelTranche extends BaseModel
                    a.libelle_annee
             FROM " . TABLES::TRANCHES_SCOLARITE . " t
             LEFT JOIN " . TABLES::SCOLARITES . " s ON t.scolarite_code = s.code_scolarite
-            LEFT JOIN " . TABLES::FILIERES . " f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
-            LEFT JOIN " . TABLES::ANNEES . " a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = COALESCE(t.filiere_code, s.filiere_code)
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = COALESCE(t.niveau_code, s.niveau_code)
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = COALESCE(t.annee_code, s.annee_code)
             {$where}
             ORDER BY f.libelle_filiere ASC, n.libelle_niveau ASC, t.date_limite ASC, t.id_tranche ASC
         ";
@@ -64,9 +64,9 @@ class ModelTranche extends BaseModel
                    a.libelle_annee
             FROM " . TABLES::TRANCHES_SCOLARITE . " t
             LEFT JOIN " . TABLES::SCOLARITES . " s ON t.scolarite_code = s.code_scolarite
-            LEFT JOIN " . TABLES::FILIERES . " f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
-            LEFT JOIN " . TABLES::ANNEES . " a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = COALESCE(t.filiere_code, s.filiere_code)
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = COALESCE(t.niveau_code, s.niveau_code)
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = COALESCE(t.annee_code, s.annee_code)
             WHERE t.id_tranche = ? OR t.code_tranche = ?
             LIMIT 1
         ");

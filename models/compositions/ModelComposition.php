@@ -230,16 +230,25 @@ class ModelComposition extends BaseModel
             $sql = "
                 SELECT DISTINCT comp.*, 
                        ? AS libelle_classe,
-                       m.libelle_matiere, 
+                       COALESCE(m.libelle_matiere, m_cm.libelle_matiere) AS libelle_matiere, 
                        s.libelle_semestre
                 FROM " . TABLES::COMPOSITIONS . " comp
-                INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
-                INNER JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
+                LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
+                LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
+                LEFT JOIN " . TABLES::MATIERES . " m_cm ON m_cm.code_matiere = cm.matiere_code
                 LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
-                WHERE cnf.niveau_code = ? AND cnf.filiere_code = ? AND cm.matiere_code = ?
+                WHERE (
+                    (comp.classe_code = ? AND comp.matiere_code = ?)
+                    OR
+                    (cnf.niveau_code = ? AND cnf.filiere_code = ? AND cm.matiere_code = ?)
+                )
             ";
-            $params = [$classeRow['libelle_classe'], $classeRow['niveau_code'], $classeRow['filiere_code'], $matiereCode];
+            $params = [
+                $classeRow['libelle_classe'],
+                $classeCode, $matiereCode,
+                $classeRow['niveau_code'], $classeRow['filiere_code'], $matiereCode
+            ];
 
             if (!empty($semestreCode)) {
                 $sql .= " AND comp.semestre_code = ?";
@@ -254,37 +263,7 @@ class ModelComposition extends BaseModel
 
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-            // Fallback: Check target compositions matching class (Niveau + Filière) if subjects matrix not yet saved
-            if (empty($results)) {
-                $sqlFallback = "
-                    SELECT DISTINCT comp.*, 
-                           ? AS libelle_classe,
-                           m.libelle_matiere, 
-                           s.libelle_semestre
-                    FROM " . TABLES::COMPOSITIONS . " comp
-                    INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
-                    LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = ?
-                    LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
-                    WHERE cnf.niveau_code = ? AND cnf.filiere_code = ?
-                ";
-                $paramsFb = [$classeRow['libelle_classe'], $matiereCode, $classeRow['niveau_code'], $classeRow['filiere_code']];
-                if (!empty($semestreCode)) {
-                    $sqlFallback .= " AND comp.semestre_code = ?";
-                    $paramsFb[] = $semestreCode;
-                }
-                if (!empty($typeComposition)) {
-                    $sqlFallback .= " AND comp.type_composition = ?";
-                    $paramsFb[] = $typeComposition;
-                }
-                $sqlFallback .= " ORDER BY comp.id_composition DESC ";
-                $stmtFb = $db->prepare($sqlFallback);
-                $stmtFb->execute($paramsFb);
-                $results = $stmtFb->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            }
-
-            return $results;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("Get compositions by classe/matiere: " . $e->getMessage());
             return [];

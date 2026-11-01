@@ -95,20 +95,23 @@ class ModelBulletin extends BaseModel
             SELECT n.*, 
                    m.libelle_matiere, 
                    COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient, 
-                   comp.matiere_code,
+                   COALESCE(comp.matiere_code, cm.matiere_code) AS matiere_code,
                    comp.type_composition AS type_evaluation_code,
                    CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_enseignant
             FROM " . TABLES::NOTES . " n
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
-            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = comp.matiere_code AND em.classe_code = ?)
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ?
+            LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
+            LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
+            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND em.classe_code = ?)
             LEFT JOIN " . TABLES::ENSEIGNANTS . " ens ON ens.code_enseignant = em.enseignant_code
             LEFT JOIN " . TABLES::USERS . " u ON u.code_user = ens.code_enseignant
             WHERE n.inscription_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
             ORDER BY m.libelle_matiere ASC, comp.type_composition ASC
         ";
         $stmtNotes = $db->prepare($sqlNotes);
-        $stmtNotes->execute([$item['classe_code'], $item['code_inscription'], $selectedSemestreCode]);
+        $stmtNotes->execute([$item['classe_code'], $item['classe_code'], $item['code_inscription'], $selectedSemestreCode]);
         $rawNotes = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
 
         $matieresNotes = [];
@@ -184,12 +187,15 @@ class ModelBulletin extends BaseModel
             $sqlClassmates = "
                 SELECT i.code_inscription,
                        n.valeur_note,
-                       COALESCE(em.coefficient, 1.00) AS coefficient
+                       COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
                 FROM " . TABLES::INSCRIPTIONS . " i
                 INNER JOIN " . TABLES::NOTES . " n ON n.inscription_code = i.code_inscription
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-                INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
-                LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = comp.matiere_code AND em.classe_code = i.classe_code)
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
+                LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
+                INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
+                LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND em.classe_code = i.classe_code)
                 WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
             ";
             $stmtClass = $db->prepare($sqlClassmates);
@@ -322,7 +328,10 @@ class ModelBulletin extends BaseModel
                 FROM " . TABLES::NOTES . " n
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
                 INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code
-                INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
+                LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
+                INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
                 WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
                 ORDER BY m.libelle_matiere ASC
             ");
@@ -352,12 +361,15 @@ class ModelBulletin extends BaseModel
 
         // 4. Batch query: Récupération en 1 seule requête de toutes les moyennes par matière pour tous les étudiants
         $stmtAllNotes = $db->prepare("
-            SELECT n.inscription_code, comp.matiere_code, AVG(n.valeur_note) AS moy_mat
+            SELECT n.inscription_code, COALESCE(comp.matiere_code, cm.matiere_code) AS matiere_code, AVG(n.valeur_note) AS moy_mat
             FROM " . TABLES::NOTES . " n
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
             INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
+            LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
             WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
-            GROUP BY n.inscription_code, comp.matiere_code
+            GROUP BY n.inscription_code, COALESCE(comp.matiere_code, cm.matiere_code)
         ");
         $stmtAllNotes->execute([$selectedClasseCode, $selectedSemestreCode]);
         $allNotesRows = $stmtAllNotes->fetchAll(PDO::FETCH_ASSOC);

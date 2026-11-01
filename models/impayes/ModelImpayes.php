@@ -12,7 +12,7 @@ class ModelImpayes extends BaseModel
             $sql = "SELECT r.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, cl.libelle_classe, n.libelle_niveau 
                     FROM " . TABLES::RELANCES_IMPAYES . " r
                     LEFT JOIN " . TABLES::ETUDIANTS . " e ON r.etudiant_code = e.code_etudiant
-                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription != '" . STATUTS::ANNULE . "'))
+                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND (ins.annee_code = r.annee_code OR r.annee_code IS NULL OR r.annee_code = '') AND ins.statut_inscription != '" . STATUTS::ANNULE . "'))
                     LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                     LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code";
             $conditions = [];
