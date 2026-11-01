@@ -357,19 +357,36 @@ $(document).ready(function() {
       try {
         var api = this.api();
         var rows = api.rows({ search: 'applied' }).data().toArray();
-        var total = rows.length;
-        var examens = 0;
-        var controles = 0;
+        
+        var compoMap = {};
         var complets = 0;
-        rows.forEach(function(r) {
+
+        rows.forEach(function(r, idx) {
           if (r) {
-            if (r.type_composition === 'EXAMEN') examens++;
-            else controles++;
+            var compoKey = r.code_composition || (r.id_composition ? 'id_' + r.id_composition : 'row_' + idx);
+            if (!compoMap[compoKey]) {
+              compoMap[compoKey] = {
+                type: r.type_composition || 'EXAMEN'
+              };
+            }
             var nb = parseInt(r.nb_notes || 0, 10);
             var tot = parseInt(r.total_etudiants || 0, 10);
             if (tot > 0 && nb >= tot) complets++;
           }
         });
+
+        var examens = 0;
+        var controles = 0;
+        Object.keys(compoMap).forEach(function(k) {
+          if (compoMap[k].type === 'EXAMEN') {
+            examens++;
+          } else {
+            controles++;
+          }
+        });
+
+        var total = Object.keys(compoMap).length;
+
         $('#kpi-total-sessions').text(total);
         $('#kpi-total-examens').text(examens);
         $('#kpi-total-controles').text(controles);
