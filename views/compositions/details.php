@@ -29,11 +29,19 @@ $encryptedId = $encryptedId ?? '';
             <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisir les Notes
           </a>
           <?php endif; ?>
-          <?php if (!empty($encryptedId)): ?>
+          <?php 
+          $isExamen = strtoupper($item['type_composition'] ?? 'EXAMEN') === 'EXAMEN';
+          if (!empty($encryptedId)): 
+            if ($isExamen):
+          ?>
           <a href="<?= RACINE ?>composition/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
           </a>
-          <?php endif; ?>
+          <?php else: ?>
+          <button type="button" class="btn btn-light" disabled style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; color: #94A3B8; background: #F1F5F9; border: 1px solid #CBD5E1; cursor: not-allowed;" title="Seuls les examens peuvent être modifiés via la programmation">
+            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
+          </button>
+          <?php endif; endif; ?>
         </div>
       </div>
 

@@ -178,8 +178,10 @@ $(document).ready(function() {
           if (!d) return '';
           var detailsUrl = window.RACINE + 'composition/details/' + (d.editId || d.id_composition);
           var editUrl = window.RACINE + 'composition/edition/' + (d.editId || d.id_composition);
-          var noterUrl = window.RACINE + 'note/saisieClasse?type_evaluation_code=EXAMEN&composition_code=' + encodeURIComponent(d.code_composition || '');
+          var noterUrl = window.RACINE + 'note/saisieClasse?type_evaluation_code=' + encodeURIComponent(d.type_composition || 'EXAMEN') + '&composition_code=' + encodeURIComponent(d.code_composition || '');
           
+          var compoType = (d.type_composition || 'EXAMEN').toString().toUpperCase();
+          var isExamen = (compoType === 'EXAMEN');
           var compoStatut = (d.statut_composition || '').toString().toLowerCase();
           var isLocked = (compoStatut === 'cloture' || compoStatut === 'termine' || compoStatut === 'annule');
           var isTermine = (compoStatut === 'cloture' || compoStatut === 'termine');
@@ -209,10 +211,16 @@ $(document).ready(function() {
                            '</a>';
           }
 
-          // 3. Bouton Éditer (crayon d'édition)
-          actionsHtml += '<a href="' + editUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Modifier la programmation">' +
-                           '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
-                         '</a>';
+          // 3. Bouton Éditer (crayon d'édition - désactivé si type != EXAMEN)
+          if (!isExamen) {
+            actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="Modification de la programmation désactivée (réservé aux examens)">' +
+                             '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
+                           '</button>';
+          } else {
+            actionsHtml += '<a href="' + editUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Modifier la programmation">' +
+                             '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
+                           '</a>';
+          }
 
           // 4. Bouton Statut : Clôturer (ou Rouvrir si déjà clôturée)
           if (isTermine) {
