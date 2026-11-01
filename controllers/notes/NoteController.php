@@ -90,6 +90,69 @@ class NoteController extends BaseController
         $this->json(['status' => 1, 'data' => $data]);
     }
 
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_NOTES, PERMISSIONS::ENTER_NOTES]);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $classeCode = trim($_GET['classe_code'] ?? '');
+        $compositionCode = trim($_GET['composition_code'] ?? '');
+        $matiereCode = trim($_GET['matiere_code'] ?? '');
+
+        if (empty($classeCode) || empty($compositionCode)) {
+            $this->renderNotFound("Paramètres invalides (classe ou composition manquante).");
+            return;
+        }
+
+        $anneeCode = $this->getActiveAnneeCode();
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        $etablissement = $this->getEtablissementConfig();
+
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Examens & Notes';
+        }
+
+        $dataDetails = $this->model->getDetailsClasseCompo($classeCode, $compositionCode, $matiereCode, $anneeCode);
+        if (!$dataDetails) {
+            $this->renderNotFound("Session d'évaluation introuvable.");
+            return;
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'info' => $dataDetails['info'] ?? [],
+            'students' => $dataDetails['students'] ?? [],
+            'stats' => $dataDetails['stats'] ?? []
+        ];
+
+        $html = PdfService::renderTemplate('fiche_notes_classe.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $classeName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $dataDetails['info']['libelle_classe'] ?? 'Classe');
+        $compoName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $dataDetails['info']['libelle_composition'] ?? 'Compo');
+        $filename = 'Notes_' . $classeName . '_' . $compoName . '_' . date('Ymd_His') . '.pdf';
+
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Fiche de Notes - ' . ($dataDetails['info']['libelle_classe'] ?? '') . ' - ' . ($dataDetails['info']['libelle_composition'] ?? ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
     public function add()
     {
         $this->requirePost(false);

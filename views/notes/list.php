@@ -187,7 +187,7 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
                 <th style="padding: 12px 14px; text-align: center; width: 70px;">Coef</th>
                 <th style="padding: 12px 14px; text-align: center;">Progression Saisie</th>
                 <th style="padding: 12px 14px; text-align: center;">Moyenne Classe</th>
-                <th style="padding: 12px 14px; text-align: right; width: 90px;">Actions</th>
+                <th style="padding: 12px 14px; text-align: right; width: 130px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -268,9 +268,14 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px; font-weight: 700; padding: 8px 18px;">
           Fermer
         </button>
-        <a href="#" id="md-btn-go-saisie" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; border-radius: 8px; font-weight: 700; padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px;">
-          <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Saisir / Modifier les Notes
-        </a>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <a href="#" id="md-btn-go-print" target="_blank" class="btn btn-outline-secondary" style="border: 1px solid #CBD5E1; color: #1E293B; background: #FFFFFF; border-radius: 8px; font-weight: 700; padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px;" title="Imprimer la fiche de notes (PDF)">
+            <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer (PDF)
+          </a>
+          <a href="#" id="md-btn-go-saisie" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; border-radius: 8px; font-weight: 700; padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Saisir / Modifier les Notes
+          </a>
+        </div>
       </div>
 
     </div>

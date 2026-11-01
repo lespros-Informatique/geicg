@@ -192,7 +192,7 @@ $(document).ready(function() {
       },
       { 
         data: null, 
-        width: '90px', 
+        width: '130px', 
         orderable: false, 
         className: 'text-end',
         render: function(d) {
@@ -203,12 +203,19 @@ $(document).ready(function() {
                         + '&matiere_code=' + encodeURIComponent(d.matiere_code || '')
                         + '&type_evaluation_code=' + encodeURIComponent(d.type_composition || '');
           
+          var printUrl = window.RACINE + 'note/imprimerPdf?classe_code=' + encodeURIComponent(d.code_classe || '')
+                       + '&composition_code=' + encodeURIComponent(d.code_composition || '')
+                       + '&matiere_code=' + encodeURIComponent(d.matiere_code || '');
+          
           return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">' +
                    '<button type="button" class="btn btn-sm btn-details-session" data-classe="' + (d.code_classe || '') + '" data-compo="' + (d.code_composition || '') + '" data-matiere="' + (d.matiere_code || '') + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; cursor:pointer;" title="Consulter les détails">' +
                      '<i data-lucide="eye" style="width:16px; height:16px;"></i>' +
                    '</button>' +
                    '<a href="' + saisieUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Modifier les notes">' +
                      '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
+                   '</a>' +
+                   '<a href="' + printUrl + '" target="_blank" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Imprimer la fiche de notes (PDF)">' +
+                     '<i data-lucide="printer" style="width:16px; height:16px;"></i>' +
                    '</a>' +
                  '</div>';
         }
@@ -333,6 +340,12 @@ $(document).ready(function() {
                         + '&matiere_code=' + encodeURIComponent(info.matiere_code || '')
                         + '&type_evaluation_code=' + encodeURIComponent(info.type_composition || '');
           $('#md-btn-go-saisie').attr('href', saisieUrl);
+
+          // Bouton Imprimer
+          var printUrl = window.RACINE + 'note/imprimerPdf?classe_code=' + encodeURIComponent(info.classe_code || classeCode)
+                       + '&composition_code=' + encodeURIComponent(info.code_composition || compoCode)
+                       + '&matiere_code=' + encodeURIComponent(info.matiere_code || '');
+          $('#md-btn-go-print').attr('href', printUrl);
 
           $('#modal-details-content').show();
           if (window.lucide) lucide.createIcons();
