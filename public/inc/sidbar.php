@@ -246,7 +246,7 @@
                     <i data-lucide="user-x"></i> <span>Absences & Appel par Classe</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($canAccess([PERMISSIONS::ENTER_NOTES, PERMISSIONS::VIEW_NOTES, PERMISSIONS::LOCK_NOTES, PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS])): ?>
+                <?php if ($canAccess([PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS])): ?>
                 <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= $isActiveRoute('/composition/') ?>" data-title="Planning des Examens">
                     <i data-lucide="award"></i> <span>Planning des Examens</span>
                 </a>

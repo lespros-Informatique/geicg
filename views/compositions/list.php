@@ -6,6 +6,9 @@ $annees = $annees ?? [];
 $matieres = $matieres ?? [];
 $semestres = $semestres ?? [];
 $selectedAnneeCode = $selectedAnneeCode ?? '';
+$canManageExamens = isset($canManageExamens) ? (bool)$canManageExamens : true;
+$canViewExamens = isset($canViewExamens) ? (bool)$canViewExamens : true;
+$canEnterNotes = isset($canEnterNotes) ? (bool)$canEnterNotes : true;
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -40,9 +43,11 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
           <button type="button" onclick="window.print()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; transition: all 0.2s;" title="Imprimer le calendrier des évaluations">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
+          <?php if ($canManageExamens): ?>
           <a href="<?= RACINE ?>composition/formulaire?type=EXAMEN" id="btn-add-composition" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Programmer un Examen
           </a>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -186,7 +191,10 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
 
 <script type="application/json" id="compositions-list-config">
 <?= json_encode([
-    'csrfToken' => Validator::generateCsrfToken()
+    'csrfToken' => Validator::generateCsrfToken(),
+    'canManageExamens' => (bool)$canManageExamens,
+    'canViewExamens' => (bool)$canViewExamens,
+    'canEnterNotes' => (bool)$canEnterNotes
 ]) ?>
 </script>
 <?php

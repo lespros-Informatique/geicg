@@ -16,6 +16,9 @@ $(document).ready(function() {
     if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
   } catch (e) {}
   var csrfToken = cfg.csrfToken || '';
+  var canManageExamens = cfg.canManageExamens !== false;
+  var canViewExamens = cfg.canViewExamens !== false;
+  var canEnterNotes = cfg.canEnterNotes !== false;
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
@@ -173,52 +176,59 @@ $(document).ready(function() {
           var actionsHtml = '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">';
           
           // 1. Bouton Détails (œil)
-          actionsHtml += '<a href="' + detailsUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; text-decoration:none; cursor:pointer;" title="Voir les détails de l\'épreuve">' +
-                           '<i data-lucide="eye" style="width:16px; height:16px;"></i>' +
-                         '</a>';
+          if (canViewExamens) {
+            actionsHtml += '<a href="' + detailsUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; text-decoration:none; cursor:pointer;" title="Voir les détails de l\'épreuve">' +
+                             '<i data-lucide="eye" style="width:16px; height:16px;"></i>' +
+                           '</a>';
+          }
 
           // 2. Bouton Noter (crayon ou cadenas si verrouillé)
-          if (isLocked) {
-            actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="' + lockTitle + '">' +
-                             '<i data-lucide="lock" style="width:16px; height:16px;"></i>' +
-                           '</button>';
-          } else {
-            actionsHtml += '<a href="' + noterUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Noter l\'épreuve">' +
-                             '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
-                           '</a>';
+          if (canEnterNotes) {
+            if (isLocked) {
+              actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="' + lockTitle + '">' +
+                               '<i data-lucide="lock" style="width:16px; height:16px;"></i>' +
+                             '</button>';
+            } else {
+              actionsHtml += '<a href="' + noterUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Noter l\'épreuve">' +
+                               '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
+                             '</a>';
+            }
           }
 
-          // 3. Bouton Éditer (crayon d'édition - désactivé si type != EXAMEN)
-          if (!isExamen) {
-            actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="Modification de la programmation désactivée (réservé aux examens)">' +
-                             '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
-                           '</button>';
-          } else {
-            actionsHtml += '<a href="' + editUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Modifier la programmation">' +
-                             '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
-                           '</a>';
-          }
+          // 3. Boutons réservés aux gestionnaires d'examens (MANAGE_EXAMENS)
+          if (canManageExamens) {
+            // 3.1. Bouton Éditer (crayon d'édition - désactivé si type != EXAMEN)
+            if (!isExamen) {
+              actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="Modification de la programmation désactivée (réservé aux examens)">' +
+                               '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
+                             '</button>';
+            } else {
+              actionsHtml += '<a href="' + editUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Modifier la programmation">' +
+                               '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
+                             '</a>';
+            }
 
-          // 4. Bouton Statut : Clôturer (ou Rouvrir si déjà clôturée)
-          if (isTermine) {
-            actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="programme" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FEF3C7; color:#B45309; border:1px solid #FDE68A; border-radius:6px; cursor:pointer;" title="Épreuve clôturée (Cliquez pour rouvrir)">' +
-                             '<i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i>' +
-                           '</button>';
-          } else {
-            actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="termine" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; border-radius:6px; cursor:pointer;" title="Clôturer cette épreuve">' +
-                             '<i data-lucide="check-circle" style="width:16px; height:16px;"></i>' +
-                           '</button>';
-          }
+            // 4. Bouton Statut : Clôturer (ou Rouvrir si déjà clôturée)
+            if (isTermine) {
+              actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="programme" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FEF3C7; color:#B45309; border:1px solid #FDE68A; border-radius:6px; cursor:pointer;" title="Épreuve clôturée (Cliquez pour rouvrir)">' +
+                               '<i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i>' +
+                             '</button>';
+            } else {
+              actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="termine" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; border-radius:6px; cursor:pointer;" title="Clôturer cette épreuve">' +
+                               '<i data-lucide="check-circle" style="width:16px; height:16px;"></i>' +
+                             '</button>';
+            }
 
-          // 5. Bouton Statut : Annuler (ou Réactiver si déjà annulée)
-          if (isAnnule) {
-            actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="programme" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FEE2E2; color:#B91C1C; border:1px solid #FECACA; border-radius:6px; cursor:pointer;" title="Épreuve annulée (Cliquez pour réactiver)">' +
-                             '<i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i>' +
-                           '</button>';
-          } else {
-            actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="annule" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FFF1F2; color:#E11D48; border:1px solid #FECDD3; border-radius:6px; cursor:pointer;" title="Annuler cette épreuve">' +
-                             '<i data-lucide="ban" style="width:16px; height:16px;"></i>' +
-                           '</button>';
+            // 5. Bouton Statut : Annuler (ou Réactiver si déjà annulée)
+            if (isAnnule) {
+              actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="programme" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FEE2E2; color:#B91C1C; border:1px solid #FECACA; border-radius:6px; cursor:pointer;" title="Épreuve annulée (Cliquez pour réactiver)">' +
+                               '<i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i>' +
+                             '</button>';
+            } else {
+              actionsHtml += '<button type="button" class="btn btn-sm btn-statut-action" data-id="' + compoId + '" data-target="annule" data-name="' + compoNom + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#FFF1F2; color:#E11D48; border:1px solid #FECDD3; border-radius:6px; cursor:pointer;" title="Annuler cette épreuve">' +
+                               '<i data-lucide="ban" style="width:16px; height:16px;"></i>' +
+                             '</button>';
+            }
           }
 
           actionsHtml += '</div>';

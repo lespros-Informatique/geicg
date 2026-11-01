@@ -10,6 +10,11 @@ class CompositionController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS]);
+        $canManageExamens = Auth::can(PERMISSIONS::MANAGE_EXAMENS);
+        $canViewExamens = Auth::can([PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS]);
+        $canEnterNotes = Auth::can(PERMISSIONS::ENTER_NOTES);
+
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -24,13 +29,17 @@ class CompositionController extends BaseController
             'classes' => $classes,
             'matieres' => $matieres,
             'semestres' => $semestres,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'canManageExamens' => $canManageExamens,
+            'canViewExamens' => $canViewExamens,
+            'canEnterNotes' => $canEnterNotes
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS]);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
@@ -55,6 +64,7 @@ class CompositionController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EXAMENS);
         $selectedClasseCode = $_GET['classe_code'] ?? '';
         $selectedMatiereCode = $_GET['matiere_code'] ?? '';
         $typeEval = $_GET['type'] ?? 'COMPOSITION';
@@ -94,6 +104,7 @@ class CompositionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EXAMENS);
         $userCode = Auth::code();
         $anneeCode = !empty($_POST['annee_code']) ? $_POST['annee_code'] : $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -159,6 +170,7 @@ class CompositionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EXAMENS);
         $id = (int)$this->post('id_composition');
         if (!$id) { $this->error('Identifiant invalide'); return; }
 
@@ -205,6 +217,7 @@ class CompositionController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EXAMENS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -273,6 +286,7 @@ class CompositionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EXAMENS);
         $rawId = $_POST['id'] ?? ($_GET['id'] ?? $this->post('id'));
         $id = (int)$rawId;
 
@@ -338,6 +352,7 @@ class CompositionController extends BaseController
     public function saveMatieresClasseApi()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EXAMENS);
         $compositionCode = trim($_POST['composition_code'] ?? ($_GET['composition_code'] ?? ''));
         $compositionNiveauFiliereCode = trim($_POST['composition_niveau_filiere_code'] ?? ($_GET['composition_niveau_filiere_code'] ?? ($_POST['composition_cible_code'] ?? ($_GET['composition_cible_code'] ?? ''))));
         $matiereCodes = $_POST['matiere_codes'] ?? ($_GET['matiere_codes'] ?? []);
@@ -361,6 +376,7 @@ class CompositionController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -389,6 +405,7 @@ class CompositionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EXAMENS);
         $id = (int)$this->post('id');
         $statut = trim($this->post('statut') ?? '');
 
