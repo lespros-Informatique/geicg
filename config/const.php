@@ -14,6 +14,13 @@ if (file_exists($autoloadPath)) {
     }
 }
 
+// Configuration globale du fuseau horaire (Abidjan / GMT / UTC+0 par défaut)
+$appTimezone = $_ENV['APP_TIMEZONE'] ?? $_SERVER['APP_TIMEZONE'] ?? getenv('APP_TIMEZONE') ?: 'Africa/Abidjan';
+if (!defined('APP_TIMEZONE')) {
+    define('APP_TIMEZONE', $appTimezone);
+}
+date_default_timezone_set(APP_TIMEZONE);
+
 define('ROOT', $_SERVER['DOCUMENT_ROOT'] ?? 'C:/wamp64/www');
 
 $httpHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
