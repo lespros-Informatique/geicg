@@ -7,41 +7,87 @@ class ModelBulletin extends BaseModel
     protected ?string $statusField = 'statut_inscription';
     protected ?string $createdAtField = 'created_at_inscription';
 
-    public function getActiveSemestres(): array
+    public function getActiveSemestres(?string $anneeCode = null): array
     {
         try {
-            $sql = "SELECT * FROM " . TABLES::SEMESTRES . " WHERE statut_semestre = '" . STATUTS::ACTIF . "' ORDER BY id_semestre ASC";
-            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $sql = "SELECT * FROM " . TABLES::SEMESTRES;
+            $params = [];
+            if (!empty($anneeCode)) {
+                $sql .= " WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+                $params[] = $anneeCode;
+            }
+            $sql .= " ORDER BY id_semestre ASC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelBulletin::getActiveSemestres error: " . $e->getMessage());
             return [];
         }
     }
 
-    public function getInscriptionsWithNotes(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
-    {
+    public function getInscriptionsWithNotes(
+        ?string $anneeCode = null,
+        ?string $niveauCode = null,
+        ?string $classeCode = null,
+        ?string $semestreCode = null,
+        ?array $teacherClasses = null,
+        ?string $statutNotes = null
+    ): array {
         try {
+            $subParams = [];
+            $subWhere = [
+                "n.statut_note = '" . STATUTS::ACTIF . "'",
+                "(comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')"
+            ];
+
+            if (!empty($semestreCode)) {
+                $subWhere[] = "comp.semestre_code = ?";
+                $subParams[] = $semestreCode;
+            }
+            if (!empty($anneeCode)) {
+                $subWhere[] = "(comp.annee_code = ? OR comp.annee_code IS NULL OR comp.annee_code = '')";
+                $subParams[] = $anneeCode;
+            }
+
+            $subWhereSql = implode(" AND ", $subWhere);
+
             $sql = "SELECT i.*, 
-                           CONCAT(e.nom_etudiant, ' ', e.prenom_etudiant) AS etudiant_nom,
+                           CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) AS etudiant_nom,
                            e.matricule_etudiant,
+                           e.sexe_etudiant,
+                           e.photo_etudiant,
                            cl.libelle_classe AS classe_nom,
+                           cl.code_classe,
+                           n.libelle_niveau AS niveau_nom,
+                           f.libelle_filiere AS filiere_nom,
                            a.libelle_annee AS annee_nom,
-                           COALESCE(n_cnt.nb_notes, 0) AS nb_notes
+                           COALESCE(n_cnt.nb_notes, 0) AS nb_notes,
+                           n_cnt.moyenne_semestre
                     FROM " . TABLES::INSCRIPTIONS . " i
-                    LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+                    INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
                     LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                    LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                    LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                     LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
                     LEFT JOIN (
-                        SELECT inscription_code, COUNT(*) AS nb_notes
-                        FROM " . TABLES::NOTES . "
-                        WHERE statut_note = '" . STATUTS::ACTIF . "'
-                        GROUP BY inscription_code
+                        SELECT 
+                            n.inscription_code, 
+                            COUNT(DISTINCT n.id_note) AS nb_notes,
+                            ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moyenne_semestre
+                        FROM " . TABLES::NOTES . " n
+                        INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+                        WHERE {$subWhereSql}
+                        GROUP BY n.inscription_code
                     ) n_cnt ON n_cnt.inscription_code = i.code_inscription";
 
-            $conditions = [];
-            $params = [];
+            $conditions = [
+                "(i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)"
+            ];
+            $params = $subParams;
+
             if (!empty($anneeCode)) {
-                $conditions[] = "i.annee_code = ?";
+                $conditions[] = "(i.annee_code = ? OR i.annee_code IS NULL OR i.annee_code = '')";
                 $params[] = $anneeCode;
             }
             if (!empty($niveauCode)) {
@@ -52,11 +98,26 @@ class ModelBulletin extends BaseModel
                 $conditions[] = "i.classe_code = ?";
                 $params[] = $classeCode;
             }
+            if (!empty($teacherClasses)) {
+                $inClasses = implode(',', array_fill(0, count($teacherClasses), '?'));
+                $conditions[] = "i.classe_code IN ($inClasses)";
+                foreach ($teacherClasses as $tc) {
+                    $params[] = $tc;
+                }
+            }
+            if (!empty($statutNotes)) {
+                if ($statutNotes === 'avec_notes') {
+                    $conditions[] = "COALESCE(n_cnt.nb_notes, 0) > 0";
+                } elseif ($statutNotes === 'sans_notes') {
+                    $conditions[] = "COALESCE(n_cnt.nb_notes, 0) = 0";
+                }
+            }
+
             if (!empty($conditions)) {
                 $sql .= " WHERE " . implode(" AND ", $conditions);
             }
 
-            $sql .= " ORDER BY i.id_inscription DESC";
+            $sql .= " ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC";
 
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
@@ -108,6 +169,7 @@ class ModelBulletin extends BaseModel
             LEFT JOIN " . TABLES::ENSEIGNANTS . " ens ON ens.code_enseignant = em.enseignant_code
             LEFT JOIN " . TABLES::USERS . " u ON u.code_user = ens.code_enseignant
             WHERE n.inscription_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
+              AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
             ORDER BY m.libelle_matiere ASC, comp.type_composition ASC
         ";
         $stmtNotes = $db->prepare($sqlNotes);
@@ -197,6 +259,8 @@ class ModelBulletin extends BaseModel
                 INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
                 LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND em.classe_code = i.classe_code)
                 WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
+                  AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
+                  AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
             ";
             $stmtClass = $db->prepare($sqlClassmates);
             $stmtClass->execute([$item['classe_code'], $selectedSemestreCode]);
@@ -353,7 +417,8 @@ class ModelBulletin extends BaseModel
             SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant
             FROM " . TABLES::INSCRIPTIONS . " i
             INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND i.statut_inscription = '" . STATUTS::ACTIF . "'
+            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') 
+              AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
         $stmtE->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
@@ -369,6 +434,7 @@ class ModelBulletin extends BaseModel
             LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
             LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
             WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
+              AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
             GROUP BY n.inscription_code, COALESCE(comp.matiere_code, cm.matiere_code)
         ");
         $stmtAllNotes->execute([$selectedClasseCode, $selectedSemestreCode]);

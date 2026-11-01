@@ -13,14 +13,49 @@ class BulletinController extends BaseController
         $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
-        $selectedAnneeCode = Session::get('annee_active_code');
+        
+        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
+            $selectedAnneeCode = trim($_GET['annee_code']);
+            foreach ($annees as $a) {
+                if ($a['code_annee'] === $selectedAnneeCode) {
+                    Session::set('annee_active_code', $a['code_annee']);
+                    Session::set('annee_active_libelle', $a['libelle_annee']);
+                    break;
+                }
+            }
+        } else {
+            $selectedAnneeCode = Session::get('annee_active_code');
+        }
+
+        $teacherCtx = $this->getTeacherContext();
+        $isTeacherOnly = $teacherCtx['isTeacherOnly'];
+        $teacherCodes = $teacherCtx['teacherCodes'];
+
+        if ($isTeacherOnly && !empty($teacherCodes)) {
+            require_once __DIR__ . '/../notes/NoteController.php';
+            $modelNote = new ModelNote();
+            $classes = $modelNote->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+        } else {
+            $classes = (new ModelClasse())->getAll();
+        }
+
+        $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
+        if (empty($semestres)) {
+            $semestres = $this->model->getActiveSemestres($selectedAnneeCode);
+        }
+
+        $canGenerateBulletins = Auth::can([PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::CONFIG_ACADEMIQUE]) && !$isTeacherOnly;
+        $canViewBulletins = Auth::can(PERMISSIONS::VIEW_BULLETINS) || $isTeacherOnly;
 
         $this->loadView('../views/bulletin/list.php', [
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'semestres' => $semestres,
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'isTeacherOnly' => $isTeacherOnly,
+            'canGenerateBulletins' => $canGenerateBulletins,
+            'canViewBulletins' => $canViewBulletins
         ]);
     }
 
@@ -29,18 +64,51 @@ class BulletinController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code') ?? null;
-        $niveauCode = $_GET['niveau_code'] ?? null;
-        $classeCode = $_GET['classe_code'] ?? null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
+        $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
+        $statutNotes = !empty($_GET['statut_notes']) ? trim($_GET['statut_notes']) : null;
 
-        $items = $this->model->getInscriptionsWithNotes($anneeCode, $niveauCode, $classeCode);
+        $teacherCtx = $this->getTeacherContext();
+        $teacherClasses = null;
+        if ($teacherCtx['isTeacherOnly'] && !empty($teacherCtx['teacherCodes'])) {
+            require_once __DIR__ . '/../../models/notes/ModelNote.php';
+            $clsList = (new ModelNote())->getClassesForTeacher($teacherCtx['teacherCodes'], $anneeCode);
+            $teacherClasses = array_column($clsList, 'code_classe');
+            if (empty($teacherClasses)) {
+                $teacherClasses = ['__NO_ACCESS__'];
+            }
+        }
+
+        $items = $this->model->getInscriptionsWithNotes(
+            $anneeCode,
+            $niveauCode,
+            $classeCode,
+            $semestreCode,
+            $teacherClasses,
+            $statutNotes
+        );
 
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_inscription'];
             $idCrypte = $this->validator->crypter($id);
+            $moy = $i['moyenne_semestre'] !== null ? (float)$i['moyenne_semestre'] : null;
+            $decision = 'En attente';
+            if ($moy !== null) {
+                if ($moy >= 10) {
+                    $decision = 'Admis(e)';
+                } else {
+                    $decision = 'Ajourné(e)';
+                }
+            }
+
             $data[] = array_merge($i, [
                 'id' => $id,
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'moyenne_num' => $moy,
+                'decision' => $decision,
+                'semestre_code_selected' => $semestreCode
             ]);
         }
         $this->json(['data' => $data]);
@@ -256,6 +324,140 @@ class BulletinController extends BaseController
             'orientation' => 'L',
             'format' => 'A4',
             'title' => 'PV de Délibération - ' . ($pvData['classeInfo']['libelle_classe'] ?? ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
+    public function imprimerRegistrePdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
+        $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
+        $statutNotes = !empty($_GET['statut_notes']) ? trim($_GET['statut_notes']) : null;
+
+        $teacherCtx = $this->getTeacherContext();
+        $teacherClasses = null;
+        if ($teacherCtx['isTeacherOnly'] && !empty($teacherCtx['teacherCodes'])) {
+            require_once __DIR__ . '/../../models/notes/ModelNote.php';
+            $clsList = (new ModelNote())->getClassesForTeacher($teacherCtx['teacherCodes'], $anneeCode);
+            $teacherClasses = array_column($clsList, 'code_classe');
+            if (empty($teacherClasses)) {
+                $teacherClasses = ['__NO_ACCESS__'];
+            }
+        }
+
+        $items = $this->model->getInscriptionsWithNotes(
+            $anneeCode,
+            $niveauCode,
+            $classeCode,
+            $semestreCode,
+            $teacherClasses,
+            $statutNotes
+        );
+
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+            if (!empty($anneeItem['libelle_annee'])) {
+                $anneeLibelle = $anneeItem['libelle_annee'];
+            }
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = !empty($teacherCtx['isTeacherOnly']) ? 'Enseignant' : 'Direction des Études';
+        }
+
+        $filtresLabels = [
+            'annee' => $anneeLibelle,
+            'niveau' => 'Tous les niveaux',
+            'classe' => 'Toutes les classes',
+            'semestre' => 'Tous les semestres',
+            'statut_notes' => 'Tous les étudiants'
+        ];
+        if (!empty($niveauCode)) {
+            $niv = (new ModelNiveau())->getByCode($niveauCode);
+            if ($niv) $filtresLabels['niveau'] = $niv['libelle_niveau'] ?? $niveauCode;
+        }
+        if (!empty($classeCode)) {
+            $cls = (new ModelClasse())->getByCode($classeCode);
+            if ($cls) $filtresLabels['classe'] = $cls['libelle_classe'] ?? $classeCode;
+        }
+        if (!empty($semestreCode)) {
+            $sem = (new ModelSemestre())->getByCode($semestreCode);
+            if ($sem) $filtresLabels['semestre'] = $sem['libelle_semestre'] ?? $semestreCode;
+        }
+        if ($statutNotes === 'avec_notes') {
+            $filtresLabels['statut_notes'] = 'Avec notes uniquement';
+        } elseif ($statutNotes === 'sans_notes') {
+            $filtresLabels['statut_notes'] = 'Sans notes uniquement';
+        }
+
+        $totalInscrits = count($items);
+        $totalAvecNotes = 0;
+        $totalAdmis = 0;
+        $totalSansNotes = 0;
+        $sommeMoyennes = 0;
+        $nbMoyennes = 0;
+
+        foreach ($items as $it) {
+            $nb = (int)($it['nb_notes'] ?? 0);
+            $moy = $it['moyenne_semestre'] !== null ? (float)$it['moyenne_semestre'] : null;
+            if ($nb > 0) {
+                $totalAvecNotes++;
+            } else {
+                $totalSansNotes++;
+            }
+            if ($moy !== null) {
+                $sommeMoyennes += $moy;
+                $nbMoyennes++;
+                if ($moy >= 10) {
+                    $totalAdmis++;
+                }
+            }
+        }
+
+        $moyenneGlobale = $nbMoyennes > 0 ? round($sommeMoyennes / $nbMoyennes, 2) : 0;
+        $tauxAdmis = $nbMoyennes > 0 ? round(($totalAdmis / $nbMoyennes) * 100, 1) : 0;
+
+        $data = [
+            'etablissement' => $etablissement,
+            'date_impression' => date('d/m/Y H:i'),
+            'editeur_nom' => $editeurNom,
+            'isTeacherOnly' => !empty($teacherCtx['isTeacherOnly']),
+            'filtres_labels' => $filtresLabels,
+            'etudiants' => $items,
+            'kpis' => [
+                'total_inscrits' => $totalInscrits,
+                'total_avec_notes' => $totalAvecNotes,
+                'total_sans_notes' => $totalSansNotes,
+                'total_admis' => $totalAdmis,
+                'moyenne_globale' => $moyenneGlobale,
+                'taux_admis' => $tauxAdmis
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('registre_bulletins.php', $data);
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Bulletins_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre des Bulletins - ' . ($etablissement['nom_etablissement'] ?? 'GEICG'),
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,

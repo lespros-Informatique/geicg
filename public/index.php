@@ -511,6 +511,7 @@ $route->addRoute('/composition/saveMatieresClasseApi', [$compositionController, 
 // Module: bulletin (BulletinController)
 $route->addRoute('/bulletin/list', [$bulletinController, 'list']);
 $route->addRoute('/bulletin/apiList', [$bulletinController, 'apiList']);
+$route->addRoute('/bulletin/imprimerRegistrePdf', [$bulletinController, 'imprimerRegistrePdf']);
 $route->addRoute('/bulletin/pvClasse', [$bulletinController, 'pvClasse']);
 $route->addRoute('/bulletin/pvClasse/{param}', [$bulletinController, 'pvClasse']);
 $route->addRoute('/bulletin/add', [$bulletinController, 'add']);

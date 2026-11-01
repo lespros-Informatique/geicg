@@ -1533,17 +1533,42 @@ $(document).ready(function() {
   // =========================================================================
   if ($('#table-bulletin').length) {
     if ($.fn.select2) {
-      $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
+      $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe, #filter-statut-notes').select2({ width: '100%' });
     }
 
-    // Mettre à jour l'URL du bouton PV de classe lors de la sélection d'une classe
-    $('#filter-classe').on('change', function() {
-      var classeCode = $(this).val();
-      if (classeCode) {
-        $('#btn-pv-classe').attr('href', window.RACINE + 'bulletin/pvClasse?classe_code=' + encodeURIComponent(classeCode));
-      } else {
-        $('#btn-pv-classe').attr('href', window.RACINE + 'bulletin/pvClasse');
+    // Helper pour mettre à jour les URLs d'impression et du PV de classe
+    function updateBulletinUrls() {
+      var params = [];
+      var pvParams = [];
+      var annee = $('#filter-annee').val();
+      var sem = $('#filter-semestre').val();
+      var niv = $('#filter-niveau').val();
+      var cls = $('#filter-classe').val();
+      var stNotes = $('#filter-statut-notes').val();
+
+      if (annee) params.push('annee_code=' + encodeURIComponent(annee));
+      if (sem) {
+        params.push('semestre_code=' + encodeURIComponent(sem));
+        pvParams.push('semestre_code=' + encodeURIComponent(sem));
       }
+      if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
+      if (cls) {
+        params.push('classe_code=' + encodeURIComponent(cls));
+        pvParams.push('classe_code=' + encodeURIComponent(cls));
+      }
+      if (stNotes) params.push('statut_notes=' + encodeURIComponent(stNotes));
+
+      var printUrl = window.RACINE + 'bulletin/imprimerRegistrePdf' + (params.length ? ('?' + params.join('&')) : '');
+      $('#btn-print-registre-bulletin').attr('href', printUrl);
+
+      var pvUrl = window.RACINE + 'bulletin/pvClasse' + (pvParams.length ? ('?' + pvParams.join('&')) : '');
+      $('#btn-pv-classe').attr('href', pvUrl);
+    }
+    updateBulletinUrls();
+
+    // Cascades & événements filtres
+    $('#filter-classe, #filter-annee, #filter-semestre, #filter-statut-notes').on('change', function() {
+      updateBulletinUrls();
       table.ajax.reload();
     });
 
@@ -1562,10 +1587,7 @@ $(document).ready(function() {
       } else {
         $('#filter-classe').select2({ width: '100%' });
       }
-      table.ajax.reload();
-    });
-
-    $('#filter-annee').on('change', function() {
+      updateBulletinUrls();
       table.ajax.reload();
     });
 
@@ -1575,49 +1597,209 @@ $(document).ready(function() {
         type: 'GET',
         data: function(d) {
           d.annee_code = $('#filter-annee').val();
+          d.semestre_code = $('#filter-semestre').val();
           d.niveau_code = $('#filter-niveau').val();
           d.classe_code = $('#filter-classe').val();
+          d.statut_notes = $('#filter-statut-notes').val();
         }
       },
       processing: true,
       autoWidth: false,
       columns: [
-        { data: null, width: '50px', render: function(d, type, row, meta) {
-          return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-        }},
-        { data: 'matricule_etudiant', defaultContent: '<span style="color:#94A3B8; font-style:italic;">-</span>', width: '130px', render: function(d, type) {
-          if (type !== 'display') return d || '';
-          return '<strong style="color:#1E3A5F;">' + (d || '-') + '</strong>';
-        }},
-        { data: 'etudiant_nom',    defaultContent: '-', width: '200px', render: function(d, type) {
-          if (type !== 'display') return d || '';
-          return '<span style="font-weight:600; color:#0F172A;">' + (d || '-') + '</span>';
-        }},
-        { data: 'classe_nom',      defaultContent: '-', width: '130px', render: function(d, type) {
-          if (type !== 'display') return d || '';
-          return '<span style="color:#334155; font-weight:500;">' + (d || '<span style="color:#94A3B8; font-style:italic;">Non assigné</span>') + '</span>';
-        }},
-        { data: 'annee_nom',       defaultContent: '-', width: '120px', render: function(d, type) {
-          if (type !== 'display') return d || '';
-          return '<span style="color:#64748B;">' + (d || '-') + '</span>';
-        }},
-        { data: 'nb_notes',        defaultContent: '0', width: '120px', render: function(d, type) {
-          if (type !== 'display') return d || 0;
-          var count = parseInt(d) || 0;
-          if (count > 0) {
-            return '<span style="display:inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: #DCFCE7; color: #15803D;">' + count + ' note(s)</span>';
-          } else {
-            return '<span style="display:inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: #F1F5F9; color: #64748B;">0 note</span>';
+        { 
+          data: null, 
+          width: '45px', 
+          render: function(d, type, row, meta) {
+            return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
           }
-        }},
-        { data: null, width: '210px', orderable: false, render: function(d) {
-          var viewBtn = '<a href="' + window.RACINE + 'bulletin/details/' + (d.editId || d.id_inscription) + '" class="btn btn-sm btn-primary" style="background:#1E3A5F;border-color:#1E3A5F;color:#fff;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Voir</a>';
-          var pdfBtn = '<a href="' + window.RACINE + 'bulletin/imprimerBulletinPdf/' + (d.editId || d.id_inscription) + '" target="_blank" class="btn btn-sm btn-outline-primary" style="border-color:#1E3A5F;color:#1E3A5F;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;" title="Télécharger le bulletin au format PDF"><i data-lucide="printer" style="width:14px;height:14px;"></i> PDF</a>';
-          return '<div style="display:inline-flex;gap:6px;justify-content:flex-end;">' + viewBtn + pdfBtn + '</div>';
-        }, className: 'text-end' }
+        },
+        { 
+          data: 'etudiant_nom',
+          render: function(d, type, r) {
+            var nom = d || '-';
+            var mat = r.matricule_etudiant || '-';
+            var sexe = r.sexe_etudiant || '';
+            var photo = r.photo_etudiant ? String(r.photo_etudiant).trim() : '';
+
+            var inits = '';
+            var parts = nom.trim().split(/\s+/);
+            if (parts.length >= 2) {
+              inits = (parts[0][0] || '') + (parts[1][0] || '');
+            } else if (parts.length === 1 && parts[0].length > 0) {
+              inits = parts[0].substring(0, 2);
+            }
+            inits = inits.toUpperCase() || 'ET';
+
+            var avatarHtml = '';
+            if (photo !== '') {
+              var photoUrl = (photo.indexOf('http') === 0) ? photo : (window.RACINE + photo.replace(/^\//, ''));
+              avatarHtml = '<div style="width:38px; height:38px; border-radius:50%; overflow:hidden; flex-shrink:0; border:1.5px solid #CBD5E1; background:#F1F5F9; display:flex; align-items:center; justify-content:center;">' +
+                             '<img src="' + photoUrl + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display=\'none\'; $(this).next().show();">' +
+                             '<div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; background:#EFF6FF; color:#1E3A5F; font-weight:800; font-size:12px;">' + inits + '</div>' +
+                           '</div>';
+            } else {
+              avatarHtml = '<div style="width:38px; height:38px; border-radius:50%; background:#EFF6FF; color:#1E3A5F; border:1px solid #DBEAFE; font-weight:800; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">' + inits + '</div>';
+            }
+
+            var sexeBadge = sexe ? '<span style="font-size:10px; font-weight:800; color:#64748B; background:#F1F5F9; padding:1px 5px; border-radius:4px; margin-left:4px;">' + sexe + '</span>' : '';
+
+            return '<div style="display:flex; align-items:center; gap:12px;">' +
+                     avatarHtml +
+                     '<div>' +
+                       '<div style="display:flex; align-items:center; gap:4px;">' +
+                         '<strong style="color:#0F172A; font-size:13.5px;">' + nom + '</strong>' +
+                         sexeBadge +
+                       '</div>' +
+                       '<div style="display:flex; align-items:center; gap:6px; margin-top:2px;">' +
+                         '<span style="font-family:monospace; font-size:11px; font-weight:700; color:#1E3A5F; background:#F8FAFC; border:1px solid #E2E8F0; padding:1px 6px; border-radius:4px;">' + mat + '</span>' +
+                       '</div>' +
+                     '</div>' +
+                   '</div>';
+          }
+        },
+        { 
+          data: 'classe_nom', 
+          render: function(d, type, r) {
+            var cls = d || r.code_classe || '-';
+            var niv = r.niveau_nom || '';
+            var fil = r.filiere_nom || '';
+            var sub = (niv && fil) ? (niv + ' &bull; ' + fil) : (niv || fil || '');
+            return '<div>' +
+                     '<strong style="color:#0F172A; font-size:13px;">' + cls + '</strong>' +
+                     (sub ? '<div style="font-size:11px; color:#64748B; margin-top:2px; max-width:240px; white-space:normal;">' + sub + '</div>' : '') +
+                   '</div>';
+          }
+        },
+        { 
+          data: 'statut_inscription', 
+          className: 'text-center',
+          render: function(d, type, r) {
+            var st = String(d || 'valide').toLowerCase();
+            var badgeStyle = 'background:#EFF6FF; color:#1D4ED8;';
+            var label = 'Valide';
+            if (st === 'solde') {
+              badgeStyle = 'background:#DCFCE7; color:#15803D;';
+              label = 'Soldé';
+            } else if (st === 'en_attente') {
+              badgeStyle = 'background:#FEF3C7; color:#B45309;';
+              label = 'En attente';
+            }
+            var affecteHtml = (r.affectation_etat === 'oui') ? '<div style="margin-top:3px;"><span style="font-size:10px; font-weight:800; background:#F3E8FF; color:#7E22CE; padding:1px 6px; border-radius:4px;">Affecté(e)</span></div>' : '';
+            return '<span class="badge" style="font-size:11px; font-weight:800; padding:4px 8px; border-radius:6px; ' + badgeStyle + '">' + label + '</span>' + affecteHtml;
+          }
+        },
+        { 
+          data: 'nb_notes', 
+          className: 'text-center',
+          render: function(d) {
+            var count = parseInt(d || 0, 10);
+            if (count > 0) {
+              return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:12px; font-weight:800; padding:4px 10px; border-radius:6px;">' + count + ' note(s)</span>';
+            }
+            return '<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px;">0 note</span>';
+          }
+        },
+        { 
+          data: 'moyenne_num', 
+          className: 'text-center',
+          render: function(d) {
+            if (d !== null && d !== undefined && d !== '') {
+              var val = parseFloat(d);
+              var col = val >= 10 ? '#15803D' : '#DC2626';
+              var bg = val >= 10 ? '#F0FDF4' : '#FEF2F2';
+              var border = val >= 10 ? '#BBF7D0' : '#FECACA';
+              return '<span style="display:inline-block; padding:4px 10px; border-radius:6px; background:' + bg + '; border:1px solid ' + border + '; color:' + col + '; font-weight:800; font-size:13.5px;">' +
+                       val.toFixed(2) + ' / 20' +
+                     '</span>';
+            }
+            return '<span style="color:#94A3B8; font-size:12px; font-style:italic;">En attente</span>';
+          }
+        },
+        { 
+          data: 'decision', 
+          className: 'text-center',
+          render: function(d) {
+            var dec = d || 'En attente';
+            if (dec === 'Admis(e)') {
+              return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:11px; font-weight:800; padding:4px 8px; border-radius:6px;">Admis(e)</span>';
+            } else if (dec === 'Ajourné(e)') {
+              return '<span class="badge" style="background:#FEE2E2; color:#B91C1C; font-size:11px; font-weight:800; padding:4px 8px; border-radius:6px;">Ajourné(e)</span>';
+            }
+            return '<span class="badge" style="background:#FEF3C7; color:#B45309; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px;">En attente</span>';
+          }
+        },
+        { 
+          data: null, 
+          width: '160px', 
+          orderable: false, 
+          className: 'text-end',
+          render: function(d) {
+            if (!d) return '';
+            var curSem = $('#filter-semestre').val() || '';
+            var semQuery = curSem ? ('?semestre=' + encodeURIComponent(curSem)) : '';
+            var viewUrl = window.RACINE + 'bulletin/details/' + (d.editId || d.id_inscription) + semQuery;
+            var pdfUrl = window.RACINE + 'bulletin/imprimerBulletinPdf/' + (d.editId || d.id_inscription) + semQuery;
+            var pvUrl = d.code_classe 
+              ? (window.RACINE + 'bulletin/pvClasse?classe_code=' + encodeURIComponent(d.code_classe) + (curSem ? ('&semestre_code=' + encodeURIComponent(curSem)) : '')) 
+              : '';
+
+            var actionsHtml = '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">';
+
+            // Bouton Voir Bulletin
+            actionsHtml += '<a href="' + viewUrl + '" class="btn btn-sm btn-primary" style="background:#1E3A5F; border-color:#1E3A5F; color:#FFFFFF; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:5px; padding:6px 10px;" title="Consulter le relevé de notes détaillé">' +
+                             '<i data-lucide="eye" style="width:14px; height:14px;"></i> Voir' +
+                           '</a>';
+
+            // Bouton Télécharger PDF
+            actionsHtml += '<a href="' + pdfUrl + '" target="_blank" class="btn btn-sm btn-outline-secondary" style="border:1.5px solid #CBD5E1; color:#334155; background:#FFFFFF; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:5px; padding:6px 10px;" title="Télécharger le bulletin au format PDF">' +
+                             '<i data-lucide="printer" style="width:14px; height:14px;"></i> PDF' +
+                           '</a>';
+
+            // Bouton PV Classe
+            if (pvUrl) {
+              actionsHtml += '<a href="' + pvUrl + '" class="btn btn-sm" style="background:#F1F5F9; border:1px solid #CBD5E1; color:#475569; font-weight:700; border-radius:6px; width:30px; height:30px; padding:0; display:inline-flex; align-items:center; justify-content:center;" title="Accéder au PV de cette classe">' +
+                               '<i data-lucide="file-spreadsheet" style="width:14px; height:14px;"></i>' +
+                             '</a>';
+            }
+
+            actionsHtml += '</div>';
+            return actionsHtml;
+          }
+        }
       ],
-      language: { url: window.RACINE + 'json/datatables-i18n-fr-FR.json' },
-      drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+      language: { url: window.RACINE + 'public/json/datatables-i18n-fr-FR.json' },
+      drawCallback: function() { 
+        if (window.lucide) lucide.createIcons();
+        try {
+          var api = this.api();
+          var rows = api.rows({ search: 'applied' }).data().toArray();
+
+          var totalInscrits = rows.length;
+          var bulletinsDispo = 0;
+          var moyennesAdmis = 0;
+          var enAttente = 0;
+
+          rows.forEach(function(r) {
+            if (r) {
+              var nb = parseInt(r.nb_notes || 0, 10);
+              var moy = r.moyenne_num !== null && r.moyenne_num !== undefined ? parseFloat(r.moyenne_num) : null;
+              if (nb > 0) {
+                bulletinsDispo++;
+              } else {
+                enAttente++;
+              }
+              if (moy !== null && moy >= 10) {
+                moyennesAdmis++;
+              }
+            }
+          });
+
+          $('#kpi-total-inscrits').text(totalInscrits);
+          $('#kpi-bulletins-dispo').text(bulletinsDispo);
+          $('#kpi-moyennes-admis').text(moyennesAdmis);
+          $('#kpi-en-attente').text(enAttente);
+        } catch (e) {}
+      }
     });
   }
 

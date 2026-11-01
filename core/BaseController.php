@@ -192,6 +192,46 @@ abstract class BaseController
         return (new ModelAnnee())->getAccessibleAnnees();
     }
 
+    /**
+     * Résout le contexte enseignant pour restreindre les données aux classes/matières assignées
+     */
+    protected function getTeacherContext(): array
+    {
+        $userCode = Auth::code();
+        $teacherCodes = [];
+        $isTeacherOnly = false;
+
+        $hasFullAcademicAccess = Auth::isSuperAdmin()
+            || Auth::hasRole([ROLES::SUPER_ADMIN, ROLES::DIR_GENERAL, ROLES::DIR_ETUDES])
+            || Auth::can([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::LOCK_NOTES, PERMISSIONS::CONFIG_SYSTEM]);
+
+        if (!$hasFullAcademicAccess) {
+            $teacherCodes = [$userCode];
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT code_enseignant, user_code FROM " . TABLES::ENSEIGNANTS . " WHERE user_code = ? OR code_enseignant = ?");
+                $stmt->execute([$userCode, $userCode]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if (!empty($row['code_enseignant'])) $teacherCodes[] = $row['code_enseignant'];
+                    if (!empty($row['user_code'])) $teacherCodes[] = $row['user_code'];
+                }
+                $teacherCodes = array_values(array_unique(array_filter($teacherCodes)));
+            } catch (Exception $e) {}
+
+            $sessionUser = Session::get('user') ?? [];
+            $isEnseignantFlag = !empty($sessionUser['is_enseignant']) || !empty($sessionUser['code_enseignant']);
+
+            if (Auth::hasRole(ROLES::ENSEIGNANT) || $isEnseignantFlag || count($teacherCodes) > 1) {
+                $isTeacherOnly = true;
+            }
+        }
+
+        return [
+            'isTeacherOnly' => $isTeacherOnly,
+            'teacherCodes' => $isTeacherOnly ? $teacherCodes : []
+        ];
+    }
+
     protected function requirePost(bool $checkCsrf = true): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
