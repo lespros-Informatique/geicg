@@ -230,54 +230,54 @@ $selectedAnneeCode = $selectedAnneeCode ?? '';
       <!-- Content Container -->
       <div id="modal-details-content">
         
-        <!-- Cartouches KPIs (Organisés avec icônes et couleurs dédiées) -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 14px; margin-bottom: 22px;">
+        <!-- Cartouches KPIs (Strictement sur 1 seule ligne avec icônes et couleurs dédiées) -->
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px;">
           
           <!-- Total Inscrits -->
-          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 14px;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <i data-lucide="users" style="width: 22px; height: 22px;"></i>
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #EEF2FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="users" style="width: 20px; height: 20px;"></i>
             </div>
-            <div>
-              <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Inscrits</div>
-              <div style="font-size: 22px; font-weight: 900; color: #0F172A; line-height: 1.2; margin-top: 2px;" id="md-total-etudiants">0</div>
-              <div style="font-size: 11px; color: #94A3B8; font-weight: 600; margin-top: 1px;">Effectif classe</div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Total Inscrits</div>
+              <div style="font-size: 20px; font-weight: 900; color: #0F172A; line-height: 1.2; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="md-total-etudiants">0</div>
+              <div style="font-size: 10.5px; color: #94A3B8; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Effectif classe</div>
             </div>
           </div>
 
           <!-- Notes Saisies -->
-          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 14px;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <i data-lucide="check-circle" style="width: 22px; height: 22px;"></i>
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
             </div>
-            <div>
-              <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Copies Saisies</div>
-              <div style="font-size: 22px; font-weight: 900; color: #1D4ED8; line-height: 1.2; margin-top: 2px;" id="md-nb-notes">0</div>
-              <div style="font-size: 11px; color: #94A3B8; font-weight: 600; margin-top: 1px;" id="md-progression-text">Progression saisie</div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Copies Saisies</div>
+              <div style="font-size: 20px; font-weight: 900; color: #1D4ED8; line-height: 1.2; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="md-nb-notes">0</div>
+              <div style="font-size: 10.5px; color: #94A3B8; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="md-progression-text">Progression saisie</div>
             </div>
           </div>
 
           <!-- Moyenne Classe -->
-          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 14px;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <i data-lucide="award" style="width: 22px; height: 22px;"></i>
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="award" style="width: 20px; height: 20px;"></i>
             </div>
-            <div>
-              <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Moyenne Classe</div>
-              <div style="font-size: 22px; font-weight: 900; color: #059669; line-height: 1.2; margin-top: 2px;" id="md-moyenne-classe">-</div>
-              <div style="font-size: 11px; color: #94A3B8; font-weight: 600; margin-top: 1px;">Barème / 20</div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Moyenne Classe</div>
+              <div style="font-size: 20px; font-weight: 900; color: #059669; line-height: 1.2; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="md-moyenne-classe">-</div>
+              <div style="font-size: 10.5px; color: #94A3B8; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Barème / 20</div>
             </div>
           </div>
 
           <!-- Taux de Réussite -->
-          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 14px;">
-            <div style="width: 44px; height: 44px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <i data-lucide="trending-up" style="width: 22px; height: 22px;"></i>
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="trending-up" style="width: 20px; height: 20px;"></i>
             </div>
-            <div>
-              <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Taux de Réussite</div>
-              <div style="font-size: 22px; font-weight: 900; color: #D97706; line-height: 1.2; margin-top: 2px;" id="md-taux-reussite">-</div>
-              <div style="font-size: 11px; color: #94A3B8; font-weight: 600; margin-top: 1px;">Notes &ge; 10/20</div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Taux de Réussite</div>
+              <div style="font-size: 20px; font-weight: 900; color: #D97706; line-height: 1.2; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="md-taux-reussite">-</div>
+              <div style="font-size: 10.5px; color: #94A3B8; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Notes &ge; 10/20</div>
             </div>
           </div>
 
