@@ -160,23 +160,45 @@ $(document).ready(function() {
         data: null, 
         defaultContent: '',
         orderable: false, 
+        width: '120px',
         className: 'text-end',
         render: function(d) {
           if (!d) return '';
           var detailsUrl = window.RACINE + 'composition/details/' + (d.editId || d.id_composition);
           var editUrl = window.RACINE + 'composition/edition/' + (d.editId || d.id_composition);
           var noterUrl = window.RACINE + 'note/saisieClasse?type_evaluation_code=EXAMEN&composition_code=' + encodeURIComponent(d.code_composition || '');
-          return '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">' +
-                   '<a href="' + noterUrl + '" class="btn btn-sm" style="background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Saisir les notes de l\'épreuve">' +
-                     '<i data-lucide="edit-3" style="width:14px; height:14px;"></i> Noter' +
-                   '</a>' +
-                   '<a href="' + detailsUrl + '" class="btn btn-sm" style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Voir les détails de l\'épreuve">' +
-                     '<i data-lucide="eye" style="width:14px; height:14px;"></i> Détails' +
-                   '</a>' +
-                   '<a href="' + editUrl + '" class="btn btn-sm" style="background:#F1F5F9; color:#334155; border:1px solid #CBD5E1; border-radius:6px; font-weight:700; padding:6px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" title="Modifier">' +
-                     '<i data-lucide="edit" style="width:14px; height:14px;"></i> Éditer' +
-                   '</a>' +
-                 '</div>';
+          
+          var compoStatut = (d.statut_composition || '').toString().toLowerCase();
+          var isLocked = (compoStatut === 'cloture' || compoStatut === 'termine' || compoStatut === 'annule');
+          var lockTitle = (compoStatut === 'annule') 
+            ? 'Épreuve annulée (Saisie des notes désactivée)' 
+            : 'Épreuve clôturée ou terminée (Saisie des notes verrouillée)';
+
+          var actionsHtml = '<div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:nowrap; align-items:center;">';
+          
+          // Bouton Détails (œil)
+          actionsHtml += '<a href="' + detailsUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius:6px; text-decoration:none; cursor:pointer;" title="Voir les détails de l\'épreuve">' +
+                           '<i data-lucide="eye" style="width:16px; height:16px;"></i>' +
+                         '</a>';
+
+          // Bouton Noter (crayon ou cadenas si verrouillé)
+          if (isLocked) {
+            actionsHtml += '<button type="button" class="btn btn-sm" disabled style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F1F5F9; color:#94A3B8; border:1px solid #CBD5E1; border-radius:6px; cursor:not-allowed;" title="' + lockTitle + '">' +
+                             '<i data-lucide="lock" style="width:16px; height:16px;"></i>' +
+                           '</button>';
+          } else {
+            actionsHtml += '<a href="' + noterUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#16A34A; color:#FFFFFF; border:none; border-radius:6px; text-decoration:none; cursor:pointer;" title="Saisir / Noter l\'épreuve">' +
+                             '<i data-lucide="edit-3" style="width:16px; height:16px;"></i>' +
+                           '</a>';
+          }
+
+          // Bouton Éditer (crayon d'édition)
+          actionsHtml += '<a href="' + editUrl + '" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#F8FAFC; color:#0F172A; border:1px solid #CBD5E1; border-radius:6px; text-decoration:none; cursor:pointer;" title="Modifier la programmation">' +
+                           '<i data-lucide="edit" style="width:16px; height:16px;"></i>' +
+                         '</a>';
+
+          actionsHtml += '</div>';
+          return actionsHtml;
         } 
       }
     ],
