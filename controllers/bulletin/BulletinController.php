@@ -69,6 +69,12 @@ class BulletinController extends BaseController
         $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
         $statutNotes = !empty($_GET['statut_notes']) ? trim($_GET['statut_notes']) : null;
 
+        // Nouvelle logique : par défaut pas de liste, uniquement si classe sélectionnée
+        if (empty($classeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $teacherCtx = $this->getTeacherContext();
         $teacherClasses = null;
         if ($teacherCtx['isTeacherOnly'] && !empty($teacherCtx['teacherCodes'])) {
@@ -342,6 +348,12 @@ class BulletinController extends BaseController
         $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
         $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
         $statutNotes = !empty($_GET['statut_notes']) ? trim($_GET['statut_notes']) : null;
+
+        // Vérification de la classe obligatoire pour l'impression du registre
+        if (empty($classeCode)) {
+            $this->renderNotFound("Veuillez sélectionner une classe pour imprimer le registre des bulletins.");
+            return;
+        }
 
         $teacherCtx = $this->getTeacherContext();
         $teacherClasses = null;

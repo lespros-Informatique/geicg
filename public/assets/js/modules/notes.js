@@ -1538,31 +1538,52 @@ $(document).ready(function() {
 
     // Helper pour mettre à jour les URLs d'impression et du PV de classe
     function updateBulletinUrls() {
-      var params = [];
-      var pvParams = [];
       var annee = $('#filter-annee').val();
       var sem = $('#filter-semestre').val();
       var niv = $('#filter-niveau').val();
       var cls = $('#filter-classe').val();
       var stNotes = $('#filter-statut-notes').val();
 
-      if (annee) params.push('annee_code=' + encodeURIComponent(annee));
-      if (sem) {
-        params.push('semestre_code=' + encodeURIComponent(sem));
-        pvParams.push('semestre_code=' + encodeURIComponent(sem));
-      }
-      if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
-      if (cls) {
-        params.push('classe_code=' + encodeURIComponent(cls));
-        pvParams.push('classe_code=' + encodeURIComponent(cls));
-      }
-      if (stNotes) params.push('statut_notes=' + encodeURIComponent(stNotes));
+      if (!cls) {
+        // Aucune classe sélectionnée : désactiver les boutons et afficher l'alerte
+        $('#btn-print-registre-bulletin')
+          .attr('href', 'javascript:void(0);')
+          .css({ 'opacity': '0.5', 'cursor': 'not-allowed', 'pointer-events': 'none' })
+          .attr('title', 'Veuillez sélectionner une classe pour imprimer le registre.');
 
-      var printUrl = window.RACINE + 'bulletin/imprimerRegistrePdf' + (params.length ? ('?' + params.join('&')) : '');
-      $('#btn-print-registre-bulletin').attr('href', printUrl);
+        $('#btn-pv-classe')
+          .attr('href', 'javascript:void(0);')
+          .css({ 'opacity': '0.5', 'cursor': 'not-allowed', 'pointer-events': 'none' })
+          .attr('title', 'Veuillez sélectionner une classe pour accéder au PV de classe.');
 
-      var pvUrl = window.RACINE + 'bulletin/pvClasse' + (pvParams.length ? ('?' + pvParams.join('&')) : '');
-      $('#btn-pv-classe').attr('href', pvUrl);
+        $('#alert-select-classe').show();
+      } else {
+        // Classe sélectionnée : activer les boutons et masquer l'alerte
+        var params = ['classe_code=' + encodeURIComponent(cls)];
+        var pvParams = ['classe_code=' + encodeURIComponent(cls)];
+
+        if (annee) params.push('annee_code=' + encodeURIComponent(annee));
+        if (sem) {
+          params.push('semestre_code=' + encodeURIComponent(sem));
+          pvParams.push('semestre_code=' + encodeURIComponent(sem));
+        }
+        if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
+        if (stNotes) params.push('statut_notes=' + encodeURIComponent(stNotes));
+
+        var printUrl = window.RACINE + 'bulletin/imprimerRegistrePdf?' + params.join('&');
+        $('#btn-print-registre-bulletin')
+          .attr('href', printUrl)
+          .css({ 'opacity': '1', 'cursor': 'pointer', 'pointer-events': 'auto' })
+          .attr('title', 'Générer et imprimer le registre officiel des bulletins en PDF');
+
+        var pvUrl = window.RACINE + 'bulletin/pvClasse?' + pvParams.join('&');
+        $('#btn-pv-classe')
+          .attr('href', pvUrl)
+          .css({ 'opacity': '1', 'cursor': 'pointer', 'pointer-events': 'auto' })
+          .attr('title', 'Consulter le Procès-Verbal récapitulatif de la classe sélectionnée');
+
+        $('#alert-select-classe').hide();
+      }
     }
     updateBulletinUrls();
 
@@ -1601,6 +1622,13 @@ $(document).ready(function() {
           d.niveau_code = $('#filter-niveau').val();
           d.classe_code = $('#filter-classe').val();
           d.statut_notes = $('#filter-statut-notes').val();
+        },
+        dataSrc: function(json) {
+          var cls = $('#filter-classe').val();
+          if (!cls) {
+            return [];
+          }
+          return json.data || [];
         }
       },
       processing: true,
@@ -1769,10 +1797,24 @@ $(document).ready(function() {
       ],
       language: { url: window.RACINE + 'public/json/datatables-i18n-fr-FR.json' },
       drawCallback: function() { 
+        var cls = $('#filter-classe').val();
+        if (!cls) {
+          $('#table-bulletin tbody td.dataTables_empty').html(
+            '<div style="padding: 40px 20px; text-align: center;">' +
+              '<div style="width: 52px; height: 52px; border-radius: 50%; background: #EFF6FF; color: #1E3A5F; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">' +
+                '<i data-lucide="graduation-cap" style="width: 28px; height: 28px;"></i>' +
+              '</div>' +
+              '<div style="font-weight: 800; font-size: 15px; color: #1E3A5F;">Aucune classe sélectionnée</div>' +
+              '<div style="font-size: 13px; color: #64748B; margin-top: 4px; max-width: 440px; margin-left: auto; margin-right: auto;">' +
+                'Veuillez choisir une <strong>Classe</strong> dans les filtres ci-dessus pour charger les étudiants inscrits et leurs bulletins semestriels.' +
+              '</div>' +
+            '</div>'
+          );
+        }
         if (window.lucide) lucide.createIcons();
         try {
           var api = this.api();
-          var rows = api.rows({ search: 'applied' }).data().toArray();
+          var rows = cls ? api.rows({ search: 'applied' }).data().toArray() : [];
 
           var totalInscrits = rows.length;
           var bulletinsDispo = 0;

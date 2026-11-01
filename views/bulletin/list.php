@@ -152,13 +152,13 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
             </select>
           </div>
 
-          <!-- Classe -->
+          <!-- Classe (Obligatoire pour charger la liste) -->
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #64748B;"></i> Classe
+              <i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #1E3A5F;"></i> Classe <span style="color: #EF4444; font-weight: 800;">*</span>
             </label>
             <select id="filter-classe" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les classes --</option>
+              <option value="">-- Choisir une classe --</option>
               <?php foreach ($classes as $c): ?>
                 <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
               <?php endforeach; ?>
@@ -177,6 +177,19 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
             </select>
           </div>
 
+        </div>
+      </div>
+
+      <!-- Alerte Invitation Sélection Classe -->
+      <div id="alert-select-classe" style="background: #EFF6FF; border: 1.5px dashed #93C5FD; border-radius: 12px; padding: 18px 24px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; color: #1E3A5F;">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: #DBEAFE; color: #1D4ED8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <i data-lucide="graduation-cap" style="width: 24px; height: 24px;"></i>
+        </div>
+        <div>
+          <div style="font-size: 14px; font-weight: 800; color: #1E3A5F;">Sélectionnez une classe pour afficher les bulletins</div>
+          <div style="font-size: 13px; color: #64748B; margin-top: 3px;">
+            Par défaut, aucun résultat n'est affiché. Veuillez sélectionner une <strong>Classe</strong> ci-dessus pour charger la liste des étudiants et leurs bulletins semestriels.
+          </div>
         </div>
       </div>
 
