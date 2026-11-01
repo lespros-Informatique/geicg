@@ -240,15 +240,20 @@ class ModelClasse extends BaseModel
     public function getMatieresForClasse(string $classeCode): array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT em.*, m.libelle_matiere, m.code_matiere,
+            SELECT DISTINCT
+                   edt.matiere_code,
+                   m.libelle_matiere,
+                   edt.classe_code,
                    u.nom_user as nom_prof,
                    u.prenom_user as prenom_prof,
-                   e.grade_enseignant
-            FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
-            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
-            WHERE em.classe_code = ?
+                   e.grade_enseignant,
+                   ROUND(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 1) AS volume_horaire
+            FROM " . TABLES::EMPLOIS_TEMPS . " edt
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+            WHERE edt.classe_code = ?
+            GROUP BY edt.matiere_code, m.libelle_matiere, edt.classe_code, u.nom_user, u.prenom_user, e.grade_enseignant
             ORDER BY m.libelle_matiere ASC
         ");
         $stmt->execute([$classeCode]);

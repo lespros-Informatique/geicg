@@ -77,20 +77,21 @@ $cours = isset($cours) ? $cours : [];
       </div>
 
       <!-- CARD 2 (COL-12) : COURS ET MATIÈRES ASSIGNÉS -->
+      <!-- CARD 2 : COURS ET MATIÈRES PLANIFIÉS -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
           <div>
             <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="book-open" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Cours & Matières Assignés (<?= count($cours) ?>)
+              <i data-lucide="book-open" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Cours & Matières Dispensés (<?= count($cours) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>enseignant_matiere/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Affecter une matière
+          <a href="<?= RACINE ?>emploi/list" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Voir emplois du temps
           </a>
         </div>
 
         <?php if (empty($cours)): ?>
-          <p style="color: #94A3B8; text-align: center; padding: 30px 0; font-style: italic;">Aucun cours n'est actuellement affecté à cet enseignant.</p>
+          <p style="color: #94A3B8; text-align: center; padding: 30px 0; font-style: italic;">Aucun cours n'est actuellement programmé pour cet enseignant.</p>
         <?php else: ?>
           <div style="width: 100%; overflow-x: auto;">
             <table class="table" style="width: 100%; border-collapse: collapse;">
@@ -98,9 +99,7 @@ $cours = isset($cours) ? $cours : [];
                 <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px;">
                   <th style="padding: 10px;">Matière</th>
                   <th style="padding: 10px;">Classe</th>
-                  <th style="padding: 10px; text-align: center;">Coefficient</th>
-                  <th style="padding: 10px; text-align: center;">Volume Horaire</th>
-                  <th style="padding: 10px; text-align: center;">Statut</th>
+                  <th style="padding: 10px; text-align: center;">Volume Hebdo</th>
                 </tr>
               </thead>
               <tbody>
@@ -108,16 +107,8 @@ $cours = isset($cours) ? $cours : [];
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($c['libelle_matiere'] ?? '-') ?></td>
                     <td style="padding: 10px; color: #334155; font-weight: 600;"><?= htmlspecialchars($c['libelle_classe'] ?? '-') ?></td>
-                    <td style="padding: 10px; text-align: center;">
-                      <span style="background: #EFF6FF; color: #1E3A5F; font-weight: 800; padding: 3px 10px; border-radius: 6px; font-size: 12px;">
-                        <?= htmlspecialchars($c['coefficient'] ?? ($c['coefficient_enseignant_matiere'] ?? '1.0')) ?>
-                      </span>
-                    </td>
-                    <td style="padding: 10px; text-align: center; color: #64748B;">
-                      <?= (int)($c['volume_horaire'] ?? 0) ?> h
-                    </td>
-                    <td style="padding: 10px; text-align: center;">
-                      <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px; border-radius:8px; font-weight:700; font-size:11px;">Actif</span>
+                    <td style="padding: 10px; text-align: center; font-weight: 700; color: #0284C7;">
+                      <?= !empty($c['volume_horaire']) ? $c['volume_horaire'] . ' h' : '-' ?>
                     </td>
                   </tr>
                 <?php endforeach; ?>

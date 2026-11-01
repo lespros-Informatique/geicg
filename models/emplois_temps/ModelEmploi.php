@@ -178,26 +178,30 @@ class ModelEmploi extends BaseModel
     }
 
     /**
-     * Recherche l'enseignant affecté à une classe et matière
+     * Recherche l'enseignant affecté à une classe et matière depuis les créneaux déjà existants
      */
     public function getAssignedTeacher(string $classeCode, string $matiereCode): ?array
     {
         try {
             $db = $this->getCon();
-            // 1. Recherche précise par classe_code + matiere_code via la vue v_dash_pedagogie_affectations
             $stmt = $db->prepare("
-                SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . "
-                WHERE classe_code = ? AND matiere_code = ? AND statut_enseignant_matiere = '" . STATUTS::ACTIF . "'
+                SELECT edt.enseignant_code,
+                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom
+                FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+                WHERE edt.classe_code = ? AND edt.matiere_code = ? AND edt.enseignant_code IS NOT NULL AND edt.enseignant_code != ''
                 LIMIT 1
             ");
             $stmt->execute([$classeCode, $matiereCode]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // 2. Recherche de secours par matière
             if (!$row) {
                 $stmtGlobal = $db->prepare("
-                    SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . "
-                    WHERE matiere_code = ? AND statut_enseignant_matiere = '" . STATUTS::ACTIF . "'
+                    SELECT edt.enseignant_code,
+                           CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom
+                    FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                    LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+                    WHERE edt.matiere_code = ? AND edt.enseignant_code IS NOT NULL AND edt.enseignant_code != ''
                     LIMIT 1
                 ");
                 $stmtGlobal->execute([$matiereCode]);

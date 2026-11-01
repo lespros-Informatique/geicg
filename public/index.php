@@ -33,7 +33,6 @@ $arriereController = new ArriereController();
 $typeDepenseController = new TypeDepenseController();
 $depenseController = new DepenseController();
 $enseignantController = new EnseignantController();
-$enseignantMatiereController = new EnseignantMatiereController();
 $emploiController = new EmploiController();
 $absenceController = new AbsenceController();
 $noteController = new NoteController();
@@ -429,16 +428,6 @@ $route->addRoute('/enseignant/changer', [$enseignantController, 'changer']);
 $route->addRoute('/enseignant/details/{param}', [$enseignantController, 'details']);
 $route->addRoute('/enseignant/edition/{param}', [$enseignantController, 'edition']);
 $route->addRoute('/enseignant/formulaire', [$enseignantController, 'formulaire']);
-
-// Module: enseignant_matiere (EnseignantMatiereController)
-$route->addRoute('/enseignant_matiere/list', [$enseignantMatiereController, 'list']);
-$route->addRoute('/enseignant_matiere/apiList', [$enseignantMatiereController, 'apiList']);
-$route->addRoute('/enseignant_matiere/add', [$enseignantMatiereController, 'add']);
-$route->addRoute('/enseignant_matiere/edit', [$enseignantMatiereController, 'edit']);
-$route->addRoute('/enseignant_matiere/changer', [$enseignantMatiereController, 'changer']);
-$route->addRoute('/enseignant_matiere/details/{param}', [$enseignantMatiereController, 'details']);
-$route->addRoute('/enseignant_matiere/edition/{param}', [$enseignantMatiereController, 'edition']);
-$route->addRoute('/enseignant_matiere/formulaire', [$enseignantMatiereController, 'formulaire']);
 
 // Module: emploi (EmploiController)
 $route->addRoute('/emploi/list', [$emploiController, 'list']);

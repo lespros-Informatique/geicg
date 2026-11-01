@@ -142,8 +142,14 @@ class ModelHome extends BaseModel
                     $stmtTeach->execute([$userCode, $userCode]);
                     $teacherCode = $stmtTeach->fetchColumn() ?: $userCode;
 
-                    $stmtTC = $db->prepare("SELECT COUNT(*), COUNT(DISTINCT classe_code) FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . " WHERE (enseignant_code = ? OR enseignant_code = ?)");
-                    $stmtTC->execute([$teacherCode, $userCode]);
+                    $sqlTC = "SELECT COUNT(DISTINCT matiere_code, classe_code), COUNT(DISTINCT classe_code) FROM " . TABLES::EMPLOIS_TEMPS . " WHERE (enseignant_code = ? OR enseignant_code = ?)";
+                    $paramsTC = [$teacherCode, $userCode];
+                    if ($anneeCode) {
+                        $sqlTC .= " AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+                        $paramsTC[] = $anneeCode;
+                    }
+                    $stmtTC = $db->prepare($sqlTC);
+                    $stmtTC->execute($paramsTC);
                     $resTC = $stmtTC->fetch(PDO::FETCH_NUM);
                     $teacherCoursesCount = (int)($resTC[0] ?? 0);
                     $teacherClassesCount = (int)($resTC[1] ?? 0);
@@ -425,16 +431,27 @@ class ModelHome extends BaseModel
     }
 
     /**
-     * Cours attribués à un enseignant depuis la Vue SQL v_dash_pedagogie_affectations
+     * Cours attribués à un enseignant depuis l'emploi du temps (emplois_temps)
      */
     public function getTeacherCourses(string $userOrTeacherCode, int $limit = 6): array
     {
         try {
             $db = $this->pdo->getCon();
             $stmt = $db->prepare("
-                SELECT * FROM " . VIEWS::DASH_PEDAGOGIE_AFFECTATIONS . " 
-                WHERE enseignant_code = ?
-                ORDER BY libelle_matiere ASC
+                SELECT DISTINCT 
+                    edt.matiere_code,
+                    edt.classe_code,
+                    m.libelle_matiere,
+                    cl.libelle_classe,
+                    f.libelle_filiere,
+                    n.libelle_niveau
+                FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                WHERE edt.enseignant_code = ?
+                ORDER BY m.libelle_matiere ASC
                 LIMIT $limit
             ");
             $stmt->execute([$userOrTeacherCode]);

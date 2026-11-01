@@ -29,7 +29,7 @@ class ModelNote extends BaseModel
                 s.statut_semestre,
                 triplets.matiere_code,
                 m.libelle_matiere,
-                COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient,
+                COALESCE(comp.coefficient, 1.00) AS coefficient,
                 COALESCE(comp.annee_code, ?) AS annee_code,
                 cl.code_classe,
                 cl.libelle_classe,
@@ -98,11 +98,11 @@ class ModelNote extends BaseModel
 
                 UNION
 
-                -- Source 5: Matières de la classe via enseignant_matiere si compo sans matière définie
+                -- Source 5: Matières de la classe via emplois_temps si compo sans matière définie
                 SELECT 
                     base_pairs.code_composition,
                     base_pairs.classe_code,
-                    em.matiere_code
+                    edt.matiere_code
                 FROM (
                     SELECT code_composition, classe_code FROM " . TABLES::COMPOSITIONS . " WHERE classe_code IS NOT NULL AND classe_code != ''
                     UNION
@@ -111,7 +111,7 @@ class ModelNote extends BaseModel
                     INNER JOIN " . TABLES::CLASSES . " cl2 ON (cl2.niveau_code = cnf.niveau_code AND cl2.filiere_code = cnf.filiere_code)
                 ) AS base_pairs
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = base_pairs.code_composition
-                INNER JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON em.classe_code = base_pairs.classe_code
+                INNER JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON edt.classe_code = base_pairs.classe_code
                 WHERE (comp.matiere_code IS NULL OR comp.matiere_code = '')
                   AND comp.type_composition != 'EXAMEN'
                   AND NOT EXISTS (SELECT 1 FROM " . TABLES::COMPOSITION_MATIERES . " cm2 WHERE cm2.composition_code = comp.code_composition)
@@ -120,7 +120,6 @@ class ModelNote extends BaseModel
             INNER JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = triplets.code_classe
             INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = triplets.matiere_code
             LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
-            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = triplets.matiere_code AND em.classe_code = triplets.code_classe)
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON (i.classe_code = cl.code_classe AND (i.annee_code = comp.annee_code OR comp.annee_code IS NULL OR comp.annee_code = '' OR i.annee_code = ?))
@@ -164,15 +163,7 @@ class ModelNote extends BaseModel
         if (!empty($teacherCodes)) {
             $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
             $conditions[] = "(
-                em.enseignant_code IN ($inCodes)
-                OR comp.user_code IN ($inCodes)
-                OR EXISTS (
-                    SELECT 1 FROM " . TABLES::ENSEIGNANT_MATIERE . " em_flt
-                    WHERE em_flt.classe_code = triplets.code_classe
-                      AND em_flt.matiere_code = triplets.matiere_code
-                      AND em_flt.enseignant_code IN ($inCodes)
-                      AND (em_flt.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em_flt.statut_enseignant_matiere IS NULL)
-                )
+                comp.user_code IN ($inCodes)
                 OR EXISTS (
                     SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt_flt
                     WHERE edt_flt.classe_code = triplets.code_classe
@@ -180,8 +171,6 @@ class ModelNote extends BaseModel
                       AND edt_flt.enseignant_code IN ($inCodes)
                 )
             )";
-            foreach ($teacherCodes as $tc) { $params[] = $tc; }
-            foreach ($teacherCodes as $tc) { $params[] = $tc; }
             foreach ($teacherCodes as $tc) { $params[] = $tc; }
             foreach ($teacherCodes as $tc) { $params[] = $tc; }
         }
@@ -212,24 +201,15 @@ class ModelNote extends BaseModel
         $sql = "
             SELECT DISTINCT cl.code_classe, cl.libelle_classe, cl.niveau_code, cl.filiere_code
             FROM " . TABLES::CLASSES . " cl
-            WHERE (
-                EXISTS (
-                    SELECT 1 FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                    WHERE em.classe_code = cl.code_classe
-                      AND em.enseignant_code IN ($inCodes)
-                      AND (em.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em.statut_enseignant_matiere IS NULL)
-                      AND (em.annee_code = ? OR ? IS NULL OR ? = '')
-                )
-                OR EXISTS (
-                    SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt
-                    WHERE edt.classe_code = cl.code_classe
-                      AND edt.enseignant_code IN ($inCodes)
-                      AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
-                )
+            WHERE EXISTS (
+                SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                WHERE edt.classe_code = cl.code_classe
+                  AND edt.enseignant_code IN ($inCodes)
+                  AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
             )
             ORDER BY cl.libelle_classe ASC
         ";
-        $params = array_merge($teacherCodes, [$anneeCode, $anneeCode, $anneeCode], $teacherCodes, [$anneeCode, $anneeCode, $anneeCode]);
+        $params = array_merge($teacherCodes, [$anneeCode, $anneeCode, $anneeCode]);
         try {
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
@@ -250,24 +230,15 @@ class ModelNote extends BaseModel
         $sql = "
             SELECT DISTINCT m.code_matiere, m.libelle_matiere
             FROM " . TABLES::MATIERES . " m
-            WHERE (
-                EXISTS (
-                    SELECT 1 FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                    WHERE em.matiere_code = m.code_matiere
-                      AND em.enseignant_code IN ($inCodes)
-                      AND (em.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em.statut_enseignant_matiere IS NULL)
-                      AND (em.annee_code = ? OR ? IS NULL OR ? = '')
-                )
-                OR EXISTS (
-                    SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt
-                    WHERE edt.matiere_code = m.code_matiere
-                      AND edt.enseignant_code IN ($inCodes)
-                      AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
-                )
+            WHERE EXISTS (
+                SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                WHERE edt.matiere_code = m.code_matiere
+                  AND edt.enseignant_code IN ($inCodes)
+                  AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
             )
             ORDER BY m.libelle_matiere ASC
         ";
-        $params = array_merge($teacherCodes, [$anneeCode, $anneeCode, $anneeCode], $teacherCodes, [$anneeCode, $anneeCode, $anneeCode]);
+        $params = array_merge($teacherCodes, [$anneeCode, $anneeCode, $anneeCode]);
         try {
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
@@ -284,17 +255,16 @@ class ModelNote extends BaseModel
         try {
             $stmtInfo = $db->prepare("
                 SELECT comp.*, s.libelle_semestre, s.statut_semestre, m.libelle_matiere, cl.libelle_classe, n.libelle_niveau, f.libelle_filiere,
-                       COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
+                       COALESCE(comp.coefficient, 1.00) AS coefficient
                 FROM " . TABLES::COMPOSITIONS . " comp
                 LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
                 LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(?, comp.matiere_code)
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ?
-                LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = COALESCE(?, comp.matiere_code) AND em.classe_code = ?)
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                 WHERE comp.code_composition = ?
             ");
-            $stmtInfo->execute([$matiereCode, $classeCode, $matiereCode, $classeCode, $compositionCode]);
+            $stmtInfo->execute([$matiereCode, $classeCode, $compositionCode]);
             $info = $stmtInfo->fetch(PDO::FETCH_ASSOC);
             if (!$info) return null;
 
@@ -456,9 +426,8 @@ class ModelNote extends BaseModel
                    vn.etu_nom AS nom_etudiant,
                    vn.etu_prenom AS prenom_etudiant,
                    vn.composition_classe_code AS classe_code,
-                   COALESCE(em.coefficient, vn.coefficient, 1.0) AS coef_cours
+                   COALESCE(vn.coefficient, 1.0) AS coef_cours
             FROM " . VIEWS::NOTES_COMPLETES . " vn
-            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.classe_code = vn.code_classe AND em.matiere_code = vn.matiere_code)
             WHERE vn.id_note = ? OR vn.code_note = ?
             LIMIT 1
         ");
@@ -486,7 +455,7 @@ class ModelNote extends BaseModel
         if (!empty($compositionCode)) {
             $stmtCompMat = $db->prepare("
                 SELECT DISTINCT m.code_matiere, m.libelle_matiere, 
-                       COALESCE(MAX(em.coefficient), MAX(comp.coefficient), 1.00) AS coefficient,
+                       COALESCE(MAX(comp.coefficient), 1.00) AS coefficient,
                        TRIM(GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ')) AS prof_nom,
                        1 AS is_assigned
                 FROM " . TABLES::COMPOSITION_MATIERES . " cm
@@ -494,9 +463,8 @@ class ModelNote extends BaseModel
                 INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
                 INNER JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
                 INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
-                LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = m.code_matiere AND em.classe_code = cl.code_classe)
                 LEFT JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON (edt.classe_code = cl.code_classe AND edt.matiere_code = m.code_matiere)
-                LEFT JOIN " . TABLES::USERS . " u ON (u.code_user = em.enseignant_code OR u.code_user = edt.enseignant_code)
+                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
                 WHERE cm.composition_code = ? AND cl.code_classe = ?
                 GROUP BY m.code_matiere, m.libelle_matiere
                 ORDER BY m.libelle_matiere ASC
@@ -511,47 +479,25 @@ class ModelNote extends BaseModel
         // 2. Matières selon l'emploi du temps
         $stmtEdt = $db->prepare("
             SELECT DISTINCT m.code_matiere, m.libelle_matiere,
-                   COALESCE(MAX(em.coefficient), 1.00) AS coefficient,
+                   1.00 AS coefficient,
                    TRIM(GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ')) AS prof_nom,
                    1 AS is_assigned
             FROM " . TABLES::EMPLOIS_TEMPS . " edt
             INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
-            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.classe_code = edt.classe_code AND em.matiere_code = edt.matiere_code)
-            LEFT JOIN " . TABLES::USERS . " u ON (u.code_user = edt.enseignant_code OR u.code_user = em.enseignant_code)
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
             WHERE edt.classe_code = ? 
               AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
               AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
             GROUP BY m.code_matiere, m.libelle_matiere
             ORDER BY m.libelle_matiere ASC
         ");
-            $stmtEdt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
+        $stmtEdt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
         $edtItems = $stmtEdt->fetchAll(PDO::FETCH_ASSOC);
         if (!empty($edtItems)) {
             return $dedup($edtItems);
         }
 
-        // 3. Matières affectées à la classe via enseignant_matiere
-        $stmtEm = $db->prepare("
-            SELECT DISTINCT m.code_matiere, m.libelle_matiere,
-                   COALESCE(MAX(em.coefficient), 1.00) AS coefficient,
-                   TRIM(GROUP_CONCAT(DISTINCT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) SEPARATOR ', ')) AS prof_nom,
-                   1 AS is_assigned
-            FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-            INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
-            WHERE em.classe_code = ?
-              AND (em.annee_code = ? OR ? IS NULL OR ? = '')
-              AND (em.statut_enseignant_matiere = '" . STATUTS::ACTIF . "' OR em.statut_enseignant_matiere IS NULL)
-            GROUP BY m.code_matiere, m.libelle_matiere
-            ORDER BY m.libelle_matiere ASC
-        ");
-        $stmtEm->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
-        $emItems = $stmtEm->fetchAll(PDO::FETCH_ASSOC);
-        if (!empty($emItems)) {
-            return $dedup($emItems);
-        }
-
-        // 4. Matières liées au Niveau & Filière (composition_niveau_filiere)
+        // 3. Matières liées au Niveau & Filière (composition_niveau_filiere)
         $stmtCnf = $db->prepare("
             SELECT DISTINCT m.code_matiere, m.libelle_matiere,
                    COALESCE(MAX(comp.coefficient), 1.00) AS coefficient,

@@ -118,12 +118,10 @@ require_once __DIR__ . '/../controllers/documents/DocumentController.php';
 
 require_once __DIR__ . '/../models/fonctions/ModelFonction.php';
 require_once __DIR__ . '/../models/impayes/ModelImpayes.php';
-require_once __DIR__ . '/../models/enseignant_matiere/ModelEnseignantMatiere.php';
 require_once __DIR__ . '/../models/bulletin/ModelBulletin.php';
 
 require_once __DIR__ . '/../controllers/fonctions/FonctionController.php';
 require_once __DIR__ . '/../controllers/impayes/ImpayesController.php';
-require_once __DIR__ . '/../controllers/enseignant_matiere/EnseignantMatiereController.php';
 require_once __DIR__ . '/../controllers/bulletin/BulletinController.php';
 
 require_once __DIR__ . '/../models/ModelFiliereCycle.php';

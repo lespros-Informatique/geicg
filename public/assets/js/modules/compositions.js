@@ -797,8 +797,6 @@ $(document).ready(function() {
 
           if (source === 'emploi_temps') {
             $('#badge-source-matieres').html('<i data-lucide="clock" style="width:12px;height:12px;"></i> Emploi du Temps (Session Active)').css({ 'background': '#DCFCE7', 'color': '#15803D' });
-          } else if (source === 'enseignant_matiere') {
-            $('#badge-source-matieres').html('<i data-lucide="user-check" style="width:12px;height:12px;"></i> Affectation Enseignants').css({ 'background': '#FEF3C7', 'color': '#B45309' });
           } else {
             $('#badge-source-matieres').html('<i data-lucide="book-open" style="width:12px;height:12px;"></i> Toutes les Matières').css({ 'background': '#F1F5F9', 'color': '#475569' });
           }

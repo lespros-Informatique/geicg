@@ -153,17 +153,23 @@ class ModelEnseignant extends BaseModel
     }
 
     /**
-     * Récupère les cours / matières affectés à un enseignant
+     * Récupère les cours / matières planifiés pour un enseignant
      */
     public function getCoursForEnseignant(string $codeEnseignant): array
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT em.*, m.libelle_matiere, cl.libelle_classe
-                FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = em.classe_code
-                WHERE em.enseignant_code = ?
+                SELECT DISTINCT 
+                       edt.matiere_code, 
+                       edt.classe_code, 
+                       m.libelle_matiere, 
+                       cl.libelle_classe,
+                       ROUND(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 1) AS volume_horaire
+                FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+                WHERE edt.enseignant_code = ?
+                GROUP BY edt.matiere_code, edt.classe_code, m.libelle_matiere, cl.libelle_classe
                 ORDER BY cl.libelle_classe ASC, m.libelle_matiere ASC
             ");
             $stmt->execute([$codeEnseignant]);

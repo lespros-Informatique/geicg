@@ -155,7 +155,7 @@ class ModelBulletin extends BaseModel
         $sqlNotes = "
             SELECT n.*, 
                    m.libelle_matiere, 
-                   COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient, 
+                   COALESCE(comp.coefficient, 1.00) AS coefficient, 
                    COALESCE(comp.matiere_code, cm.matiere_code) AS matiere_code,
                    comp.type_composition AS type_evaluation_code,
                    CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_enseignant
@@ -165,15 +165,14 @@ class ModelBulletin extends BaseModel
             LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
             LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
-            LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND em.classe_code = ?)
-            LEFT JOIN " . TABLES::ENSEIGNANTS . " ens ON ens.code_enseignant = em.enseignant_code
-            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = ens.code_enseignant
+            LEFT JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON (edt.classe_code = cl.code_classe AND edt.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code))
+            LEFT JOIN " . TABLES::USERS . " u ON (u.code_user = edt.enseignant_code OR u.code_user = comp.user_code)
             WHERE n.inscription_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
               AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
             ORDER BY m.libelle_matiere ASC, comp.type_composition ASC
         ";
         $stmtNotes = $db->prepare($sqlNotes);
-        $stmtNotes->execute([$item['classe_code'], $item['classe_code'], $item['code_inscription'], $selectedSemestreCode]);
+        $stmtNotes->execute([$item['classe_code'], $item['code_inscription'], $selectedSemestreCode]);
         $rawNotes = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
 
         $matieresNotes = [];
@@ -249,7 +248,7 @@ class ModelBulletin extends BaseModel
             $sqlClassmates = "
                 SELECT i.code_inscription,
                        n.valeur_note,
-                       COALESCE(em.coefficient, comp.coefficient, 1.00) AS coefficient
+                       COALESCE(comp.coefficient, 1.00) AS coefficient
                 FROM " . TABLES::INSCRIPTIONS . " i
                 INNER JOIN " . TABLES::NOTES . " n ON n.inscription_code = i.code_inscription
                 INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
@@ -257,7 +256,6 @@ class ModelBulletin extends BaseModel
                 LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
                 LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
                 INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
-                LEFT JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON (em.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND em.classe_code = i.classe_code)
                 WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
                   AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
                   AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
@@ -373,16 +371,21 @@ class ModelBulletin extends BaseModel
         $stmtC->execute([$selectedClasseCode]);
         $classeInfo = $stmtC->fetch(PDO::FETCH_ASSOC);
 
-        // 2. Matières assignées à cette classe
+        // 2. Matières assignées / évaluées pour cette classe
         $stmtM = $db->prepare("
             SELECT DISTINCT m.code_matiere, m.libelle_matiere, 
-                   COALESCE(em.coefficient, 1.00) AS coefficient
-            FROM " . TABLES::MATIERES . " m
-            INNER JOIN " . TABLES::ENSEIGNANT_MATIERE . " em ON em.matiere_code = m.code_matiere
-            WHERE em.classe_code = ? AND (em.annee_code = ? OR em.annee_code IS NULL OR ? = '')
+                   COALESCE(comp.coefficient, 1.00) AS coefficient
+            FROM " . TABLES::NOTES . " n
+            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+            INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
+            LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
+            INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
+            WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
             ORDER BY m.libelle_matiere ASC
         ");
-        $stmtM->execute([$selectedClasseCode, $anneeCode, $anneeCode]);
+        $stmtM->execute([$selectedClasseCode, $selectedSemestreCode]);
         $matieres = $stmtM->fetchAll(PDO::FETCH_ASSOC);
 
         // Fallback dynamique: matières ayant des notes pour cette classe

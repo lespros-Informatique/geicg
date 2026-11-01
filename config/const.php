@@ -102,7 +102,6 @@ class TABLES
 
     // PÉDAGOGIE & ÉVALUATIONS
     public const ENSEIGNANTS = 'enseignants';
-    public const ENSEIGNANT_MATIERE = 'enseignant_matiere';
     public const EMPLOIS_TEMPS = 'emplois_temps';
     public const NOTES = 'notes';
     public const ABSENCES = 'absences';
@@ -121,7 +120,6 @@ class TABLES
 
 class VIEWS
 {
-    public const DASH_PEDAGOGIE_AFFECTATIONS  = 'v_dash_pedagogie_affectations';
     public const INSCRIPTIONS_COMPLETES       = 'v_inscriptions_completes';
     public const PAIEMENTS_COMPLETS           = 'v_paiements_complets';
     public const BILAN_PAIEMENTS_INSCRIPTIONS = 'v_bilan_paiements_inscriptions';
