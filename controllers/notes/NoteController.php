@@ -80,7 +80,7 @@ class NoteController extends BaseController
             return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = trim($_GET['annee_code'] ?? '') ?: $this->getActiveAnneeCode();
         $data = $this->model->getDetailsClasseCompo($classeCode, $compositionCode, $matiereCode, $anneeCode);
         if (!$data) {
             $this->json(['status' => 0, 'message' => 'Session d\'évaluation introuvable.']);

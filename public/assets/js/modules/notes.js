@@ -5,6 +5,11 @@
 var isFormDirty = false;
 var isInitialLoading = true;
 
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 $(document).ready(function() {
   var racine = (typeof RACINE !== 'undefined') ? RACINE : (window.RACINE || '/');
 
@@ -255,21 +260,23 @@ $(document).ready(function() {
     var matiereCode = $(this).data('matiere') || '';
     if (!classeCode || !compoCode) return;
 
-    var $modal = $('#modal-details-notes');
+    var anneeCode = $('#filter-annee').val() || '';
+
     $('#modal-loading-spinner').show();
     $('#modal-details-content').hide();
     $('#md-students-list').empty();
-
-    if ($modal.modal) {
-      $modal.modal('show');
-    } else {
-      $modal.show();
-    }
+    $('#modal-details-notes').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
 
     $.ajax({
       url: window.RACINE + 'note/apiDetailsClasse',
       type: 'GET',
-      data: { classe_code: classeCode, composition_code: compoCode, matiere_code: matiereCode },
+      data: { 
+        classe_code: classeCode, 
+        composition_code: compoCode, 
+        matiere_code: matiereCode,
+        annee_code: anneeCode
+      },
       dataType: 'json',
       success: function(res) {
         $('#modal-loading-spinner').hide();
@@ -280,22 +287,48 @@ $(document).ready(function() {
           var students = d.students || [];
 
           // Header
-          $('#modal-compo-title').text((info.libelle_composition || 'Évaluation') + ' [' + (info.type_composition || 'EXAMEN') + ']');
+          var compoLibelle = info.libelle_composition || 'Évaluation';
+          var typeEval = info.type_composition || 'EXAMEN';
+          var badgeTypeStyle = typeEval === 'EXAMEN' 
+            ? 'background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;' 
+            : (typeEval === 'DEVOIR' ? 'background:#FEF3C7; color:#B45309; border:1px solid #FDE68A;' : 'background:#F1F5F9; color:#475569; border:1px solid #E2E8F0;');
+          
+          $('#modal-compo-title').html(
+            escapeHtml(compoLibelle) + ' ' +
+            '<span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:5px; text-transform:uppercase; ' + badgeTypeStyle + '">' + escapeHtml(typeEval) + '</span>'
+          );
+
           $('#modal-compo-subtitle').html(
-            'Classe : <strong>' + (info.libelle_classe || '-') + '</strong> &bull; ' +
-            'Matière : <strong>' + (info.libelle_matiere || 'Session globale') + '</strong> &bull; ' +
-            (info.libelle_semestre || '-') + ' &bull; Coef: ' + (info.coefficient || '1.00')
+            '<span style="background:#F1F5F9; color:#334155; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="graduation-cap" style="width:13px;height:13px;color:#64748B;"></i> Classe : ' + escapeHtml(info.libelle_classe || '-') + '</span>' +
+            '<span style="background:#EEF2FF; color:#4338CA; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="book-open" style="width:13px;height:13px;color:#6366F1;"></i> Matière : ' + escapeHtml(info.libelle_matiere || 'Session globale') + '</span>' +
+            '<span style="background:#F0FDF4; color:#15803D; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="calendar" style="width:13px;height:13px;color:#22C55E;"></i> ' + escapeHtml(info.libelle_semestre || '-') + '</span>' +
+            '<span style="background:#FEF3C7; color:#B45309; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="scale" style="width:13px;height:13px;color:#F59E0B;"></i> Coef : ' + parseFloat(info.coefficient || 1.00).toFixed(2) + '</span>'
           );
 
           // KPIs
-          $('#md-total-etudiants').text(stats.total_etudiants || 0);
-          $('#md-nb-notes').text(stats.nb_notes || 0);
+          var totalInscrits = parseInt(stats.total_etudiants || 0, 10);
+          var nbNotes = parseInt(stats.nb_notes || 0, 10);
+          $('#md-total-etudiants').text(totalInscrits);
+          $('#md-nb-notes').text(nbNotes + ' / ' + totalInscrits);
+
+          var pct = totalInscrits > 0 ? Math.round((nbNotes / totalInscrits) * 100) : 0;
+          $('#md-progression-text').text(pct + '% complété');
+
           if (stats.moyenne_classe !== null && stats.moyenne_classe !== undefined) {
-            $('#md-moyenne-classe').text(parseFloat(stats.moyenne_classe).toFixed(2) + ' / 20');
+            var moy = parseFloat(stats.moyenne_classe);
+            var colMoy = moy >= 10 ? '#059669' : '#DC2626';
+            $('#md-moyenne-classe').html('<span style="color:' + colMoy + ';">' + moy.toFixed(2) + '</span> <span style="font-size:13px; font-weight:700; color:#64748B;">/ 20</span>');
           } else {
             $('#md-moyenne-classe').text('-');
           }
-          $('#md-taux-reussite').text(stats.nb_notes > 0 ? (stats.taux_reussite + '%') : '-');
+          
+          if (nbNotes > 0) {
+            var tx = parseFloat(stats.taux_reussite || 0);
+            var colTx = tx >= 50 ? '#D97706' : '#DC2626';
+            $('#md-taux-reussite').html('<span style="color:' + colTx + ';">' + tx.toFixed(1) + ' %</span>');
+          } else {
+            $('#md-taux-reussite').text('-');
+          }
 
           // Tableau des étudiants
           var rowsHtml = '';
@@ -363,6 +396,21 @@ $(document).ready(function() {
         $('#modal-details-content').show();
       }
     });
+  });
+
+  // FERMETURE DU MODAL DETAILS
+  $(document).on('click', '.btn-close-details-modal', function() {
+    $('#modal-details-notes').hide();
+  });
+  $('#modal-details-notes').on('click', function(e) {
+    if ($(e.target).is('#modal-details-notes')) {
+      $('#modal-details-notes').hide();
+    }
+  });
+  $(document).on('keydown', function(e) {
+    if (e.key === 'Escape' && $('#modal-details-notes').is(':visible')) {
+      $('#modal-details-notes').hide();
+    }
   });
 
   $(document).on('change', '.toggle-statut-note', function() {
