@@ -811,12 +811,14 @@ $(document).ready(function() {
           }
 
           var html = '';
-          items.forEach(function(m, idx) {
+          var totalChecked = 0;
+          items.forEach(function(m) {
             var isChecked = false;
             if (savedCodes.length > 0) {
               isChecked = (savedCodes.indexOf(m.code_matiere) !== -1);
-            } else {
-              isChecked = (idx === 0);
+            }
+            if (isChecked) {
+              totalChecked++;
             }
             var checkedAttr = isChecked ? 'checked' : '';
 
@@ -828,6 +830,9 @@ $(document).ready(function() {
             html += '  <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; background: #F1F5F9; padding: 3px 8px; border-radius: 6px;">' + m.code_matiere + '</span>';
             html += '</label>';
           });
+
+          allCheckedState = (items.length > 0 && totalChecked === items.length);
+          $('#btn-toggle-select-all').text(allCheckedState ? 'Tout décocher' : 'Tout cocher');
 
           $container.html(html);
           if (window.lucide) lucide.createIcons();
@@ -847,6 +852,10 @@ $(document).ready(function() {
     } else {
       $card.removeClass('selected');
     }
+    var totalVisible = $('.chk-matiere-item:visible').length;
+    var totalChecked = $('.chk-matiere-item:visible:checked').length;
+    allCheckedState = (totalVisible > 0 && totalVisible === totalChecked);
+    $('#btn-toggle-select-all').text(allCheckedState ? 'Tout décocher' : 'Tout cocher');
   });
 
   // Bouton Tout cocher / Tout décocher
