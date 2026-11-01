@@ -188,8 +188,8 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
                 <th style="padding: 12px 14px; width: 45px;">#</th>
+                <th style="padding: 12px 14px; width: 140px;">Matricule</th>
                 <th style="padding: 12px 14px;">Étudiant</th>
-                <th style="padding: 12px 14px; text-align: center;">Notes Saisies</th>
                 <th style="padding: 12px 14px; text-align: center;">Moyenne Semestre</th>
                 <th style="padding: 12px 14px; text-align: center;">Décision</th>
                 <th style="padding: 12px 14px; text-align: right; width: 160px;">Actions</th>

@@ -1639,10 +1639,17 @@ $(document).ready(function() {
           }
         },
         { 
+          data: 'matricule_etudiant',
+          width: '140px',
+          render: function(d) {
+            var mat = d || '-';
+            return '<span style="font-family:monospace; font-size:12px; font-weight:800; color:#1E3A5F; background:#F8FAFC; border:1px solid #E2E8F0; padding:3px 8px; border-radius:6px; display:inline-block;">' + mat + '</span>';
+          }
+        },
+        { 
           data: 'etudiant_nom',
           render: function(d, type, r) {
             var nom = d || '-';
-            var mat = r.matricule_etudiant || '-';
             var sexe = r.sexe_etudiant || '';
             var photo = r.photo_etudiant ? String(r.photo_etudiant).trim() : '';
 
@@ -1658,39 +1665,23 @@ $(document).ready(function() {
             var avatarHtml = '';
             if (photo !== '') {
               var photoUrl = (photo.indexOf('http') === 0) ? photo : (window.RACINE + photo.replace(/^\//, ''));
-              avatarHtml = '<div style="width:38px; height:38px; border-radius:50%; overflow:hidden; flex-shrink:0; border:1.5px solid #CBD5E1; background:#F1F5F9; display:flex; align-items:center; justify-content:center;">' +
+              avatarHtml = '<div style="width:36px; height:36px; border-radius:50%; overflow:hidden; flex-shrink:0; border:1.5px solid #CBD5E1; background:#F1F5F9; display:flex; align-items:center; justify-content:center;">' +
                              '<img src="' + photoUrl + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display=\'none\'; $(this).next().show();">' +
                              '<div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; background:#EFF6FF; color:#1E3A5F; font-weight:800; font-size:12px;">' + inits + '</div>' +
                            '</div>';
             } else {
-              avatarHtml = '<div style="width:38px; height:38px; border-radius:50%; background:#EFF6FF; color:#1E3A5F; border:1px solid #DBEAFE; font-weight:800; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">' + inits + '</div>';
+              avatarHtml = '<div style="width:36px; height:36px; border-radius:50%; background:#EFF6FF; color:#1E3A5F; border:1px solid #DBEAFE; font-weight:800; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">' + inits + '</div>';
             }
 
-            var sexeBadge = sexe ? '<span style="font-size:10px; font-weight:800; color:#64748B; background:#F1F5F9; padding:1px 5px; border-radius:4px; margin-left:4px;">' + sexe + '</span>' : '';
+            var sexeBadge = sexe ? '<span style="font-size:10px; font-weight:800; color:#64748B; background:#F1F5F9; padding:1px 5px; border-radius:4px; margin-left:6px;">' + sexe + '</span>' : '';
 
-            return '<div style="display:flex; align-items:center; gap:12px;">' +
+            return '<div style="display:flex; align-items:center; gap:10px;">' +
                      avatarHtml +
-                     '<div>' +
-                       '<div style="display:flex; align-items:center; gap:4px;">' +
-                         '<strong style="color:#0F172A; font-size:13.5px;">' + nom + '</strong>' +
-                         sexeBadge +
-                       '</div>' +
-                       '<div style="display:flex; align-items:center; gap:6px; margin-top:2px;">' +
-                         '<span style="font-family:monospace; font-size:11px; font-weight:700; color:#1E3A5F; background:#F8FAFC; border:1px solid #E2E8F0; padding:1px 6px; border-radius:4px;">' + mat + '</span>' +
-                       '</div>' +
+                     '<div style="display:flex; align-items:center;">' +
+                       '<strong style="color:#0F172A; font-size:13.5px;">' + nom + '</strong>' +
+                       sexeBadge +
                      '</div>' +
                    '</div>';
-          }
-        },
-        { 
-          data: 'nb_notes', 
-          className: 'text-center',
-          render: function(d) {
-            var count = parseInt(d || 0, 10);
-            if (count > 0) {
-              return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:12px; font-weight:800; padding:4px 10px; border-radius:6px;">' + count + ' note(s)</span>';
-            }
-            return '<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px;">0 note</span>';
           }
         },
         { 
