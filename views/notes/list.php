@@ -18,6 +18,20 @@ $canManageCompos = isset($canManageCompos) ? (bool)$canManageCompos : true;
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       
+      <!-- EN-TÊTE D'IMPRESSION (VISIBLE UNIQUEMENT À L'IMPRESSION) -->
+      <div id="print-header-banner" style="margin-bottom: 16px; border-bottom: 2px solid #1E3A5F; padding-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">GEICG - GROUPE ÉCOLE D'INGÉNIEURS ET DE COMMERCE DE GAGNOA</h2>
+            <div style="font-size: 12px; font-weight: 800; color: #0F172A; margin-top: 3px;">REGISTRE DES ÉVALUATIONS & SESSIONS DE NOTES</div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #475569;">
+            <div>Date d'impression : <strong><?= date('d/m/Y H:i') ?></strong></div>
+            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim(Auth::fullName() ?: (!empty($isTeacherOnly) ? 'Enseignant' : 'Direction des Études'))) ?></strong></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Page Header -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
@@ -35,6 +49,9 @@ $canManageCompos = isset($canManageCompos) ? (bool)$canManageCompos : true;
           </p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <a href="<?= RACINE ?>note/imprimerRegistrePdf<?= !empty($selectedAnneeCode) ? ('?annee_code=' . urlencode($selectedAnneeCode)) : '' ?>" id="btn-print-registre-notes" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; cursor: pointer; transition: all 0.2s;" title="Générer et imprimer le registre officiel des évaluations en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer (PDF)
+          </a>
           <?php if ($canEnterNotes): ?>
           <a href="<?= RACINE ?>note/saisieClasse" id="btn-saisie-classe" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
             <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie des Notes

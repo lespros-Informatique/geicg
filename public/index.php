@@ -478,6 +478,7 @@ $route->addRoute('/note/list', [$noteController, 'list']);
 $route->addRoute('/note/apiList', [$noteController, 'apiList']);
 $route->addRoute('/note/apiDetailsClasse', [$noteController, 'apiDetailsClasse']);
 $route->addRoute('/note/imprimerPdf', [$noteController, 'imprimerPdf']);
+$route->addRoute('/note/imprimerRegistrePdf', [$noteController, 'imprimerRegistrePdf']);
 $route->addRoute('/note/saisieClasse', [$noteController, 'saisieClasse']);
 $route->addRoute('/note/saveBatch', [$noteController, 'saveBatch']);
 $route->addRoute('/note/getStudentsByClasse', [$noteController, 'getStudentsByClasse']);

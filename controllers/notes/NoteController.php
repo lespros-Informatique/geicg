@@ -171,8 +171,7 @@ class NoteController extends BaseController
         $matiereCode = trim($_GET['matiere_code'] ?? '');
 
         if (empty($classeCode) || empty($compositionCode)) {
-            $this->renderNotFound("Paramètres invalides (classe ou composition manquante).");
-            return;
+            return $this->imprimerRegistrePdf();
         }
 
         $anneeCode = $this->getActiveAnneeCode();
@@ -215,6 +214,127 @@ class NoteController extends BaseController
             'orientation' => 'P',
             'format' => 'A4',
             'title' => 'Fiche de Notes - ' . ($dataDetails['info']['libelle_classe'] ?? '') . ' - ' . ($dataDetails['info']['libelle_composition'] ?? ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
+    public function imprimerRegistrePdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_NOTES, PERMISSIONS::ENTER_NOTES]);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
+        $typeComposition = !empty($_GET['type_composition']) ? trim($_GET['type_composition']) : null;
+        $matiereCode = !empty($_GET['matiere_code']) ? trim($_GET['matiere_code']) : null;
+        $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
+        $compositionCode = !empty($_GET['composition_code']) ? trim($_GET['composition_code']) : null;
+
+        $teacherCtx = $this->getTeacherContext();
+        $teacherCodes = $teacherCtx['isTeacherOnly'] ? $teacherCtx['teacherCodes'] : null;
+
+        $items = $this->model->getSessionsByClasseCompo(
+            $anneeCode,
+            $niveauCode,
+            $classeCode,
+            $typeComposition,
+            $matiereCode,
+            $semestreCode,
+            $compositionCode,
+            $teacherCodes
+        );
+
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+            if (!empty($anneeItem['libelle_annee'])) {
+                $anneeLibelle = $anneeItem['libelle_annee'];
+            }
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = !empty($teacherCtx['isTeacherOnly']) ? 'Enseignant' : 'Direction des Études';
+        }
+
+        $filtresLabels = [
+            'annee' => $anneeLibelle,
+            'niveau' => 'Tous',
+            'classe' => 'Toutes',
+            'matiere' => 'Toutes',
+            'semestre' => 'Tous',
+            'type' => !empty($typeComposition) ? $typeComposition : 'Tous les types'
+        ];
+        if (!empty($niveauCode)) {
+            $niv = (new ModelNiveau())->getByCode($niveauCode);
+            if ($niv) $filtresLabels['niveau'] = $niv['libelle_niveau'] ?? $niveauCode;
+        }
+        if (!empty($classeCode)) {
+            $cls = (new ModelClasse())->getByCode($classeCode);
+            if ($cls) $filtresLabels['classe'] = $cls['libelle_classe'] ?? $classeCode;
+        }
+        if (!empty($matiereCode)) {
+            $mat = (new ModelMatiere())->getByCode($matiereCode);
+            if ($mat) $filtresLabels['matiere'] = $mat['libelle_matiere'] ?? $matiereCode;
+        }
+        if (!empty($semestreCode)) {
+            $sem = (new ModelSemestre())->getByCode($semestreCode);
+            if ($sem) $filtresLabels['semestre'] = $sem['libelle_semestre'] ?? $semestreCode;
+        }
+
+        $totalSessions = count($items);
+        $totalInscrits = 0;
+        $totalCopies = 0;
+        $sommeMoyennes = 0;
+        $nbMoyennes = 0;
+        foreach ($items as $it) {
+            $totalInscrits += (int)($it['total_etudiants'] ?? 0);
+            $totalCopies += (int)($it['nb_notes'] ?? 0);
+            if ($it['moyenne_classe'] !== null && $it['moyenne_classe'] !== '') {
+                $sommeMoyennes += (float)$it['moyenne_classe'];
+                $nbMoyennes++;
+            }
+        }
+        $moyenneGlobale = $nbMoyennes > 0 ? round($sommeMoyennes / $nbMoyennes, 2) : null;
+        $tauxCompletion = $totalInscrits > 0 ? round(($totalCopies / $totalInscrits) * 100, 1) : 0;
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'isTeacherOnly' => !empty($teacherCtx['isTeacherOnly']),
+            'filtres_labels' => $filtresLabels,
+            'sessions' => $items,
+            'kpis' => [
+                'total_sessions' => $totalSessions,
+                'total_inscrits' => $totalInscrits,
+                'total_copies' => $totalCopies,
+                'moyenne_globale' => $moyenneGlobale,
+                'taux_completion' => $tauxCompletion
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('registre_evaluations.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Evaluations_' . date('Ymd_His') . '.pdf';
+
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre des Évaluations - ' . ($etablissement['nom_etablissement'] ?? 'GEICG'),
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,

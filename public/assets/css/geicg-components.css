@@ -317,6 +317,8 @@
   #table-scolarites,
   #table-sessions-caisse,
   #table-emplois_temps,
+  #table-notes,
+  #table-compositions,
   .table-print-clean {
     width: 100% !important;
     border-collapse: collapse !important;
@@ -328,6 +330,8 @@
   #table-scolarites th, #table-scolarites td,
   #table-sessions-caisse th, #table-sessions-caisse td,
   #table-emplois_temps th, #table-emplois_temps td,
+  #table-notes th, #table-notes td,
+  #table-compositions th, #table-compositions td,
   .table-print-clean th,
   .table-print-clean td {
     border: 1px solid #334155 !important;
@@ -341,6 +345,8 @@
   #table-scolarites th,
   #table-sessions-caisse th,
   #table-emplois_temps th,
+  #table-notes th,
+  #table-compositions th,
   .table-print-clean th {
     background: #F1F5F9 !important;
     font-weight: 800 !important;
@@ -352,6 +358,8 @@
   #table-scolarites tr,
   #table-sessions-caisse tr,
   #table-emplois_temps tr,
+  #table-notes tr,
+  #table-compositions tr,
   .table-print-clean tr {
     page-break-inside: avoid !important;
   }
@@ -360,7 +368,9 @@
   #table-caisse-annexe th:last-child, #table-caisse-annexe td:last-child,
   #table-scolarites th:last-child, #table-scolarites td:last-child,
   #table-sessions-caisse th:last-child, #table-sessions-caisse td:last-child,
-  #table-emplois_temps th:last-child, #table-emplois_temps td:last-child {
+  #table-emplois_temps th:last-child, #table-emplois_temps td:last-child,
+  #table-notes th:last-child, #table-notes td:last-child,
+  #table-compositions th:last-child, #table-compositions td:last-child {
     display: none !important;
   }
   #print-header-banner, .print-signatures-block {

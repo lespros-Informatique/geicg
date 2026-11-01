@@ -32,6 +32,29 @@ $(document).ready(function() {
     $('#filter-annee, #filter-niveau, #filter-classe, #filter-type-eval, #filter-matiere, #filter-semestre, #filter-compo').select2({ width: '100%' });
   }
 
+  function updatePrintRegistreUrl() {
+    var params = [];
+    var annee = $('#filter-annee').val();
+    var niv = $('#filter-niveau').val();
+    var cls = $('#filter-classe').val();
+    var typ = $('#filter-type-eval').val();
+    var mat = $('#filter-matiere').val();
+    var sem = $('#filter-semestre').val();
+    var compo = $('#filter-compo').val();
+
+    if (annee) params.push('annee_code=' + encodeURIComponent(annee));
+    if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
+    if (cls) params.push('classe_code=' + encodeURIComponent(cls));
+    if (typ) params.push('type_composition=' + encodeURIComponent(typ));
+    if (mat) params.push('matiere_code=' + encodeURIComponent(mat));
+    if (sem) params.push('semestre_code=' + encodeURIComponent(sem));
+    if (compo) params.push('composition_code=' + encodeURIComponent(compo));
+
+    var url = window.RACINE + 'note/imprimerRegistrePdf' + (params.length ? ('?' + params.join('&')) : '');
+    $('#btn-print-registre-notes').attr('href', url);
+  }
+  updatePrintRegistreUrl();
+
   // Filtrage en cascade Niveau -> Classe
   $('#filter-niveau').on('change', function() {
     var niveauCode = $(this).val();
@@ -48,6 +71,7 @@ $(document).ready(function() {
     } else {
       $('#filter-classe').select2({ width: '100%' });
     }
+    updatePrintRegistreUrl();
     table.ajax.reload();
   });
 
@@ -67,6 +91,7 @@ $(document).ready(function() {
     } else {
       $('#filter-compo').select2({ width: '100%' });
     }
+    updatePrintRegistreUrl();
     table.ajax.reload();
   });
 
@@ -116,6 +141,7 @@ $(document).ready(function() {
         .html('<i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie des Notes');
     }
     if (window.lucide) lucide.createIcons();
+    updatePrintRegistreUrl();
     table.ajax.reload();
   });
 
