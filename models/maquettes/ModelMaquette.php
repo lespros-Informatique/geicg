@@ -272,3 +272,4 @@ class ModelMaquette extends BaseModel
         }
     }
 }
+

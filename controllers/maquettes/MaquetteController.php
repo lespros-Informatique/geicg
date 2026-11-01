@@ -176,3 +176,4 @@ class MaquetteController extends BaseController
         $this->json($res);
     }
 }
+

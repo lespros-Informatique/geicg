@@ -239,3 +239,4 @@
 </script>
 <script src="<?= RACINE ?>assets/js/modules/maquettes.js"></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
+
