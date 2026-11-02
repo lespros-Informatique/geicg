@@ -194,7 +194,7 @@ $stats = isset($stats) ? $stats : [];
                       </span>
                     </td>
                     <td style="padding: 10px; text-align: center;">
-                      <?php if (($mq['statut_maquette'] ?? 'actif') === 'actif'): ?>
+                      <?php if (($mq['statut_maquette'] ?? STATUTS::ACTIF) === STATUTS::ACTIF): ?>
                         <span class="badge" style="background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Actif</span>
                       <?php else: ?>
                         <span class="badge" style="background: #FEE2E2; color: #B91C1C; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Inactif</span>
