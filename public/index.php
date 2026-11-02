@@ -202,6 +202,7 @@ $route->addRoute('/maquette/edit', [$maquetteController, 'edit']);
 $route->addRoute('/maquette/changer', [$maquetteController, 'changer']);
 $route->addRoute('/maquette/delete', [$maquetteController, 'delete']);
 $route->addRoute('/maquette/dupliquer', [$maquetteController, 'dupliquer']);
+$route->addRoute('/maquette/imprimerPdf', [$maquetteController, 'imprimerPdf']);
 
 // Module: scolarite (ScolariteController)
 $route->addRoute('/scolarite/list', [$scolariteController, 'list']);

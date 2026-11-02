@@ -52,6 +52,67 @@ class MaquetteController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code', '');
+        $filiereCode = !empty($_GET['filiere_code']) ? $_GET['filiere_code'] : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? $_GET['niveau_code'] : null;
+        $categorie = !empty($_GET['categorie']) ? $_GET['categorie'] : null;
+
+        $items = $this->model->getFilteredList($anneeCode, $filiereCode, $niveauCode, $categorie);
+        $etablissement = $this->getEtablissementConfig();
+
+        $anneeModel = new ModelAnnee();
+        $anneeObj = !empty($anneeCode) ? $anneeModel->getByCode($anneeCode) : null;
+        $anneeLibelle = $anneeObj['libelle_annee'] ?? Session::get('annee_active_libelle', $anneeCode);
+
+        $filiereLibelle = null;
+        if (!empty($filiereCode)) {
+            $fModel = new ModelFiliere();
+            $fObj = $fModel->getByCode($filiereCode);
+            $filiereLibelle = $fObj['libelle_filiere'] ?? $filiereCode;
+        }
+
+        $niveauLibelle = null;
+        if (!empty($niveauCode)) {
+            $nModel = new ModelNiveau();
+            $nObj = $nModel->getByCode($niveauCode);
+            $niveauLibelle = $nObj['libelle_niveau'] ?? $niveauCode;
+        }
+
+        $editeurNom = Auth::fullName();
+        if (empty($editeurNom)) {
+            $editeurNom = 'Direction des Études & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'filiere_libelle' => $filiereLibelle,
+            'niveau_libelle' => $niveauLibelle,
+            'categorie_filtre' => $categorie,
+            'editeur_nom' => $editeurNom,
+            'items' => $items
+        ];
+
+        $html = PdfService::renderTemplate('maquette_pedagogique.php', $data);
+        $filename = 'Maquette_Pedagogique_' . ($anneeCode ?: 'All') . '_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Maquette Pédagogique - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 10
+        ]);
+    }
+
     public function apiGetMaquetteForFiliere()
     {
         $this->requireAuth();

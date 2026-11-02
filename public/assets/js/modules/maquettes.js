@@ -407,9 +407,29 @@
       console.error('Erreur initialisation DataTable maquette:', err);
     }
 
+    // Mise à jour de l'URL du bouton imprimer selon les filtres actifs
+    function updatePrintUrl() {
+      var annee = $('#filter-annee').val() || '';
+      var filiere = $('#filter-filiere').val() || '';
+      var niveau = $('#filter-niveau').val() || '';
+      var cat = $('#filter-categorie').val() || '';
+
+      var params = [];
+      if (annee) params.push('annee_code=' + encodeURIComponent(annee));
+      if (filiere) params.push('filiere_code=' + encodeURIComponent(filiere));
+      if (niveau) params.push('niveau_code=' + encodeURIComponent(niveau));
+      if (cat) params.push('categorie=' + encodeURIComponent(cat));
+
+      var q = params.length ? '?' + params.join('&') : '';
+      $('#btn-print-maquette').attr('href', cfg.racine + 'maquette/imprimerPdf' + q);
+    }
+
+    updatePrintUrl();
+
     // Rechargement sur changement de filtres
     $('#filter-annee, #filter-filiere, #filter-niveau, #filter-categorie').on('change', function() {
       if (maquetteTable) maquetteTable.ajax.reload();
+      updatePrintUrl();
     });
   }
 
