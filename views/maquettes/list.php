@@ -1,6 +1,60 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php'; 
 ?>
+<script>
+  window.openModalMaquette = function() {
+    var form = document.getElementById('form-maquette');
+    if (form) form.reset();
+    var idInput = document.getElementById('maq_id');
+    if (idInput) idInput.value = '';
+    var title = document.getElementById('modal-maquette-title');
+    if (title) title.innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Ajouter Matière à la Maquette';
+
+    var fAnnee = document.getElementById('filter-annee');
+    var fFiliere = document.getElementById('filter-filiere');
+    var fNiveau = document.getElementById('filter-niveau');
+    var mAnnee = document.getElementById('maq_annee');
+    var mFiliere = document.getElementById('maq_filiere');
+    var mNiveau = document.getElementById('maq_niveau');
+
+    if (fAnnee && fAnnee.value && mAnnee) {
+      mAnnee.value = fAnnee.value;
+      if (window.jQuery && $(mAnnee).data('select2')) $(mAnnee).trigger('change');
+    }
+    if (fFiliere && fFiliere.value && mFiliere) {
+      mFiliere.value = fFiliere.value;
+      if (window.jQuery && $(mFiliere).data('select2')) $(mFiliere).trigger('change');
+    }
+    if (fNiveau && fNiveau.value && mNiveau) {
+      mNiveau.value = fNiveau.value;
+      if (window.jQuery && $(mNiveau).data('select2')) $(mNiveau).trigger('change');
+    }
+
+    var modal = document.getElementById('modal-maquette');
+    if (modal) modal.style.display = 'flex';
+    if (window.lucide) {
+      try { lucide.createIcons(); } catch(e) {}
+    }
+  };
+
+  window.closeModalMaquette = function() {
+    var modal = document.getElementById('modal-maquette');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.openModalDuplicateMaquette = function() {
+    var modal = document.getElementById('modal-dupliquer-maquette');
+    if (modal) modal.style.display = 'flex';
+    if (window.lucide) {
+      try { lucide.createIcons(); } catch(e) {}
+    }
+  };
+
+  window.closeModalDuplicateMaquette = function() {
+    var modal = document.getElementById('modal-dupliquer-maquette');
+    if (modal) modal.style.display = 'none';
+  };
+</script>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -106,7 +160,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
       <button type="button" class="btn-close-modal-maquette" onclick="closeModalMaquette();" style="background:none; border:none; font-size:20px; color:#64748B; cursor:pointer;">&times;</button>
     </div>
     <form id="form-maquette" style="padding:24px;">
-      <input type="hidden" name="csrf_token" value="<?= Session::getCsrfToken() ?>">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       <input type="hidden" name="id_maquette" id="maq_id">
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
@@ -187,7 +241,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
       <button type="button" class="btn-close-modal-dup" onclick="closeModalDuplicateMaquette();" style="background:none; border:none; font-size:20px; color:#64748B; cursor:pointer;">&times;</button>
     </div>
     <form id="form-duplicate-maquette" style="padding:24px;">
-      <input type="hidden" name="csrf_token" value="<?= Session::getCsrfToken() ?>">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
       <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:12.5px; color:#1E3A5F;">
         Cette fonction permet de copier les matières, catégories et coefficients d'une année académique vers une nouvelle année académique sans ressaisie manuelle.
@@ -236,66 +290,13 @@ require_once __DIR__ . '/../../public/inc/header.php';
 <script type="application/json" id="maquette-list-config">
 <?= json_encode([
     'racine' => RACINE,
-    'csrfToken' => Session::getCsrfToken()
+    'csrfToken' => Validator::generateCsrfToken()
 ]) ?>
 </script>
 <script>
   window.MAQUETTE_CONFIG = {
     racine: '<?= RACINE ?>',
-    csrfToken: '<?= Session::getCsrfToken() ?>'
-  };
-
-  window.openModalMaquette = function() {
-    var form = document.getElementById('form-maquette');
-    if (form) form.reset();
-    var idInput = document.getElementById('maq_id');
-    if (idInput) idInput.value = '';
-    var title = document.getElementById('modal-maquette-title');
-    if (title) title.innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Ajouter Matière à la Maquette';
-
-    var fAnnee = document.getElementById('filter-annee');
-    var fFiliere = document.getElementById('filter-filiere');
-    var fNiveau = document.getElementById('filter-niveau');
-    var mAnnee = document.getElementById('maq_annee');
-    var mFiliere = document.getElementById('maq_filiere');
-    var mNiveau = document.getElementById('maq_niveau');
-
-    if (fAnnee && fAnnee.value && mAnnee) {
-      mAnnee.value = fAnnee.value;
-      if (window.jQuery && $(mAnnee).data('select2')) $(mAnnee).trigger('change');
-    }
-    if (fFiliere && fFiliere.value && mFiliere) {
-      mFiliere.value = fFiliere.value;
-      if (window.jQuery && $(mFiliere).data('select2')) $(mFiliere).trigger('change');
-    }
-    if (fNiveau && fNiveau.value && mNiveau) {
-      mNiveau.value = fNiveau.value;
-      if (window.jQuery && $(mNiveau).data('select2')) $(mNiveau).trigger('change');
-    }
-
-    var modal = document.getElementById('modal-maquette');
-    if (modal) modal.style.display = 'flex';
-    if (window.lucide) {
-      try { lucide.createIcons(); } catch(e) {}
-    }
-  };
-
-  window.closeModalMaquette = function() {
-    var modal = document.getElementById('modal-maquette');
-    if (modal) modal.style.display = 'none';
-  };
-
-  window.openModalDuplicateMaquette = function() {
-    var modal = document.getElementById('modal-dupliquer-maquette');
-    if (modal) modal.style.display = 'flex';
-    if (window.lucide) {
-      try { lucide.createIcons(); } catch(e) {}
-    }
-  };
-
-  window.closeModalDuplicateMaquette = function() {
-    var modal = document.getElementById('modal-dupliquer-maquette');
-    if (modal) modal.style.display = 'none';
+    csrfToken: '<?= Validator::generateCsrfToken() ?>'
   };
 </script>
 <?php
