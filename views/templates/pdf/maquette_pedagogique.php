@@ -194,12 +194,7 @@
   <table class="header-table">
     <tr>
       <td style="width: 75px; text-align: center;">
-        <?php 
-          $logoPath = !empty($etablissement['logo_etablissement']) 
-            ? __DIR__ . '/../../../public/assets/images/logo/' . $etablissement['logo_etablissement'] 
-            : null;
-          if ($logoPath && file_exists($logoPath)): 
-        ?>
+        <?php if (!empty($logoPath)): ?>
           <img src="<?= $logoPath ?>" style="max-height: 55px; max-width: 70px;" alt="Logo">
         <?php endif; ?>
       </td>
@@ -241,56 +236,37 @@
     <tr>
       <td style="width: 25%;">
         <span class="meta-label">Année Académique :</span> 
-        <span class="meta-value"><?= htmlspecialchars($annee_libelle ?? 'Toutes les années') ?></span>
+        <span class="meta-value"><?= htmlspecialchars($annee_libelle) ?></span>
       </td>
       <td style="width: 30%;">
         <span class="meta-label">Filière :</span> 
-        <span class="meta-value"><?= htmlspecialchars($filiere_libelle ?? 'Toutes les filières') ?></span>
+        <span class="meta-value"><?= htmlspecialchars($filiere_libelle) ?></span>
       </td>
       <td style="width: 22%;">
         <span class="meta-label">Niveau d'Études :</span> 
-        <span class="meta-value"><?= htmlspecialchars($niveau_libelle ?? 'Tous les niveaux') ?></span>
+        <span class="meta-value"><?= htmlspecialchars($niveau_libelle) ?></span>
       </td>
       <td style="width: 23%;">
         <span class="meta-label">Date Édition :</span> 
-        <span class="meta-value"><?= date('d/m/Y à H:i') ?></span>
+        <span class="meta-value"><?= htmlspecialchars($date_edition) ?></span>
       </td>
     </tr>
   </table>
 
   <!-- STATISTIQUES / KPI -->
-  <?php 
-    $totalMatieres = count($items);
-    $totalGenerales = 0;
-    $totalProfessionnelles = 0;
-    $totalCoef = 0.0;
-    foreach ($items as $it) {
-      $coef = (float)($it['coefficient'] ?? 1.0);
-      $totalCoef += $coef;
-      if (($it['categorie_matiere'] ?? 'GENERALE') === 'GENERALE') {
-        $totalGenerales++;
-      } else {
-        $totalProfessionnelles++;
-      }
-    }
-  ?>
   <table class="kpi-table">
     <tr>
-      <td class="kpi-cell" style="width: 25%;">
+      <td class="kpi-cell" style="width: 33.33%;">
         <div class="kpi-num"><?= $totalMatieres ?></div>
         <div class="kpi-text">Total Matières</div>
       </td>
-      <td class="kpi-cell" style="width: 25%;">
+      <td class="kpi-cell" style="width: 33.33%;">
         <div class="kpi-num" style="color: #1D4ED8;"><?= $totalGenerales ?></div>
         <div class="kpi-text">Matières Générales</div>
       </td>
-      <td class="kpi-cell" style="width: 25%;">
+      <td class="kpi-cell" style="width: 33.33%;">
         <div class="kpi-num" style="color: #B45309;"><?= $totalProfessionnelles ?></div>
         <div class="kpi-text">Matières Professionnelles</div>
-      </td>
-      <td class="kpi-cell" style="width: 25%;">
-        <div class="kpi-num" style="color: #047857;"><?= number_format($totalCoef, 1) ?></div>
-        <div class="kpi-text">Total Coefficients</div>
       </td>
     </tr>
   </table>
@@ -315,7 +291,7 @@
       </thead>
       <tbody>
         <?php foreach ($items as $idx => $row): ?>
-          <?php $isGen = (($row['categorie_matiere'] ?? 'GENERALE') === 'GENERALE'); ?>
+          <?php $isGen = (($row['categorie_matiere'] ?? CATEGORIES_MATIERES::GENERALE) === CATEGORIES_MATIERES::GENERALE); ?>
           <tr>
             <td class="text-center" style="font-weight: bold; color: #64748B;"><?= $idx + 1 ?></td>
             <td>
@@ -339,22 +315,13 @@
               <?= number_format((float)($row['coefficient'] ?? 1.0), 1) ?>
             </td>
             <td class="text-center">
-              <span style="font-weight: bold; color: <?= (($row['statut_maquette'] ?? 'actif') === 'actif') ? '#15803D' : '#94A3B8' ?>;">
-                <?= ucfirst($row['statut_maquette'] ?? 'actif') ?>
+              <span style="font-weight: bold; color: <?= (($row['statut_maquette'] ?? STATUTS::ACTIF) === STATUTS::ACTIF) ? '#15803D' : '#94A3B8' ?>;">
+                <?= ucfirst($row['statut_maquette'] ?? STATUTS::ACTIF) ?>
               </span>
             </td>
           </tr>
         <?php endforeach; ?>
       </tbody>
-      <tfoot>
-        <tr style="background-color: #F1F5F9; font-weight: bold;">
-          <td colspan="5" class="text-right" style="padding: 5px 8px; font-size: 8pt; color: #1E3A5F;">TOTAL COEFFICIENTS DE LA MAQUETTE :</td>
-          <td class="text-center" style="padding: 5px 8px; font-size: 9pt; color: #1E3A5F; font-weight: bold;">
-            <?= number_format($totalCoef, 1) ?>
-          </td>
-          <td></td>
-        </tr>
-      </tfoot>
     </table>
   <?php endif; ?>
 

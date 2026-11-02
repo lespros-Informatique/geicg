@@ -400,7 +400,7 @@ class ModelBulletin extends BaseModel
         $totalPointsPro = 0;       $totalCoefficientsPro = 0;
 
         foreach ($matieresNotes as $mCode => $m) {
-            if ($m['categorie_matiere'] === 'PROFESSIONNELLE') {
+            if ($m['categorie_matiere'] === CATEGORIES_MATIERES::PROFESSIONNELLE) {
                 $matieresPro[] = $m;
                 $totalPointsPro += $m['points'];
                 $totalCoefficientsPro += $m['coefficient'];

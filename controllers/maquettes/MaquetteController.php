@@ -10,12 +10,12 @@ class MaquetteController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
+        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_MAQUETTES, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
 
         $annees = (new ModelAnnee())->getAll();
-        $filieres = (new ModelFiliere())->getByStatus('actif');
+        $filieres = (new ModelFiliere())->getByStatus(STATUTS::ACTIF);
         $niveaux = (new ModelNiveau())->getActifs();
-        $matieres = (new ModelMatiere())->getByStatus('actif');
+        $matieres = (new ModelMatiere())->getByStatus(STATUTS::ACTIF);
 
         $activeAnnee = Session::get('annee_active_code', '');
 
@@ -24,6 +24,7 @@ class MaquetteController extends BaseController
             'filieres' => $filieres,
             'niveaux' => $niveaux,
             'matieres' => $matieres,
+            'categories' => CATEGORIES_MATIERES::ALL,
             'activeAnnee' => $activeAnnee,
             'scripts' => ['public/assets/js/modules/maquettes.js']
         ]);
@@ -32,7 +33,7 @@ class MaquetteController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
+        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_MAQUETTES, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
 
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code', '');
         $filiereCode = $_GET['filiere_code'] ?? null;
@@ -55,7 +56,7 @@ class MaquetteController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
+        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::PRINT_MAQUETTES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
@@ -69,16 +70,16 @@ class MaquetteController extends BaseController
 
         $anneeModel = new ModelAnnee();
         $anneeObj = !empty($anneeCode) ? $anneeModel->getByCode($anneeCode) : null;
-        $anneeLibelle = $anneeObj['libelle_annee'] ?? Session::get('annee_active_libelle', $anneeCode);
+        $anneeLibelle = $anneeObj['libelle_annee'] ?? Session::get('annee_active_libelle', $anneeCode ?: 'Toutes les années');
 
-        $filiereLibelle = null;
+        $filiereLibelle = 'Toutes les filières';
         if (!empty($filiereCode)) {
             $fModel = new ModelFiliere();
             $fObj = $fModel->getByCode($filiereCode);
             $filiereLibelle = $fObj['libelle_filiere'] ?? $filiereCode;
         }
 
-        $niveauLibelle = null;
+        $niveauLibelle = 'Tous les niveaux';
         if (!empty($niveauCode)) {
             $nModel = new ModelNiveau();
             $nObj = $nModel->getByCode($niveauCode);
@@ -90,14 +91,40 @@ class MaquetteController extends BaseController
             $editeurNom = 'Direction des Études & Scolarité';
         }
 
+        // Calcul des métriques & KPI (strictement calculés dans le contrôleur)
+        $totalMatieres = count($items);
+        $totalGenerales = 0;
+        $totalProfessionnelles = 0;
+        foreach ($items as $it) {
+            if (($it['categorie_matiere'] ?? CATEGORIES_MATIERES::GENERALE) === CATEGORIES_MATIERES::GENERALE) {
+                $totalGenerales++;
+            } else {
+                $totalProfessionnelles++;
+            }
+        }
+
+        // Résolution du logo
+        $logoPath = null;
+        if (!empty($etablissement['logo_etablissement'])) {
+            $candidateLogo = dirname(__DIR__, 2) . '/public/assets/images/logo/' . $etablissement['logo_etablissement'];
+            if (file_exists($candidateLogo)) {
+                $logoPath = $candidateLogo;
+            }
+        }
+
         $data = [
-            'etablissement' => $etablissement,
-            'annee_libelle' => $anneeLibelle,
-            'filiere_libelle' => $filiereLibelle,
-            'niveau_libelle' => $niveauLibelle,
-            'categorie_filtre' => $categorie,
-            'editeur_nom' => $editeurNom,
-            'items' => $items
+            'etablissement'         => $etablissement,
+            'logoPath'              => $logoPath,
+            'annee_libelle'         => $anneeLibelle,
+            'filiere_libelle'       => $filiereLibelle,
+            'niveau_libelle'        => $niveauLibelle,
+            'categorie_filtre'      => $categorie,
+            'editeur_nom'           => $editeurNom,
+            'date_edition'          => date('d/m/Y à H:i'),
+            'totalMatieres'         => $totalMatieres,
+            'totalGenerales'        => $totalGenerales,
+            'totalProfessionnelles' => $totalProfessionnelles,
+            'items'                 => $items
         ];
 
         $html = PdfService::renderTemplate('maquette_pedagogique.php', $data);

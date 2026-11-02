@@ -30,7 +30,7 @@ class ModelMaquette extends BaseModel
             WHERE mq.filiere_code = ? AND mq.niveau_code = ?
               AND (mq.annee_code = ? OR ? = '')
             ORDER BY 
-                CASE WHEN mq.categorie_matiere = 'GENERALE' THEN 1 ELSE 2 END ASC,
+                CASE WHEN mq.categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC,
                 m.libelle_matiere ASC
         ";
 
@@ -125,13 +125,13 @@ class ModelMaquette extends BaseModel
         $niveauCode = trim($data['niveau_code'] ?? '');
         $matiereCode = trim($data['matiere_code'] ?? '');
         $anneeCode = trim($data['annee_code'] ?? (Session::get('annee_active_code') ?: ''));
-        $categorie = in_array(strtoupper(trim($data['categorie_matiere'] ?? '')), ['GENERALE', 'PROFESSIONNELLE']) 
+        $categorie = in_array(strtoupper(trim($data['categorie_matiere'] ?? '')), [CATEGORIES_MATIERES::GENERALE, CATEGORIES_MATIERES::PROFESSIONNELLE]) 
                      ? strtoupper(trim($data['categorie_matiere'])) 
-                     : 'GENERALE';
+                     : CATEGORIES_MATIERES::GENERALE;
         $coefficient = (float)($data['coefficient'] ?? 1.00);
         if ($coefficient <= 0) $coefficient = 1.00;
         $volumeHoraire = (int)($data['volume_horaire'] ?? 0);
-        $statut = ($data['statut_maquette'] ?? 'actif') === 'inactif' ? 'inactif' : 'actif';
+        $statut = ($data['statut_maquette'] ?? STATUTS::ACTIF) === STATUTS::INACTIF ? STATUTS::INACTIF : STATUTS::ACTIF;
         $userCode = $data['user_code'] ?? Session::get('user_code') ?? null;
         $etablissementCode = $data['etablissement_code'] ?? Session::get('etablissement_code') ?? 'ETA-052CG';
         $idMaquette = !empty($data['id_maquette']) ? (int)$data['id_maquette'] : null;
@@ -254,7 +254,7 @@ class ModelMaquette extends BaseModel
                     $row['coefficient'],
                     $row['volume_horaire'] ?? 0,
                     $etablissementCode,
-                    $row['statut_maquette'] ?? 'actif',
+                    $row['statut_maquette'] ?? STATUTS::ACTIF,
                     $userCode
                 ]);
                 $imported++;

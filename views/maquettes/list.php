@@ -121,8 +121,8 @@ require_once __DIR__ . '/../../public/inc/header.php';
             <label style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px; display: block;">Catégorie</label>
             <select id="filter-categorie" class="form-control select2" style="width: 100%;">
               <option value="">-- Toutes les catégories --</option>
-              <option value="GENERALE">Matières Générales</option>
-              <option value="PROFESSIONNELLE">Matières Professionnelles</option>
+              <option value="<?= CATEGORIES_MATIERES::GENERALE ?>">Matières Générales</option>
+              <option value="<?= CATEGORIES_MATIERES::PROFESSIONNELLE ?>">Matières Professionnelles</option>
             </select>
           </div>
         </div>
@@ -212,8 +212,8 @@ require_once __DIR__ . '/../../public/inc/header.php';
         <div>
           <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Catégorie (Pour Bulletin) *</label>
           <select name="categorie_matiere" id="maq_categorie" class="form-control" required style="width:100%; border-radius:6px; height:38px;">
-            <option value="GENERALE">MATIÈRES GÉNÉRALES</option>
-            <option value="PROFESSIONNELLE">MATIÈRES PROFESSIONNELLES</option>
+            <option value="<?= CATEGORIES_MATIERES::GENERALE ?>">MATIÈRES GÉNÉRALES</option>
+            <option value="<?= CATEGORIES_MATIERES::PROFESSIONNELLE ?>">MATIÈRES PROFESSIONNELLES</option>
           </select>
           <small style="color:#64748B; font-size:11px;">Définit le bloc d'affichage et le sous-total dans le bulletin</small>
         </div>

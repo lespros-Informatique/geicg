@@ -152,6 +152,7 @@ class PERMISSIONS
     public const MANAGE_CLASSES                   = 'MANAGE_CLASSES';
     public const MANAGE_CYCLES                    = 'MANAGE_CYCLES';
     public const MANAGE_FILIERES                  = 'MANAGE_FILIERES';
+    public const MANAGE_MAQUETTES                 = 'MANAGE_MAQUETTES';
     public const MANAGE_MATIERES                  = 'MANAGE_MATIERES';
     public const MANAGE_NIVEAUX                   = 'MANAGE_NIVEAUX';
     public const MANAGE_SALLES                    = 'MANAGE_SALLES';
@@ -159,12 +160,14 @@ class PERMISSIONS
     public const MANAGE_UE                        = 'MANAGE_UE';
     public const PRINT_CLASSES                    = 'PRINT_CLASSES';
     public const PRINT_FILIERES                   = 'PRINT_FILIERES';
+    public const PRINT_MAQUETTES                  = 'PRINT_MAQUETTES';
     public const PRINT_OFFRE_ACADEMIQUE           = 'PRINT_OFFRE_ACADEMIQUE';
     public const PRINT_SALLES                     = 'PRINT_SALLES';
     public const VIEW_ANNEES                      = 'VIEW_ANNEES';
     public const VIEW_CLASSES                     = 'VIEW_CLASSES';
     public const VIEW_CYCLES                      = 'VIEW_CYCLES';
     public const VIEW_FILIERES                    = 'VIEW_FILIERES';
+    public const VIEW_MAQUETTES                   = 'VIEW_MAQUETTES';
     public const VIEW_MATIERES                    = 'VIEW_MATIERES';
     public const VIEW_NIVEAUX                     = 'VIEW_NIVEAUX';
     public const VIEW_SALLES                      = 'VIEW_SALLES';
@@ -341,5 +344,27 @@ class STATUTS
     public const TYPES_FILIERES = [
         'INDUSTRIELLE' => 'Filière Industrielle',
         'TERTIAIRE'    => 'Filière Tertiaire'
+    ];
+
+    // MAQUETTES PÉDAGOGIQUES
+    public const MAQUETTES = [self::ACTIF, self::INACTIF];
+
+    // CATÉGORIES DE MATIÈRES (MAQUETTE & BULLETIN)
+    public const CATEGORIE_GENERALE        = 'GENERALE';
+    public const CATEGORIE_PROFESSIONNELLE = 'PROFESSIONNELLE';
+    public const CATEGORIES_MATIERES       = [
+        self::CATEGORIE_GENERALE        => 'Matières Générales',
+        self::CATEGORIE_PROFESSIONNELLE => 'Matières Professionnelles'
+    ];
+}
+
+class CATEGORIES_MATIERES
+{
+    public const GENERALE        = 'GENERALE';
+    public const PROFESSIONNELLE = 'PROFESSIONNELLE';
+
+    public const ALL = [
+        self::GENERALE        => 'Matières Générales',
+        self::PROFESSIONNELLE => 'Matières Professionnelles'
     ];
 }
