@@ -177,7 +177,8 @@ class ModelBulletin extends BaseModel
                     'libelle' => $n['libelle_matiere'] ?: 'Matière sans nom',
                     'coefficient' => (float)($n['coefficient_maquette'] ?? 1),
                     'categorie_matiere' => strtoupper($n['categorie_matiere'] ?? CATEGORIES_MATIERES::GENERALE),
-                    'prof' => trim($n['nom_enseignant'] ?? '') ?: 'Non assigné',
+                    'prof' => trim($n['nom_enseignant'] ?? ($n['enseignant'] ?? '')) ?: 'Non assigné',
+                    'enseignant' => trim($n['enseignant'] ?? ($n['nom_enseignant'] ?? '')) ?: 'Non assigné',
                     'evaluations' => [],
                     'sum_notes_pond' => 0.0,
                     'sum_coef_comp' => 0.0
