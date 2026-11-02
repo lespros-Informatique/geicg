@@ -881,7 +881,10 @@ $(document).ready(function() {
   function renderClasseOptions(classList, selectedCode) {
     var $sel = $('#sel_classe_code');
     var currentVal = selectedCode || $sel.val();
-    $sel.empty().append('<option value="">-- Choisir la classe --</option>');
+    var placeholder = (classList.length === 0 && $('#sel_type_eval').val() === 'EXAMEN')
+      ? '-- Sélectionner d\'abord un examen programmé --'
+      : '-- Choisir la classe --';
+    $sel.empty().append('<option value="">' + placeholder + '</option>');
     
     var valStillExists = false;
     classList.forEach(function(c) {
@@ -898,6 +901,20 @@ $(document).ready(function() {
       $sel.val('');
     }
     $sel.trigger('change.select2');
+  }
+
+  // Filtrer les classes ciblées par un examen pour ne garder que celles autorisées pour l'utilisateur
+  function filterClassesForExam(targetClasses) {
+    if (!targetClasses || targetClasses.length === 0) {
+      return window.ALL_CLASSES;
+    }
+    var allowedMap = {};
+    window.ALL_CLASSES.forEach(function(ac) {
+      allowedMap[ac.code_classe] = true;
+    });
+    return targetClasses.filter(function(tc) {
+      return !!allowedMap[tc.code_classe];
+    });
   }
 
   // 1. Détection du Type d'Évaluation : Tout réinitialiser lors d'un changement
@@ -921,8 +938,12 @@ $(document).ready(function() {
       // Réinitialiser Coefficient (déverrouillé et vide)
       $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly').val('');
 
-      // Réinitialiser Classe (remettre toutes les classes et vider la sélection)
-      renderClasseOptions(window.ALL_CLASSES, '');
+      // Réinitialiser Classe
+      if (typeEval === 'EXAMEN') {
+        renderClasseOptions([], '');
+      } else {
+        renderClasseOptions(window.ALL_CLASSES, '');
+      }
       $('#sel_classe_code').val('').trigger('change.select2');
 
       // Réinitialiser Matière (vider la liste et remettre l'option d'attente)
@@ -944,8 +965,19 @@ $(document).ready(function() {
       // A) Sélection Type EXAMEN : affiche le sélecteur d'examen programmé
       $('#box-composition-select').slideDown(200);
       $('#box-libelle-eval').slideUp(150);
-      // Le bloc des 4 champs reste masqué tant que l'examen n'est pas choisi
       $('#box-params-fields').slideUp(150);
+
+      // S'il n'y a qu'un seul examen dans la liste ou si un examen est déjà sélectionné
+      var currentComp = $('#sel_composition_code').val();
+      var $examOptions = $('#sel_composition_code option').filter(function() { return $(this).val() !== ''; });
+
+      if (currentComp) {
+        $('#sel_composition_code').trigger('change');
+      } else if ($examOptions.length === 1) {
+        $('#sel_composition_code').val($examOptions.first().val()).trigger('change');
+      } else {
+        renderClasseOptions([], '');
+      }
     } else {
       // B) Sélection Type INTERROGATION, DEVOIR ou AUTRE :
       $('#box-composition-select').slideUp(150);
@@ -971,7 +1003,6 @@ $(document).ready(function() {
 
     if (!isInitialLoading) {
       $('#box-grille-notes-container').empty();
-      renderClasseOptions(window.ALL_CLASSES, '');
       $('#sel_classe_code').val('').trigger('change.select2');
       $('#sel_matiere_code').empty().append('<option value="">-- Choisir d\'abord une classe --</option>').val('').trigger('change.select2');
       $('#badge-matiere-count').text('0 matière(s)');
@@ -979,6 +1010,7 @@ $(document).ready(function() {
 
     if (!compCode) {
       if ($('#sel_type_eval').val() === 'EXAMEN') {
+        renderClasseOptions([], '');
         $('#box-params-fields').slideUp(150);
       }
       return;
@@ -1016,8 +1048,8 @@ $(document).ready(function() {
       $('#input_libelle_eval').val(lib);
     }
 
-    // 1- Filtrer les classes concernées par cet examen
-    var classesToRender = (targetClasses && targetClasses.length > 0) ? targetClasses : window.ALL_CLASSES;
+    // 1- Filtrer les classes concernées par cet examen et autorisées pour cet utilisateur
+    var classesToRender = filterClassesForExam(targetClasses);
     var currentClasse = isInitialLoading ? selectedClasseCode : '';
     renderClasseOptions(classesToRender, currentClasse);
 
@@ -1249,7 +1281,7 @@ $(document).ready(function() {
           targetClasses = (typeof rawClasses === 'string') ? JSON.parse(rawClasses) : rawClasses;
         } catch(e) {}
       }
-      var classesToRender = (targetClasses && targetClasses.length > 0) ? targetClasses : window.ALL_CLASSES;
+      var classesToRender = filterClassesForExam(targetClasses);
       renderClasseOptions(classesToRender, initialClasse);
       $('#sel_semestre_code').prop('disabled', true);
       $('#badge-semestre-lock').show();

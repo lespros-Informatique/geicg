@@ -542,7 +542,18 @@ class NoteController extends BaseController
 
     protected function getMatieresForClasse(string $classeCode, string $anneeCode, string $compositionCode = ''): array
     {
-        return $this->model->getMatieresForClasse($classeCode, $anneeCode, $compositionCode);
+        $matieres = $this->model->getMatieresForClasse($classeCode, $anneeCode, $compositionCode);
+        $teacherCtx = $this->getTeacherContext();
+        if (!empty($teacherCtx['isTeacherOnly']) && !empty($teacherCtx['teacherCodes'])) {
+            $teacherMatieres = $this->model->getMatieresForTeacher($teacherCtx['teacherCodes'], $anneeCode);
+            $teacherMatCodes = array_column($teacherMatieres, 'code_matiere');
+            if (!empty($teacherMatCodes)) {
+                $matieres = array_values(array_filter($matieres, function($m) use ($teacherMatCodes) {
+                    return in_array($m['code_matiere'] ?? '', $teacherMatCodes, true);
+                }));
+            }
+        }
+        return $matieres;
     }
 
     public function getMatieresByClasseApi()
@@ -602,10 +613,11 @@ class NoteController extends BaseController
         $teacherCodes = $teacherCtx['teacherCodes'];
 
         if ($isTeacherOnly && !empty($teacherCodes)) {
-            $classes = $this->model->getClassesForTeacher($teacherCodes, $anneeCode);
+            $allUserClasses = $this->model->getClassesForTeacher($teacherCodes, $anneeCode);
         } else {
-            $classes = (new ModelClasse())->getAll();
+            $allUserClasses = (new ModelClasse())->getAll();
         }
+        $userAllowedClassCodes = array_column($allUserClasses, 'code_classe');
 
         $semestres = (new ModelSemestre())->getAll($anneeCode);
         
@@ -622,19 +634,39 @@ class NoteController extends BaseController
         $compositionsProgrammees = [];
 
         $compModel = new ModelComposition();
-        $tousExamens = $compModel->getAll($anneeCode, null, null, 'EXAMEN');
-        $examCodes = array_column($tousExamens, 'code_composition');
+        $tousExamensRaw = $compModel->getAll($anneeCode, null, null, 'EXAMEN');
+        $examCodes = array_column($tousExamensRaw, 'code_composition');
         $targetsByComp = $compModel->getTargetClassesByCompositions($examCodes);
-        foreach ($tousExamens as &$exam) {
+
+        $tousExamens = [];
+        foreach ($tousExamensRaw as $exam) {
             $targetCls = $targetsByComp[$exam['code_composition']] ?? [];
-            $exam['target_classes'] = array_values(array_filter(array_map(function($tc) {
-                return !empty($tc['code_classe']) ? [
+            $mappedClasses = array_values(array_filter(array_map(function($tc) use ($isTeacherOnly, $userAllowedClassCodes) {
+                if (empty($tc['code_classe'])) {
+                    return null;
+                }
+                if ($isTeacherOnly && !in_array($tc['code_classe'], $userAllowedClassCodes, true)) {
+                    return null;
+                }
+                return [
                     'code_classe' => $tc['code_classe'],
                     'libelle_classe' => $tc['libelle_classe']
-                ] : null;
+                ];
             }, $targetCls)));
+
+            // Si c'est un enseignant et qu'aucune de ses classes ne fait partie de cet examen, on ne l'affiche pas
+            if ($isTeacherOnly && empty($mappedClasses)) {
+                continue;
+            }
+
+            $exam['target_classes'] = $mappedClasses;
+            $tousExamens[] = $exam;
         }
-        unset($exam);
+
+        // Si type EXAMEN et pas d'examen spécifié, mais qu'il n'y a qu'un seul examen disponible
+        if ($selectedTypeEval === 'EXAMEN' && empty($selectedCompositionCode) && count($tousExamens) === 1) {
+            $selectedCompositionCode = $tousExamens[0]['code_composition'];
+        }
 
         if (!empty($selectedCompositionCode)) {
             $selectedCompItem = $compModel->getByCode($selectedCompositionCode);
@@ -651,6 +683,24 @@ class NoteController extends BaseController
                 if (empty($selectedLibelleEval)) $selectedLibelleEval = $existingComp['libelle_composition'];
                 if (empty($selectedCoefEval)) $selectedCoefEval = (string)$existingComp['coefficient'];
             }
+        }
+
+        // Détermination des classes visibles selon le type et l'examen
+        if ($selectedTypeEval === 'EXAMEN') {
+            if (!empty($selectedCompositionCode)) {
+                $foundExam = null;
+                foreach ($tousExamens as $ex) {
+                    if ($ex['code_composition'] === $selectedCompositionCode) {
+                        $foundExam = $ex;
+                        break;
+                    }
+                }
+                $classes = !empty($foundExam['target_classes']) ? $foundExam['target_classes'] : $allUserClasses;
+            } else {
+                $classes = [];
+            }
+        } else {
+            $classes = $allUserClasses;
         }
 
         if (!empty($selectedClasseCode)) {
@@ -692,6 +742,7 @@ class NoteController extends BaseController
             'anneeCode' => $anneeCode,
             'anneeLibelle' => $anneeLibelle,
             'classes' => $classes,
+            'allUserClasses' => $allUserClasses,
             'matieres' => $matieres,
             'semestres' => $semestres,
             'selectedClasseCode' => $selectedClasseCode,

@@ -156,7 +156,7 @@ $typeEvals = [
                    Classe <span style="color:#EF4444;">*</span>
                 </label>
                 <select name="classe_code" id="sel_classe_code" class="form-control select2" required style="width: 100%;">
-                  <option value="">-- Choisir la classe --</option>
+                  <option value="">-- <?= ($selectedTypeEval === 'EXAMEN' && empty($selectedCompositionCode)) ? 'Sélectionner d\'abord un examen programmé' : 'Choisir la classe' ?> --</option>
                   <?php foreach ($classes as $c): ?>
                     <option value="<?= htmlspecialchars($c['code_classe']) ?>" <?= ($selectedClasseCode === $c['code_classe']) ? 'selected' : '' ?>>
                       <?= htmlspecialchars($c['libelle_classe']) ?>
@@ -231,7 +231,7 @@ $typeEvals = [
             'code_classe' => $c['code_classe'],
             'libelle_classe' => $c['libelle_classe']
         ];
-    }, $classes ?? [])),
+    }, $allUserClasses ?? $classes ?? [])),
     'selectedTypeEval' => $selectedTypeEval ?? '',
     'selectedCompositionCode' => $selectedCompositionCode ?? '',
     'selectedClasseCode' => $selectedClasseCode ?? '',
