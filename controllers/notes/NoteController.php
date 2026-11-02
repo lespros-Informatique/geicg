@@ -44,6 +44,46 @@ class NoteController extends BaseController
         ];
     }
 
+    protected function isEnseignantUser(): bool
+    {
+        if (Auth::hasRole(ROLES::ENSEIGNANT)) {
+            return true;
+        }
+
+        $sessionUser = Session::get('user') ?? [];
+        if (!empty($sessionUser['is_enseignant']) || !empty($sessionUser['code_enseignant'])) {
+            return true;
+        }
+
+        $teacherCtx = $this->getTeacherContext();
+        if (!empty($teacherCtx['isTeacherOnly'])) {
+            return true;
+        }
+
+        $userCode = Auth::code();
+        if (!empty($userCode)) {
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT 1 FROM " . TABLES::ENSEIGNANTS . " WHERE user_code = ? OR code_enseignant = ? LIMIT 1");
+                $stmt->execute([$userCode, $userCode]);
+                if ($stmt->fetchColumn()) {
+                    return true;
+                }
+            } catch (Exception $e) {}
+        }
+
+        return false;
+    }
+
+    protected function requireCanEnterNotes(string $customMessage = ''): void
+    {
+        $this->requireAuth();
+        if (!Auth::can(PERMISSIONS::ENTER_NOTES) && !$this->isEnseignantUser()) {
+            $msg = !empty($customMessage) ? $customMessage : "Accès refusé : vous devez posséder le privilège [ENTER_NOTES] ou être enseignant pour accéder à cette section.";
+            $this->renderForbidden($msg, PERMISSIONS::ENTER_NOTES);
+        }
+    }
+
     public function list()
     {
         $this->requireAuth();
@@ -349,7 +389,7 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -413,7 +453,7 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
         $id = (int)$this->post('id_note');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -462,7 +502,7 @@ class NoteController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
@@ -486,7 +526,7 @@ class NoteController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
@@ -508,7 +548,7 @@ class NoteController extends BaseController
     public function getMatieresByClasseApi()
     {
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
         $classeCode = trim($_POST['classe_code'] ?? ($_GET['classe_code'] ?? ''));
         $compositionCode = trim($_POST['composition_code'] ?? ($_GET['composition_code'] ?? ''));
         $anneeCode = $this->getActiveAnneeCode();
@@ -536,7 +576,7 @@ class NoteController extends BaseController
     public function getStudentsByClasse()
     {
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
         $classeCode = trim($_POST['classe_code'] ?? ($_GET['classe_code'] ?? ''));
         $anneeCode = $this->getActiveAnneeCode();
 
@@ -552,12 +592,21 @@ class NoteController extends BaseController
     public function saisieClasse()
     {
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
 
-        $classes = (new ModelClasse())->getAll();
+        $teacherCtx = $this->getTeacherContext();
+        $isTeacherOnly = $teacherCtx['isTeacherOnly'];
+        $teacherCodes = $teacherCtx['teacherCodes'];
+
+        if ($isTeacherOnly && !empty($teacherCodes)) {
+            $classes = $this->model->getClassesForTeacher($teacherCodes, $anneeCode);
+        } else {
+            $classes = (new ModelClasse())->getAll();
+        }
+
         $semestres = (new ModelSemestre())->getAll($anneeCode);
         
         $selectedClasseCode = $_GET['classe_code'] ?? '';
@@ -667,7 +716,7 @@ class NoteController extends BaseController
     public function getGrilleAjax()
     {
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
 
         $anneeCode = $this->getActiveAnneeCode();
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
@@ -748,7 +797,7 @@ class NoteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(PERMISSIONS::ENTER_NOTES);
+        $this->requireCanEnterNotes();
 
         $csrf = $this->post('csrf_token') ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
         if (!Validator::validateCsrfToken($csrf)) {

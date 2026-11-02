@@ -12,7 +12,6 @@ class ModelComposition extends BaseModel
         $sql = "
             SELECT comp.*, 
                    s.libelle_semestre,
-                   m.libelle_matiere,
                    GROUP_CONCAT(DISTINCT CONCAT(f.libelle_filiere, ' (', n.libelle_niveau, ')') ORDER BY f.libelle_filiere SEPARATOR ', ') AS filieres_cible_names,
                    GROUP_CONCAT(DISTINCT cl.libelle_classe ORDER BY cl.libelle_classe SEPARATOR ', ') AS classes_cible_names
             FROM " . TABLES::COMPOSITIONS . " comp
