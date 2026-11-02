@@ -31,7 +31,13 @@ $(document).ready(function() {
         { data: 'nom_enseignant', render: function(d, type, row) {
           if (type !== 'display') return (d || '') + ' ' + (row.prenom_enseignant || '');
           var nomComplet = (d || '') + ' ' + (row.prenom_enseignant || '');
-          return '<strong style="color:#0F172A;">' + (nomComplet.trim() || 'Enseignant sans nom') + '</strong>';
+          var html = '<strong style="color:#0F172A;">' + (nomComplet.trim() || 'Enseignant sans nom') + '</strong>';
+          if (row.matieres_libelles) {
+            html += '<div style="font-size:11px; color:#0284C7; font-weight:600; margin-top:3px; max-width:240px; white-space:normal; line-height:1.2;">' +
+                    '<i data-lucide="book-open" style="width:11px;height:11px;display:inline-block;vertical-align:middle;margin-right:2px;"></i> ' +
+                    row.matieres_libelles + '</div>';
+          }
+          return html;
         }},
         { data: 'sexe_user', width: '60px', className: 'text-center', render: function(d, type, row) {
           var s = (d || row.sexe_enseignant || '').toUpperCase().trim();
@@ -47,16 +53,6 @@ $(document).ready(function() {
           if (d) res += '<div style="font-weight:600; color:#1E3A5F; font-size:13px;">' + d + '</div>';
           if (row.telephone_enseignant) res += '<div style="font-size:12px; color:#64748B;">' + row.telephone_enseignant + '</div>';
           return res || '-';
-        }},
-        { data: 'grade_enseignant', render: function(d, type, row) {
-          if (type !== 'display') return d || '';
-          var html = '<span style="font-weight:600; color:#334155;">' + (d || 'Enseignant') + '</span>';
-          if (row.matieres_libelles) {
-            html += '<div style="font-size:11px; color:#0284C7; font-weight:600; margin-top:3px; max-width:240px; white-space:normal; line-height:1.2;">' +
-                    '<i data-lucide="book-open" style="width:11px;height:11px;display:inline-block;vertical-align:middle;margin-right:2px;"></i> ' +
-                    row.matieres_libelles + '</div>';
-          }
-          return html;
         }},
         { data: 'type_contrat', render: function(d, type, row) {
           if (type !== 'display') return d || '';
