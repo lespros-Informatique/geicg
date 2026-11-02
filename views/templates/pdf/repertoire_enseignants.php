@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Répertoire du Corps Enseignant - GEICG</title>
+  <style>
+    @page {
+      margin-top: 8mm;
+      margin-bottom: 10mm;
+      margin-left: 8mm;
+      margin-right: 8mm;
+    }
+    body {
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-size: 8.5pt;
+      color: #1E293B;
+      line-height: 1.25;
+    }
+
+    /* En-tête */
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 3px;
+    }
+    .header-table td {
+      vertical-align: middle;
+    }
+    .inst-title {
+      font-size: 11.5pt;
+      font-weight: bold;
+      color: #990000;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.15;
+    }
+    .inst-subtitle {
+      font-size: 8.5pt;
+      font-weight: bold;
+      color: #0369A1;
+      margin-top: 1px;
+    }
+    .inst-contacts {
+      font-size: 7.5pt;
+      color: #64748B;
+      margin-top: 1px;
+    }
+
+    .divider-line {
+      height: 1.5px;
+      background-color: #1E3A5F;
+      margin-top: 3px;
+      margin-bottom: 5px;
+    }
+
+    /* Bannière Titre */
+    .banner-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 5px;
+      background-color: #1E3A5F;
+    }
+    .banner-table td {
+      padding: 5px 8px;
+      text-align: center;
+      color: #FFFFFF;
+    }
+    .banner-title {
+      font-size: 11pt;
+      font-weight: bold;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .banner-sub {
+      font-size: 7.5pt;
+      color: #E2E8F0;
+      margin-top: 1px;
+    }
+
+    /* Cartouche Métadonnées */
+    .meta-box-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+      border: 1px solid #CBD5E1;
+      background-color: #F8FAFC;
+    }
+    .meta-box-table td {
+      padding: 3.5px 6px;
+      font-size: 8pt;
+      vertical-align: middle;
+      border: 0.5px solid #E2E8F0;
+    }
+    .meta-label {
+      font-weight: bold;
+      color: #475569;
+    }
+    .meta-value {
+      font-weight: bold;
+      color: #0F172A;
+    }
+
+    /* Résumé Chiffré / KPI */
+    .kpi-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+    }
+    .kpi-cell {
+      padding: 4px 6px;
+      text-align: center;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      border-radius: 4px;
+    }
+    .kpi-num {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #1E3A5F;
+    }
+    .kpi-text {
+      font-size: 6.8pt;
+      color: #475569;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+
+    /* Titres de Sections */
+    .section-header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      background-color: #E2E8F0;
+      border-left: 3.5px solid #1E3A5F;
+    }
+    .section-header-table td {
+      padding: 3.5px 7px;
+      font-size: 8.5pt;
+      font-weight: bold;
+      color: #1E3A5F;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Table de données */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+    .data-table th {
+      background-color: #1E3A5F;
+      color: #FFFFFF;
+      font-size: 7.8pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 5px 6px;
+      border: 0.5px solid #0F233A;
+      text-align: left;
+    }
+    .data-table td {
+      padding: 4.5px 6px;
+      font-size: 8pt;
+      border: 0.5px solid #CBD5E1;
+      vertical-align: middle;
+    }
+    .row-even {
+      background-color: #FFFFFF;
+    }
+    .row-odd {
+      background-color: #F8FAFC;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .text-end {
+      text-align: right;
+    }
+
+    /* Badges */
+    .badge-code {
+      display: inline-block;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 7.5pt;
+      padding: 1.5px 4px;
+      background-color: #F1F5F9;
+      color: #334155;
+      border: 0.5px solid #CBD5E1;
+      border-radius: 3px;
+    }
+    .badge-genre-m {
+      display: inline-block;
+      font-weight: bold;
+      font-size: 7.5pt;
+      padding: 1.5px 5px;
+      background-color: #EFF6FF;
+      color: #1D4ED8;
+      border-radius: 3px;
+    }
+    .badge-genre-f {
+      display: inline-block;
+      font-weight: bold;
+      font-size: 7.5pt;
+      padding: 1.5px 5px;
+      background-color: #FDF2F8;
+      color: #BE185D;
+      border-radius: 3px;
+    }
+    .badge-permanent {
+      display: inline-block;
+      font-weight: bold;
+      font-size: 7.2pt;
+      padding: 1.5px 5px;
+      background-color: #EEF2FF;
+      color: #4338CA;
+      border-radius: 3px;
+    }
+    .badge-vacataire {
+      display: inline-block;
+      font-weight: bold;
+      font-size: 7.2pt;
+      padding: 1.5px 5px;
+      background-color: #FEF3C7;
+      color: #B45309;
+      border-radius: 3px;
+    }
+    .badge-statut-actif {
+      display: inline-block;
+      font-weight: bold;
+      font-size: 7.2pt;
+      padding: 1.5px 5px;
+      background-color: #DCFCE7;
+      color: #15803D;
+      border-radius: 3px;
+    }
+    .badge-statut-inactif {
+      display: inline-block;
+      font-weight: bold;
+      font-size: 7.2pt;
+      padding: 1.5px 5px;
+      background-color: #FEE2E2;
+      color: #B91C1C;
+      border-radius: 3px;
+    }
+
+    /* Signatures */
+    .signature-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      page-break-inside: avoid;
+    }
+    .signature-box {
+      width: 48%;
+      border: 0.5px solid #CBD5E1;
+      background-color: #F8FAFC;
+      padding: 6px 10px;
+      text-align: center;
+      vertical-align: top;
+    }
+    .signature-title {
+      font-weight: bold;
+      font-size: 8pt;
+      color: #1E3A5F;
+      text-transform: uppercase;
+      margin-bottom: 25px;
+    }
+    .signature-mention {
+      font-size: 7pt;
+      color: #64748B;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- EN-TÊTE FIXE POUR MPDF -->
+  <htmlpageheader name="pageHeader">
+    <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
+      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Répertoire du Corps Enseignant &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
+    </div>
+  </htmlpageheader>
+  <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
+
+  <!-- PIED DE PAGE FIXE POUR MPDF -->
+  <htmlpagefooter name="pageFooter">
+    <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
+      <tr>
+        <td style="width: 40%; text-align: left;">
+          Document généré par le Système GEICG &bull; <?= date('d/m/Y H:i:s') ?>
+        </td>
+        <td style="width: 20%; text-align: center; font-weight: bold;">
+          Page {PAGENO} / {nbpg}
+        </td>
+        <td style="width: 40%; text-align: right;">
+          Réf: REF-ENS-<?= date('Ymd-His') ?>
+        </td>
+      </tr>
+    </table>
+  </htmlpagefooter>
+  <sethtmlpagefooter name="pageFooter" value="on" />
+
+  <!-- ENTÊTE DE L'ÉTABLISSEMENT -->
+  <?php
+    $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+    if (!file_exists($logoPath)) {
+      $logoPath = '/var/www/html/geicg/public/assets/images/logo/logo_eicg.jpg';
+    }
+  ?>
+  <table class="header-table">
+    <tr>
+      <td style="width: 22%; text-align: left;">
+        <?php if (file_exists($logoPath)): ?>
+          <img src="<?= $logoPath ?>" style="max-height: 52px; max-width: 135px;" alt="Logo EICG">
+        <?php else: ?>
+          <div style="font-size: 14pt; font-weight: bold; color: #1E3A5F;">GROUPE EICG</div>
+        <?php endif; ?>
+      </td>
+      <td style="width: 78%; text-align: center;">
+        <?php
+          $nomEtab = 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION';
+          if (!empty($etablissement['libelle_etablissement']) && !in_array(strtoupper(trim($etablissement['libelle_etablissement'])), ['GROUPE EICG', 'GEICG', 'ETABLISSEMENT A'], true)) {
+              $nomEtab = $etablissement['libelle_etablissement'];
+          }
+        ?>
+        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars(!empty($etablissement['numero_autorisation_etablissement']) ? 'AGRÉMENT N° ' . $etablissement['numero_autorisation_etablissement'] : 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP') ?></div>
+        <div class="inst-contacts">
+          <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : 'Bouaké - Côte d\'Ivoire') ?>
+          &nbsp;|&nbsp; Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="divider-line"></div>
+
+  <!-- BANNIÈRE DE TITRE -->
+  <table class="banner-table">
+    <tr>
+      <td>
+        <div class="banner-title">RÉPERTOIRE DU CORPS ENSEIGNANT</div>
+        <div class="banner-sub">REGISTRE DES PROFESSEURS & INTERVENANTS PÉDAGOGIQUES</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- CARTOUCHE DE MÉTADONNÉES -->
+  <?php
+    $libelleGenreFiltre = 'Tous les genres';
+    if ($sexe_filtre === 'M') $libelleGenreFiltre = 'Masculin (H)';
+    elseif ($sexe_filtre === 'F') $libelleGenreFiltre = 'Féminin (F)';
+
+    $libelleContratFiltre = 'Tous les contrats';
+    if ($contrat_filtre === 'permanent') $libelleContratFiltre = 'Permanent / Titulaire';
+    elseif ($contrat_filtre === 'vacataire') $libelleContratFiltre = 'Vacataire';
+    elseif ($contrat_filtre === 'prestataire') $libelleContratFiltre = 'Prestataire';
+  ?>
+  <table class="meta-box-table">
+    <tr>
+      <td style="width: 33%;">
+        <span class="meta-label">Année Académique :</span> 
+        <span class="meta-value" style="color: #0369A1; font-size: 9pt;"><?= htmlspecialchars($annee_libelle ?? 'Toutes les années') ?></span>
+      </td>
+      <td style="width: 34%;">
+        <span class="meta-label">Date d'édition :</span> 
+        <span class="meta-value"><?= date('d/m/Y à H:i') ?></span>
+      </td>
+      <td style="width: 33%;">
+        <span class="meta-label">Édité par :</span> 
+        <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? 'Direction des Études') ?></span>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <span class="meta-label">Filtre Genre :</span> 
+        <span class="meta-value"><?= htmlspecialchars($libelleGenreFiltre) ?></span>
+      </td>
+      <td>
+        <span class="meta-label">Filtre Contrat :</span> 
+        <span class="meta-value"><?= htmlspecialchars($libelleContratFiltre) ?></span>
+      </td>
+      <td>
+        <span class="meta-label">Effectif Listé :</span> 
+        <span class="meta-value" style="color: #1E3A5F; font-size: 9pt;"><?= (int)count($enseignants) ?> enseignant(s)</span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- SYNTHÈSE CHIFFRÉE / KPI -->
+  <table class="kpi-table">
+    <tr>
+      <td class="kpi-cell" style="width: 25%;">
+        <div class="kpi-num"><?= (int)($stats['total'] ?? 0) ?></div>
+        <div class="kpi-text">Total Enseignants</div>
+      </td>
+      <td class="kpi-cell" style="width: 25%;">
+        <div class="kpi-num" style="color: #7C3AED;"><?= (int)($stats['hommes'] ?? 0) ?> H / <?= (int)($stats['femmes'] ?? 0) ?> F</div>
+        <div class="kpi-text">Genre (Hommes / Femmes)</div>
+      </td>
+      <td class="kpi-cell" style="width: 25%;">
+        <div class="kpi-num" style="color: #4338CA;"><?= (int)($stats['permanents'] ?? 0) ?></div>
+        <div class="kpi-text">Contrats Permanents</div>
+      </td>
+      <td class="kpi-cell" style="width: 25%;">
+        <div class="kpi-num" style="color: #B45309;"><?= (int)($stats['vacataires'] ?? 0) ?></div>
+        <div class="kpi-text">Vacataires / Prestataires</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- SECTION : TABLEAU DES ENSEIGNANTS -->
+  <table class="section-header-table">
+    <tr>
+      <td>Nomenclature Nominative des Enseignants</td>
+    </tr>
+  </table>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 5%; text-align: center;">#</th>
+        <th style="width: 14%; text-align: center;">Code</th>
+        <th style="width: 28%;">Nom & Prénoms</th>
+        <th style="width: 8%; text-align: center;">Genre</th>
+        <th style="width: 23%;">Contact / Email</th>
+        <th style="width: 12%; text-align: center;">Contrat</th>
+        <th style="width: 10%; text-align: center;">Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php if (!empty($enseignants)): ?>
+        <?php foreach ($enseignants as $idx => $ens): ?>
+          <?php
+            $isEven = ($idx % 2 === 0);
+            $nom = trim($ens['nom_enseignant'] ?? ($ens['nom_user'] ?? ''));
+            $prenom = trim($ens['prenom_enseignant'] ?? ($ens['prenom_user'] ?? ''));
+            $code = trim($ens['code_enseignant'] ?? ($ens['matricule_user'] ?? '-'));
+            $sexe = strtoupper(trim($ens['sexe_user'] ?? ($ens['sexe_enseignant'] ?? '')));
+            $email = trim($ens['email_enseignant'] ?? ($ens['email_user'] ?? ''));
+            $tel = trim($ens['telephone_enseignant'] ?? ($ens['telephone_user'] ?? ''));
+            $contrat = strtolower(trim($ens['type_contrat'] ?? ''));
+            $statut = strtolower(trim($ens['statut_enseignant'] ?? ($ens['statut_user'] ?? 'actif')));
+          ?>
+          <tr class="<?= $isEven ? 'row-even' : 'row-odd' ?>">
+            <td class="text-center" style="font-weight: bold; color: #64748B;">
+              <?= $idx + 1 ?>
+            </td>
+            <td class="text-center">
+              <span class="badge-code"><?= htmlspecialchars($code) ?></span>
+            </td>
+            <td>
+              <strong style="color: #0F172A; text-transform: uppercase;"><?= htmlspecialchars($nom) ?></strong><br>
+              <span style="color: #475569;"><?= htmlspecialchars($prenom) ?></span>
+            </td>
+            <td class="text-center">
+              <?php if ($sexe === 'M' || $sexe === 'MASCULIN'): ?>
+                <span class="badge-genre-m">M</span>
+              <?php elseif ($sexe === 'F' || $sexe === 'FEMININ'): ?>
+                <span class="badge-genre-f">F</span>
+              <?php else: ?>
+                <span style="color: #94A3B8;">-</span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <?php if (!empty($tel)): ?>
+                <div style="font-weight: bold; color: #0F172A;"><?= htmlspecialchars($tel) ?></div>
+              <?php endif; ?>
+              <?php if (!empty($email)): ?>
+                <div style="color: #64748B; font-size: 7.2pt;"><?= htmlspecialchars($email) ?></div>
+              <?php endif; ?>
+              <?php if (empty($tel) && empty($email)): ?>
+                <span style="color: #94A3B8;">-</span>
+              <?php endif; ?>
+            </td>
+            <td class="text-center">
+              <?php if ($contrat === 'permanent'): ?>
+                <span class="badge-permanent">Permanent</span>
+              <?php elseif ($contrat === 'vacataire'): ?>
+                <span class="badge-vacataire">Vacataire</span>
+              <?php elseif ($contrat === 'prestataire'): ?>
+                <span class="badge-vacataire">Prestataire</span>
+              <?php else: ?>
+                <span style="color: #64748B;"><?= htmlspecialchars(ucfirst($contrat ?: '-')) ?></span>
+              <?php endif; ?>
+            </td>
+            <td class="text-center">
+              <?php if ($statut === 'actif'): ?>
+                <span class="badge-statut-actif">Actif</span>
+              <?php else: ?>
+                <span class="badge-statut-inactif">Inactif</span>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <tr>
+          <td colspan="7" class="text-center" style="padding: 15px; color: #64748B;">
+            Aucun enseignant ne correspond aux critères de recherche.
+          </td>
+        </tr>
+      <?php endif; ?>
+    </tbody>
+  </table>
+
+  <!-- BLOC DE SIGNATURES -->
+  <table class="signature-table">
+    <tr>
+      <td class="signature-box">
+        <div class="signature-title">La Direction des Études & Pédagogie</div>
+        <div style="height: 38px;"></div>
+        <div class="signature-mention">Cachet & Signature autorisée</div>
+      </td>
+      <td style="width: 4%;"></td>
+      <td class="signature-box">
+        <div class="signature-title">La Direction Générale</div>
+        <div style="height: 38px;"></div>
+        <div class="signature-mention">Cachet & Signature autorisée</div>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+

@@ -90,28 +90,32 @@ $(document).ready(function() {
           var json = api.ajax.json();
           if (json && json.stats) {
             $('#kpi-total-enseignants').text(json.stats.total || 0);
-            $('#kpi-actifs-enseignants').text(json.stats.actifs || 0);
+            $('#kpi-hommes-enseignants').text(json.stats.hommes || 0);
+            $('#kpi-femmes-enseignants').text(json.stats.femmes || 0);
             $('#kpi-permanents-enseignants').text(json.stats.permanents || 0);
             $('#kpi-vacataires-enseignants').text(json.stats.vacataires || 0);
           } else {
             var rows = api.rows().data().toArray();
             var total = rows.length;
-            var actifs = 0;
+            var hommes = 0;
+            var femmes = 0;
             var permanents = 0;
             var vacataires = 0;
 
             rows.forEach(function(r) {
               if (r) {
-                var st = (r.statut_enseignant || '').toString().toLowerCase().trim();
+                var sx = (r.sexe_user || r.sexe_enseignant || '').toString().toUpperCase().trim();
                 var tc = (r.type_contrat || '').toString().toLowerCase().trim();
-                if (st === 'actif') actifs++;
+                if (sx === 'M' || sx === 'MASCULIN') hommes++;
+                else if (sx === 'F' || sx === 'FEMININ') femmes++;
                 if (tc === 'permanent') permanents++;
                 else if (tc === 'vacataire' || tc === 'prestataire') vacataires++;
               }
             });
 
             $('#kpi-total-enseignants').text(total);
-            $('#kpi-actifs-enseignants').text(actifs);
+            $('#kpi-hommes-enseignants').text(hommes);
+            $('#kpi-femmes-enseignants').text(femmes);
             $('#kpi-permanents-enseignants').text(permanents);
             $('#kpi-vacataires-enseignants').text(vacataires);
           }
@@ -119,8 +123,11 @@ $(document).ready(function() {
       }
     });
 
-    // Initialisation Select2 des filtres avancés
-    $('#filter-statut, #filter-contrat, #filter-matiere, #filter-grade, #filter-sexe').select2({
+    // Variable d'état pour le filtre rapide KPI (ex: Actifs)
+    var kpiFilterStatut = '';
+
+    // Initialisation Select2 des filtres avancés (Année, Genre, Type de contrat)
+    $('#filter-annee, #filter-sexe, #filter-contrat').select2({
       width: '100%'
     });
 
@@ -130,65 +137,72 @@ $(document).ready(function() {
         return true;
       }
 
-      var filterStatut = ($('#filter-statut').val() || '').toLowerCase().trim();
-      var filterContrat = ($('#filter-contrat').val() || '').toLowerCase().trim();
-      var filterMatiere = ($('#filter-matiere').val() || '').trim();
-      var filterGrade = ($('#filter-grade').val() || '').toLowerCase().trim();
+      var filterAnnee = ($('#filter-annee').val() || '').trim();
       var filterSexe = ($('#filter-sexe').val() || '').toUpperCase().trim();
+      var filterContrat = ($('#filter-contrat').val() || '').toLowerCase().trim();
 
-      // 1. Filtre par Statut
-      if (filterStatut) {
-        var rowStatut = (rowData.statut_enseignant || '').toString().toLowerCase().trim();
-        if (rowStatut !== filterStatut) return false;
+      // 1. Filtre par Année Académique
+      if (filterAnnee) {
+        var anneesCodes = (rowData.annees_codes || '').toString().split(',');
+        if (anneesCodes.indexOf(filterAnnee) === -1) return false;
       }
 
-      // 2. Filtre par Contrat
-      if (filterContrat) {
-        var rowContrat = (rowData.type_contrat || '').toString().toLowerCase().trim();
-        if (rowContrat !== filterContrat) return false;
-      }
-
-      // 3. Filtre par Matière
-      if (filterMatiere) {
-        var matCodes = (rowData.matieres_codes || '').toString().split(',');
-        if (matCodes.indexOf(filterMatiere) === -1) return false;
-      }
-
-      // 4. Filtre par Grade Académique
-      if (filterGrade) {
-        var rowGrade = (rowData.grade_enseignant || '').toString().toLowerCase().trim();
-        if (rowGrade.indexOf(filterGrade) === -1) return false;
-      }
-
-      // 5. Filtre par Genre / Sexe
+      // 2. Filtre par Genre / Sexe
       if (filterSexe) {
         var rowSexe = (rowData.sexe_user || rowData.sexe_enseignant || '').toString().toUpperCase().trim();
         if (filterSexe === 'M' && rowSexe !== 'M' && rowSexe !== 'MASCULIN') return false;
         if (filterSexe === 'F' && rowSexe !== 'F' && rowSexe !== 'FEMININ') return false;
       }
 
+      // 3. Filtre par Type de Contrat
+      if (filterContrat) {
+        var rowContrat = (rowData.type_contrat || '').toString().toLowerCase().trim();
+        if (rowContrat !== filterContrat) return false;
+      }
+
+      // 4. Filtre rapide par statut via carte KPI (ex: Enseignants Actifs)
+      if (kpiFilterStatut) {
+        var rowStatut = (rowData.statut_enseignant || '').toString().toLowerCase().trim();
+        if (rowStatut !== kpiFilterStatut) return false;
+      }
+
       return true;
     });
 
+    // Synchronisation de l'URL du bouton Imprimer en fonction des filtres actifs
+    function updatePrintUrl() {
+      var annee = ($('#filter-annee').val() || '').trim();
+      var sexe = ($('#filter-sexe').val() || '').trim();
+      var contrat = ($('#filter-contrat').val() || '').trim();
+      var params = [];
+      if (annee) params.push('annee_code=' + encodeURIComponent(annee));
+      if (sexe) params.push('sexe=' + encodeURIComponent(sexe));
+      if (contrat) params.push('type_contrat=' + encodeURIComponent(contrat));
+      var qs = params.length > 0 ? ('?' + params.join('&')) : '';
+      $('#btn-print-enseignants').attr('href', racine + 'enseignant/imprimerPdf' + qs);
+    }
+    updatePrintUrl();
+
     // Déclencheur sur changement des filtres select2
-    $('#filter-statut, #filter-contrat, #filter-matiere, #filter-grade, #filter-sexe').on('change', function() {
+    $('#filter-annee, #filter-sexe, #filter-contrat').on('change', function() {
       table.draw();
+      updatePrintUrl();
     });
 
     // Réinitialisation globale de tous les filtres
     $('#btn-reset-filters').on('click', function(e) {
       e.preventDefault();
-      $('#filter-statut').val('').trigger('change.select2');
-      $('#filter-contrat').val('').trigger('change.select2');
-      $('#filter-matiere').val('').trigger('change.select2');
-      $('#filter-grade').val('').trigger('change.select2');
+      kpiFilterStatut = '';
+      $('#filter-annee').val('').trigger('change.select2');
       $('#filter-sexe').val('').trigger('change.select2');
+      $('#filter-contrat').val('').trigger('change.select2');
       $('.kpi-card-filter').css({
         'border-color': '#E2E8F0',
         'box-shadow': '0 1px 3px rgba(0,0,0,0.04)',
         'transform': 'none'
       });
       table.search('').draw();
+      updatePrintUrl();
     });
 
     // Filtrage rapide au clic sur les cartes statistiques KPI
@@ -208,18 +222,21 @@ $(document).ready(function() {
         });
       }
 
-      if (filterVal === 'actif' || filterVal === 'inactif') {
-        $('#filter-statut').val(filterVal).trigger('change.select2');
-        $('#filter-contrat').val('').trigger('change.select2');
+      if (filterVal === 'genre') {
+        var currentSexe = $('#filter-sexe').val();
+        if (!currentSexe) {
+          $('#filter-sexe').val('M').trigger('change.select2');
+        } else if (currentSexe === 'M') {
+          $('#filter-sexe').val('F').trigger('change.select2');
+        } else {
+          $('#filter-sexe').val('').trigger('change.select2');
+        }
       } else if (filterVal === 'permanent' || filterVal === 'vacataire' || filterVal === 'prestataire') {
         $('#filter-contrat').val(filterVal).trigger('change.select2');
-        $('#filter-statut').val('').trigger('change.select2');
       } else {
-        $('#filter-statut').val('').trigger('change.select2');
-        $('#filter-contrat').val('').trigger('change.select2');
-        $('#filter-matiere').val('').trigger('change.select2');
-        $('#filter-grade').val('').trigger('change.select2');
+        $('#filter-annee').val('').trigger('change.select2');
         $('#filter-sexe').val('').trigger('change.select2');
+        $('#filter-contrat').val('').trigger('change.select2');
       }
       table.draw();
     });

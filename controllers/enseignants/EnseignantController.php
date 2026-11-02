@@ -12,12 +12,12 @@ class EnseignantController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
         $stats = $this->model->getStats();
-        $matieres = (new ModelMatiere())->getAll();
-        $grades = $this->model->getDistinctGrades();
+        $annees = (new ModelAnnee())->getAll();
+        $selectedAnneeCode = Session::get('annee_active_code');
         $this->loadView('../views/enseignants/list.php', [
             'stats' => $stats,
-            'matieres' => $matieres,
-            'grades' => $grades
+            'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
 
@@ -38,6 +38,114 @@ class EnseignantController extends BaseController
         $this->json([
             'data' => $data,
             'stats' => $this->model->getStats()
+        ]);
+    }
+
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = trim($_GET['annee_code'] ?? '');
+        $sexe = strtoupper(trim($_GET['sexe'] ?? ''));
+        $typeContrat = strtolower(trim($_GET['type_contrat'] ?? ''));
+
+        $allEnseignants = $this->model->getAll();
+        $enseignants = [];
+
+        foreach ($allEnseignants as $ens) {
+            // Filtre par année
+            if (!empty($anneeCode)) {
+                $anneesCodes = explode(',', $ens['annees_codes'] ?? '');
+                if (!in_array($anneeCode, $anneesCodes, true)) {
+                    continue;
+                }
+            }
+
+            // Filtre par genre
+            if (!empty($sexe)) {
+                $rowSexe = strtoupper(trim($ens['sexe_user'] ?? ($ens['sexe_enseignant'] ?? '')));
+                if ($sexe === 'M' && $rowSexe !== 'M' && $rowSexe !== 'MASCULIN') {
+                    continue;
+                }
+                if ($sexe === 'F' && $rowSexe !== 'F' && $rowSexe !== 'FEMININ') {
+                    continue;
+                }
+            }
+
+            // Filtre par type de contrat
+            if (!empty($typeContrat)) {
+                $rowContrat = strtolower(trim($ens['type_contrat'] ?? ''));
+                if ($rowContrat !== $typeContrat) {
+                    continue;
+                }
+            }
+
+            $enseignants[] = $ens;
+        }
+
+        // Tri alphabétique (Nom, puis Prénoms)
+        usort($enseignants, function ($a, $b) {
+            $nomA = mb_strtolower(trim(($a['nom_enseignant'] ?? '') . ' ' . ($a['prenom_enseignant'] ?? '')), 'UTF-8');
+            $nomB = mb_strtolower(trim(($b['nom_enseignant'] ?? '') . ' ' . ($b['prenom_enseignant'] ?? '')), 'UTF-8');
+            return strnatcmp($nomA, $nomB);
+        });
+
+        $etablissement = $this->getEtablissementConfig();
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+            if (!empty($anneeItem['libelle_annee'])) {
+                $anneeLibelle = $anneeItem['libelle_annee'];
+            }
+        }
+
+        $editeurNom = Auth::fullName();
+        if (empty($editeurNom)) {
+            $editeurNom = 'Direction des Études & Scolarité';
+        }
+
+        // Statistiques de la sélection
+        $statsFiltre = [
+            'total' => count($enseignants),
+            'hommes' => 0,
+            'femmes' => 0,
+            'permanents' => 0,
+            'vacataires' => 0
+        ];
+        foreach ($enseignants as $ens) {
+            $sx = strtoupper(trim($ens['sexe_user'] ?? ($ens['sexe_enseignant'] ?? '')));
+            if ($sx === 'M' || $sx === 'MASCULIN') $statsFiltre['hommes']++;
+            else if ($sx === 'F' || $sx === 'FEMININ') $statsFiltre['femmes']++;
+
+            $tc = strtolower(trim($ens['type_contrat'] ?? ''));
+            if ($tc === 'permanent') $statsFiltre['permanents']++;
+            else if ($tc === 'vacataire' || $tc === 'prestataire') $statsFiltre['vacataires']++;
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'annee_code' => $anneeCode,
+            'sexe_filtre' => $sexe,
+            'contrat_filtre' => $typeContrat,
+            'editeur_nom' => $editeurNom,
+            'stats' => $statsFiltre,
+            'enseignants' => $enseignants
+        ];
+
+        $html = PdfService::renderTemplate('repertoire_enseignants.php', $data);
+        $filename = 'Repertoire_Enseignants_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Répertoire du Corps Enseignant - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 12
         ]);
     }
 

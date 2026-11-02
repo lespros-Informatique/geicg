@@ -14,17 +14,22 @@ class ModelEnseignant extends BaseModel
             $stmt = $db->query("
                 SELECT 
                     COUNT(*) AS total,
-                    SUM(CASE WHEN LOWER(TRIM(statut_enseignant)) = '" . STATUTS::ACTIF . "' THEN 1 ELSE 0 END) AS actifs,
-                    SUM(CASE WHEN LOWER(TRIM(type_contrat)) = 'permanent' THEN 1 ELSE 0 END) AS permanents,
-                    SUM(CASE WHEN LOWER(TRIM(type_contrat)) IN ('vacataire', 'prestataire') THEN 1 ELSE 0 END) AS vacataires
-                FROM " . TABLES::ENSEIGNANTS
-            );
+                    SUM(CASE WHEN LOWER(TRIM(e.statut_enseignant)) = '" . STATUTS::ACTIF . "' THEN 1 ELSE 0 END) AS actifs,
+                    SUM(CASE WHEN LOWER(TRIM(e.type_contrat)) = 'permanent' THEN 1 ELSE 0 END) AS permanents,
+                    SUM(CASE WHEN LOWER(TRIM(e.type_contrat)) IN ('vacataire', 'prestataire') THEN 1 ELSE 0 END) AS vacataires,
+                    SUM(CASE WHEN UPPER(TRIM(COALESCE(u.sexe_user, ''))) IN ('M', 'MASCULIN') THEN 1 ELSE 0 END) AS hommes,
+                    SUM(CASE WHEN UPPER(TRIM(COALESCE(u.sexe_user, ''))) IN ('F', 'FEMININ') THEN 1 ELSE 0 END) AS femmes
+                FROM " . TABLES::ENSEIGNANTS . " e
+                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
+            ");
             $res = $stmt->fetch(PDO::FETCH_ASSOC);
             return [
                 'total' => (int)($res['total'] ?? 0),
                 'actifs' => (int)($res['actifs'] ?? 0),
                 'permanents' => (int)($res['permanents'] ?? 0),
-                'vacataires' => (int)($res['vacataires'] ?? 0)
+                'vacataires' => (int)($res['vacataires'] ?? 0),
+                'hommes' => (int)($res['hommes'] ?? 0),
+                'femmes' => (int)($res['femmes'] ?? 0)
             ];
         } catch (Exception $e) {
             error_log("ModelEnseignant::getStats error: " . $e->getMessage());
@@ -32,7 +37,9 @@ class ModelEnseignant extends BaseModel
                 'total' => 0,
                 'actifs' => 0,
                 'permanents' => 0,
-                'vacataires' => 0
+                'vacataires' => 0,
+                'hommes' => 0,
+                'femmes' => 0
             ];
         }
     }
@@ -69,6 +76,7 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant,
+                   GROUP_CONCAT(DISTINCT edt.annee_code SEPARATOR ',') AS annees_codes,
                    GROUP_CONCAT(DISTINCT edt.matiere_code SEPARATOR ',') AS matieres_codes,
                    GROUP_CONCAT(DISTINCT m.libelle_matiere SEPARATOR ', ') AS matieres_libelles
             FROM " . TABLES::ENSEIGNANTS . " e
