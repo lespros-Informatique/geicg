@@ -28,16 +28,15 @@ $(document).ready(function() {
           if (type !== 'display') return d || '';
           return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
         }},
-        { data: 'nom_enseignant', render: function(d, type, row) {
+        { data: 'nom_enseignant', width: '220px', render: function(d, type, row) {
           if (type !== 'display') return (d || '') + ' ' + (row.prenom_enseignant || '');
-          var nomComplet = (d || '') + ' ' + (row.prenom_enseignant || '');
-          var html = '<strong style="color:#0F172A;">' + (nomComplet.trim() || 'Enseignant sans nom') + '</strong>';
-          if (row.matieres_libelles) {
-            html += '<div style="font-size:11px; color:#0284C7; font-weight:600; margin-top:3px; max-width:240px; white-space:normal; line-height:1.2;">' +
-                    '<i data-lucide="book-open" style="width:11px;height:11px;display:inline-block;vertical-align:middle;margin-right:2px;"></i> ' +
-                    row.matieres_libelles + '</div>';
-          }
-          return html;
+          var nom = (d || '').trim().toUpperCase();
+          var prenom = (row.prenom_enseignant || '').trim();
+          if (!nom && !prenom) return '<strong style="color:#0F172A;">Enseignant sans nom</strong>';
+          return '<div style="white-space: normal; word-break: break-word; line-height: 1.35;">' +
+                 '  <div style="font-weight: 800; color: #0F172A; font-size: 13px;">' + nom + '</div>' +
+                 (prenom ? '  <div style="font-weight: 600; color: #475569; font-size: 12px; margin-top: 1px;">' + prenom + '</div>' : '') +
+                 '</div>';
         }},
         { data: 'sexe_user', width: '60px', className: 'text-center', render: function(d, type, row) {
           var s = (d || row.sexe_enseignant || '').toUpperCase().trim();
