@@ -157,7 +157,7 @@ $encryptedId = $encryptedId ?? '';
                 <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase;">
                   <th style="padding: 10px 14px; width: 40px;">#</th>
                   <th style="padding: 10px 14px; min-width: 130px;">Niveau d'Études</th>
-                  <th style="padding: 10px 14px; min-width: 180px;">Filière</th>
+                  <th style="padding: 10px 14px; min-width: 160px; max-width: 220px; white-space: normal;">Filière</th>
                   <th style="padding: 10px 14px; text-align: center; min-width: 150px;">Nombre de Matières</th>
                   <th style="padding: 10px 14px; text-align: right; min-width: 250px;">Actions Saisie Notes</th>
                 </tr>
@@ -173,7 +173,11 @@ $encryptedId = $encryptedId ?? '';
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
                     <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
-                    <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
+                    <td style="padding: 12px 14px; white-space: normal; max-width: 220px;">
+                      <span style="background: #F1F5F9; color: #334155; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; display: inline-block; white-space: normal; line-height: 1.4; word-break: normal;">
+                        <?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?>
+                      </span>
+                    </td>
                     <td style="padding: 12px 14px; text-align: center;">
                       <span class="badge" style="background: <?= $nbMatieres > 0 ? '#EFF6FF' : '#F1F5F9' ?>; color: <?= $nbMatieres > 0 ? '#1E40AF' : '#64748B' ?>; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
                         <i data-lucide="book-open" style="width: 13px; height: 13px;"></i>
