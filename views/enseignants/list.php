@@ -156,6 +156,7 @@
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Enseignant </th>
+                <th style="padding: 12px;" class="text-center">Genre</th>
                 <th style="padding: 12px;">Email / Téléphone</th>
                 <th style="padding: 12px;">Grade Académique</th>
                 <th style="padding: 12px;">Contrat</th>

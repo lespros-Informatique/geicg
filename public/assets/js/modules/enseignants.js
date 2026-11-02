@@ -33,6 +33,14 @@ $(document).ready(function() {
           var nomComplet = (d || '') + ' ' + (row.prenom_enseignant || '');
           return '<strong style="color:#0F172A;">' + (nomComplet.trim() || 'Enseignant sans nom') + '</strong>';
         }},
+        { data: 'sexe_user', width: '60px', className: 'text-center', render: function(d, type, row) {
+          var s = (d || row.sexe_enseignant || '').toUpperCase().trim();
+          if (type !== 'display') return s;
+          if (s === 'F' || s === 'FEMININ' || s.indexOf('FEM') !== -1) {
+            return '<span style="background:#FCE7F3; color:#9D174D; border:1px solid #FBCFE8; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;" title="Féminin">F</span>';
+          }
+          return '<span style="background:#E0E7FF; color:#3730A3; border:1px solid #C7D2FE; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;" title="Masculin">M</span>';
+        }},
         { data: 'email_enseignant', render: function(d, type, row) {
           if (type !== 'display') return d || row.telephone_enseignant || '';
           var res = '';
