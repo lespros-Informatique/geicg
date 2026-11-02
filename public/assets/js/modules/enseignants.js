@@ -53,6 +53,16 @@ $(document).ready(function() {
           if (row.telephone_enseignant) res += '<div style="font-size:12px; color:#64748B;">' + row.telephone_enseignant + '</div>';
           return res || '-';
         }},
+        { data: 'volume_horaire', width: '110px', className: 'text-center', render: function(d, type, row) {
+          var vh = parseFloat(d || 0);
+          if (type !== 'display') return vh;
+          if (vh > 0) {
+            return '<span style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-weight: 800; padding: 4px 10px; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;" title="Volume horaire planifié">' +
+                   '  <i data-lucide="clock" style="width: 13px; height: 13px; color: #3B82F6;"></i> ' + vh + ' h' +
+                   '</span>';
+          }
+          return '<span style="background: #F8FAFC; color: #94A3B8; border: 1px solid #E2E8F0; font-weight: 600; padding: 3px 8px; border-radius: 6px; font-size: 11px;" title="Aucun cours planifié">0 h</span>';
+        }},
         { data: 'type_contrat', render: function(d, type, row) {
           if (type !== 'display') return d || '';
           var badge = d === 'vacataire' 

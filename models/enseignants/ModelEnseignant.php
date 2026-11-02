@@ -76,6 +76,7 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant,
+                   ROUND(COALESCE(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 0), 1) AS volume_horaire,
                    GROUP_CONCAT(DISTINCT edt.annee_code SEPARATOR ',') AS annees_codes,
                    GROUP_CONCAT(DISTINCT edt.matiere_code SEPARATOR ',') AS matieres_codes,
                    GROUP_CONCAT(DISTINCT m.libelle_matiere SEPARATOR ', ') AS matieres_libelles

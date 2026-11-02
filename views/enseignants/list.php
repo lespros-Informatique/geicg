@@ -139,6 +139,7 @@
                 <th style="padding: 12px;">Enseignant </th>
                 <th style="padding: 12px;" class="text-center">Genre</th>
                 <th style="padding: 12px;">Email / Téléphone</th>
+                <th style="padding: 12px;" class="text-center">Volume Horaire</th>
                 <th style="padding: 12px;">Contrat</th>
                 <th style="padding: 12px;" class="text-center">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>

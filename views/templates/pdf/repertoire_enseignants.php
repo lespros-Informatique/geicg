@@ -423,11 +423,12 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 5%; text-align: center;">#</th>
-        <th style="width: 14%; text-align: center;">Code</th>
-        <th style="width: 28%;">Nom & Prénoms</th>
-        <th style="width: 8%; text-align: center;">Genre</th>
-        <th style="width: 23%;">Contact / Email</th>
+        <th style="width: 4%; text-align: center;">#</th>
+        <th style="width: 12%; text-align: center;">Code</th>
+        <th style="width: 25%;">Nom & Prénoms</th>
+        <th style="width: 7%; text-align: center;">Genre</th>
+        <th style="width: 10%; text-align: center;">Vol. Hor.</th>
+        <th style="width: 20%;">Contact / Email</th>
         <th style="width: 12%; text-align: center;">Contrat</th>
         <th style="width: 10%; text-align: center;">Statut</th>
       </tr>
@@ -441,6 +442,7 @@
             $prenom = trim($ens['prenom_enseignant'] ?? ($ens['prenom_user'] ?? ''));
             $code = trim($ens['code_enseignant'] ?? ($ens['matricule_user'] ?? '-'));
             $sexe = strtoupper(trim($ens['sexe_user'] ?? ($ens['sexe_enseignant'] ?? '')));
+            $vh = (float)($ens['volume_horaire'] ?? 0);
             $email = trim($ens['email_enseignant'] ?? ($ens['email_user'] ?? ''));
             $tel = trim($ens['telephone_enseignant'] ?? ($ens['telephone_user'] ?? ''));
             $contrat = strtolower(trim($ens['type_contrat'] ?? ''));
@@ -464,6 +466,13 @@
                 <span class="badge-genre-f">F</span>
               <?php else: ?>
                 <span style="color: #94A3B8;">-</span>
+              <?php endif; ?>
+            </td>
+            <td class="text-center">
+              <?php if ($vh > 0): ?>
+                <strong style="color: #1D4ED8; font-size: 8.5pt;"><?= $vh ?> h</strong>
+              <?php else: ?>
+                <span style="color: #94A3B8;">0 h</span>
               <?php endif; ?>
             </td>
             <td>
