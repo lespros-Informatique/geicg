@@ -24,7 +24,8 @@ class MaquetteController extends BaseController
             'filieres' => $filieres,
             'niveaux' => $niveaux,
             'matieres' => $matieres,
-            'activeAnnee' => $activeAnnee
+            'activeAnnee' => $activeAnnee,
+            'scripts' => ['public/assets/js/modules/maquettes.js']
         ]);
     }
 

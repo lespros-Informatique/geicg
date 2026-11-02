@@ -1,6 +1,5 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php'; 
-ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -17,10 +16,10 @@ ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des matières par Filière et Niveau d'études (Matières Générales & Matières Professionnelles)</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline-primary btn-duplicate-maquette" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; cursor: pointer;">
+          <button type="button" class="btn btn-outline-primary btn-duplicate-maquette" onclick="openModalDuplicateMaquette()" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; cursor: pointer;">
             <i data-lucide="copy" style="width: 16px; height: 16px;"></i> Reconduire d'une année à l'autre
           </button>
-          <button type="button" class="btn btn-primary btn-add-maquette" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+          <button type="button" class="btn btn-primary btn-add-maquette" onclick="openModalMaquette()" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
             <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter une Matière à la Maquette
           </button>
         </div>
@@ -98,13 +97,13 @@ ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
 </div>
 
 <!-- MODAL : AJOUTER / MODIFIER MATIÈRE DANS MAQUETTE -->
-<div id="modal-maquette" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(2px); z-index:9999; justify-content:center; align-items:center; padding:16px;">
+<div id="modal-maquette" onclick="if(event.target === this) closeModalMaquette();" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(2px); z-index:9999; justify-content:center; align-items:center; padding:16px;">
   <div style="max-width:580px; width:92%; background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden;">
     <div style="padding:18px 24px; background:#F8FAFC; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
       <h3 id="modal-maquette-title" style="margin:0; font-size:16px; font-weight:800; color:#1E3A5F; display:flex; align-items:center; gap:8px;">
         <i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Ajouter Matière à la Maquette
       </h3>
-      <button type="button" class="btn-close-modal-maquette" style="background:none; border:none; font-size:20px; color:#64748B; cursor:pointer;">&times;</button>
+      <button type="button" class="btn-close-modal-maquette" onclick="closeModalMaquette();" style="background:none; border:none; font-size:20px; color:#64748B; cursor:pointer;">&times;</button>
     </div>
     <form id="form-maquette" style="padding:24px;">
       <input type="hidden" name="csrf_token" value="<?= Session::getCsrfToken() ?>">
@@ -169,7 +168,7 @@ ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
       </div>
 
       <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #E2E8F0; padding-top:16px;">
-        <button type="button" class="btn btn-secondary btn-close-modal-maquette" style="font-weight:600; border-radius:6px;">Annuler</button>
+        <button type="button" class="btn btn-secondary btn-close-modal-maquette" onclick="closeModalMaquette();" style="font-weight:600; border-radius:6px;">Annuler</button>
         <button type="submit" id="btn-save-maquette" class="btn btn-primary" style="background:#1E3A5F; border-color:#1E3A5F; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
           <i data-lucide="check" style="width:16px;height:16px;"></i> Enregistrer
         </button>
@@ -179,13 +178,13 @@ ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
 </div>
 
 <!-- MODAL : RECONDUCTION / DUPLICATION MAQUETTE -->
-<div id="modal-dupliquer-maquette" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(2px); z-index:9999; justify-content:center; align-items:center; padding:16px;">
+<div id="modal-dupliquer-maquette" onclick="if(event.target === this) closeModalDuplicateMaquette();" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(2px); z-index:9999; justify-content:center; align-items:center; padding:16px;">
   <div style="max-width:520px; width:92%; background:#fff; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2); overflow:hidden;">
     <div style="padding:18px 24px; background:#F8FAFC; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
       <h3 style="margin:0; font-size:16px; font-weight:800; color:#1E3A5F; display:flex; align-items:center; gap:8px;">
         <i data-lucide="copy" style="width:18px;height:18px;"></i> Reconduire une Maquette
       </h3>
-      <button type="button" class="btn-close-modal-dup" style="background:none; border:none; font-size:20px; color:#64748B; cursor:pointer;">&times;</button>
+      <button type="button" class="btn-close-modal-dup" onclick="closeModalDuplicateMaquette();" style="background:none; border:none; font-size:20px; color:#64748B; cursor:pointer;">&times;</button>
     </div>
     <form id="form-duplicate-maquette" style="padding:24px;">
       <input type="hidden" name="csrf_token" value="<?= Session::getCsrfToken() ?>">
@@ -225,7 +224,7 @@ ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
       </div>
 
       <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #E2E8F0; padding-top:16px;">
-        <button type="button" class="btn btn-secondary btn-close-modal-dup" style="font-weight:600; border-radius:6px;">Annuler</button>
+        <button type="button" class="btn btn-secondary btn-close-modal-dup" onclick="closeModalDuplicateMaquette();" style="font-weight:600; border-radius:6px;">Annuler</button>
         <button type="submit" id="btn-save-duplicate" class="btn btn-primary" style="background:#1E3A5F; border-color:#1E3A5F; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
           <i data-lucide="copy-check" style="width:16px;height:16px;"></i> Lancer la Reconduction
         </button>
@@ -244,6 +243,59 @@ ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
   window.MAQUETTE_CONFIG = {
     racine: '<?= RACINE ?>',
     csrfToken: '<?= Session::getCsrfToken() ?>'
+  };
+
+  window.openModalMaquette = function() {
+    var form = document.getElementById('form-maquette');
+    if (form) form.reset();
+    var idInput = document.getElementById('maq_id');
+    if (idInput) idInput.value = '';
+    var title = document.getElementById('modal-maquette-title');
+    if (title) title.innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Ajouter Matière à la Maquette';
+
+    var fAnnee = document.getElementById('filter-annee');
+    var fFiliere = document.getElementById('filter-filiere');
+    var fNiveau = document.getElementById('filter-niveau');
+    var mAnnee = document.getElementById('maq_annee');
+    var mFiliere = document.getElementById('maq_filiere');
+    var mNiveau = document.getElementById('maq_niveau');
+
+    if (fAnnee && fAnnee.value && mAnnee) {
+      mAnnee.value = fAnnee.value;
+      if (window.jQuery && $(mAnnee).data('select2')) $(mAnnee).trigger('change');
+    }
+    if (fFiliere && fFiliere.value && mFiliere) {
+      mFiliere.value = fFiliere.value;
+      if (window.jQuery && $(mFiliere).data('select2')) $(mFiliere).trigger('change');
+    }
+    if (fNiveau && fNiveau.value && mNiveau) {
+      mNiveau.value = fNiveau.value;
+      if (window.jQuery && $(mNiveau).data('select2')) $(mNiveau).trigger('change');
+    }
+
+    var modal = document.getElementById('modal-maquette');
+    if (modal) modal.style.display = 'flex';
+    if (window.lucide) {
+      try { lucide.createIcons(); } catch(e) {}
+    }
+  };
+
+  window.closeModalMaquette = function() {
+    var modal = document.getElementById('modal-maquette');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.openModalDuplicateMaquette = function() {
+    var modal = document.getElementById('modal-dupliquer-maquette');
+    if (modal) modal.style.display = 'flex';
+    if (window.lucide) {
+      try { lucide.createIcons(); } catch(e) {}
+    }
+  };
+
+  window.closeModalDuplicateMaquette = function() {
+    var modal = document.getElementById('modal-dupliquer-maquette');
+    if (modal) modal.style.display = 'none';
   };
 </script>
 <?php
