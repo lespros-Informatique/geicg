@@ -622,8 +622,26 @@ class NoteController extends BaseController
             if (!empty($selectedMatiereCode)) {
                 $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode);
 
-                if (!empty($selectedCompositionCode)) {
-                    $existingNotes = $this->model->getNotesByComposition($selectedCompositionCode);
+                $targetEvalCompCode = $selectedCompositionCode;
+                if (!empty($selectedSemestreCode)) {
+                    $existingSubComp = $compModel->findExistingComposition(
+                        $selectedClasseCode,
+                        $selectedMatiereCode,
+                        $selectedSemestreCode,
+                        $selectedTypeEval ?: 'EXAMEN',
+                        $anneeCode
+                    );
+                    if ($existingSubComp) {
+                        $targetEvalCompCode = $existingSubComp['code_composition'];
+                    } else if (!empty($selectedCompItem) && !empty($selectedCompItem['matiere_code']) && $selectedCompItem['matiere_code'] === $selectedMatiereCode) {
+                        $targetEvalCompCode = $selectedCompItem['code_composition'];
+                    } else {
+                        $targetEvalCompCode = null;
+                    }
+                }
+
+                if (!empty($targetEvalCompCode)) {
+                    $existingNotes = $this->model->getNotesByComposition($targetEvalCompCode);
                 }
             }
         } else {
@@ -646,7 +664,8 @@ class NoteController extends BaseController
             'compositionsProgrammees' => $compositionsProgrammees,
             'tousExamens' => $tousExamens,
             'etudiants' => $etudiants,
-            'existingNotes' => $existingNotes
+            'existingNotes' => $existingNotes,
+            'targetEvalCompCode' => $targetEvalCompCode ?? $selectedCompositionCode
         ]);
     }
 
@@ -715,10 +734,28 @@ class NoteController extends BaseController
         // Récupérer les étudiants de la classe
         $etudiants = $this->model->getStudentsByClasse($selectedClasseCode, $anneeCode);
 
-        // Récupérer les notes existantes
+        // Récupérer les notes existantes pour cette matière spécifique
+        $targetEvalCompCode = $selectedCompositionCode;
+        if (!empty($selectedClasseCode) && !empty($selectedMatiereCode) && !empty($selectedSemestreCode)) {
+            $existingSubComp = $compModel->findExistingComposition(
+                $selectedClasseCode,
+                $selectedMatiereCode,
+                $selectedSemestreCode,
+                $selectedTypeEval ?: 'EXAMEN',
+                $anneeCode
+            );
+            if ($existingSubComp) {
+                $targetEvalCompCode = $existingSubComp['code_composition'];
+            } else if (!empty($selectedCompItem) && !empty($selectedCompItem['matiere_code']) && $selectedCompItem['matiere_code'] === $selectedMatiereCode) {
+                $targetEvalCompCode = $selectedCompItem['code_composition'];
+            } else {
+                $targetEvalCompCode = null;
+            }
+        }
+
         $existingNotes = [];
-        if (!empty($selectedCompositionCode)) {
-            $existingNotes = $this->model->getNotesByComposition($selectedCompositionCode);
+        if (!empty($targetEvalCompCode)) {
+            $existingNotes = $this->model->getNotesByComposition($targetEvalCompCode);
         }
 
         $typeEvals = [

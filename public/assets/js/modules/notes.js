@@ -1137,6 +1137,19 @@ $(document).ready(function() {
     var libelleEval = $('#input_libelle_eval').val();
     var coefEval = $('#input_coef_eval').val();
 
+    // Mettre à jour l'URL sans rechargement de page pour refléter la matière courante
+    if (window.history && window.history.replaceState) {
+      try {
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('matiere_code', matiereCode);
+        if (classeCode) currentUrl.searchParams.set('classe_code', classeCode);
+        if (semCode) currentUrl.searchParams.set('semestre_code', semCode);
+        if (typeEval) currentUrl.searchParams.set('type_evaluation_code', typeEval);
+        if (compCode) currentUrl.searchParams.set('composition_code', compCode);
+        window.history.replaceState({}, '', currentUrl.toString());
+      } catch (e) {}
+    }
+
     // Afficher l'animation de chargement
     $('#loading-matiere-grid').slideDown(150);
 
@@ -1179,7 +1192,7 @@ $(document).ready(function() {
   }
 
   // 3- La sélection Matière affiche la liste des étudiants de la classe via AJAX
-  $('#sel_matiere_code').on('change', function() {
+  $(document).on('change select2:select', '#sel_matiere_code', function() {
     if (isInitialLoading) return;
 
     var matiereCode = $(this).val();

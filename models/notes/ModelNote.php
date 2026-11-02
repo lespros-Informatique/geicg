@@ -667,15 +667,27 @@ class ModelNote extends BaseModel
         $db->beginTransaction();
 
         try {
-            if ($typeEval !== 'EXAMEN') {
-                if (empty($compositionCode)) {
-                    $compositionCode = $this->createQuickComposition(
-                        $typeEval, $semestreCode, $classeCode, $matiereCode, $coefEval,
-                        $libelleEval, $anneeCode, $etabCode, $userCode
-                    );
-                } else {
-                    $this->updateQuickComposition($compositionCode, $libelleEval, $coefEval, $classeCode, $matiereCode);
+            $compModel = new ModelComposition();
+            $targetComp = null;
+            if (!empty($compositionCode)) {
+                $compRow = $compModel->getByCode($compositionCode);
+                if ($compRow && !empty($compRow['matiere_code']) && $compRow['matiere_code'] === $matiereCode && $compRow['classe_code'] === $classeCode) {
+                    $targetComp = $compRow;
                 }
+            }
+
+            if (!$targetComp) {
+                $targetComp = $compModel->findExistingComposition($classeCode, $matiereCode, $semestreCode, $typeEval, $anneeCode);
+            }
+
+            if (!$targetComp) {
+                $compositionCode = $this->createQuickComposition(
+                    $typeEval, $semestreCode, $classeCode, $matiereCode, $coefEval,
+                    $libelleEval, $anneeCode, $etabCode, $userCode
+                );
+            } else {
+                $compositionCode = $targetComp['code_composition'];
+                $this->updateQuickComposition($compositionCode, $libelleEval, $coefEval, $classeCode, $matiereCode);
             }
 
             $savedCount = 0;
