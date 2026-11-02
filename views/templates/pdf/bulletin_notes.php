@@ -397,7 +397,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
   <table class="student-title-table">
     <tr>
       <td class="student-name"><?= htmlspecialchars($nom_prenom_etudiant) ?></td>
-      <td class="student-ref"><?= htmlspecialchars($classe_code_or_ref) ?></td>
+      <td class="student-ref"><?= htmlspecialchars($matricule_etudiant) ?></td>
     </tr>
   </table>
 
