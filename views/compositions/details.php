@@ -151,53 +151,55 @@ $encryptedId = $encryptedId ?? '';
         <?php if (empty($targetClasses)): ?>
           <div style="padding: 20px; text-align: center; color: #94A3B8; font-size: 13px;">Aucun niveau/filière spécifique associé à cette composition.</div>
         <?php else: ?>
-          <table id="table-niveaux-filieres" class="table display nowrap" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-            <thead>
-              <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase;">
-                <th style="padding: 10px 14px;">#</th>
-                <th style="padding: 10px 14px;">Niveau d'Études</th>
-                <th style="padding: 10px 14px;">Filière</th>
-                <th style="padding: 10px 14px; text-align: center;">Nombre de Matières</th>
-                <th style="padding: 10px 14px; text-align: right;">Actions Saisie Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php 
-                $rowNum = 1;
-                foreach ($targetClasses as $tc): 
-                  $classeCode = $tc['code_classe'] ?? '';
-                  $targetName = !empty($tc['libelle_classe']) ? $tc['libelle_classe'] : (($tc['libelle_niveau'] ?? '') . ' - ' . ($tc['libelle_filiere'] ?? ''));
-                  $nbMatieres = (int)($tc['nb_matieres'] ?? 0);
-              ?>
-                <tr style="border-bottom: 1px solid #F1F5F9;">
-                  <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
-                  <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
-                  <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
-                  <td style="padding: 12px 14px; text-align: center;">
-                    <span class="badge" style="background: <?= $nbMatieres > 0 ? '#EFF6FF' : '#F1F5F9' ?>; color: <?= $nbMatieres > 0 ? '#1E40AF' : '#64748B' ?>; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                      <i data-lucide="book-open" style="width: 13px; height: 13px;"></i>
-                      <?= $nbMatieres ?> matière<?= $nbMatieres > 1 ? 's' : '' ?>
-                    </span>
-                  </td>
-                  <td style="padding: 12px 14px; text-align: right;">
-                    <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
-                      <button type="button" 
-                              class="btn btn-sm btn-open-saisie-modal" 
-                              data-classe-code="<?= htmlspecialchars($classeCode) ?>"
-                              data-classe-libelle="<?= htmlspecialchars($targetName) ?>"
-                              data-cible-code="<?= htmlspecialchars($tc['code_composition_niveau_filiere'] ?? '') ?>"
-                              style="background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(30,58,95,0.2);">
-                        <i data-lucide="list-checks" style="width: 14px; height: 14px;"></i> Liste Matières
-                      </button>
-                      <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($classeCode) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
-                        <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Grille des notes
-                      </a>
-                    </div>
-                  </td>
+          <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table id="table-niveaux-filieres" class="table display" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase;">
+                  <th style="padding: 10px 14px; width: 40px;">#</th>
+                  <th style="padding: 10px 14px; min-width: 130px;">Niveau d'Études</th>
+                  <th style="padding: 10px 14px; min-width: 180px;">Filière</th>
+                  <th style="padding: 10px 14px; text-align: center; min-width: 150px;">Nombre de Matières</th>
+                  <th style="padding: 10px 14px; text-align: right; min-width: 250px;">Actions Saisie Notes</th>
                 </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <?php 
+                  $rowNum = 1;
+                  foreach ($targetClasses as $tc): 
+                    $classeCode = $tc['code_classe'] ?? '';
+                    $targetName = !empty($tc['libelle_classe']) ? $tc['libelle_classe'] : (($tc['libelle_niveau'] ?? '') . ' - ' . ($tc['libelle_filiere'] ?? ''));
+                    $nbMatieres = (int)($tc['nb_matieres'] ?? 0);
+                ?>
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
+                    <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
+                    <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
+                    <td style="padding: 12px 14px; text-align: center;">
+                      <span class="badge" style="background: <?= $nbMatieres > 0 ? '#EFF6FF' : '#F1F5F9' ?>; color: <?= $nbMatieres > 0 ? '#1E40AF' : '#64748B' ?>; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i data-lucide="book-open" style="width: 13px; height: 13px;"></i>
+                        <?= $nbMatieres ?> matière<?= $nbMatieres > 1 ? 's' : '' ?>
+                      </span>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: right;">
+                      <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+                        <button type="button" 
+                                class="btn btn-sm btn-open-saisie-modal" 
+                                data-classe-code="<?= htmlspecialchars($classeCode) ?>"
+                                data-classe-libelle="<?= htmlspecialchars($targetName) ?>"
+                                data-cible-code="<?= htmlspecialchars($tc['code_composition_niveau_filiere'] ?? '') ?>"
+                                style="background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(30,58,95,0.2); white-space: nowrap;">
+                          <i data-lucide="list-checks" style="width: 14px; height: 14px;"></i> Liste Matières
+                        </button>
+                        <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($classeCode) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px; white-space: nowrap;">
+                          <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Grille des notes
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
         <?php endif; ?>
       </div>
 

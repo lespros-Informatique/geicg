@@ -747,7 +747,11 @@ $(document).ready(function() {
   if (window.lucide) lucide.createIcons();
 
   if ($.fn.DataTable && $('#table-niveaux-filieres').length) {
+    if ($.fn.DataTable.isDataTable('#table-niveaux-filieres')) {
+      $('#table-niveaux-filieres').DataTable().destroy();
+    }
     $('#table-niveaux-filieres').DataTable({
+      destroy: true,
       pageLength: 10,
       autoWidth: false,
       language: {
