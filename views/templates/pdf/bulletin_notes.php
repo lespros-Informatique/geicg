@@ -59,6 +59,11 @@ if (!file_exists($logoPath)) {
     $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
 }
 
+$defaultPlaceholder = __DIR__ . '/../../public/' . PLACEHOLDERS::ETUDIANT;
+if (!file_exists($defaultPlaceholder)) {
+    $defaultPlaceholder = __DIR__ . '/../../../public/' . PLACEHOLDERS::ETUDIANT;
+}
+
 $photoPath = '';
 if (!empty($photo_etudiant)) {
     $cPaths = [
@@ -66,11 +71,16 @@ if (!empty($photo_etudiant)) {
         __DIR__ . '/../../../public/' . ltrim($photo_etudiant, '/')
     ];
     foreach ($cPaths as $cp) {
-        if (file_exists($cp)) {
+        if (file_exists($cp) && is_file($cp)) {
             $photoPath = $cp;
             break;
         }
     }
+}
+
+// Règle : si l'étudiant n'a pas d'image, utilisation systématique de la photo par défaut
+if (empty($photoPath) && file_exists($defaultPlaceholder)) {
+    $photoPath = $defaultPlaceholder;
 }
 ?>
 <!DOCTYPE html>
@@ -394,7 +404,7 @@ if (!empty($photo_etudiant)) {
   <table class="student-grid">
     <tr>
       <td style="width: 14%;">
-        <?php if (!empty($photoPath)): ?>
+        <?php if (!empty($photoPath) && file_exists($photoPath)): ?>
           <img src="<?= $photoPath ?>" class="photo-box">
         <?php else: ?>
           <div class="photo-placeholder">PHOTO</div>

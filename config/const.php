@@ -370,3 +370,8 @@ class CATEGORIES_MATIERES
         self::PROFESSIONNELLE => 'Matières Professionnelles'
     ];
 }
+
+class PLACEHOLDERS
+{
+    public const ETUDIANT = 'assets/images/placeholders/etudiant.png';
+}
