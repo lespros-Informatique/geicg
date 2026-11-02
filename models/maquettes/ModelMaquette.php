@@ -17,21 +17,13 @@ class ModelMaquette extends BaseModel
         $anneeCode = $anneeCode ?: (Session::get('annee_active_code') ?: '');
 
         $sql = "
-            SELECT mq.*, 
-                   m.libelle_matiere,
-                   f.libelle_filiere,
-                   n.libelle_niveau,
-                   a.libelle_annee
-            FROM " . TABLES::MAQUETTES_PEDAGOGIQUES . " mq
-            INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = mq.matiere_code
-            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = mq.filiere_code
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = mq.niveau_code
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = mq.annee_code
-            WHERE mq.filiere_code = ? AND mq.niveau_code = ?
-              AND (mq.annee_code = ? OR ? = '')
+            SELECT *
+            FROM " . VIEWS::MAQUETTES_COMPLETES . "
+            WHERE filiere_code = ? AND niveau_code = ?
+              AND (annee_code = ? OR ? = '')
             ORDER BY 
-                CASE WHEN mq.categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC,
-                m.libelle_matiere ASC
+                CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC,
+                libelle_matiere ASC
         ";
 
         try {
@@ -71,38 +63,30 @@ class ModelMaquette extends BaseModel
     {
         $db = $this->getCon();
         $sql = "
-            SELECT mq.*, 
-                   m.libelle_matiere,
-                   f.libelle_filiere,
-                   n.libelle_niveau,
-                   a.libelle_annee
-            FROM " . TABLES::MAQUETTES_PEDAGOGIQUES . " mq
-            INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = mq.matiere_code
-            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = mq.filiere_code
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = mq.niveau_code
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = mq.annee_code
+            SELECT *
+            FROM " . VIEWS::MAQUETTES_COMPLETES . "
             WHERE 1=1
         ";
         $params = [];
 
         if (!empty($anneeCode)) {
-            $sql .= " AND mq.annee_code = ?";
+            $sql .= " AND annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($filiereCode)) {
-            $sql .= " AND mq.filiere_code = ?";
+            $sql .= " AND filiere_code = ?";
             $params[] = $filiereCode;
         }
         if (!empty($niveauCode)) {
-            $sql .= " AND mq.niveau_code = ?";
+            $sql .= " AND niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($categorie)) {
-            $sql .= " AND mq.categorie_matiere = ?";
+            $sql .= " AND categorie_matiere = ?";
             $params[] = strtoupper(trim($categorie));
         }
 
-        $sql .= " ORDER BY a.libelle_annee DESC, f.libelle_filiere ASC, n.libelle_niveau ASC, mq.categorie_matiere ASC, m.libelle_matiere ASC";
+        $sql .= " ORDER BY libelle_annee DESC, libelle_filiere ASC, libelle_niveau ASC, categorie_matiere ASC, libelle_matiere ASC";
 
         try {
             $stmt = $db->prepare($sql);

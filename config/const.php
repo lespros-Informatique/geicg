@@ -127,6 +127,8 @@ class VIEWS
     public const NOTES_COMPLETES              = 'v_notes_completes';
     public const ABSENCES_COMPLETES           = 'v_absences_completes';
     public const EMPLOIS_TEMPS_COMPLETS       = 'v_emplois_temps_complets';
+    public const BULLETIN_NOTES_DETAILS       = 'v_bulletin_notes_details';
+    public const MAQUETTES_COMPLETES          = 'v_maquettes_completes';
 }
 
 class ROLES

@@ -152,34 +152,16 @@ class ModelBulletin extends BaseModel
             $selectedSemestreCode = $foundSem ?: ($semestres[0]['code_semestre'] ?? '');
         }
 
+        // Requête ultra-allégée via la vue optimisée VIEWS::BULLETIN_NOTES_DETAILS
         $sqlNotes = "
-            SELECT n.*, 
-                   m.libelle_matiere, 
-                   COALESCE(mq.coefficient, 1.00) AS coefficient_maquette, 
-                   COALESCE(mq.categorie_matiere, '" . CATEGORIES_MATIERES::GENERALE . "') AS categorie_matiere,
-                   COALESCE(comp.matiere_code, cm.matiere_code) AS matiere_code,
-                   comp.type_composition AS type_evaluation_code,
-                   COALESCE(comp.coefficient, 1.00) AS coefficient_composition,
-                   (
-                       SELECT CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, ''))
-                       FROM " . TABLES::USERS . " u
-                       WHERE u.code_user = comp.user_code
-                       LIMIT 1
-                   ) AS nom_enseignant
-            FROM " . TABLES::NOTES . " n
-            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ?
-            LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
-            LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
-            LEFT JOIN " . TABLES::MAQUETTES_PEDAGOGIQUES . " mq ON (mq.filiere_code = cl.filiere_code AND mq.niveau_code = cl.niveau_code AND mq.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND (mq.annee_code = ? OR mq.annee_code = '' OR mq.annee_code IS NULL) AND (mq.statut_maquette = '" . STATUTS::ACTIF . "' OR mq.statut_maquette IS NULL))
-            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
-            WHERE n.inscription_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
-              AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
-            GROUP BY n.id_note
-            ORDER BY CASE WHEN mq.categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, m.libelle_matiere ASC, comp.type_composition ASC
+            SELECT *
+            FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
+            WHERE inscription_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
+            ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC, type_evaluation_code ASC
         ";
         $stmtNotes = $db->prepare($sqlNotes);
-        $stmtNotes->execute([$item['classe_code'], $item['annee_code'] ?? '', $item['code_inscription'], $selectedSemestreCode]);
+        $stmtNotes->execute([$item['code_inscription'], $selectedSemestreCode]);
         $rawNotes = $stmtNotes->fetchAll(PDO::FETCH_ASSOC);
 
         $matieresNotes = [];
@@ -268,25 +250,17 @@ class ModelBulletin extends BaseModel
         $moyenneMoyClasse = $moyenneGenerale;
 
         if (!empty($item['classe_code']) && !empty($selectedSemestreCode)) {
+            // Requête classe allégée via VIEWS::BULLETIN_NOTES_DETAILS
             $sqlClassmates = "
-                SELECT i.code_inscription,
-                       COALESCE(comp.matiere_code, cm.matiere_code) AS matiere_code,
-                       COALESCE(mq.categorie_matiere, '" . CATEGORIES_MATIERES::GENERALE . "') AS categorie_matiere,
-                       n.valeur_note,
-                       COALESCE(comp.coefficient, 1.00) AS coefficient_composition,
-                       COALESCE(mq.coefficient, 1.00) AS coefficient_maquette
-                FROM " . TABLES::INSCRIPTIONS . " i
-                INNER JOIN " . TABLES::NOTES . " n ON n.inscription_code = i.code_inscription
-                INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-                LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
-                LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
-                LEFT JOIN " . TABLES::MAQUETTES_PEDAGOGIQUES . " mq ON (mq.filiere_code = cl.filiere_code AND mq.niveau_code = cl.niveau_code AND mq.matiere_code = COALESCE(comp.matiere_code, cm.matiere_code) AND (mq.annee_code = i.annee_code OR mq.annee_code = '' OR mq.annee_code IS NULL) AND (mq.statut_maquette = '" . STATUTS::ACTIF . "' OR mq.statut_maquette IS NULL))
-                INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
-                WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
-                  AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
-                  AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
-                GROUP BY n.id_note
+                SELECT inscription_code AS code_inscription,
+                       matiere_code,
+                       categorie_matiere,
+                       valeur_note,
+                       coefficient_composition,
+                       coefficient_maquette
+                FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
+                WHERE classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+                  AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
             ";
             $stmtClass = $db->prepare($sqlClassmates);
             $stmtClass->execute([$item['classe_code'], $selectedSemestreCode]);
@@ -525,37 +499,31 @@ class ModelBulletin extends BaseModel
         $filiereCode = $classeInfo['filiere_code'] ?? '';
         $niveauCode = $classeInfo['niveau_code'] ?? '';
 
-        // 2. Matières assignées / évaluées pour cette classe avec leur COEFFICIENT DE MAQUETTE PÉDAGOGIQUE
+        // 2. Matières assignées / évaluées pour cette classe via VIEWS::BULLETIN_NOTES_DETAILS
         $stmtM = $db->prepare("
-            SELECT DISTINCT m.code_matiere, m.libelle_matiere, 
-                   COALESCE(mq.coefficient, 1.00) AS coefficient,
-                   COALESCE(mq.categorie_matiere, '" . CATEGORIES_MATIERES::GENERALE . "') AS categorie_matiere
-            FROM " . TABLES::NOTES . " n
-            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-            INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-            LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
-            LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
-            INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = COALESCE(comp.matiere_code, cm.matiere_code)
-            LEFT JOIN " . TABLES::MAQUETTES_PEDAGOGIQUES . " mq ON (mq.filiere_code = cl.filiere_code AND mq.niveau_code = cl.niveau_code AND mq.matiere_code = m.code_matiere AND (mq.annee_code = ? OR mq.annee_code = '' OR mq.annee_code IS NULL) AND (mq.statut_maquette = '" . STATUTS::ACTIF . "' OR mq.statut_maquette IS NULL))
-            WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
-            ORDER BY CASE WHEN mq.categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, m.libelle_matiere ASC
+            SELECT DISTINCT matiere_code AS code_matiere, 
+                   libelle_matiere, 
+                   coefficient_maquette AS coefficient,
+                   categorie_matiere
+            FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
+            WHERE classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+            ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC
         ");
-        $stmtM->execute([$anneeCode, $selectedClasseCode, $selectedSemestreCode]);
+        $stmtM->execute([$selectedClasseCode, $selectedSemestreCode]);
         $matieres = $stmtM->fetchAll(PDO::FETCH_ASSOC);
 
-        // Fallback 1: Si aucune note n'est encore saisie, charger directement la maquette pédagogique de la filière/niveau
+        // Fallback 1: Si aucune note n'est encore saisie, charger directement la maquette pédagogique via VIEWS::MAQUETTES_COMPLETES
         if (empty($matieres) && !empty($filiereCode) && !empty($niveauCode)) {
             $stmtMaq = $db->prepare("
-                SELECT m.code_matiere, m.libelle_matiere, 
-                       COALESCE(mq.coefficient, 1.00) AS coefficient,
-                       COALESCE(mq.categorie_matiere, '" . CATEGORIES_MATIERES::GENERALE . "') AS categorie_matiere
-                FROM " . TABLES::MAQUETTES_PEDAGOGIQUES . " mq
-                INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = mq.matiere_code
-                WHERE mq.filiere_code = ? AND mq.niveau_code = ? 
-                  AND (mq.annee_code = ? OR mq.annee_code = '' OR mq.annee_code IS NULL)
-                  AND (mq.statut_maquette = '" . STATUTS::ACTIF . "' OR mq.statut_maquette IS NULL)
-                ORDER BY CASE WHEN mq.categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, m.libelle_matiere ASC
+                SELECT matiere_code AS code_matiere, 
+                       libelle_matiere, 
+                       COALESCE(coefficient, 1.00) AS coefficient,
+                       COALESCE(categorie_matiere, '" . CATEGORIES_MATIERES::GENERALE . "') AS categorie_matiere
+                FROM " . VIEWS::MAQUETTES_COMPLETES . "
+                WHERE filiere_code = ? AND niveau_code = ? 
+                  AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+                  AND (statut_maquette = '" . STATUTS::ACTIF . "' OR statut_maquette IS NULL)
+                ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC
             ");
             $stmtMaq->execute([$filiereCode, $niveauCode, $anneeCode]);
             $matieres = $stmtMaq->fetchAll(PDO::FETCH_ASSOC);
@@ -583,21 +551,15 @@ class ModelBulletin extends BaseModel
         $stmtE->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
         $etudiants = $stmtE->fetchAll(PDO::FETCH_ASSOC);
 
-        // 4. Batch query: Récupération de toutes les notes avec leur COEFFICIENT DE COMPOSITION
+        // 4. Batch query allégée via VIEWS::BULLETIN_NOTES_DETAILS
         $stmtAllNotes = $db->prepare("
-            SELECT n.inscription_code, 
-                   COALESCE(comp.matiere_code, cm.matiere_code) AS matiere_code, 
-                   n.valeur_note,
-                   COALESCE(comp.coefficient, 1.00) AS coefficient_composition
-            FROM " . TABLES::NOTES . " n
-            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-            INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-            LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON (cnf.composition_code = comp.code_composition AND cnf.niveau_code = cl.niveau_code AND cnf.filiere_code = cl.filiere_code)
-            LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
-            WHERE i.classe_code = ? AND comp.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
-              AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
-            GROUP BY n.id_note
+            SELECT inscription_code, 
+                   matiere_code, 
+                   valeur_note, 
+                   coefficient_composition
+            FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
+            WHERE classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
         ");
         $stmtAllNotes->execute([$selectedClasseCode, $selectedSemestreCode]);
         $allNotesRows = $stmtAllNotes->fetchAll(PDO::FETCH_ASSOC);
