@@ -192,7 +192,7 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
                           <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                             <?php foreach ($m['evaluations'] as $ev): ?>
                               <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155;">
-                                <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
+                                <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?><?= !empty($ev['coefficient']) && (float)$ev['coefficient'] > 0 ? ' (C.' . (float)$ev['coefficient'] . ')' : '' ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
                               </span>
                             <?php endforeach; ?>
                           </div>
@@ -236,7 +236,7 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
                           <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                             <?php foreach ($m['evaluations'] as $ev): ?>
                               <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155;">
-                                <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
+                                <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?><?= !empty($ev['coefficient']) && (float)$ev['coefficient'] > 0 ? ' (C.' . (float)$ev['coefficient'] . ')' : '' ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
                               </span>
                             <?php endforeach; ?>
                           </div>
@@ -271,7 +271,7 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
                         <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                           <?php foreach ($m['evaluations'] as $ev): ?>
                             <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #F1F5F9; border: 1px solid #E2E8F0; color: #334155;">
-                              <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
+                              <strong><?= htmlspecialchars($ev['type'] ?: 'Eval') ?><?= !empty($ev['coefficient']) && (float)$ev['coefficient'] > 0 ? ' (C.' . (float)$ev['coefficient'] . ')' : '' ?>:</strong> <?= number_format($ev['note'], 2, ',', ' ') ?>
                             </span>
                           <?php endforeach; ?>
                         </div>
