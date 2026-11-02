@@ -183,19 +183,19 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
       line-height: 1.35;
     }
     .photo-box {
-      width: 75px;
-      height: 92px;
+      width: 95px;
+      height: 103px;
       border: 1px solid #000000;
       object-fit: cover;
       display: block;
     }
     .photo-placeholder {
-      width: 75px;
-      height: 92px;
+      width: 95px;
+      height: 103px;
       border: 1px solid #000000;
       background: #F1F5F9;
       text-align: center;
-      line-height: 92px;
+      line-height: 103px;
       font-size: 8pt;
       color: #64748B;
       font-weight: bold;
