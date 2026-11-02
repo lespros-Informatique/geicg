@@ -622,26 +622,17 @@ class NoteController extends BaseController
             if (!empty($selectedMatiereCode)) {
                 $compositionsProgrammees = $compModel->getByClasseMatiere($selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode);
 
-                $targetEvalCompCode = $selectedCompositionCode;
-                if (!empty($selectedSemestreCode)) {
-                    $existingSubComp = $compModel->findExistingComposition(
-                        $selectedClasseCode,
-                        $selectedMatiereCode,
-                        $selectedSemestreCode,
-                        $selectedTypeEval ?: 'EXAMEN',
-                        $anneeCode
-                    );
-                    if ($existingSubComp) {
-                        $targetEvalCompCode = $existingSubComp['code_composition'];
-                    } else if (!empty($selectedCompItem) && !empty($selectedCompItem['matiere_code']) && $selectedCompItem['matiere_code'] === $selectedMatiereCode) {
-                        $targetEvalCompCode = $selectedCompItem['code_composition'];
-                    } else {
-                        $targetEvalCompCode = null;
+                if (!empty($selectedCompositionCode)) {
+                    $compMatId = $this->model->findCompositionMatiereId($selectedCompositionCode, $selectedClasseCode, $selectedMatiereCode);
+                    if ($compMatId) {
+                        $existingNotes = $this->model->getNotesByComposition($selectedCompositionCode, $compMatId);
                     }
-                }
-
-                if (!empty($targetEvalCompCode)) {
-                    $existingNotes = $this->model->getNotesByComposition($targetEvalCompCode);
+                } else if (!empty($selectedSemestreCode) && !empty($selectedTypeEval) && $selectedTypeEval !== 'EXAMEN') {
+                    $existingComp = $compModel->findExistingComposition($selectedClasseCode, $selectedMatiereCode, $selectedSemestreCode, $selectedTypeEval, $anneeCode);
+                    if ($existingComp) {
+                        $selectedCompositionCode = $existingComp['code_composition'];
+                        $existingNotes = $this->model->getNotesByComposition($selectedCompositionCode, (int)$existingComp['id_composition_matiere']);
+                    }
                 }
             }
         } else {
@@ -735,27 +726,12 @@ class NoteController extends BaseController
         $etudiants = $this->model->getStudentsByClasse($selectedClasseCode, $anneeCode);
 
         // Récupérer les notes existantes pour cette matière spécifique
-        $targetEvalCompCode = $selectedCompositionCode;
-        if (!empty($selectedClasseCode) && !empty($selectedMatiereCode) && !empty($selectedSemestreCode)) {
-            $existingSubComp = $compModel->findExistingComposition(
-                $selectedClasseCode,
-                $selectedMatiereCode,
-                $selectedSemestreCode,
-                $selectedTypeEval ?: 'EXAMEN',
-                $anneeCode
-            );
-            if ($existingSubComp) {
-                $targetEvalCompCode = $existingSubComp['code_composition'];
-            } else if (!empty($selectedCompItem) && !empty($selectedCompItem['matiere_code']) && $selectedCompItem['matiere_code'] === $selectedMatiereCode) {
-                $targetEvalCompCode = $selectedCompItem['code_composition'];
-            } else {
-                $targetEvalCompCode = null;
-            }
-        }
-
         $existingNotes = [];
-        if (!empty($targetEvalCompCode)) {
-            $existingNotes = $this->model->getNotesByComposition($targetEvalCompCode);
+        if (!empty($selectedCompositionCode) && !empty($selectedClasseCode) && !empty($selectedMatiereCode)) {
+            $compMatId = $this->model->findCompositionMatiereId($selectedCompositionCode, $selectedClasseCode, $selectedMatiereCode);
+            if ($compMatId) {
+                $existingNotes = $this->model->getNotesByComposition($selectedCompositionCode, $compMatId);
+            }
         }
 
         $typeEvals = [

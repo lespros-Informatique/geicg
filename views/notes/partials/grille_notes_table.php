@@ -16,7 +16,7 @@ $finalLibelle = !empty($selectedLibelleEval) ? $selectedLibelleEval : $typeLabel
   <input type="hidden" name="matiere_code" value="<?= htmlspecialchars($selectedMatiereCode) ?>">
   <input type="hidden" name="semestre_code" value="<?= htmlspecialchars($selectedSemestreCode) ?>">
   <input type="hidden" name="type_evaluation_code" value="<?= htmlspecialchars($selectedTypeEval) ?>">
-  <input type="hidden" name="composition_code" value="<?= htmlspecialchars($targetEvalCompCode ?? $selectedCompositionCode) ?>">
+  <input type="hidden" name="composition_code" value="<?= htmlspecialchars($selectedCompositionCode) ?>">
   <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
   <!-- Carte Résumé de l'Évaluation et KPIs en temps réel -->

@@ -17,11 +17,10 @@ class ModelComposition extends BaseModel
                    GROUP_CONCAT(DISTINCT cl.libelle_classe ORDER BY cl.libelle_classe SEPARATOR ', ') AS classes_cible_names
             FROM " . TABLES::COMPOSITIONS . " comp
             LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
-            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
             LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cnf.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cnf.filiere_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON ((cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code) OR cl.code_classe = comp.classe_code)
+            LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
         ";
         $conditions = [];
         $params = [];
@@ -34,8 +33,7 @@ class ModelComposition extends BaseModel
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "(cl.code_classe = ? OR comp.classe_code = ?)";
-            $params[] = $classeCode;
+            $conditions[] = "cl.code_classe = ?";
             $params[] = $classeCode;
         }
         if (!empty($typeComposition)) {
@@ -55,8 +53,7 @@ class ModelComposition extends BaseModel
             }
         }
         if (!empty($matiereCode)) {
-            $conditions[] = "(comp.matiere_code = ? OR EXISTS (SELECT 1 FROM " . TABLES::COMPOSITION_MATIERES . " cm WHERE cm.composition_code = comp.code_composition AND cm.matiere_code = ?))";
-            $params[] = $matiereCode;
+            $conditions[] = "EXISTS (SELECT 1 FROM " . TABLES::COMPOSITION_MATIERES . " cm WHERE cm.composition_code = comp.code_composition AND cm.matiere_code = ?)";
             $params[] = $matiereCode;
         }
 
@@ -230,23 +227,18 @@ class ModelComposition extends BaseModel
             $sql = "
                 SELECT DISTINCT comp.*, 
                        ? AS libelle_classe,
-                       COALESCE(m.libelle_matiere, m_cm.libelle_matiere) AS libelle_matiere, 
-                       s.libelle_semestre
+                       m.libelle_matiere AS libelle_matiere, 
+                       s.libelle_semestre,
+                       cm.id_composition_matiere
                 FROM " . TABLES::COMPOSITIONS . " comp
-                LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
-                LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = comp.matiere_code
-                LEFT JOIN " . TABLES::MATIERES . " m_cm ON m_cm.code_matiere = cm.matiere_code
+                JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
+                JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
+                JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
                 LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
-                WHERE (
-                    (comp.classe_code = ? AND comp.matiere_code = ?)
-                    OR
-                    (cnf.niveau_code = ? AND cnf.filiere_code = ? AND cm.matiere_code = ?)
-                )
+                WHERE cnf.niveau_code = ? AND cnf.filiere_code = ? AND cm.matiere_code = ?
             ";
             $params = [
                 $classeRow['libelle_classe'],
-                $classeCode, $matiereCode,
                 $classeRow['niveau_code'], $classeRow['filiere_code'], $matiereCode
             ];
 
@@ -392,9 +384,14 @@ class ModelComposition extends BaseModel
     public function findExistingComposition(string $classeCode, string $matiereCode, string $semestreCode, string $typeComposition, string $anneeCode): ?array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT * FROM " . TABLES::COMPOSITIONS . " 
-            WHERE classe_code = ? AND matiere_code = ? AND semestre_code = ? AND type_composition = ? AND (annee_code = ? OR ? IS NULL OR ? = '')
-            ORDER BY id_composition DESC LIMIT 1
+            SELECT comp.*, cm.id_composition_matiere 
+            FROM " . TABLES::COMPOSITIONS . " comp
+            JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
+            JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+            JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
+            WHERE cl.code_classe = ? AND cm.matiere_code = ? AND comp.semestre_code = ? AND comp.type_composition = ? 
+              AND (comp.annee_code = ? OR ? IS NULL OR ? = '')
+            ORDER BY comp.id_composition DESC LIMIT 1
         ");
         $stmt->execute([$classeCode, $matiereCode, $semestreCode, $typeComposition, $anneeCode, $anneeCode, $anneeCode]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
