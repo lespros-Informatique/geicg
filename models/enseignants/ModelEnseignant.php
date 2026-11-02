@@ -7,6 +7,51 @@ class ModelEnseignant extends BaseModel
     protected ?string $statusField = 'statut_enseignant';
     protected ?string $createdAtField = 'created_at_enseignant';
 
+    public function getStats(): array
+    {
+        $db = $this->getCon();
+        try {
+            $stmt = $db->query("
+                SELECT 
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN LOWER(TRIM(statut_enseignant)) = '" . STATUTS::ACTIF . "' THEN 1 ELSE 0 END) AS actifs,
+                    SUM(CASE WHEN LOWER(TRIM(type_contrat)) = 'permanent' THEN 1 ELSE 0 END) AS permanents,
+                    SUM(CASE WHEN LOWER(TRIM(type_contrat)) IN ('vacataire', 'prestataire') THEN 1 ELSE 0 END) AS vacataires
+                FROM " . TABLES::ENSEIGNANTS
+            );
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return [
+                'total' => (int)($res['total'] ?? 0),
+                'actifs' => (int)($res['actifs'] ?? 0),
+                'permanents' => (int)($res['permanents'] ?? 0),
+                'vacataires' => (int)($res['vacataires'] ?? 0)
+            ];
+        } catch (Exception $e) {
+            error_log("ModelEnseignant::getStats error: " . $e->getMessage());
+            return [
+                'total' => 0,
+                'actifs' => 0,
+                'permanents' => 0,
+                'vacataires' => 0
+            ];
+        }
+    }
+
+    public function getDistinctGrades(): array
+    {
+        try {
+            $stmt = $this->getCon()->query("
+                SELECT DISTINCT grade_enseignant 
+                FROM " . TABLES::ENSEIGNANTS . " 
+                WHERE grade_enseignant IS NOT NULL AND TRIM(grade_enseignant) != ''
+                ORDER BY grade_enseignant ASC
+            ");
+            return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
     public function getAll(): array
     {
         $sql = "
@@ -23,9 +68,14 @@ class ModelEnseignant extends BaseModel
                    u.prenom_user AS prenom_enseignant,
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
-                   u.sexe_user AS sexe_enseignant
+                   u.sexe_user AS sexe_enseignant,
+                   GROUP_CONCAT(DISTINCT edt.matiere_code SEPARATOR ',') AS matieres_codes,
+                   GROUP_CONCAT(DISTINCT m.libelle_matiere SEPARATOR ', ') AS matieres_libelles
             FROM " . TABLES::ENSEIGNANTS . " e
             JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
+            LEFT JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON (edt.enseignant_code = e.code_enseignant OR edt.enseignant_code = e.user_code)
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            GROUP BY e.id_enseignant
             ORDER BY e.id_enseignant DESC
         ";
         try {

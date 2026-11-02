@@ -11,7 +11,14 @@ class EnseignantController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
-        $this->loadView('../views/enseignants/list.php');
+        $stats = $this->model->getStats();
+        $matieres = (new ModelMatiere())->getAll();
+        $grades = $this->model->getDistinctGrades();
+        $this->loadView('../views/enseignants/list.php', [
+            'stats' => $stats,
+            'matieres' => $matieres,
+            'grades' => $grades
+        ]);
     }
 
     public function apiList()
@@ -28,7 +35,10 @@ class EnseignantController extends BaseController
                 'editId' => $idCrypte
             ]);
         }
-        $this->json(['data' => $data]);
+        $this->json([
+            'data' => $data,
+            'stats' => $this->model->getStats()
+        ]);
     }
 
     public function add()

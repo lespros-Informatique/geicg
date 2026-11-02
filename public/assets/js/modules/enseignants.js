@@ -40,9 +40,15 @@ $(document).ready(function() {
           if (row.telephone_enseignant) res += '<div style="font-size:12px; color:#64748B;">' + row.telephone_enseignant + '</div>';
           return res || '-';
         }},
-        { data: 'grade_enseignant', render: function(d, type) {
+        { data: 'grade_enseignant', render: function(d, type, row) {
           if (type !== 'display') return d || '';
-          return '<span style="font-weight:600; color:#334155;">' + (d || 'Enseignant') + '</span>';
+          var html = '<span style="font-weight:600; color:#334155;">' + (d || 'Enseignant') + '</span>';
+          if (row.matieres_libelles) {
+            html += '<div style="font-size:11px; color:#0284C7; font-weight:600; margin-top:3px; max-width:240px; white-space:normal; line-height:1.2;">' +
+                    '<i data-lucide="book-open" style="width:11px;height:11px;display:inline-block;vertical-align:middle;margin-right:2px;"></i> ' +
+                    row.matieres_libelles + '</div>';
+          }
+          return html;
         }},
         { data: 'type_contrat', render: function(d, type, row) {
           if (type !== 'display') return d || '';
@@ -74,7 +80,145 @@ $(document).ready(function() {
       language: (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage) ? GEICG.dataTableLanguage : {
         url: racine + 'json/datatables-i18n-fr-FR.json'
       },
-      drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+      drawCallback: function() {
+        if (window.lucide) lucide.createIcons();
+        try {
+          var api = this.api();
+          var json = api.ajax.json();
+          if (json && json.stats) {
+            $('#kpi-total-enseignants').text(json.stats.total || 0);
+            $('#kpi-actifs-enseignants').text(json.stats.actifs || 0);
+            $('#kpi-permanents-enseignants').text(json.stats.permanents || 0);
+            $('#kpi-vacataires-enseignants').text(json.stats.vacataires || 0);
+          } else {
+            var rows = api.rows().data().toArray();
+            var total = rows.length;
+            var actifs = 0;
+            var permanents = 0;
+            var vacataires = 0;
+
+            rows.forEach(function(r) {
+              if (r) {
+                var st = (r.statut_enseignant || '').toString().toLowerCase().trim();
+                var tc = (r.type_contrat || '').toString().toLowerCase().trim();
+                if (st === 'actif') actifs++;
+                if (tc === 'permanent') permanents++;
+                else if (tc === 'vacataire' || tc === 'prestataire') vacataires++;
+              }
+            });
+
+            $('#kpi-total-enseignants').text(total);
+            $('#kpi-actifs-enseignants').text(actifs);
+            $('#kpi-permanents-enseignants').text(permanents);
+            $('#kpi-vacataires-enseignants').text(vacataires);
+          }
+        } catch (e) {}
+      }
+    });
+
+    // Initialisation Select2 des filtres avancés
+    $('#filter-statut, #filter-contrat, #filter-matiere, #filter-grade, #filter-sexe').select2({
+      width: '100%'
+    });
+
+    // Moteur de recherche et de filtrage multi-critères DataTable
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex, rowData) {
+      if (!settings || !settings.nTable || settings.nTable.id !== 'table-enseignants') {
+        return true;
+      }
+
+      var filterStatut = ($('#filter-statut').val() || '').toLowerCase().trim();
+      var filterContrat = ($('#filter-contrat').val() || '').toLowerCase().trim();
+      var filterMatiere = ($('#filter-matiere').val() || '').trim();
+      var filterGrade = ($('#filter-grade').val() || '').toLowerCase().trim();
+      var filterSexe = ($('#filter-sexe').val() || '').toUpperCase().trim();
+
+      // 1. Filtre par Statut
+      if (filterStatut) {
+        var rowStatut = (rowData.statut_enseignant || '').toString().toLowerCase().trim();
+        if (rowStatut !== filterStatut) return false;
+      }
+
+      // 2. Filtre par Contrat
+      if (filterContrat) {
+        var rowContrat = (rowData.type_contrat || '').toString().toLowerCase().trim();
+        if (rowContrat !== filterContrat) return false;
+      }
+
+      // 3. Filtre par Matière
+      if (filterMatiere) {
+        var matCodes = (rowData.matieres_codes || '').toString().split(',');
+        if (matCodes.indexOf(filterMatiere) === -1) return false;
+      }
+
+      // 4. Filtre par Grade Académique
+      if (filterGrade) {
+        var rowGrade = (rowData.grade_enseignant || '').toString().toLowerCase().trim();
+        if (rowGrade.indexOf(filterGrade) === -1) return false;
+      }
+
+      // 5. Filtre par Genre / Sexe
+      if (filterSexe) {
+        var rowSexe = (rowData.sexe_user || rowData.sexe_enseignant || '').toString().toUpperCase().trim();
+        if (filterSexe === 'M' && rowSexe !== 'M' && rowSexe !== 'MASCULIN') return false;
+        if (filterSexe === 'F' && rowSexe !== 'F' && rowSexe !== 'FEMININ') return false;
+      }
+
+      return true;
+    });
+
+    // Déclencheur sur changement des filtres select2
+    $('#filter-statut, #filter-contrat, #filter-matiere, #filter-grade, #filter-sexe').on('change', function() {
+      table.draw();
+    });
+
+    // Réinitialisation globale de tous les filtres
+    $('#btn-reset-filters').on('click', function(e) {
+      e.preventDefault();
+      $('#filter-statut').val('').trigger('change.select2');
+      $('#filter-contrat').val('').trigger('change.select2');
+      $('#filter-matiere').val('').trigger('change.select2');
+      $('#filter-grade').val('').trigger('change.select2');
+      $('#filter-sexe').val('').trigger('change.select2');
+      $('.kpi-card-filter').css({
+        'border-color': '#E2E8F0',
+        'box-shadow': '0 1px 3px rgba(0,0,0,0.04)',
+        'transform': 'none'
+      });
+      table.search('').draw();
+    });
+
+    // Filtrage rapide au clic sur les cartes statistiques KPI
+    $(document).on('click', '.kpi-card-filter', function() {
+      var filterVal = $(this).data('filter') || '';
+      $('.kpi-card-filter').css({
+        'border-color': '#E2E8F0',
+        'box-shadow': '0 1px 3px rgba(0,0,0,0.04)',
+        'transform': 'none'
+      });
+
+      if (filterVal) {
+        $(this).css({
+          'border-color': '#3B82F6',
+          'box-shadow': '0 0 0 2px rgba(59,130,246,0.2)',
+          'transform': 'translateY(-2px)'
+        });
+      }
+
+      if (filterVal === 'actif' || filterVal === 'inactif') {
+        $('#filter-statut').val(filterVal).trigger('change.select2');
+        $('#filter-contrat').val('').trigger('change.select2');
+      } else if (filterVal === 'permanent' || filterVal === 'vacataire' || filterVal === 'prestataire') {
+        $('#filter-contrat').val(filterVal).trigger('change.select2');
+        $('#filter-statut').val('').trigger('change.select2');
+      } else {
+        $('#filter-statut').val('').trigger('change.select2');
+        $('#filter-contrat').val('').trigger('change.select2');
+        $('#filter-matiere').val('').trigger('change.select2');
+        $('#filter-grade').val('').trigger('change.select2');
+        $('#filter-sexe').val('').trigger('change.select2');
+      }
+      table.draw();
     });
 
     // Bascule de statut instantanée via Ajax
