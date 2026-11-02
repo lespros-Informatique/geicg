@@ -426,6 +426,59 @@ class ModelBulletin extends BaseModel
         $absNonJustHeures = (float)($absData['abs_non_justifiees'] ?? 0);
         $heuresAbsences = $totalAbsHeures > 0 ? ($totalAbsHeures . ' H' . ($absNonJustHeures > 0 ? ' (dont ' . $absNonJustHeures . ' H non justifiées)' : '')) : '0 H';
 
+        // Récupération des moyennes multi-semestres et examens pour le récapitulatif annuel
+        $moySem1 = null;
+        $moySem2 = null;
+        $moyExam = null;
+
+        $stmtMultiSem = $db->prepare("
+            SELECT comp.semestre_code, s.libelle_semestre,
+                   ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moy_sem
+            FROM " . TABLES::NOTES . " n
+            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+            LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+            WHERE n.inscription_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
+              AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
+            GROUP BY comp.semestre_code, s.libelle_semestre
+            ORDER BY s.id_semestre ASC
+        ");
+        $stmtMultiSem->execute([$item['code_inscription']]);
+        $multiSemRows = $stmtMultiSem->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($multiSemRows as $idx => $sr) {
+            $semName = mb_strtolower($sr['libelle_semestre'] ?? '');
+            if (str_contains($semName, '1') || $idx === 0) {
+                if ($moySem1 === null) $moySem1 = (float)$sr['moy_sem'];
+            }
+            if (str_contains($semName, '2') || $idx === 1) {
+                if ($moySem2 === null) $moySem2 = (float)$sr['moy_sem'];
+            }
+        }
+
+        foreach ($semestres as $idx => $s) {
+            if ($s['code_semestre'] === $selectedSemestreCode) {
+                $sLib = mb_strtolower($s['libelle_semestre'] ?? '');
+                if (str_contains($sLib, '1') || $idx === 0) {
+                    $moySem1 = $moyenneGenerale;
+                } elseif (str_contains($sLib, '2') || $idx === 1) {
+                    $moySem2 = $moyenneGenerale;
+                }
+            }
+        }
+
+        $stmtExam = $db->prepare("
+            SELECT ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moy_exam
+            FROM " . TABLES::NOTES . " n
+            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+            WHERE n.inscription_code = ? AND comp.type_composition = 'EXAMEN' AND n.statut_note = '" . STATUTS::ACTIF . "'
+              AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
+        ");
+        $stmtExam->execute([$item['code_inscription']]);
+        $examVal = $stmtExam->fetchColumn();
+        if ($examVal !== false && $examVal !== null) {
+            $moyExam = (float)$examVal;
+        }
+
         return [
             'item' => $item,
             'semestres' => $semestres,
@@ -454,7 +507,10 @@ class ModelBulletin extends BaseModel
             'moyenneMinClasse' => $moyenneMinClasse,
             'moyenneMaxClasse' => $moyenneMaxClasse,
             'moyenneMoyClasse' => $moyenneMoyClasse,
-            'heuresAbsences' => $heuresAbsences
+            'heuresAbsences' => $heuresAbsences,
+            'moy_semestre1' => $moySem1,
+            'moy_semestre2' => $moySem2,
+            'moy_examen' => $moyExam
         ];
     }
 

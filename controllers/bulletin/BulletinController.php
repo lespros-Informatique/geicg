@@ -182,14 +182,17 @@ class BulletinController extends BaseController
                 'photo_etudiant' => $item['photo_etudiant'] ?? '',
                 'nom_prenom_etudiant' => $nomComplet ?: '-',
                 'matricule_etudiant' => $item['matricule_etudiant'] ?? '-',
+                'matricule_mesrs' => !empty($item['matricule_mesrs']) ? $item['matricule_mesrs'] : (!empty($item['matricule_menet']) ? $item['matricule_menet'] : ($item['matricule_etudiant'] ?? '-')),
                 'date_naissance' => !empty($item['date_naissance_etudiant']) ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : '-',
                 'lieu_naissance' => $item['lieu_naissance_etudiant'] ?? '-',
-                'sexe_etudiant' => $item['sexe_etudiant'] ?? '-',
+                'sexe_etudiant' => strtoupper($item['sexe_etudiant'] ?? '-'),
                 'filiere_libelle' => $item['libelle_filiere'] ?? '-',
                 'niveau_libelle' => $item['libelle_niveau'] ?? '-',
                 'classe_libelle' => $item['libelle_classe'] ?? '-',
+                'classe_code_or_ref' => !empty($item['code_classe']) ? $item['code_classe'] : ($item['libelle_classe'] ?? '-'),
                 'effectif_classe' => $calc['totalElevesClasse'] ?? '-',
-                'statut_affectation' => (!empty($item['affectation_etat']) && $item['affectation_etat'] === 'oui') ? 'AFFECTÉ(E)' : 'NON AFFECTÉ(E)',
+                'statut_affectation' => (!empty($item['affectation_etat']) && strtolower(trim($item['affectation_etat'])) === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
+                'redoublant' => (!empty($item['redoublant']) && strtolower(trim($item['redoublant'])) === 'oui') ? 'OUI' : 'NON',
                 'intitule_periode' => strtoupper($semestreLibelle),
                 'matieres_notes' => $calc['matieresNotes'],
                 'matieresGenerales' => $calc['matieresGenerales'] ?? [],
@@ -215,7 +218,11 @@ class BulletinController extends BaseController
                 'moyenneMinClasse' => $calc['moyenneMinClasse'],
                 'moyenneMaxClasse' => $calc['moyenneMaxClasse'],
                 'moyenneMoyClasse' => $calc['moyenneMoyClasse'],
-                'heures_absences' => $calc['heuresAbsences'] ?? '0 H'
+                'heures_absences' => $calc['heuresAbsences'] ?? '0 H',
+                'moy_semestre1' => $calc['moy_semestre1'] ?? null,
+                'moy_semestre2' => $calc['moy_semestre2'] ?? null,
+                'moy_examen' => $calc['moy_examen'] ?? null,
+                'directeur_etudes' => 'Dr COULIBALY Sonan Hamed'
             ];
 
             $html = PdfService::renderTemplate('bulletin_notes.php', $dataView);
@@ -229,8 +236,8 @@ class BulletinController extends BaseController
                 'orientation' => 'P',
                 'format' => 'A4',
                 'title' => 'Bulletin de Notes - ' . $nomComplet,
-                'margin_left' => 8,
-                'margin_right' => 8,
+                'margin_left' => 7,
+                'margin_right' => 7,
                 'margin_top' => 6,
                 'margin_bottom' => 6
             ]);
