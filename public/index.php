@@ -434,6 +434,7 @@ $route->addRoute('/depense/formulaire', [$depenseController, 'formulaire']);
 // Module: enseignant (EnseignantController)
 $route->addRoute('/enseignant/list', [$enseignantController, 'list']);
 $route->addRoute('/enseignant/apiList', [$enseignantController, 'apiList']);
+$route->addRoute('/enseignant/apiProgrammeJour', [$enseignantController, 'apiProgrammeJour']);
 $route->addRoute('/enseignant/imprimerPdf', [$enseignantController, 'imprimerPdf']);
 $route->addRoute('/enseignant/add', [$enseignantController, 'add']);
 $route->addRoute('/enseignant/edit', [$enseignantController, 'edit']);

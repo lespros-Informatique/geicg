@@ -85,8 +85,10 @@ $(document).ready(function() {
                  '</label>' +
                  '</div>';
         }},
-        { data: null, width: '160px', orderable: false, render: function(d) {
-          return '<a href="' + racine + 'enseignant/edition/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
+        { data: null, width: '230px', orderable: false, render: function(d) {
+          var ensName = (((d.nom_enseignant || '') + ' ' + (d.prenom_enseignant || '')).trim()).replace(/"/g, '&quot;');
+          return '<button type="button" class="btn btn-sm btn-outline-primary btn-open-prof-programme" data-code="' + (d.code_enseignant || '') + '" data-name="' + ensName + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="Programme des cours de cet enseignant"><i data-lucide="calendar" style="width:13px;height:13px;"></i> Cours</button>' +
+                 '<a href="' + racine + 'enseignant/edition/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
                  '<a href="' + racine + 'enseignant/details/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Profil</a>';
         }, className: 'text-end' }
       ],
@@ -285,6 +287,223 @@ $(document).ready(function() {
           $input.prop('checked', !isChecked);
         }
       });
+    });
+
+    // =========================================================================
+    // GESTION DU MODAL : PROGRAMME DES COURS (Aujourd'hui & Autre date)
+    // =========================================================================
+    function getTodayDateStr() {
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = String(now.getMonth() + 1).padStart(2, '0');
+      var d = String(now.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
+    }
+
+    function formatTime(t) {
+      if (!t) return '';
+      return t.substring(0, 5);
+    }
+
+    function loadProgrammeCours(dateStr, ensCode) {
+      if (!dateStr) dateStr = getTodayDateStr();
+      ensCode = (ensCode !== undefined && ensCode !== null) ? ensCode : ($('#select-programme-enseignant').val() || '');
+
+      $('#programme-loading').show();
+      $('#programme-table-wrapper').hide();
+      $('#programme-empty-state').hide();
+
+      $.ajax({
+        url: racine + 'enseignant/apiProgrammeJour',
+        type: 'GET',
+        data: {
+          date: dateStr,
+          enseignant_code: ensCode
+        },
+        dataType: 'json',
+        success: function(res) {
+          $('#programme-loading').hide();
+          if (res.status === 1) {
+            // Met à jour les libellés de date et badge
+            $('#badge-programme-jour').text(res.is_today ? "Aujourd'hui" : res.jour_libelle);
+            $('#badge-programme-jour').css('background', res.is_today ? '#10B981' : '#3B82F6');
+            $('#modal-programme-sub-text').text(res.date_formatee + (ensCode ? ' • Filtré par enseignant' : ' • Planning global'));
+
+            // Met à jour les KPI
+            var stats = res.stats || {};
+            $('#kpi-programme-cours').text(stats.total_cours || 0);
+            $('#kpi-programme-heures').text((stats.total_heures || 0) + ' h');
+            $('#kpi-programme-profs').text(stats.nb_profs || 0);
+            $('#kpi-programme-classes').text(stats.nb_classes || 0);
+
+            var items = res.data || [];
+            if (items.length > 0) {
+              var html = '';
+              items.forEach(function(item) {
+                var creneau = formatTime(item.heure_debut) + ' - ' + formatTime(item.heure_fin);
+                var duree = (item.duree || 0) + ' h';
+                var profNom = ((item.nom_enseignant || '') + ' ' + (item.prenom_enseignant || '')).trim() || 'Non assigné';
+                var profContact = item.telephone_enseignant ? '<div style="font-size:11px;color:#64748B;"><i data-lucide="phone" style="width:11px;height:11px;display:inline-block;vertical-align:middle;"></i> ' + item.telephone_enseignant + '</div>' : '';
+                var contratBadge = item.type_contrat === 'permanent' 
+                  ? '<span style="background:#EEF2FF;color:#4338CA;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">Permanent</span>'
+                  : (item.type_contrat ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">' + item.type_contrat + '</span>' : '');
+
+                html += '<tr style="border-bottom: 1px solid #F1F5F9;">' +
+                        '  <td style="padding: 12px;">' +
+                        '    <div style="font-weight: 800; color: #1E3A5F; font-size: 13px;">' + creneau + '</div>' +
+                        '    <span style="background:#EFF6FF;color:#1D4ED8;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;">' + duree + '</span>' +
+                        '  </td>' +
+                        '  <td style="padding: 12px;">' +
+                        '    <strong style="color: #0F172A; font-size: 13px;">' + (item.libelle_matiere || '-') + '</strong>' +
+                        '    <div style="font-size:11px;color:#64748B;">Code: ' + (item.matiere_code || '-') + '</div>' +
+                        '  </td>' +
+                        '  <td style="padding: 12px;">' +
+                        '    <span style="background:#F8FAFC;border:1px solid #CBD5E1;color:#1E293B;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px;">' +
+                        '      ' + (item.libelle_classe || '-') +
+                        '    </span>' +
+                        '  </td>' +
+                        '  <td style="padding: 12px;">' +
+                        '    <div style="font-weight:700;color:#0F172A;font-size:13px;"><i data-lucide="door-closed" style="width:13px;height:13px;display:inline-block;vertical-align:middle;color:#3B82F6;"></i> ' + (item.libelle_salle || 'Non définie') + '</div>' +
+                        '  </td>' +
+                        '  <td style="padding: 12px;">' +
+                        '    <div style="font-weight:800;color:#0F172A;font-size:13px;">' + profNom + ' ' + contratBadge + '</div>' +
+                        '    ' + profContact +
+                        '  </td>' +
+                        '</tr>';
+              });
+              $('#programme-cours-tbody').html(html);
+              $('#programme-table-wrapper').show();
+              if (window.lucide) lucide.createIcons();
+            } else {
+              $('#programme-empty-msg').text('Aucun cours n\'est programmé pour le ' + res.date_formatee + (ensCode ? ' avec cet enseignant.' : '.'));
+              $('#programme-empty-state').show();
+              if (window.lucide) lucide.createIcons();
+            }
+          }
+        },
+        error: function() {
+          $('#programme-loading').hide();
+          $('#programme-empty-msg').text('Erreur lors du chargement du programme.');
+          $('#programme-empty-state').show();
+        }
+      });
+    }
+
+    function openProgrammeModal(preselectedDate, preselectedEnsCode) {
+      var dateToUse = preselectedDate || getTodayDateStr();
+      $('#input-programme-date').val(dateToUse);
+      if (preselectedEnsCode !== undefined) {
+        $('#select-programme-enseignant').val(preselectedEnsCode);
+      }
+      $('#modal-programme-cours').css('display', 'flex');
+      loadProgrammeCours(dateToUse, $('#select-programme-enseignant').val());
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeProgrammeModal() {
+      $('#modal-programme-cours').hide();
+    }
+
+    // Clic bouton d'ouverture global
+    $('#btn-programme-cours').on('click', function(e) {
+      e.preventDefault();
+      openProgrammeModal(getTodayDateStr(), '');
+    });
+
+    // Clic bouton d'action par enseignant dans le tableau
+    $(document).on('click', '.btn-open-prof-programme', function(e) {
+      e.preventDefault();
+      var ensCode = $(this).data('code') || '';
+      openProgrammeModal(getTodayDateStr(), ensCode);
+    });
+
+    // Fermeture modal
+    $(document).on('click', '.btn-close-programme-modal', function(e) {
+      e.preventDefault();
+      closeProgrammeModal();
+    });
+
+    // Fermeture si clic à l'extérieur
+    $('#modal-programme-cours').on('click', function(e) {
+      if (e.target === this) {
+        closeProgrammeModal();
+      }
+    });
+
+    // Changement de date via l'input
+    $('#input-programme-date').on('change', function() {
+      var d = $(this).val();
+      loadProgrammeCours(d, $('#select-programme-enseignant').val());
+    });
+
+    // Raccourci bouton Aujourd'hui
+    $('#btn-programme-today').on('click', function() {
+      var today = getTodayDateStr();
+      $('#input-programme-date').val(today);
+      loadProgrammeCours(today, $('#select-programme-enseignant').val());
+    });
+
+    // Jour précédent
+    $('#btn-programme-prev-day').on('click', function() {
+      var curVal = $('#input-programme-date').val();
+      var cur = curVal ? new Date(curVal + 'T00:00:00') : new Date();
+      cur.setDate(cur.getDate() - 1);
+      var y = cur.getFullYear();
+      var m = String(cur.getMonth() + 1).padStart(2, '0');
+      var d = String(cur.getDate()).padStart(2, '0');
+      var dateStr = y + '-' + m + '-' + d;
+      $('#input-programme-date').val(dateStr);
+      loadProgrammeCours(dateStr, $('#select-programme-enseignant').val());
+    });
+
+    // Jour suivant
+    $('#btn-programme-next-day').on('click', function() {
+      var curVal = $('#input-programme-date').val();
+      var cur = curVal ? new Date(curVal + 'T00:00:00') : new Date();
+      cur.setDate(cur.getDate() + 1);
+      var y = cur.getFullYear();
+      var m = String(cur.getMonth() + 1).padStart(2, '0');
+      var d = String(cur.getDate()).padStart(2, '0');
+      var dateStr = y + '-' + m + '-' + d;
+      $('#input-programme-date').val(dateStr);
+      loadProgrammeCours(dateStr, $('#select-programme-enseignant').val());
+    });
+
+    // Filtre enseignant
+    $('#select-programme-enseignant').on('change', function() {
+      loadProgrammeCours($('#input-programme-date').val(), $(this).val());
+    });
+
+    // Impression de la journée depuis le modal
+    $('#btn-print-programme-modal').on('click', function() {
+      var title = $('#modal-programme-sub-text').text();
+      var rowsHtml = $('#programme-cours-tbody').html();
+      if (!rowsHtml || rowsHtml.trim() === '') {
+        if (typeof showToast === 'function') showToast('Aucun cours à imprimer pour cette journée', 'warning');
+        return;
+      }
+      var win = window.open('', '_blank');
+      win.document.write('<!DOCTYPE html><html><head><title>Programme des cours</title>');
+      win.document.write('<style>');
+      win.document.write('body{font-family:Arial,sans-serif;font-size:12px;margin:25px;color:#1E293B;}');
+      win.document.write('.header{margin-bottom:15px;border-bottom:2px solid #1E3A5F;padding-bottom:10px;}');
+      win.document.write('.title{font-size:16px;font-weight:bold;color:#1E3A5F;text-transform:uppercase;}');
+      win.document.write('.sub{font-size:12px;color:#64748B;margin-top:3px;}');
+      win.document.write('table{width:100%;border-collapse:collapse;margin-top:10px;}');
+      win.document.write('th,td{border:1px solid #CBD5E1;padding:8px 10px;text-align:left;}');
+      win.document.write('th{background:#1E3A5F;color:#FFFFFF;font-size:11px;text-transform:uppercase;}');
+      win.document.write('tr:nth-child(even){background:#F8FAFC;}');
+      win.document.write('</style></head><body>');
+      win.document.write('<div class="header">');
+      win.document.write('  <div class="title">GEICG &bull; Programme Officiel des Cours</div>');
+      win.document.write('  <div class="sub">' + title + ' &bull; Date d\'impression : ' + (new Date()).toLocaleDateString('fr-FR') + '</div>');
+      win.document.write('</div>');
+      win.document.write('<table><thead><tr><th>Créneau</th><th>Matière</th><th>Classe</th><th>Salle</th><th>Enseignant</th></tr></thead><tbody>');
+      win.document.write(rowsHtml);
+      win.document.write('</tbody></table>');
+      win.document.write('<script>window.onload=function(){window.print();};<\/script>');
+      win.document.write('</body></html>');
+      win.document.close();
     });
   }
 

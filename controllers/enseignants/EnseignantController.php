@@ -14,10 +14,12 @@ class EnseignantController extends BaseController
         $stats = $this->model->getStats();
         $annees = (new ModelAnnee())->getAll();
         $selectedAnneeCode = Session::get('annee_active_code');
+        $allEnseignants = $this->model->getAll();
         $this->loadView('../views/enseignants/list.php', [
             'stats' => $stats,
             'annees' => $annees,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'allEnseignants' => $allEnseignants
         ]);
     }
 
@@ -38,6 +40,135 @@ class EnseignantController extends BaseController
         $this->json([
             'data' => $data,
             'stats' => $this->model->getStats()
+        ]);
+    }
+
+    public function apiProgrammeJour()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
+
+        $date = trim($_GET['date'] ?? ($_POST['date'] ?? date('Y-m-d')));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = date('Y-m-d');
+        }
+
+        $ensCode = trim($_GET['enseignant_code'] ?? ($_POST['enseignant_code'] ?? ''));
+        $anneeCode = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
+
+        // Conversion Date -> Jour de la semaine en français
+        $jours = [
+            1 => 'lundi',
+            2 => 'mardi',
+            3 => 'mercredi',
+            4 => 'jeudi',
+            5 => 'vendredi',
+            6 => 'samedi',
+            7 => 'dimanche'
+        ];
+        $joursFr = [
+            1 => 'Lundi',
+            2 => 'Mardi',
+            3 => 'Mercredi',
+            4 => 'Jeudi',
+            5 => 'Vendredi',
+            6 => 'Samedi',
+            7 => 'Dimanche'
+        ];
+        $moisFr = [
+            1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
+            5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
+            9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
+        ];
+
+        $time = strtotime($date);
+        $numJour = (int)date('N', $time);
+        $jourDb = $jours[$numJour] ?? 'lundi';
+        $jourFr = $joursFr[$numJour] ?? 'Lundi';
+        $moisNum = (int)date('n', $time);
+        $dateFormatee = $jourFr . ' ' . date('d', $time) . ' ' . ($moisFr[$moisNum] ?? '') . ' ' . date('Y', $time);
+        $isToday = ($date === date('Y-m-d'));
+
+        $sql = "
+            SELECT edt.id_emploi,
+                   edt.code_emploi,
+                   edt.classe_code,
+                   edt.matiere_code,
+                   edt.enseignant_code,
+                   edt.salle_code,
+                   edt.annee_code,
+                   edt.jour,
+                   edt.heure_debut,
+                   edt.heure_fin,
+                   ROUND(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut)) / 3600, 1) AS duree,
+                   m.libelle_matiere,
+                   cl.libelle_classe,
+                   s.libelle_salle,
+                   u.code_user,
+                   u.nom_user AS nom_enseignant,
+                   u.prenom_user AS prenom_enseignant,
+                   u.telephone_user AS telephone_enseignant,
+                   u.email_user AS email_enseignant,
+                   u.photo_user,
+                   e.type_contrat
+            FROM " . TABLES::EMPLOIS_TEMPS . " edt
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
+            WHERE LOWER(edt.jour) = ?
+              AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+        ";
+        $params = [$jourDb];
+
+        if (!empty($anneeCode)) {
+            $sql .= " AND edt.annee_code = ? ";
+            $params[] = $anneeCode;
+        }
+
+        if (!empty($ensCode)) {
+            $sql .= " AND edt.enseignant_code = ? ";
+            $params[] = $ensCode;
+        }
+
+        $sql .= " ORDER BY edt.heure_debut ASC, cl.libelle_classe ASC ";
+
+        try {
+            $stmt = (new ModelEmploi())->getCon()->prepare($sql);
+            $stmt->execute($params);
+            $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $ex) {
+            error_log("apiProgrammeJour error: " . $ex->getMessage());
+            $items = [];
+        }
+
+        $totalHeures = 0;
+        $profsSet = [];
+        $classesSet = [];
+        $sallesSet = [];
+        foreach ($items as $item) {
+            $totalHeures += (float)($item['duree'] ?? 0);
+            if (!empty($item['enseignant_code'])) $profsSet[$item['enseignant_code']] = true;
+            if (!empty($item['classe_code'])) $classesSet[$item['classe_code']] = true;
+            if (!empty($item['salle_code'])) $sallesSet[$item['salle_code']] = true;
+        }
+
+        $this->json([
+            'status' => 1,
+            'date' => $date,
+            'jour' => $jourDb,
+            'jour_libelle' => $jourFr,
+            'date_formatee' => $dateFormatee,
+            'is_today' => $isToday,
+            'stats' => [
+                'total_cours' => count($items),
+                'total_heures' => round($totalHeures, 1),
+                'nb_profs' => count($profsSet),
+                'nb_classes' => count($classesSet),
+                'nb_salles' => count($sallesSet)
+            ],
+            'data' => $items
         ]);
     }
 
