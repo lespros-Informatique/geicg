@@ -46,6 +46,7 @@
 
   // Table 1: Assignations Parcours Pivots
   var tableAssign = $('#table-assignations').DataTable({
+    destroy: true,
     ajax: racine + 'filiere_cycle/apiList',
     processing: true,
     autoWidth: false,
@@ -88,6 +89,7 @@
 
   // Table 2: Catalogue Filières
   var tableFilieres = $('#table-filieres-catalogue').DataTable({
+    destroy: true,
     ajax: racine + 'filiere/apiList',
     processing: true,
     autoWidth: false,
@@ -133,6 +135,7 @@
 
   // Table 3: Cycles d'Études
   var tableCycles = $('#table-cycles-list').DataTable({
+    destroy: true,
     ajax: racine + 'cycle/apiList',
     processing: true,
     autoWidth: false,
@@ -173,6 +176,7 @@
 
   // Table 4: Niveaux d'Études
   var tableNiveaux = $('#table-niveaux-list').DataTable({
+    destroy: true,
     ajax: racine + 'niveau/apiList',
     processing: true,
     autoWidth: false,
@@ -660,7 +664,7 @@
   // 2. VUE : HUB FILIÈRES & CYCLES (views/filiere_cycles/hub.php)
   // =========================================================================
   function initFiliereCyclesHubModule() {
-    if (!$('#table-filieres-catalogue, #table-cycles-list').length) return;
+    if ($('#filieres-list-config').length || !$('#table-filieres-catalogue, #table-cycles-list').length) return;
 
   var racine = window.RACINE || '/';
   if (window.lucide) lucide.createIcons();
@@ -677,6 +681,7 @@
 
   // Table 1: Assignations
   var tableAssign = $('#table-assignations').DataTable({
+    destroy: true,
     ajax: racine + 'filiere_cycle/apiList',
     processing: true,
     autoWidth: false,
@@ -709,6 +714,7 @@
 
   // Table 2: Catalogue Filières
   var tableFilieres = $('#table-filieres-catalogue').DataTable({
+    destroy: true,
     ajax: racine + 'filiere/apiList',
     processing: true,
     autoWidth: false,
@@ -746,6 +752,7 @@
 
   // Table 3: Cycles d'Études
   var tableCycles = $('#table-cycles-list').DataTable({
+    destroy: true,
     ajax: racine + 'cycle/apiList',
     processing: true,
     autoWidth: false,
