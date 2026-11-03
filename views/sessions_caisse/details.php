@@ -50,7 +50,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
               <img src="<?= $logoUrl ?>" alt="Logo GROUPE EICG" style="max-height: 65px; width: auto; object-fit: contain;">
             <?php endif; ?>
             <div>
-              <span style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 1px;">Établissement GEICG &bull; Service Comptabilité & Caisse</span>
+              <span style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 1px;"><?= htmlspecialchars($etablissementConfig['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?> &bull; <?= htmlspecialchars($etablissementConfig['titre_service_finance'] ?? 'Service Comptabilité & Caisse') ?></span>
               <h2 style="font-size: 22px; font-weight: 900; color: #0F172A; margin: 4px 0 0 0;">Procès-Verbal de Session de Caisse</h2>
               <div style="font-size: 13px; color: #64748B; margin-top: 4px;">
                 Date de session : <strong><?= date('d/m/Y', strtotime($item['date_session'])) ?></strong>

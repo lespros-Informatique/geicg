@@ -555,7 +555,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
                 <img src="<?= htmlspecialchars($globalEtablissementLogo) ?>" alt="Logo" style="max-height: 56px; width: auto; object-fit: contain; flex-shrink: 0;">
               <?php endif; ?>
               <div>
-                <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; letter-spacing: 0.5px;">GROUPE EICG - DIRECTION FINANCIÈRE</div>
+                <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; letter-spacing: 0.5px;"><?= htmlspecialchars($etablissementConfig['sigle_etablissement'] ?? 'GROUPE EICG') ?> - <?= htmlspecialchars(strtoupper($etablissementConfig['titre_service_finance'] ?? 'DIRECTION FINANCIÈRE')) ?></div>
                 <div style="font-size: 11.5px; color: #64748B; font-weight: 700; margin-top: 2px;">SERVICE COMPTABILITÉ & RECOUVREMENT • RELEVÉ DE COMPTE ÉTUDIANT</div>
                 <div style="font-size: 11px; color: #059669; font-weight: 700; margin-top: 3px;">Date d'édition : <span id="fin_doc_date">-</span></div>
               </div>
@@ -646,7 +646,8 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
           <!-- Signatures & Visas  -->
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding-top: 16px; border-top: 1px solid #CBD5E1; font-size: 11.5px;">
             <div>
-              <div style="font-weight: 800; color: #334155; margin-bottom: 40px;">Le Service Scolarité / Comptabilité :</div>
+              <div style="font-weight: 800; color: #334155; margin-bottom: 4px;"><?= htmlspecialchars($etablissementConfig['titre_service_finance'] ?? 'Le Service Comptabilité & Caisse') ?> :</div>
+              <div style="font-weight: 700; color: #1E3A5F; font-size: 11px; margin-bottom: 32px;"><?= htmlspecialchars($etablissementConfig['nom_responsable_finance'] ?? 'Direction Financière GEICG') ?></div>
               <div style="font-size: 10.5px; color: #64748B; font-style: italic;">Signature & Cachet</div>
             </div>
             <div style="text-align: right;">

@@ -320,6 +320,7 @@
     <script>
         window.RACINE = '<?= RACINE ?>';
         window.LINK = '<?= RACINE ?>';
+        window.ETABLISSEMENT_CONFIG = <?= json_encode(!empty($etablissementConfig) ? $etablissementConfig : (class_exists('ModelConfiguration') ? (new ModelConfiguration())->getConfig() : [])) ?>;
     </script>
 
     <?php extract(ViewContext::headerData()); ?>

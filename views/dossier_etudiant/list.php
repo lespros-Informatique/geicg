@@ -212,9 +212,9 @@
           <div style="display: flex; align-items: center; gap: 14px;">
             <img id="rec-etab-logo" src="<?= RACINE ?>public/images/logo-placeholder.png" style="max-height: 55px; max-width: 140px; object-fit: contain;" onerror="this.style.display='none'">
             <div>
-              <div id="rec-etab-nom" style="font-size: 16px; font-weight: 900; color: #1E3A5F; text-transform: uppercase;">ÉTABLISSEMENT GEICG</div>
-              <div id="rec-etab-adresse" style="font-size: 11px; color: #64748B;">Adresse / Ville</div>
-              <div id="rec-etab-tel" style="font-size: 11px; color: #64748B;">Tél : -</div>
+              <div id="rec-etab-nom" style="font-size: 16px; font-weight: 900; color: #1E3A5F; text-transform: uppercase;"><?= htmlspecialchars($etablissementConfig['nom_etablissement'] ?? 'ÉTABLISSEMENT GEICG') ?></div>
+              <div id="rec-etab-adresse" style="font-size: 11px; color: #64748B;"><?= htmlspecialchars($etablissementConfig['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?></div>
+              <div id="rec-etab-tel" style="font-size: 11px; color: #64748B;">Contacts : <?= htmlspecialchars(!empty($etablissementConfig['contacts_formatted']) ? $etablissementConfig['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38') ?></div>
             </div>
           </div>
           <div style="text-align: right;">
@@ -291,7 +291,7 @@
             </div>
             <div style="text-align: center; min-width: 160px;">
               <div style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 40px;">Cachet & Signature Agent</div>
-              <div style="border-top: 1px solid #94A3B8; font-size: 10px; color: #94A3B8; padding-top: 4px;">Visa de l'Administration</div>
+              <div style="border-top: 1px solid #94A3B8; font-size: 10px; color: #94A3B8; padding-top: 4px;"><?= htmlspecialchars($etablissementConfig['titre_service_scolarite'] ?? 'Visa de l\'Administration') ?></div>
             </div>
           </div>
         </div>
