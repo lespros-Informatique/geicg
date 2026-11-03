@@ -42,7 +42,7 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
             <?php endif; ?>
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">
-            Génération, consultation et impression des relevés de notes et Procès-Verbaux de délibération par classe
+            Consultation et impression des relevés de notes
           </p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">

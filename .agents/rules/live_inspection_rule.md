@@ -185,3 +185,55 @@ Après toute refactorisation de fichier ou regroupement de modules :
      `php -l <chemin_de_la_vue.php>`
    - Le statut retourné doit obligatoirement être `No syntax errors detected`.
 
+---
+
+## 9. RÈGLE DES FICHIERS D'IMPRESSION (PDF & JS) & CONSOMMATION OBLIGATOIRE DE LA TABLE CONFIGURATIONS
+
+Lors de la création ou modification de tout fichier, flux ou vue d'impression (modèles PDF mPDF via `PdfService`, modales d'émargement imprimables, popups JS `window.open` + `window.print()` ou zones `@media print`) :
+
+1. **Source de Vérité Institutionnelle Unique (`configurations`)** :
+   - Toutes les informations relatives à l'établissement, aux contacts, aux signatures et aux mentions officielles doivent **obligatoirement provenir de la table `configurations`**.
+   - Côté PHP / Contrôleurs : Récupérer les données via `$this->getEtablissementConfig()` et les injecter systématiquement dans le gabarit d'impression :
+     ```php
+     $dataView['etablissement'] = $this->getEtablissementConfig();
+     ```
+   - Côté JavaScript : Exploiter systématiquement l'objet global `window.ETABLISSEMENT_CONFIG` exposé dans `public/inc/header.php`.
+
+2. **Interdiction Formelle du Hard-coding des Données Établissement (Zéro Texte Figé)** :
+   - **Identité Institutionnelle** :
+     - Nom officiel : `$etablissement['nom_etablissement']`
+     - Sigle : `$etablissement['sigle_etablissement']`
+     - Slogan : `$etablissement['slogan_etablissement']`
+     - Numéro d'autorisation / Agrément : `$etablissement['numero_autorisation']`
+     - Ministère de tutelle : `$etablissement['ministere_tutelle']`
+     - Logo : `$etablissement['logo_etablissement']`
+   - **Coordonnées & Localisation** :
+     - Adresse physique : `$etablissement['adresse_etablissement']`
+     - Boîte postale : `$etablissement['boite_postale']`
+     - Ville et Pays : `$etablissement['ville_etablissement']`, `$etablissement['pays_etablissement']`
+     - Téléphones & Standard : `$etablissement['contacts_formatted']` (ou `$telephone_fixe`, `$telephone_mobile`, `$telephone_mobile2`)
+     - Email & Site web : `$etablissement['email_etablissement']`, `$etablissement['site_web']`
+   - **Titres et Noms des Responsables Signataires** :
+     - Direction des Études / Pédagogie : Titre (`$etablissement['titre_direction_pedagogique']`) et Nom (`$etablissement['nom_directeur_etudes']`). Ne JAMAIS figer le nom du Directeur des Études.
+     - Direction Générale : Titre (`$etablissement['titre_direction_generale']`) et Nom (`$etablissement['nom_directeur_general']`).
+     - Service Financier / Caisse : Titre (`$etablissement['titre_service_finance']`) et Nom (`$etablissement['nom_responsable_finance']`).
+     - Service Scolarité & Inscriptions : Titre (`$etablissement['titre_service_scolarite']`) et Nom (`$etablissement['nom_responsable_scolarite']`).
+     - Secrétariat Général : Nom (`$etablissement['nom_secretaire_general']`).
+   - **Mentions Officielles, Dates & Cachets** :
+     - Lieu de délivrance / signature : Utiliser dynamiquement `Fait à <?= htmlspecialchars($etablissement['ville_signature']) ?>, le ...` (proscrire le mot figé `Fait à Bouaké`).
+     - Mention cachet : `$etablissement['mention_cachet_signature']`.
+     - Bas de page / Référence : `$etablissement['texte_pied_page']` et `$etablissement['prefixe_reference']`.
+
+3. **Garde d'Initialisation Autonome dans les Templates PDF** :
+   - Tout gabarit situé dans `views/templates/pdf/*.php` doit inclure en tête une initialisation défensive garantissant la disponibilité de `$etablissement` même en appel direct ou en sous-vue :
+     ```php
+     if (empty($etablissement) || !is_array($etablissement)) {
+         if (class_exists('ModelConfiguration')) {
+             $etablissement = (new ModelConfiguration())->getConfig();
+         }
+     }
+     ```
+
+4. **Impressions Front-End JavaScript (`window.print()`)** :
+   - Ne jamais injecter de nom d'école ou de contacts en dur dans les fonctions générant du HTML pour l'impression en JS. Toujours lire `window.ETABLISSEMENT_CONFIG || {}` et en extraire `nom_etablissement`, `sigle_etablissement`, `contacts_formatted`, `titre_direction_pedagogique`, etc.
+

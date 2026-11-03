@@ -41,13 +41,31 @@ Ce répertoire contient l'ensemble des gabarits HTML/PHP exploités par `core/Pd
 
 ---
 
-## 🛡️ Règles de Conception Graphique pour les Templates PDF
+## 🛡️ Règles de Conception Graphique & Consommation BDD pour les Templates PDF
 
-1. **Charte Institutionnelle** :
-   * En-tête centré avec logo institutionnel base64 (`$logo_src`), mentions légales, agrément État / FDFP et contacts officiels.
+1. **Consommation Obligatoire de la Table `configurations` (Zéro Texte Figé)** :
+   * Ne JAMAIS coder en dur les données de l'établissement (Nom, Sigle, Slogan, Agrément, Adresse, Boîte Postale, Téléphones, Email, Site web).
+   * Injecter systématiquement `$dataView['etablissement'] = $this->getEtablissementConfig()` depuis le contrôleur appelant.
+   * Tout template PDF doit contenir l'initialisation de repli :
+     ```php
+     if (empty($etablissement) || !is_array($etablissement)) {
+         if (class_exists('ModelConfiguration')) {
+             $etablissement = (new ModelConfiguration())->getConfig();
+         }
+     }
+     ```
+2. **Titres et Noms des Responsables Signataires** :
+   * Les signatures doivent exploiter dynamiquement les titres et les noms configurés dans `configurations` :
+     * Direction des Études : `$etablissement['titre_direction_pedagogique']` et `$etablissement['nom_directeur_etudes']`.
+     * Direction Générale : `$etablissement['titre_direction_generale']` et `$etablissement['nom_directeur_general']`.
+     * Service Financier : `$etablissement['titre_service_finance']` et `$etablissement['nom_responsable_finance']`.
+     * Scolarité : `$etablissement['titre_service_scolarite']` et `$etablissement['nom_responsable_scolarite']`.
+     * Lieu de signature : `Fait à <?= htmlspecialchars($etablissement['ville_signature']) ?>, le ...` (ne jamais coder `Fait à Bouaké` en dur).
+3. **Charte Institutionnelle & En-tête** :
+   * En-tête avec logo institutionnel, nom officiel (`$etablissement['nom_etablissement']`), agrément (`$etablissement['numero_autorisation']`) et contacts formatés (`$etablissement['contacts_formatted']`).
    * Bannière titre `#1E3A5F` avec typographie uppercase contrastée.
-2. **Boîte des Filtres & Traçabilité** :
+4. **Boîte des Filtres & Traçabilité** :
    * Tableau de métadonnées (`.meta-box-table`) affichant l'année académique, le niveau, la classe, le canal d'opération, la date d'édition et le nom de l'agent éditeur.
-3. **Tableaux Financiers** :
+5. **Tableaux Financiers & Zéro Fallback** :
    * Lignes totales bien distinctes, montants formatés en FCFA sans décimales inutiles (`number_format($montant, 0, ',', ' ')`).
    * Zéro fallback statique : toutes les sommes sont issues directement des calculs de la base de données.
