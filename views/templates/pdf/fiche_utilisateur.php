@@ -21,11 +21,30 @@ if (!empty($user['sexe_user'])) {
 }
 
 // Logo
-$logoPath = !empty($etablissement['logo_etablissement']) ? __DIR__ . '/../../' . ltrim($etablissement['logo_etablissement'], '/') : '';
+$logoPath = '';
+if (!empty($etablissement['logo_etablissement'])) {
+    $cLogo = [
+        __DIR__ . '/../../../public/' . ltrim($etablissement['logo_etablissement'], '/'),
+        __DIR__ . '/../../../' . ltrim($etablissement['logo_etablissement'], '/'),
+        __DIR__ . '/../../public/' . ltrim($etablissement['logo_etablissement'], '/')
+    ];
+    foreach ($cLogo as $clp) {
+        if (file_exists($clp) && is_file($clp)) {
+            $logoPath = $clp;
+            break;
+        }
+    }
+}
 if (empty($logoPath) || !file_exists($logoPath)) {
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-    if (!file_exists($logoPath)) {
-        $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+    $candidateLogos = [
+        __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg',
+        __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg'
+    ];
+    foreach ($candidateLogos as $l) {
+        if (file_exists($l)) {
+            $logoPath = $l;
+            break;
+        }
     }
 }
 
@@ -33,8 +52,9 @@ if (empty($logoPath) || !file_exists($logoPath)) {
 $photoPath = '';
 if (!empty($user['photo_user'])) {
     $cPaths = [
-        __DIR__ . '/../../public/' . ltrim($user['photo_user'], '/'),
-        __DIR__ . '/../../../public/' . ltrim($user['photo_user'], '/')
+        __DIR__ . '/../../../public/' . ltrim($user['photo_user'], '/'),
+        __DIR__ . '/../../../' . ltrim($user['photo_user'], '/'),
+        __DIR__ . '/../../public/' . ltrim($user['photo_user'], '/')
     ];
     foreach ($cPaths as $cp) {
         if (file_exists($cp) && is_file($cp)) {
@@ -43,10 +63,16 @@ if (!empty($user['photo_user'])) {
         }
     }
 }
-if (empty($photoPath)) {
-    $placeholder = __DIR__ . '/../../public/assets/images/placeholders/user.png';
-    if (file_exists($placeholder)) {
-        $photoPath = $placeholder;
+if (empty($photoPath) || !file_exists($photoPath)) {
+    $placeholders = [
+        __DIR__ . '/../../../public/assets/images/placeholders/user.png',
+        __DIR__ . '/../../public/assets/images/placeholders/user.png'
+    ];
+    foreach ($placeholders as $pl) {
+        if (file_exists($pl)) {
+            $photoPath = $pl;
+            break;
+        }
     }
 }
 
