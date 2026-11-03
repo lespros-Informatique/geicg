@@ -369,13 +369,60 @@ class ModelNote extends BaseModel
     public function getByIdWithDetails($id): ?array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT vn.*,
-                   vn.etu_nom AS nom_etudiant,
-                   vn.etu_prenom AS prenom_etudiant,
-                   vn.composition_classe_code AS classe_code,
-                   COALESCE(vn.coefficient, 1.0) AS coef_cours
-            FROM " . VIEWS::NOTES_COMPLETES . " vn
-            WHERE vn.id_note = ? OR vn.code_note = ?
+            SELECT 
+                n.id_note,
+                n.code_note,
+                n.valeur_note,
+                n.composition_code,
+                n.composition_matiere_id,
+                n.etudiant_code,
+                n.observations,
+                n.inscription_code,
+                n.user_code,
+                n.etablissement_code,
+                n.created_at_note,
+                n.updated_at_note,
+                n.statut_note,
+                e.nom_etudiant AS etu_nom,
+                e.prenom_etudiant AS etu_prenom,
+                e.nom_etudiant,
+                e.prenom_etudiant,
+                CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) AS nom_complet_etudiant,
+                e.matricule_etudiant,
+                e.telephone_etudiant,
+                e.email_etudiant,
+                m.code_matiere,
+                m.code_matiere AS matiere_code,
+                m.libelle_matiere,
+                cl.code_classe,
+                cl.code_classe AS classe_code,
+                cl.libelle_classe,
+                cl.niveau_code,
+                cl.filiere_code,
+                f.libelle_filiere,
+                niv.libelle_niveau,
+                s.libelle_semestre,
+                comp.semestre_code,
+                a.libelle_annee,
+                COALESCE(comp.annee_code, ins.annee_code) AS annee_code,
+                ins.classe_code AS inscription_classe_code,
+                comp.libelle_composition,
+                comp.type_composition,
+                comp.type_composition AS type_evaluation_code,
+                COALESCE(comp.coefficient, 1.0) AS coefficient,
+                COALESCE(comp.coefficient, 1.0) AS coef_cours
+            FROM " . TABLES::NOTES . " n
+            LEFT JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+            LEFT JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON cm.id_composition_matiere = n.composition_matiere_id
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = n.inscription_code
+            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = COALESCE(n.etudiant_code, ins.etudiant_code)
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " niv ON niv.code_niveau = cl.niveau_code
+            LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = COALESCE(comp.annee_code, ins.annee_code)
+            WHERE n.id_note = ? OR n.code_note = ?
             LIMIT 1
         ");
         $stmt->execute([$id, (string)$id]);
