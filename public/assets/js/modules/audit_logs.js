@@ -39,6 +39,7 @@ $(document).ready(function() {
     ajax: {
       url: racine + 'audit/apiList',
       data: function(d) {
+        d.user_id = $('#filter-user').val();
         d.action = $('#filter-action').val();
         d.module = $('#filter-module').val();
         d.date_debut = $('#filter-date-debut').val();
@@ -125,11 +126,11 @@ $(document).ready(function() {
 
   // Initialisation Select2 des filtres
   if ($.fn.select2) {
-    $('#filter-action, #filter-module').select2({
+    $('#filter-user, #filter-action, #filter-module').select2({
       width: '100%'
     });
 
-    $('#filter-action, #filter-module').on('change', function() {
+    $('#filter-user, #filter-action, #filter-module').on('change', function() {
       table.ajax.reload();
     });
   }
@@ -142,9 +143,11 @@ $(document).ready(function() {
 
   // Réinitialisation des filtres
   $('#btn-reset-filters').on('click', function() {
+    $('#filter-user').val('');
     $('#filter-action').val('');
     $('#filter-module').val('');
     if ($.fn.select2) {
+      $('#filter-user').trigger('change.select2');
       $('#filter-action').trigger('change.select2');
       $('#filter-module').trigger('change.select2');
     }

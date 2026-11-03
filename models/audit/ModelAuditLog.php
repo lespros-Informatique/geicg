@@ -18,8 +18,13 @@ class ModelAuditLog extends BaseModel
         $params = [];
 
         if (!empty($filters['user_id'])) {
-            $sql .= " AND user_id = ?";
-            $params[] = (int)$filters['user_id'];
+            if (is_numeric($filters['user_id'])) {
+                $sql .= " AND user_id = ?";
+                $params[] = (int)$filters['user_id'];
+            } else {
+                $sql .= " AND user_code = ?";
+                $params[] = trim($filters['user_id']);
+            }
         }
 
         if (!empty($filters['action'])) {
@@ -67,8 +72,13 @@ class ModelAuditLog extends BaseModel
         $params = [];
 
         if (!empty($filters['user_id'])) {
-            $sql .= " AND user_id = ?";
-            $params[] = (int)$filters['user_id'];
+            if (is_numeric($filters['user_id'])) {
+                $sql .= " AND user_id = ?";
+                $params[] = (int)$filters['user_id'];
+            } else {
+                $sql .= " AND user_code = ?";
+                $params[] = trim($filters['user_id']);
+            }
         }
 
         if (!empty($filters['action'])) {

@@ -23,8 +23,30 @@
 
       <!-- Filtres de recherche -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <form id="form-filter-logs" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) 160px; gap: 16px; align-items: flex-end;">
+        <form id="form-filter-logs" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) 160px; gap: 16px; align-items: flex-end;">
           
+          <!-- Filtre Utilisateur (Nom, Numéro, Code) -->
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="user" style="width: 14px; height: 14px; color: #64748B;"></i> Utilisateur (Nom, N°, Code)
+            </label>
+            <select id="filter-user" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les utilisateurs --</option>
+              <?php if (!empty($users)): ?>
+                <?php foreach ($users as $u): ?>
+                  <?php 
+                    $uNom = trim(($u['nom_user'] ?? '') . ' ' . ($u['prenom_user'] ?? ''));
+                    $uCode = $u['code_user'] ?? '-';
+                    $uTel = !empty($u['telephone_user']) ? $u['telephone_user'] : 'Sans tél';
+                  ?>
+                  <option value="<?= $u['id_user'] ?>">
+                    <?= htmlspecialchars($uNom) ?> | <?= htmlspecialchars($uCode) ?> | <?= htmlspecialchars($uTel) ?>
+                  </option>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </select>
+          </div>
+
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="tag" style="width: 14px; height: 14px; color: #64748B;"></i> Type d'Action

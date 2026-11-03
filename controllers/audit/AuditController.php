@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../core/BaseController.php';
 require_once __DIR__ . '/../../models/audit/ModelAuditLog.php';
+require_once __DIR__ . '/../../models/users/ModelUser.php';
 
 class AuditController extends BaseController
 {
@@ -20,10 +21,12 @@ class AuditController extends BaseController
 
         $modules = $this->model->getDistinctModules();
         $actions = $this->model->getDistinctActions();
+        $users = (new ModelUser())->getUsersWithRolesAndFonctions();
 
         $this->loadView('../views/audit/list.php', [
             'modules' => $modules,
-            'actions' => $actions
+            'actions' => $actions,
+            'users' => $users
         ]);
     }
 
