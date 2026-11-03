@@ -36,45 +36,37 @@ $canRecord = $canRecord ?? Auth::can(PERMISSIONS::RECORD_DEPENSES);
       <!-- BARRE DE FILTRAGE : CATÉGORIE & PÉRIODE -->
       <!-- ========================================================================= -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-          <div style="display: flex; align-items: center;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;" title="Filtres">
-              <i data-lucide="filter" style="width: 20px; height: 20px;"></i>
-            </div>
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <!-- Filtre Catégorie -->
+          <div style="min-width: 220px; flex: 1;">
+            <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Catégorie</label>
+            <select id="filter-type-depense" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les catégories --</option>
+              <?php foreach ($typeDepenses as $t): ?>
+                <option value="<?= htmlspecialchars($t['code_type_depense']) ?>">
+                  <?= htmlspecialchars($t['libelle_type_depense']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
           </div>
-          
-          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-grow: 1; justify-content: flex-end;">
-            <!-- Filtre Catégorie -->
-            <div style="min-width: 200px;">
-              <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Catégorie</label>
-              <select id="filter-type-depense" class="form-control select2" style="width: 100%;">
-                <option value="">-- Toutes les catégories --</option>
-                <?php foreach ($typeDepenses as $t): ?>
-                  <option value="<?= htmlspecialchars($t['code_type_depense']) ?>">
-                    <?= htmlspecialchars($t['libelle_type_depense']) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
 
-            <!-- Filtre Date Début -->
-            <div style="min-width: 150px;">
-              <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Période (Du)</label>
-              <input type="date" id="filter-date-debut" class="form-control" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
-            </div>
+          <!-- Filtre Date Début -->
+          <div style="min-width: 150px;">
+            <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Période (Du)</label>
+            <input type="date" id="filter-date-debut" class="form-control" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
+          </div>
 
-            <!-- Filtre Date Fin -->
-            <div style="min-width: 150px;">
-              <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Au</label>
-              <input type="date" id="filter-date-fin" class="form-control" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
-            </div>
+          <!-- Filtre Date Fin -->
+          <div style="min-width: 150px;">
+            <label style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 4px; display: block;">Au</label>
+            <input type="date" id="filter-date-fin" class="form-control" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
+          </div>
 
-            <!-- Bouton Réinitialiser -->
-            <div style="margin-top: 18px;">
-              <button type="button" id="btn-reset-filters" class="btn btn-secondary" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Réinitialiser tous les filtres">
-                <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Réinitialiser
-              </button>
-            </div>
+          <!-- Bouton Réinitialiser -->
+          <div style="margin-top: 18px;">
+            <button type="button" id="btn-reset-filters" class="btn btn-secondary" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Réinitialiser tous les filtres">
+              <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Réinitialiser
+            </button>
           </div>
         </div>
       </div>
