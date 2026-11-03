@@ -163,11 +163,25 @@ class EtablissementController extends BaseController
 
         if ($id && $this->model->getById($id)) {
             $this->model->update($filteredData, $id);
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'etablissements',
+                $id,
+                "Mise à jour de la configuration de l'établissement: " . ($configData['nom_etablissement'] ?? ''),
+                ['id_etablissement' => $id, 'nom' => $configData['nom_etablissement'] ?? '', 'sigle' => $configData['sigle_etablissement'] ?? '']
+            );
         } else {
             $filteredData['code_etablissement'] = $this->validator->generateCode(TABLES::ETABLISSEMENTS, 'code_etablissement', 'ETA-', 8);
             $filteredData['statut_etablissement'] = STATUTS::ACTIF;
             $filteredData['created_at_etablissement'] = date('Y-m-d H:i:s');
-            $this->model->create($filteredData);
+            $newId = $this->model->create($filteredData);
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'etablissements',
+                $newId,
+                "Création de l'établissement: " . ($configData['nom_etablissement'] ?? ''),
+                ['id_etablissement' => $newId, 'code' => $filteredData['code_etablissement'], 'nom' => $configData['nom_etablissement'] ?? '']
+            );
         }
 
         Session::remove('etablissement_config');
@@ -190,6 +204,13 @@ class EtablissementController extends BaseController
         if ($id && $this->model->getById($id)) {
             $success = !empty($statut) ? $this->model->updateStatus($id, $statut, 'statut_etablissement') : $this->model->toggleStatus($id);
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'etablissements',
+                    $id,
+                    "Changement du statut de l'établissement ID #{$id}",
+                    ['id_etablissement' => $id, 'nouveau_statut' => $statut]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

@@ -59,6 +59,14 @@ class SalleController extends BaseController
         }
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'salles',
+                $data['code_salle'],
+                "Création de la salle '{$libelle}' ({$data['code_salle']})",
+                $filteredData,
+                $etabCode
+            );
             $msg = !empty($libelle) ? "La salle « {$libelle} » a été créée avec succès !" : "Salle de classe créée avec succès !";
             $this->success($msg);
         } else {
@@ -88,6 +96,13 @@ class SalleController extends BaseController
         }
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'salles',
+                (string)$id,
+                "Modification de la salle '{$libelle}'",
+                $filteredData
+            );
             $msg = !empty($libelle) ? "La salle « {$libelle} » a été modifiée avec succès !" : "Salle de classe modifiée avec succès !";
             $this->success($msg);
         } else {
@@ -104,8 +119,15 @@ class SalleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_SALLES);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($sal = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'salles',
+                    $sal['code_salle'] ?? (string)$id,
+                    "Basculement de statut de la salle '" . ($sal['libelle_salle'] ?? $id) . "'",
+                    ['id_salle' => $id, 'code_salle' => $sal['code_salle'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -178,6 +200,15 @@ class SalleController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('repertoire_salles.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'salles',
+            'TOUT',
+            "Impression du répertoire des salles de cours (Total: " . count($salles) . ")",
+            ['total' => count($salles)]
+        );
+
         $filename = 'Repertoire_Salles_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',

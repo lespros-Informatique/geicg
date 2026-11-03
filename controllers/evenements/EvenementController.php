@@ -48,7 +48,15 @@ class EvenementController extends BaseController
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
-        if ($this->model->create($filteredData)) {
+        $newId = $this->model->create($filteredData);
+        if ($newId) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'evenements',
+                $newId,
+                "Création de l'événement: " . ($filteredData['titre_evenement'] ?? ''),
+                ['id_evenement' => $newId, 'titre' => $filteredData['titre_evenement'] ?? '', 'type' => $filteredData['type_evenement'] ?? '']
+            );
             $this->success('Item créé avec succès!');
         } else {
             $this->error('Erreur lors de la création');
@@ -66,6 +74,13 @@ class EvenementController extends BaseController
         unset($data['csrf_token']);
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'evenements',
+                $id,
+                "Modification de l'événement: " . ($filteredData['titre_evenement'] ?? "#{$id}"),
+                ['id_evenement' => $id, 'titre' => $filteredData['titre_evenement'] ?? '']
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -80,6 +95,13 @@ class EvenementController extends BaseController
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'evenements',
+                    $id,
+                    "Changement du statut de l'événement ID #{$id}",
+                    ['id_evenement' => $id]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

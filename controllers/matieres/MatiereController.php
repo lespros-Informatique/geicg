@@ -58,6 +58,14 @@ class MatiereController extends BaseController
         $libelle = trim($data['libelle_matiere'] ?? '');
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'matieres',
+                $data['code_matiere'],
+                "Création de la matière '{$libelle}' ({$data['code_matiere']})",
+                $filteredData,
+                $etabCode
+            );
             $msg = !empty($libelle) ? "La matière « {$libelle} » a été créée avec succès !" : "Matière créée avec succès !";
             $this->success($msg);
         } else {
@@ -84,6 +92,13 @@ class MatiereController extends BaseController
         $libelle = trim($data['libelle_matiere'] ?? '');
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'matieres',
+                (string)$id,
+                "Modification de la matière '{$libelle}'",
+                $filteredData
+            );
             $msg = !empty($libelle) ? "La matière « {$libelle} » a été modifiée avec succès !" : "Matière modifiée avec succès !";
             $this->success($msg);
         } else {
@@ -100,8 +115,15 @@ class MatiereController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $id = $this->post('id') ?: $this->post('id_matiere');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($mat = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'matieres',
+                    $mat['code_matiere'] ?? (string)$id,
+                    "Basculement de statut de la matière '" . ($mat['libelle_matiere'] ?? $id) . "'",
+                    ['id_matiere' => $id, 'code_matiere' => $mat['code_matiere'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

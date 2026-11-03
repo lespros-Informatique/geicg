@@ -92,6 +92,14 @@ class AnneeController extends BaseController
         $filteredData = $this->model->filterData($data);
         $libelle = $data['libelle_annee'] ?? '';
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'annees',
+                $data['code_annee'],
+                "Création de l'année académique '{$libelle}' ({$data['code_annee']})",
+                $filteredData,
+                $etabCode
+            );
             $this->success("L'année académique « {$libelle} » a été créée avec succès (statut initial : en préparation).");
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la création de l\'année académique');
@@ -158,6 +166,13 @@ class AnneeController extends BaseController
         $libelle = $data['libelle_annee'] ?? ($currentItem['libelle_annee'] ?? '');
 
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'annees',
+                $currentItem['code_annee'] ?? (string)$id,
+                "Modification de l'année académique '{$libelle}' (" . ($currentItem['code_annee'] ?? $id) . ")",
+                $filteredData
+            );
             if ($newStatus === 'actif') {
                 $this->model->setActiveYear($id);
                 $updatedRow = $this->model->getById($id);
@@ -204,6 +219,13 @@ class AnneeController extends BaseController
                     Session::set('annee_active_code', $activeYear['code_annee']);
                     Session::set('annee_active_libelle', $activeYear['libelle_annee']);
                 }
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'annees',
+                    $item['code_annee'] ?? (string)$id,
+                    "Changement de statut / activation de l'année académique '{$item['libelle_annee']}'",
+                    ['id_annee' => $id, 'code_annee' => $item['code_annee'] ?? null, 'nouveau_statut' => ($currentStatus === 'actif' ? 'cloture' : 'actif')]
+                );
                 $this->success('Statut mis à jour avec succès (Une seule année active à la fois) !', [
                     'reload' => true,
                     'activeYear' => $activeYear

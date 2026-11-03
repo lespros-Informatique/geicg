@@ -302,6 +302,14 @@ class EmploiController extends BaseController
         }
 
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'emplois_temps',
+                $data['code_emploi'],
+                "Planification de cours ({$data['classe_code']} - {$data['matiere_code']} - {$data['jour']} {$data['heure_debut']} à {$data['heure_fin']})",
+                $filteredData,
+                $etabCode
+            );
             if ($submitAction === 'save_and_new') {
                 $redirectUrl = RACINE . 'emploi/formulaire?classe_code=' . urlencode($data['classe_code']);
                 $this->success('Créneau horaire planifié avec succès ! Saisissez le créneau suivant.', ['redirect' => $redirectUrl]);
@@ -346,6 +354,13 @@ class EmploiController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'emplois_temps',
+                (string)$id,
+                "Modification du créneau horaire #{$id} ({$data['classe_code']} - {$data['jour']})",
+                $filteredData
+            );
             $this->success('Créneau horaire mis à jour avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -358,8 +373,15 @@ class EmploiController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($item = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'emplois_temps',
+                    $item['code_emploi'] ?? (string)$id,
+                    "Basculement de statut du créneau horaire #{$id}",
+                    ['id_emploi' => $id, 'code_emploi' => $item['code_emploi'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -462,6 +484,13 @@ class EmploiController extends BaseController
             $item = $this->model->getById($id);
             if ($item) {
                 if ($this->model->delete($id)) {
+                    $this->logAction(
+                        AuditLogger::ACTION_DELETE,
+                        'emplois_temps',
+                        $item['code_emploi'] ?? (string)$id,
+                        "Suppression du créneau horaire (" . ($item['classe_code'] ?? '') . " - " . ($item['jour'] ?? '') . " " . ($item['heure_debut'] ?? '') . ")",
+                        ['id_emploi' => $id, 'item' => $item]
+                    );
                     $this->success('Créneau horaire supprimé avec succès!');
                     return;
                 } else {
@@ -484,6 +513,13 @@ class EmploiController extends BaseController
             return;
         }
         if ($this->model->resetByClasse($classeCode)) {
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'emplois_temps',
+                $classeCode,
+                "Réinitialisation complète de l'emploi du temps de la classe {$classeCode}",
+                ['classe_code' => $classeCode]
+            );
             $this->success('L\'emploi du temps de la classe a été entièrement réinitialisé !');
         } else {
             $this->error('Erreur lors de la réinitialisation de l\'emploi du temps');
@@ -582,6 +618,15 @@ class EmploiController extends BaseController
             ];
 
             $html = PdfService::renderTemplate('emploi_temps_classe.php', $data);
+
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'emplois_temps',
+                $classeCode,
+                "Impression de l'emploi du temps de la classe " . ($classeInfo['libelle_classe'] ?? $classeCode),
+                ['classe_code' => $classeCode, 'annee' => $anneeAff]
+            );
+
             $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classeInfo['libelle_classe'] ?? $classeCode);
             $filename = 'Emploi_Temps_' . $cleanName . '_' . date('Ymd_His') . '.pdf';
             PdfService::generate($html, $filename, [
@@ -613,6 +658,15 @@ class EmploiController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('repertoire_emplois_temps.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'emplois_temps',
+            $anneeCode ?: 'TOUT',
+            "Impression du répertoire général des emplois du temps (Année: " . ($anneeLibelle ?: 'Toutes') . ")",
+            ['annee_code' => $anneeCode, 'is_teacher_only' => $isTeacherOnly]
+        );
+
         $filename = ($isTeacherOnly ? 'Mon_Emploi_Temps_' : 'Repertoire_Emplois_Temps_') . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'L',

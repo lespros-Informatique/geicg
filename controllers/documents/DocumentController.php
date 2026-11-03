@@ -78,7 +78,15 @@ class DocumentController extends BaseController
         if (in_array('etablisement_code', $cols)) $data['etablisement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
-        if ($this->model->create($filteredData)) {
+        $newId = $this->model->create($filteredData);
+        if ($newId) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'documents',
+                $newId,
+                "Ajout du document: " . ($filteredData['libelle_document'] ?? $filteredData['code_document'] ?? ''),
+                ['id_document' => $newId, 'code' => $filteredData['code_document'] ?? '', 'titre' => $filteredData['libelle_document'] ?? '', 'type' => $filteredData['type_document'] ?? '']
+            );
             $this->success('Document enregistré avec succès !', ['redirect' => RACINE . 'document/list']);
         } else {
             $this->error('Erreur lors de l\'enregistrement du document');
@@ -116,6 +124,13 @@ class DocumentController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'documents',
+                $id,
+                "Modification du document: " . ($filteredData['libelle_document'] ?? "#{$id}"),
+                ['id_document' => $id, 'titre' => $filteredData['libelle_document'] ?? '', 'type' => $filteredData['type_document'] ?? '']
+            );
             $this->success('Document modifié avec succès !', ['redirect' => RACINE . 'document/list']);
         } else {
             $this->error('Erreur lors de la modification');
@@ -179,6 +194,13 @@ class DocumentController extends BaseController
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'documents',
+                    $id,
+                    "Changement de statut du document ID #{$id}",
+                    ['id_document' => $id]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

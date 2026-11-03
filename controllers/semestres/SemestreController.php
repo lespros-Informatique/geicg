@@ -160,6 +160,14 @@ class SemestreController extends BaseController
         $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'semestres',
+                $data['code_semestre'],
+                "Création du '{$libelle}' ({$data['code_semestre']}) pour l'année {$anneeCode}",
+                $filteredData,
+                $etabCode
+            );
             $this->success('Semestre créé avec succès!');
         } else {
             $this->error('Erreur lors de la création du semestre.');
@@ -216,6 +224,13 @@ class SemestreController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'semestres',
+                $current['code_semestre'] ?? (string)$id,
+                "Modification du '{$libelle}' (" . ($current['code_semestre'] ?? $id) . ")",
+                $filteredData
+            );
             $this->success('Semestre modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification du semestre.');
@@ -247,6 +262,14 @@ class SemestreController extends BaseController
 
             if ($this->model->toggleStatus($id)) {
                 $msg = ($currentStatus === 'actif') ? 'Semestre clôturé avec succès !' : 'Semestre activé avec succès !';
+                $newStat = ($currentStatus === 'actif') ? 'cloture' : 'actif';
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'semestres',
+                    $item['code_semestre'] ?? (string)$id,
+                    "Changement de statut du semestre '{$item['libelle_semestre']}' vers {$newStat}",
+                    ['id_semestre' => $id, 'code_semestre' => $item['code_semestre'] ?? null, 'nouveau_statut' => $newStat]
+                );
                 $this->success($msg, ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

@@ -128,6 +128,15 @@ class MaquetteController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('maquette_pedagogique.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'maquettes',
+            $filiereCode ?: ($anneeCode ?: 'TOUT'),
+            "Impression de la maquette pédagogique ({$filiereLibelle} - {$niveauLibelle})",
+            ['annee_code' => $anneeCode, 'filiere_code' => $filiereCode, 'niveau_code' => $niveauCode, 'total' => $totalMatieres]
+        );
+
         $filename = 'Maquette_Pedagogique_' . ($anneeCode ?: 'All') . '_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
@@ -171,6 +180,16 @@ class MaquetteController extends BaseController
         $data['etablissement_code'] = $this->getActiveEtablissementCode();
 
         $res = $this->model->saveMatiereToMaquette($data);
+        if (!empty($res['status']) && $res['status'] == 1) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'maquettes',
+                $data['matiere_code'] ?? null,
+                "Ajout de la matière " . ($data['matiere_code'] ?? '') . " à la maquette " . ($data['filiere_code'] ?? '') . " (Coef: " . ($data['coefficient'] ?? 1) . ")",
+                $data,
+                $data['etablissement_code']
+            );
+        }
         $this->json($res);
     }
 
@@ -193,6 +212,16 @@ class MaquetteController extends BaseController
         $data['etablissement_code'] = $this->getActiveEtablissementCode();
 
         $res = $this->model->saveMatiereToMaquette($data);
+        if (!empty($res['status']) && $res['status'] == 1) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'maquettes',
+                (string)$id,
+                "Modification de la matière " . ($data['matiere_code'] ?? '') . " dans la maquette (Coef: " . ($data['coefficient'] ?? 1) . ")",
+                $data,
+                $data['etablissement_code']
+            );
+        }
         $this->json($res);
     }
 
@@ -221,6 +250,13 @@ class MaquetteController extends BaseController
         $success = $this->model->update($id, ['statut_maquette' => $newStatut]);
 
         if ($success) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'maquettes',
+                (string)$id,
+                "Basculement de statut de la maquette #{$id} vers {$newStatut}",
+                ['id_maquette' => $id, 'nouveau_statut' => $newStatut]
+            );
             $this->json(['status' => 1, 'message' => 'Statut mis à jour', 'nouveau_statut' => $newStatut]);
         } else {
             $this->json(['status' => 0, 'message' => 'Erreur lors de la mise à jour']);
@@ -242,8 +278,16 @@ class MaquetteController extends BaseController
             $id = $this->validator->decrypter($id);
         }
 
+        $item = $this->model->getById($id);
         $success = $this->model->delete($id);
         if ($success) {
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'maquettes',
+                (string)$id,
+                "Retrait de la matière " . ($item['matiere_code'] ?? $id) . " de la maquette",
+                ['id_maquette' => $id, 'item' => $item]
+            );
             $this->json(['status' => 1, 'message' => 'Matière retirée de la maquette avec succès']);
         } else {
             $this->json(['status' => 0, 'message' => 'Erreur lors de la suppression']);
@@ -262,7 +306,15 @@ class MaquetteController extends BaseController
         $niveauCode = !empty($_POST['niveau_code']) ? trim($_POST['niveau_code']) : null;
 
         $res = $this->model->duplicateMaquette($sourceAnnee, $targetAnnee, $filiereCode, $niveauCode);
+        if (!empty($res['status']) && $res['status'] == 1) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'maquettes',
+                $targetAnnee,
+                "Duplication de la maquette pédagogique de {$sourceAnnee} vers {$targetAnnee}",
+                ['source' => $sourceAnnee, 'cible' => $targetAnnee, 'filiere' => $filiereCode, 'niveau' => $niveauCode, 'res' => $res]
+            );
+        }
         $this->json($res);
     }
 }
-
