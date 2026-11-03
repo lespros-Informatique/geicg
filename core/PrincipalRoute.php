@@ -19,6 +19,7 @@ require_once __DIR__ . '/../models/permissions/ModelPermission.php';
 
 // School Structure & Academic Models
 require_once __DIR__ . '/../models/etablissements/ModelEtablissement.php';
+require_once __DIR__ . '/../models/configurations/ModelConfiguration.php';
 require_once __DIR__ . '/../models/cycles/ModelCycle.php';
 require_once __DIR__ . '/../models/filieres/ModelFiliere.php';
 require_once __DIR__ . '/../models/niveaux/ModelNiveau.php';

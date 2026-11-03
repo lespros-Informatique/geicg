@@ -497,12 +497,58 @@ abstract class BaseController
         }
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = '" . STATUTS::ACTIF . "' ORDER BY id_etablissement DESC LIMIT 1");
-            $config = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
-            if (!$config) {
-                $stmtFb = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
-                $config = $stmtFb ? $stmtFb->fetch(PDO::FETCH_ASSOC) : [];
+            // 1. Récupération des paramètres institutionnels globaux
+            $configInstitution = [];
+            try {
+                $stmtConf = $db->query("SELECT * FROM " . TABLES::CONFIGURATIONS . " ORDER BY id_configuration ASC LIMIT 1");
+                $configInstitution = $stmtConf ? $stmtConf->fetch(PDO::FETCH_ASSOC) : [];
+            } catch (Exception $e) {
+                // Table configurations potentiellement en cours de migration
             }
+
+            // 2. Récupération de l'établissement actif
+            $configEtab = [];
+            $stmt = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = '" . STATUTS::ACTIF . "' ORDER BY id_etablissement DESC LIMIT 1");
+            $configEtab = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
+            if (!$configEtab) {
+                $stmtFb = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
+                $configEtab = $stmtFb ? $stmtFb->fetch(PDO::FETCH_ASSOC) : [];
+            }
+
+            // Fusion en donnant la priorité aux données institutionnelles récentes
+            $config = array_merge($configEtab ?: [], $configInstitution ?: []);
+
+            // Normalisation et rétrocompatibilité des alias de champs
+            if (empty($config['libelle_etablissement']) && !empty($config['nom_etablissement'])) {
+                $config['libelle_etablissement'] = $config['nom_etablissement'];
+            }
+            if (empty($config['nom_etablissement']) && !empty($config['libelle_etablissement'])) {
+                $config['nom_etablissement'] = $config['libelle_etablissement'];
+            }
+            if (empty($config['numero_autorisation_etablissement']) && !empty($config['numero_autorisation'])) {
+                $config['numero_autorisation_etablissement'] = $config['numero_autorisation'];
+            }
+            if (empty($config['numero_autorisation']) && !empty($config['numero_autorisation_etablissement'])) {
+                $config['numero_autorisation'] = $config['numero_autorisation_etablissement'];
+            }
+            if (empty($config['telephone_etablissement']) && !empty($config['telephone_mobile'])) {
+                $config['telephone_etablissement'] = $config['telephone_mobile'];
+            }
+            if (empty($config['telephone_etablissement2']) && !empty($config['telephone_mobile2'])) {
+                $config['telephone_etablissement2'] = $config['telephone_mobile2'];
+            }
+            if (empty($config['telephone_fixe']) && !empty($config['telephone_etablissement'])) {
+                $config['telephone_fixe'] = $config['telephone_etablissement'];
+            }
+
+            // Contacts formatés pour les en-têtes et pieds de page PDF
+            $telephones = array_filter([
+                $config['telephone_fixe'] ?? '',
+                $config['telephone_mobile'] ?? ($config['telephone_etablissement'] ?? ''),
+                $config['telephone_mobile2'] ?? ($config['telephone_etablissement2'] ?? '')
+            ]);
+            $config['contacts_formatted'] = implode(' / ', array_unique($telephones));
+
             Session::set('etablissement_config', $config ?: []);
             return Session::get('etablissement_config', []);
         } catch (Exception $e) {

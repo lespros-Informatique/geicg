@@ -24,12 +24,12 @@
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="building" style="color: #1E3A5F; width: 24px; height: 24px;"></i> Configuration de l'Établissement
+            <i data-lucide="building" style="color: #1E3A5F; width: 24px; height: 24px;"></i> Configuration Générale & Documents Officiels
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Paramètres généraux et identité de l'établissement GEICG</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Identité institutionnelle, coordonnées et mentions officielles appliquées sur tous les documents PDF</p>
         </div>
         <span class="badge" style="background: #DCFCE7; color: #15803D; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-          <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Établissement Actif
+          <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Système Actif
         </span>
       </div>
 
@@ -38,8 +38,9 @@
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <input type="hidden" name="id_etablissement" value="<?= htmlspecialchars($item['id_etablissement'] ?? 1) ?>">
           
+          <!-- SECTION 1 : LOGO & EMBLÈME -->
           <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="image" style="width: 16px; height: 16px;"></i> Logo & Emblème
+            <i data-lucide="image" style="width: 16px; height: 16px;"></i> 1. Logo & Emblème Institutionnel
           </div>
 
           <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; background: #F8FAFC; padding: 20px; border-radius: 10px; border: 1px solid #E2E8F0;">
@@ -50,72 +51,160 @@
                 $logoSrc = (strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/');
               }
             ?>
-            <div style="width: 100px; height: 100px; border-radius: 12px; background: #FFFFFF; border: 2px dashed #CBD5E1; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; position: relative;">
-              <img id="logo-img-preview" src="<?= htmlspecialchars($logoSrc) ?>" alt="Logo GEICG" style="max-width: 100%; max-height: 100%; object-fit: contain; <?= empty($logoSrc) ? 'display:none;' : '' ?>">
-              <i id="logo-icon-placeholder" data-lucide="school" style="width: 44px; height: 44px; color: #94A3B8; <?= !empty($logoSrc) ? 'display:none;' : '' ?>"></i>
+            <div style="width: 110px; height: 110px; border-radius: 12px; background: #FFFFFF; border: 2px dashed #CBD5E1; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; position: relative;">
+              <img id="logo-img-preview" src="<?= htmlspecialchars($logoSrc) ?>" alt="Logo Institutionnel" style="max-width: 100%; max-height: 100%; object-fit: contain; <?= empty($logoSrc) ? 'display:none;' : '' ?>">
+              <i id="logo-icon-placeholder" data-lucide="school" style="width: 48px; height: 48px; color: #94A3B8; <?= !empty($logoSrc) ? 'display:none;' : '' ?>"></i>
             </div>
             <div style="flex: 1; min-width: 250px;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléverser le Logo (PNG, JPG, SVG, WEBP)</label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléverser le Logo Officiel (PNG, JPG, SVG, WEBP)</label>
               <input type="file" id="logo-file-input" name="logo_file" accept="image/*" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 13px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;">
-              <small style="color: #64748B; font-size: 12px; margin-top: 6px; display: block;">Format recommandé : PNG avec fond transparent (max 2 Mo)</small>
+              <small style="color: #64748B; font-size: 12px; margin-top: 6px; display: block;">Ce logo est inséré automatiquement en en-tête de toutes les fiches, attestations, bulletins et répertoires PDF.</small>
             </div>
           </div>
 
+          <!-- SECTION 2 : IDENTITÉ INSTITUTIONNELLE -->
           <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="info" style="width: 16px; height: 16px;"></i> Identité de l'Établissement
+            <i data-lucide="info" style="width: 16px; height: 16px;"></i> 2. Identité & En-tête Institutionnelle
           </div>
           
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom Officiel de l'Établissement <span style="color: #EF4444;">*</span></label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="nom_etablissement" value="<?= htmlspecialchars($item['nom_etablissement'] ?? ($item['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION')) ?>" placeholder="Ex: GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION" required>
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Sigle / Nom Court <span style="color: #EF4444;">*</span></label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="sigle_etablissement" value="<?= htmlspecialchars($item['sigle_etablissement'] ?? 'GROUPE EICG') ?>" placeholder="Ex: GROUPE EICG" required>
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Slogan / Devise</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="slogan_etablissement" value="<?= htmlspecialchars($item['slogan_etablissement'] ?? 'Excellence - Rigueur - Réussite') ?>" placeholder="Ex: Excellence - Rigueur - Réussite">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Arrêté / Numéro d'Autorisation</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="numero_autorisation" value="<?= htmlspecialchars($item['numero_autorisation'] ?? ($item['numero_autorisation_etablissement'] ?? 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP')) ?>" placeholder="Ex: AGRÉÉ PAR L'ÉTAT ET LE FDFP">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Ministère de Tutelle</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="ministere_tutelle" value="<?= htmlspecialchars($item['ministere_tutelle'] ?? 'Ministère de l\'Enseignement Supérieur et de la Recherche Scientifique') ?>" placeholder="Ex: Ministère de l'Enseignement Supérieur et de la Recherche Scientifique">
+            </div>
+          </div>
+
+          <!-- SECTION 3 : CONTACTS & COORDONNÉES -->
+          <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="phone-call" style="width: 16px; height: 16px;"></i> 3. Contacts Téléphoniques & Digitaux
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone Fixe / Standard</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_fixe" value="<?= htmlspecialchars($item['telephone_fixe'] ?? '27 31 62 40 57') ?>" placeholder="Ex: 27 31 62 40 57">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Mobile Principal <span style="color: #EF4444;">*</span></label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_mobile" value="<?= htmlspecialchars($item['telephone_mobile'] ?? ($item['telephone_etablissement'] ?? '07 79 37 37 38')) ?>" placeholder="Ex: 07 79 37 37 38" required>
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Mobile Secondaire</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_mobile2" value="<?= htmlspecialchars($item['telephone_mobile2'] ?? ($item['telephone_etablissement2'] ?? '05 04 59 39 99')) ?>" placeholder="Ex: 05 04 59 39 99">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Email Officiel <span style="color: #EF4444;">*</span></label>
+              <input type="email" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="email_etablissement" value="<?= htmlspecialchars($item['email_etablissement'] ?? 'eicgbouake01@gmail.com') ?>" placeholder="Ex: eicgbouake01@gmail.com" required>
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Site Web / Portail</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="site_web" value="<?= htmlspecialchars($item['site_web'] ?? 'www.groupe-eicg.net') ?>" placeholder="Ex: www.groupe-eicg.net">
+            </div>
+          </div>
+
+          <!-- SECTION 4 : LOCALISATION PHYSIQUE & POSTALE -->
+          <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> 4. Localisation Physique & Postale
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse Géographique / Quartier</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="adresse_etablissement" value="<?= htmlspecialchars($item['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?>" placeholder="Ex: Bouaké quartier Kennedy, route ancien ADDR">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Boîte Postale</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="boite_postale" value="<?= htmlspecialchars($item['boite_postale'] ?? 'BP 960 Bouaké 01') ?>" placeholder="Ex: BP 960 Bouaké 01">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Ville</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="ville_etablissement" value="<?= htmlspecialchars($item['ville_etablissement'] ?? 'Bouaké') ?>" placeholder="Ex: Bouaké">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Pays</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="pays_etablissement" value="<?= htmlspecialchars($item['pays_etablissement'] ?? 'Côte d\'Ivoire') ?>" placeholder="Ex: Côte d'Ivoire">
+            </div>
+          </div>
+
+          <!-- SECTION 5 : SIGNATURES OFFICIELLES & CACHETS -->
+          <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="pen-tool" style="width: 16px; height: 16px;"></i> 5. Titres & Signatures Officielles (Sur les PDF)
+          </div>
+
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de l'Établissement <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="libelle_etablissement" value="<?= htmlspecialchars($item['libelle_etablissement'] ?? 'Institut Supérieur GEICG') ?>" placeholder="Ex: Institut Supérieur GEICG - Campus Principal" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Titre Direction Pédagogique</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="titre_direction_pedagogique" value="<?= htmlspecialchars($item['titre_direction_pedagogique'] ?? 'La Direction des Études & Pédagogie') ?>" placeholder="Ex: La Direction des Études & Pédagogie">
             </div>
 
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro d'Autorisation / Arrêté</label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="numero_autorisation_etablissement" value="<?= htmlspecialchars($item['numero_autorisation_etablissement'] ?? '') ?>" placeholder="Ex: N° 045/MESRS/DGES/DESP/KK">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Titre Direction Générale</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="titre_direction_generale" value="<?= htmlspecialchars($item['titre_direction_generale'] ?? 'La Direction Générale') ?>" placeholder="Ex: La Direction Générale">
             </div>
-            
+
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Slogan</label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="slogan_etablissement" value="<?= htmlspecialchars($item['slogan_etablissement'] ?? '') ?>" placeholder="Ex: L'Excellence au Service de l'Avenir">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Titre Service Financier / Caisse</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="titre_service_finance" value="<?= htmlspecialchars($item['titre_service_finance'] ?? 'Le Service Comptabilité & Caisse') ?>" placeholder="Ex: Le Service Comptabilité & Caisse">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Mention Cachet & Signature</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="mention_cachet_signature" value="<?= htmlspecialchars($item['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?>" placeholder="Ex: Cachet & Signature autorisée">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Ville de Signature</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="ville_signature" value="<?= htmlspecialchars($item['ville_signature'] ?? 'Bouaké') ?>" placeholder="Ex: Fait à Bouaké">
             </div>
           </div>
 
+          <!-- SECTION 6 : PIED DE PAGE & RÉFÉRENCES DOCUMENTS -->
           <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="phone-call" style="width: 16px; height: 16px;"></i> Contacts & Coordonnées
+            <i data-lucide="file-text" style="width: 16px; height: 16px;"></i> 6. Bas de Page & Références (Documents Officiels)
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Email de l'Établissement <span style="color: #EF4444;">*</span></label>
-              <input type="email" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="email_etablissement" value="<?= htmlspecialchars($item['email_etablissement'] ?? 'contact@geicg.ci') ?>" placeholder="Ex: contact@geicg.ci" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Texte de Pied de Page Officiel</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="texte_pied_page" value="<?= htmlspecialchars($item['texte_pied_page'] ?? 'Document officiel généré par le Système GEICG') ?>" placeholder="Ex: Document officiel généré par le Système GEICG">
             </div>
 
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone Principal <span style="color: #EF4444;">*</span></label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_etablissement" value="<?= htmlspecialchars($item['telephone_etablissement'] ?? '') ?>" placeholder="Ex: 0708091011" required>
-            </div>
-
-            <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone Secondaire</label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="telephone_etablissement2" value="<?= htmlspecialchars($item['telephone_etablissement2'] ?? '') ?>" placeholder="Ex: 0102030405">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Préfixe des Références</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="prefixe_reference" value="<?= htmlspecialchars($item['prefixe_reference'] ?? 'REF-') ?>" placeholder="Ex: REF-">
             </div>
           </div>
 
-          <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> Localisation Physique
-          </div>
-
-          <div style="width: 100%; margin-bottom: 24px;">
-            <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse Physique Complète</label>
-              <textarea class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="adresse_etablissement" rows="3" placeholder="Ex: Abidjan Cocody Angré 8ème Tranche, Boulevard Principal GEICG"><?= htmlspecialchars($item['adresse_etablissement'] ?? '') ?></textarea>
-            </div>
-          </div>
-
+          <!-- SECTION 7 : CONFIGURATION DES SLUGS / RACCOURCIS -->
           <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px; margin-top: 28px;">
-            <i data-lucide="tag" style="width: 16px; height: 16px;"></i> Configuration des Raccourcis / Slugs (Sigles)
+            <i data-lucide="tag" style="width: 16px; height: 16px;"></i> 7. Configuration des Raccourcis / Slugs (Sigles)
           </div>
 
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">

@@ -10,9 +10,9 @@ class EtablissementController extends BaseController
     private function getSingleItem()
     {
         $items = $this->model->getAll();
-        return !empty($items) ? $items[0] : [
-            'id_etablissement' => null,
-            'libelle_etablissement' => '',
+        $etab = !empty($items) ? $items[0] : [
+            'id_etablissement' => 1,
+            'libelle_etablissement' => 'Institut Supérieur GEICG',
             'numero_autorisation_etablissement' => '',
             'telephone_etablissement' => '',
             'telephone_etablissement2' => '',
@@ -21,6 +21,11 @@ class EtablissementController extends BaseController
             'adresse_etablissement' => '',
             'statut_etablissement' => 'actif'
         ];
+
+        $modelConfig = new ModelConfiguration();
+        $conf = $modelConfig->getConfig();
+
+        return array_merge($etab, $conf ?: []);
     }
 
     public function list()
@@ -99,54 +104,74 @@ class EtablissementController extends BaseController
             }
         }
 
+        // Configuration institutionnelle (table configurations)
+        $modelConfig = new ModelConfiguration();
+        $configData = [
+            'nom_etablissement' => $data['nom_etablissement'] ?? ($data['libelle_etablissement'] ?? ''),
+            'sigle_etablissement' => $data['sigle_etablissement'] ?? 'GROUPE EICG',
+            'slogan_etablissement' => $data['slogan_etablissement'] ?? '',
+            'numero_autorisation' => $data['numero_autorisation'] ?? ($data['numero_autorisation_etablissement'] ?? ''),
+            'ministere_tutelle' => $data['ministere_tutelle'] ?? '',
+            'adresse_etablissement' => $data['adresse_etablissement'] ?? '',
+            'boite_postale' => $data['boite_postale'] ?? '',
+            'ville_etablissement' => $data['ville_etablissement'] ?? 'Bouaké',
+            'pays_etablissement' => $data['pays_etablissement'] ?? 'Côte d\'Ivoire',
+            'telephone_fixe' => $data['telephone_fixe'] ?? '',
+            'telephone_mobile' => $data['telephone_mobile'] ?? ($data['telephone_etablissement'] ?? ''),
+            'telephone_mobile2' => $data['telephone_mobile2'] ?? ($data['telephone_etablissement2'] ?? ''),
+            'email_etablissement' => $data['email_etablissement'] ?? '',
+            'site_web' => $data['site_web'] ?? '',
+            'titre_direction_pedagogique' => $data['titre_direction_pedagogique'] ?? '',
+            'titre_direction_generale' => $data['titre_direction_generale'] ?? '',
+            'titre_service_finance' => $data['titre_service_finance'] ?? '',
+            'mention_cachet_signature' => $data['mention_cachet_signature'] ?? '',
+            'ville_signature' => $data['ville_signature'] ?? 'Bouaké',
+            'texte_pied_page' => $data['texte_pied_page'] ?? '',
+            'prefixe_reference' => $data['prefixe_reference'] ?? 'REF-',
+        ];
+        if (!empty($data['logo_etablissement'])) {
+            $configData['logo_etablissement'] = $data['logo_etablissement'];
+        }
+        $modelConfig->saveConfig($configData);
+
+        // Synchronisation des slugs et champs de base dans la table etablissements
         $data['use_slug_filiere'] = isset($data['use_slug_filiere']) ? (int)$data['use_slug_filiere'] : 0;
         $data['use_slug_cycle'] = isset($data['use_slug_cycle']) ? (int)$data['use_slug_cycle'] : 0;
         $data['use_slug_niveau'] = isset($data['use_slug_niveau']) ? (int)$data['use_slug_niveau'] : 0;
+        if (!empty($configData['nom_etablissement'])) {
+            $data['libelle_etablissement'] = $configData['nom_etablissement'];
+        }
+        if (!empty($configData['numero_autorisation'])) {
+            $data['numero_autorisation_etablissement'] = $configData['numero_autorisation'];
+        }
+        if (!empty($configData['telephone_mobile'])) {
+            $data['telephone_etablissement'] = $configData['telephone_mobile'];
+        }
+        if (!empty($configData['telephone_mobile2'])) {
+            $data['telephone_etablissement2'] = $configData['telephone_mobile2'];
+        }
 
         $filteredData = $this->model->filterData($data);
 
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
         if ($id && $this->model->getById($id)) {
-            if ($this->model->update($filteredData, $id)) {
-                Session::remove('etablissement_config');
-                if ($isAjax) {
-                    $this->success('Configuration de l\'établissement mise à jour avec succès!');
-                } else {
-                    Session::set('flash_success', 'Configuration de l\'établissement mise à jour avec succès!');
-                    header('Location: ' . RACINE . 'etablissement/config');
-                    exit();
-                }
-            } else {
-                if ($isAjax) {
-                    $this->error('Erreur lors de la mise à jour de la configuration');
-                } else {
-                    Session::set('flash_error', 'Erreur lors de la mise à jour de la configuration');
-                    header('Location: ' . RACINE . 'etablissement/config');
-                    exit();
-                }
-            }
+            $this->model->update($filteredData, $id);
         } else {
             $filteredData['code_etablissement'] = $this->validator->generateCode(TABLES::ETABLISSEMENTS, 'code_etablissement', 'ETA-', 8);
             $filteredData['statut_etablissement'] = STATUTS::ACTIF;
             $filteredData['created_at_etablissement'] = date('Y-m-d H:i:s');
-            if ($this->model->create($filteredData)) {
-                if ($isAjax) {
-                    $this->success('Configuration enregistrée avec succès!');
-                } else {
-                    Session::set('flash_success', 'Configuration enregistrée avec succès!');
-                    header('Location: ' . RACINE . 'etablissement/config');
-                    exit();
-                }
-            } else {
-                if ($isAjax) {
-                    $this->error('Erreur lors de l\'enregistrement');
-                } else {
-                    Session::set('flash_error', 'Erreur lors de l\'enregistrement');
-                    header('Location: ' . RACINE . 'etablissement/config');
-                    exit();
-                }
-            }
+            $this->model->create($filteredData);
+        }
+
+        Session::remove('etablissement_config');
+
+        if ($isAjax) {
+            $this->success('Configuration de l\'établissement mise à jour avec succès!');
+        } else {
+            Session::set('flash_success', 'Configuration de l\'établissement mise à jour avec succès!');
+            header('Location: ' . RACINE . 'etablissement/config');
+            exit();
         }
     }
 
