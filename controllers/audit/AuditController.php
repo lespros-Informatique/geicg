@@ -70,5 +70,67 @@ class AuditController extends BaseController
 
         $this->json(['data' => $data]);
     }
+
+    /**
+     * Génère et imprime le journal d'audit en PDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::CONFIG_SYSTEM, PERMISSIONS::MANAGE_USERS, PERMISSIONS::VIEW_USERS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $filters = [
+            'action' => trim($_GET['action'] ?? ''),
+            'module' => trim($_GET['module'] ?? ''),
+            'user_id' => trim($_GET['user_id'] ?? ''),
+            'date_debut' => trim($_GET['date_debut'] ?? ''),
+            'date_fin' => trim($_GET['date_fin'] ?? ''),
+            'search' => trim($_GET['search'] ?? '')
+        ];
+
+        $logs = $this->model->getLogs($filters, 2000, 0);
+
+        $targetUserLabel = '';
+        if (!empty($filters['user_id'])) {
+            $uRow = (new ModelUser())->getById((int)$filters['user_id']);
+            if ($uRow) {
+                $targetUserLabel = trim($uRow['nom_user'] . ' ' . ($uRow['prenom_user'] ?? '')) . ' (' . ($uRow['code_user'] ?? '') . ')';
+            }
+        }
+
+        // Journaliser cette impression
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'audit',
+            null,
+            "Impression du journal des logs d'audit (" . count($logs) . " entrées)"
+        );
+
+        $dataView = [
+            'logs' => $logs,
+            'filters' => $filters,
+            'targetUserLabel' => $targetUserLabel,
+            'etablissement' => $this->getEtablissementConfig()
+        ];
+
+        $html = PdfService::renderTemplate('journal_audit.php', $dataView);
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Journal_Audit_Logs_' . date('Ymd_His') . '.pdf';
+
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Journal d\'Audit & Logs - GEICG',
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
 }
 

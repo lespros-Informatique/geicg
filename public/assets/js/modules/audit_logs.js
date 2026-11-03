@@ -124,6 +124,27 @@ $(document).ready(function() {
     }
   });
 
+  // Mise à jour dynamique de l'URL d'impression selon les filtres actifs
+  function updatePrintUrl() {
+    var userId = ($('#filter-user').val() || '').trim();
+    var action = ($('#filter-action').val() || '').trim();
+    var module = ($('#filter-module').val() || '').trim();
+    var dateDebut = ($('#filter-date-debut').val() || '').trim();
+    var dateFin = ($('#filter-date-fin').val() || '').trim();
+
+    var params = [];
+    if (userId) params.push('user_id=' + encodeURIComponent(userId));
+    if (action) params.push('action=' + encodeURIComponent(action));
+    if (module) params.push('module=' + encodeURIComponent(module));
+    if (dateDebut) params.push('date_debut=' + encodeURIComponent(dateDebut));
+    if (dateFin) params.push('date_fin=' + encodeURIComponent(dateFin));
+
+    var qs = params.length > 0 ? ('?' + params.join('&')) : '';
+    $('#btn-print-audit').attr('href', racine + 'audit/imprimerPdf' + qs);
+  }
+
+  updatePrintUrl();
+
   // Initialisation Select2 des filtres
   if ($.fn.select2) {
     $('#filter-user, #filter-action, #filter-module').select2({
@@ -132,13 +153,20 @@ $(document).ready(function() {
 
     $('#filter-user, #filter-action, #filter-module').on('change', function() {
       table.ajax.reload();
+      updatePrintUrl();
     });
   }
+
+  // Changement dates
+  $('#filter-date-debut, #filter-date-fin').on('change', function() {
+    updatePrintUrl();
+  });
 
   // Soumission des filtres
   $('#form-filter-logs').on('submit', function(e) {
     e.preventDefault();
     table.ajax.reload();
+    updatePrintUrl();
   });
 
   // Réinitialisation des filtres
@@ -154,6 +182,7 @@ $(document).ready(function() {
     $('#filter-date-debut').val('');
     $('#filter-date-fin').val('');
     table.ajax.reload();
+    updatePrintUrl();
   });
 
   // Bouton Actualiser

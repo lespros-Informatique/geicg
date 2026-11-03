@@ -584,6 +584,7 @@ $route->addRoute('/permission/formulaire', [$permissionController, 'formulaire']
 // Module: audit / logs (AuditController)
 $route->addRoute('/audit/list', [$auditController, 'list']);
 $route->addRoute('/audit/apiList', [$auditController, 'apiList']);
+$route->addRoute('/audit/imprimerPdf', [$auditController, 'imprimerPdf']);
 
 
 

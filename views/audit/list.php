@@ -14,7 +14,10 @@
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Historique chronologique et surveillance des actions effectuées sur le système</p>
         </div>
-        <div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <a href="<?= RACINE ?>audit/imprimerPdf" id="btn-print-audit" target="_blank" class="btn btn-outline-primary" style="background: #FFFFFF; border: 1.5px solid #1E3A5F; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 9px 16px; text-decoration: none; cursor: pointer; transition: all 0.2s;" title="Générer et imprimer le journal d'audit en PDF">
+            <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Journal
+          </a>
           <button type="button" id="btn-refresh-logs" class="btn btn-outline-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 9px 16px; cursor: pointer;">
             <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Actualiser
           </button>
