@@ -61,6 +61,7 @@ $route->addRoute('/user/edit', [$userController, 'edit']);
 $route->addRoute('/user/changer', [$userController, 'changer']);
 $route->addRoute('/user/edition/{param}', [$userController, 'edition']);
 $route->addRoute('/user/details/{param}', [$userController, 'details']);
+$route->addRoute('/user/imprimerFichePdf/{param}', [$userController, 'imprimerFichePdf']);
 $route->addRoute('/user/formulaire', [$userController, 'formulaire']);
 
 // Routes pour les modules GEICG

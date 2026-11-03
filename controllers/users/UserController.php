@@ -521,4 +521,60 @@ class UserController extends BaseController
             $this->error('Erreur lors de la mise à jour du mot de passe.');
         }
     }
+
+    /**
+     * Génère et imprime la fiche officielle d'un utilisateur en PDF
+     */
+    public function imprimerFichePdf($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_USERS);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        try {
+            $userId = $this->validator->decrypter($details);
+            if (!$userId || !is_numeric($userId)) {
+                $userId = is_numeric($details) ? (int)$details : 0;
+            }
+
+            $userProfile = $this->model->getById((int)$userId);
+            if (!$userProfile) {
+                header('Location: ' . RACINE . 'user/list');
+                exit();
+            }
+
+            $userRoles = $this->model->getUserRoles($userProfile['code_user'] ?? '');
+            $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
+
+            $dataView = [
+                'user' => $userProfile,
+                'role' => $primaryRole,
+                'userRoles' => $userRoles,
+                'etablissement' => $this->getEtablissementConfig()
+            ];
+
+            $html = PdfService::renderTemplate('fiche_utilisateur.php', $dataView);
+            if (isset($_GET['html'])) {
+                echo $html;
+                return;
+            }
+
+            $nomClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim(($userProfile['nom_user'] ?? '') . '_' . ($userProfile['prenom_user'] ?? '')));
+            $filename = 'Fiche_Utilisateur_' . ($nomClean ?: 'Compte') . '_' . date('Ymd_His') . '.pdf';
+
+            PdfService::generate($html, $filename, [
+                'orientation' => 'P',
+                'format' => 'A4',
+                'title' => 'Fiche Utilisateur - ' . trim(($userProfile['nom_user'] ?? '') . ' ' . ($userProfile['prenom_user'] ?? '')),
+                'margin_left' => 8,
+                'margin_right' => 8,
+                'margin_top' => 8,
+                'margin_bottom' => 8
+            ]);
+        } catch (Exception $e) {
+            error_log("UserController::imprimerFichePdf error: " . $e->getMessage());
+            header('Location: ' . RACINE . 'user/list');
+            exit();
+        }
+    }
 }

@@ -21,6 +21,12 @@ if (!empty($user['code_user'])) {
     }
 }
 
+// Configuration institutionnelle pour impression
+$etablissementConfig = [];
+if (class_exists('ModelConfiguration')) {
+    $etablissementConfig = (new ModelConfiguration())->getConfig();
+}
+
 // Photo et placeholder
 $photoUser = !empty($user['photo_user']) ? $user['photo_user'] : '';
 $photoUrl = RACINE . 'public/assets/images/placeholders/user.png';
@@ -75,6 +81,38 @@ if (!empty($user['sexe_user'])) {
     align-items: center;
     justify-content: center;
   }
+  @media print {
+    .print-only-banner {
+      display: block !important;
+    }
+    .page-header,
+    .main-nav,
+    .app-sidebar,
+    .btn,
+    nav,
+    aside,
+    footer,
+    .sidebar-wrapper,
+    header {
+      display: none !important;
+    }
+    body, html, .app-layout, .main-content, .content-wrapper {
+      background: #FFFFFF !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+    }
+    .card {
+      box-shadow: none !important;
+      border: 1px solid #CBD5E1 !important;
+      page-break-inside: avoid;
+    }
+    .user-details-grid {
+      display: grid !important;
+      grid-template-columns: 280px 1fr !important;
+      gap: 20px !important;
+    }
+  }
 </style>
 
 <div class="app-layout">
@@ -82,6 +120,24 @@ if (!empty($user['sexe_user'])) {
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px;">
+
+      <!-- EN-TÊTE D'IMPRESSION (VISIBLE UNIQUEMENT À L'IMPRESSION) -->
+      <div class="print-only-banner" style="display: none; margin-bottom: 20px; border-bottom: 2px solid #1E3A5F; padding-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">
+              <?= htmlspecialchars($etablissementConfig['libelle_etablissement'] ?? 'GEICG - GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?>
+            </h2>
+            <div style="font-size: 12px; font-weight: 800; color: #0F172A; margin-top: 3px;">
+              FICHE OFFICIELLE D'IDENTIFICATION & DE GESTION DU COMPTE UTILISATEUR
+            </div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #475569;">
+            <div>Date d'impression : <strong><?= date('d/m/Y H:i') ?></strong></div>
+            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(Auth::fullName() ?: 'Administration') ?></strong></div>
+          </div>
+        </div>
+      </div>
       
       <!-- Page Header -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
@@ -95,11 +151,13 @@ if (!empty($user['sexe_user'])) {
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           
 
-          <?php if (!empty($enseignantEncId)): ?>
-            <a href="<?= RACINE ?>enseignant/details/<?= $enseignantEncId ?>" class="btn btn-outline-primary" style="background: #FFFFFF; border: 1.5px solid #1E3A5F; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none;" title="Accéder directement à la fiche du profil enseignant">
-              <i data-lucide="graduation-cap" style="width: 18px; height: 18px;"></i> Profil Enseignant
-            </a>
-          <?php endif; ?>
+          <a href="<?= RACINE ?>user/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
+          </a>
+
+          <a href="<?= RACINE ?>user/imprimerFichePdf/<?= $encryptedId ?>" target="_blank" class="btn btn-outline-primary" style="background: #FFFFFF; border: 1.5px solid #1E3A5F; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; cursor: pointer; transition: all 0.2s;" title="Générer et imprimer la fiche officielle de l'utilisateur en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Fiche Utilisateur
+          </a>
 
           <a href="<?= RACINE ?>user/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l'utilisateur
