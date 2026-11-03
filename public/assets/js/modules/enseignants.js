@@ -354,7 +354,6 @@ $(document).ready(function() {
                         '  </td>' +
                         '  <td style="padding: 12px;">' +
                         '    <strong style="color: #0F172A; font-size: 13px;">' + (item.libelle_matiere || '-') + '</strong>' +
-                        '    <div style="font-size:11px;color:#64748B;">Code: ' + (item.matiere_code || '-') + '</div>' +
                         '  </td>' +
                         '  <td style="padding: 12px;">' +
                         '    <span style="background:#F8FAFC;border:1px solid #CBD5E1;color:#1E293B;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px;">' +

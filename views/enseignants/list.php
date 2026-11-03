@@ -7,7 +7,7 @@
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Corps Enseignant & Professeurs</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion des enseignants, grades académiques et accès pédagogiques</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion des enseignants</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;" class="no-print">
           <button type="button" id="btn-programme-cours" class="btn btn-outline-primary" style="border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; transition: all 0.2s;" title="Afficher le programme des cours du jour ou d'une autre date">
