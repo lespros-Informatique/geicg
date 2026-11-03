@@ -244,6 +244,14 @@ class NoteController extends BaseController
 
         $html = PdfService::renderTemplate('fiche_notes_classe.php', $data);
 
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'notes',
+            $compositionCode,
+            "Impression de la fiche de notes pour la classe {$classeCode} (Évaluation: {$compositionCode})",
+            ['classe_code' => $classeCode, 'composition_code' => $compositionCode, 'matiere_code' => $matiereCode]
+        );
+
         if (isset($_GET['html'])) {
             echo $html;
             return;
@@ -367,6 +375,14 @@ class NoteController extends BaseController
 
         $html = PdfService::renderTemplate('registre_evaluations.php', $data);
 
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'notes',
+            $anneeCode ?: 'TOUT',
+            "Impression du registre général des évaluations (Année: {$anneeLibelle})",
+            ['annee_code' => $anneeCode, 'classe_code' => $classeCode, 'total_sessions' => $totalSessions]
+        );
+
         if (isset($_GET['html'])) {
             echo $html;
             return;
@@ -443,6 +459,14 @@ class NoteController extends BaseController
         $data['etablissement_code'] = $etabCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'notes',
+                $data['code_note'],
+                "Enregistrement de note (" . ($data['valeur_note'] ?? '') . "/20) pour {$inscCode} en {$matiereCode}",
+                $filteredData,
+                $etabCode
+            );
             $this->success('Note enregistrée avec succès!');
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de l\'enregistrement de la note');
@@ -460,6 +484,13 @@ class NoteController extends BaseController
         unset($data['csrf_token']);
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'notes',
+                (string)$id,
+                "Modification de la note #{$id}",
+                $filteredData
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -473,6 +504,13 @@ class NoteController extends BaseController
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'notes',
+                    (string)$id,
+                    "Basculement de statut de la note #{$id}",
+                    ['id_note' => $id]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -913,6 +951,23 @@ class NoteController extends BaseController
             $savedCount = $result['saved_count'];
             $deletedCount = $result['deleted_count'];
             $compCode = $result['composition_code'];
+
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'notes',
+                $compCode,
+                "Saisie collective des notes pour la classe {$classeCode} en {$matiereCode} ({$savedCount} enregistrée(s), {$deletedCount} effacée(s))",
+                [
+                    'composition_code' => $compCode,
+                    'classe_code' => $classeCode,
+                    'matiere_code' => $matiereCode,
+                    'semestre_code' => $semestreCode,
+                    'type_evaluation' => $typeEval,
+                    'saved_count' => $savedCount,
+                    'deleted_count' => $deletedCount
+                ],
+                $etabCode
+            );
 
             $msg = "$savedCount note(s) enregistrée(s) avec succès !";
             if ($deletedCount > 0) {

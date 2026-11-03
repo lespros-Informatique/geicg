@@ -116,6 +116,14 @@ class EtudiantController extends BaseController
         $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'etudiants',
+                $data['matricule_etudiant'],
+                "Création du dossier étudiant {$prenomEtudiant} {$nomEtudiant} (Matricule: {$data['matricule_etudiant']})",
+                $filteredData,
+                $etabCode
+            );
             $this->success('Item créé avec succès!');
         } else {
             $this->error('Erreur lors de la création');
@@ -162,6 +170,14 @@ class EtudiantController extends BaseController
         $redirectUrl = RACINE . 'etudiant/details/' . $encryptedId;
 
         if ($this->model->update($filteredData, $id)) {
+            $mat = $data['matricule_etudiant'] ?? (string)$id;
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'etudiants',
+                $mat,
+                "Modification de la fiche de l'étudiant {$mat}",
+                $filteredData
+            );
             if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
                 Session::flash('flash_success', "Fiche de l'étudiant modifiée avec succès !");
                 header('Location: ' . $redirectUrl);
@@ -190,6 +206,13 @@ class EtudiantController extends BaseController
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'etudiants',
+                    (string)$id,
+                    "Basculement de statut (actif/inactif) de l'étudiant #{$id}",
+                    ['id_etudiant' => $id]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -266,6 +289,19 @@ class EtudiantController extends BaseController
         );
 
         if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'inscriptions',
+                $codeInscription ?: $codeEtudiant,
+                "Changement de classe vers {$nouvelleClasse} pour le dossier {$codeInscription}",
+                [
+                    'code_inscription' => $codeInscription,
+                    'code_etudiant' => $codeEtudiant,
+                    'nouvelle_classe' => $nouvelleClasse,
+                    'affectation' => $affectationEtat,
+                    'montant_scolarite' => $montantScolarite
+                ]
+            );
             $this->success($res['message'], ['redirect' => RACINE . 'etudiant/list']);
         } else {
             $this->error($res['message']);
@@ -468,6 +504,14 @@ class EtudiantController extends BaseController
 
         $html = PdfService::renderTemplate($template, $data);
 
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'etudiants',
+            $filtresLabels['classe'] ?? ($anneeCode ?: 'TOUT'),
+            "Impression " . ($isClassList ? "de la liste de classe ({$filtresLabels['classe']})" : "du registre nominatif des étudiants"),
+            ['filters' => $filters, 'total' => $total]
+        );
+
         if (isset($_GET['html'])) {
             echo $html;
             return;
@@ -497,6 +541,14 @@ class EtudiantController extends BaseController
         $res = $this->model->annulerInscription($idInscription, $codeInscription);
 
         if ($res['success']) {
+            $inscrCode = $res['inscription']['code_inscription'] ?? ($codeInscription ?: (string)$idInscription);
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'inscriptions',
+                $inscrCode,
+                "Annulation de l'inscription {$inscrCode}",
+                ['id_inscription' => $idInscription, 'code_inscription' => $codeInscription]
+            );
             $this->success($res['message'], [
                 'reload' => true,
                 'id_inscription' => $res['inscription']['id_inscription'] ?? $idInscription,

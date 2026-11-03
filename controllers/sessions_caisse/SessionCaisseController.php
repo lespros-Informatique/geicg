@@ -128,6 +128,18 @@ class SessionCaisseController extends BaseController
 
         $id = $this->model->create($filteredData);
         if ($id) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'sessions_caisse',
+                $data['code_session'],
+                "Ouverture de la session de caisse {$data['code_session']} avec un fond initial de " . number_format($data['fond_initial'], 0, ',', ' ') . " GNF",
+                [
+                    'code_session' => $data['code_session'],
+                    'date_session' => $dateSession,
+                    'fond_initial' => $data['fond_initial']
+                ],
+                $etabCode
+            );
             $this->success("La session de caisse {$data['code_session']} a été ouverte avec succès.", RACINE . 'session_caisse/list');
         } else {
             $this->error("Erreur lors de l'ouverture de la session de caisse.");
@@ -210,6 +222,21 @@ class SessionCaisseController extends BaseController
 
         $res = $this->model->update($updateData, $idSession);
         if ($res) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'sessions_caisse',
+                $session['code_session'] ?? (string)$idSession,
+                "Clôture de la session de caisse {$session['code_session']} (Solde attendu: " . number_format($soldeAttendu, 0, ',', ' ') . " GNF, Écart: " . number_format($ecartCaisse, 0, ',', ' ') . " GNF)",
+                [
+                    'code_session' => $session['code_session'] ?? null,
+                    'fond_initial' => $fondInitial,
+                    'total_general' => $totalGeneral,
+                    'solde_attendu' => $soldeAttendu,
+                    'montant_physique' => $montantPhysiqueCompte,
+                    'ecart' => $ecartCaisse
+                ],
+                $session['etablissement_code'] ?? null
+            );
             $this->success("Arrêté et clôture de la session {$session['code_session']} enregistrés avec succès.", RACINE . 'session_caisse/details/' . $this->validator->crypter($idSession));
         } else {
             $this->error("Erreur lors de l'enregistrement de la clôture.");
@@ -421,6 +448,13 @@ class SessionCaisseController extends BaseController
 
         $res = $this->model->update($filteredData, $id);
         if ($res) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'sessions_caisse',
+                (string)$id,
+                "Modification des informations de la session de caisse #{$id}",
+                $filteredData
+            );
             $this->success("Session de caisse mise à jour.", RACINE . 'session_caisse/list');
         } else {
             $this->error("Erreur lors de la mise à jour.");
@@ -452,6 +486,13 @@ class SessionCaisseController extends BaseController
 
         $res = $this->model->update($update, $id);
         if ($res) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'sessions_caisse',
+                (string)$id,
+                "Changement de statut de la session de caisse #{$id} : {$statut}",
+                ['id_session' => $id, 'nouveau_statut' => $statut]
+            );
             $this->json(['status' => 1, 'message' => 'Statut de session mis à jour avec succès']);
         } else {
             $this->json(['status' => 0, 'message' => 'Erreur lors de la mise à jour']);

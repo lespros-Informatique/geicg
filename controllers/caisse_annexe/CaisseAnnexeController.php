@@ -298,6 +298,22 @@ class CaisseAnnexeController extends BaseController
             $encryptedId = $this->validator->crypter($newId);
             $encryptedInscrId = $this->validator->crypter($inscription['id_inscription'] ?? $codeInscription);
 
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'caisse_annexe',
+                $codePaiement,
+                "Encaissement de frais annexes de " . number_format($montant, 0, ',', ' ') . " GNF pour l'inscription {$codeInscription}",
+                [
+                    'code_paiement' => $codePaiement,
+                    'inscription_code' => $codeInscription,
+                    'montant' => $montant,
+                    'mode_paiement' => $modePaiement,
+                    'reference' => $reference,
+                    'session_code' => $sessionCode
+                ],
+                $etabCode
+            );
+
             $this->success("Encaissement des frais annexes enregistré avec succès !", [
                 'code_paiement' => $codePaiement,
                 'id_paiement' => $newId,
@@ -334,6 +350,14 @@ class CaisseAnnexeController extends BaseController
             $aRow = $this->model->getAnneeByCode($anneeCode);
             $anneeLibelle = $aRow['libelle_annee'] ?? $anneeCode;
         }
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'caisse_annexe',
+            $anneeCode ?: 'TOUT',
+            "Impression du registre de caisse annexe (Année: " . ($anneeLibelle ?? 'Toutes') . ", Période: " . ($dateDebut ?: 'début') . " à " . ($dateFin ?: 'fin') . ")",
+            ['annee_code' => $anneeCode, 'niveau_code' => $niveauCode, 'classe_code' => $classeCode, 'date_debut' => $dateDebut, 'date_fin' => $dateFin]
+        );
 
         // Rendu de la vue d'impression épurée
         $this->loadView('../views/caisse_annexe/print.php', [

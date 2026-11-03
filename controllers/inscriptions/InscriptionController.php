@@ -151,6 +151,21 @@ class InscriptionController extends BaseController
         if ($modeInscription === 'nouveau' || (!empty($data['nom_etudiant']) && !empty($data['prenom_etudiant']))) {
             $res = $this->model->processFullInscription($data, $userCode, $etabCode, $anneeCode, $this->validator);
             if ($res['success']) {
+                $inscrCode = $res['data']['code_inscription'] ?? ($data['code_inscription'] ?? '');
+                $etuNom = trim(($data['prenom_etudiant'] ?? '') . ' ' . ($data['nom_etudiant'] ?? ''));
+                $this->logAction(
+                    AuditLogger::ACTION_CREATE,
+                    'inscriptions',
+                    $inscrCode,
+                    "Nouvelle inscription de l'étudiant {$etuNom} (Classe: " . ($data['classe_code'] ?? '') . ")",
+                    [
+                        'code_inscription' => $inscrCode,
+                        'etudiant' => $etuNom,
+                        'classe_code' => $data['classe_code'] ?? null,
+                        'mode' => 'nouveau'
+                    ],
+                    $etabCode
+                );
                 $this->success($res['message']);
             } else {
                 $this->error($res['message']);
@@ -165,6 +180,21 @@ class InscriptionController extends BaseController
 
         $res = $this->model->processReinscription($data, $userCode, $etabCode, $anneeCode, $this->validator, $hasDerogationPermission, $agentName);
         if ($res['success']) {
+            $inscrCode = $res['voucher_data']['code_inscription'] ?? ($data['code_inscription'] ?? '');
+            $nomComplet = $res['voucher_data']['nom_complet'] ?? '';
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'inscriptions',
+                $inscrCode,
+                "Réinscription de l'étudiant {$nomComplet} (Classe: " . ($data['classe_code'] ?? '') . ")",
+                [
+                    'code_inscription' => $inscrCode,
+                    'etudiant' => $nomComplet,
+                    'classe_code' => $data['classe_code'] ?? null,
+                    'mode' => 'reinscription'
+                ],
+                $etabCode
+            );
             $this->json([
                 'status' => 1,
                 'message' => $res['message'],
@@ -201,6 +231,13 @@ class InscriptionController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'inscriptions',
+                (string)$id,
+                "Modification du dossier d'inscription #{$id}",
+                $filteredData
+            );
             $this->success('Inscription modifiée avec succès !');
         } else {
             $this->error('Erreur lors de la modification');
@@ -222,6 +259,13 @@ class InscriptionController extends BaseController
                 $success = $this->model->toggleStatus($id);
             }
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'inscriptions',
+                    (string)$id,
+                    "Changement de statut de l'inscription #{$id} : " . ($statut ?: 'inversion'),
+                    ['id_inscription' => $id, 'statut' => $statut]
+                );
                 $this->success('Statut de l\'inscription mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -335,6 +379,15 @@ class InscriptionController extends BaseController
         }
 
         $html = PdfService::renderTemplate('recu_inscription.php', $data);
+
+        $mat = $data['matricule'] ?? ($data['code_inscription'] ?? 'INCONNU');
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'inscriptions',
+            $mat,
+            "Impression de la fiche / reçu d'inscription pour {$mat}",
+            ['matricule' => $mat, 'id' => $id ?? null]
+        );
 
         if (!empty($_GET['pdf'])) {
             $filename = 'Recu_Inscription_' . ($data['matricule'] ?? 'GEICG') . '.pdf';
@@ -482,6 +535,13 @@ class InscriptionController extends BaseController
             $ok = $this->model->updatePhoto((int)$inscInfo['id_inscription'], $relativePath, $codeEtu, $matEtu);
 
             if ($ok) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'inscriptions',
+                    $matEtu ?: (string)$inscInfo['id_inscription'],
+                    "Mise à jour de la photo d'identité pour {$matEtu}",
+                    ['id_inscription' => $inscInfo['id_inscription'], 'matricule' => $matEtu, 'photo_path' => $relativePath]
+                );
                 $this->success("La photo d'inscription a été enregistrée avec succès !", [
                     'photo_url' => RACINE . $relativePath
                 ]);

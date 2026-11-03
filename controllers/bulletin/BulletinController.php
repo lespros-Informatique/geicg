@@ -238,6 +238,15 @@ class BulletinController extends BaseController
             $item = $calc['item'];
             $dataView = $this->buildBulletinViewData($calc);
             $nomComplet = $dataView['nom_prenom_etudiant'];
+            $matricule = $item['matricule_etudiant'] ?? 'Etudiant';
+
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'bulletins',
+                $matricule,
+                "Impression du bulletin de notes de {$nomComplet} ({$matricule}) pour {$dataView['intitule_periode']}",
+                ['matricule' => $matricule, 'nom_etudiant' => $nomComplet, 'semestre' => $selectedSemestreCode, 'moyenne' => $dataView['moyenneGenerale'] ?? null]
+            );
 
             $html = PdfService::renderTemplate('bulletin_notes.php', $dataView);
             if (isset($_GET['html'])) {
@@ -344,6 +353,14 @@ class BulletinController extends BaseController
             $classeLibelle = $bulletins[0]['classe_libelle'] ?? $classeCode;
             $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classeLibelle);
             $filename = 'Bulletins_Classe_' . $cleanName . '_' . date('Ymd_His') . '.pdf';
+
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'bulletins',
+                $classeCode,
+                "Impression groupée des bulletins pour la classe {$classeLibelle} ({$total} étudiants)",
+                ['classe_code' => $classeCode, 'semestre_code' => $semestreCode, 'nb_bulletins' => $total]
+            );
 
             PdfService::generate($fullHtml, $filename, [
                 'orientation' => 'P',
@@ -452,6 +469,15 @@ class BulletinController extends BaseController
         ]);
 
         $html = PdfService::renderTemplate('pv_classe_pdf.php', $dataView);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'bulletins',
+            $selectedClasseCode,
+            "Impression du PV de délibération de la classe {$selectedClasseCode} ({$selectedSemestreLibelle})",
+            ['classe_code' => $selectedClasseCode, 'semestre' => $selectedSemestreCode]
+        );
+
         if (isset($_GET['html'])) {
             echo $html;
             return;
@@ -588,6 +614,15 @@ class BulletinController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('registre_bulletins.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'bulletins',
+            $classeCode,
+            "Impression du registre des bulletins pour la classe {$classeCode} ({$filtresLabels['semestre']})",
+            ['classe_code' => $classeCode, 'semestre_code' => $semestreCode, 'total_inscrits' => $totalInscrits]
+        );
+
         if (isset($_GET['html'])) {
             echo $html;
             return;

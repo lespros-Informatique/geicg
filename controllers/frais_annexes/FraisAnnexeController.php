@@ -109,6 +109,14 @@ class FraisAnnexeController extends BaseController
         $filteredData = $this->model->filterData($data);
 
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'frais_annexes',
+                $data['code_frais_annexe'],
+                "Création du tarif de frais annexes '{$libelle}' (Montant: " . number_format((float)($data['montant_frais_annexe'] ?? 0), 0, ',', ' ') . " GNF)",
+                $filteredData,
+                $etabCode
+            );
             $this->success("Tarif de frais annexes enregistré avec succès !");
         } else {
             $this->error("Erreur lors de l'enregistrement du tarif de frais annexes.");
@@ -167,6 +175,13 @@ class FraisAnnexeController extends BaseController
         $filteredData = $this->model->filterData($data);
 
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'frais_annexes',
+                $existingItem['code_frais_annexe'] ?? (string)$id,
+                "Modification du tarif de frais annexes '{$libelle}' (Montant: " . number_format((float)($data['montant_frais_annexe'] ?? 0), 0, ',', ' ') . " GNF)",
+                $filteredData
+            );
             $this->success("Tarif de frais annexes modifié avec succès !");
         } else {
             $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
@@ -195,6 +210,13 @@ class FraisAnnexeController extends BaseController
 
         $newStatut = ($item['statut_frais_annexe'] === STATUTS::ACTIF) ? 'inactif' : 'actif';
         if ($this->model->update(['statut_frais_annexe' => $newStatut, 'updated_at_frais_annexe' => date('Y-m-d H:i:s')], $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'frais_annexes',
+                $item['code_frais_annexe'] ?? (string)$id,
+                "Changement de statut du tarif '{$item['libelle_frais_annexe']}' vers : {$newStatut}",
+                ['id_frais_annexe' => $id, 'nouveau_statut' => $newStatut]
+            );
             $this->success("Statut mis à jour avec succès (" . ucfirst($newStatut) . ")");
         } else {
             $this->error("Erreur lors du changement de statut.");
@@ -248,6 +270,13 @@ class FraisAnnexeController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('grille_frais_annexes.php', $data);
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'frais_annexes',
+            $anneeCode ?: 'TOUT',
+            "Impression de la grille des frais annexes (Année: {$anneeLibelle})",
+            ['annee_code' => $anneeCode, 'categorie' => $categorie, 'type_filiere' => $typeFiliere, 'niveau_code' => $niveauCode]
+        );
         $filename = 'Grille_Frais_Annexes_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',

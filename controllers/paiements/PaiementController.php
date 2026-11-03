@@ -203,6 +203,23 @@ class PaiementController extends BaseController
 
         $res = $this->model->processEnregistrementPaiement($data, $userCode, $anneeCode, $etabCode, $this->validator);
         if ($res['success']) {
+            $codePmt = $res['data']['code_paiement'] ?? ($data['code_paiement'] ?? '');
+            $montant = $data['montant_paye'] ?? ($data['montant'] ?? 0);
+            $inscrCode = $data['inscription_code'] ?? '';
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'paiements',
+                $codePmt,
+                "Enregistrement d'un versement de " . number_format((float)$montant, 0, ',', ' ') . " GNF pour l'inscription {$inscrCode}",
+                [
+                    'code_paiement' => $codePmt,
+                    'montant' => $montant,
+                    'inscription_code' => $inscrCode,
+                    'mode_paiement' => $data['mode_paiement'] ?? null,
+                    'canal_paiement' => $data['canal_paiement'] ?? null
+                ],
+                $etabCode
+            );
             $this->success($res['message'], $res['data'] ?? []);
         } else {
             $this->error($res['message']);
@@ -220,6 +237,13 @@ class PaiementController extends BaseController
         unset($data['csrf_token']);
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'paiements',
+                (string)$id,
+                "Modification du versement #{$id}",
+                $filteredData
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -241,6 +265,13 @@ class PaiementController extends BaseController
                 $success = $this->model->toggleStatus($id);
             }
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'paiements',
+                    (string)$id,
+                    "Changement de statut du versement #{$id} : " . ($statut ?: 'inversion'),
+                    ['id' => $id, 'statut' => $statut]
+                );
                 $this->success('Statut du paiement mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -265,6 +296,13 @@ class PaiementController extends BaseController
 
         $res = $this->model->annulerVersement($id, $codePaiement, $motif, $userCode, $userName);
         if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'paiements',
+                $codePaiement ?: (string)$id,
+                "Annulation du versement {$codePaiement} (Motif: {$motif})",
+                ['id_paiement' => $id, 'code_paiement' => $codePaiement, 'motif' => $motif]
+            );
             $this->success($res['message'], $res['data'] ?? []);
         } else {
             $this->error($res['message']);
@@ -372,6 +410,13 @@ class PaiementController extends BaseController
         }
 
         $numRecuCode = $data['numero_recu'] ?? 'REC';
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'paiements',
+            $numRecuCode,
+            "Impression du reçu de versement N° {$numRecuCode}",
+            ['numero_recu' => $numRecuCode, 'id' => $id]
+        );
         $filename = 'Recu_Versement_' . $numRecuCode . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
@@ -405,6 +450,14 @@ class PaiementController extends BaseController
             echo $html;
             return;
         }
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'paiements',
+            $anneeCode,
+            "Impression de l'état de synthèse comptable des étudiants (Année: {$anneeCode}, Classe: {$classeCode})",
+            ['annee_code' => $anneeCode, 'niveau_code' => $niveauCode, 'classe_code' => $classeCode, 'regime' => $regime, 'statut_paiement' => $statutPaiement]
+        );
 
         $filename = 'Etat_Comptabilite_Etudiants_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
@@ -442,6 +495,14 @@ class PaiementController extends BaseController
             echo $html;
             return;
         }
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'paiements',
+            $anneeCode ?: 'TOUT',
+            "Impression du registre des encaissements (Année: " . ($anneeCode ?: 'TOUT') . ", Période: {$dateDebut} à {$dateFin})",
+            ['annee_code' => $anneeCode, 'date_debut' => $dateDebut, 'date_fin' => $dateFin, 'classe_code' => $classeCode]
+        );
 
         $filename = 'Registre_Encaissements_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
@@ -496,6 +557,15 @@ class PaiementController extends BaseController
 
         $matricule = $dataView['matricule_etudiant'] ?? 'ETUDIANT';
         $nomComplet = $dataView['nom_prenom_etudiant'] ?? '';
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'paiements',
+            $matricule,
+            "Impression du bilan financier pour l'étudiant {$nomComplet} ({$matricule})",
+            ['id' => $id, 'matricule' => $matricule, 'nom_prenom' => $nomComplet]
+        );
+
         $filename = 'Bilan_Financier_' . $matricule . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',

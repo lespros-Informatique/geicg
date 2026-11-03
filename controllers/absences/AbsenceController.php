@@ -97,6 +97,14 @@ class AbsenceController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'absences',
+                $data['code_absence'],
+                "Enregistrement d'une absence pour {$inscCode} le " . ($data['date_absence'] ?? date('d/m/Y')),
+                $filteredData,
+                $etabCode
+            );
             $this->success('Absence enregistrée avec succès!');
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de l\'enregistrement de l\'absence');
@@ -131,6 +139,13 @@ class AbsenceController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'absences',
+                (string)$id,
+                "Modification de l'absence #{$id}",
+                $filteredData
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -197,6 +212,13 @@ class AbsenceController extends BaseController
             }
             $success = $this->model->updateStatus($id, $newStat, 'justifiee');
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'absences',
+                    (string)$id,
+                    "Changement du statut de justification de l'absence #{$id} : {$newStat}",
+                    ['id_absence' => $id, 'justifiee' => $newStat]
+                );
                 $this->success('Statut de justification mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -286,6 +308,21 @@ class AbsenceController extends BaseController
                 $dureeHeures,
                 $absencesData,
                 $anneeCode,
+                $etabCode
+            );
+            $nbAbs = is_array($absencesData) ? count($absencesData) : 0;
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'absences',
+                $classeCode,
+                "Saisie groupée des absences pour la classe {$classeCode} au {$dateAbsence} ({$nbAbs} lignes traitées)",
+                [
+                    'classe_code' => $classeCode,
+                    'date_absence' => $dateAbsence,
+                    'matiere_code' => $matiereCode,
+                    'duree_heures' => $dureeHeures,
+                    'nb_lignes' => $nbAbs
+                ],
                 $etabCode
             );
             $this->success('Registre des absences de la classe mis à jour avec succès !', ['reload' => true]);

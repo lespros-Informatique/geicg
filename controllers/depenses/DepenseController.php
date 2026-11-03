@@ -160,6 +160,14 @@ class DepenseController extends BaseController
         $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'depenses',
+                $data['code_depense'],
+                "Enregistrement d'une dépense de " . number_format((float)($data['montant_depense'] ?? 0), 0, ',', ' ') . " GNF pour : " . ($data['description_depense'] ?? $data['code_depense']),
+                $filteredData,
+                $etabCode
+            );
             $this->success('Dépense enregistrée avec le statut "En attente" !');
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la création de la dépense');
@@ -197,6 +205,13 @@ class DepenseController extends BaseController
         $filteredData = $this->model->filterData($data);
 
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'depenses',
+                $item['code_depense'] ?? (string)$id,
+                "Modification de la dépense {$item['code_depense']}",
+                $filteredData
+            );
             $this->success('Dépense modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -235,6 +250,13 @@ class DepenseController extends BaseController
                 'approuve' => 'approuvée',
                 'annule' => 'annulée'
             ];
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'depenses',
+                $item['code_depense'] ?? (string)$id,
+                "Changement de statut de la dépense {$item['code_depense']} : " . ($labels[$statut] ?? $statut),
+                ['id_depense' => $id, 'code_depense' => $item['code_depense'] ?? null, 'nouveau_statut' => $statut, 'user_validation' => $userCode]
+            );
             $this->success('Dépense marquée comme ' . ($labels[$statut] ?? $statut) . ' avec succès!', ['reload' => true]);
         } else {
             $this->error('Erreur lors de la mise à jour du statut');
