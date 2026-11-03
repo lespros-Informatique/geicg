@@ -247,19 +247,6 @@ if (!empty($user['sexe_user'])) {
               </div>
             </div>
 
-            <!-- Établissement -->
-            <?php if (!empty($user['etablissement_code'])): ?>
-              <div class="info-detail-row">
-                <div class="info-icon-box">
-                  <i data-lucide="building-2" style="width: 16px; height: 16px;"></i>
-                </div>
-                <div style="flex: 1;">
-                  <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Établissement</span>
-                  <div style="font-size: 13px; font-weight: 700; color: #1E3A5F;"><?= htmlspecialchars($user['etablissement_code']) ?></div>
-                </div>
-              </div>
-            <?php endif; ?>
-
             <!-- Date de création -->
             <div class="info-detail-row">
               <div class="info-icon-box">
@@ -284,16 +271,6 @@ if (!empty($user['sexe_user'])) {
               </div>
             </div>
 
-          </div>
-
-          <!-- Bloc Sécurité & Authentification -->
-          <div style="margin-top: 20px; padding: 14px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0;">
-            <div style="font-size: 11.5px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Sécurité d'accès
-            </div>
-            <div style="font-size: 12px; color: #64748B; line-height: 1.4;">
-              Mot de passe protégé avec hachage sécurisé Bcrypt.
-            </div>
           </div>
 
         </div>
