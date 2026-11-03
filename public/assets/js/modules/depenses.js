@@ -383,9 +383,24 @@
     });
   };
 
+  function updatePrintButtonUrl() {
+    var typeCode = $('#filter-type-depense').val();
+    var dateDebut = $('#filter-date-debut').val();
+    var dateFin = $('#filter-date-fin').val();
+    var params = [];
+    if (typeCode) params.push('type_depense_code=' + encodeURIComponent(typeCode));
+    if (dateDebut) params.push('date_debut=' + encodeURIComponent(dateDebut));
+    if (dateFin) params.push('date_fin=' + encodeURIComponent(dateFin));
+    var url = racine + 'depense/imprimerPdf' + (params.length ? '?' + params.join('&') : '');
+    $('#btn-print-depenses').attr('href', url);
+  }
+
+  updatePrintButtonUrl();
+
   $('#filter-type-depense, #filter-date-debut, #filter-date-fin').on('change input', function() {
     table.ajax.reload();
     reloadStats();
+    updatePrintButtonUrl();
   });
 
   $('#btn-reset-filters').on('click', function() {
@@ -398,6 +413,7 @@
     $('#filter-date-fin').val('');
     table.ajax.reload();
     reloadStats();
+    updatePrintButtonUrl();
   });
 
 

@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $stats = $stats ?? (new ModelDepense())->getStats();
 $typeDepenses = $typeDepenses ?? (new ModelTypeDepense())->getAll();
@@ -14,10 +14,13 @@ $canRecord = $canRecord ?? Auth::can(PERMISSIONS::RECORD_DEPENSES);
       <!-- En-tête de la page -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Dépenses & Charges de Fonctionnement</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et suivi des décaissements, engagements budgétaires et validation des dépenses</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Dépenses & Charges</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et suivi des décaissements</p>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <a href="<?= RACINE ?>depense/imprimerPdf" id="btn-print-depenses" target="_blank" class="btn btn-outline-primary" style="background: #FFFFFF; border: 1.5px solid #1E3A5F; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; cursor: pointer; transition: all 0.2s;" title="Générer et imprimer le registre des dépenses en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
+          </a>
           <a href="<?= RACINE ?>type_depense/list" class="btn btn-secondary" style="background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="tags" style="width: 18px; height: 18px;"></i> Catégories de Dépenses
           </a>
@@ -40,7 +43,6 @@ $canRecord = $canRecord ?? Auth::can(PERMISSIONS::RECORD_DEPENSES);
             </div>
             <div>
               <span style="font-size: 13.5px; font-weight: 800; color: #0F172A; display: block;">Filtrer les Dépenses</span>
-              <span style="font-size: 11.5px; color: #64748B;">Filtrage par catégorie et période d'engagement</span>
             </div>
           </div>
           

@@ -84,6 +84,89 @@ class DepenseController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    /**
+     * Génère et imprime le registre des dépenses en PDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_DEPENSES, PERMISSIONS::RECORD_DEPENSES, PERMISSIONS::VALIDATE_DEPENSES]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : $this->getActiveAnneeCode();
+        $typeCode = !empty($_GET['type_depense_code']) ? trim($_GET['type_depense_code']) : null;
+        $dateDebut = !empty($_GET['date_debut']) ? trim($_GET['date_debut']) : null;
+        $dateFin = !empty($_GET['date_fin']) ? trim($_GET['date_fin']) : null;
+
+        $depenses = $this->model->getAll($anneeCode, $typeCode, $dateDebut, $dateFin);
+        $stats = $this->model->getStats($anneeCode, $typeCode, $dateDebut, $dateFin);
+        $etablissement = $this->getEtablissementConfig();
+
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            $aRow = $this->model->getAnneeByCode($anneeCode);
+            if ($aRow && !empty($aRow['libelle_annee'])) {
+                $anneeLibelle = $aRow['libelle_annee'];
+            }
+        }
+
+        $typeLibelle = 'Toutes les catégories';
+        if (!empty($typeCode)) {
+            $modelType = new ModelTypeDepense();
+            $tTypes = $modelType->getAll();
+            foreach ($tTypes as $t) {
+                if (($t['code_type_depense'] ?? '') === $typeCode) {
+                    $typeLibelle = $t['libelle_type_depense'] ?? $typeCode;
+                    break;
+                }
+            }
+        }
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'depenses',
+            $anneeCode ?: 'TOUT',
+            "Impression du registre des dépenses (Année: {$anneeLibelle}, Catégorie: {$typeLibelle})",
+            [
+                'annee_code' => $anneeCode,
+                'type_depense_code' => $typeCode,
+                'date_debut' => $dateDebut,
+                'date_fin' => $dateFin,
+                'total_depenses' => count($depenses)
+            ],
+            $this->getActiveEtablissementCode()
+        );
+
+        $dataView = [
+            'etablissement' => $etablissement,
+            'depenses' => $depenses,
+            'stats' => $stats,
+            'anneeLibelle' => $anneeLibelle,
+            'typeLibelle' => $typeLibelle,
+            'dateDebut' => $dateDebut,
+            'dateFin' => $dateFin,
+            'imprimePar' => Auth::fullName() ?: 'Service Comptabilité'
+        ];
+
+        $html = PdfService::renderTemplate('registre_depenses.php', $dataView);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Depenses_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre des Dépenses - ' . ($etablissement['nom_etablissement'] ?? 'GEICG'),
+            'margin_left' => 6,
+            'margin_right' => 6,
+            'margin_top' => 6,
+            'margin_bottom' => 6
+        ]);
+    }
+
     private function handleFileUpload(?array $fileInfo): ?string
     {
         if (empty($fileInfo) || empty($fileInfo['name']) || $fileInfo['error'] !== UPLOAD_ERR_OK) {

@@ -426,6 +426,8 @@ $route->addRoute('/type_depense/formulaire', [$typeDepenseController, 'formulair
 $route->addRoute('/depense/list', [$depenseController, 'list']);
 $route->addRoute('/depense/apiList', [$depenseController, 'apiList']);
 $route->addRoute('/depense/apiStats', [$depenseController, 'apiStats']);
+$route->addRoute('/depense/imprimerPdf', [$depenseController, 'imprimerPdf']);
+$route->addRoute('/depenses/imprimerPdf', [$depenseController, 'imprimerPdf']);
 $route->addRoute('/depense/add', [$depenseController, 'add']);
 $route->addRoute('/depense/edit', [$depenseController, 'edit']);
 $route->addRoute('/depense/changer', [$depenseController, 'changer']);
