@@ -70,6 +70,19 @@ class RoleController extends BaseController
             'statut_role' => 'actif'
         ];
         if ($this->model->createRole($rolePayload, $permissions)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'roles',
+                $codeRole,
+                "Création du rôle d'accès '{$libelle}' ({$codeRole}) avec " . count($permissions) . " permission(s)",
+                [
+                    'code_role' => $codeRole,
+                    'libelle_role' => $libelle,
+                    'module' => $module,
+                    'groupe' => $groupe,
+                    'permissions' => $permissions
+                ]
+            );
             $this->success('Rôle créé avec succès !', RACINE . 'role/list');
         } else {
             $this->error('Erreur lors de la création du rôle.');
@@ -110,6 +123,19 @@ class RoleController extends BaseController
             'statut_role' => $statut
         ];
         if ($this->model->updateRole($id, $rolePayload, $permissions)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'roles',
+                $role['code_role'] ?? (string)$id,
+                "Mise à jour du rôle '{$libelle}' (" . ($role['code_role'] ?? $id) . ") avec " . count($permissions) . " permission(s)",
+                [
+                    'id_role' => $id,
+                    'code_role' => $role['code_role'] ?? null,
+                    'libelle_role' => $libelle,
+                    'statut' => $statut,
+                    'permissions' => $permissions
+                ]
+            );
             $this->success('Rôle et permissions mis à jour avec succès !', RACINE . 'role/list');
         } else {
             $this->error('Erreur lors de la modification du rôle.');
@@ -122,8 +148,15 @@ class RoleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($role = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'roles',
+                    $role['code_role'] ?? (string)$id,
+                    "Basculement de statut (actif/inactif) du rôle '" . ($role['libelle_role'] ?? $id) . "'",
+                    ['id_role' => $id, 'code_role' => $role['code_role'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

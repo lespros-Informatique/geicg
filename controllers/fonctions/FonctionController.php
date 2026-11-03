@@ -58,6 +58,14 @@ class FonctionController extends BaseController
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'fonctions',
+                $data['code_fonction'],
+                "Création de la fonction '{$data['libelle_fonction']}' ({$data['code_fonction']})",
+                $filteredData,
+                $etabCode
+            );
             $this->success('Fonction créée avec succès!');
         } else {
             $this->error('Erreur lors de la création');
@@ -80,6 +88,13 @@ class FonctionController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'fonctions',
+                (string)$id,
+                "Modification de la fonction '" . ($data['libelle_fonction'] ?? $id) . "'",
+                $filteredData
+            );
             $this->success('Fonction modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -142,9 +157,16 @@ class FonctionController extends BaseController
         $this->requirePermission(PERMISSIONS::MANAGE_FONCTIONS);
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($cur = $this->model->getById($id))) {
             $success = !empty($statut) ? $this->model->updateStatus($id, $statut, 'statut_fonction') : $this->model->toggleStatus($id);
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'fonctions',
+                    $cur['code_fonction'] ?? (string)$id,
+                    "Basculement de statut de la fonction '" . ($cur['libelle_fonction'] ?? $id) . "'",
+                    ['id_fonction' => $id, 'code_fonction' => $cur['code_fonction'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

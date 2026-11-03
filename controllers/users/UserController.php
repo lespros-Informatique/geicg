@@ -123,6 +123,23 @@ class UserController extends BaseController
                 $this->model->saveUserAnneeAcces($code_user, $_POST['annee_acces']);
             }
 
+            $nomComplet = trim($nom . ' ' . $prenom);
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'user',
+                $code_user,
+                "Création du compte utilisateur {$nomComplet} ({$code_user})",
+                [
+                    'code_user' => $code_user,
+                    'nom_complet' => $nomComplet,
+                    'email' => $email,
+                    'telephone' => $telephone,
+                    'roles' => $postedRoles,
+                    'fonction_code' => $fonctionCode
+                ],
+                $etabCode
+            );
+
             // Envoi automatique de l'e-mail de bienvenue si email présent
             if (!empty($email)) {
                 $nomComplet = trim($nom . ' ' . $prenom);
@@ -238,6 +255,22 @@ class UserController extends BaseController
                 $this->model->saveUserAnneeAcces($user['code_user'], $_POST['annee_acces']);
             }
 
+            $nomComplet = trim($nom . ' ' . $prenom);
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'user',
+                $user['code_user'] ?? (string)$id,
+                "Modification des informations du compte utilisateur {$nomComplet} (" . ($user['code_user'] ?? $id) . ")",
+                [
+                    'id_user' => $id,
+                    'code_user' => $user['code_user'] ?? null,
+                    'nom_complet' => $nomComplet,
+                    'roles' => $postedRoles,
+                    'fonction_code' => $fonctionCode,
+                    'statut' => $statut
+                ]
+            );
+
             $this->success('Utilisateur et permissions par rôle mis à jour avec succès !', RACINE . 'user/list');
         } else {
             $this->error('Erreur lors de la modification de l\'utilisateur.');
@@ -250,8 +283,15 @@ class UserController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         $id = $this->post('id');
-        if (isset($id) && $this->model->getById($id)) {
+        if (isset($id) && ($usr = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'user',
+                    $usr['code_user'] ?? (string)$id,
+                    "Basculement de statut (actif/inactif) du compte utilisateur #{$id}",
+                    ['id_user' => $id, 'code_user' => $usr['code_user'] ?? null]
+                );
                 $this->success('Statut modifié avec succès!', ['id' => $id, 'reload' => true]);
             } else {
                 $this->error('Erreur lors du changement de statut.');
@@ -525,6 +565,13 @@ class UserController extends BaseController
 
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         if ($this->model->updatePassword($hash, (int)$userId)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'user',
+                $user['code_user'] ?? (string)$userId,
+                "Modification du mot de passe de l'utilisateur " . trim(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? '')),
+                ['id_user' => $userId, 'code_user' => $user['code_user'] ?? null]
+            );
             $this->success('Votre mot de passe a été modifié avec succès !');
         } else {
             $this->error('Erreur lors de la mise à jour du mot de passe.');

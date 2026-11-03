@@ -268,6 +268,15 @@ class EnseignantController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('repertoire_enseignants.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'enseignant',
+            $anneeCode ?: 'TOUT',
+            "Impression du répertoire du corps enseignant (Année: " . ($anneeLibelle ?: 'Toutes') . ", Total: {$statsFiltre['total']})",
+            ['annee_code' => $anneeCode, 'sexe' => $sexe, 'contrat' => $typeContrat, 'total' => $statsFiltre['total']]
+        );
+
         $filename = 'Repertoire_Enseignants_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
@@ -303,6 +312,14 @@ class EnseignantController extends BaseController
             $errorMsg = null;
             $userRow = $this->model->attachExistingUser($codeUser, $etabCode, $currentUserCode, $data, $errorMsg);
             if ($userRow) {
+                $this->logAction(
+                    AuditLogger::ACTION_CREATE,
+                    'enseignant',
+                    $codeUser,
+                    "Rattachement de l'employé {$userRow['nom_user']} {$userRow['prenom_user']} comme enseignant",
+                    ['code_user' => $codeUser, 'mode' => 'existant', 'ensData' => $data],
+                    $etabCode
+                );
                 $this->success("L'employé <strong>{$userRow['nom_user']} {$userRow['prenom_user']}</strong> a été configuré comme enseignant avec succès !", [
                     'redirect' => RACINE . 'enseignant/list'
                 ]);
@@ -350,6 +367,15 @@ class EnseignantController extends BaseController
         $rawPassword = $this->model->createNewTeacher($userData, $ensData, $etabCode, $currentUserCode, $errorMsg);
 
         if ($rawPassword !== null) {
+            $nomComplet = trim($nom . ' ' . $prenom);
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'enseignant',
+                $codeUser,
+                "Création complète du profil enseignant {$nomComplet} ({$codeUser})",
+                ['code_user' => $codeUser, 'nom' => $nomComplet, 'email' => $email, 'grade' => $ensData['grade_enseignant'] ?? null],
+                $etabCode
+            );
             $idDisplay = $email ?: ($telephone ?: $codeUser);
             $this->success("Enseignant et compte utilisateur créés avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
                 'password' => $rawPassword,
@@ -409,6 +435,14 @@ class EnseignantController extends BaseController
 
         $errorMsg = null;
         if ($this->model->updateTeacherAndUser($id, $item['code_enseignant'], $userData, $ensData, $errorMsg)) {
+            $nomComplet = trim($nom . ' ' . $prenom);
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'enseignant',
+                $item['code_enseignant'] ?? (string)$id,
+                "Modification du profil enseignant {$nomComplet} (" . ($item['code_enseignant'] ?? $id) . ")",
+                ['id_enseignant' => $id, 'code_enseignant' => $item['code_enseignant'] ?? null, 'nom' => $nomComplet]
+            );
             $this->success('Profil enseignant et compte utilisateur mis à jour avec succès !', [
                 'redirect' => RACINE . 'enseignant/list'
             ]);
@@ -423,8 +457,15 @@ class EnseignantController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_ENSEIGNANTS);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($ens = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'enseignant',
+                    $ens['code_enseignant'] ?? (string)$id,
+                    "Basculement de statut (actif/inactif) de l'enseignant #{$id}",
+                    ['id_enseignant' => $id, 'code_enseignant' => $ens['code_enseignant'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès !', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

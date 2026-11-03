@@ -59,6 +59,13 @@ class PermissionController extends BaseController
         }
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'permissions',
+                $data['code_permission'],
+                "Création de la permission '{$data['libelle_permission']}' ({$data['code_permission']})",
+                $filteredData
+            );
             $this->success('Item créé avec succès!');
         } else {
             $this->error('Erreur lors de la création');
@@ -85,6 +92,13 @@ class PermissionController extends BaseController
         }
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'permissions',
+                $data['code_permission'] ?? (string)$id,
+                "Modification de la permission '" . ($data['libelle_permission'] ?? $id) . "'",
+                $filteredData
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -96,8 +110,15 @@ class PermissionController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($perm = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'permissions',
+                    $perm['code_permission'] ?? (string)$id,
+                    "Basculement de statut (actif/inactif) de la permission '" . ($perm['libelle_permission'] ?? $id) . "'",
+                    ['id_permission' => $id, 'code_permission' => $perm['code_permission'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
