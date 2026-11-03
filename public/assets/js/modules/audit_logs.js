@@ -191,7 +191,8 @@ $(document).ready(function() {
   });
 
   // Affichage Modal Détails
-  $('#table-audit-logs tbody').on('click', '.btn-view-log-details', function() {
+  $('#table-audit-logs tbody').on('click', '.btn-view-log-details', function(e) {
+    e.preventDefault();
     var tr = $(this).closest('tr');
     var rowData = table.row(tr).data();
     if (!rowData) return;
@@ -200,31 +201,44 @@ $(document).ready(function() {
     $('#modal-log-usercode').text(rowData.user_code || '-');
     $('#modal-log-date').text(rowData.date || '-');
     $('#modal-log-ip').text('IP : ' + (rowData.ip || '-'));
+    $('#modal-log-action').html(renderActionBadge(rowData.action));
+    $('#modal-log-module').text(rowData.module || '-');
+    $('#modal-log-entite').text(rowData.entite_id || '-');
     $('#modal-log-desc').text(rowData.description || '-');
     $('#modal-log-useragent').text(rowData.user_agent || '-');
 
     if (rowData.details) {
       try {
-        var parsed = JSON.parse(rowData.details);
+        var parsed = typeof rowData.details === 'string' ? JSON.parse(rowData.details) : rowData.details;
         $('#modal-log-json').text(JSON.stringify(parsed, null, 2));
-      } catch (e) {
+      } catch (ex) {
         $('#modal-log-json').text(rowData.details);
       }
     } else {
       $('#modal-log-json').text('Aucune donnée contextuelle complémentaire enregistrée.');
     }
 
-    var modalEl = document.getElementById('modal-log-details');
-    if (window.bootstrap && bootstrap.Modal) {
-      var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-      modal.show();
-    } else {
-      $('#modal-log-details').modal('show');
-    }
+    $('#modal-log-details').css('display', 'flex');
+    if (window.lucide) lucide.createIcons();
+  });
 
-    setTimeout(function() {
-      if (window.lucide) lucide.createIcons();
-    }, 150);
+  // Fermer la modale au clic sur le bouton de fermeture ou d'annulation
+  $(document).on('click', '.btn-close-modal-log', function() {
+    $('#modal-log-details').css('display', 'none');
+  });
+
+  // Fermer au clic sur l'arrière-plan grisé
+  $('#modal-log-details').on('click', function(e) {
+    if ($(e.target).is('#modal-log-details')) {
+      $('#modal-log-details').css('display', 'none');
+    }
+  });
+
+  // Fermer avec la touche Échap
+  $(document).on('keydown', function(e) {
+    if (e.key === 'Escape' && $('#modal-log-details').is(':visible')) {
+      $('#modal-log-details').css('display', 'none');
+    }
   });
 
 });

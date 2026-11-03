@@ -129,51 +129,78 @@
   </main>
 </div>
 
-<!-- MODAL DÉTAILS DU LOG -->
-<div class="modal fade" id="modal-log-details" tabindex="-1" style="display: none;" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
-      <div class="modal-header" style="background: #1E3A5F; color: #FFFFFF; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 16px 20px;">
-        <h5 class="modal-title" style="font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; margin: 0;">
-          <i data-lucide="info" style="width: 18px; height: 18px;"></i> Détails Complets de l'Action
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-      </div>
-      <div class="modal-body" style="padding: 22px;">
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;">
-          <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Auteur de l'action</div>
-            <div id="modal-log-user" style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-top: 3px;">-</div>
-            <div id="modal-log-usercode" style="font-size: 11.5px; color: #64748B; font-family: monospace;">-</div>
-          </div>
-          <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Horodatage & IP</div>
-            <div id="modal-log-date" style="font-size: 13.5px; font-weight: 700; color: #1E3A5F; margin-top: 3px;">-</div>
-            <div id="modal-log-ip" style="font-size: 11.5px; color: #64748B;">IP : -</div>
-          </div>
-        </div>
-
-        <div style="margin-bottom: 16px;">
-          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Description de l'action</div>
-          <div id="modal-log-desc" style="font-size: 13px; font-weight: 600; color: #0F172A; background: #F1F5F9; padding: 10px 12px; border-radius: 6px;">-</div>
-        </div>
-
-        <div style="margin-bottom: 16px;">
-          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Navigateur / Agent Utilisateur</div>
-          <div id="modal-log-useragent" style="font-size: 11px; color: #475569; word-break: break-all; font-family: monospace; background: #F8FAFC; padding: 8px 10px; border-radius: 6px; border: 1px solid #E2E8F0;">-</div>
-        </div>
-
-        <div>
-          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">Données contextuelles / Valeurs modifiées (JSON)</div>
-          <pre id="modal-log-json" style="background: #0F172A; color: #38BDF8; padding: 14px; border-radius: 8px; font-size: 12px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; margin: 0;">Aucune donnée complémentaire</pre>
-        </div>
-
-      </div>
-      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid #E2E8F0;">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-weight: 700; border-radius: 8px; padding: 8px 16px;">Fermer</button>
-      </div>
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : DÉTAILS COMPLETS DU LOG -->
+<!-- ========================================================================= -->
+<div id="modal-log-details" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(3px); z-index: 99999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 680px; max-height: 90vh; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; display: flex; flex-direction: column;">
+    
+    <!-- En-tête de la modale -->
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="info" style="width: 18px; height: 18px;"></i> Détails Complets de l'Opération
+      </h3>
+      <button type="button" class="btn-close-modal-log" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
     </div>
+
+    <!-- Corps de la modale avec défilement -->
+    <div style="padding: 22px; overflow-y: auto; flex: 1;">
+      
+      <!-- Cartouche Auteur & Date/IP -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+        <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Auteur de l'action</div>
+          <div id="modal-log-user" style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-top: 3px;">-</div>
+          <div id="modal-log-usercode" style="font-size: 11.5px; color: #64748B; font-family: monospace;">-</div>
+        </div>
+        <div style="background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Horodatage & IP</div>
+          <div id="modal-log-date" style="font-size: 13.5px; font-weight: 700; color: #1E3A5F; margin-top: 3px;">-</div>
+          <div id="modal-log-ip" style="font-size: 11.5px; color: #64748B; font-family: monospace; margin-top: 2px;">IP : -</div>
+        </div>
+      </div>
+
+      <!-- Action & Module & Cible -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Type d'Action</div>
+          <div id="modal-log-action" style="margin-top: 4px;">-</div>
+        </div>
+        <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Module Applicatif</div>
+          <div id="modal-log-module" style="font-size: 13px; font-weight: 700; color: #1E3A5F; margin-top: 4px;">-</div>
+        </div>
+        <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Référence Cible</div>
+          <div id="modal-log-entite" style="font-size: 12px; font-weight: 600; font-family: monospace; color: #0F172A; margin-top: 4px;">-</div>
+        </div>
+      </div>
+
+      <!-- Description complète -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Description de l'opération</div>
+        <div id="modal-log-desc" style="font-size: 13px; font-weight: 600; color: #0F172A; background: #F1F5F9; padding: 10px 14px; border-radius: 8px; border-left: 3px solid #1E3A5F;">-</div>
+      </div>
+
+      <!-- Navigateur / User Agent -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 4px;">Navigateur & Appareil (User-Agent)</div>
+        <div id="modal-log-useragent" style="font-size: 11px; color: #475569; word-break: break-all; font-family: monospace; background: #F8FAFC; padding: 8px 12px; border-radius: 6px; border: 1px solid #E2E8F0;">-</div>
+      </div>
+
+      <!-- Données contextuelles JSON -->
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">Données contextuelles / Valeurs transmises (JSON)</div>
+        <pre id="modal-log-json" style="background: #0F172A; color: #38BDF8; padding: 14px; border-radius: 8px; font-size: 12px; max-height: 220px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; margin: 0; border: 1px solid #334155;">Aucune donnée complémentaire</pre>
+      </div>
+
+    </div>
+
+    <!-- Pied de la modale -->
+    <div style="padding: 12px 20px; border-top: 1px solid #E2E8F0; background: #F8FAFC; display: flex; justify-content: flex-end;">
+      <button type="button" class="btn btn-secondary btn-close-modal-log" style="font-weight: 700; border-radius: 8px; padding: 8px 20px; cursor: pointer;">Fermer</button>
+    </div>
+
   </div>
 </div>
 
