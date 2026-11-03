@@ -44,6 +44,7 @@ $galerieController = new GalerieController();
 $documentController = new DocumentController();
 $roleController = new RoleController();
 $permissionController = new PermissionController();
+$auditController = new AuditController();
 
 
 // Route d'accueil & Authentification
@@ -579,6 +580,10 @@ $route->addRoute('/permission/changer', [$permissionController, 'changer']);
 $route->addRoute('/permission/details/{param}', [$permissionController, 'details']);
 $route->addRoute('/permission/edition/{param}', [$permissionController, 'edition']);
 $route->addRoute('/permission/formulaire', [$permissionController, 'formulaire']);
+
+// Module: audit / logs (AuditController)
+$route->addRoute('/audit/list', [$auditController, 'list']);
+$route->addRoute('/audit/apiList', [$auditController, 'apiList']);
 
 
 

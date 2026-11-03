@@ -15,6 +15,8 @@ require_once __DIR__ . '/../models/home/ModelHome.php';
 require_once __DIR__ . '/../models/users/ModelUser.php';
 require_once __DIR__ . '/../models/roles/ModelRole.php';
 require_once __DIR__ . '/../models/permissions/ModelPermission.php';
+require_once __DIR__ . '/../models/audit/ModelAuditLog.php';
+require_once __DIR__ . '/../controllers/audit/AuditController.php';
 
 
 // School Structure & Academic Models
