@@ -85,11 +85,13 @@ $(document).ready(function() {
                  '</label>' +
                  '</div>';
         }},
-        { data: null, width: '230px', orderable: false, render: function(d) {
+        { data: null, width: '130px', orderable: false, render: function(d) {
           var ensName = (((d.nom_enseignant || '') + ' ' + (d.prenom_enseignant || '')).trim()).replace(/"/g, '&quot;');
-          return '<button type="button" class="btn btn-sm btn-outline-primary btn-open-prof-programme" data-code="' + (d.code_enseignant || '') + '" data-name="' + ensName + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="Programme des cours de cet enseignant"><i data-lucide="calendar" style="width:13px;height:13px;"></i> Cours</button>' +
-                 '<a href="' + racine + 'enseignant/edition/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-                 '<a href="' + racine + 'enseignant/details/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Profil</a>';
+          return '<div style="display:inline-flex; align-items:center; gap:5px; justify-content:flex-end;">' +
+                 '  <button type="button" class="btn btn-sm btn-outline-primary btn-open-prof-programme" data-code="' + (d.code_enseignant || '') + '" data-name="' + ensName + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px;" title="Programme des cours"><i data-lucide="calendar" style="width:15px;height:15px;"></i></button>' +
+                 '  <a href="' + racine + 'enseignant/edition/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-secondary" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px;" title="Modifier cet enseignant"><i data-lucide="edit-3" style="width:15px;height:15px;"></i></a>' +
+                 '  <a href="' + racine + 'enseignant/details/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-info" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px;" title="Profil complet"><i data-lucide="eye" style="width:15px;height:15px;"></i></a>' +
+                 '</div>';
         }, className: 'text-end' }
       ],
       language: (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage) ? GEICG.dataTableLanguage : {

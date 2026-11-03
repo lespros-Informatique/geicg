@@ -145,7 +145,7 @@
                 <th style="padding: 12px;" class="text-center">Volume Horaire</th>
                 <th style="padding: 12px;">Contrat</th>
                 <th style="padding: 12px;" class="text-center">Statut</th>
-                <th style="padding: 12px; text-align: right;">Actions</th>
+                <th style="padding: 12px; text-align: right; width: 130px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
