@@ -130,6 +130,75 @@ class BulletinController extends BaseController
         return $calc;
     }
 
+    /**
+     * Prépare le tableau des variables pour la vue bulletin_notes.php
+     */
+    private function buildBulletinViewData(array $calc): array
+    {
+        $item = $calc['item'];
+        $semestreLibelle = $calc['selectedSemestreCode'] ?? '';
+        if (!empty($calc['semestres'])) {
+            foreach ($calc['semestres'] as $s) {
+                if ($s['code_semestre'] === ($calc['selectedSemestreCode'] ?? '')) {
+                    $semestreLibelle = $s['libelle_semestre'];
+                    break;
+                }
+            }
+        }
+
+        $nomComplet = trim(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? ''));
+        $config = $this->getEtablissementConfig();
+
+        return [
+            'annee_libelle' => $item['libelle_annee'] ?? '-',
+            'photo_etudiant' => $item['photo_etudiant'] ?? '',
+            'nom_prenom_etudiant' => $nomComplet ?: '-',
+            'matricule_etudiant' => $item['matricule_etudiant'] ?? '-',
+            'matricule_mesrs' => !empty($item['matricule_mesrs']) ? $item['matricule_mesrs'] : (!empty($item['matricule_menet']) ? $item['matricule_menet'] : ($item['matricule_etudiant'] ?? '-')),
+            'date_naissance' => !empty($item['date_naissance_etudiant']) ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : '-',
+            'lieu_naissance' => $item['lieu_naissance_etudiant'] ?? '-',
+            'sexe_etudiant' => strtoupper($item['sexe_etudiant'] ?? '-'),
+            'filiere_libelle' => $item['libelle_filiere'] ?? '-',
+            'niveau_libelle' => $item['libelle_niveau'] ?? '-',
+            'classe_libelle' => $item['libelle_classe'] ?? '-',
+            'classe_code_or_ref' => !empty($item['code_classe']) ? $item['code_classe'] : ($item['libelle_classe'] ?? '-'),
+            'effectif_classe' => $calc['totalElevesClasse'] ?? '-',
+            'statut_affectation' => (!empty($item['affectation_etat']) && strtolower(trim($item['affectation_etat'])) === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
+            'redoublant' => (!empty($item['redoublant']) && strtolower(trim($item['redoublant'])) === 'oui') ? 'OUI' : 'NON',
+            'intitule_periode' => strtoupper($semestreLibelle ?: 'SEMESTRE'),
+            'matieres_notes' => $calc['matieresNotes'] ?? [],
+            'matieresGenerales' => $calc['matieresGenerales'] ?? [],
+            'matieresPro' => $calc['matieresPro'] ?? [],
+            'totalPointsGenerales' => $calc['totalPointsGenerales'] ?? 0,
+            'totalCoefficientsGenerales' => $calc['totalCoefficientsGenerales'] ?? 0,
+            'moyenneGenerales' => $calc['moyenneGenerales'] ?? 0,
+            'rangGeneralesFr' => $calc['rangGeneralesFr'] ?? '-',
+            'appreciationGenerales' => $calc['appreciationGenerales'] ?? '-',
+            'totalPointsPro' => $calc['totalPointsPro'] ?? 0,
+            'totalCoefficientsPro' => $calc['totalCoefficientsPro'] ?? 0,
+            'moyennePro' => $calc['moyennePro'] ?? 0,
+            'rangProFr' => $calc['rangProFr'] ?? '-',
+            'appreciationPro' => $calc['appreciationPro'] ?? '-',
+            'totalPoints' => $calc['totalPoints'] ?? 0,
+            'totalCoefficients' => $calc['totalCoefficients'] ?? 0,
+            'moyenneGenerale' => $calc['moyenneGenerale'] ?? 0,
+            'mention' => $calc['mention'] ?? '-',
+            'decision' => $calc['decision'] ?? '-',
+            'rang' => $calc['rang'] ?? '-',
+            'rangFr' => $calc['rangFr'] ?? (($calc['rang'] ?? '-') !== '-' ? ($calc['rang'] . 'ème') : '-'),
+            'totalElevesClasse' => $calc['totalElevesClasse'] ?? '-',
+            'moyenneMinClasse' => $calc['moyenneMinClasse'] ?? 0,
+            'moyenneMaxClasse' => $calc['moyenneMaxClasse'] ?? 0,
+            'moyenneMoyClasse' => $calc['moyenneMoyClasse'] ?? 0,
+            'heures_absences' => $calc['heuresAbsences'] ?? '0 H',
+            'moy_semestre1' => $calc['moy_semestre1'] ?? null,
+            'moy_semestre2' => $calc['moy_semestre2'] ?? null,
+            'moy_examen' => $calc['moy_examen'] ?? null,
+            'etablissement' => $config,
+            'directeur_etudes' => ($config['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed')
+        ];
+    }
+
 
     public function details($details)
     {
@@ -167,64 +236,8 @@ class BulletinController extends BaseController
             }
 
             $item = $calc['item'];
-            $semestreLibelle = $calc['selectedSemestreCode'];
-            foreach ($calc['semestres'] as $s) {
-                if ($s['code_semestre'] === $calc['selectedSemestreCode']) {
-                    $semestreLibelle = $s['libelle_semestre'];
-                    break;
-                }
-            }
-
-            $nomComplet = trim(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? ''));
-
-            $dataView = [
-                'annee_libelle' => $item['libelle_annee'] ?? '-',
-                'photo_etudiant' => $item['photo_etudiant'] ?? '',
-                'nom_prenom_etudiant' => $nomComplet ?: '-',
-                'matricule_etudiant' => $item['matricule_etudiant'] ?? '-',
-                'matricule_mesrs' => !empty($item['matricule_mesrs']) ? $item['matricule_mesrs'] : (!empty($item['matricule_menet']) ? $item['matricule_menet'] : ($item['matricule_etudiant'] ?? '-')),
-                'date_naissance' => !empty($item['date_naissance_etudiant']) ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : '-',
-                'lieu_naissance' => $item['lieu_naissance_etudiant'] ?? '-',
-                'sexe_etudiant' => strtoupper($item['sexe_etudiant'] ?? '-'),
-                'filiere_libelle' => $item['libelle_filiere'] ?? '-',
-                'niveau_libelle' => $item['libelle_niveau'] ?? '-',
-                'classe_libelle' => $item['libelle_classe'] ?? '-',
-                'classe_code_or_ref' => !empty($item['code_classe']) ? $item['code_classe'] : ($item['libelle_classe'] ?? '-'),
-                'effectif_classe' => $calc['totalElevesClasse'] ?? '-',
-                'statut_affectation' => (!empty($item['affectation_etat']) && strtolower(trim($item['affectation_etat'])) === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
-                'redoublant' => (!empty($item['redoublant']) && strtolower(trim($item['redoublant'])) === 'oui') ? 'OUI' : 'NON',
-                'intitule_periode' => strtoupper($semestreLibelle),
-                'matieres_notes' => $calc['matieresNotes'],
-                'matieresGenerales' => $calc['matieresGenerales'] ?? [],
-                'matieresPro' => $calc['matieresPro'] ?? [],
-                'totalPointsGenerales' => $calc['totalPointsGenerales'] ?? 0,
-                'totalCoefficientsGenerales' => $calc['totalCoefficientsGenerales'] ?? 0,
-                'moyenneGenerales' => $calc['moyenneGenerales'] ?? 0,
-                'rangGeneralesFr' => $calc['rangGeneralesFr'] ?? '-',
-                'appreciationGenerales' => $calc['appreciationGenerales'] ?? '-',
-                'totalPointsPro' => $calc['totalPointsPro'] ?? 0,
-                'totalCoefficientsPro' => $calc['totalCoefficientsPro'] ?? 0,
-                'moyennePro' => $calc['moyennePro'] ?? 0,
-                'rangProFr' => $calc['rangProFr'] ?? '-',
-                'appreciationPro' => $calc['appreciationPro'] ?? '-',
-                'totalPoints' => $calc['totalPoints'],
-                'totalCoefficients' => $calc['totalCoefficients'],
-                'moyenneGenerale' => $calc['moyenneGenerale'],
-                'mention' => $calc['mention'],
-                'decision' => $calc['decision'],
-                'rang' => $calc['rang'],
-                'rangFr' => $calc['rangFr'] ?? ($calc['rang'] . 'ème'),
-                'totalElevesClasse' => $calc['totalElevesClasse'],
-                'moyenneMinClasse' => $calc['moyenneMinClasse'],
-                'moyenneMaxClasse' => $calc['moyenneMaxClasse'],
-                'moyenneMoyClasse' => $calc['moyenneMoyClasse'],
-                'heures_absences' => $calc['heuresAbsences'] ?? '0 H',
-                'moy_semestre1' => $calc['moy_semestre1'] ?? null,
-                'moy_semestre2' => $calc['moy_semestre2'] ?? null,
-                'moy_examen' => $calc['moy_examen'] ?? null,
-                'etablissement' => $this->getEtablissementConfig(),
-                'directeur_etudes' => ($this->getEtablissementConfig()['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed')
-            ];
+            $dataView = $this->buildBulletinViewData($calc);
+            $nomComplet = $dataView['nom_prenom_etudiant'];
 
             $html = PdfService::renderTemplate('bulletin_notes.php', $dataView);
             if (isset($_GET['html'])) {
@@ -245,6 +258,105 @@ class BulletinController extends BaseController
         } catch (Exception $e) {
             error_log("BulletinController::imprimerBulletinPdf error: " . $e->getMessage());
             $this->renderNotFound("Erreur lors de la génération du bulletin PDF.");
+        }
+    }
+
+    /**
+     * Imprime en un seul fichier PDF tous les bulletins des étudiants de la classe sélectionnée
+     */
+    public function imprimerClasseBulletinsPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::VIEW_NOTES]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        try {
+            ini_set('memory_limit', '512M');
+            set_time_limit(180);
+
+            $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
+            $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
+            $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : Session::get('annee_active_code');
+            $statutNotes = !empty($_GET['statut_notes']) ? trim($_GET['statut_notes']) : null;
+
+            if (empty($classeCode)) {
+                $this->renderNotFound("Veuillez sélectionner une classe pour imprimer les bulletins de notes.");
+                return;
+            }
+
+            $teacherCtx = $this->getTeacherContext();
+            $teacherClasses = null;
+            if ($teacherCtx['isTeacherOnly'] && !empty($teacherCtx['teacherCodes'])) {
+                require_once __DIR__ . '/../../models/notes/ModelNote.php';
+                $clsList = (new ModelNote())->getClassesForTeacher($teacherCtx['teacherCodes'], $anneeCode);
+                $teacherClasses = array_column($clsList, 'code_classe');
+                if (!in_array($classeCode, $teacherClasses)) {
+                    $this->renderNotFound("Vous n'avez pas l'autorisation d'accéder aux bulletins de cette classe.");
+                    return;
+                }
+            }
+
+            $items = $this->model->getInscriptionsWithNotes(
+                $anneeCode,
+                null,
+                $classeCode,
+                $semestreCode,
+                $teacherClasses,
+                $statutNotes
+            );
+
+            if (empty($items)) {
+                $this->renderNotFound("Aucun étudiant inscrit trouvé dans cette classe pour la période sélectionnée.");
+                return;
+            }
+
+            $bulletins = [];
+            foreach ($items as $item) {
+                $id = (int)$item['id_inscription'];
+                $calc = $this->calculateBulletinData($id, $semestreCode);
+                if ($calc) {
+                    $bulletins[] = $this->buildBulletinViewData($calc);
+                }
+            }
+
+            if (empty($bulletins)) {
+                $this->renderNotFound("Aucune donnée de bulletin n'a pu être générée pour cette classe.");
+                return;
+            }
+
+            $fullHtml = '';
+            $total = count($bulletins);
+            foreach ($bulletins as $idx => $bData) {
+                if ($idx > 0) {
+                    $fullHtml .= '<pagebreak />';
+                }
+                $bData['is_batch'] = true;
+                $bData['include_styles'] = ($idx === 0);
+                $bData['is_last_in_batch'] = ($idx === $total - 1);
+                $fullHtml .= PdfService::renderTemplate('bulletin_notes.php', $bData);
+            }
+
+            if (isset($_GET['html'])) {
+                echo $fullHtml;
+                return;
+            }
+
+            $classeLibelle = $bulletins[0]['classe_libelle'] ?? $classeCode;
+            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classeLibelle);
+            $filename = 'Bulletins_Classe_' . $cleanName . '_' . date('Ymd_His') . '.pdf';
+
+            PdfService::generate($fullHtml, $filename, [
+                'orientation' => 'P',
+                'format' => 'A4',
+                'title' => 'Bulletins de Notes - Classe ' . $classeLibelle,
+                'margin_left' => 7,
+                'margin_right' => 7,
+                'margin_top' => 6,
+                'margin_bottom' => 6
+            ]);
+        } catch (Exception $e) {
+            error_log("BulletinController::imprimerClasseBulletinsPdf error: " . $e->getMessage());
+            $this->renderNotFound("Erreur lors de la génération des bulletins de la classe en PDF : " . $e->getMessage());
         }
     }
 

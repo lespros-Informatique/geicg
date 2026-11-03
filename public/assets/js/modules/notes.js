@@ -1595,6 +1595,11 @@ $(document).ready(function() {
           .css({ 'opacity': '0.5', 'cursor': 'not-allowed', 'pointer-events': 'none' })
           .attr('title', 'Veuillez sélectionner une classe pour imprimer le registre.');
 
+        $('#btn-print-classe-bulletins')
+          .attr('href', 'javascript:void(0);')
+          .css({ 'opacity': '0.5', 'cursor': 'not-allowed', 'pointer-events': 'none' })
+          .attr('title', 'Veuillez sélectionner une classe pour imprimer les bulletins de toute la classe.');
+
         $('#btn-pv-classe')
           .attr('href', 'javascript:void(0);')
           .css({ 'opacity': '0.5', 'cursor': 'not-allowed', 'pointer-events': 'none' })
@@ -1618,6 +1623,12 @@ $(document).ready(function() {
           .attr('href', printUrl)
           .css({ 'opacity': '1', 'cursor': 'pointer', 'pointer-events': 'auto' })
           .attr('title', 'Générer et imprimer le registre officiel des bulletins en PDF');
+
+        var printClasseBulletinsUrl = window.RACINE + 'bulletin/imprimerClasseBulletinsPdf?' + params.join('&');
+        $('#btn-print-classe-bulletins')
+          .attr('href', printClasseBulletinsUrl)
+          .css({ 'opacity': '1', 'cursor': 'pointer', 'pointer-events': 'auto' })
+          .attr('title', 'Imprimer en un seul fichier PDF tous les bulletins de la classe sélectionnée');
 
         var pvUrl = window.RACINE + 'bulletin/pvClasse?' + pvParams.join('&');
         $('#btn-pv-classe')

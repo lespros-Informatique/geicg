@@ -47,7 +47,10 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <a href="<?= RACINE ?>bulletin/imprimerRegistrePdf<?= !empty($selectedAnneeCode) ? ('?annee_code=' . urlencode($selectedAnneeCode)) : '' ?>" id="btn-print-registre-bulletin" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; cursor: pointer; transition: all 0.2s;" title="Générer et imprimer le registre officiel des bulletins en PDF">
-            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer (PDF)
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Registre (PDF)
+          </a>
+          <a href="javascript:void(0);" id="btn-print-classe-bulletins" target="_blank" class="btn btn-outline-primary" style="border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; opacity: 0.5; cursor: not-allowed; pointer-events: none; transition: all 0.2s;" title="Veuillez sélectionner une classe pour imprimer les bulletins de toute la classe.">
+            <i data-lucide="files" style="width: 18px; height: 18px;"></i> Imprimer Bulletins Classe
           </a>
           <a href="<?= RACINE ?>bulletin/pvClasse" id="btn-pv-classe" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);" title="Consulter le Procès-Verbal récapitulatif de la classe sélectionnée">
             <i data-lucide="file-spreadsheet" style="width: 18px; height: 18px;"></i> Procès-Verbal (PV) de Classe

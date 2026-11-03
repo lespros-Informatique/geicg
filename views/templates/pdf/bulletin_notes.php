@@ -94,6 +94,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
     $photoPath = $defaultPlaceholder;
 }
 ?>
+<?php if (empty($is_batch) || !empty($include_styles)): ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -381,6 +382,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
   </style>
 </head>
 <body>
+<?php endif; ?>
 
 <div class="page-container">
 
@@ -708,5 +710,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
 
 </div>
 
+<?php if (empty($is_batch) || !empty($is_last_in_batch)): ?>
 </body>
 </html>
+<?php endif; ?>
