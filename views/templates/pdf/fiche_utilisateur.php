@@ -110,7 +110,7 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     .inst-title {
       font-size: 13px;
       font-weight: bold;
-      color: #1E3A5F;
+      color: #b90c0cff;
       text-transform: uppercase;
       text-align: center;
     }
@@ -260,7 +260,7 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
         <div class="inst-contacts">
           <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) ? $etablissement['adresse_etablissement'] : 'Bouaké quartier Kennedy, route ancien ADDR') ?> 
           &bull; <?= htmlspecialchars($etablissement['boite_postale'] ?? '01 BP 960 Bouaké 01') ?>
-          &bull; Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38') ?>
+        <br> Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38') ?>
         </div>
       </td>
     </tr>
@@ -288,11 +288,8 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
             </td>
           </tr>
           <tr>
-            <td colspan="2" style="padding-top: 4px;">
+            <td colspan="3" style="padding-top: 4px;">
               Rôle Principal : <span class="val-bold"><?= htmlspecialchars($role['libelle_role'] ?? 'Standard') ?></span>
-            </td>
-            <td style="padding-top: 4px;">
-              Établissement : <span class="val-bold"><?= htmlspecialchars($etabCode) ?></span>
             </td>
           </tr>
         </table>
@@ -309,8 +306,8 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     </tr>
   </table>
 
-  <!-- SECTION 2 : COORDONNÉES & SÉCURITÉ DU COMPTE -->
-  <div class="section-title">2. COORDONNÉES, ACCÈS & SÉCURITÉ</div>
+  <!-- SECTION 2 : COORDONNÉES & ACCÈS -->
+  <div class="section-title">2. COORDONNÉES</div>
   <table class="data-table" style="border: 1px solid #E2E8F0; background: #FAFAFA; border-radius: 6px;">
     <tr>
       <td style="width: 50%;">Email de connexion : <span class="val-bold"><?= htmlspecialchars($emailUser) ?></span></td>
@@ -319,10 +316,6 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     <tr>
       <td>Date d'ouverture du compte : <span class="val-bold"><?= htmlspecialchars($dateCreation) ?></span></td>
       <td>Dernière session active : <span class="val-bold"><?= htmlspecialchars($lastConnexion) ?></span></td>
-    </tr>
-    <tr>
-      <td>Chiffrement Mot de passe : <span class="val-bold">Hachage Bcrypt Sécurisé</span></td>
-      <td>Politique d'accès : <span class="val-bold">Contrôle d'accès basé sur les rôles (RBAC)</span></td>
     </tr>
   </table>
 
