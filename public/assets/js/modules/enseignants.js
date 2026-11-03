@@ -346,9 +346,6 @@ $(document).ready(function() {
                 var duree = (item.duree || 0) + ' h';
                 var profNom = ((item.nom_enseignant || '') + ' ' + (item.prenom_enseignant || '')).trim() || 'Non assigné';
                 var profContact = item.telephone_enseignant ? '<div style="font-size:11px;color:#64748B;"><i data-lucide="phone" style="width:11px;height:11px;display:inline-block;vertical-align:middle;"></i> ' + item.telephone_enseignant + '</div>' : '';
-                var contratBadge = item.type_contrat === 'permanent' 
-                  ? '<span style="background:#EEF2FF;color:#4338CA;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">Permanent</span>'
-                  : (item.type_contrat ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">' + item.type_contrat + '</span>' : '');
 
                 html += '<tr style="border-bottom: 1px solid #F1F5F9;">' +
                         '  <td style="padding: 12px;">' +
@@ -368,7 +365,7 @@ $(document).ready(function() {
                         '    <div style="font-weight:700;color:#0F172A;font-size:13px;"><i data-lucide="door-closed" style="width:13px;height:13px;display:inline-block;vertical-align:middle;color:#3B82F6;"></i> ' + (item.libelle_salle || 'Non définie') + '</div>' +
                         '  </td>' +
                         '  <td style="padding: 12px;">' +
-                        '    <div style="font-weight:800;color:#0F172A;font-size:13px;">' + profNom + ' ' + contratBadge + '</div>' +
+                        '    <div style="font-weight:800;color:#0F172A;font-size:13px;">' + profNom + '</div>' +
                         '    ' + profContact +
                         '  </td>' +
                         '</tr>';
