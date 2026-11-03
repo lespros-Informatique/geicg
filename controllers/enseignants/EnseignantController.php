@@ -457,6 +457,60 @@ class EnseignantController extends BaseController
         ]);
     }
 
+    /**
+     * Génère et imprime la fiche officielle d'un enseignant en PDF
+     */
+    public function imprimerFichePdf($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        try {
+            $id = $this->validator->decrypter($details);
+            if (!$id || !is_numeric($id)) {
+                $id = is_numeric($details) ? (int)$details : 0;
+            }
+
+            $item = $this->model->getById((int)$id);
+            if (!$item) {
+                header('Location: ' . RACINE . 'enseignant/list');
+                exit();
+            }
+
+            $cours = $this->model->getCoursForEnseignant($item['code_enseignant']);
+
+            $dataView = [
+                'item' => $item,
+                'cours' => $cours,
+                'etablissement' => $this->getEtablissementConfig()
+            ];
+
+            $html = PdfService::renderTemplate('fiche_enseignant.php', $dataView);
+            if (isset($_GET['html'])) {
+                echo $html;
+                return;
+            }
+
+            $nomClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim(($item['nom_enseignant'] ?? '') . '_' . ($item['prenom_enseignant'] ?? '')));
+            $filename = 'Fiche_Enseignant_' . ($nomClean ?: 'Profil') . '_' . date('Ymd_His') . '.pdf';
+
+            PdfService::generate($html, $filename, [
+                'orientation' => 'P',
+                'format' => 'A4',
+                'title' => 'Fiche Enseignant - ' . trim(($item['nom_enseignant'] ?? '') . ' ' . ($item['prenom_enseignant'] ?? '')),
+                'margin_left' => 8,
+                'margin_right' => 8,
+                'margin_top' => 8,
+                'margin_bottom' => 8
+            ]);
+        } catch (Exception $e) {
+            error_log("imprimerFichePdf error: " . $e->getMessage());
+            header('Location: ' . RACINE . 'enseignant/list');
+            exit();
+        }
+    }
+
     public function edition($details)
     {
         $this->requireAuth();

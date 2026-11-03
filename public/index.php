@@ -437,6 +437,7 @@ $route->addRoute('/enseignant/list', [$enseignantController, 'list']);
 $route->addRoute('/enseignant/apiList', [$enseignantController, 'apiList']);
 $route->addRoute('/enseignant/apiProgrammeJour', [$enseignantController, 'apiProgrammeJour']);
 $route->addRoute('/enseignant/imprimerPdf', [$enseignantController, 'imprimerPdf']);
+$route->addRoute('/enseignant/imprimerFichePdf/{param}', [$enseignantController, 'imprimerFichePdf']);
 $route->addRoute('/enseignant/add', [$enseignantController, 'add']);
 $route->addRoute('/enseignant/edit', [$enseignantController, 'edit']);
 $route->addRoute('/enseignant/changer', [$enseignantController, 'changer']);
