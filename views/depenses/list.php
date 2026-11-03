@@ -37,12 +37,9 @@ $canRecord = $canRecord ?? Auth::can(PERMISSIONS::RECORD_DEPENSES);
       <!-- ========================================================================= -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+          <div style="display: flex; align-items: center;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;" title="Filtres">
               <i data-lucide="filter" style="width: 20px; height: 20px;"></i>
-            </div>
-            <div>
-              <span style="font-size: 13.5px; font-weight: 800; color: #0F172A; display: block;">Filtrer les Dépenses</span>
             </div>
           </div>
           
