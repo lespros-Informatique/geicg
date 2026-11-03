@@ -18,9 +18,10 @@ abstract class BaseController
     /**
      * Enregistre une action utilisateur dans le journal d'audit
      */
-    protected function logAction(string $action, string $module, ?string $entiteId = null, string $description = '', ?array $details = null): bool
+    protected function logAction(string $action, string $module, ?string $entiteId = null, string $description = '', ?array $details = null, ?string $etablissementCode = null): bool
     {
-        return AuditLogger::log($action, $module, $entiteId, $description, $details);
+        $etabCode = $etablissementCode ?? $this->getActiveEtablissementCode();
+        return AuditLogger::log($action, $module, $entiteId, $description, $details, null, null, null, $etabCode);
     }
 
     /**

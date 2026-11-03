@@ -160,19 +160,23 @@
         </div>
       </div>
 
-      <!-- Action & Module & Cible -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px;">
+      <!-- Action & Module & Cible & Établissement -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px;">
         <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
           <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Type d'Action</div>
           <div id="modal-log-action" style="margin-top: 4px;">-</div>
         </div>
         <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
-          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Module Applicatif</div>
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Module</div>
           <div id="modal-log-module" style="font-size: 13px; font-weight: 700; color: #1E3A5F; margin-top: 4px;">-</div>
         </div>
         <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
-          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Référence Cible</div>
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Réf. Cible</div>
           <div id="modal-log-entite" style="font-size: 12px; font-weight: 600; font-family: monospace; color: #0F172A; margin-top: 4px;">-</div>
+        </div>
+        <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Établissement</div>
+          <div id="modal-log-etab" style="font-size: 12px; font-weight: 700; color: #1E3A5F; margin-top: 4px;">-</div>
         </div>
       </div>
 

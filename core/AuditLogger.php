@@ -29,6 +29,7 @@ class AuditLogger
      * @param int|null $userId ID utilisateur forcé (si non connecté ou session indisponible)
      * @param string|null $userCode Code utilisateur forcé
      * @param string|null $userNom Nom complet forcé
+     * @param string|null $etablissementCode Code établissement forcé
      * @return bool
      */
     public static function log(
@@ -39,12 +40,14 @@ class AuditLogger
         ?array $details = null,
         ?int $userId = null,
         ?string $userCode = null,
-        ?string $userNom = null
+        ?string $userNom = null,
+        ?string $etablissementCode = null
     ): bool {
         try {
             $uId = $userId ?? Auth::id();
             $uCode = $userCode ?? Auth::code();
             $uNom = $userNom ?? (Auth::check() ? Auth::fullName() : 'Système');
+            $etabCode = $etablissementCode ?? self::getEtablissementCode();
 
             $ip = self::getClientIp();
             $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Inconnu', 0, 255);
@@ -52,14 +55,15 @@ class AuditLogger
 
             $db = (new Database())->getCon();
             $sql = "INSERT INTO " . TABLES::LOGS_ACTIVITES . " 
-                    (user_id, user_code, user_nom, action, module, entite_id, description, details_json, ip_address, user_agent, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                    (user_id, user_code, user_nom, etablissement_code, action, module, entite_id, description, details_json, ip_address, user_agent, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
             $stmt = $db->prepare($sql);
             return $stmt->execute([
                 $uId,
                 $uCode,
                 $uNom,
+                $etabCode,
                 strtoupper(trim($action)),
                 strtolower(trim($module)),
                 $entiteId,
@@ -134,6 +138,38 @@ class AuditLogger
     public static function logPrint(string $module, ?string $entiteId, string $description, ?array $details = null): bool
     {
         return self::log(self::ACTION_PRINT, $module, $entiteId, $description, $details);
+    }
+
+    /**
+     * Récupère le code de l'établissement actif
+     */
+    public static function getEtablissementCode(): ?string
+    {
+        if (class_exists('Session')) {
+            $sessionCode = Session::get('etablissement_active_code');
+            if (!empty($sessionCode)) {
+                return (string)$sessionCode;
+            }
+
+            $userEtab = Session::get(USERS_AUTH . '.etablissement_code');
+            if (!empty($userEtab)) {
+                return (string)$userEtab;
+            }
+        }
+
+        try {
+            $db = (new Database())->getCon();
+            $stmt = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = '" . STATUTS::ACTIF . "' ORDER BY id_etablissement DESC LIMIT 1");
+            $code = $stmt ? $stmt->fetchColumn() : null;
+            if ($code) {
+                return (string)$code;
+            }
+
+            $stmtFb = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
+            return $stmtFb ? (string)$stmtFb->fetchColumn() : null;
+        } catch (Throwable $e) {
+            return null;
+        }
     }
 
     /**

@@ -27,6 +27,11 @@ class ModelAuditLog extends BaseModel
             }
         }
 
+        if (!empty($filters['etablissement_code'])) {
+            $sql .= " AND etablissement_code = ?";
+            $params[] = trim($filters['etablissement_code']);
+        }
+
         if (!empty($filters['action'])) {
             $sql .= " AND action = ?";
             $params[] = strtoupper(trim($filters['action']));
@@ -79,6 +84,11 @@ class ModelAuditLog extends BaseModel
                 $sql .= " AND user_code = ?";
                 $params[] = trim($filters['user_id']);
             }
+        }
+
+        if (!empty($filters['etablissement_code'])) {
+            $sql .= " AND etablissement_code = ?";
+            $params[] = trim($filters['etablissement_code']);
         }
 
         if (!empty($filters['action'])) {

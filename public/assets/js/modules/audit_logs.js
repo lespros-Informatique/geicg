@@ -204,6 +204,7 @@ $(document).ready(function() {
     $('#modal-log-action').html(renderActionBadge(rowData.action));
     $('#modal-log-module').text(rowData.module || '-');
     $('#modal-log-entite').text(rowData.entite_id || '-');
+    $('#modal-log-etab').text(rowData.etablissement_code || '-');
     $('#modal-log-desc').text(rowData.description || '-');
     $('#modal-log-useragent').text(rowData.user_agent || '-');
 

@@ -57,6 +57,7 @@ class AuditController extends BaseController
                 'user_nom' => $log['user_nom'] ?: 'Système',
                 'user_code' => $log['user_code'] ?: '-',
                 'user_id' => $log['user_id'],
+                'etablissement_code' => $log['etablissement_code'] ?: '-',
                 'action' => $log['action'],
                 'module' => strtoupper($log['module']),
                 'entite_id' => $log['entite_id'] ?: '-',
