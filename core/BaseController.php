@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/AuditLogger.php';
+
 abstract class BaseController
 {
     protected $validator;
@@ -12,6 +14,14 @@ abstract class BaseController
     }
 
     abstract protected function resolveModel();
+
+    /**
+     * Enregistre une action utilisateur dans le journal d'audit
+     */
+    protected function logAction(string $action, string $module, ?string $entiteId = null, string $description = '', ?array $details = null): bool
+    {
+        return AuditLogger::log($action, $module, $entiteId, $description, $details);
+    }
 
     /**
      * Récupère le code de l'année académique active en session (avec initialisation auto)

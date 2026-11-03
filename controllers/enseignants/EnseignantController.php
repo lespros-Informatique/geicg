@@ -495,6 +495,14 @@ class EnseignantController extends BaseController
             $nomClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim(($item['nom_enseignant'] ?? '') . '_' . ($item['prenom_enseignant'] ?? '')));
             $filename = 'Fiche_Enseignant_' . ($nomClean ?: 'Profil') . '_' . date('Ymd_His') . '.pdf';
 
+            // Journalisation de l'impression
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'enseignant',
+                $item['code_enseignant'] ?? (string)$id,
+                "Impression de la fiche officielle de l'enseignant " . trim(($item['nom_enseignant'] ?? '') . ' ' . ($item['prenom_enseignant'] ?? ''))
+            );
+
             PdfService::generate($html, $filename, [
                 'orientation' => 'P',
                 'format' => 'A4',

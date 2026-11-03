@@ -428,6 +428,14 @@ class UserController extends BaseController
                     Auth::login($sessionData, $roleCodes, $allPermissions);
                     Session::set('roles', $roleCodes);
 
+                    // Journalisation de la connexion
+                    AuditLogger::logLogin(
+                        (int)$user['id_user'],
+                        $user['code_user'] ?? '',
+                        trim(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? '')),
+                        $user['email_user'] ?? $login
+                    );
+
                     // Année académique active
                     $anneeActive = $this->model->getActiveAnneeAcademique();
                     if ($anneeActive) {
@@ -459,6 +467,7 @@ class UserController extends BaseController
 
     public function decon()
     {
+        AuditLogger::logLogout();
         Auth::logout();
         header('Location: ' . RACINE . 'user/connexion');
         exit();
@@ -561,6 +570,14 @@ class UserController extends BaseController
 
             $nomClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim(($userProfile['nom_user'] ?? '') . '_' . ($userProfile['prenom_user'] ?? '')));
             $filename = 'Fiche_Utilisateur_' . ($nomClean ?: 'Compte') . '_' . date('Ymd_His') . '.pdf';
+
+            // Journalisation de l'impression
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'user',
+                $userProfile['code_user'] ?? (string)$userId,
+                "Impression de la fiche de l'utilisateur " . trim(($userProfile['nom_user'] ?? '') . ' ' . ($userProfile['prenom_user'] ?? ''))
+            );
 
             PdfService::generate($html, $filename, [
                 'orientation' => 'P',

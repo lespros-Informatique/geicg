@@ -62,6 +62,7 @@ class TABLES
     public const ROLE_PERMISSIONS = 'role_permissions';
     public const USER_ROLES = 'user_roles';
     public const USER_ANNEE_ACCES = 'user_annee_acces';
+    public const LOGS_ACTIVITES = 'logs_activites';
 
     // ACADÉMIQUE & LMD
     public const ANNEES = 'annees';
