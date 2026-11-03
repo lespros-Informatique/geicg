@@ -17,7 +17,7 @@ class AuditController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_SYSTEM, PERMISSIONS::MANAGE_USERS, PERMISSIONS::VIEW_USERS]);
+        $this->requirePermission(PERMISSIONS::VIEW_LOGS);
 
         $modules = $this->model->getDistinctModules();
         $actions = $this->model->getDistinctActions();
@@ -36,7 +36,7 @@ class AuditController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_SYSTEM, PERMISSIONS::MANAGE_USERS, PERMISSIONS::VIEW_USERS]);
+        $this->requirePermission(PERMISSIONS::VIEW_LOGS);
 
         $filters = [
             'action' => trim($_GET['action'] ?? ''),
@@ -77,7 +77,7 @@ class AuditController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_SYSTEM, PERMISSIONS::MANAGE_USERS, PERMISSIONS::VIEW_USERS]);
+        $this->requirePermission(PERMISSIONS::VIEW_LOGS);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $filters = [

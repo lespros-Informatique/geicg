@@ -330,7 +330,7 @@
                     <i data-lucide="key"></i> <span>Permissions Granulaires</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($canAccess([PERMISSIONS::CONFIG_SYSTEM, PERMISSIONS::MANAGE_USERS, PERMISSIONS::VIEW_USERS])): ?>
+                <?php if ($canAccess(PERMISSIONS::VIEW_LOGS)): ?>
                 <a href="<?= RACINE ?>audit/list" class="nav-item sub <?= $isActiveRoute(['/audit/', '/audit/list']) ?>" data-title="Journal d'Audit & Logs">
                     <i data-lucide="history"></i> <span>Journal d'Audit (Logs)</span>
                 </a>

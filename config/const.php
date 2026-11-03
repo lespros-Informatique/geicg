@@ -187,6 +187,7 @@ class PERMISSIONS
     public const MANAGE_ROLES                     = 'MANAGE_ROLES';
     public const MANAGE_USERS                     = 'MANAGE_USERS';
     public const VIEW_FONCTIONS                   = 'VIEW_FONCTIONS';
+    public const VIEW_LOGS                        = 'VIEW_LOGS';
     public const VIEW_PERMISSIONS                 = 'VIEW_PERMISSIONS';
     public const VIEW_ROLES                       = 'VIEW_ROLES';
     public const VIEW_USERS                       = 'VIEW_USERS';
