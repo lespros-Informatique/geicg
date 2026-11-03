@@ -1,3 +1,10 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -163,12 +170,12 @@
   <table class="header-table">
     <tr>
       <td style="width: 70%;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? "GROUPE ECOLE D'INGENIEURS ET DE COMMERCE") ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['nom_court'] ?? 'GEICG') ?> &bull; Direction Académique & des Études</div>
+        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? "GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION") ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['sigle_etablissement'] ?? 'GROUPE EICG') ?> &bull; <?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'Direction des Études & Pédagogie') ?></div>
         <div class="inst-contacts">
-          <?= htmlspecialchars($etablissement['adresse_etablissement'] ?? 'B.P. 518 Gagnoa') ?> &bull; 
-          Tél : <?= htmlspecialchars($etablissement['telephone_etablissement'] ?? '+225 27 34 77 22 28') ?> &bull; 
-          Email : <?= htmlspecialchars($etablissement['email_etablissement'] ?? 'contact@geicg.ci') ?>
+          <?= htmlspecialchars($etablissement['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?> &bull; 
+          Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99') ?> &bull; 
+          Email : <?= htmlspecialchars($etablissement['email_etablissement'] ?? 'eicgbouake01@gmail.com') ?>
         </div>
       </td>
       <td style="width: 30%; text-align: right;">
@@ -304,9 +311,10 @@
         <em>Document académique officiel généré automatiquement par le progiciel GEICG.</em>
       </td>
       <td style="width: 50%; text-align: right; vertical-align: top; font-size: 8pt;">
-        <strong>Le Directeur des Études & des Examens</strong>
-        <div style="height: 35px;"></div>
-        <div style="font-size: 7.5pt; color: #94A3B8;">(Signature et Cachet)</div>
+        <strong><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'Le Directeur des Études & des Examens') ?></strong>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 3px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?></div>
+        <div style="height: 20px;"></div>
+        <div style="font-size: 7.5pt; color: #94A3B8;"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '(Signature et Cachet)') ?></div>
       </td>
     </tr>
   </table>

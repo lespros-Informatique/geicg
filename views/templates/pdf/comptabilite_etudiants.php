@@ -1,3 +1,10 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -172,9 +179,9 @@
         <?php endif; ?>
       </td>
       <td style="width: 76%; text-align: center; vertical-align: middle;">
-        <div class="inst-title" style="text-align: center;">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle" style="text-align: center;">Agréé par l'Etat et le FDFP — Service de la Comptabilité & Direction Financière</div>
-        <div class="inst-contacts" style="text-align: center;">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99 — Site Web : www.groupe-eicg.net</div>
+        <div class="inst-title" style="text-align: center;"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
+        <div class="inst-subtitle" style="text-align: center;"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'Agréé par l\'Etat et le FDFP') ?> — <?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'Service de la Comptabilité & Direction Financière') ?></div>
+        <div class="inst-contacts" style="text-align: center;">Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99') ?> — Site Web : <?= htmlspecialchars($etablissement['site_web'] ?? 'www.groupe-eicg.net') ?></div>
       </td>
       <td style="width: 12%; text-align: right; vertical-align: middle;">
         <!-- Cellule d'équilibrage pour centrage parfait -->
@@ -276,8 +283,8 @@
         Document édité le <?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?> par <?= htmlspecialchars($caissier_nom ?? 'Direction Financière') ?>.
       </td>
       <td style="width: 40%; text-align: right; vertical-align: top;">
-        <div style="font-weight: bold; text-decoration: underline; font-size: 8pt; margin-bottom: 25px;">LE SERVICE DE COMPTABILITÉ</div>
-        <div style="font-size: 8pt; font-weight: bold;"><?= htmlspecialchars($caissier_nom ?? 'Direction Financière') ?></div>
+        <div style="font-weight: bold; text-decoration: underline; font-size: 8pt; margin-bottom: 25px;"><?= htmlspecialchars(strtoupper($etablissement['titre_service_finance'] ?? 'LE SERVICE DE COMPTABILITÉ')) ?></div>
+        <div style="font-size: 8pt; font-weight: bold;"><?= htmlspecialchars($caissier_nom ?? ($etablissement['nom_responsable_finance'] ?? 'Direction Financière')) ?></div>
       </td>
     </tr>
   </table>

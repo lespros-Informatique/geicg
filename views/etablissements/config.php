@@ -153,25 +153,60 @@
             </div>
           </div>
 
-          <!-- SECTION 5 : SIGNATURES OFFICIELLES & CACHETS -->
+          <!-- SECTION 5 : SIGNATURES OFFICIELLES & RESPONSABLES -->
           <div style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #E2E8F0; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="pen-tool" style="width: 16px; height: 16px;"></i> 5. Titres & Signatures Officielles (Sur les PDF)
+            <i data-lucide="pen-tool" style="width: 16px; height: 16px;"></i> 5. Titres & Noms des Responsables Signataires (Sur les PDF)
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
+            <!-- Direction des Études / Pédagogie -->
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Titre Direction Pédagogique</label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Titre Direction des Études</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="titre_direction_pedagogique" value="<?= htmlspecialchars($item['titre_direction_pedagogique'] ?? 'La Direction des Études & Pédagogie') ?>" placeholder="Ex: La Direction des Études & Pédagogie">
             </div>
 
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom du Directeur des Études <span style="color: #0284C7;">(Bulletins & PV)</span></label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="nom_directeur_etudes" value="<?= htmlspecialchars($item['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?>" placeholder="Ex: Dr COULIBALY Sonan Hamed">
+            </div>
+
+            <!-- Direction Générale -->
             <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Titre Direction Générale</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="titre_direction_generale" value="<?= htmlspecialchars($item['titre_direction_generale'] ?? 'La Direction Générale') ?>" placeholder="Ex: La Direction Générale">
             </div>
 
             <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom du Directeur Général / Fondateur</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="nom_directeur_general" value="<?= htmlspecialchars($item['nom_directeur_general'] ?? 'La Direction Générale') ?>" placeholder="Ex: M. KOUASSI ... ou La Direction Générale">
+            </div>
+
+            <!-- Service Financier / Caisse -->
+            <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Titre Service Financier / Caisse</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="titre_service_finance" value="<?= htmlspecialchars($item['titre_service_finance'] ?? 'Le Service Comptabilité & Caisse') ?>" placeholder="Ex: Le Service Comptabilité & Caisse">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom du Responsable Financier / Comptable</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="nom_responsable_finance" value="<?= htmlspecialchars($item['nom_responsable_finance'] ?? 'Direction Financière GEICG') ?>" placeholder="Ex: Direction Financière GEICG">
+            </div>
+
+            <!-- Service Scolarité & Inscriptions -->
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Titre Service Scolarité & Inscriptions</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="titre_service_scolarite" value="<?= htmlspecialchars($item['titre_service_scolarite'] ?? 'Le Service Scolarité & Inscriptions') ?>" placeholder="Ex: Le Service Scolarité & Inscriptions">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom du Responsable Scolarité</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="nom_responsable_scolarite" value="<?= htmlspecialchars($item['nom_responsable_scolarite'] ?? 'Service Scolarité & Inscriptions') ?>" placeholder="Ex: Service Scolarité & Inscriptions">
+            </div>
+
+            <!-- Secrétaire Général & Mentions -->
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom du Secrétaire Général</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="nom_secretaire_general" value="<?= htmlspecialchars($item['nom_secretaire_general'] ?? 'Le Secrétaire Général') ?>" placeholder="Ex: Le Secrétaire Général">
             </div>
 
             <div class="form-group" style="width: 100%;">
@@ -180,8 +215,8 @@
             </div>
 
             <div class="form-group" style="width: 100%;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Ville de Signature</label>
-              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="ville_signature" value="<?= htmlspecialchars($item['ville_signature'] ?? 'Bouaké') ?>" placeholder="Ex: Fait à Bouaké">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Ville de Signature (Fait à ...)</label>
+              <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="ville_signature" value="<?= htmlspecialchars($item['ville_signature'] ?? 'Bouaké') ?>" placeholder="Ex: Bouaké">
             </div>
           </div>
 

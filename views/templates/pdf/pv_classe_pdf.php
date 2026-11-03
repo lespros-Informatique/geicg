@@ -7,6 +7,12 @@ $selectedClasseCode = $selectedClasseCode ?? '';
 $selectedSemestreCode = $selectedSemestreCode ?? '';
 $selectedSemestreLibelle = $selectedSemestreLibelle ?? $selectedSemestreCode;
 $anneeLibelle = $anneeLibelle ?? '-';
+
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -204,9 +210,9 @@ $anneeLibelle = $anneeLibelle ?? '-';
         <?php endif; ?>
       </td>
       <td style="width: 60%; text-align: center;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">AGRÉÉ PAR L'ÉTAT ET LE FDFP &bull; ENSEIGNEMENT SUPÉRIEUR</div>
-        <div class="inst-contacts">Direction des Études &bull; Commission des Examens, Notes et Délibérations</div>
+        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP &bull; ENSEIGNEMENT SUPÉRIEUR') ?></div>
+        <div class="inst-contacts"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'Direction des Études') ?> &bull; Commission des Examens, Notes et Délibérations</div>
       </td>
       <td style="width: 25%; text-align: right; font-size: 7pt; color: #475569;">
         <div><strong>Édition :</strong> <?= date('d/m/Y H:i') ?></div>
@@ -315,21 +321,23 @@ $anneeLibelle = $anneeLibelle ?? '-';
         <div class="sig-cachet">Signature & Date</div>
       </td>
       <td>
-        <div class="sig-title">Le Directeur des Études</div>
-        <div style="height: 38px;"></div>
-        <div class="sig-cachet">Signature, Visa & Cachet</div>
+        <div class="sig-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'Le Directeur des Études') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?></div>
+        <div style="height: 20px;"></div>
+        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Signature, Visa & Cachet') ?></div>
       </td>
       <td>
-        <div class="sig-title">Le Président du Jury / Directeur Général</div>
-        <div style="height: 38px;"></div>
-        <div class="sig-cachet">Signature, Visa & Cachet</div>
+        <div class="sig-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'Le Président du Jury / Directeur Général') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? 'La Direction Générale') ?></div>
+        <div style="height: 20px;"></div>
+        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Signature, Visa & Cachet') ?></div>
       </td>
     </tr>
   </table>
 
   <!-- 6. Footer -->
   <div class="footer-text">
-    GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION &bull; Document officiel généré par le Système Intégré de Délibérations &bull; Fait le <?= date('d/m/Y') ?>
+    <?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?> &bull; <?= htmlspecialchars($etablissement['texte_pied_page'] ?? 'Document officiel généré par le Système Intégré de Délibérations') ?> &bull; Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?>
   </div>
 
 </body>

@@ -222,7 +222,8 @@ class BulletinController extends BaseController
                 'moy_semestre1' => $calc['moy_semestre1'] ?? null,
                 'moy_semestre2' => $calc['moy_semestre2'] ?? null,
                 'moy_examen' => $calc['moy_examen'] ?? null,
-                'directeur_etudes' => 'Dr COULIBALY Sonan Hamed'
+                'etablissement' => $this->getEtablissementConfig(),
+                'directeur_etudes' => ($this->getEtablissementConfig()['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed')
             ];
 
             $html = PdfService::renderTemplate('bulletin_notes.php', $dataView);
@@ -332,6 +333,7 @@ class BulletinController extends BaseController
         }
 
         $dataView = array_merge($pvData, [
+            'etablissement' => $this->getEtablissementConfig(),
             'selectedClasseCode' => $selectedClasseCode,
             'selectedSemestreCode' => $selectedSemestreCode,
             'selectedSemestreLibelle' => $selectedSemestreLibelle

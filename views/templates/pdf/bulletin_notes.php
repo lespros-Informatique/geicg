@@ -43,7 +43,15 @@ $heures_absences = $heures_absences ?? '0 H';
 $moy_semestre1 = $moy_semestre1 ?? null;
 $moy_semestre2 = $moy_semestre2 ?? null;
 $moy_examen = $moy_examen ?? null;
-$directeur_etudes = $directeur_etudes ?? 'Dr COULIBALY Sonan Hamed';
+
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+$directeur_etudes = $directeur_etudes ?? ($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed');
+$titre_direction_pedagogique = !empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'LE DIRECTEUR DES ETUDES';
+$ville_signature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : 'Bouaké';
 
 $hasNotes = !empty($totalCoefficients) && (float)$totalCoefficients > 0;
 $moyVal = (float)$moyenneGenerale;
@@ -54,9 +62,12 @@ $dist_honneur = $hasNotes && ($moyVal >= 12 && $moyVal < 14);
 $sanc_avertissement = $hasNotes && ($moyVal < 10 && $moyVal >= 8);
 $sanc_blame = $hasNotes && ($moyVal < 8);
 
-$logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-if (!file_exists($logoPath)) {
-    $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+$logoPath = !empty($etablissement['logo_etablissement']) ? __DIR__ . '/../../' . ltrim($etablissement['logo_etablissement'], '/') : '';
+if (empty($logoPath) || !file_exists($logoPath)) {
+    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+    if (!file_exists($logoPath)) {
+        $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+    }
 }
 
 $defaultPlaceholder = __DIR__ . '/../../public/' . PLACEHOLDERS::ETUDIANT;
@@ -384,8 +395,12 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
         <?php endif; ?>
       </td>
       <td style="width: 82%; text-align: center;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">AGREE PAR L'ETAT ET LE <span class="fdfp-badge">FDFP</span></div>
+        <?php
+          $nomEtab = $etablissement['nom_etablissement'] ?? ($etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION');
+          $numAutorisation = $etablissement['numero_autorisation'] ?? ($etablissement['numero_autorisation_etablissement'] ?? 'AGREE PAR L\'ETAT ET LE FDFP');
+        ?>
+        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars($numAutorisation) ?></div>
         <div class="annee-header">Année Académique : <?= htmlspecialchars($annee_libelle) ?></div>
       </td>
     </tr>
@@ -667,8 +682,8 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
                 </div>
               </td>
               <td style="width: 56%; text-align: center;">
-                <div style="font-size: 7.5pt; margin-bottom: 2px;">Fait à Bouaké le <?= date('d/m/Y') ?></div>
-                <div style="font-weight: bold; text-decoration: underline; font-size: 8pt; text-transform: uppercase;">LE DIRECTEUR DES ETUDES</div>
+                <div style="font-size: 7.5pt; margin-bottom: 2px;">Fait à <?= htmlspecialchars($ville_signature) ?> le <?= date('d/m/Y') ?></div>
+                <div style="font-weight: bold; text-decoration: underline; font-size: 8pt; text-transform: uppercase;"><?= htmlspecialchars(strtoupper($titre_direction_pedagogique)) ?></div>
                 <div style="height: 38px;"></div>
                 <div style="font-weight: bold; font-size: 8.5pt;"><?= htmlspecialchars($directeur_etudes) ?></div>
               </td>
@@ -680,9 +695,15 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
   </table>
 
   <!-- 6. PIED DE PAGE CONTACTS -->
+  <?php
+    $contactsTxt = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 – Cél : 07 79 37 37 38 / 05 04 59 39 99';
+    $adresseTxt = !empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : 'Bouaké quartier Kennedy, route ancien ADDR';
+    $bpTxt = !empty($etablissement['boite_postale']) ? $etablissement['boite_postale'] : '01 BP 960 Bouaké 01';
+    $emailTxt = !empty($etablissement['email_etablissement']) ? $etablissement['email_etablissement'] : 'eicgbouake01@gmail.com';
+  ?>
   <div class="footer-block">
-    Contacts : Bouaké quartier Kennedy, route ancien ADDR<br>
-    01 BP 960 Bouaké 01 – Email : eicgbouake01@gmail.com | Tél : 27 31 62 40 57 – Cél : 07 79 37 37 38 / 05 04 59 39 99
+    Contacts : <?= htmlspecialchars($adresseTxt) ?><br>
+    <?= htmlspecialchars($bpTxt) ?> – Email : <?= htmlspecialchars($emailTxt) ?> | Contacts : <?= htmlspecialchars($contactsTxt) ?>
   </div>
 
 </div>

@@ -320,16 +320,19 @@
       </td>
       <td style="width: 78%; text-align: center;">
         <?php
-          $nomEtab = 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION';
-          if (!empty($etablissement['libelle_etablissement']) && !in_array(strtoupper(trim($etablissement['libelle_etablissement'])), ['GROUPE EICG', 'GEICG', 'ETABLISSEMENT A'], true)) {
-              $nomEtab = $etablissement['libelle_etablissement'];
-          }
+          $nomEtab = $etablissement['nom_etablissement'] ?? ($etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION');
+          $numAutorisation = $etablissement['numero_autorisation'] ?? ($etablissement['numero_autorisation_etablissement'] ?? 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP');
+          $adresse = $etablissement['adresse_etablissement'] ?? 'Bouaké - Côte d\'Ivoire';
+          $contacts = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99';
         ?>
         <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars(!empty($etablissement['numero_autorisation_etablissement']) ? 'AGRÉMENT N° ' . $etablissement['numero_autorisation_etablissement'] : 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP') ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars(strpos($numAutorisation, 'AGRÉ') !== false ? $numAutorisation : 'AGRÉMENT N° ' . $numAutorisation) ?></div>
         <div class="inst-contacts">
-          <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : 'Bouaké - Côte d\'Ivoire') ?>
-          &nbsp;|&nbsp; Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99
+          <?= htmlspecialchars($adresse) ?>
+          &nbsp;|&nbsp; Contacts : <?= htmlspecialchars($contacts) ?>
+          <?php if (!empty($etablissement['email_etablissement'])): ?>
+            &nbsp;|&nbsp; Email : <?= htmlspecialchars($etablissement['email_etablissement']) ?>
+          <?php endif; ?>
         </div>
       </td>
     </tr>
@@ -480,15 +483,15 @@
   <table class="signature-table">
     <tr>
       <td class="signature-box">
-        <div class="signature-title">La Direction des Études & Pédagogie</div>
-        <div style="height: 38px;"></div>
-        <div class="signature-mention">Cachet & Signature autorisée</div>
+        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'La Direction des Études & Pédagogie') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?></div>
+        <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?></div>
       </td>
       <td style="width: 4%;"></td>
       <td class="signature-box">
-        <div class="signature-title">La Direction Générale</div>
-        <div style="height: 38px;"></div>
-        <div class="signature-mention">Cachet & Signature autorisée</div>
+        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'La Direction Générale') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? 'La Direction Générale') ?></div>
+        <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?></div>
       </td>
     </tr>
   </table>

@@ -1,3 +1,10 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -201,11 +208,11 @@
         <?php endif; ?>
       </td>
       <td style="width: 82%; text-align: center; vertical-align: middle;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
+        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
         <br>
-        <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
-        <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
-        <div class="inst-contacts">Site web : www.groupe-eicg.net</div>
+        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGREE PAR L\'ETAT ET LE FDFP') ?></div>
+        <div class="inst-contacts">Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99') ?></div>
+        <div class="inst-contacts">Site web : <?= htmlspecialchars($etablissement['site_web'] ?? 'www.groupe-eicg.net') ?></div>
       </td>
     </tr>
   </table>
@@ -359,9 +366,9 @@
         <div style="margin-top: 20px; font-weight: bold; font-size: 9.5px;"><?= htmlspecialchars($agent_caisse_nom ?? 'Caisse Principale GEICG') ?></div>
       </td>
       <td style="width: 50%; text-align: right;">
-        <div style="font-size: 9px; margin-bottom: 2px;">Fait à Bouaké, le <?= date('d/m/Y') ?></div>
-        <div style="font-weight: bold; text-decoration: underline;">Le Chef du Service Financier</div>
-        <div style="margin-top: 20px; font-weight: bold; font-size: 9.5px;">Direction Financière GEICG</div>
+        <div style="font-size: 9px; margin-bottom: 2px;">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?></div>
+        <div style="font-weight: bold; text-decoration: underline;"><?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'Le Chef du Service Financier') ?></div>
+        <div style="margin-top: 20px; font-weight: bold; font-size: 9.5px;"><?= htmlspecialchars($etablissement['nom_responsable_finance'] ?? 'Direction Financière GEICG') ?></div>
       </td>
     </tr>
   </table>

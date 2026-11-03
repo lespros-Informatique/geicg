@@ -541,6 +541,14 @@ abstract class BaseController
                 $config['telephone_fixe'] = $config['telephone_etablissement'];
             }
 
+            // Responsables & Signataires par défaut
+            $config['nom_directeur_etudes'] = !empty($config['nom_directeur_etudes']) ? $config['nom_directeur_etudes'] : 'Dr COULIBALY Sonan Hamed';
+            $config['nom_directeur_general'] = !empty($config['nom_directeur_general']) ? $config['nom_directeur_general'] : 'La Direction Générale';
+            $config['titre_service_scolarite'] = !empty($config['titre_service_scolarite']) ? $config['titre_service_scolarite'] : 'Le Service Scolarité & Inscriptions';
+            $config['nom_responsable_scolarite'] = !empty($config['nom_responsable_scolarite']) ? $config['nom_responsable_scolarite'] : 'Service Scolarité & Inscriptions';
+            $config['nom_responsable_finance'] = !empty($config['nom_responsable_finance']) ? $config['nom_responsable_finance'] : 'Direction Financière GEICG';
+            $config['nom_secretaire_general'] = !empty($config['nom_secretaire_general']) ? $config['nom_secretaire_general'] : 'Le Secrétaire Général';
+
             // Contacts formatés pour les en-têtes et pieds de page PDF
             $telephones = array_filter([
                 $config['telephone_fixe'] ?? '',

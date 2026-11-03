@@ -1,3 +1,10 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -150,8 +157,8 @@
         <?php endif; ?>
       </td>
       <td style="width: 78%; text-align: center; vertical-align: middle;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
+        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGREE PAR L\'ETAT ET LE FDFP') ?></div>
       </td>
     </tr>
   </table>
@@ -289,9 +296,9 @@
     </table>
     
     <div class="footer-contacts">
-      Contacts : Bouaké quartier Kennedy, route ancien ADDR près de l’ONG SAVE THE CHILDREN<br>
-      01 BP 960 Bouaké 01 – Email : eicgbouake01@gmail.com<br>
-      Tél : 27 31 62 40 57 – Cél : 07 79 37 37 38 / 05 04 59 39 99
+      Contacts : <?= htmlspecialchars($etablissement['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?><br>
+      <?= htmlspecialchars($etablissement['boite_postale'] ?? '01 BP 960 Bouaké 01') ?> – Email : <?= htmlspecialchars($etablissement['email_etablissement'] ?? 'eicgbouake01@gmail.com') ?><br>
+      Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 – Cél : 07 79 37 37 38 / 05 04 59 39 99') ?>
     </div>
   </div>
 
