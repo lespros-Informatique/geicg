@@ -25,10 +25,22 @@ $role = isset($role) ? $role : [];
 
       <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; width: 100%; box-sizing: border-box;">
         <!-- Identité Card -->
+        <?php
+        $photoUser = !empty($user['photo_user']) ? $user['photo_user'] : '';
+        $photoUrl = RACINE . 'public/assets/images/placeholders/user.png';
+        if (!empty($photoUser)) {
+            $cleanRel = ltrim($photoUser, '/');
+            if (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
+                $photoUrl = RACINE . 'public/' . $cleanRel;
+            } elseif (file_exists(__DIR__ . '/../../' . $cleanRel)) {
+                $photoUrl = RACINE . $cleanRel;
+            }
+        }
+        ?>
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: fit-content;">
           <div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #F1F5F9;">
-            <div style="width: 80px; height: 80px; border-radius: 50%; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 28px; font-weight: 800;">
-              <?= strtoupper(substr($user['nom_user'] ?? 'U', 0, 1) . substr($user['prenom_user'] ?? 'S', 0, 1)) ?>
+            <div style="width: 115px; height: 115px; border-radius: 50%; border: 3px solid #E2E8F0; overflow: hidden; background: #F8FAFC; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+              <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Utilisateur" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='<?= RACINE ?>public/assets/images/placeholders/user.png';">
             </div>
             <h2 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;"><?= htmlspecialchars(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? '')) ?></h2>
             <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;"><?= htmlspecialchars($role['libelle_role'] ?? 'Rôle non attribué') ?></p>
