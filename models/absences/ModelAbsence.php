@@ -82,15 +82,19 @@ class ModelAbsence extends BaseModel
 
     public function getStudentsByClasse(string $classeCode, string $anneeCode): array
     {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
                 FROM " . TABLES::INSCRIPTIONS . " i
                 INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
+                WHERE i.classe_code = ? AND i.annee_code = ? AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
                 ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
             ");
-            $stmt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
+            $stmt->execute([$classeCode, $anneeCode]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelAbsence::getStudentsByClasse error: " . $e->getMessage());
@@ -135,7 +139,7 @@ class ModelAbsence extends BaseModel
             $params[] = $classeCode;
         }
         if (!empty($anneeCode)) {
-            $sql .= " AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)";
+            $sql .= " AND annee_code = ?";
             $params[] = $anneeCode;
         }
         $sql .= " ORDER BY id_inscription DESC LIMIT 1";

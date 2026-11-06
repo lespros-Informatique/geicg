@@ -145,7 +145,7 @@ class ModelHome extends BaseModel
                     $sqlTC = "SELECT COUNT(DISTINCT matiere_code, classe_code), COUNT(DISTINCT classe_code) FROM " . TABLES::EMPLOIS_TEMPS . " WHERE (enseignant_code = ? OR enseignant_code = ?)";
                     $paramsTC = [$teacherCode, $userCode];
                     if ($anneeCode) {
-                        $sqlTC .= " AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+                        $sqlTC .= " AND annee_code = ?";
                         $paramsTC[] = $anneeCode;
                     }
                     $stmtTC = $db->prepare($sqlTC);

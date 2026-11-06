@@ -534,7 +534,7 @@ class ModelPaiement extends BaseModel
             }
         }
 
-        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
+        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND annee_code = ?");
         $stmtScoAll->execute([$anneeCode]);
         $scolariteGrid = $stmtScoAll->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -1675,7 +1675,7 @@ class ModelPaiement extends BaseModel
             }
         }
 
-        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')");
+        $stmtScoAll = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND annee_code = ?");
         $stmtScoAll->execute([$anneeCode]);
         $scolariteGrid = $stmtScoAll->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -1991,18 +1991,17 @@ class ModelPaiement extends BaseModel
         $stmtSco = $db->prepare("
             SELECT code_scolarite, montant_scolarite FROM " . TABLES::SCOLARITES . " 
             WHERE filiere_code = ? 
-              AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+              AND annee_code = ?
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
               AND (affectation_etat = ? OR affectation_etat = ?)
               AND statut_scolarite = '" . STATUTS::ACTIF . "'
             ORDER BY 
-              (CASE WHEN annee_code = ? THEN 1 ELSE 2 END),
               (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END),
               (CASE WHEN affectation_etat = ? THEN 1 ELSE 2 END),
               id_scolarite DESC
             LIMIT 1
         ");
-        $stmtSco->execute([$filiereCode, $anneeCode, $nCode, $affRaw, $targetAff, $anneeCode, $nCode, $targetAff]);
+        $stmtSco->execute([$filiereCode, $anneeCode, $nCode, $affRaw, $targetAff, $nCode, $targetAff]);
         $scoRow = $stmtSco->fetch(PDO::FETCH_ASSOC);
         if ($scoRow) {
             $scolariteDue = (float)$scoRow['montant_scolarite'];
@@ -2061,7 +2060,7 @@ class ModelPaiement extends BaseModel
             $stmtTr = $db->prepare("
                 SELECT code_tranche, libelle_tranche, montant_tranche, date_limite 
                 FROM " . TABLES::TRANCHES_SCOLARITE . " 
-                WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL) AND statut_tranche = '" . STATUTS::ACTIF . "'
+                WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_tranche = '" . STATUTS::ACTIF . "'
                 ORDER BY id_tranche ASC
             ");
             $stmtTr->execute([$filiereCode, $nCode, $anneeCode]);

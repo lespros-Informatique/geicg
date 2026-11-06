@@ -9,16 +9,14 @@ class ModelBulletin extends BaseModel
 
     public function getActiveSemestres(?string $anneeCode = null): array
     {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
         try {
-            $sql = "SELECT * FROM " . TABLES::SEMESTRES;
-            $params = [];
-            if (!empty($anneeCode)) {
-                $sql .= " WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
-                $params[] = $anneeCode;
-            }
-            $sql .= " ORDER BY id_semestre ASC";
+            $sql = "SELECT * FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? ORDER BY id_semestre ASC";
             $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute($params);
+            $stmt->execute([$anneeCode]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelBulletin::getActiveSemestres error: " . $e->getMessage());
@@ -34,20 +32,22 @@ class ModelBulletin extends BaseModel
         ?array $teacherClasses = null,
         ?string $statutNotes = null
     ): array {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
         try {
             $subParams = [];
             $subWhere = [
                 "n.statut_note = '" . STATUTS::ACTIF . "'",
-                "(comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')"
+                "(comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')",
+                "comp.annee_code = ?"
             ];
+            $subParams[] = $anneeCode;
 
             if (!empty($semestreCode)) {
                 $subWhere[] = "comp.semestre_code = ?";
                 $subParams[] = $semestreCode;
-            }
-            if (!empty($anneeCode)) {
-                $subWhere[] = "(comp.annee_code = ? OR comp.annee_code IS NULL OR comp.annee_code = '')";
-                $subParams[] = $anneeCode;
             }
 
             $subWhereSql = implode(" AND ", $subWhere);
@@ -82,14 +82,10 @@ class ModelBulletin extends BaseModel
                     ) n_cnt ON n_cnt.inscription_code = i.code_inscription";
 
             $conditions = [
-                "(i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)"
+                "(i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)",
+                "i.annee_code = ?"
             ];
-            $params = $subParams;
-
-            if (!empty($anneeCode)) {
-                $conditions[] = "(i.annee_code = ? OR i.annee_code IS NULL OR i.annee_code = '')";
-                $params[] = $anneeCode;
-            }
+            $params = array_merge($subParams, [$anneeCode]);
             if (!empty($niveauCode)) {
                 $conditions[] = "cl.niveau_code = ?";
                 $params[] = $niveauCode;
@@ -578,7 +574,7 @@ class ModelBulletin extends BaseModel
                        COALESCE(categorie_matiere, '" . CATEGORIES_MATIERES::GENERALE . "') AS categorie_matiere
                 FROM " . VIEWS::MAQUETTES_COMPLETES . "
                 WHERE filiere_code = ? AND niveau_code = ? 
-                  AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)
+                  AND annee_code = ?
                   AND (statut_maquette = '" . STATUTS::ACTIF . "' OR statut_maquette IS NULL)
                 ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC
             ");
@@ -601,11 +597,11 @@ class ModelBulletin extends BaseModel
             SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant
             FROM " . TABLES::INSCRIPTIONS . " i
             INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') 
+            WHERE i.classe_code = ? AND i.annee_code = ? 
               AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
-        $stmtE->execute([$selectedClasseCode, $anneeCode, $anneeCode, $anneeCode]);
+        $stmtE->execute([$selectedClasseCode, $anneeCode]);
         $etudiants = $stmtE->fetchAll(PDO::FETCH_ASSOC);
 
         // 4. Batch query allégée via VIEWS::BULLETIN_NOTES_DETAILS

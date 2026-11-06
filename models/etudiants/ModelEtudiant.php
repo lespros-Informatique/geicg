@@ -296,7 +296,7 @@ class ModelEtudiant extends BaseModel
 
             if ($montantScolarite === null || $montantScolarite <= 0) {
                 $regimeScol = ($affectationEtat === 'oui') ? 'affecte' : 'non_affecte';
-                $stmtSco = $db->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND affectation_etat = ? AND statut_scolarite = '" . STATUTS::ACTIF . "' ORDER BY id_scolarite DESC LIMIT 1");
+                $stmtSco = $db->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND affectation_etat = ? AND statut_scolarite = '" . STATUTS::ACTIF . "' ORDER BY id_scolarite DESC LIMIT 1");
                 $stmtSco->execute([$classeRow['filiere_code'], $classeRow['niveau_code'], $anneeCode, $regimeScol]);
                 $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
                 if ($sco) {

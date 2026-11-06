@@ -12,7 +12,7 @@ class ModelImpayes extends BaseModel
             $sql = "SELECT r.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, cl.libelle_classe, n.libelle_niveau 
                     FROM " . TABLES::RELANCES_IMPAYES . " r
                     LEFT JOIN " . TABLES::ETUDIANTS . " e ON r.etudiant_code = e.code_etudiant
-                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND (ins.annee_code = r.annee_code OR r.annee_code IS NULL OR r.annee_code = '') AND ins.statut_inscription != '" . STATUTS::ANNULE . "'))
+                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.annee_code = r.annee_code AND ins.statut_inscription != '" . STATUTS::ANNULE . "'))
                     LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                     LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code";
             $conditions = [];
@@ -421,11 +421,15 @@ class ModelImpayes extends BaseModel
 
     public function getScolariteDue(string $filiereCode, string $niveauCode, ?string $anneeCode = null): ?float
     {
-        $cacheKey = "{$filiereCode}|{$niveauCode}|" . ($anneeCode ?? '');
+        if (empty($anneeCode)) {
+            return null;
+        }
+
+        $cacheKey = "{$filiereCode}|{$niveauCode}|{$anneeCode}";
         if (array_key_exists($cacheKey, self::$scolariteDueCache)) {
             return self::$scolariteDueCache[$cacheKey];
         }
-        $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = '" . STATUTS::ACTIF . "' LIMIT 1");
+        $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_scolarite = '" . STATUTS::ACTIF . "' LIMIT 1");
         $stmt->execute([$filiereCode, $niveauCode, $anneeCode]);
         $val = $stmt->fetchColumn();
         $res = $val !== false ? (float)$val : null;

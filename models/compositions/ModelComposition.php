@@ -382,6 +382,10 @@ class ModelComposition extends BaseModel
 
     public function findExistingComposition(string $classeCode, string $matiereCode, string $semestreCode, string $typeComposition, string $anneeCode): ?array
     {
+        if (empty($anneeCode)) {
+            return null;
+        }
+
         $stmt = $this->getCon()->prepare("
             SELECT comp.*, cm.id_composition_matiere 
             FROM " . TABLES::COMPOSITIONS . " comp
@@ -389,10 +393,10 @@ class ModelComposition extends BaseModel
             JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
             JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
             WHERE cl.code_classe = ? AND cm.matiere_code = ? AND comp.semestre_code = ? AND comp.type_composition = ? 
-              AND (comp.annee_code = ? OR ? IS NULL OR ? = '')
+              AND comp.annee_code = ?
             ORDER BY comp.id_composition DESC LIMIT 1
         ");
-        $stmt->execute([$classeCode, $matiereCode, $semestreCode, $typeComposition, $anneeCode, $anneeCode, $anneeCode]);
+        $stmt->execute([$classeCode, $matiereCode, $semestreCode, $typeComposition, $anneeCode]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 }
