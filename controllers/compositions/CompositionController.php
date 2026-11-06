@@ -16,12 +16,30 @@ class CompositionController extends BaseController
         $canEnterNotes = Auth::can(PERMISSIONS::ENTER_NOTES);
 
         $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/compositions/list.php', [
+                'annees' => $annees,
+                'niveaux' => [],
+                'classes' => [],
+                'matieres' => [],
+                'semestres' => [],
+                'selectedAnneeCode' => '',
+                'canManageExamens' => false,
+                'canViewExamens' => false,
+                'canEnterNotes' => false
+            ]);
+            return;
+        }
+
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
         $matieres = (new ModelMatiere())->getAll();
-        
-        $selectedAnneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
+
+        $canManageExamens = $canManageExamens && $this->canWriteAcademicYear($selectedAnneeCode);
+        $canEnterNotes = $canEnterNotes && $this->canWriteAcademicYear($selectedAnneeCode);
 
         $this->loadView('../views/compositions/list.php', [
             'annees' => $annees,
@@ -40,7 +58,11 @@ class CompositionController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS]);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $semestreCode = $_GET['semestre_code'] ?? null;
@@ -69,8 +91,13 @@ class CompositionController extends BaseController
         $selectedMatiereCode = $_GET['matiere_code'] ?? '';
         $typeEval = $_GET['type'] ?? 'COMPOSITION';
 
-        $activeAnneeCode = $this->getActiveAnneeCode();
-        $annees = (new ModelAnnee())->getAll();
+        $activeAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($activeAnneeCode === null || !$this->canWriteAcademicYear($activeAnneeCode)) {
+            $this->error("Programmation d'évaluation non autorisée sur cette année académique.");
+            return;
+        }
+
+        $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $filieres = (new ModelFiliere())->getAll();
         $classes = (new ModelClasse())->getAll();
@@ -106,7 +133,11 @@ class CompositionController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_EXAMENS);
         $userCode = Auth::code();
-        $anneeCode = !empty($_POST['annee_code']) ? $_POST['annee_code'] : $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if ($anneeCode === null || !$this->canWriteAcademicYear($anneeCode)) {
+            $this->error("Action non autorisée sur cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
 
         $this->validateForeignKeys([
@@ -177,6 +208,11 @@ class CompositionController extends BaseController
         $item = $this->model->getById($id);
         if (!$item) { $this->error('Composition introuvable'); return; }
 
+        if (!empty($item['annee_code']) && !$this->canWriteAcademicYear($item['annee_code'])) {
+            $this->error("Modification impossible : l'année académique de cette épreuve est fermée ou en lecture seule.");
+            return;
+        }
+
         $data = $_POST;
         unset($data['csrf_token']);
         if (empty($data['date_fin_composition']) && !empty($data['date_composition'])) {
@@ -222,6 +258,9 @@ class CompositionController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'composition/list'); exit(); }
+            if (!empty($item['annee_code']) && !$this->canWriteAcademicYear($item['annee_code'])) {
+                header('Location: ' . RACINE . 'composition/list'); exit();
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'composition/list'); exit();
@@ -381,6 +420,9 @@ class CompositionController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item) { header('Location: ' . RACINE . 'composition/list'); exit(); }
+            if (!empty($item['annee_code']) && !$this->canAccessAcademicYear($item['annee_code'])) {
+                header('Location: ' . RACINE . 'composition/list'); exit();
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             header('Location: ' . RACINE . 'composition/list'); exit();
@@ -409,7 +451,12 @@ class CompositionController extends BaseController
         $id = (int)$this->post('id');
         $statut = trim($this->post('statut') ?? '');
 
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($item = $this->model->getById($id))) {
+            if (!empty($item['annee_code']) && !$this->canWriteAcademicYear($item['annee_code'])) {
+                $this->error("Action impossible : l'année académique de cette épreuve est fermée ou en lecture seule.");
+                return;
+            }
+
             $res = false;
             if (!empty($statut)) {
                 $res = $this->model->updateStatus($id, $statut);

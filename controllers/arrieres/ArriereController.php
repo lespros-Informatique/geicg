@@ -20,6 +20,18 @@ class ArriereController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_ARRIERES, PERMISSIONS::VIEW_ARRIERES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::MANAGE_PAIEMENTS, PERMISSIONS::VIEW_PAIEMENTS]);
 
         $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/arrieres/list.php', [
+                'stats' => ['total_dossiers' => 0, 'montant_total_du' => 0, 'montant_recouvre' => 0, 'reste_a_recouvrer' => 0],
+                'annees' => $annees,
+                'niveaux' => [],
+                'classes' => [],
+                'selectedAnneeCode' => ''
+            ]);
+            return;
+        }
 
         $niveauModel = new ModelNiveau();
         $niveaux = $niveauModel->getAll();
@@ -27,7 +39,6 @@ class ArriereController extends BaseController
         $classeModel = new ModelClasse();
         $classes = $classeModel->getAll();
 
-        $selectedAnneeCode = Session::get('annee_active_code');
         $stats = $this->model->getStats($selectedAnneeCode);
 
         $this->loadView('../views/arrieres/list.php', [
@@ -44,7 +55,12 @@ class ArriereController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ARRIERES, PERMISSIONS::VIEW_ARRIERES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::MANAGE_PAIEMENTS, PERMISSIONS::VIEW_PAIEMENTS]);
 
-        $anneeActiveCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeActiveCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeActiveCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $anneeOrigineCode = $_GET['annee_origine_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $statutFilter = $_GET['statut'] ?? null;
@@ -63,7 +79,12 @@ class ArriereController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ARRIERES, PERMISSIONS::VIEW_ARRIERES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::MANAGE_PAIEMENTS, PERMISSIONS::VIEW_PAIEMENTS]);
 
-        $anneeActiveCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeActiveCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeActiveCode === null) {
+            $this->json(['status' => 1, 'stats' => ['total_dossiers' => 0, 'montant_total_du' => 0, 'montant_recouvre' => 0, 'reste_a_recouvrer' => 0]]);
+            return;
+        }
+
         $stats = $this->model->getStats($anneeActiveCode);
         $this->json(['status' => 1, 'stats' => $stats]);
     }
@@ -79,7 +100,12 @@ class ArriereController extends BaseController
             return;
         }
 
-        $anneeActiveCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeActiveCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeActiveCode === null) {
+            $this->json(['status' => 1, 'data' => []]);
+            return;
+        }
+
         $details = $this->model->getArrieresEtudiantDetail($etudiantCode, $anneeActiveCode);
 
         $this->json(['status' => 1, 'data' => $details]);
@@ -128,9 +154,14 @@ class ArriereController extends BaseController
             $userCode = Auth::code();
             $sessionCaisseCode = $userCode ? $this->model->getActiveSessionForUser($userCode) : null;
 
+            $anneeActive = $this->resolveTargetAcademicYear(null);
+            if ($anneeActive === null || !$this->canWriteAcademicYear($anneeActive)) {
+                $this->json(['status' => 0, 'message' => "Enregistrement de règlement impossible : l'année académique courante est fermée ou inaccessible en écriture."]);
+                return;
+            }
+
             // Générer un code paiement unique
             $codePaiement = $this->validator->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'PAI-ARR-', 8);
-            $anneeActive = Session::get('annee_active_code') ?: $inscr['annee_code'];
             $etablissementCode = $inscr['etablissement_code'] ?? ($this->getActiveEtablissementCode());
 
             $this->model->recordArrierePayment([

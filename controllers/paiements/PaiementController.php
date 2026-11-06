@@ -12,16 +12,16 @@ class PaiementController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_PAIEMENTS);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($selectedAnneeCode !== null) {
+            $aRow = $this->model->getAnneeByCode($selectedAnneeCode);
             if ($aRow) {
                 Session::set('annee_active_code', $aRow['code_annee']);
                 Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
-        $activeYear = $this->getActiveAnneeCode();
+        $activeYear = $selectedAnneeCode;
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $dateDebut = $_GET['date_debut'] ?? null;
@@ -63,16 +63,16 @@ class PaiementController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($selectedAnneeCode !== null) {
+            $aRow = $this->model->getAnneeByCode($selectedAnneeCode);
             if ($aRow) {
                 Session::set('annee_active_code', $aRow['code_annee']);
                 Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
-        $activeYear = $this->getActiveAnneeCode();
+        $activeYear = $selectedAnneeCode;
         $annees = $this->getAccessibleAnnees();
         $deps = $this->model->getListDependencies($activeYear);
 
@@ -119,13 +119,18 @@ class PaiementController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_PAIEMENTS);
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code') ?? null;
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['status' => 1, 'stats' => []]);
+            return;
+        }
+
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $dateDebut = $_GET['date_debut'] ?? null;
         $dateFin = $_GET['date_fin'] ?? null;
 
-        $stats = $this->model->computeFinancialStats($anneeCode, $niveauCode, $classeCode, $dateDebut, $dateFin, $this->getActiveAnneeCode());
+        $stats = $this->model->computeFinancialStats($anneeCode, $niveauCode, $classeCode, $dateDebut, $dateFin, $anneeCode);
         $this->json(['status' => 1, 'stats' => $stats]);
     }
 
@@ -139,16 +144,19 @@ class PaiementController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_PAIEMENTS);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode !== null) {
+            $aRow = $this->model->getAnneeByCode($anneeCode);
             if ($aRow) {
                 Session::set('annee_active_code', $aRow['code_annee']);
                 Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $dateDebut = $_GET['date_debut'] ?? null;

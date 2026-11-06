@@ -14,8 +14,8 @@ class BulletinController extends BaseController
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($selectedAnneeCode !== null) {
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
                     Session::set('annee_active_code', $a['code_annee']);
@@ -23,25 +23,28 @@ class BulletinController extends BaseController
                     break;
                 }
             }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
         $teacherCtx = $this->getTeacherContext();
         $isTeacherOnly = $teacherCtx['isTeacherOnly'];
         $teacherCodes = $teacherCtx['teacherCodes'];
 
-        if ($isTeacherOnly && !empty($teacherCodes)) {
-            require_once __DIR__ . '/../notes/NoteController.php';
-            $modelNote = new ModelNote();
-            $classes = $modelNote->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+        if (empty($selectedAnneeCode)) {
+            $classes = [];
+            $semestres = [];
         } else {
-            $classes = (new ModelClasse())->getAll();
-        }
+            if ($isTeacherOnly && !empty($teacherCodes)) {
+                require_once __DIR__ . '/../notes/NoteController.php';
+                $modelNote = new ModelNote();
+                $classes = $modelNote->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+            } else {
+                $classes = (new ModelClasse())->getAll();
+            }
 
-        $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
-        if (empty($semestres)) {
-            $semestres = $this->model->getActiveSemestres($selectedAnneeCode);
+            $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
+            if (empty($semestres)) {
+                $semestres = $this->model->getActiveSemestres($selectedAnneeCode);
+            }
         }
 
         $canGenerateBulletins = Auth::can([PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::CONFIG_ACADEMIQUE]) && !$isTeacherOnly;
@@ -63,14 +66,14 @@ class BulletinController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code') ?? null;
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
         $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
         $statutNotes = !empty($_GET['statut_notes']) ? trim($_GET['statut_notes']) : null;
 
-        // Nouvelle logique : par défaut pas de liste, uniquement si classe sélectionnée
-        if (empty($classeCode)) {
+        // Arrêt immédiat si aucune classe sélectionnée ou aucune année académique autorisée
+        if (empty($anneeCode) || empty($classeCode)) {
             $this->json(['data' => []]);
             return;
         }
@@ -285,8 +288,13 @@ class BulletinController extends BaseController
 
             $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
             $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
-            $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : Session::get('annee_active_code');
+            $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
             $statutNotes = !empty($_GET['statut_notes']) ? trim($_GET['statut_notes']) : null;
+
+            if (empty($anneeCode)) {
+                $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
+                return;
+            }
 
             if (empty($classeCode)) {
                 $this->renderNotFound("Veuillez sélectionner une classe pour imprimer les bulletins de notes.");
@@ -503,7 +511,11 @@ class BulletinController extends BaseController
         $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
+            return;
+        }
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
         $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;

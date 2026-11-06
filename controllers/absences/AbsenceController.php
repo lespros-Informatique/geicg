@@ -13,10 +13,9 @@ class AbsenceController extends BaseController
         $this->requirePermission(PERMISSIONS::VIEW_ABSENCES);
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
         
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($selectedAnneeCode !== null) {
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
                     Session::set('annee_active_code', $a['code_annee']);
@@ -24,9 +23,9 @@ class AbsenceController extends BaseController
                     break;
                 }
             }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
         }
+
+        $classes = !empty($selectedAnneeCode) ? (new ModelClasse())->getAll() : [];
 
         $this->loadView('../views/absences/list.php', [
             'annees' => $annees,
@@ -40,7 +39,12 @@ class AbsenceController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_ABSENCES);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
@@ -62,7 +66,11 @@ class AbsenceController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if (empty($anneeCode) || !$this->academicGuard()->canUserWriteYear($anneeCode)) {
+            $this->error("Opération refusée : vous n'avez pas l'autorisation d'enregistrer des absences sur cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
@@ -232,7 +240,11 @@ class AbsenceController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
+            return;
+        }
         $classes = (new ModelClasse())->getAll();
         $matieres = (new ModelMatiere())->getAll();
         
@@ -290,7 +302,11 @@ class AbsenceController extends BaseController
         $absencesData = $_POST['absences'] ?? [];
 
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($this->post('annee_code'));
+        if (empty($anneeCode) || !$this->academicGuard()->canUserWriteYear($anneeCode)) {
+            $this->error("Opération refusée : vous n'avez pas l'autorisation d'enregistrer des absences sur cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
 
         $this->validateForeignKeys([

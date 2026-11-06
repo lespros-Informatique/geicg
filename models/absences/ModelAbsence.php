@@ -8,14 +8,16 @@ class ModelAbsence extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
         $sql = "SELECT * FROM " . VIEWS::ABSENCES_COMPLETES . "";
         $conditions = [];
         $params = [];
-        if (!empty($anneeCode)) {
-            $conditions[] = "(annee_code = ? OR inscription_annee_code = ?)";
-            $params[] = $anneeCode;
-            $params[] = $anneeCode;
-        }
+        $conditions[] = "(annee_code = ? OR inscription_annee_code = ?)";
+        $params[] = $anneeCode;
+        $params[] = $anneeCode;
         if (!empty($niveauCode)) {
             $conditions[] = "niveau_code = ?";
             $params[] = $niveauCode;

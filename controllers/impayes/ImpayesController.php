@@ -13,24 +13,25 @@ class ImpayesController extends BaseController
         $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/impayes/list.php', [
+                'annees' => $annees,
+                'niveaux' => [],
+                'classes' => [],
+                'selectedAnneeCode' => '',
+                'canSendRelance' => false,
+                'canRecordPayment' => false
+            ]);
+            return;
+        }
+
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
 
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
-                }
-            }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
-        }
-
-        $canSendRelance = $this->hasPermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]);
-        $canRecordPayment = $this->hasPermission([PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canSendRelance = $this->hasPermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]) && $this->canWriteAcademicYear($selectedAnneeCode);
+        $canRecordPayment = $this->hasPermission([PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]) && $this->canWriteAcademicYear($selectedAnneeCode);
 
         $this->loadView('../views/impayes/list.php', [
             'annees' => $annees,
@@ -47,7 +48,17 @@ class ImpayesController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json([
+                'status' => 1,
+                'success' => true,
+                'data' => [],
+                'kpis' => []
+            ]);
+            return;
+        }
+
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $severite = $_GET['severite'] ?? 'ALL';
@@ -82,7 +93,12 @@ class ImpayesController extends BaseController
         $this->requirePermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]);
 
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if ($anneeCode === null || !$this->canWriteAcademicYear($anneeCode)) {
+            $this->error("Action d'enregistrement de relance non autorisée sur cette année académique.");
+            return;
+        }
+
         $etabCode = $this->getActiveEtablissementCode();
 
         $data = $_POST;
@@ -113,7 +129,12 @@ class ImpayesController extends BaseController
         $this->requirePermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]);
 
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if ($anneeCode === null || !$this->canWriteAcademicYear($anneeCode)) {
+            $this->error("Action de relance groupée non autorisée sur cette année académique.");
+            return;
+        }
+
         $etabCode = $this->getActiveEtablissementCode();
 
         $itemsJson = $_POST['items'] ?? '[]';
@@ -171,7 +192,12 @@ class ImpayesController extends BaseController
         $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->error("Accès non autorisé aux impayés de cette année académique.");
+            return;
+        }
+
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $severite = $_GET['severite'] ?? 'ALL';
@@ -232,6 +258,11 @@ class ImpayesController extends BaseController
         $ins = $this->model->getInscriptionDetailsForRappel($id);
         if (!$ins) {
             $this->error('Inscription introuvable pour ce rappel.');
+            return;
+        }
+
+        if (!empty($ins['annee_code']) && !$this->canAccessAcademicYear($ins['annee_code'])) {
+            $this->error("Accès non autorisé aux informations financières de cette année académique.");
             return;
         }
 

@@ -11,19 +11,25 @@ class ScolariteController extends BaseController
     {
         $this->requireAuth();
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = (new ModelAnnee())->getByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($activeYear === null) {
+            $this->loadView('../views/scolarites/list.php', [
+                'total_grilles' => 0,
+                'grilles_actives' => 0,
+                'total_filieres' => 0,
+                'taux_couverture' => 0,
+                'annees' => $annees,
+                'filieres' => [],
+                'niveaux' => [],
+                'classes' => [],
+                'selectedAnneeCode' => ''
+            ]);
+            return;
         }
 
-        $activeYear = $this->getActiveAnneeCode();
-        $annees = $this->getAccessibleAnnees();
         $stats = $this->model->getStats($activeYear);
-
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
         $rawFilieres = (new ModelFiliere())->getFilieresAssocieesAuxCycles();
@@ -43,16 +49,12 @@ class ScolariteController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = (new ModelAnnee())->getByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
         $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $affectationEtat = !empty($_GET['affectation_etat']) ? trim($_GET['affectation_etat']) : null;
@@ -155,7 +157,11 @@ class ScolariteController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = Auth::code();
-        $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($this->getActiveAnneeCode());
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if ($anneeCode === null || !$this->canWriteAcademicYear($anneeCode)) {
+            $this->error("Action non autorisée : l'année académique cible est clôturée ou inaccessible en écriture.");
+            return;
+        }
         
         $cycleCode = !empty($_POST['cycle_code']) ? trim($_POST['cycle_code']) : '';
         $typeFiliere = !empty($_POST['type_filiere']) ? trim($_POST['type_filiere']) : '';
