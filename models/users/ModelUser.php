@@ -334,23 +334,18 @@ class ModelUser extends BaseModel
     }
 
     /**
-     * Récupère l'année académique active courante
+     * Récupère l'année académique active courante (sans fallback sur une année clôturée)
      */
     public function getActiveAnneeAcademique(): ?array
     {
         try {
             $stmt = $this->getCon()->query("
                 SELECT code_annee, libelle_annee 
-                FROM " . TABLES::ANNEES . " 
-                WHERE statut_annee = '" . STATUTS::ACTIF . "' 
-                ORDER BY id_annee DESC LIMIT 1
+                FROM `" . TABLES::ANNEES . "` 
+                WHERE `statut_annee` = '" . STATUTS::ACTIF . "' 
+                LIMIT 1
             ");
-            $active = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
-            if (!$active) {
-                $stmtFallback = $this->getCon()->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
-                $active = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
-            }
-            return $active ?: null;
+            return ($stmt && ($active = $stmt->fetch(PDO::FETCH_ASSOC))) ? $active : null;
         } catch (Exception $e) {
             error_log("ModelUser::getActiveAnneeAcademique error: " . $e->getMessage());
             return null;

@@ -218,6 +218,9 @@ class AnneeController extends BaseController
                 if ($activeYear) {
                     Session::set('annee_active_code', $activeYear['code_annee']);
                     Session::set('annee_active_libelle', $activeYear['libelle_annee']);
+                } else {
+                    Session::set('annee_active_code', '');
+                    Session::set('annee_active_libelle', 'Aucune');
                 }
                 $this->logAction(
                     AuditLogger::ACTION_UPDATE,
@@ -297,6 +300,15 @@ class AnneeController extends BaseController
         $annee = $this->model->getAnneeByCodeOrId($code);
 
         if ($annee) {
+            // Vérification stricte des droits d'accès à l'historique si l'année n'est pas active
+            if (!$this->model->canUserAccessAnnee($annee['code_annee'])) {
+                $this->json([
+                    'status' => 0,
+                    'message' => "Accès refusé : vous n'avez pas l'autorisation de consulter l'historique de cette année académique."
+                ]);
+                return;
+            }
+
             Session::set('annee_active_code', $annee['code_annee']);
             Session::set('annee_active_libelle', $annee['libelle_annee']);
             

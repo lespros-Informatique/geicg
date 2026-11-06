@@ -229,8 +229,7 @@ class ViewContext
         }
 
         $userCodeNav = Auth::code() ?? '';
-        $userPermsNav = Auth::user('permissions') ?? [];
-        $hasGlobalViewNav = in_array('*', $userPermsNav, true) || in_array(PERMISSIONS::VIEW_ANNEES_ANTERIEURES, $userPermsNav, true);
+        $hasGlobalViewNav = Auth::can(PERMISSIONS::VIEW_ANNEES_ANTERIEURES);
 
         $userAccesNav = [];
         if (!$hasGlobalViewNav && !empty($userCodeNav) && $dbNav) {
@@ -256,6 +255,27 @@ class ViewContext
         }
         unset($anItem);
 
+        // Si l'année actuellement en session n'est pas accessible par l'utilisateur connecté, on réinitialise la session
+        if (!empty($activeAnneeCode)) {
+            $currentSessionAllowed = false;
+            foreach ($allAnneesNav as $anItem) {
+                if ($anItem['code_annee'] === $activeAnneeCode && !empty($anItem['_canAccessThisYear'])) {
+                    $currentSessionAllowed = true;
+                    break;
+                }
+            }
+            if (!$currentSessionAllowed) {
+                $activeAnneeCode = '';
+                $activeAnneeLibelle = 'Aucune';
+                Session::set('annee_active_code', '');
+                Session::set('annee_active_libelle', 'Aucune');
+                foreach ($allAnneesNav as &$anItem) {
+                    $anItem['_isSelected'] = false;
+                }
+                unset($anItem);
+            }
+        }
+
         $navRoles = Auth::roles();
         if (empty($navRoles) && !empty(Auth::role())) {
             $navRoles = [Auth::role()];
@@ -276,7 +296,7 @@ class ViewContext
         }
 
         if ($isPastAnneeNav) {
-            $hasEditPermBanner = in_array('*', $userPermsNav, true) || in_array(PERMISSIONS::EDIT_ANNEES_ANTERIEURES, $userPermsNav, true);
+            $hasEditPermBanner = Auth::can(PERMISSIONS::EDIT_ANNEES_ANTERIEURES);
             if (!$hasEditPermBanner && !empty($userCodeNav) && $dbNav) {
                 try {
                     $stChk = $dbNav->prepare("SELECT niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ? AND annee_code = ? LIMIT 1");

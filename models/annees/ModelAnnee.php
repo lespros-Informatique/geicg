@@ -16,9 +16,9 @@ class ModelAnnee extends BaseModel
             $db = $this->getCon();
             $db->beginTransaction();
             // Clôturer toute année précédemment active
-            $db->exec("UPDATE " . TABLES::ANNEES . "` SET `statut_annee` = 'cloture' WHERE `statut_annee` = 'actif'");
+            $db->exec("UPDATE `" . TABLES::ANNEES . "` SET `statut_annee` = '" . STATUTS::CLOTURE . "' WHERE `statut_annee` = '" . STATUTS::ACTIF . "'");
             // Activer l'année demandée
-            $stmt = $db->prepare("UPDATE " . TABLES::ANNEES . "` SET `statut_annee` = 'actif' WHERE `id_annee` = ?");
+            $stmt = $db->prepare("UPDATE `" . TABLES::ANNEES . "` SET `statut_annee` = '" . STATUTS::ACTIF . "' WHERE `id_annee` = ?");
             $stmt->execute([$id]);
             $db->commit();
             return true;
@@ -44,7 +44,7 @@ class ModelAnnee extends BaseModel
             return $this->setActiveYear($id);
         } else {
             // Clôturer l'année active
-            $stmt = $this->getCon()->prepare("UPDATE " . TABLES::ANNEES . "` SET `statut_annee` = 'cloture' WHERE `id_annee` = ?");
+            $stmt = $this->getCon()->prepare("UPDATE `" . TABLES::ANNEES . "` SET `statut_annee` = '" . STATUTS::CLOTURE . "' WHERE `id_annee` = ?");
             return $stmt->execute([$id]);
         }
     }
@@ -94,21 +94,51 @@ class ModelAnnee extends BaseModel
     }
 
     /**
-     * Récupère l'unique année académique active en base
+     * Récupère l'unique année académique active en base (sans fallback sur une année clôturée)
      */
     public function getActiveYear(): ?array
     {
         try {
-            $stmt = $this->getCon()->query("SELECT * FROM " . TABLES::ANNEES . "` WHERE `statut_annee` = 'actif' LIMIT 1");
-            $res = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
-            if (!$res) {
-                // Fallback sur la plus récente si aucune n'est active
-                $stmt2 = $this->getCon()->query("SELECT * FROM " . TABLES::ANNEES . "` ORDER BY `id_annee` DESC LIMIT 1");
-                $res = $stmt2 ? $stmt2->fetch(PDO::FETCH_ASSOC) : null;
-            }
-            return $res ?: null;
+            $stmt = $this->getCon()->query("SELECT * FROM `" . TABLES::ANNEES . "` WHERE `statut_annee` = '" . STATUTS::ACTIF . "' LIMIT 1");
+            return ($stmt && ($res = $stmt->fetch(PDO::FETCH_ASSOC))) ? $res : null;
         } catch (Exception $e) {
+            error_log("ModelAnnee::getActiveYear error: " . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Vérifie si un utilisateur a le droit d'accéder / consulter une année spécifique
+     */
+    public function canUserAccessAnnee(string $anneeCode, ?string $userCode = null): bool
+    {
+        try {
+            $annee = $this->getByCode($anneeCode);
+            if (empty($annee)) {
+                return false;
+            }
+
+            // Si l'année est active ou planifiée, accès standard autorisé
+            if (($annee['statut_annee'] ?? '') === STATUTS::ACTIF || ($annee['statut_annee'] ?? '') === 'planifie') {
+                return true;
+            }
+
+            // Si l'année est clôturée ou archivée : vérifier strictement la permission dédiée ou l'accès par la table user_annee_acces
+            if (Auth::can(PERMISSIONS::VIEW_ANNEES_ANTERIEURES)) {
+                return true;
+            }
+
+            $uCode = $userCode ?? Auth::code();
+            if (!empty($uCode)) {
+                $st = $this->getCon()->prepare("SELECT COUNT(*) FROM `" . TABLES::USER_ANNEE_ACCES . "` WHERE `user_code` = ? AND `annee_code` = ?");
+                $st->execute([$uCode, $anneeCode]);
+                return ((int)$st->fetchColumn()) > 0;
+            }
+
+            return false;
+        } catch (Exception $e) {
+            error_log("ModelAnnee::canUserAccessAnnee error: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -137,8 +167,7 @@ class ModelAnnee extends BaseModel
             if (empty($allAnnees)) return [];
 
             $userCode = Auth::code();
-            $userPerms = Auth::permissions();
-            $hasGlobalView = in_array('*', $userPerms, true) || in_array(PERMISSIONS::VIEW_ANNEES_ANTERIEURES, $userPerms, true);
+            $hasGlobalView = Auth::can(PERMISSIONS::VIEW_ANNEES_ANTERIEURES);
 
             $userAcces = [];
             if (!$hasGlobalView && !empty($userCode)) {
