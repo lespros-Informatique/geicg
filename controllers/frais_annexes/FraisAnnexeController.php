@@ -12,17 +12,18 @@ class FraisAnnexeController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($activeYear === null) {
+            $this->loadView('../views/frais_annexes/list.php', [
+                'annees' => $annees,
+                'selectedAnneeCode' => '',
+                'niveaux' => []
+            ]);
+            return;
         }
 
-        $activeYear = $this->getActiveAnneeCode();
-        $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getActifs();
 
         $this->loadView('../views/frais_annexes/list.php', [
@@ -37,16 +38,12 @@ class FraisAnnexeController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
         $typeFiliere = $_GET['type_filiere'] ?? null;
         $niveauCode = $_GET['niveau_code'] ?? null;
         $categorie = $_GET['categorie'] ?? null;

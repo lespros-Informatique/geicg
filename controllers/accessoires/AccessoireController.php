@@ -12,18 +12,16 @@ class AccessoireController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $annees = $this->getAccessibleAnnees();
-        
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
-                }
-            }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/accessoires/list.php', [
+                'stats' => ['total' => 0, 'actifs' => 0, 'inactifs' => 0, 'obligatoires' => 0, 'montant_total' => 0],
+                'annees' => $annees,
+                'niveaux' => [],
+                'selectedAnneeCode' => ''
+            ]);
+            return;
         }
 
         $stats = $this->model->getStats($selectedAnneeCode);
@@ -43,18 +41,16 @@ class AccessoireController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
 
         $annees = $this->getAccessibleAnnees();
-        
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
-                }
-            }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/accessoires/registre.php', [
+                'stats' => ['total' => 0, 'actifs' => 0, 'inactifs' => 0, 'obligatoires' => 0, 'montant_total' => 0],
+                'annees' => $annees,
+                'classes' => [],
+                'selectedAnneeCode' => ''
+            ]);
+            return;
         }
 
         $classeModel = new ModelClasse();
@@ -74,7 +70,11 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES]);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
         $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
@@ -166,7 +166,11 @@ class AccessoireController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
 
         $filter = trim($_GET['filter'] ?? 'all');
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
         $classeCode = $_GET['classe_code'] ?? null;
 
         try {

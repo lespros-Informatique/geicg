@@ -53,20 +53,30 @@ class EmploiController extends BaseController
         $teacherCodes = $ctx['teacherCodes'];
 
         $annees = $this->getAccessibleAnnees();
-        $niveaux = (new ModelNiveau())->getAll();
-        
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
-                }
-            }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/emplois_temps/list.php', [
+                'annees' => $annees,
+                'niveaux' => [],
+                'classes' => [],
+                'selectedAnneeCode' => '',
+                'canManage' => false,
+                'isTeacherOnly' => $isTeacherOnly,
+                'stats' => [
+                    'total_classes' => 0,
+                    'total_heures' => 0,
+                    'total_creneaux' => 0,
+                    'plannings_complets' => 0,
+                    'plannings_brouillons' => 0,
+                    'total_matieres' => 0,
+                    'total_heures_formatted' => '0h00'
+                ]
+            ]);
+            return;
         }
+
+        $niveaux = (new ModelNiveau())->getAll();
 
         if ($isTeacherOnly) {
             $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
@@ -127,12 +137,17 @@ class EmploiController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
 
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $ctx = $this->getTeacherContext();
         $canManage = $ctx['canManage'];
         $isTeacherOnly = $ctx['isTeacherOnly'];
         $teacherCodes = $ctx['teacherCodes'];
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
 
@@ -172,7 +187,11 @@ class EmploiController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['status' => 1, 'data' => []]);
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
@@ -248,7 +267,11 @@ class EmploiController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if ($anneeCode === null || !$this->canWriteAcademicYear($anneeCode)) {
+            $this->error("Planification de créneau non autorisée sur cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
@@ -567,7 +590,11 @@ class EmploiController extends BaseController
         $isTeacherOnly = $ctx['isTeacherOnly'];
         $teacherCodes = $ctx['teacherCodes'];
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->error("Accès non autorisé aux emplois du temps de cette année académique.");
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
 

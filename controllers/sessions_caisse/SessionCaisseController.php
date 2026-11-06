@@ -14,18 +14,21 @@ class SessionCaisseController extends BaseController
         $today = date('Y-m-d');
         
         $annees = $this->getAccessibleAnnees();
-        
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
-                }
-            }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/sessions_caisse/list.php', [
+                'totalSessions' => 0,
+                'totalOuvertes' => 0,
+                'totalCloturees' => 0,
+                'totalCumulSessions' => 0,
+                'activeSession' => null,
+                'latestSession' => null,
+                'dailyTotals' => ['total_scolarite' => 0, 'total_annexe' => 0, 'total_journee' => 0],
+                'annees' => $annees,
+                'selectedAnneeCode' => ''
+            ]);
+            return;
         }
 
         $stats = $this->model->getStatistics($selectedAnneeCode);
@@ -60,7 +63,11 @@ class SessionCaisseController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::CLOTURE_CAISSE]);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
         $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {

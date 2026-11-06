@@ -13,18 +13,15 @@ class DossierEtudiantController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS]);
 
         $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
 
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
-                }
-            }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/dossier_etudiant/list.php', [
+                'annees' => $annees,
+                'classes' => [],
+                'selectedAnneeCode' => ''
+            ]);
+            return;
         }
 
         $classeModel = new ModelClasse();
@@ -42,7 +39,12 @@ class DossierEtudiantController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS]);
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code') ?? '';
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $classeCode = $_GET['classe_code'] ?? '';
         $filterStatut = $_GET['filter_statut'] ?? 'all';
 

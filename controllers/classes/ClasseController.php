@@ -12,17 +12,18 @@ class ClasseController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = (new ModelAnnee())->getByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($activeYear === null) {
+            $this->loadView('../views/classes/list.php', [
+                'annees' => $annees,
+                'selectedAnneeCode' => '',
+                'parcoursPivots' => []
+            ]);
+            return;
         }
 
-        $activeYear = $this->getActiveAnneeCode();
-        $annees = (new ModelAnnee())->getAll();
         $parcoursPivots = $this->model->getParcoursPivots();
 
         $this->loadView('../views/classes/list.php', [
@@ -37,16 +38,12 @@ class ClasseController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = (new ModelAnnee())->getByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
         $items = $this->model->getAllWithDetails($anneeCode);
         $data = [];
         foreach ($items as $i) {

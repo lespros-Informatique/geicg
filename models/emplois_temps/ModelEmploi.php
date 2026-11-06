@@ -9,13 +9,13 @@ class ModelEmploi extends BaseModel
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "SELECT * FROM " . VIEWS::EMPLOIS_TEMPS_COMPLETS . "";
-        $conditions = [];
-        $params = [];
-        if (!empty($anneeCode)) {
-            $conditions[] = "annee_code = ?";
-            $params[] = $anneeCode;
+        if (empty($anneeCode)) {
+            return [];
         }
+
+        $sql = "SELECT * FROM " . VIEWS::EMPLOIS_TEMPS_COMPLETS . "";
+        $conditions = ["annee_code = ?"];
+        $params = [$anneeCode];
         if (!empty($niveauCode)) {
             $conditions[] = "niveau_code = ?";
             $params[] = $niveauCode;
@@ -24,9 +24,7 @@ class ModelEmploi extends BaseModel
             $conditions[] = "classe_code = ?";
             $params[] = $classeCode;
         }
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(" AND ", $conditions);
-        }
+        $sql .= " WHERE " . implode(" AND ", $conditions);
         $sql .= " ORDER BY jour ASC, heure_debut ASC ";
         try {
             $stmt = $this->getCon()->prepare($sql);
@@ -43,6 +41,10 @@ class ModelEmploi extends BaseModel
      */
     public function getClassesSummary(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
         $sql = "
             SELECT 
                 cl.code_classe,
@@ -60,13 +62,9 @@ class ModelEmploi extends BaseModel
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
         ";
-        $conditions = [];
-        $params = [];
+        $conditions = ["edt.annee_code = ?"];
+        $params = [$anneeCode];
 
-        if (!empty($anneeCode)) {
-            $conditions[] = "edt.annee_code = ?";
-            $params[] = $anneeCode;
-        }
         if (!empty($niveauCode)) {
             $conditions[] = "cl.niveau_code = ?";
             $params[] = $niveauCode;
@@ -76,10 +74,7 @@ class ModelEmploi extends BaseModel
             $params[] = $classeCode;
         }
 
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(" AND ", $conditions);
-        }
-
+        $sql .= " WHERE " . implode(" AND ", $conditions);
         $sql .= " GROUP BY cl.code_classe, cl.libelle_classe, n.libelle_niveau ORDER BY cl.libelle_classe ASC ";
 
         try {
@@ -97,7 +92,7 @@ class ModelEmploi extends BaseModel
      */
     public function getClassesSummaryForTeacher(array $teacherCodes, ?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        if (empty($teacherCodes)) {
+        if (empty($teacherCodes) || empty($anneeCode)) {
             return [];
         }
         $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
@@ -118,13 +113,10 @@ class ModelEmploi extends BaseModel
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
             WHERE edt.enseignant_code IN ($inCodes)
+              AND edt.annee_code = ?
         ";
-        $params = $teacherCodes;
+        $params = array_merge($teacherCodes, [$anneeCode]);
 
-        if (!empty($anneeCode)) {
-            $sql .= " AND edt.annee_code = ?";
-            $params[] = $anneeCode;
-        }
         if (!empty($niveauCode)) {
             $sql .= " AND cl.niveau_code = ?";
             $params[] = $niveauCode;
@@ -151,7 +143,7 @@ class ModelEmploi extends BaseModel
      */
     public function getClassesForTeacher(array $teacherCodes, ?string $anneeCode = null): array
     {
-        if (empty($teacherCodes)) {
+        if (empty($teacherCodes) || empty($anneeCode)) {
             return [];
         }
         $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
@@ -160,12 +152,9 @@ class ModelEmploi extends BaseModel
             FROM " . TABLES::CLASSES . " cl
             INNER JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON edt.classe_code = cl.code_classe
             WHERE edt.enseignant_code IN ($inCodes)
+              AND edt.annee_code = ?
         ";
-        $params = $teacherCodes;
-        if (!empty($anneeCode)) {
-            $sql .= " AND edt.annee_code = ?";
-            $params[] = $anneeCode;
-        }
+        $params = array_merge($teacherCodes, [$anneeCode]);
         $sql .= " ORDER BY cl.libelle_classe ASC";
         try {
             $stmt = $this->getCon()->prepare($sql);

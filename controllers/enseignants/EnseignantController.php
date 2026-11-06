@@ -12,13 +12,13 @@ class EnseignantController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
         $stats = $this->model->getStats();
-        $annees = (new ModelAnnee())->getAll();
-        $selectedAnneeCode = Session::get('annee_active_code');
+        $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
         $allEnseignants = $this->model->getAll();
         $this->loadView('../views/enseignants/list.php', [
             'stats' => $stats,
             'annees' => $annees,
-            'selectedAnneeCode' => $selectedAnneeCode,
+            'selectedAnneeCode' => $selectedAnneeCode ?: '',
             'allEnseignants' => $allEnseignants
         ]);
     }
@@ -54,7 +54,11 @@ class EnseignantController extends BaseController
         }
 
         $ensCode = trim($_GET['enseignant_code'] ?? ($_POST['enseignant_code'] ?? ''));
-        $anneeCode = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? ($_POST['annee_code'] ?? null));
+        if ($anneeCode === null) {
+            $this->json(['status' => 1, 'creneaux' => []]);
+            return;
+        }
 
         // Conversion Date -> Jour de la semaine en français
         $jours = [

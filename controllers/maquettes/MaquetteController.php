@@ -12,12 +12,25 @@ class MaquetteController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_MAQUETTES, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
 
-        $annees = (new ModelAnnee())->getAll();
+        $annees = $this->getAccessibleAnnees();
+        $activeAnnee = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($activeAnnee === null) {
+            $this->loadView('../views/maquettes/list.php', [
+                'annees' => $annees,
+                'filieres' => [],
+                'niveaux' => [],
+                'matieres' => [],
+                'categories' => CATEGORIES_MATIERES::ALL,
+                'activeAnnee' => '',
+                'scripts' => ['public/assets/js/modules/maquettes.js']
+            ]);
+            return;
+        }
+
         $filieres = (new ModelFiliere())->getByStatus(STATUTS::ACTIF);
         $niveaux = (new ModelNiveau())->getActifs();
         $matieres = (new ModelMatiere())->getByStatus(STATUTS::ACTIF);
-
-        $activeAnnee = Session::get('annee_active_code', '');
 
         $this->loadView('../views/maquettes/list.php', [
             'annees' => $annees,
@@ -35,7 +48,11 @@ class MaquetteController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_MAQUETTES, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES]);
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code', '');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
         $filiereCode = $_GET['filiere_code'] ?? null;
         $niveauCode = $_GET['niveau_code'] ?? null;
         $categorie = $_GET['categorie'] ?? null;

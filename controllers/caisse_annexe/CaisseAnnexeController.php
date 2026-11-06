@@ -18,17 +18,28 @@ class CaisseAnnexeController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        // Synchronisation de l'année académique si passée en paramètre GET
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($activeYear === null) {
+            $this->loadView('../views/caisse_annexe/list.php', [
+                'stats' => ['total_encaisse' => 0, 'nb_operations' => 0, 'encaisse_especes' => 0, 'encaisse_mobile' => 0],
+                'annees' => $annees,
+                'niveaux' => [],
+                'classes' => [],
+                'filieres' => [],
+                'selectedAnneeCode' => '',
+                'inscriptions' => [],
+                'isCaisseOuverte' => false,
+                'activeSession' => null,
+                'encryptedSessionId' => '',
+                'canRecord' => false,
+                'canOpenCaisse' => false,
+                'canCloseCaisse' => false
+            ]);
+            return;
         }
 
-        $activeYear = $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $typeFiliere = $_GET['type_filiere'] ?? 'ALL';
@@ -36,7 +47,6 @@ class CaisseAnnexeController extends BaseController
         $dateDebut = $_GET['date_debut'] ?? null;
         $dateFin = $_GET['date_fin'] ?? null;
 
-        $annees = $this->getAccessibleAnnees();
         $niveaux = $this->model->getNiveauxActifs();
         $classes = $this->model->getClassesActives();
         $filieres = $this->model->getFilieresActives();
@@ -83,16 +93,12 @@ class CaisseAnnexeController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $typeFiliere = $_GET['type_filiere'] ?? null;

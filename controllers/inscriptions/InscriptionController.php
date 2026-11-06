@@ -342,15 +342,15 @@ class InscriptionController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
-        $activeAnneeCode = $this->getActiveAnneeCode();
         $annees = $this->getAccessibleAnnees();
+        $activeAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
         $deps = $this->model->getPriseDeVueDependencies();
 
         $this->loadView('../views/inscriptions/prise_de_vue.php', [
             'annees' => $annees,
-            'filieres' => $deps['filieres'] ?? [],
-            'classes' => $deps['classes'] ?? [],
-            'selectedAnneeCode' => $activeAnneeCode
+            'filieres' => $activeAnneeCode ? ($deps['filieres'] ?? []) : [],
+            'classes' => $activeAnneeCode ? ($deps['classes'] ?? []) : [],
+            'selectedAnneeCode' => $activeAnneeCode ?: ''
         ]);
     }
 
@@ -409,7 +409,12 @@ class InscriptionController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
-        $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $filiereCode = $_GET['filiere_code'] ?? '';
         $classeCode = $_GET['classe_code'] ?? '';
         $filterPhoto = $_GET['filter_photo'] ?? 'all';
