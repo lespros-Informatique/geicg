@@ -114,6 +114,7 @@ class TABLES
     public const COMPOSITION_NIVEAU_FILIERE = 'composition_niveau_filiere';
     public const BULLETINS = 'bulletins';
     public const V_SESSIONS_EVALUATIONS = 'v_sessions_evaluations';
+    public const V_BULLETIN_INSCRIPTIONS_SYNTHESE = 'v_bulletin_inscriptions_synthese';
 
     // COMMUNICATION & MÉDIAS
     public const DOCUMENTS = 'documents';
@@ -132,6 +133,7 @@ class VIEWS
     public const ABSENCES_COMPLETES           = 'v_absences_completes';
     public const EMPLOIS_TEMPS_COMPLETS       = 'v_emplois_temps_complets';
     public const BULLETIN_NOTES_DETAILS       = 'v_bulletin_notes_details';
+    public const BULLETIN_INSCRIPTIONS_SYNTHESE = 'v_bulletin_inscriptions_synthese';
     public const MAQUETTES_COMPLETES          = 'v_maquettes_completes';
 }
 

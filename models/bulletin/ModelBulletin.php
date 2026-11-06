@@ -52,24 +52,10 @@ class ModelBulletin extends BaseModel
 
             $subWhereSql = implode(" AND ", $subWhere);
 
-            $sql = "SELECT i.*, 
-                           CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) AS etudiant_nom,
-                           e.matricule_etudiant,
-                           e.sexe_etudiant,
-                           e.photo_etudiant,
-                           cl.libelle_classe AS classe_nom,
-                           cl.code_classe,
-                           n.libelle_niveau AS niveau_nom,
-                           f.libelle_filiere AS filiere_nom,
-                           a.libelle_annee AS annee_nom,
+            $sql = "SELECT v.*, 
                            COALESCE(n_cnt.nb_notes, 0) AS nb_notes,
                            n_cnt.moyenne_semestre
-                    FROM " . TABLES::INSCRIPTIONS . " i
-                    INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-                    LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-                    LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-                    LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-                    LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
+                    FROM " . VIEWS::BULLETIN_INSCRIPTIONS_SYNTHESE . " v
                     LEFT JOIN (
                         SELECT 
                             n.inscription_code, 
@@ -79,24 +65,24 @@ class ModelBulletin extends BaseModel
                         INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
                         WHERE {$subWhereSql}
                         GROUP BY n.inscription_code
-                    ) n_cnt ON n_cnt.inscription_code = i.code_inscription";
+                    ) n_cnt ON n_cnt.inscription_code = v.code_inscription";
 
             $conditions = [
-                "(i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)",
-                "i.annee_code = ?"
+                "(v.statut_inscription != '" . STATUTS::ANNULE . "' OR v.statut_inscription IS NULL)",
+                "v.annee_code = ?"
             ];
             $params = array_merge($subParams, [$anneeCode]);
             if (!empty($niveauCode)) {
-                $conditions[] = "cl.niveau_code = ?";
+                $conditions[] = "v.niveau_code = ?";
                 $params[] = $niveauCode;
             }
             if (!empty($classeCode)) {
-                $conditions[] = "i.classe_code = ?";
+                $conditions[] = "v.classe_code = ?";
                 $params[] = $classeCode;
             }
             if (!empty($teacherClasses)) {
                 $inClasses = implode(',', array_fill(0, count($teacherClasses), '?'));
-                $conditions[] = "i.classe_code IN ($inClasses)";
+                $conditions[] = "v.classe_code IN ($inClasses)";
                 foreach ($teacherClasses as $tc) {
                     $params[] = $tc;
                 }
@@ -113,7 +99,7 @@ class ModelBulletin extends BaseModel
                 $sql .= " WHERE " . implode(" AND ", $conditions);
             }
 
-            $sql .= " ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC, e.prenom_etudiant ASC";
+            $sql .= " ORDER BY v.classe_nom ASC, v.etudiant_nom ASC";
 
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
@@ -594,12 +580,11 @@ class ModelBulletin extends BaseModel
 
         // 3. Étudiants inscrits dans cette classe pour l'année active
         $stmtE = $db->prepare("
-            SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.sexe_etudiant
-            FROM " . TABLES::INSCRIPTIONS . " i
-            INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            WHERE i.classe_code = ? AND i.annee_code = ? 
-              AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
-            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+            SELECT code_inscription, etudiant_code, etudiant_nom, matricule_etudiant, sexe_etudiant
+            FROM " . VIEWS::BULLETIN_INSCRIPTIONS_SYNTHESE . "
+            WHERE classe_code = ? AND annee_code = ? 
+              AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)
+            ORDER BY etudiant_nom ASC
         ");
         $stmtE->execute([$selectedClasseCode, $anneeCode]);
         $etudiants = $stmtE->fetchAll(PDO::FETCH_ASSOC);
@@ -674,7 +659,7 @@ class ModelBulletin extends BaseModel
             $tempPvData[] = [
                 'inscription_code' => $inscCode,
                 'matricule' => $e['matricule_etudiant'],
-                'nom_prenom' => $e['nom_etudiant'] . ' ' . $e['prenom_etudiant'],
+                'nom_prenom' => $e['etudiant_nom'],
                 'sexe' => $e['sexe_etudiant'],
                 'notes_matieres' => $notesMatiere,
                 'total_points' => $totalPointsEtud,
