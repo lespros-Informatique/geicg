@@ -113,6 +113,7 @@ class TABLES
     public const COMPOSITION_MATIERES = 'composition_matieres';
     public const COMPOSITION_NIVEAU_FILIERE = 'composition_niveau_filiere';
     public const BULLETINS = 'bulletins';
+    public const V_SESSIONS_EVALUATIONS = 'v_sessions_evaluations';
 
     // COMMUNICATION & MÉDIAS
     public const DOCUMENTS = 'documents';

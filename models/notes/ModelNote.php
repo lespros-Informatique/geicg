@@ -19,104 +19,45 @@ class ModelNote extends BaseModel
             return [];
         }
 
-        $db = $this->getCon();
-        $sql = "
-            SELECT 
-                comp.id_composition,
-                comp.code_composition,
-                comp.libelle_composition,
-                comp.type_composition,
-                comp.statut_composition,
-                comp.semestre_code,
-                comp.date_composition,
-                comp.created_at_composition,
-                s.libelle_semestre,
-                s.statut_semestre,
-                triplets.matiere_code,
-                m.libelle_matiere,
-                COALESCE(comp.coefficient, 1.00) AS coefficient,
-                comp.annee_code AS annee_code,
-                cl.code_classe,
-                cl.libelle_classe,
-                cl.niveau_code,
-                cl.filiere_code,
-                n.libelle_niveau,
-                f.libelle_filiere,
-                (
-                    SELECT COUNT(DISTINCT ins_c.code_inscription) 
-                    FROM " . TABLES::INSCRIPTIONS . " ins_c 
-                    WHERE ins_c.classe_code = cl.code_classe 
-                      AND (ins_c.statut_inscription != '" . STATUTS::ANNULE . "' OR ins_c.statut_inscription IS NULL)
-                      AND ins_c.annee_code = ?
-                ) AS total_etudiants,
-                COUNT(DISTINCT n_entry.id_note) AS nb_notes,
-                ROUND(AVG(n_entry.valeur_note), 2) AS moyenne_classe,
-                MIN(n_entry.valeur_note) AS note_min,
-                MAX(n_entry.valeur_note) AS note_max,
-                MAX(n_entry.created_at_note) AS date_enregistrement_note,
-                COALESCE(MAX(n_entry.created_at_note), comp.date_composition, comp.created_at_composition) AS date_enregistrement
-            FROM (
-                SELECT 
-                    cm.composition_code,
-                    cl.code_classe,
-                    cm.matiere_code,
-                    cm.id_composition_matiere
-                FROM " . TABLES::COMPOSITION_MATIERES . " cm
-                INNER JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.code_composition_niveau_filiere = cm.composition_niveau_filiere_code
-                INNER JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
-                WHERE cl.code_classe IS NOT NULL AND cm.matiere_code IS NOT NULL AND cm.matiere_code != ''
-            ) AS triplets
-            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = triplets.composition_code
-            INNER JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = triplets.code_classe
-            INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = triplets.matiere_code
-            LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON (i.classe_code = cl.code_classe AND i.annee_code = ?)
-            LEFT JOIN " . TABLES::NOTES . " n_entry ON (n_entry.composition_code = comp.code_composition AND n_entry.composition_matiere_id = triplets.id_composition_matiere AND n_entry.inscription_code = i.code_inscription AND n_entry.statut_note = '" . STATUTS::ACTIF . "')
-        ";
+        $conditions = [
+            "v.annee_code = ?",
+            "(v.statut_composition IS NULL OR LOWER(TRIM(v.statut_composition)) != '" . STATUTS::ANNULE . "')"
+        ];
+        $params = [$anneeCode];
 
-        $conditions = [];
-        $params = [$anneeCode, $anneeCode];
-
-        // Exclusion des évaluations annulées
-        $conditions[] = "(comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')";
-
-        // Filtrage strict par année académique (zéro catch-all)
-        $conditions[] = "comp.annee_code = ?";
-        $params[] = $anneeCode;
         if (!empty($niveauCode)) {
-            $conditions[] = "cl.niveau_code = ?";
+            $conditions[] = "v.niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "cl.code_classe = ?";
+            $conditions[] = "v.code_classe = ?";
             $params[] = $classeCode;
         }
         if (!empty($typeComposition)) {
-            $conditions[] = "comp.type_composition = ?";
+            $conditions[] = "v.type_composition = ?";
             $params[] = $typeComposition;
         }
         if (!empty($matiereCode)) {
-            $conditions[] = "triplets.matiere_code = ?";
+            $conditions[] = "v.matiere_code = ?";
             $params[] = $matiereCode;
         }
         if (!empty($semestreCode)) {
-            $conditions[] = "comp.semestre_code = ?";
+            $conditions[] = "v.semestre_code = ?";
             $params[] = $semestreCode;
         }
         if (!empty($compositionCode)) {
-            $conditions[] = "comp.code_composition = ?";
+            $conditions[] = "v.code_composition = ?";
             $params[] = $compositionCode;
         }
         if (!empty($teacherCodes)) {
             $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
             $conditions[] = "(
-                comp.user_code IN ($inCodes)
+                v.composition_user_code IN ($inCodes)
                 OR EXISTS (
-                    SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt_flt
-                    WHERE edt_flt.classe_code = triplets.code_classe
-                      AND edt_flt.matiere_code = triplets.matiere_code
+                    SELECT 1 FROM `" . TABLES::EMPLOIS_TEMPS . "` edt_flt
+                    WHERE edt_flt.classe_code = v.code_classe
+                      AND edt_flt.matiere_code = v.matiere_code
+                      AND edt_flt.annee_code = v.annee_code
                       AND edt_flt.enseignant_code IN ($inCodes)
                 )
             )";
@@ -124,14 +65,10 @@ class ModelNote extends BaseModel
             foreach ($teacherCodes as $tc) { $params[] = $tc; }
         }
 
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(" AND ", $conditions);
-        }
-
-        $sql .= " GROUP BY comp.code_composition, cl.code_classe, triplets.matiere_code ORDER BY comp.id_composition DESC, cl.libelle_classe ASC, m.libelle_matiere ASC";
+        $sql = "SELECT * FROM `" . TABLES::V_SESSIONS_EVALUATIONS . "` v WHERE " . implode(" AND ", $conditions) . " ORDER BY v.id_composition DESC, v.libelle_classe ASC, v.libelle_matiere ASC";
 
         try {
-            $stmt = $db->prepare($sql);
+            $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
