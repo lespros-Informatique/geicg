@@ -204,6 +204,51 @@ abstract class BaseController
     }
 
     /**
+     * Instance du Guard de sécurité académique (Principes SOLID)
+     */
+    protected function academicGuard(): AcademicSecurityGuard
+    {
+        return AcademicSecurityGuard::getInstance();
+    }
+
+    /**
+     * Résout l'année académique cible pour la requête et garantit qu'elle est autorisée en lecture.
+     * Renvoie null si aucune année active n'existe et que l'utilisateur n'a pas accès à l'historique.
+     */
+    protected function resolveTargetAcademicYear(?string $paramYear = null): ?string
+    {
+        return $this->academicGuard()->resolveOperationalYearCode($paramYear);
+    }
+
+    /**
+     * Vérifie si l'utilisateur courant peut accéder en lecture à une année académique donnée
+     */
+    protected function canAccessAcademicYear(string $anneeCode): bool
+    {
+        return $this->academicGuard()->canUserReadYear($anneeCode);
+    }
+
+    /**
+     * Exige l'autorisation d'accès en lecture à une année académique (arrête l'exécution sinon)
+     */
+    protected function requireAcademicYearReadAccess(string $anneeCode): void
+    {
+        if (!$this->academicGuard()->canUserReadYear($anneeCode)) {
+            $this->error("Accès refusé : vous n'avez pas l'autorisation de consulter les données de cette année académique.");
+        }
+    }
+
+    /**
+     * Exige l'autorisation d'accès en écriture à une année académique (arrête l'exécution sinon)
+     */
+    protected function requireAcademicYearWriteAccess(string $anneeCode): void
+    {
+        if (!$this->academicGuard()->canUserWriteYear($anneeCode)) {
+            $this->error("Accès refusé : cette année académique est clôturée ou vous n'avez pas l'autorisation de la modifier.");
+        }
+    }
+
+    /**
      * Résout le contexte enseignant pour restreindre les données aux classes/matières assignées
      */
     protected function getTeacherContext(): array

@@ -96,8 +96,8 @@ class NoteController extends BaseController
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($selectedAnneeCode !== null) {
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
                     Session::set('annee_active_code', $a['code_annee']);
@@ -105,23 +105,29 @@ class NoteController extends BaseController
                     break;
                 }
             }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
-        if ($isTeacherOnly && !empty($teacherCodes)) {
-            $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
-            $matieres = $this->model->getMatieresForTeacher($teacherCodes, $selectedAnneeCode);
+        // Si aucune année autorisée n'est résolue, aucune donnée d'évaluation n'est extraite
+        if (empty($selectedAnneeCode)) {
+            $classes = [];
+            $matieres = [];
+            $semestres = [];
+            $compositions = [];
         } else {
-            $classes = (new ModelClasse())->getAll();
-            $matieres = (new ModelMatiere())->getAll();
-        }
+            if ($isTeacherOnly && !empty($teacherCodes)) {
+                $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+                $matieres = $this->model->getMatieresForTeacher($teacherCodes, $selectedAnneeCode);
+            } else {
+                $classes = (new ModelClasse())->getAll();
+                $matieres = (new ModelMatiere())->getAll();
+            }
 
-        $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
-        $compositions = (new ModelComposition())->getAll($selectedAnneeCode);
-        $compositions = array_values(array_filter($compositions, function ($cp) {
-            return strtolower(trim($cp['statut_composition'] ?? '')) !== STATUTS::ANNULE;
-        }));
+            $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
+            $compositions = (new ModelComposition())->getAll($selectedAnneeCode);
+            $compositions = array_values(array_filter($compositions, function ($cp) {
+                return strtolower(trim($cp['statut_composition'] ?? '')) !== STATUTS::ANNULE;
+            }));
+        }
 
         $canEnterNotes = Auth::can(PERMISSIONS::ENTER_NOTES) || $isTeacherOnly;
         $canViewNotes = Auth::can(PERMISSIONS::VIEW_NOTES) || $isTeacherOnly;
@@ -146,7 +152,16 @@ class NoteController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_NOTES, PERMISSIONS::ENTER_NOTES]);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+
+        // Résolution de l'année opérationnelle autorisée
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        // Si l'utilisateur n'a aucune année active ou aucun droit sur l'année demandée, réponse vide immédiate
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $typeComposition = $_GET['type_composition'] ?? null;
@@ -192,7 +207,12 @@ class NoteController extends BaseController
             return;
         }
 
-        $anneeCode = trim($_GET['annee_code'] ?? '') ?: $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['status' => 0, 'message' => "Accès refusé : aucune année académique active autorisée."]);
+            return;
+        }
+
         $data = $this->model->getDetailsClasseCompo($classeCode, $compositionCode, $matiereCode, $anneeCode);
         if (!$data) {
             $this->json(['status' => 0, 'message' => 'Session d\'évaluation introuvable.']);
@@ -217,7 +237,11 @@ class NoteController extends BaseController
             return $this->imprimerRegistrePdf();
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
+            return;
+        }
         $anneeLibelle = $this->getActiveAnneeLibelle();
         $etablissement = $this->getEtablissementConfig();
 
@@ -407,7 +431,11 @@ class NoteController extends BaseController
         $this->requireAuth();
         $this->requireCanEnterNotes();
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($this->post('annee_code'));
+        if (empty($anneeCode) || !$this->academicGuard()->canUserWriteYear($anneeCode)) {
+            $this->error("Opération refusée : vous n'avez pas l'autorisation de saisir ou modifier des notes pour cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
@@ -627,9 +655,9 @@ class NoteController extends BaseController
         $this->requireAuth();
         $this->requireCanEnterNotes();
         $classeCode = trim($_POST['classe_code'] ?? ($_GET['classe_code'] ?? ''));
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? ($_GET['annee_code'] ?? null));
 
-        if (empty($classeCode)) {
+        if (empty($classeCode) || empty($anneeCode)) {
             $this->json(['status' => 1, 'data' => []]);
             return;
         }
@@ -642,7 +670,11 @@ class NoteController extends BaseController
     {
         $this->requireAuth();
         $this->requireCanEnterNotes();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès refusé : aucune année académique active autorisée pour la saisie.");
+            return;
+        }
         $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
         $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
 
@@ -914,7 +946,11 @@ class NoteController extends BaseController
         $notesData = $_POST['notes'] ?? [];
 
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($this->post('annee_code'));
+        if (empty($anneeCode) || !$this->academicGuard()->canUserWriteYear($anneeCode)) {
+            $this->error("Opération refusée : vous n'avez pas l'autorisation de saisir ou modifier des notes pour cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
 
         $validFk = $this->validateForeignKeys([

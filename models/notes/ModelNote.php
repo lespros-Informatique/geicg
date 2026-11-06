@@ -14,6 +14,11 @@ class ModelNote extends BaseModel
 
     public function getSessionsByClasseCompo(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $typeComposition = null, ?string $matiereCode = null, ?string $semestreCode = null, ?string $compositionCode = null, ?array $teacherCodes = null): array
     {
+        // En l'absence d'année académique autorisée, arrêt immédiat pour éviter toute fuite d'historique
+        if (empty($anneeCode)) {
+            return [];
+        }
+
         $db = $this->getCon();
         $sql = "
             SELECT 
@@ -30,7 +35,7 @@ class ModelNote extends BaseModel
                 triplets.matiere_code,
                 m.libelle_matiere,
                 COALESCE(comp.coefficient, 1.00) AS coefficient,
-                COALESCE(comp.annee_code, ?) AS annee_code,
+                comp.annee_code AS annee_code,
                 cl.code_classe,
                 cl.libelle_classe,
                 cl.niveau_code,
@@ -42,7 +47,7 @@ class ModelNote extends BaseModel
                     FROM " . TABLES::INSCRIPTIONS . " ins_c 
                     WHERE ins_c.classe_code = cl.code_classe 
                       AND (ins_c.statut_inscription != '" . STATUTS::ANNULE . "' OR ins_c.statut_inscription IS NULL)
-                      AND (ins_c.annee_code = comp.annee_code OR comp.annee_code IS NULL OR comp.annee_code = '' OR ins_c.annee_code = ?)
+                      AND ins_c.annee_code = ?
                 ) AS total_etudiants,
                 COUNT(DISTINCT n_entry.id_note) AS nb_notes,
                 ROUND(AVG(n_entry.valeur_note), 2) AS moyenne_classe,
@@ -67,20 +72,19 @@ class ModelNote extends BaseModel
             LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON (i.classe_code = cl.code_classe AND (i.annee_code = comp.annee_code OR comp.annee_code IS NULL OR comp.annee_code = '' OR i.annee_code = ?))
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON (i.classe_code = cl.code_classe AND i.annee_code = ?)
             LEFT JOIN " . TABLES::NOTES . " n_entry ON (n_entry.composition_code = comp.code_composition AND n_entry.composition_matiere_id = triplets.id_composition_matiere AND n_entry.inscription_code = i.code_inscription AND n_entry.statut_note = '" . STATUTS::ACTIF . "')
         ";
 
         $conditions = [];
-        $params = [$anneeCode, $anneeCode, $anneeCode];
+        $params = [$anneeCode, $anneeCode];
 
         // Exclusion des évaluations annulées
         $conditions[] = "(comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')";
 
-        if (!empty($anneeCode)) {
-            $conditions[] = "(comp.annee_code = ? OR comp.annee_code IS NULL OR comp.annee_code = '')";
-            $params[] = $anneeCode;
-        }
+        // Filtrage strict par année académique (zéro catch-all)
+        $conditions[] = "comp.annee_code = ?";
+        $params[] = $anneeCode;
         if (!empty($niveauCode)) {
             $conditions[] = "cl.niveau_code = ?";
             $params[] = $niveauCode;
@@ -138,7 +142,7 @@ class ModelNote extends BaseModel
 
     public function getClassesForTeacher(array $teacherCodes, ?string $anneeCode = null): array
     {
-        if (empty($teacherCodes)) {
+        if (empty($teacherCodes) || empty($anneeCode)) {
             return [];
         }
         $db = $this->getCon();
@@ -150,11 +154,11 @@ class ModelNote extends BaseModel
                 SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt
                 WHERE edt.classe_code = cl.code_classe
                   AND edt.enseignant_code IN ($inCodes)
-                  AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
+                  AND edt.annee_code = ?
             )
             ORDER BY cl.libelle_classe ASC
         ";
-        $params = array_merge($teacherCodes, [$anneeCode, $anneeCode, $anneeCode]);
+        $params = array_merge($teacherCodes, [$anneeCode]);
         try {
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
@@ -167,7 +171,7 @@ class ModelNote extends BaseModel
 
     public function getMatieresForTeacher(array $teacherCodes, ?string $anneeCode = null): array
     {
-        if (empty($teacherCodes)) {
+        if (empty($teacherCodes) || empty($anneeCode)) {
             return [];
         }
         $db = $this->getCon();
@@ -179,11 +183,11 @@ class ModelNote extends BaseModel
                 SELECT 1 FROM " . TABLES::EMPLOIS_TEMPS . " edt
                 WHERE edt.matiere_code = m.code_matiere
                   AND edt.enseignant_code IN ($inCodes)
-                  AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
+                  AND edt.annee_code = ?
             )
             ORDER BY m.libelle_matiere ASC
         ";
-        $params = array_merge($teacherCodes, [$anneeCode, $anneeCode, $anneeCode]);
+        $params = array_merge($teacherCodes, [$anneeCode]);
         try {
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
@@ -235,10 +239,10 @@ class ModelNote extends BaseModel
                 LEFT JOIN " . TABLES::NOTES . " n ON (n.composition_code = ? AND (? IS NULL OR n.composition_matiere_id = ?) AND n.inscription_code = i.code_inscription AND n.statut_note = '" . STATUTS::ACTIF . "')
                 WHERE i.classe_code = ? 
                   AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
-                  AND (i.annee_code = ? OR ? IS NULL OR ? = '')
+                  AND i.annee_code = ?
                 ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
             ");
-            $stmtStudents->execute([$compositionCode, $compMatId, $compMatId, $classeCode, $anneeCode, $anneeCode, $anneeCode]);
+            $stmtStudents->execute([$compositionCode, $compMatId, $compMatId, $classeCode, $anneeCode]);
             $students = $stmtStudents->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             $notesVals = [];
@@ -480,12 +484,12 @@ class ModelNote extends BaseModel
             INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
             LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
             WHERE edt.classe_code = ? 
-              AND (edt.annee_code = ? OR ? IS NULL OR ? = '')
+              AND edt.annee_code = ?
               AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
             GROUP BY m.code_matiere, m.libelle_matiere
             ORDER BY m.libelle_matiere ASC
         ");
-        $stmtEdt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
+        $stmtEdt->execute([$classeCode, $anneeCode]);
         $edtItems = $stmtEdt->fetchAll(PDO::FETCH_ASSOC);
         if (!empty($edtItems)) {
             return $dedup($edtItems);
@@ -503,11 +507,11 @@ class ModelNote extends BaseModel
             INNER JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cm.composition_code
             WHERE cl.code_classe = ?
-              AND (comp.annee_code = ? OR ? IS NULL OR ? = '')
+              AND comp.annee_code = ?
             GROUP BY m.code_matiere, m.libelle_matiere
             ORDER BY m.libelle_matiere ASC
         ");
-        $stmtCnf->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
+        $stmtCnf->execute([$classeCode, $anneeCode]);
         $cnfItems = $stmtCnf->fetchAll(PDO::FETCH_ASSOC);
         if (!empty($cnfItems)) {
             return $dedup($cnfItems);
@@ -535,10 +539,10 @@ class ModelNote extends BaseModel
             SELECT i.id_inscription, i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
             FROM " . TABLES::INSCRIPTIONS . " i
             INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
+            WHERE i.classe_code = ? AND i.annee_code = ? AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
-        $stmt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
+        $stmt->execute([$classeCode, $anneeCode]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 

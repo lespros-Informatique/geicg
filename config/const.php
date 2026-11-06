@@ -37,11 +37,12 @@ if (!defined('RACINE')) {
     define('RACINE', $isLocalEnvironment ? 'http://localhost/geicg/' : 'https://test.groupe-eicg.net/');
 }
 
-// Chargement automatique du socle Core MVC (Session, Auth, Helpers, ViewContext)
+// Chargement automatique du socle Core MVC (Session, Auth, Helpers, ViewContext, AcademicSecurityGuard)
 require_once __DIR__ . '/../core/Session.php';
 require_once __DIR__ . '/../core/Helper.php';
 require_once __DIR__ . '/../core/Auth.php';
 require_once __DIR__ . '/../core/ViewContext.php';
+require_once __DIR__ . '/../core/AcademicSecurityGuard.php';
 
 define('LOGO', '<span class="fw-bold fs-4 text-primary" style="letter-spacing: 1px;">GEICG</span>');
 define('ICON', '<span class="fw-bold fs-4 text-primary">G</span>');
