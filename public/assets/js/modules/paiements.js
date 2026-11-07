@@ -92,7 +92,7 @@ $(document).ready(function() {
     processing: true,
     autoWidth: false,
     columns: [
-      { data: null, width: '45px', className: 'text-center', render: function(d, type, row, meta) {
+      { data: null, orderable: false, width: '45px', className: 'text-center', render: function(d, type, row, meta) {
         return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
       }},
       { data: 'code_paiement', width: '120px', render: function(d) {
@@ -205,7 +205,17 @@ $(document).ready(function() {
       } }
     ],
     language: (typeof dtLang === 'object') ? dtLang : { url: dtLang },
-    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+    rowCallback: function(row, data, displayNum, displayIndex) {
+      $('td:eq(0)', row).html('<span style="font-weight:700; color:#64748B;">' + (displayIndex + 1) + '</span>');
+    },
+    drawCallback: function() {
+      var api = this.api();
+      var startIndex = (api.context && api.context[0] && api.context[0]._iDisplayStart) ? api.context[0]._iDisplayStart : 0;
+      api.column(0, { page: 'current' }).nodes().each(function(cell, i) {
+        cell.innerHTML = '<span style="font-weight:700; color:#64748B;">' + (startIndex + i + 1) + '</span>';
+      });
+      if (window.lucide) lucide.createIcons();
+    }
   });
 
   // FONCTION DE GESTION IMPRESSION DU REGISTRE ENCAISSEMENTS (PDF mPDF)
@@ -1950,6 +1960,7 @@ function initImpayesModule() {
     var selectedRowsData = [];
 
     var table = $table.DataTable({
+      order: [],
       ajax: {
         url: GEICG.url('impayes/apiList'),
         type: 'GET',
@@ -1991,12 +2002,15 @@ function initImpayesModule() {
                       style="width: 17px; height: 17px; cursor: pointer; vertical-align: middle;">`;
           }
         },
-        { data: null, className: 'text-center', width: '40px', render: function(d, type, row, meta) {
+        { data: null, orderable: false, className: 'text-center', width: '40px', render: function(d, type, row, meta) {
           return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
         }},
         { 
           data: null,
-          render: function(d) {
+          render: function(d, type) {
+            if (type === 'sort' || type === 'filter') {
+              return (d && d.nom_complet) ? d.nom_complet : '';
+            }
             var photoPath = d.photo ? String(d.photo).trim() : '';
             if (photoPath && !photoPath.startsWith('http') && !photoPath.startsWith('data:') && !photoPath.startsWith('/')) {
               photoPath = GEICG.url(photoPath);
@@ -2094,7 +2108,17 @@ function initImpayesModule() {
         }
       ],
       language: GEICG.dataTableLanguage,
-      drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+      rowCallback: function(row, data, displayNum, displayIndex) {
+        $('td:eq(1)', row).html('<span style="font-weight:700; color:#64748B;">' + (displayIndex + 1) + '</span>');
+      },
+      drawCallback: function() {
+        var api = this.api();
+        var startIndex = (api.context && api.context[0] && api.context[0]._iDisplayStart) ? api.context[0]._iDisplayStart : 0;
+        api.column(1, { page: 'current' }).nodes().each(function(cell, i) {
+          cell.innerHTML = '<span style="font-weight:700; color:#64748B;">' + (startIndex + i + 1) + '</span>';
+        });
+        if (window.lucide) lucide.createIcons();
+      }
     });
 
     // Check all / Check row events
@@ -2363,9 +2387,9 @@ function initSessionsCaisseModule() {
         },
         processing: true,
         autoWidth: false,
-        order: [[0, 'desc']],
+        order: [[2, 'desc']],
         columns: [
-          { data: null, width: '50px', render: function(d, type, row, meta) {
+          { data: null, orderable: false, width: '50px', render: function(d, type, row, meta) {
             return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
           }},
           { 
@@ -2449,7 +2473,17 @@ function initSessionsCaisseModule() {
           }
         ],
         language: GEICG.dataTableLanguage,
-        drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+        rowCallback: function(row, data, displayNum, displayIndex) {
+          $('td:eq(0)', row).html('<span style="font-weight:700; color:#64748B;">' + (displayIndex + 1) + '</span>');
+        },
+        drawCallback: function() {
+          var api = this.api();
+          var startIndex = (api.context && api.context[0] && api.context[0]._iDisplayStart) ? api.context[0]._iDisplayStart : 0;
+          api.column(0, { page: 'current' }).nodes().each(function(cell, i) {
+            cell.innerHTML = '<span style="font-weight:700; color:#64748B;">' + (startIndex + i + 1) + '</span>';
+          });
+          if (window.lucide) lucide.createIcons();
+        }
       });
 
       // OUVERTURE DU MODAL TRANSACTIONS DE SESSION
