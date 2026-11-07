@@ -314,7 +314,7 @@ if (!file_exists($logoPath)) {
   <!-- BARRE SYNTHÈSE KPIS -->
   <table class="kpi-summary-table">
     <tr>
-      <td class="kpi-total" style="width: 25%;">TOTAL CANDIDATS : <?= $kpis['total'] ?? 0 ?></td>
+      <td class="kpi-total" style="width: 25%;">TOTAL ÉTUDIANTS : <?= $kpis['total'] ?? 0 ?></td>
       <td class="kpi-hommes" style="width: 25%;">HOMMES : <?= $kpis['hommes'] ?? 0 ?></td>
       <td class="kpi-femmes" style="width: 25%;">FEMMES : <?= $kpis['femmes'] ?? 0 ?></td>
       <td class="kpi-session" style="width: 25%;">SESSION ACTIVE : <?= htmlspecialchars($annee_active_libelle) ?></td>
