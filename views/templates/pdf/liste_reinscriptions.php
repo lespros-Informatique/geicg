@@ -273,11 +273,11 @@ if (!file_exists($logoPath)) {
         <div class="inst-subtitle"><?= htmlspecialchars(strpos($numAutorisation, 'AGRÉ') !== false ? $numAutorisation : 'AGRÉMENT N° ' . $numAutorisation) ?></div>
         <div class="inst-contacts">
           <?= htmlspecialchars($adresse) ?>
-          &nbsp;|&nbsp; Contacts : <?= htmlspecialchars($contacts) ?>
+          &nbsp; <br>  Contacts : <?= htmlspecialchars($contacts) ?>
           <?php if (!empty($email)): ?>
-            &nbsp;|&nbsp; Email : <?= htmlspecialchars($email) ?>
+            &nbsp;<br> Email : <?= htmlspecialchars($email) ?>
           <?php endif; ?>
-          &nbsp;|&nbsp; Site Web : <?= htmlspecialchars($siteWeb) ?>
+          &nbsp; <br> Site Web : <?= htmlspecialchars($siteWeb) ?>
         </div>
       </td>
     </tr>
@@ -290,7 +290,7 @@ if (!file_exists($logoPath)) {
     <tr>
       <td>
         <div class="banner-title">REGISTRE DES CANDIDATS À LA RÉINSCRIPTION</div>
-        <div class="banner-sub">SESSION ACADÉMIQUE : <?= htmlspecialchars($annee_active_libelle) ?> (BASE ANTÉRIEURE : <?= htmlspecialchars($annee_prev_libelle) ?>)</div>
+        <div class="banner-sub">SESSION ACADÉMIQUE : <?= htmlspecialchars($annee_active_libelle) ?></div>
       </td>
     </tr>
   </table>
