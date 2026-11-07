@@ -56,6 +56,7 @@ class InscriptionController extends BaseController
                 'prenom_etudiant' => $etu['prenom_etudiant'],
                 'nom_complet' => trim(($etu['nom_etudiant'] ?? '') . ' ' . ($etu['prenom_etudiant'] ?? '')),
                 'sexe' => $etu['sexe_etudiant'] ?? 'M',
+                'date_naissance' => !empty($etu['date_naissance_etudiant']) ? date('d/m/Y', strtotime($etu['date_naissance_etudiant'])) : '-',
                 'telephone' => $etu['telephone_etudiant'] ?? '-',
                 'photo_etudiant' => $etu['photo_etudiant'] ?? '',
 

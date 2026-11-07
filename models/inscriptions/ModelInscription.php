@@ -16,7 +16,7 @@ class ModelInscription extends BaseModel
         try {
             // 1. Tous les étudiants
             $students = $db->query("
-                SELECT id_etudiant, code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, telephone_etudiant, email_etudiant, photo_etudiant, statut_etudiant
+                SELECT id_etudiant, code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, telephone_etudiant, email_etudiant, photo_etudiant, statut_etudiant
                 FROM " . TABLES::ETUDIANTS . "
                 ORDER BY id_etudiant DESC
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];

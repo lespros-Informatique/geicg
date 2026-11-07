@@ -42,6 +42,17 @@
       { data: 'nom_complet', render: function(d) {
         return '<span style="font-weight:800; color:#0F172A; font-size:13.5px;">' + (d || '-') + '</span>';
       }},
+      { data: 'date_naissance', className: 'text-center', render: function(d) {
+        if (!d || d === '-') return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">-</span>';
+        return '<span style="font-weight:700; color:#1E293B; font-size:12.5px;">' + d + '</span>';
+      }},
+      { data: 'sexe', width: '60px', className: 'text-center', render: function(d) {
+        var s = (d || '').toUpperCase();
+        if (s.indexOf('F') !== -1) {
+          return '<span style="background:#FCE7F3; color:#9D174D; border:1px solid #FBCFE8; padding:2px 7px; border-radius:6px; font-size:11px; font-weight:800;">F</span>';
+        }
+        return '<span style="background:#E0E7FF; color:#3730A3; border:1px solid #C7D2FE; padding:2px 7px; border-radius:6px; font-size:11px; font-weight:800;">H</span>';
+      }},
       { data: 'classe_precedente', render: function(d, type, row) {
         if (!d) {
           return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Nouveau / Sans historique</span>';
@@ -49,14 +60,21 @@
         var annee = row.annee_precedente ? ' <span style="font-size:11px; color:#64748B;">(' + row.annee_precedente + ')</span>' : '';
         return '<div style="font-weight:700; color:#334155; font-size:13px;">' + d + annee + '</div>';
       } },
-      { data: null, orderable: false, width: '220px', className: 'text-end', render: function(d, type, row) {
+      { data: null, orderable: false, width: '100px', className: 'text-center', render: function(d, type, row) {
         var idInscription = row.editId || row.id_inscription;
         var printUrl = idInscription ? (racine + 'inscription/details/' + idInscription + '?print=1') : (racine + 'etudiant/details/' + encodeURIComponent(row.code_etudiant || row.id_etudiant) + '?print=1');
-        return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
-               '  <a href="' + printUrl + '" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer la fiche"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
-               '  <a href="' + racine + 'inscription/formulaire?etudiant_code=' + encodeURIComponent(row.code_etudiant) + '" class="btn btn-sm btn-primary" style="background:#1E3A5F; border-color:#1E3A5F; font-weight:700; border-radius:6px; padding:5px 10px; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(30,58,95,0.2);">' +
-               '    <i data-lucide="user-check" style="width:13px;height:13px;"></i> Réinscrire' +
-               '  </a>' +
+        var reinscrireUrl = racine + 'inscription/formulaire?etudiant_code=' + encodeURIComponent(row.code_etudiant);
+
+        var btnPrint = '<a href="' + printUrl + '" target="_blank" class="btn btn-sm" style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #1E3A5F; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Imprimer la fiche">' +
+                       '  <i data-lucide="printer" style="width: 16px; height: 16px;"></i>' +
+                       '</a>';
+
+        var btnReinscrire = '<a href="' + reinscrireUrl + '" class="btn btn-sm" style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #16A34A; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Réinscrire l\'étudiant">' +
+                            '  <i data-lucide="user-check" style="width: 16px; height: 16px;"></i>' +
+                            '</a>';
+
+        return '<div style="display: flex; gap: 6px; justify-content: center; align-items: center;">' +
+               btnPrint + btnReinscrire +
                '</div>';
       } }
     ],
