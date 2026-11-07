@@ -118,7 +118,9 @@ if ($.fn.select2) {
       processing: true,
       autoWidth: false,
       columns: [
-        { data: 'id_tranche', defaultContent: '-' },
+        { data: null, width: '50px', render: function(d, type, row, meta) {
+          return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+        }},
         { data: 'code_tranche', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
         { data: 'libelle_filiere', render: function(d, t, r) {
           var fil = d || r.filiere_code || 'Filière';
@@ -202,8 +204,27 @@ if ($.fn.select2) {
         $('#tab-scolarites').addClass('show active').show();
         $('#btn-add-action').attr('href', GEICG.url('scolarite/formulaire'));
         $('#btn-add-label').text('Ajouter Tarif de Scolarité');
-        tableScolarites.
+        tableScolarites.columns.adjust().draw();
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    $(document).on('click', '.nav-tabs .nav-link', function(e) {
+      e.preventDefault();
+      var target = $(this).attr('data-bs-target');
+      switchScolariteTab(target);
+    });
+
+    // Default active tab
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab') === 'tranches') {
+      switchScolariteTab('#tab-tranches');
+    } else {
+      switchScolariteTab('#tab-scolarites');
+    }
   }
+
+  $(document).ready(initScolaritesListModule);
 
   // =========================================================================
   // 2. SECTION : ÉDITION TRANCHE SCOLARITÉ (Exécutée si #form-tranche est présent)
@@ -277,8 +298,26 @@ if (window.lucide) lucide.createIcons();
         error: function(xhr) {
           $btn.prop('disabled', false).html(originalHtml);
           var errMsg = 'Une erreur est survenue lors de la communication avec le serveur.';
-          if (xhr.responseJSON && xhr.respon
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            errMsg = xhr.responseJSON.message;
+          }
+          if (window.Swal) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Erreur',
+              text: errMsg
+            });
+          } else if (window.toastr) {
+            toastr.error(errMsg);
+          } else {
+            alert(errMsg);
+          }
+        }
+      });
+    });
   }
+
+  $(document).ready(initTrancheEditModule);
 
   // =========================================================================
   // 3. SECTION : CONFIGURATION TARIF DE SCOLARITÉ & PANIER TRANCHES (views/scolarites/edit.php)

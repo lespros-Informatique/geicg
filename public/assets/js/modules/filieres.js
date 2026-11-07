@@ -94,7 +94,9 @@
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_filiere', defaultContent: '-' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_filiere', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_filiere', render: function(d) { 
         return '<span style="font-weight:700; color:#0F172A;">' + (d || '-') + '</span>';
@@ -140,7 +142,9 @@
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_cycle', defaultContent: '-' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_cycle', render: function(d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
       { data: 'libelle_cycle', render: function(d) { 
         return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>';
@@ -686,7 +690,9 @@
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_filiere_cycle', defaultContent: '-', width: '50px' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_filiere_cycle', width: '120px', render: function(d, type) {
         if (type !== 'display') return d || '';
         return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
@@ -719,7 +725,9 @@
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_filiere', defaultContent: '-', width: '50px' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_filiere', width: '120px', render: function(d, type) {
         if (type !== 'display') return d || '';
         return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
@@ -757,7 +765,9 @@
     processing: true,
     autoWidth: false,
     columns: [
-      { data: 'id_cycle', defaultContent: '-', width: '50px' },
+      { data: null, width: '50px', render: function(d, type, row, meta) {
+        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      }},
       { data: 'code_cycle', width: '120px', render: function(d, type) {
         if (type !== 'display') return d || '';
         return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>';
