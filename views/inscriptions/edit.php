@@ -69,9 +69,9 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
           <div style="padding: 20px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
             <!-- Boîtier Photo / Avatar -->
             <div style="position: relative; flex-shrink: 0; text-align: center;">
-              <div style="width: 84px; height: 84px; border-radius: 14px; background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 3px solid #CBD5E1; box-shadow: 0 4px 12px rgba(0,0,0,0.12); overflow: hidden; position: relative;">
-                <img id="prev_stu_photo_img" src="" alt="Photo d'identité" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-                <span id="prev_stu_avatar">ET</span>
+              <div style="width: 84px; height: 84px; border-radius: 14px; background: #F8FAFC; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 3px solid #CBD5E1; box-shadow: 0 4px 12px rgba(0,0,0,0.12); overflow: hidden; position: relative;">
+                <img id="prev_stu_photo_img" src="<?= RACINE ?>public/assets/images/placeholders/etudiant.png" alt="Photo d'identité" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                <span id="prev_stu_avatar" style="display: none;">ET</span>
               </div>
               <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 6px; letter-spacing: 0.5px;">Photo d'identité</div>
             </div>
@@ -605,9 +605,9 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
           <!-- Bloc Cartouche Étudiant (Photo + Identité) -->
           <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 18px 22px; margin-bottom: 22px; display: flex; align-items: center; gap: 22px;">
             <!-- Boîtier Photo -->
-            <div style="width: 80px; height: 80px; border-radius: 12px; background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 2.5px solid #CBD5E1; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-              <img id="fin_stu_photo_img" src="" alt="Photo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-              <span id="fin_stu_avatar">ET</span>
+            <div style="width: 80px; height: 80px; border-radius: 12px; background: #F8FAFC; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 2.5px solid #CBD5E1; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+              <img id="fin_stu_photo_img" src="<?= RACINE ?>public/assets/images/placeholders/etudiant.png" alt="Photo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+              <span id="fin_stu_avatar" style="display: none;">ET</span>
             </div>
 
             <!-- Détails de l'étudiant -->

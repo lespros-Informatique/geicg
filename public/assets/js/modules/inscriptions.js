@@ -271,15 +271,16 @@
             currentStudentData = d;
 
             var initials = (d.nom_complet || 'ET').split(' ').map(function (n) { return n[0]; }).join('').substr(0, 2).toUpperCase();
-            if (d.photo_url) {
+            var placeholderPhoto = racine + 'public/assets/images/placeholders/etudiant.png';
+            if (d.photo_url && d.photo_url.trim() !== '') {
               $('#prev_stu_photo_img').off('error').on('error', function () {
-                $(this).hide();
-                $('#prev_stu_avatar').text(initials || 'ET').show();
+                $(this).attr('src', placeholderPhoto).show();
+                $('#prev_stu_avatar').hide();
               }).attr('src', d.photo_url).show();
               $('#prev_stu_avatar').hide();
             } else {
-              $('#prev_stu_photo_img').hide();
-              $('#prev_stu_avatar').text(initials || 'ET').show();
+              $('#prev_stu_photo_img').off('error').attr('src', placeholderPhoto).show();
+              $('#prev_stu_avatar').hide();
             }
 
             // Étape 1 : Identité & Coordonnées
@@ -881,15 +882,16 @@
       }
 
       var initials = (d.nom_complet || 'ET').split(' ').map(function (n) { return n[0]; }).join('').substr(0, 2).toUpperCase();
-      if (d.photo_url) {
+      var placeholderPhoto = racine + 'public/assets/images/placeholders/etudiant.png';
+      if (d.photo_url && d.photo_url.trim() !== '') {
         $('#fin_stu_photo_img').off('error').on('error', function () {
-          $(this).hide();
-          $('#fin_stu_avatar').text(initials || 'ET').show();
+          $(this).attr('src', placeholderPhoto).show();
+          $('#fin_stu_avatar').hide();
         }).attr('src', d.photo_url).show();
         $('#fin_stu_avatar').hide();
       } else {
-        $('#fin_stu_photo_img').hide();
-        $('#fin_stu_avatar').text(initials || 'ET').show();
+        $('#fin_stu_photo_img').off('error').attr('src', placeholderPhoto).show();
+        $('#fin_stu_avatar').hide();
       }
 
       var scolarite = Number(d.prev_scolarite || 0);
