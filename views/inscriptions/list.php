@@ -105,9 +105,8 @@
                 <th style="padding: 14px 12px; width: 45px;">#</th>
                 <th style="padding: 14px 12px;">Matricule</th>
                 <th style="padding: 14px 12px;">Nom & Prénoms</th>
-                <th style="padding: 14px 12px;">Contact</th>
                 <th style="padding: 14px 12px;">Classe Antérieure (N-1)</th>
-                <th style="padding: 14px 12px; text-align: right;">Action</th>
+                <th style="padding: 14px 12px; text-align: center; width: 100px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>

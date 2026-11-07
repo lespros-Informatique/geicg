@@ -42,10 +42,6 @@
       { data: 'nom_complet', render: function(d) {
         return '<span style="font-weight:800; color:#0F172A; font-size:13.5px;">' + (d || '-') + '</span>';
       }},
-      { data: 'telephone', render: function(d) {
-        if (!d || d === '-') return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Non renseigné</span>';
-        return '<span style="color:#334155; font-weight:700; font-size:12.5px;"><i data-lucide="phone" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:4px;color:#2563EB;"></i>' + d + '</span>';
-      }},
       { data: 'classe_precedente', render: function(d, type, row) {
         if (!d) {
           return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Nouveau / Sans historique</span>';
