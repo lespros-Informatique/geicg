@@ -46,13 +46,6 @@
         if (!d || d === '-') return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Non renseigné</span>';
         return '<span style="color:#334155; font-weight:700; font-size:12.5px;"><i data-lucide="phone" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:4px;color:#2563EB;"></i>' + d + '</span>';
       }},
-      { data: 'filiere_precedente', render: function(d, type, row) {
-        var fil = d || 'Non définie';
-        return '<div>' +
-               '  <div style="font-weight:700; color:#1E3A5F; font-size:13px;">' + fil + '</div>' +
-               '  <div style="font-size:11.5px; color:#64748B;">' + (row.niveau_precedent || 'Niveau non défini') + '</div>' +
-               '</div>';
-      } },
       { data: 'classe_precedente', render: function(d, type, row) {
         if (!d) {
           return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Nouveau / Sans historique</span>';

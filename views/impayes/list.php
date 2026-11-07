@@ -158,9 +158,8 @@ $canRecordPayment = $canRecordPayment ?? true;
                 <th style="padding: 12px; width: 36px;" class="text-center">
                   <input type="checkbox" id="check-all-impayes" style="width: 17px; height: 17px; cursor: pointer; vertical-align: middle;">
                 </th>
-                <th style="padding: 12px; width: 40px;" class="text-center">#</th>
                 <th style="padding: 12px; width: 110px;">Matricule</th>
-                <th style="padding: 12px;"> Étudiant</th>
+                <th style="padding: 10px; width: 210px;"> Étudiant</th>
                 <th style="padding: 12px;"> Contact</th>
                 <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px;">Observation</th>

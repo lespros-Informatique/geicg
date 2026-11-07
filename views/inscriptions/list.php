@@ -106,7 +106,6 @@
                 <th style="padding: 14px 12px;">Matricule</th>
                 <th style="padding: 14px 12px;">Nom & Prénoms</th>
                 <th style="padding: 14px 12px;">Contact</th>
-                <th style="padding: 14px 12px;">Filière & Niveau Antérieur</th>
                 <th style="padding: 14px 12px;">Classe Antérieure (N-1)</th>
                 <th style="padding: 14px 12px; text-align: right;">Action</th>
               </tr>

@@ -2039,11 +2039,6 @@
               }
             },
             {
-              data: null, orderable: false, searchable: false, className: 'text-center', width: '40px', render: function (d, type, row, meta) {
-                return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-              }
-            },
-            {
               data: 'matricule',
               className: 'text-center',
               width: '110px',
@@ -2174,17 +2169,7 @@
             }
           ],
           language: GEICG.dataTableLanguage,
-          rowCallback: function (row, data, displayNum, displayIndex) {
-            $('td:eq(1)', row).html('<span style="font-weight:700; color:#64748B;">' + (displayIndex + 1) + '</span>');
-          },
           drawCallback: function () {
-            var api = this.api();
-            var startIndex = (api.context && api.context[0] && api.context[0]._iDisplayStart) ? api.context[0]._iDisplayStart : 0;
-            $(this).find('tbody tr').each(function (i) {
-              if (!$(this).find('td.dataTables_empty').length) {
-                $(this).find('td').eq(1).html('<span style="font-weight:700; color:#64748B;">' + (startIndex + i + 1) + '</span>');
-              }
-            });
             if (window.lucide) lucide.createIcons();
           }
         });
