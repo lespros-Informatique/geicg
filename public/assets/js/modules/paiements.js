@@ -1912,6 +1912,12 @@ function initImpayesModule() {
     var $table = $('#table-impayes');
     if (!$table.length) return;
 
+    var configEl = document.getElementById('impayes-config');
+    var config = configEl ? JSON.parse(configEl.textContent) : {};
+    var racine = config.racine || (window.GEICG && window.GEICG.racine) || '/';
+    var isCaisseOuverte = (config.isCaisseOuverte !== undefined) ? config.isCaisseOuverte : true;
+    var canRecordPayment = (config.canRecordPayment !== undefined) ? config.canRecordPayment : true;
+
     if (window.lucide) lucide.createIcons();
     if ($.fn.select2) {
       $('#filter-annee, #filter-niveau, #filter-classe, #filter-severite').select2({ width: '100%' });
@@ -2002,7 +2008,7 @@ function initImpayesModule() {
                       style="width: 17px; height: 17px; cursor: pointer; vertical-align: middle;">`;
           }
         },
-        { data: null, orderable: false, className: 'text-center', width: '40px', render: function(d, type, row, meta) {
+        { data: null, orderable: false, searchable: false, className: 'text-center', width: '40px', render: function(d, type, row, meta) {
           return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
         }},
         { 
@@ -2094,10 +2100,16 @@ function initImpayesModule() {
                                 <i data-lucide="send" style="width: 16px; height: 16px;"></i>
                               </button>`;
 
-            var btnPaiement = `<a href="${GEICG.url('paiement/comptabilite_etudiants?annee_code=' + d.annee_code + '&classe_code=' + d.code_classe)}" 
-                                class="btn btn-sm" style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #16A34A; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Encaisser en Caisse">
-                                <i data-lucide="credit-card" style="width: 16px; height: 16px;"></i>
-                              </a>`;
+            var btnPaiement = '';
+            if (canRecordPayment) {
+              btnPaiement = `<button type="button" class="btn btn-sm btn-encaisser-impaye" 
+                              data-inscription-code="${d.code_inscription}"
+                              data-annee-code="${d.annee_code || ''}"
+                              data-student-name="${(d.nom_complet || '').replace(/"/g, '&quot;')}"
+                              style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #16A34A; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" title="Encaisser en Caisse">
+                              <i data-lucide="credit-card" style="width: 16px; height: 16px;"></i>
+                            </button>`;
+            }
 
             return `<div style="display: flex; gap: 4px; justify-content: center;">
                       ${btnPrint}
@@ -2114,8 +2126,10 @@ function initImpayesModule() {
       drawCallback: function() {
         var api = this.api();
         var startIndex = (api.context && api.context[0] && api.context[0]._iDisplayStart) ? api.context[0]._iDisplayStart : 0;
-        api.column(1, { page: 'current' }).nodes().each(function(cell, i) {
-          cell.innerHTML = '<span style="font-weight:700; color:#64748B;">' + (startIndex + i + 1) + '</span>';
+        $(this).find('tbody tr').each(function(i) {
+          if (!$(this).find('td.dataTables_empty').length) {
+            $(this).find('td').eq(1).html('<span style="font-weight:700; color:#64748B;">' + (startIndex + i + 1) + '</span>');
+          }
         });
         if (window.lucide) lucide.createIcons();
       }
@@ -2349,6 +2363,243 @@ function initImpayesModule() {
         },
         error: function() {
           if (window.toastr) toastr.error('Erreur réseau lors de l\'envoi groupé');
+        }
+      });
+    });
+
+    // -------------------------------------------------------------
+    // GESTION DU MODAL D'ENCAISSEMENT DIRECT DEPUIS LES IMPAYÉS
+    // -------------------------------------------------------------
+    $(document).on('click', '.btn-encaisser-impaye', function() {
+      var inscriptionCode = $(this).data('inscription-code');
+      var anneeCode = $(this).data('annee-code') || $('#filter-annee').val() || '';
+      openModalPayementForImpaye(inscriptionCode, anneeCode);
+    });
+
+    function openModalPayementForImpaye(inscriptionCode, anneeCode) {
+      if (!inscriptionCode) return;
+
+      $('#modal_select_inscription').val(inscriptionCode);
+      $('#encaisse-student-summary-card').hide();
+      $('#encaisse-payment-inputs-section').hide();
+      $('#modal_select_tranche').empty();
+      $('#input-montant-versement').val(0);
+      $('#hidden_montant_tranche').val(0);
+      $('#input_ref_paiement').val('');
+      $('input[name="observations"]', '#form-encaisse-versement').val('');
+      $('#modal_select_mode').val('espece');
+
+      $('#modal-encaisse-versement').css('display', 'flex');
+
+      var summaryUrl = GEICG.url('paiement/getStudentFinancialSummary') + 
+        '?inscription_code=' + encodeURIComponent(inscriptionCode) + 
+        '&annee_code=' + encodeURIComponent(anneeCode);
+
+      $.ajax({
+        url: summaryUrl,
+        type: 'GET',
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(res) {
+          if (res.status === 1 || res.success) {
+            var data = res.data || res;
+
+            var studentName = data.etudiant_nom || data.nom_complet || (data.nom_etudiant ? (data.nom_etudiant + ' ' + (data.prenom_etudiant || '')) : 'Étudiant');
+            var studentMatricule = data.matricule || data.matricule_etudiant || '-';
+            var studentClasse = data.classe || data.libelle_classe || '-';
+
+            $('#encaisse-student-name').text(studentName);
+            $('#encaisse-student-meta').text('Matricule: ' + studentMatricule + ' | Classe: ' + studentClasse);
+
+            var photoPath = data.photo || data.photo_url || '';
+            if (photoPath && !photoPath.startsWith('http') && !photoPath.startsWith('data:') && !photoPath.startsWith('/')) {
+              photoPath = GEICG.url(photoPath);
+            }
+            $('#encaisse-photo-preview').attr('src', photoPath || (racine + 'public/assets/images/default-avatar.png'));
+
+            $('#encaisse-val-scolarite').text(formatFCFA(data.scolarite_due));
+            $('#encaisse-val-paye').text(formatFCFA(data.total_paye));
+            $('#encaisse-val-reste').text(formatFCFA(data.solde_restant));
+
+            var $selTr = $('#modal_select_tranche');
+            $selTr.empty();
+            if (data.tranches && data.tranches.length > 0) {
+              var suggested = null;
+              data.tranches.forEach(function(tr) {
+                var trCode = tr.code_tranche || '';
+                var libelle = tr.libelle || tr.libelle_tranche || 'Tranche';
+                var reste = tr.reste !== undefined ? tr.reste : (tr.reste_a_payer !== undefined ? tr.reste_a_payer : 0);
+
+                var $opt = $('<option>', {
+                  value: trCode,
+                  text: libelle + ' - Dû: ' + formatFCFA(reste)
+                });
+                $opt.attr('data-montant-tranche', reste);
+                $selTr.append($opt);
+
+                if (reste > 0 && !suggested) {
+                  suggested = trCode;
+                }
+              });
+              if (suggested) {
+                $selTr.val(suggested);
+              }
+            }
+
+            var selectedOpt = $selTr.find('option:selected');
+            var currentTrancheMontant = selectedOpt.length ? parseFloat(selectedOpt.attr('data-montant-tranche') || 0) : parseFloat(data.suggested_tranche_reste || 0);
+            $('#hidden_montant_tranche').val(currentTrancheMontant);
+            $('#input-montant-versement').val(currentTrancheMontant);
+
+            $('#encaisse-student-summary-card').show();
+            $('#encaisse-payment-inputs-section').show();
+            updateSubmitButtonStateImpaye();
+            if (window.lucide) lucide.createIcons();
+          } else {
+            if (window.toastr) toastr.error(res.message || "Erreur de chargement des données de l'étudiant.");
+            else alert(res.message || "Erreur de chargement des données de l'étudiant.");
+            $('#modal-encaisse-versement').hide();
+          }
+        },
+        error: function() {
+          if (window.toastr) toastr.error("Une erreur de communication est survenue lors du chargement des données.");
+          else alert("Une erreur de communication est survenue.");
+          $('#modal-encaisse-versement').hide();
+        }
+      });
+    }
+
+    $(document).on('change', '#modal_select_tranche', function() {
+      var selectedOpt = $(this).find('option:selected');
+      var montant = selectedOpt.length ? parseFloat(selectedOpt.attr('data-montant-tranche') || 0) : 0;
+      $('#hidden_montant_tranche').val(montant);
+      $('#input-montant-versement').val(montant);
+      updateSubmitButtonStateImpaye();
+    });
+
+    $(document).on('change', '#modal_select_mode', function() {
+      updateSubmitButtonStateImpaye();
+    });
+
+    function updateSubmitButtonStateImpaye() {
+      var isCaisseActive = isCaisseOuverte;
+      var mode = $('#modal_select_mode').val() || 'espece';
+      var isCash = (mode === 'espece' || mode === 'especes' || mode === 'cash');
+      var $btnSubmit = $('#btn-submit-encaissement');
+      var $note = $('#caisse-status-footer-note');
+      var montant = parseFloat($('#input-montant-versement').val()) || 0;
+
+      if (!$btnSubmit.length) return;
+
+      if (isCash && !isCaisseActive) {
+        $btnSubmit.prop('disabled', true);
+        $btnSubmit.css({
+          'background': '#94A3B8',
+          'cursor': 'not-allowed',
+          'opacity': '0.65'
+        });
+        $btnSubmit.attr('title', "Session de caisse fermée : veuillez d'abord ouvrir la caisse du jour pour encaisser en espèces.");
+        $note.css('display', 'inline-flex');
+      } else if (montant <= 0) {
+        $btnSubmit.prop('disabled', true);
+        $btnSubmit.css({
+          'background': '#94A3B8',
+          'cursor': 'not-allowed',
+          'opacity': '0.65'
+        });
+        $btnSubmit.attr('title', "Le montant à payer doit être supérieur à 0.");
+        $note.hide();
+      } else {
+        $btnSubmit.prop('disabled', false);
+        $btnSubmit.css({
+          'background': '#16A34A',
+          'cursor': 'pointer',
+          'opacity': '1'
+        });
+        $btnSubmit.removeAttr('title');
+        $note.hide();
+      }
+    }
+
+    $(document).on('click', '.btn-close-modal-encaissement', function() {
+      $('#modal-encaisse-versement').hide();
+    });
+
+    $('#modal-encaisse-versement').on('click', function(e) {
+      if ($(e.target).is('#modal-encaisse-versement')) {
+        $('#modal-encaisse-versement').hide();
+      }
+    });
+
+    $('#form-encaisse-versement').on('submit', function(e) {
+      e.preventDefault();
+      var $btnSubmit = $('#btn-submit-encaissement');
+      $btnSubmit.prop('disabled', true);
+
+      var formData = new FormData(this);
+      var formAction = $(this).attr('action') || GEICG.url('paiement/add');
+
+      $.ajax({
+        url: formAction,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(res) {
+          updateSubmitButtonStateImpaye();
+          if (res.status === 1 || res.success) {
+            $('#modal-encaisse-versement').hide();
+            if (window.toastr) {
+              toastr.success(res.message || "Versement encaissé avec succès !");
+            } else {
+              alert(res.message || "Versement encaissé avec succès !");
+            }
+
+            var paymentId = (res.data && res.data.encrypted_id) ? res.data.encrypted_id : (res.encrypted_id || null);
+            if (paymentId) {
+              var receiptUrl = GEICG.url('paiement/imprimerRecuPdf/' + paymentId);
+              if (window.Swal) {
+                Swal.fire({
+                  title: 'Paiement Enregistré !',
+                  text: 'Le versement a été validé. Voulez-vous imprimer le reçu officiel maintenant ?',
+                  icon: 'success',
+                  showCancelButton: true,
+                  confirmButtonColor: '#16A34A',
+                  cancelButtonColor: '#64748B',
+                  confirmButtonText: '<i class="fa fa-print"></i> Imprimer le Reçu',
+                  cancelButtonText: 'Fermer'
+                }).then(function(result) {
+                  if (result.isConfirmed) {
+                    window.open(receiptUrl, '_blank');
+                  }
+                });
+              } else {
+                window.open(receiptUrl, '_blank');
+              }
+            }
+
+            if (table) table.ajax.reload(null, false);
+          } else {
+            if (window.toastr) {
+              toastr.error(res.message || res.error || "Erreur lors de l'enregistrement du versement.");
+            } else {
+              alert(res.message || res.error || "Erreur lors de l'enregistrement du versement.");
+            }
+          }
+        },
+        error: function(xhr) {
+          updateSubmitButtonStateImpaye();
+          var errMsg = "Erreur de communication avec le serveur.";
+          try {
+            var json = JSON.parse(xhr.responseText);
+            if (json && (json.message || json.error)) {
+              errMsg = json.message || json.error;
+            }
+          } catch(e) {}
+          if (window.toastr) toastr.error(errMsg);
+          else alert(errMsg);
         }
       });
     });

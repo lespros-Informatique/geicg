@@ -33,13 +33,18 @@ class ImpayesController extends BaseController
         $canSendRelance = $this->hasPermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]) && $this->canWriteAcademicYear($selectedAnneeCode);
         $canRecordPayment = $this->hasPermission([PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]) && $this->canWriteAcademicYear($selectedAnneeCode);
 
+        $modelSessionCaisse = new ModelSessionCaisse();
+        $activeSession = $modelSessionCaisse->getActiveSession();
+        $isCaisseOuverte = !empty($activeSession);
+
         $this->loadView('../views/impayes/list.php', [
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
             'selectedAnneeCode' => $selectedAnneeCode,
             'canSendRelance' => $canSendRelance,
-            'canRecordPayment' => $canRecordPayment
+            'canRecordPayment' => $canRecordPayment,
+            'isCaisseOuverte' => $isCaisseOuverte
         ]);
     }
 

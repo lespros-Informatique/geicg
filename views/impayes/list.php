@@ -308,5 +308,129 @@ $canRecordPayment = $canRecordPayment ?? true;
   </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL SUR MESURE : ENCAISSEMENT DIRECT DEPUIS LES IMPAYÉS                 -->
+<!-- ========================================================================= -->
+<div id="modal-encaisse-versement" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 680px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; animation: modalZoomIn 0.25s ease-out; max-height: 92vh; display: flex; flex-direction: column;">
+    
+    <div style="background: linear-gradient(135deg, #16A34A 0%, #15803D 100%); color: #FFFFFF; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="credit-card" style="width: 22px; height: 22px;"></i>
+        <h3 style="font-size: 17px; font-weight: 900; margin: 0;">Encaisser un Versement de Scolarité</h3>
+      </div>
+      <button type="button" class="btn-close-modal-encaissement" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-encaisse-versement" action="<?= RACINE ?>paiement/add" method="POST" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" id="modal_select_inscription" name="inscription_code" value="" required>
+
+      <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+
+        <div id="encaisse-student-summary-card" style="display: none; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <img id="encaisse-photo-preview" src="<?= RACINE ?>public/assets/images/default-avatar.png" class="student-avatar" alt="Avatar" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #CBD5E1;">
+            <div>
+              <div id="encaisse-student-name" style="font-size: 15px; font-weight: 900; color: #0F172A;">Nom Étudiant</div>
+              <div id="encaisse-student-meta" style="font-size: 12px; color: #64748B;">Matricule: - | Classe: -</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
+            <div style="background: #FFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px;">
+              <div style="font-size: 10px; font-weight: 700; color: #64748B;">Scolarité Due</div>
+              <div id="encaisse-val-scolarite" style="font-size: 14px; font-weight: 900; color: #1E3A5F;">0 FCFA</div>
+            </div>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 8px;">
+              <div style="font-size: 10px; font-weight: 700; color: #15803D;">Total Payé</div>
+              <div id="encaisse-val-paye" style="font-size: 14px; font-weight: 900; color: #15803D;">0 FCFA</div>
+            </div>
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 8px;">
+              <div style="font-size: 10px; font-weight: 700; color: #DC2626;">Reste à Payer</div>
+              <div id="encaisse-val-reste" style="font-size: 14px; font-weight: 900; color: #DC2626;">0 FCFA</div>
+            </div>
+          </div>
+        </div>
+
+        <input type="hidden" id="hidden_montant_tranche" name="montant_tranche" value="0">
+
+        <div id="encaisse-payment-inputs-section" style="display: none; background: #FFFFFF; border-radius: 12px; padding: 16px; border: 1px solid #E2E8F0;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            
+            <div style="grid-column: span 2;">
+              <label style="font-size: 11.5px; font-weight: 800; color: #0F172A; margin-bottom: 4px; display: block;">1. Tranche / Échéance à régler <span class="text-danger">*</span></label>
+              <div style="position: relative;">
+                <select id="modal_select_tranche" name="tranche_code" class="form-control" style="font-weight: 800; font-size: 13px; color: #1E3A5F; background: #FFFFFF;" required>
+                </select>
+              </div>
+              <div id="tranche-hint-info" style="font-size: 11px; color: #64748B; margin-top: 3px;"></div>
+            </div>
+
+            <div style="grid-column: span 2;">
+              <label style="font-size: 12px; font-weight: 800; color: #0F172A; margin-bottom: 4px; display: block;">2. Montant Total Versé (FCFA) <span class="text-danger">*</span></label>
+              <div style="position: relative;">
+                <input type="number" step="1" id="input-montant-versement" name="montant_paiement" class="form-control form-control-lg" style="font-weight: 900; font-size: 18px; color: #15803D; background-color: #F0FDF4; border: 2px solid #86EFAC; padding-right: 70px; cursor: not-allowed;" placeholder="0" readonly required>
+                <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #15803D; font-size: 13px;">FCFA</span>
+              </div>
+              <div id="montant-max-hint" style="font-size: 11px; color: #64748B; margin-top: 4px;">
+                Montant calculé automatiquement selon la tranche sélectionnée.
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Mode de Règlement</label>
+              <select id="modal_select_mode" name="mode_paiement" class="form-control" style="font-size: 13px; font-weight: 700;" required>
+                <option value="espece" selected>💵 Espèces</option>
+                <option value="mobile_money">📱 Mobile Money</option>
+                <option value="cheque">🏦 Chèque</option>
+                <option value="virement">🏛️ Virement</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Référence Transaction</label>
+              <input type="text" name="reference_paiement" id="input_ref_paiement" class="form-control" placeholder="Réf. / N° Chèque">
+            </div>
+
+            <div style="grid-column: span 2;">
+              <label style="font-size: 11.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Observations / Notes (facultatif)</label>
+              <input type="text" name="observations" class="form-control" placeholder="Ex: Payé par le tuteur...">
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+        <div id="caisse-status-footer-note" style="<?= empty($isCaisseOuverte) ? 'display: inline-flex;' : 'display: none;' ?> align-items: center; gap: 6px; font-size: 11.5px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; padding: 5px 10px; border-radius: 6px;">
+          <i data-lucide="lock" style="width: 14px; height: 14px; color: #D97706; flex-shrink: 0;"></i>
+          <span>Session de caisse fermée &bull; Ouvrez la caisse du jour pour encaisser en espèces</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+          <button type="button" class="btn btn-secondary btn-close-modal-encaissement" style="font-weight: 700; border-radius: 8px; padding: 8px 16px;">
+            Annuler
+          </button>
+          <button type="submit" id="btn-submit-encaissement" class="btn btn-success" 
+            <?= empty($isCaisseOuverte) ? 'disabled style="font-weight: 800; border-radius: 8px; padding: 8px 20px; background: #94A3B8; border: none; color: #FFF; cursor: not-allowed; opacity: 0.65;" title="Session de caisse fermée : veuillez d\'abord ouvrir la caisse du jour."' : 'style="font-weight: 800; border-radius: 8px; padding: 8px 20px; background: #16A34A; border: none; color: #FFF; cursor: pointer;"' ?>>
+            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Valider & Encaisser
+          </button>
+        </div>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script type="application/json" id="impayes-config">
+<?= json_encode([
+    'racine' => RACINE,
+    'canRecordPayment' => !empty($canRecordPayment),
+    'isCaisseOuverte' => !empty($isCaisseOuverte),
+    'csrfToken' => Validator::generateCsrfToken()
+]) ?>
+</script>
+
 <?php ViewContext::setScripts(['public/assets/js/modules/paiements.js']); ?>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
