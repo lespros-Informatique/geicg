@@ -18,17 +18,17 @@ $canRecordPayment = $canRecordPayment ?? true;
             Suivi des Impayés & Retards de Versements
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">
-            Détection automatique des échéances de scolarité échues et relances multi-canaux des parents/tuteurs
+       E     chéances de scolarité échues
           </p>
         </div>
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <button type="button" id="btn-open-group-sms-modal" class="btn" style="background: #EA580C; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(234,88,12,0.25); cursor: pointer;">
-            <i data-lucide="message-square" style="width: 18px; height: 18px;"></i> Notification par SMS
+            <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>  SMS
           </button>
 
           <button type="button" id="btn-open-group-whatsapp-modal" class="btn" style="background: #16A34A; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(22,163,74,0.25); cursor: pointer;">
-            <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i> Notification WhatsApp
+            <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>  WhatsApp
           </button>
 
           <button type="button" id="btn-imprimer-en-masse" class="btn" style="background: #2ba3dfff; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(58, 165, 237, 0.25); cursor: pointer;">
@@ -159,10 +159,11 @@ $canRecordPayment = $canRecordPayment ?? true;
                   <input type="checkbox" id="check-all-impayes" style="width: 17px; height: 17px; cursor: pointer; vertical-align: middle;">
                 </th>
                 <th style="padding: 12px; width: 40px;" class="text-center">#</th>
+                <th style="padding: 12px; width: 110px;">Matricule</th>
                 <th style="padding: 12px;"> Étudiant</th>
                 <th style="padding: 12px;"> Contact</th>
                 <th style="padding: 12px;">Classe</th>
-                <th style="padding: 12px;">Libellé Tranche</th>
+                <th style="padding: 12px;">Observation</th>
                 <th style="padding: 12px;" class="text-end">Total Versé</th>
                 <th style="padding: 12px;" class="text-end">Reste à Payer</th>
                 <th style="padding: 12px; text-align: center; width: 140px;">Actions</th>

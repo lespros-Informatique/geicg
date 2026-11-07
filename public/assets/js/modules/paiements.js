@@ -2044,6 +2044,14 @@
               }
             },
             {
+              data: 'matricule',
+              className: 'text-center',
+              width: '110px',
+              render: function (v) {
+                return `<code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; border: 1px solid #DBEAFE; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-family: monospace;">${v || '-'}</code>`;
+              }
+            },
+            {
               data: null,
               render: function (d, type) {
                 if (type === 'sort' || type === 'filter') {
@@ -2075,7 +2083,6 @@
                       ${photoHtml}
                       <div style="white-space: normal;">
                         ${nomHtml}
-                        <div style="font-size: 11.5px; color: #64748B; font-family: monospace; font-weight: 700; margin-top: 2px;">${d.matricule}</div>
                       </div>
                     </div>`;
               }
