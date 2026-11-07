@@ -27,12 +27,12 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Bureau d\'Inscription : Guichet de Réinscription Étudiant' ?></h1>
+            <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Bureau d\'Inscription' ?></h1>
             <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 8px;">
               Session <?= htmlspecialchars(Session::get('annee_active_libelle', 'en cours')) ?>
             </span>
           </div>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Contrôle du quitus financier N-1, progression académique et émission de la Fiche Navette pour le Bureau des Versements</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Reinscription</p>
         </div>
         <a href="<?= RACINE ?>reinscription/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux Réinscriptions
@@ -328,21 +328,53 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
             <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le montant et l'échéancier des tranches s'ajustent automatiquement selon le régime sélectionné.</small>
           </div>
 
-          <!-- ANNÉE ACADÉMIQUE D'INSCRIPTION -->
+          <!-- ANNÉE ACADÉMIQUE D'INSCRIPTION (EN LECTURE SEULE / FIXÉE À L'ANNÉE SÉLECTIONNÉE) -->
           <div class="form-group" style="width: 100%; box-sizing: border-box; margin-bottom: 20px;">
             <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
               Année Académique d'Inscription <span style="color: #EF4444;">*</span>
             </label>
-            <select class="form-control select2" id="sel_annee_inscription" style="width: 100%; box-sizing: border-box;" name="annee_code" required>
-              <?php 
-                $selectedAnneeIns = $item['annee_code'] ?? (Session::get('annee_active_code', ''));
-                foreach($annees as $a): 
-              ?>
-                <option value="<?= $a['code_annee'] ?>" <?= ($selectedAnneeIns == $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' (Active)' : '' ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
+            <?php 
+              $selectedAnneeIns = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : (!empty($item['annee_code']) ? $item['annee_code'] : Session::get('annee_active_code', ''));
+              if (empty($selectedAnneeIns)) {
+                  foreach ($annees as $a) {
+                      if (($a['statut_annee'] ?? '') === STATUTS::ACTIF) {
+                          $selectedAnneeIns = $a['code_annee'];
+                          break;
+                      }
+                  }
+                  if (empty($selectedAnneeIns) && !empty($annees)) {
+                      $selectedAnneeIns = $annees[0]['code_annee'];
+                  }
+              }
+
+              $selectedAnneeLibelle = '';
+              foreach ($annees as $a) {
+                  if ($a['code_annee'] === $selectedAnneeIns) {
+                      $selectedAnneeLibelle = $a['libelle_annee'] . ((($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' (Active)' : '');
+                      break;
+                  }
+              }
+              if (empty($selectedAnneeLibelle) && !empty($selectedAnneeIns)) {
+                  try {
+                      $rowAnn = (new ModelAnnee())->getByCode($selectedAnneeIns);
+                      if ($rowAnn && !empty($rowAnn['libelle_annee'])) {
+                          $selectedAnneeLibelle = $rowAnn['libelle_annee'] . ((($rowAnn['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' (Active)' : '');
+                      }
+                  } catch (Exception $e) {}
+              }
+              if (empty($selectedAnneeLibelle)) {
+                  $selectedAnneeLibelle = Session::get('annee_active_libelle', 'Session active');
+              }
+            ?>
+            <div style="position: relative;">
+              <input type="text" class="form-control" id="disp_annee_inscription" value="<?= htmlspecialchars($selectedAnneeLibelle) ?>" readonly 
+                     style="background-color: #F8FAFC; color: #1E3A5F; font-weight: 700; cursor: not-allowed; border: 1.5px solid #CBD5E1; padding-left: 38px; height: 42px; width: 100%; box-sizing: border-box;">
+              <i data-lucide="calendar" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #64748B;"></i>
+            </div>
+            <input type="hidden" id="sel_annee_inscription" name="annee_code" value="<?= htmlspecialchars($selectedAnneeIns) ?>">
+            <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">
+              Verrouillée sur l'année académique active sélectionnée.
+            </small>
           </div>
 
           <!-- SÉLECTION DE LA CLASSE D'AFFECTATION (PLEINE LARGEUR) -->
