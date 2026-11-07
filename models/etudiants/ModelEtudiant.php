@@ -455,7 +455,7 @@ class ModelEtudiant extends BaseModel
     }
 
     /**
-     * Récupère l'ensemble des données requises pour la génération de la Fiche officielle de l'étudiant
+     * Récupère l'ensemble des données requises pour la génération de la Fiche de réinscription & Bilan académique
      *
      * @param string|int $studentIdentifier ID, code ou matricule de l'étudiant, ou ID/code d'inscription
      * @param string|int|null $inscriptionIdentifier ID ou code d'inscription optionnel
@@ -471,7 +471,7 @@ class ModelEtudiant extends BaseModel
         if (!empty($inscriptionIdentifier)) {
             $stmtIns = $db->prepare("
                 SELECT ins.*, cl.libelle_classe, cl.filiere_code, cl.niveau_code,
-                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee, a.code_annee as annee_code_reel
                 FROM " . TABLES::INSCRIPTIONS . " ins
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
@@ -488,11 +488,11 @@ class ModelEtudiant extends BaseModel
             $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: null;
         }
 
-        // 2. Si non trouvé et $studentIdentifier correspond éventuellement à une inscription
+        // 2. Si non trouvé et $studentIdentifier correspond à une inscription
         if (!$inscription && !empty($studentIdentifier)) {
             $stmtTryIns = $db->prepare("
                 SELECT ins.*, cl.libelle_classe, cl.filiere_code, cl.niveau_code,
-                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee, a.code_annee as annee_code_reel
                 FROM " . TABLES::INSCRIPTIONS . " ins
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
@@ -534,7 +534,7 @@ class ModelEtudiant extends BaseModel
         if (!$inscription) {
             $stmtLatestIns = $db->prepare("
                 SELECT ins.*, cl.libelle_classe, cl.filiere_code, cl.niveau_code,
-                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee, a.code_annee as annee_code_reel
                 FROM " . TABLES::INSCRIPTIONS . " ins
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
@@ -558,31 +558,9 @@ class ModelEtudiant extends BaseModel
         $stmtPar->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant']]);
         $parent = $stmtPar->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        // 6. Situation financière dynamique
-        $totalScolarite = (float)($inscription['montant_scolarite_inscription'] ?? 0);
-        $fraisInscription = 0;
-
-        if (!empty($inscription['classe_code'])) {
-            try {
-                $stmtTr = $db->prepare("
-                    SELECT tr.montant_tranche
-                    FROM " . TABLES::TRANCHES_SCOLARITE . " tr
-                    JOIN " . TABLES::SCOLARITES . " sc ON sc.code_scolarite = tr.scolarite_code
-                    WHERE sc.classe_code = ? AND tr.statut_tranche = '" . STATUTS::ACTIF . "'
-                    ORDER BY tr.id_tranche ASC LIMIT 1
-                ");
-                $stmtTr->execute([$inscription['classe_code']]);
-                $rowTr = $stmtTr->fetch(PDO::FETCH_ASSOC);
-                if ($rowTr && !empty($rowTr['montant_tranche'])) {
-                    $fraisInscription = (float)$rowTr['montant_tranche'];
-                }
-            } catch (Exception $e) {
-                // Table tranches_scolarite optionnelle
-            }
-        }
-
-        // Versements scolarité effectués pour cette inscription
-        $totalPaye = 0;
+        // 6. Situation financière de l'ancienne classe (N-1)
+        $totalScolariteN1 = (float)($inscription['montant_scolarite_inscription'] ?? 0);
+        $totalPayeN1 = 0;
         if (!empty($inscription['code_inscription'])) {
             try {
                 $stmtPay = $db->prepare("
@@ -592,14 +570,103 @@ class ModelEtudiant extends BaseModel
                 ");
                 $stmtPay->execute([$inscription['code_inscription']]);
                 $rowPay = $stmtPay->fetch(PDO::FETCH_ASSOC);
-                $totalPaye = (float)($rowPay['total_paye'] ?? 0);
+                $totalPayeN1 = (float)($rowPay['total_paye'] ?? 0);
             } catch (Exception $e) {
                 error_log("ModelEtudiant::getStudentFicheData paiements: " . $e->getMessage());
             }
         }
-        $soldeRestant = max(0, $totalScolarite - $totalPaye);
+        $soldeN1 = max(0, $totalScolariteN1 - $totalPayeN1);
 
-        // 7. Contrôle des pièces du dossier
+        // 7. Bilan Académique & Décision du Jury / Conseil
+        $moyenneN1 = null;
+        $mentionN1 = 'Non évalué';
+        $decisionN1 = 'Autorisé(e) à se réinscrire';
+        $decisionBadge = 'info'; // success | warning | danger | info
+
+        if (!empty($inscription['id_inscription'])) {
+            try {
+                require_once __DIR__ . '/../bulletin/ModelBulletin.php';
+                $modelBulletin = new ModelBulletin();
+                $bulletinData = $modelBulletin->calculateBulletinData((int)$inscription['id_inscription']);
+                if ($bulletinData && isset($bulletinData['moyenneGenerale'])) {
+                    $mg = (float)$bulletinData['moyenneGenerale'];
+                    if ($mg > 0 || !empty($bulletinData['notesDetails'])) {
+                        $moyenneN1 = $mg;
+                        $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : ($mg >= 10 ? 'Passable' : 'Ajourné(e)');
+                        if ($mg >= 10) {
+                            $decisionN1 = 'Admis(e) en classe supérieure';
+                            $decisionBadge = 'success';
+                        } else {
+                            $decisionN1 = 'Ajourné(e) / Redoublement';
+                            $decisionBadge = 'warning';
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("ModelEtudiant::getStudentFicheData bulletin: " . $e->getMessage());
+            }
+        }
+
+        // 8. Calcul de la classe cible / Orientation pour la réinscription
+        $anneeActiveLibelle = '';
+        $anneeActiveCode = '';
+        try {
+            $stmtActAnn = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
+            $actAnn = $stmtActAnn ? $stmtActAnn->fetch(PDO::FETCH_ASSOC) : null;
+            if ($actAnn) {
+                $anneeActiveCode = $actAnn['code_annee'];
+                $anneeActiveLibelle = $actAnn['libelle_annee'];
+            }
+        } catch (Exception $e) {}
+
+        $classeCibleLibelle = $inscription['libelle_classe'] ?? '-';
+        $filiereCibleLibelle = $inscription['libelle_filiere'] ?? '-';
+        $niveauCibleLibelle = $inscription['libelle_niveau'] ?? '-';
+        $scolariteCible = $totalScolariteN1;
+
+        if ($decisionBadge === 'success' || $decisionBadge === 'info') {
+            if (!empty($inscription['filiere_code']) && !empty($inscription['niveau_code'])) {
+                try {
+                    $stmtNiv = $db->prepare("SELECT id_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ? LIMIT 1");
+                    $stmtNiv->execute([$inscription['niveau_code']]);
+                    $currNiv = $stmtNiv->fetch(PDO::FETCH_ASSOC);
+                    if ($currNiv) {
+                        $nextNivId = (int)$currNiv['id_niveau'] + 1;
+                        $stmtNextCl = $db->prepare("
+                            SELECT c.code_classe, c.libelle_classe, f.libelle_filiere, n.libelle_niveau
+                            FROM " . TABLES::CLASSES . " c
+                            JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+                            JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+                            WHERE c.filiere_code = ? 
+                              AND n.id_niveau = ?
+                              AND c.statut_classe = '" . STATUTS::ACTIF . "'
+                            ORDER BY c.id_classe ASC
+                            LIMIT 1
+                        ");
+                        $stmtNextCl->execute([$inscription['filiere_code'], $nextNivId]);
+                        $nextCl = $stmtNextCl->fetch(PDO::FETCH_ASSOC);
+                        if ($nextCl) {
+                            $classeCibleLibelle = $nextCl['libelle_classe'];
+                            $filiereCibleLibelle = $nextCl['libelle_filiere'] ?? $filiereCibleLibelle;
+                            $niveauCibleLibelle = $nextCl['libelle_niveau'] ?? $niveauCibleLibelle;
+
+                            $stmtTarif = $db->prepare("
+                                SELECT montant_scolarite FROM " . TABLES::SCOLARITES . "
+                                WHERE classe_code = ? AND statut_scolarite = '" . STATUTS::ACTIF . "'
+                                LIMIT 1
+                            ");
+                            $stmtTarif->execute([$nextCl['code_classe']]);
+                            $scolTarif = $stmtTarif->fetchColumn();
+                            if ($scolTarif !== false && (float)$scolTarif > 0) {
+                                $scolariteCible = (float)$scolTarif;
+                            }
+                        }
+                    }
+                } catch (Exception $e) {}
+            }
+        }
+
+        // 9. Contrôle des pièces physiques du dossier
         $piecePhotos = false;
         $pieceExtrait = false;
         $pieceCni = false;
@@ -636,14 +703,14 @@ class ModelEtudiant extends BaseModel
         $nomComplet = trim(($etudiant['nom_etudiant'] ?? '') . ' ' . ($etudiant['prenom_etudiant'] ?? ''));
         $sexeRaw = strtoupper($etudiant['sexe_etudiant'] ?? '');
         $sexeLibelle = ($sexeRaw === 'F' || strpos($sexeRaw, 'FEM') !== false) ? 'Féminin' : 'Masculin';
-        $statutAff = (!empty($inscription['affectation_etat']) && in_array(strtolower($inscription['affectation_etat']), ['oui', 'affecte'])) ? 'AFFECTÉ' : 'NON AFFECTÉ';
+        $statutAff = (!empty($inscription['affectation_etat']) && in_array(strtolower($inscription['affectation_etat']), ['oui', 'affecte'])) ? 'Affecté (État)' : 'Non Affecté (Privé)';
 
         return [
             'etudiant' => $etudiant,
             'inscription' => $inscription,
             'parent' => $parent,
             'viewData' => [
-                'annee_libelle' => $inscription['libelle_annee'] ?? '-',
+                // Identité
                 'matricule_etudiant' => !empty($etudiant['matricule_etudiant']) ? $etudiant['matricule_etudiant'] : '-',
                 'code_inscription' => !empty($inscription['code_inscription']) ? $inscription['code_inscription'] : '-',
                 'num_gpeicg' => !empty($etudiant['matricule_etudiant']) ? $etudiant['matricule_etudiant'] : (!empty($etudiant['code_etudiant']) ? $etudiant['code_etudiant'] : '-'),
@@ -651,20 +718,40 @@ class ModelEtudiant extends BaseModel
                 'date_naissance' => !empty($etudiant['date_naissance_etudiant']) ? date('d/m/Y', strtotime($etudiant['date_naissance_etudiant'])) : '-',
                 'lieu_naissance' => $etudiant['lieu_naissance_etudiant'] ?? '-',
                 'sexe_etudiant' => $sexeLibelle,
-                'nationalite' => $etudiant['nationalite_etudiant'] ?? '-',
+                'nationalite' => $etudiant['nationalite_etudiant'] ?? 'Ivoirienne',
                 'statut_affectation' => $statutAff,
                 'num_piece_identite' => $etudiant['numero_cni'] ?? '-',
                 'contact_etudiant' => $etudiant['telephone_etudiant'] ?? '-',
                 'email_etudiant' => $etudiant['email_etudiant'] ?? '-',
                 'adresse_etudiant' => $etudiant['lieu_residence_etudiant'] ?? '-',
                 'photo_etudiant' => !empty($etudiant['photo_etudiant']) ? $etudiant['photo_etudiant'] : ($inscription['photo_inscription'] ?? ''),
-                'filiere_libelle' => $inscription['libelle_filiere'] ?? '-',
-                'niveau_libelle' => $inscription['libelle_niveau'] ?? '-',
-                'classe_libelle' => $inscription['libelle_classe'] ?? '-',
+
+                // Récap Ancienne Classe (N-1)
+                'annee_precedente' => $inscription['libelle_annee'] ?? '-',
+                'classe_precedente' => $inscription['libelle_classe'] ?? '-',
+                'filiere_precedente' => $inscription['libelle_filiere'] ?? '-',
+                'niveau_precedent' => $inscription['libelle_niveau'] ?? '-',
                 'est_redoublant' => (!empty($inscription['est_redoublant']) && $inscription['est_redoublant'] == 1) ? 'OUI' : 'NON',
-                'dernier_diplome' => $etudiant['dernier_diplome'] ?? '-',
-                'annee_diplome' => $etudiant['annee_diplome'] ?? '-',
-                'etablissement_origine' => $etudiant['etablissement_origine'] ?? '-',
+
+                // Résultats & Décision de passage
+                'moyenne_n1' => $moyenneN1 !== null ? number_format($moyenneN1, 2, ',', ' ') . ' / 20' : 'Non renseignée',
+                'mention_n1' => $mentionN1,
+                'decision_n1' => $decisionN1,
+                'decision_badge' => $decisionBadge,
+
+                // Orientation & Nouvelle classe (Réinscription)
+                'annee_reinscription' => !empty($anneeActiveLibelle) ? $anneeActiveLibelle : date('Y') . '-' . (date('Y') + 1),
+                'classe_cible' => $classeCibleLibelle,
+                'filiere_cible' => $filiereCibleLibelle,
+                'niveau_cible' => $niveauCibleLibelle,
+                'scolarite_cible' => $scolariteCible,
+
+                // Bilan financier N-1
+                'total_scolarite_n1' => $totalScolariteN1,
+                'total_paye_n1' => $totalPayeN1,
+                'solde_n1' => $soldeN1,
+
+                // Coordonnées parents / tuteur
                 'nom_pere' => $parent['nom_pere'] ?? '-',
                 'contact_pere' => $parent['telephone_pere'] ?? '-',
                 'nom_mere' => $parent['nom_mere'] ?? '-',
@@ -673,10 +760,8 @@ class ModelEtudiant extends BaseModel
                 'contact_tuteur' => $parent['telephone_tuteur'] ?? '-',
                 'profession_tuteur' => $parent['profession_tuteur'] ?? '-',
                 'adresse_tuteur' => $parent['parent_habitation'] ?? '-',
-                'total_scolarite' => $totalScolarite,
-                'frais_inscription' => $fraisInscription,
-                'montant_paye' => $totalPaye,
-                'reste_payer' => $soldeRestant,
+
+                // Pièces du dossier
                 'piece_photos' => $piecePhotos,
                 'piece_extrait' => $pieceExtrait,
                 'piece_cni' => $pieceCni,
