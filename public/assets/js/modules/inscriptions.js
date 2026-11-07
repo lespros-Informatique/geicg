@@ -74,8 +74,11 @@
         },
         {
           data: null, orderable: false, width: '130px', className: 'text-center', render: function (d, type, row) {
-            var idInscription = row.editId || row.id_inscription;
-            var printUrl = idInscription ? (racine + 'inscription/details/' + idInscription + '?print=1') : (racine + 'etudiant/details/' + encodeURIComponent(row.code_etudiant || row.id_etudiant) + '?print=1');
+            var targetPrintId = row.encrypted_inscription_id || row.encrypted_id || encodeURIComponent(row.code_etudiant || row.id_etudiant);
+            var printUrl = racine + 'etudiant/imprimerFichePdf/' + targetPrintId;
+            if (row.encrypted_inscription_id) {
+              printUrl += '?inscription_id=' + encodeURIComponent(row.encrypted_inscription_id);
+            }
             var reinscrireUrl = racine + 'inscription/formulaire?etudiant_code=' + encodeURIComponent(row.code_etudiant);
             var profileUrl = racine + 'etudiant/details/' + encodeURIComponent(row.encrypted_id || row.code_etudiant || row.id_etudiant);
 

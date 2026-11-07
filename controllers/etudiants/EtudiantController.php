@@ -529,6 +529,77 @@ class EtudiantController extends BaseController
         ]);
     }
 
+    public function imprimerFichePdf($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        try {
+            $id = $this->validator->decrypter($details);
+            if (empty($id)) {
+                $id = $details;
+            }
+
+            // Inscription optionnelle transmise en query string
+            $inscrId = null;
+            if (!empty($_GET['inscription_id'])) {
+                $inscrId = $this->validator->decrypter($_GET['inscription_id']);
+                if (empty($inscrId)) {
+                    $inscrId = $_GET['inscription_id'];
+                }
+            }
+
+            $ficheData = $this->model->getStudentFicheData($id, $inscrId);
+            if (!$ficheData) {
+                Session::flash('flash_error', "Dossier étudiant ou inscription introuvable pour l'impression de la fiche.");
+                header('Location: ' . RACINE . 'etudiant/list');
+                exit();
+            }
+
+            $etudiant = $ficheData['etudiant'];
+            $inscription = $ficheData['inscription'];
+            $dataView = array_merge($ficheData['viewData'], [
+                'etablissement' => $this->getEtablissementConfig()
+            ]);
+
+            $html = PdfService::renderTemplate('fiche_etudiant.php', $dataView);
+            if (isset($_GET['html'])) {
+                echo $html;
+                return;
+            }
+
+            $mat = $etudiant['matricule_etudiant'] ?? ($etudiant['code_etudiant'] ?? (string)$id);
+            $nomClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim(($etudiant['nom_etudiant'] ?? '') . '_' . ($etudiant['prenom_etudiant'] ?? '')));
+            $filename = 'Fiche_Etudiant_' . ($nomClean ?: 'Dossier') . '_' . date('Ymd_His') . '.pdf';
+
+            // Journalisation de l'impression
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'etudiant',
+                $mat,
+                "Impression de la fiche officielle de l'étudiant " . trim(($etudiant['nom_etudiant'] ?? '') . ' ' . ($etudiant['prenom_etudiant'] ?? '')) . (!empty($inscription['libelle_classe']) ? " (" . $inscription['libelle_classe'] . ")" : '')
+            );
+
+            $download = !empty($_GET['download']);
+            PdfService::generate($html, $filename, [
+                'orientation' => 'P',
+                'format' => 'A4',
+                'title' => 'Fiche Étudiant - ' . trim(($etudiant['nom_etudiant'] ?? '') . ' ' . ($etudiant['prenom_etudiant'] ?? '')),
+                'margin_left' => 6,
+                'margin_right' => 6,
+                'margin_top' => 6,
+                'margin_bottom' => 6,
+                'download' => $download
+            ]);
+        } catch (Exception $e) {
+            error_log("EtudiantController::imprimerFichePdf error: " . $e->getMessage());
+            Session::flash('flash_error', "Erreur lors de la génération de la fiche étudiant : " . $e->getMessage());
+            header('Location: ' . RACINE . 'etudiant/list');
+            exit();
+        }
+    }
+
     public function annulerInscription()
     {
         $this->requirePost(false);

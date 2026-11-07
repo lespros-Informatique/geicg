@@ -246,6 +246,7 @@ $route->addRoute('/tranche/formulaire', [$trancheController, 'formulaire']);
 $route->addRoute('/etudiant/list', [$etudiantController, 'list']);
 $route->addRoute('/etudiant/apiList', [$etudiantController, 'apiList']);
 $route->addRoute('/etudiant/imprimerPdf', [$etudiantController, 'imprimerPdf']);
+$route->addRoute('/etudiant/imprimerFichePdf/{param}', [$etudiantController, 'imprimerFichePdf']);
 $route->addRoute('/etudiant/add', [$etudiantController, 'add']);
 $route->addRoute('/etudiant/addWizard', [$etudiantController, 'addWizard']);
 $route->addRoute('/etudiant/changer', [$etudiantController, 'changer']);
@@ -286,6 +287,7 @@ $route->addRoute('/inscription/apiPriseDeVue', [$inscriptionController, 'apiPris
 $route->addRoute('/inscription/uploadPhoto', [$inscriptionController, 'uploadPhoto']);
 $route->addRoute('/inscription/fiche', [$inscriptionController, 'imprimerFiche']);
 $route->addRoute('/inscription/fiche/{param}', [$inscriptionController, 'imprimerFiche']);
+$route->addRoute('/inscription/imprimerFichePdf/{param}', [$inscriptionController, 'imprimerFichePdf']);
 $route->addRoute('/reinscription/formulaire', [$inscriptionController, 'formulaire']);
 
 // Module: accessoire (AccessoireController)

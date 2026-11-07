@@ -455,6 +455,239 @@ class ModelEtudiant extends BaseModel
     }
 
     /**
+     * Récupère l'ensemble des données requises pour la génération de la Fiche officielle de l'étudiant
+     *
+     * @param string|int $studentIdentifier ID, code ou matricule de l'étudiant, ou ID/code d'inscription
+     * @param string|int|null $inscriptionIdentifier ID ou code d'inscription optionnel
+     * @return array|null
+     */
+    public function getStudentFicheData($studentIdentifier, $inscriptionIdentifier = null): ?array
+    {
+        $db = $this->getCon();
+        $inscription = null;
+        $etudiant = null;
+
+        // 1. Si un identifiant d'inscription explicite est fourni
+        if (!empty($inscriptionIdentifier)) {
+            $stmtIns = $db->prepare("
+                SELECT ins.*, cl.libelle_classe, cl.filiere_code, cl.niveau_code,
+                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                FROM " . TABLES::INSCRIPTIONS . " ins
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = ins.annee_code
+                WHERE (ins.id_inscription = ? OR ins.code_inscription = ?)
+                  AND ins.statut_inscription != '" . STATUTS::ANNULE . "'
+                LIMIT 1
+            ");
+            $stmtIns->execute([
+                is_numeric($inscriptionIdentifier) ? (int)$inscriptionIdentifier : 0,
+                (string)$inscriptionIdentifier
+            ]);
+            $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: null;
+        }
+
+        // 2. Si non trouvé et $studentIdentifier correspond éventuellement à une inscription
+        if (!$inscription && !empty($studentIdentifier)) {
+            $stmtTryIns = $db->prepare("
+                SELECT ins.*, cl.libelle_classe, cl.filiere_code, cl.niveau_code,
+                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                FROM " . TABLES::INSCRIPTIONS . " ins
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = ins.annee_code
+                WHERE (ins.id_inscription = ? OR ins.code_inscription = ?)
+                  AND ins.statut_inscription != '" . STATUTS::ANNULE . "'
+                LIMIT 1
+            ");
+            $stmtTryIns->execute([
+                is_numeric($studentIdentifier) ? (int)$studentIdentifier : 0,
+                (string)$studentIdentifier
+            ]);
+            $tryIns = $stmtTryIns->fetch(PDO::FETCH_ASSOC);
+            if ($tryIns) {
+                $inscription = $tryIns;
+                $studentIdentifier = $tryIns['etudiant_code'];
+            }
+        }
+
+        // 3. Récupération du dossier étudiant
+        $stmtEtu = $db->prepare("
+            SELECT * FROM " . TABLES::ETUDIANTS . "
+            WHERE id_etudiant = ? OR code_etudiant = ? OR matricule_etudiant = ?
+            LIMIT 1
+        ");
+        $stmtEtu->execute([
+            is_numeric($studentIdentifier) ? (int)$studentIdentifier : 0,
+            (string)$studentIdentifier,
+            (string)$studentIdentifier
+        ]);
+        $etudiant = $stmtEtu->fetch(PDO::FETCH_ASSOC);
+
+        if (!$etudiant) {
+            return null;
+        }
+
+        // 4. Si pas encore d'inscription associée, chercher la dernière inscription active de l'étudiant
+        if (!$inscription) {
+            $stmtLatestIns = $db->prepare("
+                SELECT ins.*, cl.libelle_classe, cl.filiere_code, cl.niveau_code,
+                       f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                FROM " . TABLES::INSCRIPTIONS . " ins
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = ins.annee_code
+                WHERE (ins.etudiant_code = ? OR ins.etudiant_code = ?)
+                  AND ins.statut_inscription != '" . STATUTS::ANNULE . "'
+                ORDER BY ins.id_inscription DESC
+                LIMIT 1
+            ");
+            $stmtLatestIns->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant']]);
+            $inscription = $stmtLatestIns->fetch(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        // 5. Coordonnées parents / tuteurs
+        $stmtPar = $db->prepare("
+            SELECT * FROM " . TABLES::PARENTS . "
+            WHERE etudiant_code = ? OR etudiant_code = ?
+            LIMIT 1
+        ");
+        $stmtPar->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant']]);
+        $parent = $stmtPar->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        // 6. Situation financière dynamique
+        $totalScolarite = (float)($inscription['montant_scolarite_inscription'] ?? 0);
+        $fraisInscription = 0;
+
+        if (!empty($inscription['classe_code'])) {
+            try {
+                $stmtTr = $db->prepare("
+                    SELECT tr.montant_tranche
+                    FROM " . TABLES::TRANCHES_SCOLARITE . " tr
+                    JOIN " . TABLES::SCOLARITES . " sc ON sc.code_scolarite = tr.scolarite_code
+                    WHERE sc.classe_code = ? AND tr.statut_tranche = '" . STATUTS::ACTIF . "'
+                    ORDER BY tr.id_tranche ASC LIMIT 1
+                ");
+                $stmtTr->execute([$inscription['classe_code']]);
+                $rowTr = $stmtTr->fetch(PDO::FETCH_ASSOC);
+                if ($rowTr && !empty($rowTr['montant_tranche'])) {
+                    $fraisInscription = (float)$rowTr['montant_tranche'];
+                }
+            } catch (Exception $e) {
+                // Table tranches_scolarite optionnelle
+            }
+        }
+
+        // Versements scolarité effectués pour cette inscription
+        $totalPaye = 0;
+        if (!empty($inscription['code_inscription'])) {
+            try {
+                $stmtPay = $db->prepare("
+                    SELECT SUM(montant_paiement) as total_paye
+                    FROM " . TABLES::PAIEMENTS . "
+                    WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'
+                ");
+                $stmtPay->execute([$inscription['code_inscription']]);
+                $rowPay = $stmtPay->fetch(PDO::FETCH_ASSOC);
+                $totalPaye = (float)($rowPay['total_paye'] ?? 0);
+            } catch (Exception $e) {
+                error_log("ModelEtudiant::getStudentFicheData paiements: " . $e->getMessage());
+            }
+        }
+        $soldeRestant = max(0, $totalScolarite - $totalPaye);
+
+        // 7. Contrôle des pièces du dossier
+        $piecePhotos = false;
+        $pieceExtrait = false;
+        $pieceCni = false;
+        $pieceDiplome = false;
+        $pieceBulletins = false;
+        $pieceAffectation = false;
+
+        try {
+            $stmtDossier = $db->prepare("
+                SELECT pf.libelle_piece, COALESCE(de.statut_depot, 'en_attente') AS statut_depot
+                FROM " . TABLES::PIECES_FOURNIR . " pf
+                LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.piece_code = pf.code_piece_fournir 
+                     AND (de.etudiant_code = ? OR de.etudiant_code = ?)
+                WHERE pf.statut_piece = '" . STATUTS::ACTIF . "'
+                ORDER BY pf.id_piece_fournir ASC
+            ");
+            $stmtDossier->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant']]);
+            $dossierRows = $stmtDossier->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            foreach ($dossierRows as $dr) {
+                $lib = mb_strtolower($dr['libelle_piece'] ?? '', 'UTF-8');
+                $isDep = ($dr['statut_depot'] === 'depose');
+                if (strpos($lib, 'photo') !== false) $piecePhotos = $isDep;
+                elseif (strpos($lib, 'extrait') !== false || strpos($lib, 'naissance') !== false) $pieceExtrait = $isDep;
+                elseif (strpos($lib, 'cni') !== false || strpos($lib, 'identit') !== false) $pieceCni = $isDep;
+                elseif (strpos($lib, 'diplome') !== false || strpos($lib, 'collante') !== false || strpos($lib, 'bac') !== false) $pieceDiplome = $isDep;
+                elseif (strpos($lib, 'bulletin') !== false) $pieceBulletins = $isDep;
+                elseif (strpos($lib, 'affect') !== false) $pieceAffectation = $isDep;
+            }
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFicheData dossier: " . $e->getMessage());
+        }
+
+        $nomComplet = trim(($etudiant['nom_etudiant'] ?? '') . ' ' . ($etudiant['prenom_etudiant'] ?? ''));
+        $sexeRaw = strtoupper($etudiant['sexe_etudiant'] ?? '');
+        $sexeLibelle = ($sexeRaw === 'F' || strpos($sexeRaw, 'FEM') !== false) ? 'Féminin' : 'Masculin';
+        $statutAff = (!empty($inscription['affectation_etat']) && in_array(strtolower($inscription['affectation_etat']), ['oui', 'affecte'])) ? 'AFFECTÉ' : 'NON AFFECTÉ';
+
+        return [
+            'etudiant' => $etudiant,
+            'inscription' => $inscription,
+            'parent' => $parent,
+            'viewData' => [
+                'annee_libelle' => $inscription['libelle_annee'] ?? '-',
+                'matricule_etudiant' => !empty($etudiant['matricule_etudiant']) ? $etudiant['matricule_etudiant'] : '-',
+                'code_inscription' => !empty($inscription['code_inscription']) ? $inscription['code_inscription'] : '-',
+                'num_gpeicg' => !empty($etudiant['matricule_etudiant']) ? $etudiant['matricule_etudiant'] : (!empty($etudiant['code_etudiant']) ? $etudiant['code_etudiant'] : '-'),
+                'nom_prenom_etudiant' => $nomComplet,
+                'date_naissance' => !empty($etudiant['date_naissance_etudiant']) ? date('d/m/Y', strtotime($etudiant['date_naissance_etudiant'])) : '-',
+                'lieu_naissance' => $etudiant['lieu_naissance_etudiant'] ?? '-',
+                'sexe_etudiant' => $sexeLibelle,
+                'nationalite' => $etudiant['nationalite_etudiant'] ?? '-',
+                'statut_affectation' => $statutAff,
+                'num_piece_identite' => $etudiant['numero_cni'] ?? '-',
+                'contact_etudiant' => $etudiant['telephone_etudiant'] ?? '-',
+                'email_etudiant' => $etudiant['email_etudiant'] ?? '-',
+                'adresse_etudiant' => $etudiant['lieu_residence_etudiant'] ?? '-',
+                'photo_etudiant' => !empty($etudiant['photo_etudiant']) ? $etudiant['photo_etudiant'] : ($inscription['photo_inscription'] ?? ''),
+                'filiere_libelle' => $inscription['libelle_filiere'] ?? '-',
+                'niveau_libelle' => $inscription['libelle_niveau'] ?? '-',
+                'classe_libelle' => $inscription['libelle_classe'] ?? '-',
+                'est_redoublant' => (!empty($inscription['est_redoublant']) && $inscription['est_redoublant'] == 1) ? 'OUI' : 'NON',
+                'dernier_diplome' => $etudiant['dernier_diplome'] ?? '-',
+                'annee_diplome' => $etudiant['annee_diplome'] ?? '-',
+                'etablissement_origine' => $etudiant['etablissement_origine'] ?? '-',
+                'nom_pere' => $parent['nom_pere'] ?? '-',
+                'contact_pere' => $parent['telephone_pere'] ?? '-',
+                'nom_mere' => $parent['nom_mere'] ?? '-',
+                'contact_mere' => $parent['telephone_mere'] ?? '-',
+                'nom_tuteur' => $parent['nom_tuteur'] ?? '-',
+                'contact_tuteur' => $parent['telephone_tuteur'] ?? '-',
+                'profession_tuteur' => $parent['profession_tuteur'] ?? '-',
+                'adresse_tuteur' => $parent['parent_habitation'] ?? '-',
+                'total_scolarite' => $totalScolarite,
+                'frais_inscription' => $fraisInscription,
+                'montant_paye' => $totalPaye,
+                'reste_payer' => $soldeRestant,
+                'piece_photos' => $piecePhotos,
+                'piece_extrait' => $pieceExtrait,
+                'piece_cni' => $pieceCni,
+                'piece_diplome' => $pieceDiplome,
+                'piece_bulletins' => $pieceBulletins,
+                'piece_affectation' => $pieceAffectation
+            ]
+        ];
+    }
+
+    /**
      * Récupère les intitulés lisibles des filtres pour l'export PDF
      */
     public function getFiltresLabels(array $filters): array

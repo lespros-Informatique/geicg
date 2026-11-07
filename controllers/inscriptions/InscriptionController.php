@@ -63,6 +63,10 @@ class InscriptionController extends BaseController
                 'photo_etudiant' => $etu['photo_etudiant'] ?? '',
 
                 // Cursus antérieur (N-1)
+                'id_inscription' => $prev['id_inscription'] ?? null,
+                'code_inscription' => $prev['code_inscription'] ?? null,
+                'encrypted_inscription_id' => !empty($prev['id_inscription']) ? $this->validator->crypter($prev['id_inscription']) : '',
+                'encrypted_inscription_code' => !empty($prev['code_inscription']) ? $this->validator->crypter($prev['code_inscription']) : '',
                 'classe_precedente' => $prev['classe_prev'] ?? '',
                 'filiere_precedente' => $prev['filiere_prev'] ?? '',
                 'niveau_precedent' => $prev['niveau_prev'] ?? '',
@@ -400,6 +404,13 @@ class InscriptionController extends BaseController
         } else {
             echo $html;
         }
+    }
+
+    public function imprimerFichePdf($details)
+    {
+        require_once __DIR__ . '/../etudiants/EtudiantController.php';
+        $etudiantController = new EtudiantController();
+        $etudiantController->imprimerFichePdf($details);
     }
 
     public function apiSansPhoto()
