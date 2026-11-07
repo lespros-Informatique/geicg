@@ -79,7 +79,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
             <div style="flex: 1; min-width: 260px;">
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
                 <h2 id="prev_stu_nom" style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.2px;">Nom et Prénoms</h2>
-                <span id="prev_stu_badge_sexe" class="badge" style="background: #E0F2FE; color: #0369A1; font-weight: 700; font-size: 11.5px; padding: 4px 10px; border-radius: 20px; border: 1px solid #BAE6FD;">Masculin (M)</span>
+              
                 <span id="prev_stu_badge_redoublant" class="badge" style="display: none; background: #FEE2E2; color: #991B1B; font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 20px; border: 1px solid #FCA5A5;">Redoublant</span>
               </div>
 
@@ -94,7 +94,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
                 </span>
                  <span style="display: inline-flex; align-items: center; gap: 6px; background: #F8FAFC; padding: 4px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
                   <i data-lucide="globe" style="width: 14px; height: 14px; color: #059669;"></i>
-                  <strong>Sexe :</strong> <span id="prev_stu_nationalite" style="font-weight: 700; color: #0F172A;">Ivoirienne</span>
+                  <strong>Sexe :</strong> <span id="prev_stu_badge_sexe" style="font-weight: 700; color: #0F172A;"></span>
                 </span>
               </div>
             </div>
