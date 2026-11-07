@@ -105,12 +105,10 @@
                 <th style="padding: 14px 12px; width: 45px;">#</th>
                 <th style="padding: 14px 12px;">Matricule</th>
                 <th style="padding: 14px 12px;">Nom & Prénoms</th>
-                <th style="padding: 14px 12px;" class="text-center">Date de Naissance</th>
-                <th style="padding: 14px 12px;" class="text-center">Sexe</th>
-                <th style="padding: 14px 12px;" class="text-center">Date de Naissance</th>
+                <th style="padding: 14px 12px;" class="text-center">Date - Nais</th>
                 <th style="padding: 14px 12px;" class="text-center">Sexe</th>
                 <th style="padding: 14px 12px;">Classe Antérieure</th>
-                <th style="padding: 14px 12px; text-align: center; width: 100px;">Actions</th>
+                <th style="padding: 14px 12px; text-align: center; width: 130px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>

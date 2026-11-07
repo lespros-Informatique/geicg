@@ -51,6 +51,8 @@ class InscriptionController extends BaseController
             $data[] = [
                 'id_etudiant' => $etu['id_etudiant'],
                 'code_etudiant' => $etu['code_etudiant'],
+                'encrypted_id' => $this->validator->crypter($etu['id_etudiant']),
+                'encrypted_code' => $this->validator->crypter($etu['code_etudiant']),
                 'matricule_etudiant' => $etu['matricule_etudiant'] ?? '-',
                 'nom_etudiant' => $etu['nom_etudiant'],
                 'prenom_etudiant' => $etu['prenom_etudiant'],
