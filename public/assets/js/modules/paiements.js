@@ -2117,12 +2117,6 @@
               }
             },
             {
-              data: 'echeance_date', className: 'text-center',
-              render: function (v) {
-                return `<span style="font-weight: 800; color: #1E293B; font-size: 12.5px;">${v || '-'}</span>`;
-              }
-            },
-            {
               data: 'total_paye', className: 'text-end font-monospace',
               render: function (v) {
                 return `<div style="font-size: 12.5px; font-weight: 700; color: #16A34A;">${formatFCFA(v)}</div>`;

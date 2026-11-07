@@ -159,11 +159,10 @@ $canRecordPayment = $canRecordPayment ?? true;
                   <input type="checkbox" id="check-all-impayes" style="width: 17px; height: 17px; cursor: pointer; vertical-align: middle;">
                 </th>
                 <th style="padding: 12px; width: 40px;" class="text-center">#</th>
-                <th style="padding: 12px;">Élève / Étudiant</th>
-                <th style="padding: 12px;">Parent / Contact</th>
-                <th style="padding: 12px;">Classe & Régime</th>
+                <th style="padding: 12px;"> Étudiant</th>
+                <th style="padding: 12px;"> Contact</th>
+                <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px;">Libellé Tranche</th>
-                <th style="padding: 12px;" class="text-center">Date d'Échéance</th>
                 <th style="padding: 12px;" class="text-end">Total Versé</th>
                 <th style="padding: 12px;" class="text-end">Reste à Payer</th>
                 <th style="padding: 12px; text-align: center; width: 140px;">Actions</th>
