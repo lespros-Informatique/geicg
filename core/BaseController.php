@@ -229,6 +229,14 @@ abstract class BaseController
     }
 
     /**
+     * Vérifie si l'utilisateur courant peut modifier / écrire sur une année académique donnée
+     */
+    protected function canWriteAcademicYear(string $anneeCode): bool
+    {
+        return $this->academicGuard()->canUserWriteYear($anneeCode);
+    }
+
+    /**
      * Exige l'autorisation d'accès en lecture à une année académique (arrête l'exécution sinon)
      */
     protected function requireAcademicYearReadAccess(string $anneeCode): void
