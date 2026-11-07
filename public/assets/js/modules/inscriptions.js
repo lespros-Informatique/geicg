@@ -186,6 +186,24 @@
       table.ajax.reload();
     });
 
+    // Impression officielle du registre des candidats à la réinscription
+    $('#btn-print-list').on('click', function (e) {
+      e.preventDefault();
+      var annee = $('#filter-annee').val() || '';
+      var filiere = $('#filter-filiere').val() || '';
+      var niveau = $('#filter-niveau').val() || '';
+      var classe = $('#filter-classe').val() || '';
+
+      var url = racine + 'reinscription/imprimerPdf?' + $.param({
+        annee_code: annee,
+        filiere_code: filiere,
+        niveau_code: niveau,
+        classe_code: classe
+      });
+
+      window.open(url, '_blank');
+    });
+
   }
 
   // 2. VUE : FORMULAIRE D'INSCRIPTION / RÉINSCRIPTION (views/inscriptions/edit.php)
@@ -345,6 +363,42 @@
                 });
               });
 
+              // Bilan Académique & Décision du Conseil en fonction du bulletin
+              var decText = d.decision_conseil || 'En attente de délibération';
+              var decBg = '#EFF6FF';
+              var decColor = '#1E3A5F';
+              var decBorder = '#BFDBFE';
+              var decIcon = 'info';
+
+              if (d.decision_badge === 'success') {
+                decBg = '#DCFCE7';
+                decColor = '#15803D';
+                decBorder = '#86EFAC';
+                decIcon = 'check-circle';
+              } else if (d.decision_badge === 'warning') {
+                decBg = '#FEF3C7';
+                decColor = '#B45309';
+                decBorder = '#FDE68A';
+                decIcon = 'alert-triangle';
+              }
+
+              var moyInfo = (d.moyenne_n1 !== null && d.moyenne_n1 !== undefined)
+                ? ' (' + Number(d.moyenne_n1).toFixed(2) + '/20' + (d.mention_n1 && d.mention_n1 !== 'Non évalué' ? ' • ' + d.mention_n1 : '') + ')'
+                : '';
+
+              $('#prev_stu_decision').css({
+                'background': decBg,
+                'color': decColor,
+                'border-color': decBorder
+              }).html('<i data-lucide="' + decIcon + '" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:4px;"></i>' + decText + moyInfo);
+
+              // Présélection automatique de l'état Redoublant / Passant selon la délibération du conseil
+              if (d.decision_badge === 'warning') {
+                $('input[name="is_redoublant"][value="1"]').prop('checked', true);
+              } else if (d.decision_badge === 'success') {
+                $('input[name="is_redoublant"][value="0"]').prop('checked', true);
+              }
+
               // Gestion automatique de l'état Redoublant / Passant avec suggestion intelligente
               handleRedoublantState();
             } else {
@@ -353,6 +407,11 @@
               $('#prev_stu_niveau').text('Non défini');
               $('#prev_stu_classe').text('Nouvel Inscrit');
               $('#prev_stu_annee_detail').text('Première inscription dans l\'établissement');
+              $('#prev_stu_decision').css({
+                'background': '#F1F5F9',
+                'color': '#64748B',
+                'border-color': '#CBD5E1'
+              }).html('<i data-lucide="user-plus" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:4px;"></i> Nouvel inscrit');
               $('#prev_stu_solde').css('color', '#15803D').text('Aucun arriéré (0 FCFA)');
               $('#quitus-financial-status-box').hide();
               $('#smart_class_suggestion_hint').hide();

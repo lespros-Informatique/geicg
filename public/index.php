@@ -288,6 +288,8 @@ $route->addRoute('/inscription/uploadPhoto', [$inscriptionController, 'uploadPho
 $route->addRoute('/inscription/fiche', [$inscriptionController, 'imprimerFiche']);
 $route->addRoute('/inscription/fiche/{param}', [$inscriptionController, 'imprimerFiche']);
 $route->addRoute('/inscription/imprimerFichePdf/{param}', [$inscriptionController, 'imprimerFichePdf']);
+$route->addRoute('/inscription/imprimerPdf', [$inscriptionController, 'imprimerPdf']);
+$route->addRoute('/reinscription/imprimerPdf', [$inscriptionController, 'imprimerPdf']);
 $route->addRoute('/reinscription/formulaire', [$inscriptionController, 'formulaire']);
 
 // Module: accessoire (AccessoireController)

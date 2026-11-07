@@ -136,6 +136,10 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
               <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Niveau d'études :</span> <span id="prev_stu_niveau" style="font-weight: 700;">-</span></div>
               <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Classe passée :</span> <span id="prev_stu_classe" style="font-weight: 700;">-</span></div>
               <div style="font-size: 12px; color: #64748B; margin-top: 2px;"><span id="prev_stu_annee_detail">-</span></div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 6px; border-top: 1px dashed #E2E8F0;">
+                <span style="color: #64748B;">Décision du conseil :</span> 
+                <span id="prev_stu_decision" style="font-weight: 800; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;">-</span>
+              </div>
               <div style="margin-top: 6px; padding: 8px 12px; background: #FEF2F2; border-radius: 8px; border: 1px solid #FCA5A5; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 11.5px; font-weight: 700; color: #991B1B;">Solde restant antérieur :</span>
                 <span id="prev_stu_solde" style="font-weight: 900; font-size: 13.5px; color: #DC2626;">0 FCFA</span>

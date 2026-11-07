@@ -443,6 +443,10 @@ class ModelInscription extends BaseModel
         $hasHistory = false;
         $suggestedNextClassCode = '';
         $suggestedNextClassLibelle = '';
+        $decisionConseil = 'Nouvel inscrit';
+        $decisionBadge = 'secondary';
+        $moyenneN1 = null;
+        $mentionN1 = 'Non évalué';
 
         if ($prevIns) {
             $hasHistory = true;
@@ -457,6 +461,38 @@ class ModelInscription extends BaseModel
             $rowP = $stmtP->fetch(PDO::FETCH_ASSOC);
             $prevPaye = (float)($rowP['total_paye'] ?? 0);
             $prevSolde = max(0, $prevDue - $prevPaye);
+
+            // Bilan Académique & Décision du Conseil selon le bulletin de la session passée
+            $decisionConseil = 'Autorisé(e) à se réinscrire';
+            $decisionBadge = 'info';
+
+            if (!empty($prevIns['id_inscription'])) {
+                try {
+                    require_once __DIR__ . '/../bulletin/ModelBulletin.php';
+                    $modelBulletin = new ModelBulletin();
+                    $bulletinData = $modelBulletin->calculateBulletinData((int)$prevIns['id_inscription']);
+                    if ($bulletinData && isset($bulletinData['moyenneGenerale'])) {
+                        $mg = (float)$bulletinData['moyenneGenerale'];
+                        $hasNotes = ($mg > 0 || !empty($bulletinData['notesDetails']) || ($bulletinData['totalCoefficients'] ?? 0) > 0);
+                        if ($hasNotes) {
+                            $moyenneN1 = $mg;
+                            $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : ($mg >= 10 ? 'Passable' : 'Ajourné(e)');
+                            if ($mg >= 10) {
+                                $decisionConseil = 'Admis(e) en classe supérieure';
+                                $decisionBadge = 'success';
+                            } else {
+                                $decisionConseil = 'Ajourné(e) / Redoublement';
+                                $decisionBadge = 'warning';
+                            }
+                        } else {
+                            $decisionConseil = 'Autorisé(e) à se réinscrire (Sans notes)';
+                            $decisionBadge = 'info';
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("ModelInscription::getStudentProfileForReinscription bulletin: " . $e->getMessage());
+                }
+            }
 
             if (!empty($prevIns['filiere_code']) && !empty($prevIns['niveau_code'])) {
                 $stmtNiv = $db->prepare("SELECT id_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ? LIMIT 1");
@@ -551,6 +587,10 @@ class ModelInscription extends BaseModel
             'dernier_niveau_code' => $prevIns['niveau_code'] ?? '',
             'derniere_filiere_code' => $prevIns['filiere_code'] ?? '',
             'derniere_annee' => $prevIns['libelle_annee'] ?? '',
+            'decision_conseil' => $decisionConseil,
+            'decision_badge' => $decisionBadge,
+            'moyenne_n1' => $moyenneN1,
+            'mention_n1' => $mentionN1,
             'suggested_next_class_code' => $suggestedNextClassCode,
             'suggested_next_class_libelle' => $suggestedNextClassLibelle,
             'prev_affectation_etat' => (($prevIns['affectation_etat'] ?? '') === 'affecte' || ($prevIns['affectation_etat'] ?? '') === 'oui') ? 'affecte' : 'non_affecte',

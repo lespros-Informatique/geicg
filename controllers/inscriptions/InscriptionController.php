@@ -413,6 +413,130 @@ class InscriptionController extends BaseController
         $etudiantController->imprimerFichePdf($details);
     }
 
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_INSCRIPTIONS);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $activeAnneeCode = $this->getActiveAnneeCode();
+        $activeAnneeLibelle = Session::get('annee_active_libelle', 'En cours');
+
+        $filterAnnee = trim($_GET['annee_code'] ?? '');
+        $filterFiliere = trim($_GET['filiere_code'] ?? '');
+        $filterNiveau = trim($_GET['niveau_code'] ?? '');
+        $filterClasse = trim($_GET['classe_code'] ?? '');
+
+        $deps = $this->model->getReinscriptionFormDependencies($activeAnneeCode);
+        if (empty($filterAnnee) || $filterAnnee === 'ALL') {
+            $filterAnnee = $deps['anneesCloturees'][0]['code_annee'] ?? '';
+        }
+
+        $candidates = $this->model->getReinscriptionCandidates(
+            $activeAnneeCode,
+            $filterAnnee,
+            $filterFiliere,
+            $filterNiveau,
+            $filterClasse
+        );
+
+        $filiereLabel = 'Toutes les filières';
+        foreach ($deps['filieres'] as $f) {
+            if (($f['code_filiere'] ?? '') === $filterFiliere) {
+                $filiereLabel = $f['libelle_filiere'] ?? $filiereLabel;
+                break;
+            }
+        }
+
+        $niveauLabel = 'Tous les niveaux';
+        foreach ($deps['niveaux'] as $n) {
+            if (($n['code_niveau'] ?? '') === $filterNiveau) {
+                $niveauLabel = $n['libelle_niveau'] ?? $niveauLabel;
+                break;
+            }
+        }
+
+        $classeLabel = 'Toutes les classes';
+        foreach ($deps['classes'] as $c) {
+            if (($c['code_classe'] ?? '') === $filterClasse) {
+                $classeLabel = $c['libelle_classe'] ?? $classeLabel;
+                break;
+            }
+        }
+
+        $anneePrevLabel = $filterAnnee;
+        foreach ($deps['anneesCloturees'] as $a) {
+            if (($a['code_annee'] ?? '') === $filterAnnee) {
+                $anneePrevLabel = $a['libelle_annee'] ?? $anneePrevLabel;
+                break;
+            }
+        }
+
+        $total = count($candidates);
+        $hommes = 0;
+        $femmes = 0;
+        foreach ($candidates as $cand) {
+            $sexe = strtoupper(trim($cand['etudiant']['sexe_etudiant'] ?? ''));
+            if (strpos($sexe, 'F') !== false) {
+                $femmes++;
+            } else {
+                $hommes++;
+            }
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Inscription & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_active_libelle' => $activeAnneeLibelle,
+            'annee_prev_libelle' => $anneePrevLabel,
+            'editeur_nom' => $editeurNom,
+            'candidates' => $candidates,
+            'filtres_labels' => [
+                'annee' => $anneePrevLabel,
+                'filiere' => $filiereLabel,
+                'niveau' => $niveauLabel,
+                'classe' => $classeLabel,
+            ],
+            'kpis' => [
+                'total' => $total,
+                'hommes' => $hommes,
+                'femmes' => $femmes
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('liste_reinscriptions.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'inscriptions',
+            $filterAnnee ?: 'TOUT',
+            "Impression du registre des candidats à la réinscription (Total: {$total})",
+            ['filters' => compact('filterAnnee', 'filterFiliere', 'filterNiveau', 'filterClasse'), 'total' => $total]
+        );
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Candidats_Reinscription_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre Candidats Réinscription - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
     public function apiSansPhoto()
     {
         $this->apiPriseDeVue();
