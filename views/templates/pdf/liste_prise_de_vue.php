@@ -30,6 +30,8 @@ if (!empty($etablissement['logo_etablissement'])) {
     }
 }
 
+$placeholderPath = __DIR__ . '/../../../public/assets/images/placeholders/etudiant.png';
+
 $totalInscrits = (int)($stats['total'] ?? count($rows ?? []));
 $avecPhoto = (int)($stats['avec_photo'] ?? 0);
 $sansPhoto = (int)($stats['sans_photo'] ?? 0);
@@ -371,6 +373,8 @@ $tauxCouverture = (float)($stats['taux'] ?? 0);
             <td class="text-center" style="padding: 2px;">
               <?php if ($hasPhoto): ?>
                 <img src="<?= $photoFullPath ?>" style="width: 26px; height: 26px; border-radius: 4px; object-fit: cover; border: 1px solid #10B981;" alt="Photo">
+              <?php elseif (file_exists($placeholderPath)): ?>
+                <img src="<?= $placeholderPath ?>" style="width: 26px; height: 26px; border-radius: 4px; object-fit: cover; border: 1px solid #CBD5E1; opacity: 0.8;" alt="Sans photo">
               <?php else: ?>
                 <span style="color: #94A3B8; font-size: 7pt; font-style: italic;">Sans photo</span>
               <?php endif; ?>

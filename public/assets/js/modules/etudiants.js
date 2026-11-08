@@ -1854,28 +1854,23 @@
           data: null,
           render: function(d) {
             var rawName = (d.nom_complet ? d.nom_complet.trim() : '') || 'Étudiant non identifié';
-            var parts = rawName.split(' ').filter(function(p) { return p.length > 0; });
-            var initials = 'ET';
-            if (parts.length >= 2) {
-              initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-            } else if (parts.length === 1 && parts[0].length >= 2) {
-              initials = parts[0].substring(0, 2).toUpperCase();
-            }
-
             var photoPath = d.photo ? String(d.photo).trim() : '';
-            var initialsDiv = '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0;">' + escapeHtml(initials) + '</div>';
+            var placeholderUrl = racine + 'public/assets/images/placeholders/etudiant.png';
+            var safeName = escapeHtml(rawName);
 
-            var avatarHtml = initialsDiv;
+            var avatarHtml;
             if (photoPath !== '') {
-              var photoUrl = (photoPath.indexOf('http') === 0) ? photoPath : (racine + photoPath.replace(/^\//, ''));
-              avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.style.display=\'none\'; if(this.nextElementSibling) this.nextElementSibling.style.display=\'flex\';">' +
-                           '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0;">' + escapeHtml(initials) + '</div>';
+              var cleanRel = photoPath.replace(/^\/+/, '');
+              var photoUrl = (cleanRel.indexOf('http') === 0) ? cleanRel : (racine + cleanRel);
+              avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #10B981; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex-shrink: 0;" title="' + safeName + '" onerror="this.onerror=null; this.src=\'' + placeholderUrl + '\';">';
+            } else {
+              avatarHtml = '<img src="' + placeholderUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #CBD5E1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); background: #F8FAFC; flex-shrink: 0;" title="Sans photo - ' + safeName + '">';
             }
 
             return '<div style="display: flex; align-items: center; gap: 12px; min-width: 180px;">' +
                      avatarHtml +
                      '<div>' +
-                       '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">' + escapeHtml(rawName) + '</div>' +
+                       '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">' + safeName + '</div>' +
                      '</div>' +
                    '</div>';
           }
@@ -1905,33 +1900,18 @@
         },
         {
           data: null,
-          render: function(d) {
-            var pct = d.pourcentage;
-            var barColor = pct === 100 ? '#16A34A' : (pct >= 50 ? '#EA580C' : '#DC2626');
-            return '<div style="min-width: 120px;">' +
-                     '<div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #475569; margin-bottom: 3px;">' +
-                       '<span>' + pct + '%</span>' +
-                     '</div>' +
-                     '<div style="height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">' +
-                       '<div style="height: 100%; width: ' + pct + '%; background: ' + barColor + '; border-radius: 4px;"></div>' +
-                     '</div>' +
-                   '</div>';
-          }
-        },
-        {
-          data: null,
           orderable: false,
-          className: 'text-end',
+          className: 'text-center',
           render: function(d) {
-            return '<div style="display: flex; justify-content: flex-end; gap: 6px;">' +
-                     '<button type="button" class="btn btn-sm btn-primary btn-open-dossier" style="font-weight: 700; border-radius: 8px; padding: 6px 11px;" title="Gérer les pièces et les scans">' +
-                       '<i data-lucide="folder-open" style="width: 14px; height: 14px; margin-right: 4px;"></i> Gérer' +
+            return '<div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">' +
+                     '<button type="button" class="btn-action-icon btn-open-dossier" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;" title="Gérer les pièces et les scans">' +
+                       '<i data-lucide="folder-open"></i>' +
                      '</button>' +
-                     '<button type="button" class="btn btn-sm btn-outline-primary btn-print-recepisse-row" title="Imprimer le Récépissé" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
-                       '<i data-lucide="printer" style="width: 14px; height: 14px;"></i>' +
+                     '<button type="button" class="btn-action-icon btn-print-recepisse-row" style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1;" title="Imprimer le récépissé de dépôt">' +
+                       '<i data-lucide="printer"></i>' +
                      '</button>' +
-                     '<button type="button" class="btn btn-sm btn-outline-success btn-quick-validate" title="Tout valider en 1 clic" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
-                       '<i data-lucide="check-check" style="width: 14px; height: 14px;"></i>' +
+                     '<button type="button" class="btn-action-icon btn-quick-validate" style="background: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7;" title="Tout valider en 1 clic">' +
+                       '<i data-lucide="check-check"></i>' +
                      '</button>' +
                    '</div>';
           }

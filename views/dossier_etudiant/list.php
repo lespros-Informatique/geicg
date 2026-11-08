@@ -11,7 +11,7 @@
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="folder-check" style="width: 26px; height: 26px; color: #1E3A5F;"></i> Dépôt des Dossiers Étudiants
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion, numérisation, émargement et contrôle de la complétude des pièces exigées</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion des dépôts de dossiers étudiants</p>
         </div>
       </div>
 
@@ -121,8 +121,7 @@
                 <th style="padding: 12px; text-align: center;">Matricule</th>
                 <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px; text-align: center;">Pièces Déposées</th>
-                <th style="padding: 12px; min-width: 140px;">Complétude</th>
-                <th style="padding: 12px; text-align: right; width: 140px;">Actions</th>
+                <th style="padding: 12px; text-align: center; width: 120px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
