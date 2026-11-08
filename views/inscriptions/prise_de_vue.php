@@ -11,7 +11,7 @@
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="camera" style="width: 26px; height: 26px; color: #1E3A5F;"></i> Prise de vue
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Registre des étudiants régulièrement inscrits avec gestion de la prise de vue et capture des photos</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;"> Restion de la prise de vue des étudiants</p>
         </div>
       </div>
 
@@ -78,13 +78,13 @@
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                 <th style="padding: 12px; width: 50px;">#</th>
-                <th style="padding: 12px; width: 60px; text-align: center;">Aperçu Photo</th>
+                <th style="padding: 12px; width: 60px; text-align: center;">Photo</th>
                 <th style="padding: 12px;">Matricule</th>
-                <th style="padding: 12px;">Nom & Prénom(s) Étudiant</th>
-                <th style="padding: 12px;">Classe & Filière</th>
+                <th style="padding: 12px;">Nom & Prénoms</th>
+                <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px;">Téléphone</th>
-                <th style="padding: 12px;">Date Inscription</th>
-                <th style="padding: 12px; text-align: center; width: 140px;">Action Unique</th>
+                <th style="padding: 12px;">Date Ins</th>
+                <th style="padding: 12px; text-align: center; width: 140px;">Action</th>
               </tr>
             </thead>
             <tbody></tbody>
