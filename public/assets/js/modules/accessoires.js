@@ -709,7 +709,7 @@
             var photoPath = d.photo_etudiant ? String(d.photo_etudiant).trim() : '';
             var photoUrl = (photoPath !== '') ? ((photoPath.indexOf('http') === 0) ? photoPath : (racine + photoPath.replace(/^\//, ''))) : placeholderUrl;
 
-            var avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.onerror=null; this.src=\'' + placeholderUrl + '\';">';
+            var avatarHtml = '<img src="' + photoUrl + '" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.onerror=null; this.src=\'' + placeholderUrl + '\';">';
 
             return '<div style="display: flex; align-items: center; gap: 12px; min-width: 180px;">' +
                      avatarHtml +
