@@ -126,18 +126,32 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
               <small style="color: #64748B; font-size: 12px; margin-top: 6px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi (Affecté ou Non Affecté).</small>
             </div>
 
-            <!-- ANNÉE ACADÉMIQUE -->
+            <!-- ANNÉE ACADÉMIQUE (READONLY) -->
             <div class="form-group" style="grid-column: 1 / -1;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
                 Année Académique d'Inscription <span style="color: #EF4444;">*</span>
               </label>
-              <select class="form-control select2" id="wiz_annee" name="annee_code" style="width: 100%;" required>
-                <?php foreach($annees as $a): ?>
-                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF)) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($a['libelle_annee']) ?> (<?= htmlspecialchars($a['code_annee']) ?>)<?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' — Session Active' : '' ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
+              <?php
+                $selectedAnneeLibelle = '';
+                foreach ($annees as $a) {
+                    if ($a['code_annee'] === $activeAnneeCode) {
+                        $selectedAnneeLibelle = $a['libelle_annee'] . ((!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' — Session Active' : '');
+                        break;
+                    }
+                }
+                if (empty($selectedAnneeLibelle)) {
+                    $selectedAnneeLibelle = $activeAnneeCode;
+                }
+              ?>
+              <div style="position: relative;">
+                <input type="text" class="form-control" id="disp_wiz_annee" value="<?= htmlspecialchars($selectedAnneeLibelle) ?>" readonly 
+                       style="background-color: #F8FAFC; color: #1E3A5F; font-weight: 700; cursor: not-allowed; border: 1.5px solid #CBD5E1; padding-left: 38px; height: 42px; width: 100%; box-sizing: border-box;">
+                <i data-lucide="calendar" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #64748B;"></i>
+              </div>
+              <input type="hidden" id="wiz_annee" name="annee_code" value="<?= htmlspecialchars($activeAnneeCode) ?>">
+              <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">
+                Verrouillée sur l'année académique de l'inscription en cours.
+              </small>
             </div>
 
             <!-- CLASSE D'AFFECTATION -->
@@ -163,10 +177,11 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
               </select>
             </div>
 
-            <!-- Remise / Bourse -->
+            <!-- Remise / Bourse (READONLY) -->
             <div class="form-group">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
-              <input type="number" min="0" step="any" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="<?= htmlspecialchars($inscription['remise_scolarite'] ?? 0) ?>" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-weight: 600;">
+              <input type="number" min="0" step="any" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="<?= htmlspecialchars($inscription['remise_scolarite'] ?? 0) ?>" readonly style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background-color: #F8FAFC; color: #334155; font-weight: 700; cursor: not-allowed;">
+              <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Montant fixé lors de l'inscription initiale (lecture seule).</small>
             </div>
 
           </div>
