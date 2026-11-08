@@ -82,7 +82,6 @@
                 <th style="padding: 12px;">Matricule</th>
                 <th style="padding: 12px;">Nom & Prénoms</th>
                 <th style="padding: 12px;">Classe</th>
-                <th style="padding: 12px;">Téléphone</th>
                 <th style="padding: 12px;">Date Ins</th>
                 <th style="padding: 12px; text-align: center; width: 140px;">Action</th>
               </tr>

@@ -1072,11 +1072,6 @@
           }
         },
         {
-          data: 'telephone_etudiant', render: function (d) {
-            return '<span style="color:#475569; font-weight:600; font-size:13px;">' + (d || '-') + '</span>';
-          }
-        },
-        {
           data: 'created_at_inscription', render: function (d) {
             if (!d) return '-';
             var parts = d.split(' ');
