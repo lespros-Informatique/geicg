@@ -247,7 +247,9 @@
       filiere_code: $('#filter-filiere').val() || '',
       niveau_code: $('#filter-niveau').val() || '',
       classe_code: $('#filter-classe').val() || '',
-      affectation_etat: $('#filter-regime').val() || ''
+      affectation_etat: $('#filter-regime').val() || '',
+      canal_inscription: $('#filter-canal').val() || '',
+      statut_inscription: $('#filter-statut-inscription').val() || 'ACTIFS'
     };
     var qs = $.param(params);
     $('#btn-print-etudiants').attr('href', racine + 'etudiant/imprimerPdf?' + qs);
@@ -308,6 +310,8 @@
     $('#filter-niveau').val('ALL').trigger('change.select2');
     $('#filter-classe').val('ALL').trigger('change.select2');
     $('#filter-regime').val('ALL');
+    $('#filter-canal').val('ALL');
+    $('#filter-statut-inscription').val('ACTIFS');
     filterClassDropdown();
     updateSmartColumns();
     updatePrintPdfUrl();

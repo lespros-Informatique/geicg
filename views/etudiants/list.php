@@ -146,11 +146,12 @@ $anneeActive = $anneeActive ?? '';
               <i data-lucide="shield-check" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Statut Dossier
             </label>
             <select id="filter-statut-inscription" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
-              <option value="ALL">-- Tous les statuts --</option>
-              <option value="en_attente">En Attente</option>
+              <option value="ACTIFS" selected>Inscriptions actives (par défaut)</option>
+              <option value="ALL">-- Tous les dossiers (inclus annulés) --</option>
+              <option value="en_attente">En attente</option>
               <option value="valide">Validée</option>
               <option value="solde">Soldée</option>
-              <option value="annule">Annulée</option>
+              <option value="annule">Annulée uniquement</option>
             </select>
           </div>
 

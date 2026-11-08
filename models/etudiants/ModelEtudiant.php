@@ -137,9 +137,16 @@ class ModelEtudiant extends BaseModel
             $params[] = $filters['canal_inscription'];
         }
 
-        if (!empty($filters['statut_inscription']) && $filters['statut_inscription'] !== 'ALL') {
-            $where[] = "i.statut_inscription = ?";
-            $params[] = $filters['statut_inscription'];
+        if (!empty($filters['statut_inscription'])) {
+            if ($filters['statut_inscription'] === 'ACTIFS') {
+                $where[] = "i.statut_inscription != '" . STATUTS::ANNULE . "'";
+            } elseif ($filters['statut_inscription'] !== 'ALL') {
+                $where[] = "i.statut_inscription = ?";
+                $params[] = $filters['statut_inscription'];
+            }
+        } else {
+            // Par défaut : aucune inscription annulée sauf si explicitement demandé
+            $where[] = "i.statut_inscription != '" . STATUTS::ANNULE . "'";
         }
 
         $whereClause = implode(" AND ", $where);
@@ -1060,6 +1067,22 @@ class ModelEtudiant extends BaseModel
                     if (empty($filters['niveau_code']) || $filters['niveau_code'] === 'ALL') {
                         $filtresLabels['niveau'] = $row['libelle_niveau'] ?? '-';
                     }
+                }
+            }
+
+            if (!empty($filters['statut_inscription'])) {
+                if ($filters['statut_inscription'] === 'ACTIFS') {
+                    $filtresLabels['statut_inscription'] = 'Inscriptions Actives';
+                } elseif ($filters['statut_inscription'] === 'ALL') {
+                    $filtresLabels['statut_inscription'] = 'Tous les statuts';
+                } elseif ($filters['statut_inscription'] === 'annule') {
+                    $filtresLabels['statut_inscription'] = 'Annulées uniquement';
+                } elseif ($filters['statut_inscription'] === 'valide') {
+                    $filtresLabels['statut_inscription'] = 'Validées';
+                } elseif ($filters['statut_inscription'] === 'solde') {
+                    $filtresLabels['statut_inscription'] = 'Soldées';
+                } elseif ($filters['statut_inscription'] === 'en_attente') {
+                    $filtresLabels['statut_inscription'] = 'En attente';
                 }
             }
         } catch (Exception $e) {

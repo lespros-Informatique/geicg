@@ -40,7 +40,7 @@ class EtudiantController extends BaseController
             'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? ''),
             'affectation_etat' => $_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? ''),
             'canal_inscription' => $_GET['canal_inscription'] ?? ($_POST['canal_inscription'] ?? ''),
-            'statut_inscription' => $_GET['statut_inscription'] ?? ($_POST['statut_inscription'] ?? '')
+            'statut_inscription' => !empty($_GET['statut_inscription']) ? $_GET['statut_inscription'] : (!empty($_POST['statut_inscription']) ? $_POST['statut_inscription'] : 'ACTIFS')
         ];
 
         $etabCfg = $this->getEtablissementConfig();
@@ -444,7 +444,9 @@ class EtudiantController extends BaseController
             'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
             'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),
             'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? ''),
-            'affectation_etat' => $_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? '')
+            'affectation_etat' => $_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? ''),
+            'canal_inscription' => $_GET['canal_inscription'] ?? ($_POST['canal_inscription'] ?? ''),
+            'statut_inscription' => !empty($_GET['statut_inscription']) ? $_GET['statut_inscription'] : (!empty($_POST['statut_inscription']) ? $_POST['statut_inscription'] : 'ACTIFS')
         ];
 
         $etudiants = $this->model->getFilteredRegistry($filters);
