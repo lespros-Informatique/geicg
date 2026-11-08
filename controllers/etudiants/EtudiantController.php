@@ -289,17 +289,24 @@ class EtudiantController extends BaseController
         );
 
         if ($res['success']) {
+            $logDesc = "Changement de classe vers {$nouvelleClasse} pour le dossier {$codeInscription}";
+            if (!empty($res['paiements_annules_count'])) {
+                $logDesc .= " ({$res['paiements_annules_count']} versement(s) antérieur(s) annulé(s) pour " . number_format($res['paiements_annules_montant'], 0, ',', ' ') . " FCFA suite au changement de scolarité)";
+            }
+
             $this->logAction(
                 AuditLogger::ACTION_UPDATE,
                 'inscriptions',
                 $codeInscription ?: $codeEtudiant,
-                "Changement de classe vers {$nouvelleClasse} pour le dossier {$codeInscription}",
+                $logDesc,
                 [
                     'code_inscription' => $codeInscription,
                     'code_etudiant' => $codeEtudiant,
                     'nouvelle_classe' => $nouvelleClasse,
                     'affectation' => $affectationEtat,
-                    'montant_scolarite' => $montantScolarite
+                    'montant_scolarite' => $montantScolarite,
+                    'paiements_annules' => $res['paiements_annules_count'] ?? 0,
+                    'montant_annule' => $res['paiements_annules_montant'] ?? 0
                 ]
             );
             $this->success($res['message'], ['redirect' => RACINE . 'etudiant/list']);

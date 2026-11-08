@@ -306,11 +306,61 @@ class ModelEtudiant extends BaseModel
                 }
             }
 
+            // Gestion de l'annulation des versements antérieurs si la classe change et que le montant est différent
+            $classeChangee = ($inscriptionRow['classe_code'] !== $nouvelleClasse);
+            $ancienMontant = (float)($inscriptionRow['montant_scolarite_inscription'] ?? 0);
+            $montantDifferent = (abs($ancienMontant - (float)$montantScolarite) > 0.01);
+            $nbPaiementsAnnules = 0;
+            $totalMontantAnnule = 0.0;
+
+            if ($classeChangee && $montantDifferent && !empty($inscriptionRow['code_inscription'])) {
+                // Recherche des versements de scolarité actifs de l'ancienne classe
+                $stmtPaiements = $db->prepare("
+                    SELECT id_paiement, code_paiement, montant_paiement, observations
+                    FROM " . TABLES::PAIEMENTS . "
+                    WHERE inscription_code = ? 
+                      AND statut_paiement != '" . STATUTS::ANNULE . "'
+                      AND (categorie_paiement = 'SCOLARITE' OR categorie_paiement IS NULL OR categorie_paiement = '')
+                ");
+                $stmtPaiements->execute([$inscriptionRow['code_inscription']]);
+                $oldPayments = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                if (!empty($oldPayments)) {
+                    $motifAnnulation = sprintf(
+                        " [ANNULATION le %s : Changement de classe de %s (%s FCFA) vers %s (%s FCFA) avec tarification différente]",
+                        date('d/m/Y H:i'),
+                        $inscriptionRow['classe_code'] ?? 'ancienne',
+                        number_format($ancienMontant, 0, ',', ' '),
+                        $nouvelleClasse,
+                        number_format((float)$montantScolarite, 0, ',', ' ')
+                    );
+
+                    $stmtCancelPay = $db->prepare("
+                        UPDATE " . TABLES::PAIEMENTS . "
+                        SET statut_paiement = '" . STATUTS::ANNULE . "',
+                            observations = CONCAT(COALESCE(observations, ''), ?)
+                        WHERE id_paiement = ?
+                    ");
+
+                    foreach ($oldPayments as $op) {
+                        $stmtCancelPay->execute([$motifAnnulation, $op['id_paiement']]);
+                        $nbPaiementsAnnules++;
+                        $totalMontantAnnule += (float)($op['montant_paiement'] ?? 0);
+                    }
+                }
+            }
+
+            // Si des paiements ont été annulés, réajuster le statut d'inscription s'il était soldé
+            $nouveauStatutInscription = ($nbPaiementsAnnules > 0 && ($inscriptionRow['statut_inscription'] ?? '') === STATUTS::SOLDE) 
+                ? STATUTS::VALIDE 
+                : ($inscriptionRow['statut_inscription'] ?? STATUTS::VALIDE);
+
             $stmtUpdate = $db->prepare("
                 UPDATE " . TABLES::INSCRIPTIONS . " 
                 SET classe_code = ?,
                     affectation_etat = ?,
                     montant_scolarite_inscription = ?,
+                    statut_inscription = ?,
                     annee_code = COALESCE(NULLIF(?, ''), annee_code),
                     updated_at_inscription = NOW()
                 WHERE id_inscription = ?
@@ -319,15 +369,22 @@ class ModelEtudiant extends BaseModel
                 $nouvelleClasse,
                 $affectationEtat,
                 $montantScolarite,
+                $nouveauStatutInscription,
                 $anneeCode,
                 $inscriptionRow['id_inscription']
             ]);
 
             if ($ok) {
+                $msg = "La classe et le régime de l'étudiant ont été modifiés avec succès vers " . $classeRow['libelle_classe'] . " !";
+                if ($nbPaiementsAnnules > 0) {
+                    $msg .= " Le montant de scolarité ayant changé (" . number_format($ancienMontant, 0, ',', ' ') . " à " . number_format((float)$montantScolarite, 0, ',', ' ') . " FCFA), " . $nbPaiementsAnnules . " versement(s) antérieur(s) (" . number_format($totalMontantAnnule, 0, ',', ' ') . " FCFA) ont été annulés pour régularisation sur le nouvel échéancier.";
+                }
                 return [
                     'success' => true,
-                    'message' => "La classe et le régime de l'étudiant ont été modifiés avec succès vers " . $classeRow['libelle_classe'] . " !",
-                    'classe_libelle' => $classeRow['libelle_classe']
+                    'message' => $msg,
+                    'classe_libelle' => $classeRow['libelle_classe'],
+                    'paiements_annules_count' => $nbPaiementsAnnules,
+                    'paiements_annules_montant' => $totalMontantAnnule
                 ];
             }
             return ['success' => false, 'message' => "Erreur lors de la mise à jour de la classe de l'étudiant."];
