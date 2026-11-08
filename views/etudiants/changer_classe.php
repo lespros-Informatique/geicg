@@ -20,10 +20,10 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="refresh-cw" style="width: 24px; height: 24px; color: #1E3A5F;"></i>
-            Changer la Classe & Régime de l'Étudiant
+            Changer la Classe 
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">
-            Sélection de la nouvelle classe d'affectation avec simulation en direct des tarifs et échéanciers de scolarité.
+            Sélection de la nouvelle classe d'affectation .
           </p>
         </div>
 
@@ -123,7 +123,6 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
                   </span>
                 </label>
               </div>
-              <small style="color: #64748B; font-size: 12px; margin-top: 6px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi (Affecté ou Non Affecté).</small>
             </div>
 
             <!-- LIGNE DES 3 CHAMPS GROUPÉS : ANNÉE, NOUVELLE CLASSE, REMISE -->
