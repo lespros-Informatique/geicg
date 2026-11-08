@@ -16,50 +16,49 @@
       </div>
 
       <!-- Barre de Filtres (Année, Classe & Statut Dossier) -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
           
-          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; flex: 1;">
-            <!-- Année Académique -->
-            <div style="min-width: 200px; flex: 1;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Année Académique</label>
-              <select id="filter-annee" class="form-select select2" style="width: 100%;">
-                <option value="">-- Toutes les années --</option>
-                <?php foreach ($annees as $a): ?>
-                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <!-- Classe -->
-            <div style="min-width: 200px; flex: 1;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Classe</label>
-              <select id="filter-classe" class="form-select select2" style="width: 100%;">
-                <option value="">-- Toutes les classes --</option>
-                <?php foreach ($classes as $c): ?>
-                  <option value="<?= htmlspecialchars($c['code_classe']) ?>">
-                    <?= htmlspecialchars($c['libelle_classe'] ?? ($c['nom_classe'] ?? '')) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <!-- Statut du Dossier -->
-            <div style="min-width: 200px; flex: 1;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Statut du Dossier</label>
-              <select id="filter-statut" class="form-select select2" style="width: 100%;">
-                <option value="all">-- Tous les statuts --</option>
-                <option value="incomplet">⚠️ Incomplets (Manque des pièces)</option>
-                <option value="complet">✅ Complets (Toutes pièces déposées)</option>
-                <option value="rejete">❌ Avec pièces rejetées</option>
-              </select>
-            </div>
+          <!-- Année Académique -->
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px; display: block;">Année Académique</label>
+            <select id="filter-annee" class="form-select select2" style="width: 100%;">
+              <option value="">-- Toutes les années --</option>
+              <?php foreach ($annees as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" id="btn-refresh" class="btn btn-light" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 15px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; cursor: pointer;">
+          <!-- Classe -->
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px; display: block;">Classe</label>
+            <select id="filter-classe" class="form-select select2" style="width: 100%;">
+              <option value="">-- Toutes les classes --</option>
+              <?php foreach ($classes as $c): ?>
+                <option value="<?= htmlspecialchars($c['code_classe']) ?>">
+                  <?= htmlspecialchars($c['libelle_classe'] ?? ($c['nom_classe'] ?? '')) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <!-- Statut du Dossier -->
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px; display: block;">Statut du Dossier</label>
+            <select id="filter-statut" class="form-select select2" style="width: 100%;">
+              <option value="all">-- Tous les statuts --</option>
+              <option value="incomplet">⚠️ Incomplets (Manque des pièces)</option>
+              <option value="complet">✅ Complets (Toutes pièces déposées)</option>
+              <option value="rejete">❌ Avec pièces rejetées</option>
+            </select>
+          </div>
+
+          <!-- Action Actualiser -->
+          <div>
+            <button type="button" id="btn-refresh" class="btn btn-light" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 15px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; cursor: pointer; height: 38px;">
               <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Actualiser
             </button>
           </div>
@@ -113,20 +112,22 @@
       </div>
 
       <!-- Tableau des Étudiants et Dépôt des Dossiers -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-        <table id="table-dossiers" class="table table-hover align-middle w-100" style="width: 100%;">
-          <thead>
-            <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
-              <th>Étudiant</th>
-              <th>Matricule</th>
-              <th>Classe</th>
-              <th>Pièces Déposées</th>
-              <th>Complétude</th>
-              <th style="text-align: right;">Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table id="table-dossiers" class="table table-hover align-middle display nowrap" style="width: 100%; max-width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+                <th style="padding: 12px;">Étudiant</th>
+                <th style="padding: 12px; text-align: center;">Matricule</th>
+                <th style="padding: 12px;">Classe</th>
+                <th style="padding: 12px; text-align: center;">Pièces Déposées</th>
+                <th style="padding: 12px; min-width: 140px;">Complétude</th>
+                <th style="padding: 12px; text-align: right; width: 140px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
 
     </div>

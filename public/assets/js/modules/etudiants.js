@@ -1803,9 +1803,17 @@
   }
 
   function initTable() {
+    var racine = (typeof RACINE !== 'undefined') ? RACINE : (window.RACINE || '/geicg/');
+    var dtLang = (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage)
+      ? GEICG.dataTableLanguage
+      : { url: racine + 'json/datatables-i18n-fr-FR.json' };
+
     table = $('#table-dossiers').DataTable({
+      processing: true,
+      autoWidth: false,
+      order: [],
       ajax: {
-        url: window.RACINE + 'dossier_etudiant/apiList',
+        url: racine + 'dossier_etudiant/apiList',
         type: 'GET',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         data: function(d) {
@@ -1859,7 +1867,7 @@
 
             var avatarHtml = initialsDiv;
             if (photoPath !== '') {
-              var photoUrl = (photoPath.indexOf('http') === 0) ? photoPath : (window.RACINE + photoPath.replace(/^\//, ''));
+              var photoUrl = (photoPath.indexOf('http') === 0) ? photoPath : (racine + photoPath.replace(/^\//, ''));
               avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.style.display=\'none\'; if(this.nextElementSibling) this.nextElementSibling.style.display=\'flex\';">' +
                            '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0;">' + escapeHtml(initials) + '</div>';
             }
@@ -1874,6 +1882,7 @@
         },
         {
           data: 'matricule',
+          className: 'text-center',
           render: function(d) {
             return '<span class="badge bg-light text-dark font-monospace" style="font-size: 12px; font-weight: 700; padding: 6px 10px; border: 1px solid #CBD5E1;">' + escapeHtml(d || '-') + '</span>';
           }
@@ -1886,6 +1895,7 @@
         },
         {
           data: null,
+          className: 'text-center',
           render: function(d) {
             var badgeClass = d.est_complet ? 'bg-success' : (d.deposees_count > 0 ? 'bg-warning text-dark' : 'bg-danger');
             return '<span class="badge ' + badgeClass + '" style="font-size: 12px; font-weight: 700; padding: 6px 12px;">' +
@@ -1910,6 +1920,7 @@
         },
         {
           data: null,
+          orderable: false,
           className: 'text-end',
           render: function(d) {
             return '<div style="display: flex; justify-content: flex-end; gap: 6px;">' +
@@ -1929,9 +1940,7 @@
       drawCallback: function() {
         if (window.lucide) lucide.createIcons();
       },
-      language: {
-        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
-      }
+      language: dtLang
     });
   }
 
@@ -1944,8 +1953,7 @@
 
   $('.kpi-card-clickable').on('click', function() {
     var status = $(this).data('status');
-    $('#filter-statut').val(status).trigger('change.select2');
-    table.ajax.reload();
+    $('#filter-statut').val(status).trigger('change');
   });
 
   $('#btn-refresh').on('click', function() {
