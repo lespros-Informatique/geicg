@@ -1,9 +1,4 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<?php
-$etudiants = (new ModelEtudiant())->getAll();
-$accessoires = (new ModelAccessoire())->getAll();
-$stats = $stats ?? (new ModelAccessoire())->getStats();
-?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -27,52 +22,51 @@ $stats = $stats ?? (new ModelAccessoire())->getStats();
 
       <!-- Filtres (Année, Classe & Statut Retrait) -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; flex: 1;">
-            
-            <!-- Filter Année -->
-            <div style="min-width: 200px; flex: 1;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Année Académique</label>
-              <select id="filter-annee" class="form-select select2" style="width: 100%;">
-                <option value="">-- Toutes les années --</option>
-                <?php foreach ($annees as $a): ?>
-                  <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <!-- Filter Classe -->
-            <div style="min-width: 200px; flex: 1;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Classe</label>
-              <select id="filter-classe" class="form-select select2" style="width: 100%;">
-                <option value="">-- Toutes les classes --</option>
-                <?php foreach ($classes as $c): ?>
-                  <option value="<?= htmlspecialchars($c['code_classe']) ?>">
-                    <?= htmlspecialchars($c['libelle_classe'] ?? ($c['nom_classe'] ?? '')) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <!-- Filter Statut Retrait -->
-            <div style="min-width: 200px; flex: 1;">
-              <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Statut de Retrait</label>
-              <select id="filter-statut" class="form-select select2" style="width: 100%;">
-                <option value="all">-- Tous les statuts --</option>
-                <option value="en_attente">⏳ Avec des kits en attente</option>
-                <option value="retire">✅ Kits entièrement remis</option>
-              </select>
-            </div>
-
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
+          
+          <!-- Filter Année -->
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Année Académique</label>
+            <select id="filter-annee" class="form-select select2" style="width: 100%;">
+              <option value="">-- Toutes les années --</option>
+              <?php foreach ($annees as $a): ?>
+                <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($selectedAnneeCode === $a['code_annee']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active'])) ? ' (Active)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" id="btn-refresh" class="btn btn-light" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 15px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; cursor: pointer;">
+          <!-- Filter Classe -->
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Classe</label>
+            <select id="filter-classe" class="form-select select2" style="width: 100%;">
+              <option value="">-- Toutes les classes --</option>
+              <?php foreach ($classes as $c): ?>
+                <option value="<?= htmlspecialchars($c['code_classe']) ?>">
+                  <?= htmlspecialchars($c['libelle_classe'] ?? ($c['nom_classe'] ?? '')) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <!-- Filter Statut Retrait -->
+          <div>
+            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block;">Statut de Retrait</label>
+            <select id="filter-statut" class="form-select select2" style="width: 100%;">
+              <option value="all">-- Tous les statuts --</option>
+              <option value="en_attente">⏳ Avec des kits en attente</option>
+              <option value="retire">✅ Kits entièrement remis</option>
+            </select>
+          </div>
+
+          <!-- Bouton Actualiser -->
+          <div>
+            <button type="button" id="btn-refresh" class="btn btn-light w-100" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 15px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; cursor: pointer; height: 38px;">
               <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Actualiser
             </button>
           </div>
+
         </div>
       </div>
 
@@ -122,20 +116,22 @@ $stats = $stats ?? (new ModelAccessoire())->getStats();
       </div>
 
       <!-- Tableau du Registre d'Émargement des Kits par Étudiant -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-        <table id="table-distributions" class="table table-hover align-middle w-100" style="width: 100%;">
-          <thead>
-            <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
-              <th>Étudiant</th>
-              <th>Matricule & Classe</th>
-              <th>Nombre d'articles</th>
-              <th>Kits remis</th>
-              <th>Progression Retrait</th>
-              <th style="text-align: right;">Actions Émargement</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table id="table-distributions" class="table table-hover align-middle display nowrap" style="width: 100%; max-width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+                <th>Étudiant</th>
+                <th>Matricule & Classe</th>
+                <th>Nombre d'articles</th>
+                <th>Kits remis</th>
+                <th>Progression Retrait</th>
+                <th style="text-align: right;">Actions Émargement</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
 
     </div>

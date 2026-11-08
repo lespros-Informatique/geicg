@@ -57,11 +57,15 @@ class AccessoireController extends BaseController
         $classes = $classeModel->getAll();
 
         $stats = $this->model->getStats($selectedAnneeCode);
+        $etudiants = (new ModelEtudiant())->getAll();
+        $accessoires = $this->model->getAll();
 
         $this->loadView('../views/accessoires/registre.php', [
             'stats' => $stats,
             'annees' => $annees,
             'classes' => $classes,
+            'etudiants' => $etudiants,
+            'accessoires' => $accessoires,
             'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }

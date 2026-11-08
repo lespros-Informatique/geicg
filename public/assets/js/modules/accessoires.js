@@ -678,6 +678,9 @@
 
   function initTable() {
     table = $('#table-distributions').DataTable({
+      autoWidth: false,
+      processing: true,
+      order: [],
       ajax: {
         url: distUrl,
         type: 'GET',
@@ -702,23 +705,11 @@
                           ((d.nom_etudiant || '') + ' ' + (d.prenom_etudiant || '')).trim() || 
                           'Étudiant non identifié';
             
-            var parts = rawName.split(' ').filter(function(p) { return p.length > 0; });
-            var initials = 'ET';
-            if (parts.length >= 2) {
-              initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-            } else if (parts.length === 1 && parts[0].length >= 2) {
-              initials = parts[0].substring(0, 2).toUpperCase();
-            }
-
+            var placeholderUrl = racine + 'public/assets/images/placeholders/etudiant.png';
             var photoPath = d.photo_etudiant ? String(d.photo_etudiant).trim() : '';
-            var initialsDiv = '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0; box-shadow: 0 2px 4px rgba(30,58,95,0.15);">' + escapeHtml(initials) + '</div>';
+            var photoUrl = (photoPath !== '') ? ((photoPath.indexOf('http') === 0) ? photoPath : (racine + photoPath.replace(/^\//, ''))) : placeholderUrl;
 
-            var avatarHtml = initialsDiv;
-            if (photoPath !== '') {
-              var photoUrl = (photoPath.indexOf('http') === 0) ? photoPath : (racine + photoPath.replace(/^\//, ''));
-              avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.style.display=\'none\'; if(this.nextElementSibling) this.nextElementSibling.style.display=\'flex\';">' +
-                           '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1E3A5F, #0F172A); color: #FFFFFF; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; flex-shrink: 0; border: 2px solid #E2E8F0;">' + escapeHtml(initials) + '</div>';
-            }
+            var avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.onerror=null; this.src=\'' + placeholderUrl + '\';">';
 
             var phone = (d.telephone_etudiant && d.telephone_etudiant !== '-') ? d.telephone_etudiant : null;
             var phoneHtml = phone ? '<div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Tél : ' + escapeHtml(phone) + '</div>' : '<div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Tél : -</div>';
@@ -788,17 +779,19 @@
         },
         {
           data: null,
+          orderable: false,
+          searchable: false,
           className: 'text-end',
           render: function() {
             return '<div style="display: flex; justify-content: flex-end; gap: 6px;">' +
-                     '<button type="button" class="btn btn-sm btn-success btn-open-student-kit" style="font-weight: 700; border-radius: 8px; padding: 6px 11px; background: #15803D; border: none;" title="Gérer et émarger les fournitures de cet élève">' +
-                       '<i data-lucide="package-check" style="width: 14px; height: 14px; margin-right: 4px;"></i> Émarger' +
+                     '<button type="button" class="btn btn-sm btn-success btn-open-student-kit" style="font-weight: 700; border-radius: 8px; padding: 6px 10px; background: #15803D; border: none;" title="Gérer et émarger les fournitures de cet élève">' +
+                       '<i data-lucide="package-check" style="width: 15px; height: 15px;"></i>' +
                      '</button>' +
                      '<button type="button" class="btn btn-sm btn-outline-primary btn-print-bon-row" title="Imprimer le Bon de Remise A4" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
-                       '<i data-lucide="printer" style="width: 14px; height: 14px;"></i>' +
+                       '<i data-lucide="printer" style="width: 15px; height: 15px;"></i>' +
                      '</button>' +
                      '<button type="button" class="btn btn-sm btn-outline-success btn-quick-validate-all-kits" title="Tout marquer comme remis en 1 clic" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
-                       '<i data-lucide="check-check" style="width: 14px; height: 14px;"></i>' +
+                       '<i data-lucide="check-check" style="width: 15px; height: 15px;"></i>' +
                      '</button>' +
                    '</div>';
           }
