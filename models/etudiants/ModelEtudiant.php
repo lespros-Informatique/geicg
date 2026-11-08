@@ -290,7 +290,7 @@ class ModelEtudiant extends BaseModel
                     SELECT i.*, cl.filiere_code as ancienne_filiere_code, cl.niveau_code as ancien_niveau_code, cl.libelle_classe as ancien_libelle_classe
                     FROM " . TABLES::INSCRIPTIONS . " i
                     LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-                    WHERE i.code_inscription = ? 
+                    WHERE i.code_inscription = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "' 
                     LIMIT 1
                 ");
                 $stmtIns->execute([$codeInscription]);

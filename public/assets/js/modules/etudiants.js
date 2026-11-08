@@ -129,35 +129,50 @@
 
         // 1. Validation (si en attente)
         var validerBtn = '';
-        if (isEnAttente) {
+        if (isEnAttente && !isAnnule) {
           validerBtn = '  <button type="button" class="btn-action-icon btn-action-validate btn-valider-inscription" data-id="' + idIns + '" data-nom="' + nomComplet.replace(/"/g, '&quot;') + '" title="Valider définitivement l\'inscription"><i data-lucide="check"></i></button>';
         }
 
         // 2. Changement de classe
         var classeBtn = '';
         if (canChangerClasse && idIns) {
-          classeBtn = '  <a href="' + racine + 'etudiant/changerClasse/' + idCrypte + '" class="btn-action-icon btn-action-classe" title="Changer de classe / Réorienter"><i data-lucide="refresh-cw"></i></a>';
+          if (!isAnnule) {
+            classeBtn = '  <a href="' + racine + 'etudiant/changerClasse/' + idCrypte + '" class="btn-action-icon btn-action-classe" title="Changer de classe / Réorienter"><i data-lucide="refresh-cw"></i></a>';
+          } else {
+            classeBtn = '  <span class="btn-action-icon" style="background:#F1F5F9; color:#94A3B8; cursor:not-allowed; opacity:0.55; border:1px solid #E2E8F0;" title="Désactivé : Inscription annulée"><i data-lucide="refresh-cw"></i></span>';
+          }
         }
 
         // 3. Fiche Inscription PDF
         var printBtn = '';
         if (idIns) {
-          printBtn = '  <a href="' + racine + 'inscription/fiche/' + idIns + '?pdf=1" target="_blank" class="btn-action-icon btn-action-print" title="Télécharger la fiche d\'inscription PDF"><i data-lucide="file-text"></i></a>';
+          if (!isAnnule) {
+            printBtn = '  <a href="' + racine + 'inscription/fiche/' + idIns + '?pdf=1" target="_blank" class="btn-action-icon btn-action-print" title="Télécharger la fiche d\'inscription PDF"><i data-lucide="file-text"></i></a>';
+          } else {
+            printBtn = '  <span class="btn-action-icon" style="background:#F1F5F9; color:#94A3B8; cursor:not-allowed; opacity:0.55; border:1px solid #E2E8F0;" title="Désactivé : Inscription annulée"><i data-lucide="file-text"></i></span>';
+          }
         }
 
-        // 4. Édition Étudiant
+        // 4. Consulter le dossier complet (toujours actif même si inscription annulée)
+        var dossierBtn = '  <a href="' + racine + 'etudiant/details/' + idCrypte + '" class="btn-action-icon btn-action-dossier" title="Consulter le dossier complet"><i data-lucide="eye"></i></a>';
+
+        // 5. Édition Étudiant
         var editBtn = '';
         if (canEditEtudiant) {
-          editBtn = '  <a href="' + racine + 'etudiant/edit/' + idCrypte + '" class="btn-action-icon btn-action-edit" title="Modifier les coordonnées de l\'étudiant"><i data-lucide="edit-3"></i></a>';
+          if (!isAnnule) {
+            editBtn = '  <a href="' + racine + 'etudiant/edition/' + idCrypte + '" class="btn-action-icon btn-action-edit" title="Modifier les coordonnées de l\'étudiant"><i data-lucide="edit-3"></i></a>';
+          } else {
+            editBtn = '  <span class="btn-action-icon" style="background:#F1F5F9; color:#94A3B8; cursor:not-allowed; opacity:0.55; border:1px solid #E2E8F0;" title="Désactivé : Inscription annulée"><i data-lucide="edit-3"></i></span>';
+          }
         }
 
-        // 5. Annulation Inscription
+        // 6. Annulation Inscription
         var cancelBtn = '';
         if (canAnnulerInscription) {
           if (!isAnnule) {
             cancelBtn = '  <button type="button" class="btn-action-icon btn-action-cancel btn-annuler-inscription" data-id="' + idIns + '" data-code="' + insCode + '" data-nom="' + nomComplet.replace(/"/g, '&quot;') + '" data-payments="' + (row.total_paiements_count || 0) + '" title="Annuler l\'inscription"><i data-lucide="user-x"></i></button>';
           } else {
-            cancelBtn = '  <span class="btn-action-icon" style="background:#FEE2E2; color:#991B1B; cursor:not-allowed; opacity:0.6; border:1px solid #FECACA;" title="Inscription déjà annulée"><i data-lucide="ban"></i></span>';
+            cancelBtn = '  <span class="btn-action-icon" style="background:#FEE2E2; color:#991B1B; cursor:not-allowed; opacity:0.55; border:1px solid #FECACA;" title="Inscription déjà annulée"><i data-lucide="ban"></i></span>';
           }
         }
 
@@ -165,7 +180,7 @@
                validerBtn +
                classeBtn +
                printBtn +
-               '  <a href="' + racine + 'etudiant/details/' + idCrypte + '" class="btn-action-icon btn-action-dossier" title="Consulter le dossier complet"><i data-lucide="eye"></i></a>' +
+               dossierBtn +
                editBtn +
                cancelBtn +
                '</div>';

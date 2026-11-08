@@ -242,6 +242,11 @@ class EtudiantController extends BaseController
 
             $anneeActive = $this->getActiveAnneeCode();
             $data = $this->model->getChangerClasseData($item['code_etudiant'], $anneeActive);
+            if (empty($data['inscription'])) {
+                Session::flash('flash_error', "Impossible de changer de classe : cet étudiant n'a aucun dossier d'inscription actif (inscription annulée ou inexistante).");
+                header('Location: ' . RACINE . 'etudiant/list');
+                exit;
+            }
             $encryptedId = $this->validator->crypter($item['id_etudiant']);
 
             $this->loadView('../views/etudiants/changer_classe.php', [
