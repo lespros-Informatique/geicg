@@ -278,9 +278,9 @@ class ModelInscription extends BaseModel
             }
 
             if ($filterPhoto === 'sans_photo') {
-                $sql .= " AND (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '')";
+                $sql .= " AND (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '') AND (e.photo_etudiant IS NULL OR TRIM(e.photo_etudiant) = '')";
             } elseif ($filterPhoto === 'avec_photo') {
-                $sql .= " AND i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != ''";
+                $sql .= " AND ((i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != '') OR (e.photo_etudiant IS NOT NULL AND TRIM(e.photo_etudiant) != ''))";
             }
 
             $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC";
@@ -291,6 +291,66 @@ class ModelInscription extends BaseModel
         } catch (Exception $e) {
             error_log("ModelInscription::getInscriptionsSansPhoto error: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Calcule les métriques et KPIs statistiques de la prise de vue
+     */
+    public function getPriseDeVueStats(string $anneeCode = '', string $filiereCode = '', string $classeCode = ''): array
+    {
+        $db = $this->getCon();
+        try {
+            $sql = "
+                SELECT 
+                    COUNT(DISTINCT i.id_inscription) AS total,
+                    COUNT(DISTINCT CASE 
+                        WHEN (i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != '') 
+                          OR (e.photo_etudiant IS NOT NULL AND TRIM(e.photo_etudiant) != '') 
+                        THEN i.id_inscription 
+                    END) AS avec_photo,
+                    COUNT(DISTINCT CASE 
+                        WHEN (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '') 
+                         AND (e.photo_etudiant IS NULL OR TRIM(e.photo_etudiant) = '') 
+                        THEN i.id_inscription 
+                    END) AS sans_photo
+                FROM " . TABLES::INSCRIPTIONS . " i
+                JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+                JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
+            ";
+            $params = [];
+            if (!empty($anneeCode)) {
+                $sql .= " AND i.annee_code = ?";
+                $params[] = $anneeCode;
+            }
+            if (!empty($filiereCode)) {
+                $sql .= " AND cl.filiere_code = ?";
+                $params[] = $filiereCode;
+            }
+            if (!empty($classeCode)) {
+                $sql .= " AND i.classe_code = ?";
+                $params[] = $classeCode;
+            }
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $total = (int)($res['total'] ?? 0);
+            $avecPhoto = (int)($res['avec_photo'] ?? 0);
+            $sansPhoto = (int)($res['sans_photo'] ?? 0);
+            $taux = ($total > 0) ? round(($avecPhoto / $total) * 100, 1) : 0.0;
+
+            return [
+                'total' => $total,
+                'avec_photo' => $avecPhoto,
+                'sans_photo' => $sansPhoto,
+                'taux' => $taux
+            ];
+        } catch (Exception $e) {
+            error_log("ModelInscription::getPriseDeVueStats error: " . $e->getMessage());
+            return ['total' => 0, 'avec_photo' => 0, 'sans_photo' => 0, 'taux' => 0.0];
         }
     }
 

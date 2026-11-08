@@ -71,6 +71,59 @@
         </div>
       </div>
 
+      <!-- CARTES KPI STATISTIQUES (PRISE DE VUE) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;" class="no-print">
+        
+        <!-- Total Inscrits -->
+        <div class="card kpi-card-clickable" id="card-kpi-total" data-filter="all" style="background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; border-left: 4px solid #1E3A5F; box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour afficher tous les étudiants">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(30, 58, 95, 0.12);">
+            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Total Inscrits</div>
+            <div style="font-size: 24px; font-weight: 900; color: #0F172A; line-height: 1.2;" id="kpi-total-inscrits"><?= (int)($stats['total'] ?? 0) ?></div>
+            <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Effectif éligible à la prise de vue</div>
+          </div>
+        </div>
+
+        <!-- Photos Enregistrées -->
+        <div class="card kpi-card-clickable" id="card-kpi-avec-photo" data-filter="avec_photo" style="background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #DCFCE7; border-left: 4px solid #16A34A; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.05); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour filtrer les photos renseignées">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(21, 128, 61, 0.12);">
+            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Photos Enregistrées</div>
+            <div style="font-size: 24px; font-weight: 900; color: #15803D; line-height: 1.2;" id="kpi-avec-photo"><?= (int)($stats['avec_photo'] ?? 0) ?></div>
+            <div style="font-size: 11.5px; color: #166534; margin-top: 2px;">Photos d'identité conformes</div>
+          </div>
+        </div>
+
+        <!-- Photos Manquantes -->
+        <div class="card kpi-card-clickable" id="card-kpi-sans-photo" data-filter="sans_photo" style="background: linear-gradient(135deg, #FFFFFF 0%, #FFFBEB 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #FEF3C7; border-left: 4px solid #D97706; box-shadow: 0 2px 4px rgba(217, 119, 6, 0.05); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour filtrer les photos manquantes">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(217, 119, 6, 0.12);">
+            <i data-lucide="camera-off" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Photos Manquantes</div>
+            <div style="font-size: 24px; font-weight: 900; color: #B45309; line-height: 1.2;" id="kpi-sans-photo"><?= (int)($stats['sans_photo'] ?? 0) ?></div>
+            <div style="font-size: 11.5px; color: #92400E; margin-top: 2px;">En attente de prise de vue</div>
+          </div>
+        </div>
+
+        <!-- Taux de Couverture -->
+        <div class="card" id="card-kpi-taux" style="background: linear-gradient(135deg, #FFFFFF 0%, #EEF2FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #E0E7FF; border-left: 4px solid #4F46E5; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.05); display: flex; align-items: center; gap: 16px; transition: all 0.2s ease;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(67, 56, 202, 0.12);">
+            <i data-lucide="pie-chart" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Taux de Couverture</div>
+            <div style="font-size: 24px; font-weight: 900; color: #4338CA; line-height: 1.2;" id="kpi-taux-couverture"><?= number_format((float)($stats['taux'] ?? 0), 1, ',', ' ') ?>%</div>
+            <div style="font-size: 11.5px; color: #3730A3; margin-top: 2px;">Progression globale du studio</div>
+          </div>
+        </div>
+
+      </div>
+
       <!-- Tableau DataTables -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">

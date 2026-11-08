@@ -352,12 +352,14 @@ class InscriptionController extends BaseController
         $annees = $this->getAccessibleAnnees();
         $activeAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
         $deps = $this->model->getPriseDeVueDependencies();
+        $stats = $this->model->getPriseDeVueStats($activeAnneeCode ?: '');
 
         $this->loadView('../views/inscriptions/prise_de_vue.php', [
             'annees' => $annees,
             'filieres' => $activeAnneeCode ? ($deps['filieres'] ?? []) : [],
             'classes' => $activeAnneeCode ? ($deps['classes'] ?? []) : [],
-            'selectedAnneeCode' => $activeAnneeCode ?: ''
+            'selectedAnneeCode' => $activeAnneeCode ?: '',
+            'stats' => $stats
         ]);
     }
 
@@ -559,6 +561,7 @@ class InscriptionController extends BaseController
 
         try {
             $rows = $this->model->getInscriptionsSansPhoto($anneeCode, $filiereCode, $classeCode, $filterPhoto);
+            $stats = $this->model->getPriseDeVueStats($anneeCode, $filiereCode, $classeCode);
             $data = [];
             foreach ($rows as $r) {
                 $id = $r['id_inscription'];
@@ -573,7 +576,7 @@ class InscriptionController extends BaseController
                     'photo_path' => $photoPath
                 ]);
             }
-            $this->json(['data' => $data]);
+            $this->json(['data' => $data, 'stats' => $stats]);
         } catch (Exception $e) {
             error_log("InscriptionController::apiPriseDeVue error: " . $e->getMessage());
             $this->json(['data' => [], 'error' => $e->getMessage()]);

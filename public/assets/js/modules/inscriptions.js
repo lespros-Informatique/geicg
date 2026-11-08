@@ -1103,6 +1103,22 @@
       table.ajax.reload();
     });
 
+    table.on('xhr.dt', function (e, settings, json, xhr) {
+      if (json && json.stats) {
+        var s = json.stats;
+        $('#kpi-total-inscrits').text(s.total || 0);
+        $('#kpi-avec-photo').text(s.avec_photo || 0);
+        $('#kpi-sans-photo').text(s.sans_photo || 0);
+        var tauxVal = (typeof s.taux !== 'undefined') ? (parseFloat(s.taux).toFixed(1).replace('.', ',') + '%') : '0,0%';
+        $('#kpi-taux-couverture').text(tauxVal);
+      }
+    });
+
+    $('.kpi-card-clickable[data-filter]').on('click', function () {
+      var filterVal = $(this).data('filter');
+      $('#filter-photo').val(filterVal).trigger('change');
+    });
+
     function startWebcam() {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 400 } })
