@@ -83,7 +83,7 @@
                 <th style="padding: 12px;">Nom & Prénoms</th>
                 <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px;">Date Ins</th>
-                <th style="padding: 12px; text-align: center; width: 140px;">Action</th>
+                <th style="padding: 12px; text-align: center; width: 70px;">Action</th>
               </tr>
             </thead>
             <tbody></tbody>

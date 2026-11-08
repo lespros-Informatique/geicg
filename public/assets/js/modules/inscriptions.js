@@ -1081,18 +1081,22 @@
           }
         },
         {
-          data: null, orderable: false, width: '140px', render: function (d) {
+          data: null, orderable: false, width: '70px', render: function (d) {
             var safeNom = $('<div>').text(d.nom_complet || '').html();
             var safeInfo = $('<div>').text((d.matricule_etudiant || '-') + ' • ' + (d.libelle_classe || '-')).html();
-            var btnText = d.has_photo ? 'Reprendre Photo' : 'Prendre Photo';
-            var btnColor = d.has_photo ? '#475569' : '#1E3A5F';
-            return '<button type="button" class="btn btn-sm btn-primary btn-upload-photo" ' +
+            var actionTitle = d.has_photo ? 'Reprendre la photo' : 'Prendre la photo';
+            var btnStyle = d.has_photo
+              ? 'background:#F8FAFC; color:#1E3A5F; border:1px solid #CBD5E1;'
+              : 'background:#1E3A5F; color:#FFFFFF; border:1px solid #1E3A5F;';
+
+            return '<button type="button" class="btn-action-icon btn-upload-photo" ' +
               'data-id="' + d.id_inscription + '" ' +
               'data-code="' + d.code_inscription + '" ' +
               'data-nom="' + safeNom + '" ' +
               'data-info="' + safeInfo + '" ' +
-              'style="font-weight:700; border-radius:6px; background:' + btnColor + '; border-color:' + btnColor + '; display:inline-flex; align-items:center; gap:6px; cursor:pointer;">' +
-              '<i data-lucide="camera" style="width:14px;height:14px;"></i> ' + btnText + '</button>';
+              'style="' + btnStyle + '" ' +
+              'title="' + actionTitle + '">' +
+              '<i data-lucide="camera"></i></button>';
           }, className: 'text-center'
         }
       ],
