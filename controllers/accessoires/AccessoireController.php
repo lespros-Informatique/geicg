@@ -70,6 +70,76 @@ class AccessoireController extends BaseController
         ]);
     }
 
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $filter = trim($_GET['filter'] ?? 'all');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
+
+        $items = $this->model->getDistributions($filter, $anneeCode, $classeCode);
+        $stats = $this->model->getStats($anneeCode);
+
+        // Labels pour filtres
+        $anneeLibelle = '';
+        if (!empty($anneeCode)) {
+            $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+            $anneeLibelle = $anneeObj['libelle_annee'] ?? $anneeCode;
+        }
+
+        $classeLibelle = 'Toutes les classes';
+        if (!empty($classeCode)) {
+            $clObj = (new ModelClasse())->getByCode($classeCode);
+            $classeLibelle = $clObj['libelle_classe'] ?? ($clObj['nom_classe'] ?? $classeCode);
+        }
+
+        $statutLabel = 'Tous les statuts';
+        if ($filter === 'en_attente') {
+            $statutLabel = 'Avec des kits en attente';
+        } elseif ($filter === 'retire') {
+            $statutLabel = 'Kits entièrement remis';
+        }
+
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Logistique & Scolarité';
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'classe_libelle' => $classeLibelle,
+            'statut_label' => $statutLabel,
+            'editeur_nom' => $editeurNom,
+            'rows' => $items,
+            'stats' => $stats
+        ];
+
+        $html = PdfService::renderTemplate('liste_registre_accessoires.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Retrait_Kits_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Registre Retrait Kits - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
     public function apiList()
     {
         $this->requireAuth();

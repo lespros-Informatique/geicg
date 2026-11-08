@@ -770,23 +770,35 @@
     });
   }
 
+  function updatePrintUrl() {
+    var annee = $('#filter-annee').val() || '';
+    var classe = $('#filter-classe').val() || '';
+    var statut = $('#filter-statut').val() || 'all';
+    var printUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('accessoire_inscription/imprimerRegistrePdf') : (racine + 'accessoire_inscription/imprimerRegistrePdf');
+    $('#btn-print-registre').attr('href', printUrl + '?annee_code=' + encodeURIComponent(annee) + '&classe_code=' + encodeURIComponent(classe) + '&filter=' + encodeURIComponent(statut));
+  }
+
   initTable();
+  updatePrintUrl();
 
   // Filtrage interactif
   $('#filter-annee, #filter-classe, #filter-statut').on('change', function() {
     table.ajax.reload();
     refreshKpis();
+    updatePrintUrl();
   });
 
   $('.kpi-card-clickable').on('click', function() {
     var status = $(this).data('status');
     $('#filter-statut').val(status).trigger('change.select2');
     table.ajax.reload();
+    updatePrintUrl();
   });
 
   $('#btn-refresh, #btn-refresh-header').on('click', function() {
     table.ajax.reload();
     refreshKpis();
+    updatePrintUrl();
   });
 
   function refreshKpis() {

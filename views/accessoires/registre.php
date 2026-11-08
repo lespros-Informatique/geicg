@@ -13,7 +13,12 @@
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Suivi exclusif des retraits, émargement au guichet et impression des bons de décharge</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;" class="no-print">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]))): ?>
+          <a href="<?= RACINE ?>accessoire_inscription/imprimerRegistrePdf" id="btn-print-registre" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le registre d'émargement des kits en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
+          </a>
+          <?php endif; ?>
           <button type="button" id="btn-open-attrib-modal" class="btn btn-success" style="background: #15803D; border: none; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(21,128,61,0.2);">
             <i data-lucide="package-plus" style="width: 18px; height: 18px;"></i> Attribuer un Kit
           </button>
