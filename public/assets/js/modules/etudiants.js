@@ -428,7 +428,12 @@
     if (nbPayments > 0) {
       warningHtml += '<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 12px; margin-top:10px; color:#92400E; display:flex; gap:8px; align-items:flex-start;">' +
         '<span style="font-weight:800; font-size:14px;">⚠️</span>' +
-        '<span>Attention : <strong>' + nbPayments + ' paiement(s) actif(s)</strong> sont associés à ce dossier. L\'annulation du dossier d\'inscription n\'annulera pas automatiquement les paiements en caisse.</span>' +
+        '<span>Attention : <strong>' + nbPayments + ' paiement(s) actif(s)</strong> ainsi que les dotations de kits associées à ce dossier seront <strong>automatiquement annulés</strong>.</span>' +
+        '</div>';
+    } else {
+      warningHtml += '<div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:10px 12px; margin-top:10px; color:#475569; display:flex; gap:8px; align-items:flex-start;">' +
+        '<span style="font-size:14px;">📦</span>' +
+        '<span>Les dotations de kits scolaires rattachées à cette inscription seront également <strong>automatiquement désactivées</strong>.</span>' +
         '</div>';
     }
 

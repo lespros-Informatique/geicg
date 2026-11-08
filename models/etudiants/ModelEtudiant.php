@@ -1086,29 +1086,96 @@ class ModelEtudiant extends BaseModel
                 return ['success' => false, 'message' => "Cette inscription est déjà annulée."];
             }
 
-            $stmtPay = $db->prepare("SELECT COUNT(*) FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'");
-            $stmtPay->execute([$inscription['code_inscription']]);
-            $nbPaiements = (int)$stmtPay->fetchColumn();
+            $db->beginTransaction();
 
+            $codeIns = $inscription['code_inscription'] ?? $codeInscription;
+
+            // 1. Annulation de l'inscription
             $stmtUp = $db->prepare("UPDATE " . TABLES::INSCRIPTIONS . " SET statut_inscription = '" . STATUTS::ANNULE . "', updated_at_inscription = NOW() WHERE id_inscription = ?");
             $res = $stmtUp->execute([$inscription['id_inscription']]);
 
-            if ($res) {
-                $msg = "L'inscription a été annulée avec succès.";
-                if ($nbPaiements > 0) {
-                    $msg .= " Note : " . $nbPaiements . " paiement(s) étai(en)t rattaché(s) à ce dossier.";
-                }
-                return [
-                    'success' => true,
-                    'message' => $msg,
-                    'inscription' => $inscription,
-                    'nbPaiements' => $nbPaiements
-                ];
+            if (!$res) {
+                $db->rollBack();
+                return ['success' => false, 'message' => "Erreur lors de l'annulation de l'inscription."];
             }
-            return ['success' => false, 'message' => "Erreur lors de l'annulation de l'inscription."];
+
+            // 2. Annulation automatique des paiements associés
+            $nbPaiementsAnnules = 0;
+            $totalMontantAnnule = 0.0;
+            if (!empty($codeIns)) {
+                $stmtPaiements = $db->prepare("
+                    SELECT id_paiement, code_paiement, montant_paiement, observations 
+                    FROM " . TABLES::PAIEMENTS . " 
+                    WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'
+                ");
+                $stmtPaiements->execute([$codeIns]);
+                $activePayments = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                if (!empty($activePayments)) {
+                    $motifPay = sprintf(" [ANNULATION le %s : Annulation automatique suite à l'annulation du dossier d'inscription %s]", date('d/m/Y H:i'), $codeIns);
+                    $stmtCancelPay = $db->prepare("
+                        UPDATE " . TABLES::PAIEMENTS . "
+                        SET statut_paiement = '" . STATUTS::ANNULE . "',
+                            observations = CONCAT(COALESCE(observations, ''), ?)
+                        WHERE id_paiement = ?
+                    ");
+                    foreach ($activePayments as $p) {
+                        $stmtCancelPay->execute([$motifPay, $p['id_paiement']]);
+                        $nbPaiementsAnnules++;
+                        $totalMontantAnnule += (float)($p['montant_paiement'] ?? 0);
+                    }
+                }
+            }
+
+            // 3. Annulation automatique des kits / accessoires associés
+            $nbKitsAnnules = 0;
+            if (!empty($codeIns)) {
+                $stmtCountKits = $db->prepare("
+                    SELECT COUNT(*) 
+                    FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " 
+                    WHERE inscription_code = ? AND statut_accessoire_inscription != 'inactif'
+                ");
+                $stmtCountKits->execute([$codeIns]);
+                $nbKitsAnnules = (int)$stmtCountKits->fetchColumn();
+
+                if ($nbKitsAnnules > 0) {
+                    $stmtCancelKits = $db->prepare("
+                        UPDATE " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                        SET statut_accessoire_inscription = 'inactif'
+                        WHERE inscription_code = ? AND statut_accessoire_inscription != 'inactif'
+                    ");
+                    $stmtCancelKits->execute([$codeIns]);
+                }
+            }
+
+            $db->commit();
+
+            $msg = "L'inscription a été annulée avec succès.";
+            $details = [];
+            if ($nbPaiementsAnnules > 0) {
+                $details[] = $nbPaiementsAnnules . " paiement(s) associé(s) (" . number_format($totalMontantAnnule, 0, ',', ' ') . " FCFA) automatiquement annulé(s)";
+            }
+            if ($nbKitsAnnules > 0) {
+                $details[] = $nbKitsAnnules . " kit(s) scolaire(s) désactivé(s)";
+            }
+            if (!empty($details)) {
+                $msg .= " " . implode(' et ', $details) . ".";
+            }
+
+            return [
+                'success' => true,
+                'message' => $msg,
+                'inscription' => $inscription,
+                'paiements_annules_count' => $nbPaiementsAnnules,
+                'paiements_annules_montant' => $totalMontantAnnule,
+                'kits_annules_count' => $nbKitsAnnules
+            ];
         } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             error_log("ModelEtudiant::annulerInscription error: " . $e->getMessage());
-            return ['success' => false, 'message' => "Erreur lors de l'annulation de l'inscription."];
+            return ['success' => false, 'message' => "Erreur lors de l'annulation de l'inscription: " . $e->getMessage()];
         }
     }
 

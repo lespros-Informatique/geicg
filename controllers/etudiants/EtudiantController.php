@@ -322,7 +322,7 @@ class EtudiantController extends BaseController
                     'kits_desactives' => $res['kits_desactives_count'] ?? 0,
                     'kits_ajoutes' => $res['kits_ajoutes_count'] ?? 0,
                     'kits_reactives' => $res['kits_reactives_count'] ?? 0
-da                ]
+                ]
             );
             $this->success($res['message'], ['redirect' => RACINE . 'etudiant/list']);
         } else {
@@ -635,17 +635,33 @@ da                ]
 
         if ($res['success']) {
             $inscrCode = $res['inscription']['code_inscription'] ?? ($codeInscription ?: (string)$idInscription);
+            $logDesc = "Annulation de l'inscription {$inscrCode}";
+            if (!empty($res['paiements_annules_count'])) {
+                $logDesc .= " ({$res['paiements_annules_count']} paiement(s) annulé(s) pour " . number_format($res['paiements_annules_montant'], 0, ',', ' ') . " FCFA)";
+            }
+            if (!empty($res['kits_annules_count'])) {
+                $logDesc .= " ({$res['kits_annules_count']} kit(s) scolaire(s) désactivé(s))";
+            }
+
             $this->logAction(
                 AuditLogger::ACTION_DELETE,
                 'inscriptions',
                 $inscrCode,
-                "Annulation de l'inscription {$inscrCode}",
-                ['id_inscription' => $idInscription, 'code_inscription' => $codeInscription]
+                $logDesc,
+                [
+                    'id_inscription' => $idInscription,
+                    'code_inscription' => $codeInscription,
+                    'paiements_annules' => $res['paiements_annules_count'] ?? 0,
+                    'montant_annule' => $res['paiements_annules_montant'] ?? 0,
+                    'kits_annules' => $res['kits_annules_count'] ?? 0
+                ]
             );
             $this->success($res['message'], [
                 'reload' => true,
                 'id_inscription' => $res['inscription']['id_inscription'] ?? $idInscription,
-                'code_inscription' => $res['inscription']['code_inscription'] ?? $codeInscription
+                'code_inscription' => $res['inscription']['code_inscription'] ?? $codeInscription,
+                'paiements_annules_count' => $res['paiements_annules_count'] ?? 0,
+                'kits_annules_count' => $res['kits_annules_count'] ?? 0
             ]);
         } else {
             $this->error($res['message']);
