@@ -753,7 +753,7 @@
                      '<button type="button" class="btn-action-icon btn-open-student-kit" style="background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0;" title="Gérer et émarger les fournitures de cet élève">' +
                        '<i data-lucide="package-check"></i>' +
                      '</button>' +
-                     '<button type="button" class="btn-action-icon btn-print-bon-row" style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1;" title="Imprimer le Bon de Remise A4">' +
+                     '<button type="button" class="btn-action-icon btn-print-bon-row" style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1;" title="Imprimer le Reçu de Tenue (Bon de Remise)">' +
                        '<i data-lucide="printer"></i>' +
                      '</button>' +
                      '<button type="button" class="btn-action-icon btn-quick-validate-all-kits" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;" title="Tout marquer comme remis en 1 clic">' +
@@ -826,15 +826,22 @@
     openStudentKitModal(rowData);
   });
 
-  // Ouvrir le Bon de remise depuis la ligne
+  // Ouvrir le Reçu de Tenue / Bon de remise officiel PDF depuis la ligne
   $('#table-distributions').on('click', '.btn-print-bon-row', function() {
     var rowData = table.row($(this).closest('tr')).data();
-    loadAndOpenBonRemiseModal(rowData.code_inscription);
+    if (!rowData || !rowData.code_inscription) return;
+    var printUrl = (typeof GEICG !== 'undefined' && GEICG.url) 
+      ? GEICG.url('accessoire_inscription/imprimerBonPdf?inscription_code=' + encodeURIComponent(rowData.code_inscription))
+      : (racine + 'accessoire_inscription/imprimerBonPdf?inscription_code=' + encodeURIComponent(rowData.code_inscription));
+    window.open(printUrl, '_blank');
   });
 
   $('#btn-print-bon-modal').on('click', function() {
-    if (currentStudentData) {
-      loadAndOpenBonRemiseModal(currentStudentData.code_inscription);
+    if (currentStudentData && currentStudentData.code_inscription) {
+      var printUrl = (typeof GEICG !== 'undefined' && GEICG.url) 
+        ? GEICG.url('accessoire_inscription/imprimerBonPdf?inscription_code=' + encodeURIComponent(currentStudentData.code_inscription))
+        : (racine + 'accessoire_inscription/imprimerBonPdf?inscription_code=' + encodeURIComponent(currentStudentData.code_inscription));
+      window.open(printUrl, '_blank');
     }
   });
 
@@ -1053,7 +1060,14 @@
   }
 
   $('#btn-trigger-print-bon').on('click', function() {
-    window.print();
+    if (currentStudentData && currentStudentData.code_inscription) {
+      var printUrl = (typeof GEICG !== 'undefined' && GEICG.url) 
+        ? GEICG.url('accessoire_inscription/imprimerBonPdf?inscription_code=' + encodeURIComponent(currentStudentData.code_inscription))
+        : (racine + 'accessoire_inscription/imprimerBonPdf?inscription_code=' + encodeURIComponent(currentStudentData.code_inscription));
+      window.open(printUrl, '_blank');
+    } else {
+      window.print();
+    }
   });
 
   // Modal Attribution

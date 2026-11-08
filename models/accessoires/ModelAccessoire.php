@@ -123,6 +123,7 @@ class ModelAccessoire extends BaseModel
         $stmt = $db->prepare("
             SELECT 
                 i.code_inscription, i.created_at_inscription AS date_inscription, i.statut_inscription,
+                i.montant_scolarite_inscription, i.affectation_etat, i.annee_code,
                 e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, e.photo_etudiant,
                 cl.libelle_classe, cl.filiere_code,
                 a.libelle_annee,
@@ -171,15 +172,82 @@ class ModelAccessoire extends BaseModel
             }
         }
 
+        // Paiements associés à cette inscription
+        $stmtP = $db->prepare("
+            SELECT categorie_paiement, montant_paiement, type_paiement, code_paiement, date_paiement
+            FROM " . TABLES::PAIEMENTS . "
+            WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'
+            ORDER BY date_paiement DESC
+        ");
+        $stmtP->execute([$inscriptionCode]);
+        $allPayments = $stmtP->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $fraisAnnexesPaye = 0.0;
+        $dernierCodePaiementFrais = '';
+        $dateDernierPaiementFrais = '';
+        $scolaritePaye = 0.0;
+        foreach ($allPayments as $p) {
+            if ($p['categorie_paiement'] === 'FRAIS_ANNEXES') {
+                $fraisAnnexesPaye += (float)$p['montant_paiement'];
+                if (empty($dernierCodePaiementFrais)) {
+                    $dernierCodePaiementFrais = $p['code_paiement'];
+                    $dateDernierPaiementFrais = !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : '';
+                }
+            } elseif ($p['categorie_paiement'] === 'SCOLARITE') {
+                $scolaritePaye += (float)$p['montant_paiement'];
+            }
+        }
+
+        // Grille tarifaire des frais annexes correspondante
+        $montantPayerTenue = 0.0;
+        if (!empty($student['filiere_code'])) {
+            $stmtFrais = $db->prepare("
+                SELECT fa.montant_frais_annexe 
+                FROM " . TABLES::FRAIS_ANNEXES . " fa
+                JOIN " . TABLES::FILIERES . " fil ON fil.code_filiere = ?
+                WHERE fa.annee_code = ? 
+                  AND (fa.type_filiere = fil.type_filiere OR fa.type_filiere = 'TOUT')
+                  AND fa.statut_frais_annexe = '" . STATUTS::ACTIF . "'
+                ORDER BY (fa.type_filiere != 'TOUT') DESC
+                LIMIT 1
+            ");
+            $stmtFrais->execute([$student['filiere_code'], $student['annee_code'] ?? '']);
+            $faRow = $stmtFrais->fetch(PDO::FETCH_ASSOC);
+            if ($faRow && (float)$faRow['montant_frais_annexe'] > 0) {
+                $montantPayerTenue = (float)$faRow['montant_frais_annexe'];
+            }
+        }
+        if ($montantPayerTenue <= 0) {
+            $montantPayerTenue = $fraisAnnexesPaye;
+        }
+
+        $restePayerTenue = max(0, $montantPayerTenue - $fraisAnnexesPaye);
+        $scolaritePayer = (float)($student['montant_scolarite_inscription'] ?? 0);
+        $resteScolarite = max(0, $scolaritePayer - $scolaritePaye);
+
         return [
             'student' => $student,
+            'etudiant' => $student,
             'kits' => $kits,
             'kits_remis' => $kitsRemis,
             'kits_en_attente' => $kitsEnAttente,
             'total_kits' => count($kits),
             'total_remis' => count($kitsRemis),
             'total_en_attente' => count($kitsEnAttente),
-            'pourcentage' => (count($kits) > 0) ? round((count($kitsRemis) / count($kits)) * 100) : 0
+            'pourcentage' => (count($kits) > 0) ? round((count($kitsRemis) / count($kits)) * 100) : 0,
+            'finances' => [
+                'code_paiement' => $dernierCodePaiementFrais ?: $student['code_inscription'],
+                'date_operation' => $dateDernierPaiementFrais ?: date('d/m/Y', strtotime($student['date_inscription'] ?? date('Y-m-d'))),
+                'montant_payer_tenue' => $montantPayerTenue,
+                'montant_paye_tenue' => $fraisAnnexesPaye,
+                'reste_payer_tenue' => ($restePayerTenue <= 0 && $fraisAnnexesPaye > 0) ? 'Soldé' : ($restePayerTenue > 0 ? number_format($restePayerTenue, 0, ',', ' ') . ' CFA' : 'Soldé'),
+                'scolarite_recap' => [
+                    'montant_payer' => $scolaritePayer,
+                    'montant_paye' => $scolaritePaye,
+                    'reste_payer' => $resteScolarite,
+                    'prochain_rdv' => ($resteScolarite <= 0) ? 'Soldé' : 'À fixer'
+                ]
+            ]
         ];
     }
 

@@ -140,6 +140,84 @@ class AccessoireController extends BaseController
         ]);
     }
 
+    public function imprimerBonPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $inscriptionCode = trim($_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? ''));
+        if (empty($inscriptionCode)) {
+            $this->error('Inscription introuvable.');
+            return;
+        }
+
+        $data = $this->model->getBonRemiseData($inscriptionCode);
+        if (empty($data) || empty($data['student'])) {
+            $this->error('Données de remise introuvables pour cet étudiant.');
+            return;
+        }
+
+        $student = $data['student'];
+        $finances = $data['finances'] ?? [];
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $agentName = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+
+        $montantOperation = (float)($finances['montant_paye_tenue'] ?? 0);
+        if ($montantOperation <= 0) {
+            $montantOperation = (float)($finances['montant_payer_tenue'] ?? 0);
+        }
+        $montantLettres = PdfService::numberToWordsFrench($montantOperation);
+
+        $viewData = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $student['libelle_annee'] ?? '',
+            'code_paiement' => $finances['code_paiement'] ?? $student['code_inscription'],
+            'date_operation' => $finances['date_operation'] ?? date('d/m/Y'),
+            'statut_affectation' => (!empty($student['affectation_etat']) && $student['affectation_etat'] === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
+            'matricule_etudiant' => $student['matricule_etudiant'] ?? '-',
+            'telephone_etudiant' => $student['telephone_etudiant'] ?? '-',
+            'nom_prenom_etudiant' => trim(($student['nom_etudiant'] ?? '') . ' ' . ($student['prenom_etudiant'] ?? '')),
+            'filiere_niveau' => $student['libelle_classe'] ?? '-',
+            'montant_operation' => $montantOperation,
+            'montant_operation_lettres' => $montantLettres,
+            'photo_etudiant' => $student['photo_etudiant'] ?? '',
+            'montant_payer_tenue' => $finances['montant_payer_tenue'] ?? 0,
+            'montant_paye_tenue' => $finances['montant_paye_tenue'] ?? 0,
+            'reste_payer_tenue' => $finances['reste_payer_tenue'] ?? 'Soldé',
+            'items_kits' => $data['kits'] ?? [],
+            'kits_remis' => $data['kits_remis'] ?? [],
+            'kits_en_attente' => $data['kits_en_attente'] ?? [],
+            'scolarite_recap' => $finances['scolarite_recap'] ?? [],
+            'gestionnaire_nom' => $agentName ?: ($etablissement['nom_responsable_scolarite'] ?? 'Le Responsable de la Scolarité'),
+            'caissier_nom' => $etablissement['nom_responsable_finance'] ?? ($etablissement['nom_directeur_general'] ?? 'Le Service Financier'),
+            'date_impression' => date('d/m/Y')
+        ];
+
+        $html = PdfService::renderTemplate('recu_tenue.php', $viewData);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $matriculeClean = !empty($student['matricule_etudiant']) && $student['matricule_etudiant'] !== '-' 
+            ? preg_replace('/[^A-Za-z0-9_-]/', '_', $student['matricule_etudiant']) 
+            : $student['code_etudiant'];
+        $filename = 'Recu_Tenue_' . $matriculeClean . '_' . date('Ymd_His') . '.pdf';
+
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Reçu de Paiement des Frais de Tenue - ' . ($student['matricule_etudiant'] ?? ''),
+            'margin_left' => 6,
+            'margin_right' => 6,
+            'margin_top' => 6,
+            'margin_bottom' => 6
+        ]);
+    }
+
     public function apiList()
     {
         $this->requireAuth();
