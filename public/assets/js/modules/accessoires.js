@@ -711,14 +711,10 @@
 
             var avatarHtml = '<img src="' + photoUrl + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0; flex-shrink: 0;" onerror="this.onerror=null; this.src=\'' + placeholderUrl + '\';">';
 
-            var phone = (d.telephone_etudiant && d.telephone_etudiant !== '-') ? d.telephone_etudiant : null;
-            var phoneHtml = phone ? '<div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Tél : ' + escapeHtml(phone) + '</div>' : '<div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">Tél : -</div>';
-
             return '<div style="display: flex; align-items: center; gap: 12px; min-width: 180px;">' +
                      avatarHtml +
                      '<div style="min-width: 0;">' +
                        '<div style="font-weight: 800; color: #0F172A; font-size: 13.5px; line-height: 1.3;">' + escapeHtml(rawName) + '</div>' +
-                       phoneHtml +
                      '</div>' +
                    '</div>';
           }
