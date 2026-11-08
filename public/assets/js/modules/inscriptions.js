@@ -1066,10 +1066,7 @@
         },
         {
           data: 'nom_complet', render: function (d, type, row) {
-            var badgePhoto = row.has_photo
-              ? ' <span class="badge bg-success" style="font-size:10px; padding:2px 6px; border-radius:4px; margin-left:4px;">Photo OK</span>'
-              : ' <span class="badge bg-danger" style="font-size:10px; padding:2px 6px; border-radius:4px; margin-left:4px;">Sans photo</span>';
-            return '<span style="font-weight:800; color:#0F172A;">' + (d || '-') + '</span>' + badgePhoto;
+            return '<span style="font-weight:800; color:#0F172A;">' + (d || '-') + '</span>';
           }
         },
         {
