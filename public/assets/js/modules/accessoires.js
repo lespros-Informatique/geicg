@@ -724,16 +724,21 @@
           }
         },
         {
-          data: null,
+          data: 'matricule_etudiant',
+          className: 'text-center',
           render: function(d) {
-            return '<div>' +
-                     '<span class="badge bg-light text-dark font-monospace border" style="font-size: 11.5px; font-weight: 700; padding: 4px 8px;">' + escapeHtml(d.matricule_etudiant || '-') + '</span>' +
-                     '<div style="font-weight: 700; color: #1E3A5F; font-size: 12px; margin-top: 3px;">' + escapeHtml(d.libelle_classe || '-') + '</div>' +
-                   '</div>';
+            return '<span class="badge bg-light text-dark font-monospace" style="font-size: 12px; font-weight: 700; padding: 6px 10px; border: 1px solid #CBD5E1;">' + escapeHtml(d || '-') + '</span>';
+          }
+        },
+        {
+          data: 'libelle_classe',
+          render: function(d) {
+            return '<span style="font-weight: 700; color: #1E3A5F; font-size: 12.5px;">' + escapeHtml(d || '-') + '</span>';
           }
         },
         {
           data: null,
+          className: 'text-center',
           render: function(d) {
             var isComplet = (d.total_retires === d.total_kits && d.total_kits > 0);
             var badgeClass = isComplet ? 'bg-success' : (d.total_retires > 0 ? 'bg-warning text-dark' : 'bg-danger');
@@ -746,17 +751,17 @@
           data: null,
           orderable: false,
           searchable: false,
-          className: 'text-end',
+          className: 'text-center',
           render: function() {
-            return '<div style="display: flex; justify-content: flex-end; gap: 6px;">' +
-                     '<button type="button" class="btn btn-sm btn-success btn-open-student-kit" style="font-weight: 700; border-radius: 8px; padding: 6px 10px; background: #15803D; border: none;" title="Gérer et émarger les fournitures de cet élève">' +
-                       '<i data-lucide="package-check" style="width: 15px; height: 15px;"></i>' +
+            return '<div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">' +
+                     '<button type="button" class="btn-action-icon btn-open-student-kit" style="background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0;" title="Gérer et émarger les fournitures de cet élève">' +
+                       '<i data-lucide="package-check"></i>' +
                      '</button>' +
-                     '<button type="button" class="btn btn-sm btn-outline-primary btn-print-bon-row" title="Imprimer le Bon de Remise A4" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
-                       '<i data-lucide="printer" style="width: 15px; height: 15px;"></i>' +
+                     '<button type="button" class="btn-action-icon btn-print-bon-row" style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1;" title="Imprimer le Bon de Remise A4">' +
+                       '<i data-lucide="printer"></i>' +
                      '</button>' +
-                     '<button type="button" class="btn btn-sm btn-outline-success btn-quick-validate-all-kits" title="Tout marquer comme remis en 1 clic" style="font-weight: 700; border-radius: 8px; padding: 6px 10px;">' +
-                       '<i data-lucide="check-check" style="width: 15px; height: 15px;"></i>' +
+                     '<button type="button" class="btn-action-icon btn-quick-validate-all-kits" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;" title="Tout marquer comme remis en 1 clic">' +
+                       '<i data-lucide="check-check"></i>' +
                      '</button>' +
                    '</div>';
           }
