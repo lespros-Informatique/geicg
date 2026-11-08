@@ -687,7 +687,8 @@ class ModelPaiement extends BaseModel
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
             LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-            WHERE i.code_inscription = ? OR i.id_inscription = ? OR e.matricule_etudiant = ? OR e.code_etudiant = ?
+            WHERE (i.code_inscription = ? OR i.id_inscription = ? OR e.matricule_etudiant = ? OR e.code_etudiant = ?)
+              AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
             ORDER BY (CASE WHEN i.annee_code = ? THEN 1 ELSE 2 END), i.id_inscription DESC
             LIMIT 1
         ");
@@ -1119,9 +1120,13 @@ class ModelPaiement extends BaseModel
         $anneeCode = $defaultAnneeCode;
         $etabCode = $defaultEtabCode;
 
-        $stmtInsInfo = $db->prepare("SELECT annee_code, etablissement_code FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+        $stmtInsInfo = $db->prepare("SELECT annee_code, etablissement_code, statut_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
         $stmtInsInfo->execute([$inscriptionCode]);
         $insData = $stmtInsInfo->fetch(PDO::FETCH_ASSOC);
+
+        if ($insData && ($insData['statut_inscription'] ?? '') === STATUTS::ANNULE) {
+            return ['success' => false, 'message' => "Encaissement impossible : Ce dossier d'inscription a été ANNULÉ."];
+        }
 
         if (!empty($insData['annee_code'])) {
             $anneeCode = $insData['annee_code'];

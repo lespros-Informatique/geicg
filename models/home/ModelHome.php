@@ -57,8 +57,10 @@ class ModelHome extends BaseModel
                         WHEN (p.categorie_paiement = 'FRAIS_ANNEXES' OR p.tranche_code = 'FRAIS_ANNEXES' OR p.type_paiement LIKE '%Frais Annexe%')
                         THEN p.montant_paiement ELSE 0 END), 0) AS annexes
                 FROM " . TABLES::PAIEMENTS . " p
+                LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = p.inscription_code
                 WHERE (p.annee_code = ? OR ? = '')
                   AND p.statut_paiement = 'confirme'
+                  AND (i.statut_inscription IS NULL OR i.statut_inscription != '" . STATUTS::ANNULE . "')
             ");
             $stmtEnc->execute([$anneeCode ?: '', $anneeCode ?: '']);
             $encRow = $stmtEnc->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -116,7 +118,9 @@ class ModelHome extends BaseModel
                 $stmtNotes = $db->prepare("
                     SELECT COUNT(*) FROM " . TABLES::NOTES . " n 
                     INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code 
-                    WHERE i.annee_code = ? AND (n.statut_note = '" . STATUTS::ACTIF . "' OR n.statut_note IS NULL)
+                    WHERE i.annee_code = ? 
+                      AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
+                      AND (n.statut_note = '" . STATUTS::ACTIF . "' OR n.statut_note IS NULL)
                 ");
                 $stmtNotes->execute([$anneeCode ?: '']);
                 $totalNotes = (int)$stmtNotes->fetchColumn();
@@ -128,6 +132,7 @@ class ModelHome extends BaseModel
                     SELECT COUNT(*) FROM " . TABLES::ABSENCES . " a 
                     INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = a.inscription_code 
                     WHERE i.annee_code = ?
+                      AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
                 ");
                 $stmtAbs->execute([$anneeCode ?: '']);
                 $totalAbsences = (int)$stmtAbs->fetchColumn();
@@ -246,6 +251,7 @@ class ModelHome extends BaseModel
                 FROM " . TABLES::PAIEMENTS . " p
                 JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = p.inscription_code
                 WHERE (i.annee_code = ? OR ? = '') 
+                  AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
                   AND (p.statut_paiement = 'confirme' OR p.statut_paiement != '" . STATUTS::ANNULE . "')
                   AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
                   AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
@@ -345,6 +351,7 @@ class ModelHome extends BaseModel
                      AND pfc.statut_piece_cycle = '" . STATUTS::ACTIF . "'
                 LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
                 WHERE (i.annee_code = ? OR ? = '')
+                  AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
                   AND (de.statut_depot IS NULL OR de.statut_depot = '" . STATUTS::EN_ATTENTE . "')
             ");
             $stmtDossiers->execute([$anneeCode, $anneeCode]);
@@ -354,7 +361,10 @@ class ModelHome extends BaseModel
                 SELECT COUNT(*)
                 FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
                 JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
-                WHERE (i.annee_code = ? OR ? = '') AND ai.etat_retrait = 'en_attente'
+                WHERE (i.annee_code = ? OR ? = '') 
+                  AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
+                  AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
+                  AND ai.etat_retrait = 'en_attente'
             ");
             $stmtKits->execute([$anneeCode, $anneeCode]);
             $kitsEnAttente = (int)$stmtKits->fetchColumn();

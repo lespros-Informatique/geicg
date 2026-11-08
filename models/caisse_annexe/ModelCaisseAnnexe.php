@@ -327,6 +327,7 @@ class ModelCaisseAnnexe extends BaseModel
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
             LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
             WHERE i.code_inscription = ?
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmt->execute([$codeInscription]);
@@ -362,7 +363,7 @@ class ModelCaisseAnnexe extends BaseModel
 
     public function getInscriptionByCode(string $codeInscription): ?array
     {
-        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? AND statut_inscription != '" . STATUTS::ANNULE . "' LIMIT 1");
         $stmt->execute([$codeInscription]);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res ?: null;

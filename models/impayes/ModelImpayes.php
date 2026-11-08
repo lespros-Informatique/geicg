@@ -356,7 +356,8 @@ class ModelImpayes extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
-            WHERE id_inscription = ? OR code_inscription = ?
+            WHERE (id_inscription = ? OR code_inscription = ?)
+              AND statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmt->execute([$idOrCode, $idOrCode]);
@@ -370,7 +371,8 @@ class ModelImpayes extends BaseModel
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->getCon()->prepare("
             SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
-            WHERE id_inscription IN ({$placeholders}) OR code_inscription IN ({$placeholders})
+            WHERE (id_inscription IN ({$placeholders}) OR code_inscription IN ({$placeholders}))
+              AND statut_inscription != '" . STATUTS::ANNULE . "'
             ORDER BY nom_etudiant ASC
         ");
         $execParams = array_merge($ids, $ids);

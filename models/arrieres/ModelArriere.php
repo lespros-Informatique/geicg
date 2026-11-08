@@ -60,7 +60,7 @@ class ModelArriere extends BaseModel
             LEFT JOIN " . TABLES::CLASSES . " c_orig ON c_orig.code_classe = i_orig.classe_code
             LEFT JOIN " . TABLES::ANNEES . " ann_orig ON ann_orig.code_annee = i_orig.annee_code
             LEFT JOIN " . TABLES::INSCRIPTIONS . " i_act ON i_act.etudiant_code = e.code_etudiant AND i_act.id_inscription = (
-                SELECT MAX(id_inscription) FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = e.code_etudiant
+                SELECT MAX(id_inscription) FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = e.code_etudiant AND statut_inscription != '" . STATUTS::ANNULE . "'
             )
             LEFT JOIN " . TABLES::CLASSES . " c_act ON c_act.code_classe = i_act.classe_code
             LEFT JOIN (
@@ -218,7 +218,7 @@ class ModelArriere extends BaseModel
 
     public function getInscriptionByCode(string $inscriptionCode): ?array
     {
-        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? AND statut_inscription != '" . STATUTS::ANNULE . "' LIMIT 1");
         $stmt->execute([$inscriptionCode]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;

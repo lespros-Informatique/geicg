@@ -162,6 +162,7 @@ class ModelInscription extends BaseModel
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON (a.code_annee = i.annee_code OR a.id_annee = i.annee_code)
                 WHERE i.etudiant_code = ?
+                  AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                 ORDER BY i.id_inscription DESC
                 LIMIT 1
             ");

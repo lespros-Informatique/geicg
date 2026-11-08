@@ -631,12 +631,21 @@ class ModelEtudiant extends BaseModel
             error_log("ModelEtudiant::getStudentFullDetails paiements: " . $e->getMessage());
         }
 
-        // 4. Statistiques financières calculées dynamiquement
+        // 4. Statistiques financières calculées dynamiquement (Séparation stricte Scolarité / Frais Annexes - Règle 4)
         $scolariteTotale = (float)($inscription['montant_scolarite_inscription'] ?? 0);
-        $totalPaye = 0;
+        $totalPaye = 0.0;
+        $activeInscrCode = $inscription['code_inscription'] ?? '';
         foreach ($paiements as $p) {
-            if (($p['statut_paiement'] ?? '') !== STATUTS::ANNULE) {
-                $totalPaye += (float)($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0));
+            $cat = strtoupper($p['categorie_paiement'] ?? '');
+            $tranche = strtoupper($p['tranche_code'] ?? '');
+            $type = strtolower($p['type_paiement'] ?? '');
+            $isFraisAnnexe = ($cat === 'FRAIS_ANNEXES' || $tranche === 'FRAIS_ANNEXES' || strpos($type, 'annexe') !== false);
+
+            if (($p['statut_paiement'] ?? '') !== STATUTS::ANNULE && !$isFraisAnnexe) {
+                // Imputer uniquement sur l'inscription active affichée
+                if (empty($activeInscrCode) || ($p['inscription_code'] ?? '') === $activeInscrCode) {
+                    $totalPaye += (float)($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0));
+                }
             }
         }
         $soldeRestant = max(0, $scolariteTotale - $totalPaye);
