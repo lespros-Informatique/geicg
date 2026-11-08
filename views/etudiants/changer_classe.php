@@ -126,62 +126,74 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
               <small style="color: #64748B; font-size: 12px; margin-top: 6px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi (Affecté ou Non Affecté).</small>
             </div>
 
-            <!-- ANNÉE ACADÉMIQUE (READONLY) -->
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                Année Académique d'Inscription <span style="color: #EF4444;">*</span>
-              </label>
-              <?php
-                $selectedAnneeLibelle = '';
-                foreach ($annees as $a) {
-                    if ($a['code_annee'] === $activeAnneeCode) {
-                        $selectedAnneeLibelle = $a['libelle_annee'] . ((!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' — Session Active' : '');
-                        break;
-                    }
-                }
-                if (empty($selectedAnneeLibelle)) {
-                    $selectedAnneeLibelle = $activeAnneeCode;
-                }
-              ?>
-              <div style="position: relative;">
-                <input type="text" class="form-control" id="disp_wiz_annee" value="<?= htmlspecialchars($selectedAnneeLibelle) ?>" readonly 
-                       style="background-color: #F8FAFC; color: #1E3A5F; font-weight: 700; cursor: not-allowed; border: 1.5px solid #CBD5E1; padding-left: 38px; height: 42px; width: 100%; box-sizing: border-box;">
-                <i data-lucide="calendar" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #64748B;"></i>
+            <!-- LIGNE DES 3 CHAMPS GROUPÉS : ANNÉE, NOUVELLE CLASSE, REMISE -->
+            <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: start;">
+              
+              <!-- 1. Année Académique (READONLY) -->
+              <div class="form-group" style="width: 100%;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Année Académique d'Inscription <span style="color: #EF4444;">*</span>
+                </label>
+                <?php
+                  $selectedAnneeLibelle = '';
+                  foreach ($annees as $a) {
+                      if ($a['code_annee'] === $activeAnneeCode) {
+                          $selectedAnneeLibelle = $a['libelle_annee'] . ((!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' — Session Active' : '');
+                          break;
+                      }
+                  }
+                  if (empty($selectedAnneeLibelle)) {
+                      $selectedAnneeLibelle = $activeAnneeCode;
+                  }
+                ?>
+                <div style="position: relative;">
+                  <input type="text" class="form-control" id="disp_wiz_annee" value="<?= htmlspecialchars($selectedAnneeLibelle) ?>" readonly 
+                         style="background-color: #F8FAFC; color: #1E3A5F; font-weight: 700; cursor: not-allowed; border: 1.5px solid #CBD5E1; padding-left: 38px; height: 42px; width: 100%; box-sizing: border-box;">
+                  <i data-lucide="calendar" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #64748B;"></i>
+                </div>
+                <input type="hidden" id="wiz_annee" name="annee_code" value="<?= htmlspecialchars($activeAnneeCode) ?>">
+                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">
+                  Verrouillée sur l'année de l'inscription.
+                </small>
               </div>
-              <input type="hidden" id="wiz_annee" name="annee_code" value="<?= htmlspecialchars($activeAnneeCode) ?>">
-              <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">
-                Verrouillée sur l'année académique de l'inscription en cours.
-              </small>
-            </div>
 
-            <!-- CLASSE D'AFFECTATION -->
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                Nouvelle Classe d'affectation <span style="color: #EF4444;">*</span>
-              </label>
-              <select class="form-control select2" id="wiz_classe" name="classe_code" style="width: 100%;" required>
-                <?php if (!empty($classes)): ?>
-                  <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
-                  <?php foreach($classes as $cl): ?>
-                    <option value="<?= htmlspecialchars($cl['code_classe']) ?>" 
-                            <?= (($inscription['classe_code'] ?? '') === $cl['code_classe']) ? 'selected' : '' ?>
-                            data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"
-                            data-type-filiere="<?= htmlspecialchars($cl['type_filiere'] ?? '') ?>"
-                            data-niveau="<?= htmlspecialchars($cl['niveau_code'] ?? '') ?>">
-                      <?= htmlspecialchars($cl['libelle_classe']) ?> (<?= htmlspecialchars($cl['code_classe']) ?>)
-                    </option>
-                  <?php endforeach; ?>
-                <?php else: ?>
-                  <option value="">-- Aucune classe disponible pour cette année --</option>
-                <?php endif; ?>
-              </select>
-            </div>
+              <!-- 2. Nouvelle Classe d'affectation -->
+              <div class="form-group" style="width: 100%;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Nouvelle Classe d'affectation <span style="color: #EF4444;">*</span>
+                </label>
+                <select class="form-control select2" id="wiz_classe" name="classe_code" style="width: 100%;" required>
+                  <?php if (!empty($classes)): ?>
+                    <option value="">-- Sélectionner la classe d'affectation --</option>
+                    <?php foreach($classes as $cl): ?>
+                      <option value="<?= htmlspecialchars($cl['code_classe']) ?>" 
+                              <?= (($inscription['classe_code'] ?? '') === $cl['code_classe']) ? 'selected' : '' ?>
+                              data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"
+                              data-type-filiere="<?= htmlspecialchars($cl['type_filiere'] ?? '') ?>"
+                              data-niveau="<?= htmlspecialchars($cl['niveau_code'] ?? '') ?>">
+                        <?= htmlspecialchars($cl['libelle_classe']) ?> (<?= htmlspecialchars($cl['code_classe']) ?>)
+                      </option>
+                    <?php endforeach; ?>
+                  <?php else: ?>
+                    <option value="">-- Aucune classe disponible pour cette année --</option>
+                  <?php endif; ?>
+                </select>
+                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">
+                  Classe cible pour la réorientation.
+                </small>
+              </div>
 
-            <!-- Remise / Bourse (READONLY) -->
-            <div class="form-group">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
-              <input type="number" min="0" step="any" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="<?= htmlspecialchars($inscription['remise_scolarite'] ?? 0) ?>" readonly style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background-color: #F8FAFC; color: #334155; font-weight: 700; cursor: not-allowed;">
-              <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Montant fixé lors de l'inscription initiale (lecture seule).</small>
+              <!-- 3. Remise / Bourse (READONLY) -->
+              <div class="form-group" style="width: 100%;">
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                  Remise / Bourse Accordée (FCFA)
+                </label>
+                <input type="number" min="0" step="any" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="<?= htmlspecialchars($inscription['remise_scolarite'] ?? 0) ?>" readonly style="width: 100%; padding: 11px 14px; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; background-color: #F8FAFC; color: #334155; font-weight: 700; cursor: not-allowed; box-sizing: border-box;">
+                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">
+                  Montant initial (lecture seule).
+                </small>
+              </div>
+
             </div>
 
           </div>
