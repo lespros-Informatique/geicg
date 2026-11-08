@@ -279,13 +279,26 @@ class ModelEtudiant extends BaseModel
 
             $inscriptionRow = null;
             if (!empty($codeInscription)) {
-                $stmtIns = $db->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+                $stmtIns = $db->prepare("
+                    SELECT i.*, cl.filiere_code as ancienne_filiere_code, cl.niveau_code as ancien_niveau_code, cl.libelle_classe as ancien_libelle_classe
+                    FROM " . TABLES::INSCRIPTIONS . " i
+                    LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                    WHERE i.code_inscription = ? 
+                    LIMIT 1
+                ");
                 $stmtIns->execute([$codeInscription]);
                 $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
             }
 
             if (!$inscriptionRow && !empty($codeEtudiant)) {
-                $stmtIns = $db->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ? AND statut_inscription != '" . STATUTS::ANNULE . "' ORDER BY (annee_code = ?) DESC, id_inscription DESC LIMIT 1");
+                $stmtIns = $db->prepare("
+                    SELECT i.*, cl.filiere_code as ancienne_filiere_code, cl.niveau_code as ancien_niveau_code, cl.libelle_classe as ancien_libelle_classe
+                    FROM " . TABLES::INSCRIPTIONS . " i
+                    LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                    WHERE i.etudiant_code = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "' 
+                    ORDER BY (i.annee_code = ?) DESC, i.id_inscription DESC 
+                    LIMIT 1
+                ");
                 $stmtIns->execute([$codeEtudiant, $anneeCode]);
                 $inscriptionRow = $stmtIns->fetch(PDO::FETCH_ASSOC);
             }
@@ -350,6 +363,42 @@ class ModelEtudiant extends BaseModel
                 }
             }
 
+            // Option A : Gestion de l'inactivation des notes si la filière ou le niveau d'études change (réorientation)
+            $ancienneFiliere = $inscriptionRow['ancienne_filiere_code'] ?? '';
+            $ancienNiveau = $inscriptionRow['ancien_niveau_code'] ?? '';
+            $nouvelleFiliere = $classeRow['filiere_code'] ?? '';
+            $nouveauNiveau = $classeRow['niveau_code'] ?? '';
+            $isReorientation = ($classeChangee && (!empty($ancienneFiliere) && $ancienneFiliere !== $nouvelleFiliere || !empty($ancienNiveau) && $ancienNiveau !== $nouveauNiveau));
+            $nbNotesDesactivees = 0;
+
+            if ($isReorientation && !empty($inscriptionRow['code_inscription'])) {
+                $stmtCountNotes = $db->prepare("
+                    SELECT COUNT(*) 
+                    FROM " . TABLES::NOTES . " 
+                    WHERE inscription_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+                ");
+                $stmtCountNotes->execute([$inscriptionRow['code_inscription']]);
+                $nbNotesDesactivees = (int)$stmtCountNotes->fetchColumn();
+
+                if ($nbNotesDesactivees > 0) {
+                    $motifNote = sprintf(
+                        " [NOTE INACTIVE le %s : Réorientation de %s vers %s]",
+                        date('d/m/Y H:i'),
+                        $inscriptionRow['ancien_libelle_classe'] ?? ($inscriptionRow['classe_code'] ?? 'ancienne classe'),
+                        $classeRow['libelle_classe'] ?? $nouvelleClasse
+                    );
+
+                    $stmtUpdateNotes = $db->prepare("
+                        UPDATE " . TABLES::NOTES . "
+                        SET statut_note = 'inactif',
+                            observations = CONCAT(COALESCE(observations, ''), ?),
+                            updated_at_note = NOW()
+                        WHERE inscription_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+                    ");
+                    $stmtUpdateNotes->execute([$motifNote, $inscriptionRow['code_inscription']]);
+                }
+            }
+
             // Si des paiements ont été annulés, réajuster le statut d'inscription s'il était soldé
             $nouveauStatutInscription = ($nbPaiementsAnnules > 0 && ($inscriptionRow['statut_inscription'] ?? '') === STATUTS::SOLDE) 
                 ? STATUTS::VALIDE 
@@ -379,12 +428,16 @@ class ModelEtudiant extends BaseModel
                 if ($nbPaiementsAnnules > 0) {
                     $msg .= " Le montant de scolarité ayant changé (" . number_format($ancienMontant, 0, ',', ' ') . " à " . number_format((float)$montantScolarite, 0, ',', ' ') . " FCFA), " . $nbPaiementsAnnules . " versement(s) antérieur(s) (" . number_format($totalMontantAnnule, 0, ',', ' ') . " FCFA) ont été annulés pour régularisation sur le nouvel échéancier.";
                 }
+                if ($nbNotesDesactivees > 0) {
+                    $msg .= " La filière ou le niveau ayant changé, " . $nbNotesDesactivees . " note(s) de l'ancienne filière ont été archivées (inactives) pour initialiser la nouvelle maquette pédagogique.";
+                }
                 return [
                     'success' => true,
                     'message' => $msg,
                     'classe_libelle' => $classeRow['libelle_classe'],
                     'paiements_annules_count' => $nbPaiementsAnnules,
-                    'paiements_annules_montant' => $totalMontantAnnule
+                    'paiements_annules_montant' => $totalMontantAnnule,
+                    'notes_desactivees_count' => $nbNotesDesactivees
                 ];
             }
             return ['success' => false, 'message' => "Erreur lors de la mise à jour de la classe de l'étudiant."];

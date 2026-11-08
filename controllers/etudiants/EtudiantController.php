@@ -293,6 +293,9 @@ class EtudiantController extends BaseController
             if (!empty($res['paiements_annules_count'])) {
                 $logDesc .= " ({$res['paiements_annules_count']} versement(s) antérieur(s) annulé(s) pour " . number_format($res['paiements_annules_montant'], 0, ',', ' ') . " FCFA suite au changement de scolarité)";
             }
+            if (!empty($res['notes_desactivees_count'])) {
+                $logDesc .= " ({$res['notes_desactivees_count']} note(s) antérieure(s) archivée(s) suite au changement de filière/niveau)";
+            }
 
             $this->logAction(
                 AuditLogger::ACTION_UPDATE,
@@ -306,7 +309,8 @@ class EtudiantController extends BaseController
                     'affectation' => $affectationEtat,
                     'montant_scolarite' => $montantScolarite,
                     'paiements_annules' => $res['paiements_annules_count'] ?? 0,
-                    'montant_annule' => $res['paiements_annules_montant'] ?? 0
+                    'montant_annule' => $res['paiements_annules_montant'] ?? 0,
+                    'notes_desactivees' => $res['notes_desactivees_count'] ?? 0
                 ]
             );
             $this->success($res['message'], ['redirect' => RACINE . 'etudiant/list']);
