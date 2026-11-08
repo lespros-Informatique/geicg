@@ -52,7 +52,7 @@ class ModelAbsence extends BaseModel
             SELECT DISTINCT e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant,
                    i.code_inscription, i.classe_code, cl.libelle_classe
             FROM " . TABLES::ETUDIANTS . " e
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
             ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC
         ";
@@ -111,7 +111,7 @@ class ModelAbsence extends BaseModel
                 SELECT abs.*, ins.etudiant_code, abs.motif as motif_absence
                 FROM " . TABLES::ABSENCES . " abs
                 INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = abs.inscription_code
-                WHERE ins.classe_code = ? AND abs.date_absence = ?
+                WHERE ins.classe_code = ? AND abs.date_absence = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "'
             ";
             $paramsAbs = [$classeCode, $dateAbsence];
             if (!empty($matiereCode)) {
@@ -134,7 +134,7 @@ class ModelAbsence extends BaseModel
 
     public function getInscriptionCodeByEtudiant(string $etudiantCode, ?string $classeCode = null, ?string $anneeCode = null): ?string
     {
-        $sql = "SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ?";
+        $sql = "SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ? AND statut_inscription != '" . STATUTS::ANNULE . "'";
         $params = [$etudiantCode];
         if (!empty($classeCode)) {
             $sql .= " AND classe_code = ?";

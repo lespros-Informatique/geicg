@@ -30,7 +30,7 @@ class ModelCycle extends BaseModel
                  WHERE cl.cycle_code = ? AND cl.statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
                 (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
                  JOIN " . TABLES::CLASSES . " cl2 ON cl2.code_classe = ins.classe_code
-                 WHERE cl2.cycle_code = ? AND ins.statut_inscription = '" . STATUTS::ACTIF . "') as total_etudiants
+                 WHERE cl2.cycle_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_etudiants
             FROM " . TABLES::FILIERE_CYCLES . " fc
             WHERE fc.cycle_code = ?
         ");

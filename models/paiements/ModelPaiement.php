@@ -89,7 +89,7 @@ class ModelPaiement extends BaseModel
                 FROM " . TABLES::INSCRIPTIONS . " i
                 LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
                 LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-                WHERE i.code_inscription = ? LIMIT 1";
+                WHERE i.code_inscription = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "' LIMIT 1";
         $stmt = $this->getCon()->prepare($sql);
         $stmt->execute([$inscriptionCode]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -140,7 +140,7 @@ class ModelPaiement extends BaseModel
             SELECT i.photo_inscription, e.photo_etudiant 
             FROM " . TABLES::INSCRIPTIONS . " i 
             LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code 
-            WHERE i.code_inscription = ? LIMIT 1
+            WHERE i.code_inscription = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "' LIMIT 1
         ");
         $stmt->execute([$inscriptionCode]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;

@@ -260,7 +260,7 @@ class ModelInscription extends BaseModel
                 JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-                WHERE 1=1
+                WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
             ";
 
             $params = [];
@@ -316,6 +316,7 @@ class ModelInscription extends BaseModel
                 LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
                 WHERE " . (is_numeric($idOrCode) && (int)$idOrCode > 0 ? "i.id_inscription = ?" : "i.code_inscription = ?") . "
+                  AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                 LIMIT 1
             ");
             $stmtInfo->execute([$idOrCode]);
@@ -1103,7 +1104,8 @@ class ModelInscription extends BaseModel
 
         $stmtIns = $db->prepare("
             SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
-            WHERE id_inscription = ? OR code_inscription = ? OR code_etudiant = ? OR matricule_etudiant = ? OR id_etudiant = ?
+            WHERE (id_inscription = ? OR code_inscription = ? OR code_etudiant = ? OR matricule_etudiant = ? OR id_etudiant = ?)
+              AND statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmtIns->execute([$id, $id, $id, $id, $id]);

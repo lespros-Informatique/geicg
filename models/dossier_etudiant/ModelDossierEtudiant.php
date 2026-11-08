@@ -33,7 +33,7 @@ class ModelDossierEtudiant extends BaseModel
                  AND pfc.statut_piece_cycle = '" . STATUTS::ACTIF . "'
             JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
             LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
-            WHERE i.code_inscription = ?
+            WHERE i.code_inscription = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             GROUP BY pfc.piece_code
             ORDER BY pf.libelle_piece ASC
         ";
@@ -78,7 +78,7 @@ class ModelDossierEtudiant extends BaseModel
                  AND pfc.statut_piece_cycle = '" . STATUTS::ACTIF . "'
             JOIN " . TABLES::PIECES_FOURNIR . " pf ON pf.code_piece_fournir = pfc.piece_code
             LEFT JOIN " . TABLES::DOSSIER_ETUDIANT . " de ON de.inscription_code = i.code_inscription AND de.piece_code = pfc.piece_code
-            WHERE i.code_inscription IN ({$placeholders})
+            WHERE i.code_inscription IN ({$placeholders}) AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             GROUP BY i.code_inscription, pfc.piece_code
             ORDER BY pf.libelle_piece ASC
         ";
@@ -192,7 +192,7 @@ class ModelDossierEtudiant extends BaseModel
                 FROM " . TABLES::INSCRIPTIONS . " i
                 JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
                 JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-                WHERE 1=1
+                WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
             ";
 
             $params = [];
@@ -234,7 +234,7 @@ class ModelDossierEtudiant extends BaseModel
                 JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
                 LEFT JOIN " . TABLES::ETABLISSEMENTS . " et ON et.code_etablissement = i.etablissement_code
-                WHERE i.code_inscription = ?
+                WHERE i.code_inscription = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                 LIMIT 1
             ");
             $stmt->execute([$inscriptionCode]);

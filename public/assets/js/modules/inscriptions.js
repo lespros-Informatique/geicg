@@ -1047,11 +1047,6 @@
       autoWidth: false,
       columns: [
         {
-          data: null, width: '50px', render: function (d, type, row, meta) {
-            return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-          }
-        },
-        {
           data: 'photo_path', width: '60px', className: 'text-center', render: function (d, type, row) {
             return renderFramedAvatar(d, row.nom_complet, 40);
           }

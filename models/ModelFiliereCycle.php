@@ -165,7 +165,7 @@ class ModelFiliereCycle
                 SELECT cl.*, n.libelle_niveau, COUNT(i.id_inscription) as nb_etudiants
                 FROM " . TABLES::CLASSES . " cl
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.classe_code = cl.code_classe AND i.statut_inscription = '" . STATUTS::ACTIF . "'
+                LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.classe_code = cl.code_classe AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                 WHERE cl.filiere_code = ?
                   AND (cl.cycle_code = ? OR ? = '' OR cl.cycle_code IS NULL)
                   AND (cl.niveau_code = ? OR ? = '' OR cl.niveau_code IS NULL)

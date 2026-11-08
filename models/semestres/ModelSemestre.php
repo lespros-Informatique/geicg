@@ -187,7 +187,7 @@ class ModelSemestre extends BaseModel
             $stmt = $this->getCon()->prepare("
                 SELECT 
                     (SELECT COUNT(*) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.semestre_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "') as total_notes,
-                    (SELECT COUNT(DISTINCT ins.classe_code) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = n.inscription_code WHERE c.semestre_code = ?) as total_classes_evaluees,
+                    (SELECT COUNT(DISTINCT ins.classe_code) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = n.inscription_code WHERE c.semestre_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_classes_evaluees,
                     (SELECT COUNT(DISTINCT n.etudiant_code) FROM " . TABLES::NOTES . " n JOIN " . TABLES::COMPOSITIONS . " c ON c.code_composition = n.composition_code WHERE c.semestre_code = ?) as total_etudiants_notes
             ");
             $stmt->execute([$semestreCode, $semestreCode, $semestreCode]);

@@ -132,7 +132,7 @@ class ModelAccessoire extends BaseModel
             JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
             LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
             LEFT JOIN " . TABLES::ETABLISSEMENTS . " et ON et.code_etablissement = i.etablissement_code
-            WHERE i.code_inscription = ?
+            WHERE i.code_inscription = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmt->execute([$inscriptionCode]);
@@ -269,6 +269,7 @@ class ModelAccessoire extends BaseModel
             JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
             JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
             WHERE i.etudiant_code = ?
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
               AND (ai.annee_code = ? OR ? = '')
               AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
             ORDER BY ai.id_accessoire_inscription DESC
@@ -298,6 +299,7 @@ class ModelAccessoire extends BaseModel
             LEFT JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
             JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
             WHERE (i.etudiant_code = ? OR ai.inscription_code = ?)
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
               AND ai.accessoire_code = ? 
               AND (ai.annee_code = ? OR ? = '')
               AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)

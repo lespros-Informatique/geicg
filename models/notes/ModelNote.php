@@ -294,6 +294,7 @@ class ModelNote extends BaseModel
             FROM " . TABLES::INSCRIPTIONS . " i
             LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
             LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
             ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC
         ";
         $inscriptionsDetails = $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];

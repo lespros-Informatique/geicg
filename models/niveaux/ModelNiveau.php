@@ -77,7 +77,7 @@ class ModelNiveau extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT cl.*, f.libelle_filiere,
-                   (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription = '" . STATUTS::ACTIF . "') as nb_eleves
+                   (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as nb_eleves
             FROM " . TABLES::CLASSES . " cl
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             WHERE cl.niveau_code = ?
@@ -94,7 +94,7 @@ class ModelNiveau extends BaseModel
                 (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
                 (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
                  JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code 
-                 WHERE cl.niveau_code = ? AND ins.statut_inscription = '" . STATUTS::ACTIF . "') as total_etudiants
+                 WHERE cl.niveau_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_etudiants
         ");
         $stmt->execute([$niveauCode, $niveauCode]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total_classes' => $defaultTotalClasses, 'total_etudiants' => 0];

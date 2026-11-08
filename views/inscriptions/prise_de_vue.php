@@ -77,7 +77,6 @@
           <table id="table-prise-de-vue" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px; width: 60px; text-align: center;">Photo</th>
                 <th style="padding: 12px;">Matricule</th>
                 <th style="padding: 12px;">Nom & Prénoms</th>
