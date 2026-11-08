@@ -225,7 +225,7 @@ class EtudiantController extends BaseController
     public function changerClassePage($details)
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CHANGER_CLASSE_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]);
+        $this->requirePermission(PERMISSIONS::CHANGER_CLASSE_ETUDIANT);
 
         try {
             $id = $this->validator->decrypter($details);
@@ -269,7 +269,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CHANGER_CLASSE_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]);
+        $this->requirePermission(PERMISSIONS::CHANGER_CLASSE_ETUDIANT);
 
         $codeInscription = trim($_POST['code_inscription'] ?? '');
         $codeEtudiant = trim($_POST['code_etudiant'] ?? '');
@@ -633,7 +633,7 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::ANNULER_INSCRIPTION, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $this->requirePermission(PERMISSIONS::ANNULER_INSCRIPTION);
 
         $idInscription = (int)$this->post('id_inscription');
         $codeInscription = trim($this->post('code_inscription') ?? '');

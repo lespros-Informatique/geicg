@@ -18,9 +18,9 @@
 
   var racine = (typeof RACINE !== 'undefined') ? RACINE : (window.RACINE || '/geicg/');
   var csrfToken = config.csrfToken || $('#csrf_token').val() || '';
-  var canChangerClasse = config.canChangerClasse || false;
-  var canEditEtudiant = config.canEditEtudiant || false;
-  var canAnnulerInscription = config.canAnnulerInscription || false;
+  var canChangerClasse = Boolean(config.canChangerClasse);
+  var canEditEtudiant = Boolean(config.canEditEtudiant);
+  var canAnnulerInscription = Boolean(config.canAnnulerInscription);
   var defaultUseSlugFiliere = !!config.useSlugFiliere;
   var defaultUseSlugNiveau = !!config.useSlugNiveau;
   var anneeActiveVal = config.anneeActive || '';

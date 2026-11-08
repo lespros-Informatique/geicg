@@ -238,11 +238,16 @@ $anneeActive = $anneeActive ?? '';
 
 
 
+<?php
+$canChangerClasse = Auth::isSuperAdmin() || (isset($canAccess) && is_callable($canAccess) ? $canAccess(PERMISSIONS::CHANGER_CLASSE_ETUDIANT) : Auth::can(PERMISSIONS::CHANGER_CLASSE_ETUDIANT));
+$canAnnulerInscription = Auth::isSuperAdmin() || (isset($canAccess) && is_callable($canAccess) ? $canAccess(PERMISSIONS::ANNULER_INSCRIPTION) : Auth::can(PERMISSIONS::ANNULER_INSCRIPTION));
+$canEditEtudiant = Auth::isSuperAdmin() || (isset($canAccess) && is_callable($canAccess) ? $canAccess([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]) : Auth::can([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]));
+?>
 <script type="application/json" id="etudiants-list-config">
 <?= json_encode([
-    'canChangerClasse' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::CHANGER_CLASSE_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]))),
-    'canEditEtudiant' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]))),
-    'canAnnulerInscription' => (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::ANNULER_INSCRIPTION, PERMISSIONS::MANAGE_INSCRIPTIONS]))),
+    'canChangerClasse' => (bool)$canChangerClasse,
+    'canEditEtudiant' => (bool)$canEditEtudiant,
+    'canAnnulerInscription' => (bool)$canAnnulerInscription,
     'useSlugFiliere' => !empty($useSlugFiliere),
     'useSlugNiveau' => !empty($useSlugNiveau),
     'anneeActive' => $anneeActive ?? '',

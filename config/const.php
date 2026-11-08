@@ -269,6 +269,7 @@ class PERMISSIONS
 
     // MODULE: SCOLAIRITE
     public const ANNULER_INSCRIPTION              = 'ANNULER_INSCRIPTION';
+    public const CHANGER_CLASSE                   = 'CHANGER_CLASSE_ETUDIANT';
     public const CHANGER_CLASSE_ETUDIANT          = 'CHANGER_CLASSE_ETUDIANT';
     public const EDIT_ETUDIANT                    = 'EDIT_ETUDIANT';
     public const MANAGE_ABSENCES                  = 'MANAGE_ABSENCES';
