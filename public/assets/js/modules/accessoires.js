@@ -735,46 +735,11 @@
         {
           data: null,
           render: function(d) {
-            var items = d.items || [];
-            if (items.length === 0) {
-              return '<span class="text-muted" style="font-size: 12px;">Aucun article souscrit</span>';
-            }
-
-            var html = '<div style="display: flex; flex-wrap: wrap; gap: 6px;">';
-            items.forEach(function(item) {
-              if (item.etat_retrait === 'retire') {
-                html += '<span class="badge bg-success" style="font-size: 11px; font-weight: 700; padding: 4px 8px;" title="Remis le ' + (item.date_retrait_formatee || '-') + '">✓ ' + escapeHtml(item.libelle_accessoire) + '</span>';
-              } else {
-                html += '<span class="badge bg-warning text-dark" style="font-size: 11px; font-weight: 700; padding: 4px 8px;" title="En attente de remise">⏳ ' + escapeHtml(item.libelle_accessoire) + '</span>';
-              }
-            });
-            html += '</div>';
-            return html;
-          }
-        },
-        {
-          data: null,
-          render: function(d) {
             var isComplet = (d.total_retires === d.total_kits && d.total_kits > 0);
             var badgeClass = isComplet ? 'bg-success' : (d.total_retires > 0 ? 'bg-warning text-dark' : 'bg-danger');
             return '<span class="badge ' + badgeClass + '" style="font-size: 12px; font-weight: 700; padding: 6px 12px;">' +
                    d.total_retires + ' / ' + d.total_kits + ' remis' +
                    '</span>';
-          }
-        },
-        {
-          data: null,
-          render: function(d) {
-            var pct = d.pourcentage || 0;
-            var barColor = pct === 100 ? '#16A34A' : (pct >= 50 ? '#EA580C' : '#DC2626');
-            return '<div style="min-width: 110px;">' +
-                     '<div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #475569; margin-bottom: 3px;">' +
-                       '<span>' + pct + '%</span>' +
-                     '</div>' +
-                     '<div style="height: 7px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">' +
-                       '<div style="height: 100%; width: ' + pct + '%; background: ' + barColor + '; border-radius: 4px;"></div>' +
-                     '</div>' +
-                   '</div>';
           }
         },
         {

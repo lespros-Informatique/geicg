@@ -123,9 +123,7 @@
               <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
                 <th>Étudiant</th>
                 <th>Matricule & Classe</th>
-                <th>Nombre d'articles</th>
                 <th>Kits remis</th>
-                <th>Progression Retrait</th>
                 <th style="text-align: right;">Actions Émargement</th>
               </tr>
             </thead>
