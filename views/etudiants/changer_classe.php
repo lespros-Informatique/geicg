@@ -46,12 +46,30 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
           
           <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 56px; height: 68px; min-width: 56px; border-radius: 8px; border: 2px solid #CBD5E1; background: #1E3A5F; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; font-weight: 900; font-size: 18px; flex-shrink: 0;">
-              <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-                <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
-              <?php else: ?>
-                <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
-              <?php endif; ?>
+            <?php
+              $photoCandidate = !empty($inscription['photo_inscription']) 
+                  ? $inscription['photo_inscription'] 
+                  : (!empty($item['photo_etudiant']) ? $item['photo_etudiant'] : '');
+              
+              $photoSrc = '';
+              if (!empty($photoCandidate)) {
+                  $cleanRel = ltrim($photoCandidate, '/');
+                  if (file_exists(__DIR__ . '/../../' . $cleanRel)) {
+                      $photoSrc = RACINE . $cleanRel;
+                  } elseif (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
+                      $photoSrc = RACINE . 'public/' . $cleanRel;
+                  } elseif (strpos($photoCandidate, 'http') === 0) {
+                      $photoSrc = $photoCandidate;
+                  }
+              }
+              $placeholderImg = RACINE . 'public/assets/images/placeholders/etudiant.png';
+              $finalPhotoUrl = !empty($photoSrc) ? $photoSrc : $placeholderImg;
+            ?>
+            <div style="width: 104px; height: 108px; min-width: 64px; border-radius: 10px; border: 2px solid #CBD5E1; background: #F8FAFC; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; flex-shrink: 0;">
+              <img src="<?= htmlspecialchars($finalPhotoUrl) ?>" 
+                   alt="Photo <?= htmlspecialchars($nomComplet) ?>" 
+                   onerror="this.onerror=null; this.src='<?= $placeholderImg ?>';" 
+                   style="width: 100%; height: 100%; object-fit: cover;">
             </div>
 
             <div>
