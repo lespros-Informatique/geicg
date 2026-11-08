@@ -265,7 +265,7 @@ class ModelEtudiant extends BaseModel
     /**
      * Effectue le changement de classe, de régime et de scolarité pour une inscription
      */
-    public function changerClasseInscription(string $codeInscription, string $codeEtudiant, string $nouvelleClasse, string $affectationEtat, string $anneeCode, ?float $montantScolarite = null): array
+    public function changerClasseInscription(string $codeInscription, string $codeEtudiant, string $nouvelleClasse, string $affectationEtat, string $anneeCode, ?float $montantScolarite = null, ?string $userCode = null, ?string $etabCode = null): array
     {
         $db = $this->getCon();
         try {
@@ -399,6 +399,119 @@ class ModelEtudiant extends BaseModel
                 }
             }
 
+            // Option 1 : Synchronisation intelligente des kits / accessoires scolaires
+            $nbKitsDesactives = 0;
+            $nbKitsAjoutes = 0;
+            $nbKitsReactives = 0;
+
+            if ($classeChangee && !empty($inscriptionRow['code_inscription'])) {
+                try {
+                    // 1. Type de filière de la nouvelle classe (INDUSTRIELLE / TERTIAIRE)
+                    $nouveauTypeFiliere = '';
+                    if (!empty($classeRow['filiere_code'])) {
+                        $stmtTypeFil = $db->prepare("SELECT type_filiere FROM " . TABLES::FILIERES . " WHERE code_filiere = ? LIMIT 1");
+                        $stmtTypeFil->execute([$classeRow['filiere_code']]);
+                        $nouveauTypeFiliere = strtoupper(trim((string)$stmtTypeFil->fetchColumn()));
+                    }
+
+                    // 2. Kits éligibles pour la nouvelle classe
+                    $sqlEligible = "
+                        SELECT code_accessoire, libelle_accessoire, type_filiere_cible, niveau_code
+                        FROM " . TABLES::ACCESSOIRES . "
+                        WHERE statut_accessoire = '" . STATUTS::ACTIF . "'
+                          AND (type_filiere_cible = 'TOUT' OR type_filiere_cible IS NULL OR type_filiere_cible = ''" . (!empty($nouveauTypeFiliere) ? " OR type_filiere_cible = ?" : "") . ")
+                          AND (niveau_code IS NULL OR niveau_code = '' OR niveau_code = 'TOUT'" . (!empty($classeRow['niveau_code']) ? " OR niveau_code = ?" : "") . ")
+                    ";
+                    $paramsEligible = [];
+                    if (!empty($nouveauTypeFiliere)) $paramsEligible[] = $nouveauTypeFiliere;
+                    if (!empty($classeRow['niveau_code'])) $paramsEligible[] = $classeRow['niveau_code'];
+
+                    $stmtEligible = $db->prepare($sqlEligible);
+                    $stmtEligible->execute($paramsEligible);
+                    $eligibleKits = $stmtEligible->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                    $eligibleCodes = array_column($eligibleKits, 'code_accessoire');
+
+                    // 3. Kits actuels de cette inscription
+                    $stmtCurrentKits = $db->prepare("
+                        SELECT id_accessoire_inscription, code_accessoire_inscription, accessoire_code, etat_retrait, statut_accessoire_inscription
+                        FROM " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                        WHERE inscription_code = ?
+                    ");
+                    $stmtCurrentKits->execute([$inscriptionRow['code_inscription']]);
+                    $currentKits = $stmtCurrentKits->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                    $currentMapByCode = [];
+                    foreach ($currentKits as $ck) {
+                        $currentMapByCode[$ck['accessoire_code']] = $ck;
+                    }
+
+                    // 4. Désactiver les kits non retirés ne correspondant plus
+                    $stmtDeactivateKit = $db->prepare("
+                        UPDATE " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                        SET statut_accessoire_inscription = 'inactif'
+                        WHERE id_accessoire_inscription = ?
+                    ");
+
+                    foreach ($currentKits as $ck) {
+                        // Kits déjà retirés en main propre : strictement conservés
+                        if ($ck['etat_retrait'] === 'retire') {
+                            continue;
+                        }
+
+                        // Kits en attente non éligibles à la nouvelle classe : désactivation
+                        if (!in_array($ck['accessoire_code'], $eligibleCodes) && ($ck['statut_accessoire_inscription'] ?? '') === STATUTS::ACTIF) {
+                            $stmtDeactivateKit->execute([$ck['id_accessoire_inscription']]);
+                            $nbKitsDesactives++;
+                        }
+                    }
+
+                    // 5. Nouveaux kits éligibles : ajout ou réactivation
+                    $stmtReactivateKit = $db->prepare("
+                        UPDATE " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                        SET statut_accessoire_inscription = '" . STATUTS::ACTIF . "'
+                        WHERE id_accessoire_inscription = ?
+                    ");
+
+                    $stmtInsertKit = $db->prepare("
+                        INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                        (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+                        VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
+                    ");
+
+                    $targetAnnee = !empty($anneeCode) ? $anneeCode : ($inscriptionRow['annee_code'] ?? '');
+                    $targetEtab = !empty($etabCode) ? $etabCode : ($inscriptionRow['etablissement_code'] ?? null);
+                    $targetUser = !empty($userCode) ? $userCode : ($inscriptionRow['user_code'] ?? null);
+
+                    foreach ($eligibleCodes as $elCode) {
+                        if (isset($currentMapByCode[$elCode])) {
+                            $existing = $currentMapByCode[$elCode];
+                            if ($existing['statut_accessoire_inscription'] !== STATUTS::ACTIF) {
+                                $stmtReactivateKit->execute([$existing['id_accessoire_inscription']]);
+                                $nbKitsReactives++;
+                            }
+                        } else {
+                            do {
+                                $newAccCode = 'ACI-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                                $stmtChkAcc = $db->prepare("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE code_accessoire_inscription = ?");
+                                $stmtChkAcc->execute([$newAccCode]);
+                            } while ((int)$stmtChkAcc->fetchColumn() > 0);
+
+                            $stmtInsertKit->execute([
+                                $newAccCode,
+                                $inscriptionRow['code_inscription'],
+                                $elCode,
+                                $targetAnnee,
+                                $targetUser,
+                                $targetEtab
+                            ]);
+                            $nbKitsAjoutes++;
+                        }
+                    }
+                } catch (Exception $eAcc) {
+                    error_log("ModelEtudiant::changerClasseInscription sync kits error: " . $eAcc->getMessage());
+                }
+            }
+
             // Si des paiements ont été annulés, réajuster le statut d'inscription s'il était soldé
             $nouveauStatutInscription = ($nbPaiementsAnnules > 0 && ($inscriptionRow['statut_inscription'] ?? '') === STATUTS::SOLDE) 
                 ? STATUTS::VALIDE 
@@ -431,13 +544,23 @@ class ModelEtudiant extends BaseModel
                 if ($nbNotesDesactivees > 0) {
                     $msg .= " La filière ou le niveau ayant changé, " . $nbNotesDesactivees . " note(s) de l'ancienne filière ont été archivées (inactives) pour initialiser la nouvelle maquette pédagogique.";
                 }
+                if ($nbKitsDesactives > 0 || $nbKitsAjoutes > 0 || $nbKitsReactives > 0) {
+                    $kitDetails = [];
+                    if ($nbKitsDesactives > 0) $kitDetails[] = "{$nbKitsDesactives} kit(s) non retiré(s) désactivé(s)";
+                    if ($nbKitsAjoutes > 0) $kitDetails[] = "{$nbKitsAjoutes} nouveau(x) kit(s) attribué(s) en attente";
+                    if ($nbKitsReactives > 0) $kitDetails[] = "{$nbKitsReactives} kit(s) réactivé(s)";
+                    $msg .= " Dotation kits actualisée : " . implode(', ', $kitDetails) . " (les kits déjà retirés en main propre restent conservés).";
+                }
                 return [
                     'success' => true,
                     'message' => $msg,
                     'classe_libelle' => $classeRow['libelle_classe'],
                     'paiements_annules_count' => $nbPaiementsAnnules,
                     'paiements_annules_montant' => $totalMontantAnnule,
-                    'notes_desactivees_count' => $nbNotesDesactivees
+                    'notes_desactivees_count' => $nbNotesDesactivees,
+                    'kits_desactives_count' => $nbKitsDesactives,
+                    'kits_ajoutes_count' => $nbKitsAjoutes,
+                    'kits_reactives_count' => $nbKitsReactives
                 ];
             }
             return ['success' => false, 'message' => "Erreur lors de la mise à jour de la classe de l'étudiant."];

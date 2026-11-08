@@ -279,13 +279,18 @@ class EtudiantController extends BaseController
             return;
         }
 
+        $userCode = Auth::user()['code_user'] ?? Session::get('user_code') ?? null;
+        $etabCode = $this->getEtablissementCode();
+
         $res = $this->model->changerClasseInscription(
             $codeInscription,
             $codeEtudiant,
             $nouvelleClasse,
             $affectationEtat,
             $anneeCode ?: $this->getActiveAnneeCode(),
-            $montantScolarite
+            $montantScolarite,
+            $userCode,
+            $etabCode
         );
 
         if ($res['success']) {
@@ -295,6 +300,9 @@ class EtudiantController extends BaseController
             }
             if (!empty($res['notes_desactivees_count'])) {
                 $logDesc .= " ({$res['notes_desactivees_count']} note(s) antérieure(s) archivée(s) suite au changement de filière/niveau)";
+            }
+            if (!empty($res['kits_desactives_count']) || !empty($res['kits_ajoutes_count']) || !empty($res['kits_reactives_count'])) {
+                $logDesc .= " (Kits synchronisés: " . ($res['kits_desactives_count'] ?? 0) . " désactivé(s), " . ($res['kits_ajoutes_count'] ?? 0) . " ajouté(s), " . ($res['kits_reactives_count'] ?? 0) . " réactivé(s))";
             }
 
             $this->logAction(
@@ -310,8 +318,11 @@ class EtudiantController extends BaseController
                     'montant_scolarite' => $montantScolarite,
                     'paiements_annules' => $res['paiements_annules_count'] ?? 0,
                     'montant_annule' => $res['paiements_annules_montant'] ?? 0,
-                    'notes_desactivees' => $res['notes_desactivees_count'] ?? 0
-                ]
+                    'notes_desactivees' => $res['notes_desactivees_count'] ?? 0,
+                    'kits_desactives' => $res['kits_desactives_count'] ?? 0,
+                    'kits_ajoutes' => $res['kits_ajoutes_count'] ?? 0,
+                    'kits_reactives' => $res['kits_reactives_count'] ?? 0
+da                ]
             );
             $this->success($res['message'], ['redirect' => RACINE . 'etudiant/list']);
         } else {
