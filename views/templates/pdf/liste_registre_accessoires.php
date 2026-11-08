@@ -16,7 +16,7 @@ $contacts = !empty($etablissement['contacts_formatted']) ? $etablissement['conta
 $email = $etablissement['email_etablissement'] ?? '';
 $siteWeb = $etablissement['site_web'] ?? 'www.groupe-eicg.net';
 $villeSignature = $etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? 'Bouaké');
-$titreDirection = $etablissement['titre_service_scolarite'] ?? ($etablissement['titre_direction_pedagogique'] ?? 'Le Responsable du Service Fournitures & Kits');
+$titreDirection = $etablissement['titre_service_scolarite'] ?? ($etablissement['titre_direction_pedagogique'] ?? 'Le Responsable de la Scolarité');
 $nomSignataire = $etablissement['nom_responsable_scolarite'] ?? ($etablissement['nom_directeur_etudes'] ?? '');
 
 $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
@@ -66,7 +66,7 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
     .inst-title {
       font-size: 11pt;
       font-weight: bold;
-      color: #15803D;
+      color: #990000;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       line-height: 1.15;
@@ -85,7 +85,7 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
 
     .divider-line {
       height: 1.5px;
-      background-color: #15803D;
+      background-color: #1E3A5F;
       margin-top: 3px;
       margin-bottom: 6px;
     }
@@ -95,7 +95,7 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 6px;
-      background-color: #15803D;
+      background-color: #1E3A5F;
     }
     .banner-table td {
       padding: 6px 10px;
@@ -110,7 +110,7 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
     }
     .banner-sub {
       font-size: 8pt;
-      color: #DCFCE7;
+      color: #E2E8F0;
       margin-top: 1px;
     }
 
@@ -163,7 +163,7 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
       margin-bottom: 12px;
     }
     .data-table th {
-      background-color: #15803D;
+      background-color: #1E3A5F;
       color: #FFFFFF;
       border: 0.5px solid #0F172A;
       padding: 5px 6px;
@@ -230,7 +230,7 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
     .signature-title {
       font-size: 8pt;
       font-weight: bold;
-      color: #15803D;
+      color: #1E3A5F;
       text-transform: uppercase;
       text-align: center;
       border-bottom: 0.5px solid #CBD5E1;
@@ -250,7 +250,7 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
   <!-- EN-TÊTE FIXE MPDF -->
   <htmlpageheader name="pageHeader">
     <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
-      <?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE EICG') ?> &bull; Registre d'Émargement des Kits Fournitures &bull; Session <?= htmlspecialchars($annee_libelle ?? '') ?>
+      <?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE EICG') ?> &bull; Registre des Kits Fournitures &bull; Session <?= htmlspecialchars($annee_libelle ?? '') ?>
     </div>
   </htmlpageheader>
   <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
@@ -259,41 +259,41 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
   <htmlpagefooter name="pageFooter">
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
-        <td style="width: 35%; text-align: left;">
-          Document Officiel d'Émargement - <?= htmlspecialchars($etablissement['sigle_etablissement'] ?? 'GEICG') ?>
+        <td style="width: 40%; text-align: left;">
+          Document officiel GEICG &bull; Édité le <?= date('d/m/Y H:i:s') ?>
         </td>
-        <td style="width: 30%; text-align: center; font-style: italic;">
-          Page {PAGENO} sur {nbpg}
+        <td style="width: 20%; text-align: center; font-weight: bold;">
+          Page {PAGENO} / {nbpg}
         </td>
-        <td style="width: 35%; text-align: right;">
-          Imprimé le <?= date('d/m/Y à H:i') ?>
+        <td style="width: 40%; text-align: right;">
+          Réf: REF-KITS-<?= date('Ymd-His') ?>
         </td>
       </tr>
     </table>
   </htmlpagefooter>
   <sethtmlpagefooter name="pageFooter" value="on" />
 
-  <!-- EN-TÊTE INSTITUTIONNEL OFFICIEL -->
+  <!-- EN-TÊTE ÉTABLISSEMENT (CONFORME AUX AUTRES MODÈLES DU PROJET) -->
   <table class="header-table">
     <tr>
-      <?php if (file_exists($logoPath)): ?>
-      <td style="width: 65px; text-align: left;">
-        <img src="<?= $logoPath ?>" style="max-height: 52px; max-width: 65px;" alt="Logo" />
+      <td style="width: 18%; text-align: left;">
+        <?php if (file_exists($logoPath)): ?>
+          <img src="<?= $logoPath ?>" style="max-height: 50px; max-width: 130px;" alt="Logo EICG">
+        <?php else: ?>
+          <div style="font-size: 13pt; font-weight: bold; color: #1E3A5F;"><?= htmlspecialchars($etablissement['sigle_etablissement'] ?? 'GROUPE EICG') ?></div>
+        <?php endif; ?>
       </td>
-      <?php endif; ?>
-      <td style="padding-left: 8px;">
+      <td style="width: 82%; text-align: center;">
         <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($numAutorisation) ?></div>
+        <div class="inst-subtitle"><?= htmlspecialchars(strpos($numAutorisation, 'AGRÉ') !== false ? $numAutorisation : 'AGRÉMENT N° ' . $numAutorisation) ?></div>
         <div class="inst-contacts">
-          <?= htmlspecialchars($adresse) ?> &bull; Tél: <?= htmlspecialchars($contacts) ?>
-          <?php if (!empty($email)): ?> &bull; Email: <?= htmlspecialchars($email) ?><?php endif; ?>
-          <?php if (!empty($siteWeb)): ?> &bull; Web: <?= htmlspecialchars($siteWeb) ?><?php endif; ?>
+          <?= htmlspecialchars($adresse) ?>
+          &nbsp;&bull;&nbsp; Contacts : <?= htmlspecialchars($contacts) ?>
+          <?php if (!empty($email)): ?>
+            &nbsp;&bull;&nbsp; Email : <?= htmlspecialchars($email) ?>
+          <?php endif; ?>
+          &nbsp;&bull;&nbsp; Site Web : <?= htmlspecialchars($siteWeb) ?>
         </div>
-      </td>
-      <td style="width: 130px; text-align: right; vertical-align: top;">
-        <div style="font-size: 7.5pt; font-weight: bold; color: #475569;">SERVICE LOGISTIQUE</div>
-        <div style="font-size: 7pt; color: #64748B;">Émargement Fournitures</div>
-        <div style="font-size: 7pt; color: #0F172A; font-weight: bold; margin-top: 3px;">Date: <?= date('d/m/Y') ?></div>
       </td>
     </tr>
   </table>
@@ -305,30 +305,21 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
     <tr>
       <td>
         <div class="banner-title">REGISTRE DE RETRAIT ET D'ÉMARGEMENT DES KITS SCOLAIRES</div>
-        <div class="banner-sub">Bordereau officiel de remise des kits, uniformes et fournitures aux apprenants</div>
+        <div class="banner-sub">SESSION ACADÉMIQUE : <?= htmlspecialchars($annee_libelle ?: 'Toutes') ?></div>
       </td>
     </tr>
   </table>
 
-  <!-- CARTOUCHE DE FILTRAGE ET CONTEXTE -->
+  <!-- CARTOUCHE DE FILTRES ET ÉDITION -->
   <table class="meta-box-table">
     <tr>
-      <td style="width: 25%;">
-        <span class="meta-label">Année Académique :</span><br>
-        <span class="meta-value"><?= !empty($annee_libelle) ? htmlspecialchars($annee_libelle) : 'Toutes les années' ?></span>
-      </td>
-      <td style="width: 25%;">
-        <span class="meta-label">Classe Ciblée :</span><br>
-        <span class="meta-value"><?= htmlspecialchars($classe_libelle ?? 'Toutes les classes') ?></span>
-      </td>
-      <td style="width: 25%;">
-        <span class="meta-label">Filtre Statut :</span><br>
-        <span class="meta-value"><?= htmlspecialchars($statut_label ?? 'Tous les statuts') ?></span>
-      </td>
-      <td style="width: 25%;">
-        <span class="meta-label">Opérateur / Éditeur :</span><br>
-        <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? 'Service Scolarité') ?></span>
-      </td>
+      <td style="width: 30%;"><span class="meta-label">Année Académique :</span> <span class="meta-value"><?= htmlspecialchars($annee_libelle ?: 'En cours') ?></span></td>
+      <td style="width: 35%;"><span class="meta-label">Classe :</span> <span class="meta-value"><?= htmlspecialchars($classe_libelle ?? 'Toutes') ?></span></td>
+      <td style="width: 35%;"><span class="meta-label">Filtre Statut :</span> <span class="meta-value"><?= htmlspecialchars($statut_label ?? 'Tous') ?></span></td>
+    </tr>
+    <tr>
+      <td colspan="2"><span class="meta-label">Opérateur / Éditeur :</span> <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? 'Service Logistique & Scolarité') ?></span></td>
+      <td style="text-align: right;"><span class="meta-label">Date d'édition :</span> <span class="meta-value"><?= date('d/m/Y à H:i') ?></span></td>
     </tr>
   </table>
 
@@ -359,10 +350,10 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
     <thead>
       <tr>
         <th style="width: 28px;">N°</th>
-        <th style="width: 75px;">Matricule</th>
+        <th style="width: 80px;">Matricule</th>
         <th style="text-align: left; padding-left: 8px;">Nom & Prénoms de l'Étudiant</th>
         <th style="width: 100px;">Classe</th>
-        <th style="width: 75px;">Fournitures</th>
+        <th style="width: 80px;">Fournitures</th>
         <th style="width: 80px;">Statut</th>
         <th style="width: 110px;">Date & Émargement</th>
       </tr>
@@ -413,29 +404,25 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
     </tbody>
   </table>
 
-  <!-- SECTION DES SIGNATURES OFFICIELLES -->
+  <!-- SECTION DES SIGNATURES OFFICIELLES (CONFORME RÈGLE 9) -->
   <table class="signature-table">
     <tr>
-      <td class="signature-box">
-        <div class="signature-title"><?= htmlspecialchars($titreDirection) ?></div>
-        <div style="height: 48px;"></div>
-        <div class="signature-mention">
-          Fait à <?= htmlspecialchars($villeSignature) ?>, le <?= date('d/m/Y') ?><br>
-          <strong><?= htmlspecialchars($nomSignataire) ?></strong>
-        </div>
+      <td class="signature-box" style="width: 48%;">
+        <div class="signature-title">L'Agent Responsable du Matériel & Kits</div>
+        <div style="height: 40px;"></div>
+        <div class="signature-mention"><?= htmlspecialchars($editeur_nom) ?></div>
       </td>
       <td style="width: 4%;"></td>
-      <td class="signature-box">
-        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'La Direction Générale') ?></div>
-        <div style="height: 48px;"></div>
-        <div class="signature-mention">
-          Visa & Cachet Officiel<br>
-          <strong><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? '') ?></strong>
+      <td class="signature-box" style="width: 48%;">
+        <div class="signature-title"><?= htmlspecialchars($titreDirection) ?></div>
+        <div style="text-align: center; font-size: 7.5pt; color: #475569; margin-bottom: 2px;">
+          Fait à <?= htmlspecialchars($villeSignature) ?>, le <?= date('d/m/Y') ?>
         </div>
+        <div style="height: 35px;"></div>
+        <div class="signature-mention"><?= htmlspecialchars($nomSignataire) ?></div>
       </td>
     </tr>
   </table>
 
 </body>
 </html>
-
