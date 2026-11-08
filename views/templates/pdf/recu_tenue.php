@@ -313,21 +313,6 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
     </tbody>
   </table>
 
-  <!-- INFORMATION RÉCAPITULATIVE SCOLARITÉ -->
-  <table class="data-table">
-    <thead>
-      <tr style="background: #CBD5E1;">
-        <th colspan="3" style="text-align: center; font-size: 7.5pt; color: #0F172A;">Situation Récapitulative Scolarité</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="width: 33.33%;">Scolarité Totale : <strong><?= isset($scolarite_recap['montant_payer']) ? number_format((float)$scolarite_recap['montant_payer'], 0, ',', ' ') . ' FCFA' : '-' ?></strong></td>
-        <td style="width: 33.33%;">Scolarité Versée : <strong><?= isset($scolarite_recap['montant_paye']) ? number_format((float)$scolarite_recap['montant_paye'], 0, ',', ' ') . ' FCFA' : '-' ?></strong></td>
-        <td style="width: 33.34%;">Reste Scolarité : <strong><?= isset($scolarite_recap['reste_payer']) ? number_format((float)$scolarite_recap['reste_payer'], 0, ',', ' ') . ' FCFA' : '-' ?></strong></td>
-      </tr>
-    </tbody>
-  </table>
 
   <!-- SIGNATURES ORIGINAL -->
   <table style="width: 100%; margin-top: 4px;">
