@@ -13,6 +13,13 @@
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion des dépôts de dossiers étudiants</p>
         </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS]))): ?>
+          <a href="<?= RACINE ?>dossier_etudiant/imprimerPdf" id="btn-print-dossiers" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le registre des dossiers étudiants en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
+          </a>
+          <?php endif; ?>
+        </div>
       </div>
 
       <!-- Barre de Filtres (Année, Classe & Statut Dossier) -->

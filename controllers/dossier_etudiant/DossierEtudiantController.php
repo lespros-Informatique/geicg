@@ -106,6 +106,149 @@ class DossierEtudiantController extends BaseController
         }
     }
 
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $classeCode = trim($_GET['classe_code'] ?? '');
+        $filterStatut = trim($_GET['filter_statut'] ?? 'all');
+
+        $rows = $this->model->getInscriptionsForDossiers($anneeCode, $classeCode);
+        $inscCodes = array_column($rows, 'code_inscription');
+        $dossiersByInsc = $this->model->getDossiersByInscriptions($inscCodes);
+
+        $dataRows = [];
+        $totalEtudiants = 0;
+        $completsCount = 0;
+        $incompletsCount = 0;
+        $totalPiecesGlobal = 0;
+        $totalDeposeesGlobal = 0;
+
+        foreach ($rows as $r) {
+            $dossierItems = $dossiersByInsc[$r['code_inscription']] ?? [];
+            $totalPieces = count($dossierItems);
+            $deposeesCount = 0;
+            $enAttenteCount = 0;
+            $rejeteesCount = 0;
+
+            foreach ($dossierItems as $item) {
+                if ($item['statut_depot'] === 'depose') {
+                    $deposeesCount++;
+                } elseif ($item['statut_depot'] === 'rejete') {
+                    $rejeteesCount++;
+                } else {
+                    $enAttenteCount++;
+                }
+            }
+
+            $pourcentage = ($totalPieces > 0) ? round(($deposeesCount / $totalPieces) * 100) : 100;
+            $estComplet = ($totalPieces > 0 && $deposeesCount === $totalPieces);
+
+            if ($estComplet) {
+                $completsCount++;
+            } else {
+                $incompletsCount++;
+            }
+            $totalPiecesGlobal += $totalPieces;
+            $totalDeposeesGlobal += $deposeesCount;
+            $totalEtudiants++;
+
+            // Filtrage selon le statut sélectionné
+            if ($filterStatut === 'incomplet' && $estComplet) continue;
+            if ($filterStatut === 'complet' && !$estComplet) continue;
+            if ($filterStatut === 'rejete' && $rejeteesCount === 0) continue;
+
+            $dataRows[] = [
+                'code_inscription' => $r['code_inscription'],
+                'matricule' => $r['matricule_etudiant'],
+                'nom_complet' => trim($r['nom_etudiant'] . ' ' . $r['prenom_etudiant']),
+                'classe' => $r['libelle_classe'],
+                'total_pieces' => $totalPieces,
+                'deposees_count' => $deposeesCount,
+                'en_attente_count' => $enAttenteCount,
+                'rejetees_count' => $rejeteesCount,
+                'pourcentage' => $pourcentage,
+                'est_complet' => $estComplet
+            ];
+        }
+
+        $tauxGlobal = ($totalPiecesGlobal > 0) ? round(($totalDeposeesGlobal / $totalPiecesGlobal) * 100, 1) : 0.0;
+
+        // Labels pour filtres
+        $anneeLibelle = '';
+        if (!empty($anneeCode)) {
+            $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+            $anneeLibelle = $anneeObj['libelle_annee'] ?? $anneeCode;
+        }
+
+        $classeLibelle = 'Toutes les classes';
+        if (!empty($classeCode)) {
+            $clObj = (new ModelClasse())->getByCode($classeCode);
+            $classeLibelle = $clObj['libelle_classe'] ?? $classeCode;
+        }
+
+        $statutLabel = 'Tous les statuts';
+        if ($filterStatut === 'complet') {
+            $statutLabel = 'Dossiers Complets uniquement';
+        } elseif ($filterStatut === 'incomplet') {
+            $statutLabel = 'Dossiers Incomplets uniquement';
+        } elseif ($filterStatut === 'rejete') {
+            $statutLabel = 'Avec pièces rejetées';
+        }
+
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Scolarité & Admissions';
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'classe_libelle' => $classeLibelle,
+            'statut_label' => $statutLabel,
+            'editeur_nom' => $editeurNom,
+            'rows' => $dataRows,
+            'kpis' => [
+                'total' => $totalEtudiants,
+                'complets' => $completsCount,
+                'incomplets' => $incompletsCount,
+                'taux_global' => $tauxGlobal
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('liste_dossiers_etudiants.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'dossier_etudiant',
+            $anneeCode ?: 'TOUT',
+            "Impression du registre des dépôts de dossiers étudiants",
+            ['annee' => $anneeCode, 'total' => count($dataRows)]
+        );
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Dossiers_Etudiants_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Registre des Dossiers Étudiants - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
     public function saveStatut()
     {
         $this->requirePost(false);

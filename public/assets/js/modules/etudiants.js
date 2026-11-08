@@ -1926,8 +1926,19 @@
 
   initTable();
 
+  function updatePrintUrl() {
+    var params = {
+      annee_code: $('#filter-annee').val() || '',
+      classe_code: $('#filter-classe').val() || '',
+      filter_statut: $('#filter-statut').val() || 'all'
+    };
+    $('#btn-print-dossiers').attr('href', racine + 'dossier_etudiant/imprimerPdf?' + $.param(params));
+  }
+  updatePrintUrl();
+
   // Filtrage interactif
   $('#filter-annee, #filter-classe, #filter-statut').on('change', function() {
+    updatePrintUrl();
     table.ajax.reload();
   });
 

@@ -315,6 +315,7 @@ $route->addRoute('/accessoire/formulaire', [$accessoireController, 'formulaire']
 // Module: dossier_etudiant (DossierEtudiantController)
 $route->addRoute('/dossier_etudiant/list', [$dossierEtudiantController, 'list']);
 $route->addRoute('/dossier_etudiant/apiList', [$dossierEtudiantController, 'apiList']);
+$route->addRoute('/dossier_etudiant/imprimerPdf', [$dossierEtudiantController, 'imprimerPdf']);
 $route->addRoute('/dossier_etudiant/saveStatut', [$dossierEtudiantController, 'saveStatut']);
 $route->addRoute('/dossier_etudiant/saveAll', [$dossierEtudiantController, 'saveAll']);
 $route->addRoute('/dossier_etudiant/getRecepisseData', [$dossierEtudiantController, 'getRecepisseData']);
