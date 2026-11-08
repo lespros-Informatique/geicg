@@ -1021,18 +1021,15 @@
 
     function renderFramedAvatar(photoPath, fullName, size) {
       size = size || 40;
-      var inits = getStudentInitials(fullName);
-      var fontSize = Math.round(size * 0.42);
       var escapedName = $('<div>').text(fullName || '').html();
-      var avatarBadgeHtml = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color:#FFFFFF; font-weight:800; font-size:' + fontSize + 'px; border:2px solid #3B82F6; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.12); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;" title="' + escapedName + '">' + inits + '</div>';
+      var placeholderUrl = racine + 'public/assets/images/placeholders/etudiant.png';
 
       if (photoPath && photoPath.trim() !== '') {
         var cleanRel = photoPath.trim().replace(/^\/+/, '');
         var fullUrl = racine + cleanRel;
-        var escapedFallback = avatarBadgeHtml.replace(/'/g, "\\'");
-        return '<img src="' + fullUrl + '" style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; object-fit:cover; border:2px solid #10B981; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Photo de ' + escapedName + '" onerror="this.onerror=null; this.outerHTML=\'' + escapedFallback + '\';">';
+        return '<img src="' + fullUrl + '" style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; object-fit:cover; border:2px solid #10B981; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Photo de ' + escapedName + '" onerror="this.onerror=null; this.src=\'' + placeholderUrl + '\';">';
       }
-      return avatarBadgeHtml;
+      return '<img src="' + placeholderUrl + '" style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; object-fit:cover; border:2px solid #CBD5E1; box-shadow:0 1px 3px rgba(0,0,0,0.08); background:#F8FAFC;" title="Sans photo - ' + escapedName + '">';
     }
 
     var table = $('#table-prise-de-vue').DataTable({
@@ -1349,18 +1346,15 @@
 
     function renderFramedAvatar(photoPath, fullName, size) {
       size = size || 38;
-      var inits = getStudentInitials(fullName);
-      var fontSize = Math.round(size * 0.42);
       var escapedName = $('<div>').text(fullName || '').html();
-      var avatarBadgeHtml = '<div style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color:#FFFFFF; font-weight:800; font-size:' + fontSize + 'px; border:2px solid #3B82F6; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.12); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;" title="' + escapedName + '">' + inits + '</div>';
+      var placeholderUrl = racine + 'public/assets/images/placeholders/etudiant.png';
 
       if (photoPath && photoPath.trim() !== '') {
         var cleanRel = photoPath.trim().replace(/^\/+/, '');
         var fullUrl = racine + cleanRel;
-        var escapedFallback = avatarBadgeHtml.replace(/'/g, "\\'");
-        return '<img src="' + fullUrl + '" style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; object-fit:cover; border:2px solid #10B981; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Photo de ' + escapedName + '" onerror="this.onerror=null; this.outerHTML=\'' + escapedFallback + '\';">';
+        return '<img src="' + fullUrl + '" style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; object-fit:cover; border:2px solid #10B981; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Photo de ' + escapedName + '" onerror="this.onerror=null; this.src=\'' + placeholderUrl + '\';">';
       }
-      return avatarBadgeHtml;
+      return '<img src="' + placeholderUrl + '" style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; object-fit:cover; border:2px solid #CBD5E1; box-shadow:0 1px 3px rgba(0,0,0,0.08); background:#F8FAFC;" title="Sans photo - ' + escapedName + '">';
     }
 
     var table = $('#table-sans-photo').DataTable({
