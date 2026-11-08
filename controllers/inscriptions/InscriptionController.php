@@ -539,6 +539,92 @@ class InscriptionController extends BaseController
         ]);
     }
 
+    public function imprimerPriseDeVuePdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $filiereCode = trim($_GET['filiere_code'] ?? '');
+        $classeCode = trim($_GET['classe_code'] ?? '');
+        $filterPhoto = trim($_GET['filter_photo'] ?? 'all');
+
+        $rows = $this->model->getInscriptionsSansPhoto($anneeCode ?: '', $filiereCode, $classeCode, $filterPhoto);
+        $stats = $this->model->getPriseDeVueStats($anneeCode ?: '', $filiereCode, $classeCode);
+
+        // Labels pour métadonnées d'édition
+        $anneeLibelle = '';
+        if (!empty($anneeCode)) {
+            $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+            $anneeLibelle = $anneeObj['libelle_annee'] ?? $anneeCode;
+        }
+
+        $filiereLibelle = 'Toutes les filières';
+        if (!empty($filiereCode)) {
+            $filObj = (new ModelFiliere())->getByCode($filiereCode);
+            $filiereLibelle = $filObj['libelle_filiere'] ?? $filiereCode;
+        }
+
+        $classeLibelle = 'Toutes les classes';
+        if (!empty($classeCode)) {
+            $clObj = (new ModelClasse())->getByCode($classeCode);
+            $classeLibelle = $clObj['libelle_classe'] ?? $classeCode;
+        }
+
+        $photoLabel = 'Tous les étudiants inscrits';
+        if ($filterPhoto === 'sans_photo') {
+            $photoLabel = 'Photos Manquantes (Sans photo)';
+        } elseif ($filterPhoto === 'avec_photo') {
+            $photoLabel = 'Photos Enregistrées (Avec photo)';
+        }
+
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Scolarité & Admissions';
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'filiere_libelle' => $filiereLibelle,
+            'classe_libelle' => $classeLibelle,
+            'photo_label' => $photoLabel,
+            'editeur_nom' => $editeurNom,
+            'rows' => $rows,
+            'stats' => $stats
+        ];
+
+        $html = PdfService::renderTemplate('liste_prise_de_vue.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'inscriptions',
+            $anneeCode ?: 'TOUT',
+            "Impression de l'état du studio photo & prise de vue",
+            ['annee' => $anneeCode, 'total' => count($rows)]
+        );
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Etat_Prise_De_Vue_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'État de Prise de Vue - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
     public function apiSansPhoto()
     {
         $this->apiPriseDeVue();

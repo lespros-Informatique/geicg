@@ -1099,7 +1099,19 @@
       drawCallback: function () { if (window.lucide) lucide.createIcons(); }
     });
 
+    function updatePrintUrl() {
+      var params = {
+        annee_code: $('#filter-annee').val() || '',
+        filter_photo: $('#filter-photo').val() || 'all',
+        filiere_code: $('#filter-filiere').val() || '',
+        classe_code: $('#filter-classe').val() || ''
+      };
+      $('#btn-print-prise-de-vue').attr('href', racine + 'inscription/imprimerPriseDeVuePdf?' + $.param(params));
+    }
+    updatePrintUrl();
+
     $('#filter-annee, #filter-photo, #filter-filiere, #filter-classe').on('change', function () {
+      updatePrintUrl();
       table.ajax.reload();
     });
 

@@ -11,7 +11,14 @@
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="camera" style="width: 26px; height: 26px; color: #1E3A5F;"></i> Prise de vue
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;"> Restion de la prise de vue des étudiants</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion de la prise de vue des étudiants</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]))): ?>
+          <a href="<?= RACINE ?>inscription/imprimerPriseDeVuePdf" id="btn-print-prise-de-vue" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer l'état de la prise de vue en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
+          </a>
+          <?php endif; ?>
         </div>
       </div>
 
