@@ -117,27 +117,6 @@
         return '<span style="font-weight:700; color:' + (isNA ? '#94A3B8; font-style:italic;' : '#1E3A5F;') + ' font-size:12.5px;">' + val + '</span>';
       }},
 
-      // 7. Filière
-      { data: 'filiere_libelle', defaultContent: '', width: '130px', render: function(d, type, row) {
-        var useSlug = row.use_slug_filiere !== undefined ? row.use_slug_filiere : defaultUseSlugFiliere;
-        var code = (useSlug && row.filiere_slug) ? row.filiere_slug : (row.code_filiere || '');
-        var full = row.filiere_nom || d || row.code_filiere || '-';
-        if (code && full && code !== full) {
-          return '<span title="' + escapeHtml(full) + '" style="font-weight:700; color:#334155; font-size:12px; cursor:help;">' + escapeHtml(code) + '</span>';
-        }
-        return '<span style="font-weight:700; color:#334155; font-size:12px;">' + escapeHtml(full) + '</span>';
-      }},
-
-      // 8. Niveau d'Études
-      { data: 'niveau_libelle', defaultContent: '', width: '120px', render: function(d, type, row) {
-        var useSlugNiv = row.use_slug_niveau !== undefined ? row.use_slug_niveau : defaultUseSlugNiveau;
-        var codeNiv = (useSlugNiv && row.niveau_slug) ? row.niveau_slug : (row.code_niveau || '');
-        var fullNiv = row.niveau_nom || d || row.code_niveau || '-';
-        if (codeNiv && fullNiv && codeNiv !== fullNiv) {
-          return '<span title="' + escapeHtml(fullNiv) + '" style="font-weight:700; color:#475569; font-size:12px; cursor:help;">' + escapeHtml(codeNiv) + '</span>';
-        }
-        return '<span style="font-weight:700; color:#475569; font-size:12px;">' + escapeHtml(fullNiv) + '</span>';
-      }},
 
       // 9. Actions (Palette moderne d'icônes avec tooltips)
       { data: null, orderable: false, width: '160px', render: function(d, type, row) {
@@ -248,18 +227,10 @@
 
   // Gestion intelligente de la visibilité des colonnes
   function updateSmartColumns() {
-    var selFil = $('#filter-filiere').val();
-    var selNiv = $('#filter-niveau').val();
     var selCls = $('#filter-classe').val();
 
     // Colonne 6 : Classe -> masquée si une classe spécifique est sélectionnée
     table.column(6).visible(selCls === 'ALL' || !selCls);
-
-    // Colonne 7 : Filière -> masquée si une filière spécifique est sélectionnée
-    table.column(7).visible(selFil === 'ALL' || !selFil);
-
-    // Colonne 8 : Niveau -> masquée si un niveau spécifique est sélectionné
-    table.column(8).visible(selNiv === 'ALL' || !selNiv);
   }
 
   // Initialisation de Select2 sur les filtres

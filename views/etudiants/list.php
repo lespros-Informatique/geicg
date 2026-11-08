@@ -15,7 +15,7 @@ $anneeActive = $anneeActive ?? '';
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="user-plus" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Nouveaux Étudiants
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Consultation du registre et enregistrement des nouveaux dossiers étudiants</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Consultation du registre  des nouveaux dossiers étudiants</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
           <a href="<?= RACINE ?>etudiant/imprimerPdf" id="btn-print-etudiants" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer la liste des étudiants en PDF">
@@ -217,14 +217,12 @@ $anneeActive = $anneeActive ?? '';
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
                 <th style="padding: 12px; width: 45px;">#</th>
-                <th style="padding: 12px;"><i data-lucide="calendar" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Date Inscription</th>
+                <th style="padding: 12px;"><i data-lucide="calendar" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Date Insc</th>
                 <th style="padding: 12px;"><i data-lucide="qr-code" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Matricule</th>
-                <th style="padding: 12px;"><i data-lucide="user" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Étudiant (Nom & Prénoms)</th>
+                <th style="padding: 12px;"><i data-lucide="user" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Nom & Prénoms</th>
                 <th style="padding: 12px;"><i data-lucide="venus-mars" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Sexe</th>
                 <th style="padding: 12px;"><i data-lucide="shield-check" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Régime</th>
                 <th style="padding: 12px;"><i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Classe</th>
-                <th style="padding: 12px;"><i data-lucide="book-open" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Filière</th>
-                <th style="padding: 12px;"><i data-lucide="layers" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Niveau</th>
                 <th style="padding: 12px; text-align: center; width: 160px;"><i data-lucide="settings" style="width: 14px; height: 14px; color: #1E3A5F; vertical-align: middle; margin-right: 4px;"></i> Actions</th>
               </tr>
             </thead>
