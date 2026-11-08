@@ -148,8 +148,8 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
       font-size: 8pt;
     }
     .photo-box {
-      width: 85px;
-      height: 95px;
+      width: 100px;
+      height: 100px;
       border: 1px solid #CBD5E1;
       object-fit: cover;
     }
@@ -439,11 +439,11 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
       </td>
       <td style="width: 18%; text-align: right; vertical-align: top;">
         <?php if (!empty($resolvedPhoto) && file_exists($resolvedPhoto)): ?>
-          <img src="<?= $resolvedPhoto ?>" class="photo-box" style="height: 85px; width: 77px;">
+          <img src="<?= $resolvedPhoto ?>" class="photo-box" style="height: 100px; width: 100px;">
         <?php elseif (file_exists($placeholderPhoto)): ?>
-          <img src="<?= $placeholderPhoto ?>" class="photo-box" style="height: 85px; width: 77px;">
+          <img src="<?= $placeholderPhoto ?>" class="photo-box" style="height: 100px; width: 100px;">
         <?php else: ?>
-          <div class="photo-box" style="height: 80px; width: 72px; background: #F1F5F9; text-align: center; line-height: 60px; color: #94A3B8; font-size: 7pt;">PHOTO</div>
+          <div class="photo-box" style="height: 100px; width: 100px; background: #F1F5F9; text-align: center; line-height: 60px; color: #94A3B8; font-size: 7pt;">PHOTO</div>
         <?php endif; ?>
       </td>
     </tr>
