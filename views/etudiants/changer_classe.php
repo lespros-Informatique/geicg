@@ -152,9 +152,6 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
                   <i data-lucide="calendar" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #64748B;"></i>
                 </div>
                 <input type="hidden" id="wiz_annee" name="annee_code" value="<?= htmlspecialchars($activeAnneeCode) ?>">
-                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">
-                  Verrouillée sur l'année de l'inscription.
-                </small>
               </div>
 
               <!-- 2. Nouvelle Classe d'affectation -->
@@ -178,9 +175,6 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
                     <option value="">-- Aucune classe disponible pour cette année --</option>
                   <?php endif; ?>
                 </select>
-                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">
-                  Classe cible pour la réorientation.
-                </small>
               </div>
 
               <!-- 3. Remise / Bourse (READONLY) -->
@@ -189,14 +183,12 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
                   Remise / Bourse Accordée (FCFA)
                 </label>
                 <input type="number" min="0" step="any" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="<?= htmlspecialchars($inscription['remise_scolarite'] ?? 0) ?>" readonly style="width: 100%; padding: 11px 14px; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; background-color: #F8FAFC; color: #334155; font-weight: 700; cursor: not-allowed; box-sizing: border-box;">
-                <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">
-                  Montant initial (lecture seule).
-                </small>
               </div>
 
             </div>
 
           </div>
+          <br>
 
           <!-- GRILLE TARIFAIRE AUTOMATIQUE & ÉCHÉANCIER COMPLET DES TRANCHES (STYLE WIZARD) -->
           <div id="wiz-class-tuition-box" style="display: none; background: #FFFFFF; border: 2px solid #CBD5E1; border-radius: 12px; padding: 22px 24px; margin-top: 24px; box-shadow: 0 4px 14px -2px rgba(0,0,0,0.08); transition: all 0.3s ease;">
