@@ -15,6 +15,11 @@
               <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer la Grille
             </a>
           <?php endif; ?>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]))): ?>
+            <button type="button" class="btn btn-secondary btn-reconduire-frais" style="background: #0D9488; border-color: #0D9488; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;" title="Reconduire les tarifs de frais annexes d'une année vers une autre">
+              <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduire
+            </button>
+          <?php endif; ?>
           <button type="button" class="btn btn-primary btn-add-frais" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Frais Annexes
           </button>
@@ -179,6 +184,61 @@
         <button type="button" class="btn btn-secondary btn-close-modal-frais" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Annuler</button>
         <button type="submit" id="btn-save-frais" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px; display: inline-flex; align-items: center; gap: 6px;">
           <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : RECONDUCTION DES FRAIS ANNEXES (N-1 -> N)             -->
+<!-- ========================================================================= -->
+<div id="modal-reconduire-frais" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #0D9488; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduction des Frais Annexes (N-1 &rarr; N)
+      </h3>
+      <button type="button" class="btn-close-modal-reconduire-frais" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-reconduire-frais" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      
+      <p style="font-size: 13px; color: #475569; margin-top: 0; margin-bottom: 16px; line-height: 1.5;">
+        Cet outil va copier automatiquement tous les tarifs de frais annexes actifs de l'<strong>Année Source</strong> vers l'<strong>Année de Destination</strong> sans dupliquer les tarifs déjà existants.
+      </p>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Année Source (Tarifs à copier) <span style="color: #EF4444;">*</span></label>
+        <select name="annee_source_code" id="reconduire_annee_source_frais" required class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #CBD5E1;">
+          <option value="">-- Sélectionner l'année source --</option>
+          <?php foreach (($annees ?? []) as $a): ?>
+            <option value="<?= htmlspecialchars($a['code_annee']) ?>">
+              <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Année de Destination <span style="color: #EF4444;">*</span></label>
+        <select name="annee_cible_code" id="reconduire_annee_cible_frais" required class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #CBD5E1;">
+          <option value="">-- Sélectionner l'année de destination --</option>
+          <?php foreach (($annees ?? []) as $a): ?>
+            <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
+              <?= htmlspecialchars($a['libelle_annee']) ?><?= ($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
+        <button type="button" class="btn btn-secondary btn-close-modal-reconduire-frais" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+          Annuler
+        </button>
+        <button type="submit" id="btn-submit-reconduire-frais" class="btn btn-primary" style="background: #0D9488; border: none; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 9px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="copy-check" style="width: 16px; height: 16px;"></i> Lancer la Reconduction
         </button>
       </div>
     </form>

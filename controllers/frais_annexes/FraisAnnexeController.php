@@ -285,4 +285,43 @@ class FraisAnnexeController extends BaseController
             'margin_bottom' => 12
         ]);
     }
+
+    public function reconduire()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
+
+        $anneeSourceCode = trim($_POST['annee_source_code'] ?? '');
+        $anneeCibleCode = trim($_POST['annee_cible_code'] ?? '');
+
+        if (empty($anneeSourceCode) || empty($anneeCibleCode)) {
+            $this->error("Veuillez sélectionner l'année source et l'année de destination.");
+            return;
+        }
+
+        if ($anneeSourceCode === $anneeCibleCode) {
+            $this->error("L'année source et l'année de destination doivent être différentes.");
+            return;
+        }
+
+        $etabCode = $this->getActiveEtablissementCode();
+        $userCode = Auth::code();
+
+        $res = $this->model->reconduireFraisAnnee($anneeSourceCode, $anneeCibleCode, $etabCode, $userCode);
+
+        if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'frais_annexes',
+                $anneeCibleCode,
+                "Reconduction de {$res['count']} tarif(s) de frais annexes depuis l'année {$anneeSourceCode} vers {$anneeCibleCode}",
+                ['source' => $anneeSourceCode, 'cible' => $anneeCibleCode, 'count' => $res['count'], 'skipped' => $res['skipped']],
+                $etabCode
+            );
+            $this->success($res['message'], ['reload' => true, 'count' => $res['count'], 'skipped' => $res['skipped']]);
+        } else {
+            $this->error($res['message']);
+        }
+    }
 }

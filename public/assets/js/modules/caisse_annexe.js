@@ -774,6 +774,68 @@
       });
     });
 
+    // Modal Reconduction Frais Annexes
+    $(document).on('click', '.btn-reconduire-frais', function (e) {
+      e.preventDefault();
+      $('#form-reconduire-frais')[0].reset();
+      var currentYear = $('#filter-annee').val() || '';
+      if (currentYear) {
+        $('#reconduire_annee_cible_frais').val(currentYear);
+      }
+      $('#modal-reconduire-frais').css('display', 'flex');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    $(document).on('click', '.btn-close-modal-reconduire-frais', function () {
+      $('#modal-reconduire-frais').hide();
+    });
+
+    $(window).on('click', function (e) {
+      if ($(e.target).is('#modal-reconduire-frais')) {
+        $('#modal-reconduire-frais').hide();
+      }
+    });
+
+    $('#form-reconduire-frais').on('submit', function (e) {
+      e.preventDefault();
+      var $btn = $('#btn-submit-reconduire-frais');
+      $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;" class="lucide-spin"></i> Traitement...');
+      if (window.lucide) lucide.createIcons();
+
+      var reconduireUrl = (typeof GEICG !== 'undefined' && GEICG.url) ?
+        GEICG.url('fraisAnnexe/reconduire') :
+        ((typeof RACINE !== 'undefined' ? RACINE : '/geicg/') + 'fraisAnnexe/reconduire');
+
+      $.ajax({
+        url: reconduireUrl,
+        type: 'POST',
+        data: $(this).serialize(),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function (res) {
+          $btn.prop('disabled', false).html('<i data-lucide="copy-check" style="width:16px;height:16px;"></i> Lancer la Reconduction');
+          if (window.lucide) lucide.createIcons();
+          if (res.status === 1 || res.success) {
+            notify(res.message || 'Reconduction effectuée avec succès', 'success');
+            $('#modal-reconduire-frais').hide();
+            tableFrais.ajax.reload(null, false);
+          } else {
+            notify(res.message || 'Erreur lors de la reconduction', 'error');
+          }
+        },
+        error: function (xhr) {
+          $btn.prop('disabled', false).html('<i data-lucide="copy-check" style="width:16px;height:16px;"></i> Lancer la Reconduction');
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur lors de la reconduction';
+          try {
+            var json = JSON.parse(xhr.responseText);
+            if (json.message) msg = json.message;
+          } catch (e) { }
+          notify(msg, 'error');
+        }
+      });
+    });
+
   }
 
   $(document).ready(function () {

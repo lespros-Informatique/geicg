@@ -232,6 +232,8 @@ $route->addRoute('/fraisAnnexe/toggleStatut', [$fraisAnnexeController, 'toggleSt
 $route->addRoute('/frais_annexe/toggleStatut', [$fraisAnnexeController, 'toggleStatut']);
 $route->addRoute('/fraisAnnexe/imprimerPdf', [$fraisAnnexeController, 'imprimerPdf']);
 $route->addRoute('/frais_annexe/imprimerPdf', [$fraisAnnexeController, 'imprimerPdf']);
+$route->addRoute('/fraisAnnexe/reconduire', [$fraisAnnexeController, 'reconduire']);
+$route->addRoute('/frais_annexe/reconduire', [$fraisAnnexeController, 'reconduire']);
 
 // Module: tranche (TrancheController)
 $route->addRoute('/tranche/list', [$trancheController, 'list']);

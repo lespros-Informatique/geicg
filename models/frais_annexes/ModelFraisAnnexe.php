@@ -176,4 +176,65 @@ class ModelFraisAnnexe extends BaseModel
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
+
+    public function reconduireFraisAnnee(string $anneeSourceCode, string $anneeCibleCode, ?string $etabCode = null, ?string $userCode = null): array
+    {
+        $db = $this->getCon();
+        $validator = new Validator();
+
+        // 1. Récupérer tous les tarifs actifs de l'année source
+        $stmt = $db->prepare("SELECT * FROM " . TABLES::FRAIS_ANNEXES . " WHERE annee_code = ? AND statut_frais_annexe = '" . STATUTS::ACTIF . "'");
+        $stmt->execute([$anneeSourceCode]);
+        $fraisSource = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($fraisSource)) {
+            return [
+                'success' => false,
+                'message' => "Aucun tarif de frais annexes actif trouvé pour l'année source sélectionnée.",
+                'count' => 0
+            ];
+        }
+
+        $createdCount = 0;
+        $skippedCount = 0;
+
+        $stmtInsert = $db->prepare("
+            INSERT INTO " . TABLES::FRAIS_ANNEXES . " 
+            (code_frais_annexe, libelle_frais_annexe, montant_frais_annexe, type_filiere, niveau_code, categorie_frais_annexe, annee_code, etablissement_code, statut_frais_annexe, created_at_frais_annexe, user_code)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
+        ");
+
+        foreach ($fraisSource as $fa) {
+            // Vérifier si le tarif existe déjà dans l'année de destination
+            $duplicate = $this->checkDuplicate($anneeCibleCode, $fa['type_filiere'], $fa['niveau_code'], $fa['categorie_frais_annexe']);
+            if ($duplicate) {
+                $skippedCount++;
+                continue;
+            }
+
+            // Générer un nouveau code unique
+            $newCode = $validator->generateCode(TABLES::FRAIS_ANNEXES, 'code_frais_annexe', 'FRAIS-ANN-', 8);
+
+            $stmtInsert->execute([
+                $newCode,
+                $fa['libelle_frais_annexe'],
+                $fa['montant_frais_annexe'],
+                $fa['type_filiere'],
+                $fa['niveau_code'],
+                $fa['categorie_frais_annexe'],
+                $anneeCibleCode,
+                $etabCode ?: $fa['etablissement_code'],
+                $userCode ?: $fa['user_code']
+            ]);
+
+            $createdCount++;
+        }
+
+        return [
+            'success' => true,
+            'count' => $createdCount,
+            'skipped' => $skippedCount,
+            'message' => "Reconduction terminée : {$createdCount} tarif(s) de frais annexes reconduit(s), {$skippedCount} ignoré(s) (déjà existants)."
+        ];
+    }
 }
