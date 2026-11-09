@@ -129,23 +129,8 @@
           }
         },
         {
-          data: 'etudiant_nom', render: function (d, type, row) {
-            var photo = row.photo_inscription || row.photo_etudiant;
-            var inits = (d || 'ET').split(' ').filter(function (x) { return x; }).map(function (n) { return n[0]; }).join('').substr(0, 2).toUpperCase();
-            var photoHtml = '';
-            if (photo && photo.trim() !== '') {
-              var pUrl = racine + photo.replace(/^\/+/, '');
-              photoHtml = '<div style="width:32px; height:32px; border-radius:8px; overflow:hidden; flex-shrink:0; border:1px solid #CBD5E1; background:#F8FAFC;">' +
-                '<img src="' + escapeHtml(pUrl) + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display=\'none\'; $(this).next().show();">' +
-                '<span style="display:none; font-size:11px; font-weight:800; color:#1E3A5F;">' + escapeHtml(inits) + '</span>' +
-                '</div>';
-            } else {
-              photoHtml = '<div style="width:32px; height:32px; border-radius:8px; background:#EFF6FF; color:#1E3A5F; font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">' + escapeHtml(inits) + '</div>';
-            }
-            return '<div style="display:flex; align-items:center; gap:9px;">' +
-              photoHtml +
-              '<span style="font-weight:700; color:#0F172A;">' + escapeHtml(d || '-') + '</span>' +
-              '</div>';
+          data: 'etudiant_nom', render: function (d) {
+            return '<span style="font-weight:700; color:#0F172A;">' + escapeHtml(d || '-') + '</span>';
           }
         },
         {
