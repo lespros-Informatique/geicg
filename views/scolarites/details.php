@@ -65,33 +65,6 @@ $nbTranches = count($tranches);
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Total planifié</div>
           </div>
 
-          <!-- 4. Statut de Répartition -->
-          <?php if ($montantScolarite > 0 && abs($diffTranches) < 0.01): ?>
-            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
-              <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Répartition</span>
-              <div style="font-size: 20px; font-weight: 800; color: #15803D; margin-top: 4px;">✓ 100% Planifié</div>
-              <div style="font-size: 12px; color: #15803D; margin-top: 2px;">Scolarité couverte</div>
-            </div>
-          <?php elseif ($diffTranches > 0): ?>
-            <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 16px;">
-              <span style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Répartition</span>
-              <div style="font-size: 18px; font-weight: 800; color: #B45309; margin-top: 4px;">Incomplet (-<?= number_format($diffTranches, 0, ',', ' ') ?> FCFA)</div>
-              <div style="font-size: 12px; color: #B45309; margin-top: 2px;">Reste à planifier</div>
-            </div>
-          <?php elseif ($diffTranches < 0): ?>
-            <div style="background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 10px; padding: 16px;">
-              <span style="font-size: 11px; font-weight: 700; color: #B91C1C; text-transform: uppercase;">Répartition</span>
-              <div style="font-size: 18px; font-weight: 800; color: #B91C1C; margin-top: 4px;">Dépassement (+<?= number_format(abs($diffTranches), 0, ',', ' ') ?> FCFA)</div>
-              <div style="font-size: 12px; color: #B91C1C; margin-top: 2px;">Tranches supérieures au total</div>
-            </div>
-          <?php else: ?>
-            <div style="background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 10px; padding: 16px;">
-              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Répartition</span>
-              <div style="font-size: 20px; font-weight: 800; color: #64748B; margin-top: 4px;">Non configuré</div>
-              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Aucune tranche rattachée</div>
-            </div>
-          <?php endif; ?>
-
         </div>
       </div>
 
@@ -103,9 +76,7 @@ $nbTranches = count($tranches);
               <i data-lucide="calendar" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Échéancier des Tranches (<?= count($tranches) ?>)
             </h3>
           </div>
-          <a href="<?= url('scolarite/edition/' . $encryptedId) ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Gérer l'échéancier
-          </a>
+        
         </div>
 
         <?php if (empty($tranches)): ?>
