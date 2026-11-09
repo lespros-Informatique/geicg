@@ -104,56 +104,47 @@ class EtablissementController extends BaseController
             }
         }
 
-        // Configuration institutionnelle (table configurations)
+        // Configuration institutionnelle (table configurations) : MAJ ciblée des champs soumis
         $modelConfig = new ModelConfiguration();
-        $configData = [
-            'nom_etablissement' => $data['nom_etablissement'] ?? ($data['libelle_etablissement'] ?? ''),
-            'sigle_etablissement' => $data['sigle_etablissement'] ?? 'GROUPE EICG',
-            'slogan_etablissement' => $data['slogan_etablissement'] ?? '',
-            'numero_autorisation' => $data['numero_autorisation'] ?? ($data['numero_autorisation_etablissement'] ?? ''),
-            'ministere_tutelle' => $data['ministere_tutelle'] ?? '',
-            'adresse_etablissement' => $data['adresse_etablissement'] ?? '',
-            'boite_postale' => $data['boite_postale'] ?? '',
-            'ville_etablissement' => $data['ville_etablissement'] ?? 'Bouaké',
-            'pays_etablissement' => $data['pays_etablissement'] ?? 'Côte d\'Ivoire',
-            'telephone_fixe' => $data['telephone_fixe'] ?? '',
-            'telephone_mobile' => $data['telephone_mobile'] ?? ($data['telephone_etablissement'] ?? ''),
-            'telephone_mobile2' => $data['telephone_mobile2'] ?? ($data['telephone_etablissement2'] ?? ''),
-            'email_etablissement' => $data['email_etablissement'] ?? '',
-            'site_web' => $data['site_web'] ?? '',
-            'titre_direction_pedagogique' => $data['titre_direction_pedagogique'] ?? '',
-            'nom_directeur_etudes' => $data['nom_directeur_etudes'] ?? '',
-            'titre_direction_generale' => $data['titre_direction_generale'] ?? '',
-            'nom_directeur_general' => $data['nom_directeur_general'] ?? '',
-            'titre_service_finance' => $data['titre_service_finance'] ?? '',
-            'nom_responsable_finance' => $data['nom_responsable_finance'] ?? '',
-            'titre_service_scolarite' => $data['titre_service_scolarite'] ?? '',
-            'nom_responsable_scolarite' => $data['nom_responsable_scolarite'] ?? '',
-            'nom_secretaire_general' => $data['nom_secretaire_general'] ?? '',
-            'mention_cachet_signature' => $data['mention_cachet_signature'] ?? '',
-            'ville_signature' => $data['ville_signature'] ?? 'Bouaké',
-            'texte_pied_page' => $data['texte_pied_page'] ?? '',
-            'prefixe_reference' => $data['prefixe_reference'] ?? 'REF-',
+        $allowedConfigFields = [
+            'nom_etablissement', 'sigle_etablissement', 'slogan_etablissement',
+            'numero_autorisation', 'ministere_tutelle', 'adresse_etablissement',
+            'boite_postale', 'ville_etablissement', 'pays_etablissement',
+            'telephone_fixe', 'telephone_mobile', 'telephone_mobile2',
+            'email_etablissement', 'site_web', 'titre_direction_pedagogique',
+            'nom_directeur_etudes', 'titre_direction_generale', 'nom_directeur_general',
+            'titre_service_finance', 'nom_responsable_finance', 'titre_service_scolarite',
+            'nom_responsable_scolarite', 'nom_secretaire_general', 'mention_cachet_signature',
+            'ville_signature', 'texte_pied_page', 'prefixe_reference', 'logo_etablissement'
         ];
-        if (!empty($data['logo_etablissement'])) {
-            $configData['logo_etablissement'] = $data['logo_etablissement'];
+
+        $configData = [];
+        foreach ($allowedConfigFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $configData[$field] = $data[$field];
+            }
         }
-        $modelConfig->saveConfig($configData);
+        if (!empty($configData)) {
+            $modelConfig->saveConfig($configData);
+        }
 
         // Synchronisation des slugs et champs de base dans la table etablissements
-        $data['use_slug_filiere'] = isset($data['use_slug_filiere']) ? (int)$data['use_slug_filiere'] : 0;
-        $data['use_slug_cycle'] = isset($data['use_slug_cycle']) ? (int)$data['use_slug_cycle'] : 0;
-        $data['use_slug_niveau'] = isset($data['use_slug_niveau']) ? (int)$data['use_slug_niveau'] : 0;
-        if (!empty($configData['nom_etablissement'])) {
+        if (isset($data['use_slug_filiere']) || isset($data['use_slug_cycle']) || isset($data['use_slug_niveau']) || isset($data['section_parametres'])) {
+            $data['use_slug_filiere'] = !empty($data['use_slug_filiere']) ? 1 : 0;
+            $data['use_slug_cycle'] = !empty($data['use_slug_cycle']) ? 1 : 0;
+            $data['use_slug_niveau'] = !empty($data['use_slug_niveau']) ? 1 : 0;
+        }
+
+        if (isset($configData['nom_etablissement'])) {
             $data['libelle_etablissement'] = $configData['nom_etablissement'];
         }
-        if (!empty($configData['numero_autorisation'])) {
+        if (isset($configData['numero_autorisation'])) {
             $data['numero_autorisation_etablissement'] = $configData['numero_autorisation'];
         }
-        if (!empty($configData['telephone_mobile'])) {
+        if (isset($configData['telephone_mobile'])) {
             $data['telephone_etablissement'] = $configData['telephone_mobile'];
         }
-        if (!empty($configData['telephone_mobile2'])) {
+        if (isset($configData['telephone_mobile2'])) {
             $data['telephone_etablissement2'] = $configData['telephone_mobile2'];
         }
 
@@ -162,13 +153,15 @@ class EtablissementController extends BaseController
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
         if ($id && $this->model->getById($id)) {
-            $this->model->update($filteredData, $id);
+            if (!empty($filteredData)) {
+                $this->model->update($filteredData, $id);
+            }
             $this->logAction(
                 AuditLogger::ACTION_UPDATE,
                 'etablissements',
                 $id,
                 "Mise à jour de la configuration de l'établissement: " . ($configData['nom_etablissement'] ?? ''),
-                ['id_etablissement' => $id, 'nom' => $configData['nom_etablissement'] ?? '', 'sigle' => $configData['sigle_etablissement'] ?? '']
+                ['id_etablissement' => $id, 'fields' => array_keys($data)]
             );
         } else {
             $filteredData['code_etablissement'] = $this->validator->generateCode(TABLES::ETABLISSEMENTS, 'code_etablissement', 'ETA-', 8);
@@ -180,16 +173,25 @@ class EtablissementController extends BaseController
                 'etablissements',
                 $newId,
                 "Création de l'établissement: " . ($configData['nom_etablissement'] ?? ''),
-                ['id_etablissement' => $newId, 'code' => $filteredData['code_etablissement'], 'nom' => $configData['nom_etablissement'] ?? '']
+                ['id_etablissement' => $newId, 'code' => $filteredData['code_etablissement']]
             );
         }
 
         Session::remove('etablissement_config');
 
+        $sectionName = $this->post('section_name') ?: 'Configuration';
+        $message = "{$sectionName} enregistrée avec succès !";
+        $responseData = [
+            'section' => $this->post('section_id') ?? ''
+        ];
+        if (!empty($data['logo_etablissement'])) {
+            $responseData['logo_url'] = RACINE . ltrim($data['logo_etablissement'], '/');
+        }
+
         if ($isAjax) {
-            $this->success('Configuration de l\'établissement mise à jour avec succès!');
+            $this->success($message, $responseData);
         } else {
-            Session::set('flash_success', 'Configuration de l\'établissement mise à jour avec succès!');
+            Session::set('flash_success', $message);
             header('Location: ' . RACINE . 'etablissement/config');
             exit();
         }
