@@ -17,12 +17,14 @@ class ModelTranche extends BaseModel
             $params[] = $anneeCode;
         }
         if (!empty($filiereCode)) {
-            $conditions[] = "(s.filiere_code = ? OR t.filiere_code = ?)";
+            $conditions[] = "(s.filiere_code = ? OR t.filiere_code = ? OR f.slug_filiere = ?)";
+            $params[] = $filiereCode;
             $params[] = $filiereCode;
             $params[] = $filiereCode;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "(s.niveau_code = ? OR t.niveau_code = ?)";
+            $conditions[] = "(s.niveau_code = ? OR t.niveau_code = ? OR n.slug_niveau = ?)";
+            $params[] = $niveauCode;
             $params[] = $niveauCode;
             $params[] = $niveauCode;
         }
@@ -38,7 +40,9 @@ class ModelTranche extends BaseModel
                    s.montant_scolarite, 
                    s.affectation_etat,
                    f.libelle_filiere, 
+                   f.slug_filiere,
                    n.libelle_niveau, 
+                   n.slug_niveau,
                    a.libelle_annee
             FROM " . TABLES::TRANCHES_SCOLARITE . " t
             LEFT JOIN " . TABLES::SCOLARITES . " s ON t.scolarite_code = s.code_scolarite
@@ -60,7 +64,9 @@ class ModelTranche extends BaseModel
                    s.montant_scolarite, 
                    s.affectation_etat,
                    f.libelle_filiere, 
+                   f.slug_filiere,
                    n.libelle_niveau, 
+                   n.slug_niveau,
                    a.libelle_annee
             FROM " . TABLES::TRANCHES_SCOLARITE . " t
             LEFT JOIN " . TABLES::SCOLARITES . " s ON t.scolarite_code = s.code_scolarite

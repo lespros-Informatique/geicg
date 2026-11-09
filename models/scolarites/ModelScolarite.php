@@ -23,11 +23,13 @@ class ModelScolarite extends BaseModel
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "s.niveau_code = ?";
+            $conditions[] = "(s.niveau_code = ? OR n.slug_niveau = ?)";
+            $params[] = $niveauCode;
             $params[] = $niveauCode;
         }
         if (!empty($filiereCode)) {
-            $conditions[] = "s.filiere_code = ?";
+            $conditions[] = "(s.filiere_code = ? OR f.slug_filiere = ?)";
+            $params[] = $filiereCode;
             $params[] = $filiereCode;
         }
         if (!empty($affectationEtat)) {

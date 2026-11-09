@@ -48,9 +48,12 @@
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filière</label>
             <select id="filter-filiere" class="form-control select2" style="width: 100%; border-radius: 8px; font-size: 13px;">
               <option value="">-- Toutes les filières --</option>
-              <?php foreach (($filieres ?? []) as $f): ?>
-                <option value="<?= htmlspecialchars($f['code_filiere']) ?>">
-                  <?= htmlspecialchars($f['libelle_filiere'] ?? $f['code_filiere']) ?>
+              <?php foreach (($filieres ?? []) as $f): 
+                $fSlug = !empty($f['slug_filiere']) ? $f['slug_filiere'] : $f['code_filiere'];
+                $fLib = $f['libelle_filiere'] ?? $f['code_filiere'];
+              ?>
+                <option value="<?= htmlspecialchars($fSlug) ?>" data-code="<?= htmlspecialchars($f['code_filiere']) ?>" title="<?= htmlspecialchars($fLib) ?>">
+                  <?= htmlspecialchars(!empty($f['slug_filiere']) ? ($f['slug_filiere'] . ' - ' . $fLib) : $fLib) ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -59,9 +62,12 @@
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau d'Études</label>
             <select id="filter-niveau" class="form-control select2" style="width: 100%; border-radius: 8px; font-size: 13px;">
               <option value="">-- Tous les niveaux --</option>
-              <?php foreach (($niveaux ?? []) as $n): ?>
-                <option value="<?= htmlspecialchars($n['code_niveau']) ?>">
-                  <?= htmlspecialchars($n['libelle_niveau'] ?? $n['code_niveau']) ?>
+              <?php foreach (($niveaux ?? []) as $n): 
+                $nSlug = !empty($n['slug_niveau']) ? $n['slug_niveau'] : $n['code_niveau'];
+                $nLib = $n['libelle_niveau'] ?? $n['code_niveau'];
+              ?>
+                <option value="<?= htmlspecialchars($nSlug) ?>" data-code="<?= htmlspecialchars($n['code_niveau']) ?>" title="<?= htmlspecialchars($nLib) ?>">
+                  <?= htmlspecialchars(!empty($n['slug_niveau']) ? ($n['slug_niveau'] . ' - ' . $nLib) : $nLib) ?>
                 </option>
               <?php endforeach; ?>
             </select>
