@@ -6,8 +6,8 @@
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
         <div>
-          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Scolarités & Échéanciers de Paiement</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion centralisée des grilles tarifaires et des tranches de versement</p>
+          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Grille des Scolarités</h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion centralisée des grilles tarifaires par année, filière et niveau</p>
         </div>
         <div id="btn-container" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::PRINT_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]))): ?>
@@ -123,65 +123,24 @@
         </div>
       </div>
 
-      <!-- Nav Tabs -->
-      <ul class="nav nav-tabs" id="scolariteTabs" role="tablist" style="border-bottom: 2px solid #E2E8F0; margin-bottom: 20px; gap: 8px; list-style: none; padding-left: 0; display: flex;">
-        <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="tab-scolarites-btn" data-bs-target="#tab-scolarites" type="button" role="tab" style="font-weight: 700; padding: 12px 22px; border-radius: 8px 8px 0 0; color: #1E3A5F; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #E2E8F0; border-bottom: none; background: #FFFFFF; cursor: pointer;">
-            <i data-lucide="receipt" style="width: 16px; height: 16px;"></i> Grille des Scolarités
-          </button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link" id="tab-tranches-btn" data-bs-target="#tab-tranches" type="button" role="tab" style="font-weight: 700; padding: 12px 22px; border-radius: 8px 8px 0 0; color: #64748B; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #E2E8F0; border-bottom: none; background: #F8FAFC; cursor: pointer;">
-            <i data-lucide="list-checks" style="width: 16px; height: 16px;"></i> Échéanciers de Paiement
-          </button>
-        </li>
-      </ul>
-
-      <div class="tab-content" id="scolariteTabsContent">
-        <!-- TAB 1 : GRILLE DES SCOLARITÉS -->
-        <div class="tab-pane fade show active" id="tab-scolarites" role="tabpanel">
-          <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
-            <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-              <table id="table-scolarites" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
-                <thead>
-                  <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                    <th style="padding: 12px; width: 50px;">#</th>
-                    <th style="padding: 12px;">Code</th>
-                    <th style="padding: 12px;">Statut d'Affectation</th>
-                    <th style="padding: 12px;">Filière</th>
-                    <th style="padding: 12px;">Niveau</th>
-                    <th style="padding: 12px;">Montant (FCFA)</th>
-                    <th class="text-center" style="padding: 12px;">Statut</th>
-                    <th class="text-end" style="padding: 12px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 2 : ÉCHEANCIERS DE PAIEMENT -->
-        <div class="tab-pane fade" id="tab-tranches" role="tabpanel" style="display: none;">
-          <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
-            <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-              <table id="table-tranches_scolarite" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
-                <thead>
-                  <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                    <th style="padding: 12px; width: 50px;">#</th>
-                    <th style="padding: 12px;">Code</th>
-                    <th style="padding: 12px;">Scolarité Rattachée</th>
-                    <th style="padding: 12px;">Libellé Tranche</th>
-                    <th style="padding: 12px;">Montant (FCFA)</th>
-                    <th style="padding: 12px;">Date Limite</th>
-                    <th class="text-center" style="padding: 12px;">Statut</th>
-                    <th class="text-end" style="padding: 12px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
+      <!-- TABLEAU DES SCOLARITÉS -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
+        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table id="table-scolarites" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
+                <th style="padding: 12px; width: 50px;">#</th>
+                <th style="padding: 12px;">Code</th>
+                <th style="padding: 12px;">Statut d'Affectation</th>
+                <th style="padding: 12px;">Filière</th>
+                <th style="padding: 12px;">Niveau</th>
+                <th style="padding: 12px;">Montant (FCFA)</th>
+                <th class="text-center" style="padding: 12px;">Statut</th>
+                <th class="text-end" style="padding: 12px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
       </div>
 

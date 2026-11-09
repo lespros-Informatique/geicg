@@ -140,74 +140,77 @@
       drawCallback: function () { if (window.lucide) lucide.createIcons(); }
     });
 
-    if ($.fn.DataTable.isDataTable($tableTranches)) {
-      $tableTranches.DataTable().destroy();
-    }
+    var tableTranches = null;
+    if ($tableTranches.length) {
+      if ($.fn.DataTable.isDataTable($tableTranches)) {
+        $tableTranches.DataTable().destroy();
+      }
 
-    var tableTranches = $tableTranches.DataTable({
-      ajax: {
-        url: GEICG.url('tranche/apiList'),
-        data: function (d) {
-          d.annee_code = $('#filter-annee').val();
-          d.filiere_code = $('#filter-filiere').val();
-          d.niveau_code = $('#filter-niveau').val();
-        }
-      },
-      processing: true,
-      autoWidth: false,
-      columns: [
-        {
-          data: null, width: '50px', render: function (d, type, row, meta) {
-            return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+      tableTranches = $tableTranches.DataTable({
+        ajax: {
+          url: GEICG.url('tranche/apiList'),
+          data: function (d) {
+            d.annee_code = $('#filter-annee').val();
+            d.filiere_code = $('#filter-filiere').val();
+            d.niveau_code = $('#filter-niveau').val();
           }
         },
-        { data: 'code_tranche', render: function (d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
-        {
-          data: 'libelle_filiere', render: function (d, t, r) {
-            var filText = d || r.filiere_code || 'Filière';
-            var nivText = r.libelle_niveau || r.niveau_code || '';
-            var ann = r.libelle_annee ? ' (' + r.libelle_annee + ')' : '';
-            var badgeFil = r.slug_filiere ? '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:800; font-size:11.5px; padding:2px 7px; border-radius:5px; border:1px solid #BFDBFE; margin-right:4px;" title="' + filText + '">' + r.slug_filiere + '</span>' : filText;
-            var badgeNiv = r.slug_niveau ? '<span class="badge" style="background:#F1F5F9; color:#0F172A; font-weight:800; font-size:11.5px; padding:2px 7px; border-radius:5px; border:1px solid #CBD5E1;" title="' + nivText + '">' + r.slug_niveau + '</span>' : nivText;
-            return '<div style="display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;">' + badgeFil + ' ' + badgeNiv + '</div>' +
-              '<div style="font-size:11.5px; color:#64748B; margin-top:2px;">' + (r.montant_scolarite ? Number(r.montant_scolarite).toLocaleString('fr-FR') + ' FCFA' : '') + ann + '</div>';
+        processing: true,
+        autoWidth: false,
+        columns: [
+          {
+            data: null, width: '50px', render: function (d, type, row, meta) {
+              return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+            }
+          },
+          { data: 'code_tranche', render: function (d) { return '<code style="font-weight:700; color:#475569;">' + (d || '-') + '</code>'; } },
+          {
+            data: 'libelle_filiere', render: function (d, t, r) {
+              var filText = d || r.filiere_code || 'Filière';
+              var nivText = r.libelle_niveau || r.niveau_code || '';
+              var ann = r.libelle_annee ? ' (' + r.libelle_annee + ')' : '';
+              var badgeFil = r.slug_filiere ? '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:800; font-size:11.5px; padding:2px 7px; border-radius:5px; border:1px solid #BFDBFE; margin-right:4px;" title="' + filText + '">' + r.slug_filiere + '</span>' : filText;
+              var badgeNiv = r.slug_niveau ? '<span class="badge" style="background:#F1F5F9; color:#0F172A; font-weight:800; font-size:11.5px; padding:2px 7px; border-radius:5px; border:1px solid #CBD5E1;" title="' + nivText + '">' + r.slug_niveau + '</span>' : nivText;
+              return '<div style="display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;">' + badgeFil + ' ' + badgeNiv + '</div>' +
+                '<div style="font-size:11.5px; color:#64748B; margin-top:2px;">' + (r.montant_scolarite ? Number(r.montant_scolarite).toLocaleString('fr-FR') + ' FCFA' : '') + ann + '</div>';
+            }
+          },
+          { data: 'libelle_tranche', render: function (d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>'; } },
+          {
+            data: 'montant_tranche', render: function (d) {
+              return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>';
+            }
+          },
+          { data: 'date_limite', render: function (d) { return '<span style="font-weight:600; color:#475569;">' + (d || '-') + '</span>'; } },
+          {
+            data: 'statut_tranche', width: '90px', className: 'text-center', render: function (d, type, row) {
+              var isActif = (d === 'actif');
+              var checkedAttr = isActif ? 'checked' : '';
+              return '<div style="display:flex; justify-content:center; align-items:center;">' +
+                '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+                '<input type="checkbox" class="toggle-statut-tranche" data-id="' + row.id_tranche + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+                '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+                '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+                '</span>' +
+                '</label>' +
+                '</div>';
+            }
+          },
+          {
+            data: null, orderable: false, render: function (d) {
+              var detailsUrl = GEICG.url('tranche/details/' + (d.editId || d.id_tranche));
+              var editUrl = d.scolariteEditId ? GEICG.url('scolarite/edition/' + d.scolariteEditId) : GEICG.url('tranche/edition/' + (d.editId || d.id_tranche));
+              return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
+                '<a href="' + detailsUrl + '" class="btn btn-sm" style="color:#1E3A5F; background:#F1F5F9; border:1px solid #CBD5E1; border-radius:6px; padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Consulter les détails"><i data-lucide="eye" style="width:15px;height:15px;"></i></a>' +
+                '<a href="' + editUrl + '" class="btn btn-sm" style="color:#0284C7; background:#F0F9FF; border:1px solid #BAE6FD; border-radius:6px; padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Modifier l\'échéancier dans la scolarité"><i data-lucide="edit" style="width:15px;height:15px;"></i></a>' +
+                '</div>';
+            }, className: 'text-end'
           }
-        },
-        { data: 'libelle_tranche', render: function (d) { return '<span style="font-weight:700; color:#1E3A5F;">' + (d || '-') + '</span>'; } },
-        {
-          data: 'montant_tranche', render: function (d) {
-            return '<span style="font-weight:800; color:#0F172A;">' + (d ? Number(d).toLocaleString('fr-FR') + ' FCFA' : '0 FCFA') + '</span>';
-          }
-        },
-        { data: 'date_limite', render: function (d) { return '<span style="font-weight:600; color:#475569;">' + (d || '-') + '</span>'; } },
-        {
-          data: 'statut_tranche', width: '90px', className: 'text-center', render: function (d, type, row) {
-            var isActif = (d === 'actif');
-            var checkedAttr = isActif ? 'checked' : '';
-            return '<div style="display:flex; justify-content:center; align-items:center;">' +
-              '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
-              '<input type="checkbox" class="toggle-statut-tranche" data-id="' + row.id_tranche + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-              '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-              '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-              '</span>' +
-              '</label>' +
-              '</div>';
-          }
-        },
-        {
-          data: null, orderable: false, render: function (d) {
-            var detailsUrl = GEICG.url('tranche/details/' + (d.editId || d.id_tranche));
-            var editUrl = d.scolariteEditId ? GEICG.url('scolarite/edition/' + d.scolariteEditId) : GEICG.url('tranche/edition/' + (d.editId || d.id_tranche));
-            return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
-              '<a href="' + detailsUrl + '" class="btn btn-sm" style="color:#1E3A5F; background:#F1F5F9; border:1px solid #CBD5E1; border-radius:6px; padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Consulter les détails"><i data-lucide="eye" style="width:15px;height:15px;"></i></a>' +
-              '<a href="' + editUrl + '" class="btn btn-sm" style="color:#0284C7; background:#F0F9FF; border:1px solid #BAE6FD; border-radius:6px; padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Modifier l\'échéancier dans la scolarité"><i data-lucide="edit" style="width:15px;height:15px;"></i></a>' +
-              '</div>';
-          }, className: 'text-end'
-        }
-      ],
-      language: GEICG.dataTableLanguage,
-      drawCallback: function () { if (window.lucide) lucide.createIcons(); }
-    });
+        ],
+        language: GEICG.dataTableLanguage,
+        drawCallback: function () { if (window.lucide) lucide.createIcons(); }
+      });
+    }
 
     function bindAjaxToggle(selector, url, tableRef) {
       $(document).on('change', selector, function () {
@@ -240,41 +243,45 @@
     }
 
     bindAjaxToggle('.toggle-statut-scolarite', GEICG.url('scolarite/changer'), tableScolarites);
-    bindAjaxToggle('.toggle-statut-tranche', GEICG.url('tranche/changer'), tableTranches);
-
-    // Switch Tab Handler
-    function switchScolariteTab(targetId) {
-      $('.nav-tabs .nav-link').removeClass('active').css({ 'color': '#64748B', 'background': '#F8FAFC' });
-      $('.tab-pane').removeClass('show active').hide();
-
-      if (targetId === '#tab-tranches') {
-        $('#tab-tranches-btn').addClass('active').css({ 'color': '#1E3A5F', 'background': '#FFFFFF' });
-        $('#tab-tranches').addClass('show active').show();
-        $('#btn-add-action').attr('href', GEICG.url('scolarite/formulaire'));
-        $('#btn-add-label').text('Ajouter Tarif & Échéancier');
-        tableTranches.columns.adjust().draw();
-      } else {
-        $('#tab-scolarites-btn').addClass('active').css({ 'color': '#1E3A5F', 'background': '#FFFFFF' });
-        $('#tab-scolarites').addClass('show active').show();
-        $('#btn-add-action').attr('href', GEICG.url('scolarite/formulaire'));
-        $('#btn-add-label').text('Ajouter Tarif de Scolarité');
-        tableScolarites.columns.adjust().draw();
-      }
-      if (window.lucide) lucide.createIcons();
+    if (tableTranches) {
+      bindAjaxToggle('.toggle-statut-tranche', GEICG.url('tranche/changer'), tableTranches);
     }
 
-    $(document).on('click', '.nav-tabs .nav-link', function (e) {
-      e.preventDefault();
-      var target = $(this).attr('data-bs-target');
-      switchScolariteTab(target);
-    });
+    // Switch Tab Handler (if tabs exist)
+    if ($('.nav-tabs .nav-link').length) {
+      function switchScolariteTab(targetId) {
+        $('.nav-tabs .nav-link').removeClass('active').css({ 'color': '#64748B', 'background': '#F8FAFC' });
+        $('.tab-pane').removeClass('show active').hide();
 
-    // Default active tab
-    var urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('tab') === 'tranches') {
-      switchScolariteTab('#tab-tranches');
-    } else {
-      switchScolariteTab('#tab-scolarites');
+        if (targetId === '#tab-tranches' && tableTranches) {
+          $('#tab-tranches-btn').addClass('active').css({ 'color': '#1E3A5F', 'background': '#FFFFFF' });
+          $('#tab-tranches').addClass('show active').show();
+          $('#btn-add-action').attr('href', GEICG.url('scolarite/formulaire'));
+          $('#btn-add-label').text('Ajouter Tarif & Échéancier');
+          tableTranches.columns.adjust().draw();
+        } else {
+          $('#tab-scolarites-btn').addClass('active').css({ 'color': '#1E3A5F', 'background': '#FFFFFF' });
+          $('#tab-scolarites').addClass('show active').show();
+          $('#btn-add-action').attr('href', GEICG.url('scolarite/formulaire'));
+          $('#btn-add-label').text('Ajouter Tarif de Scolarité');
+          tableScolarites.columns.adjust().draw();
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+
+      $(document).on('click', '.nav-tabs .nav-link', function (e) {
+        e.preventDefault();
+        var target = $(this).attr('data-bs-target');
+        switchScolariteTab(target);
+      });
+
+      // Default active tab
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('tab') === 'tranches' && tableTranches) {
+        switchScolariteTab('#tab-tranches');
+      } else {
+        switchScolariteTab('#tab-scolarites');
+      }
     }
   }
 
@@ -309,7 +316,7 @@
         success: function (res) {
           if (res && (res.status === 1 || res.status === 'success' || res.success)) {
             var successMsg = res.message || 'Tranche enregistrée avec succès !';
-            var targetUrl = res.redirect || GEICG.url('scolarite/list?tab=tranches');
+            var targetUrl = res.redirect || GEICG.url('scolarite/list');
 
             if (window.Swal) {
               Swal.fire({
