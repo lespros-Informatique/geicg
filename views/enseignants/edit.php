@@ -70,7 +70,8 @@ $isEdit = !empty($item['id_enseignant']);
               <i data-lucide="user" style="width: 18px; height: 18px;"></i> Identité & Compte Utilisateur
             </h3>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
+            <!-- Nom et Prénom sur la même ligne (2 colonnes) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%; margin-bottom: 20px;">
               <div class="form-group" style="width: 100%; box-sizing: border-box;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom de famille <span style="color: #EF4444;">*</span></label>
                 <input type="text" class="form-control field-ident" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="nom_user" value="<?= htmlspecialchars($item['nom_user'] ?? ($item['nom_enseignant'] ?? '')) ?>" placeholder="Ex: KOUASSI" required>
@@ -80,7 +81,10 @@ $isEdit = !empty($item['id_enseignant']);
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Prénom(s) <span style="color: #EF4444;">*</span></label>
                 <input type="text" class="form-control field-ident" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="prenom_user" value="<?= htmlspecialchars($item['prenom_user'] ?? ($item['prenom_enseignant'] ?? '')) ?>" placeholder="Ex: Jean-Marc" required>
               </div>
+            </div>
 
+            <!-- Autres champs d'identité -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; width: 100%; margin-bottom: 24px;">
               <div class="form-group" style="width: 100%; box-sizing: border-box;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse Email</label>
                 <input type="email" class="form-control field-ident" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="email_user" value="<?= htmlspecialchars($item['email_user'] ?? ($item['email_enseignant'] ?? '')) ?>" placeholder="Ex: prof.kouassi@geicg.ci">
@@ -97,13 +101,6 @@ $isEdit = !empty($item['id_enseignant']);
                   <option value="Masculin" <?= (in_array($item['sexe_user'] ?? ($item['sexe_enseignant'] ?? 'M'), ['M', 'Masculin'])) ? 'selected' : '' ?>>Masculin (M)</option>
                   <option value="Féminin" <?= (in_array($item['sexe_user'] ?? ($item['sexe_enseignant'] ?? ''), ['F', 'Féminin'])) ? 'selected' : '' ?>>Féminin (F)</option>
                 </select>
-              </div>
-
-              <div class="form-group" style="width: 100%; box-sizing: border-box;">
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-                  <?= $isEdit ? 'Changer le mot de passe (Laisser vide pour conserver)' : 'Mot de passe initial (Optionnel)' ?>
-                </label>
-                <input type="password" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="password_user" placeholder="<?= $isEdit ? 'Nouveau mot de passe...' : 'Généré automatiquement si vide' ?>">
               </div>
             </div>
           </div>
