@@ -157,6 +157,80 @@ if (!function_exists('getEtablissementLogoUrl')) {
     }
 }
 
+if (!function_exists('url')) {
+    /**
+     * Génère une URL interne canonique avec paramètres optionnels
+     * 
+     * @param string $path Chemin relatif (ex: 'absence/list' ou 'classe/details/123')
+     * @param array $params Paramètres GET sous forme de clé => valeur
+     * @return string URL complète
+     */
+    function url(string $path = '', array $params = []): string
+    {
+        $path = trim($path);
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            $base = $path;
+        } else {
+            $cleanRacine = defined('RACINE') ? rtrim(RACINE, '/') . '/' : '/geicg/';
+            $base = $cleanRacine . ltrim($path, '/');
+        }
+
+        if (!empty($params)) {
+            $separator = str_contains($base, '?') ? '&' : '?';
+            $base .= $separator . http_build_query($params);
+        }
+
+        return $base;
+    }
+}
+
+if (!function_exists('asset')) {
+    /**
+     * Génère une URL vers une ressource statique (CSS, JS, Image, Font)
+     * 
+     * @param string $path Chemin relatif du fichier statique
+     * @param bool $version Ajoute un paramètre de cache-busting (?v=timestamp)
+     * @return string URL complète vers l'asset
+     */
+    function asset(string $path, bool $version = false): string
+    {
+        $cleanPath = ltrim($path, '/');
+        if (!str_starts_with($cleanPath, 'public/')) {
+            $cleanPath = 'public/' . $cleanPath;
+        }
+
+        $fullUrl = url($cleanPath);
+        if ($version) {
+            $diskPath = dirname(__DIR__) . '/' . $cleanPath;
+            if (file_exists($diskPath)) {
+                $fullUrl .= '?v=' . filemtime($diskPath);
+            }
+        }
+        return $fullUrl;
+    }
+}
+
+if (!function_exists('redirect')) {
+    /**
+     * Effectue une redirection HTTP propre et arrête l'exécution du script
+     * 
+     * @param string $path Route cible (ex: 'absence/list' ou URL absolue)
+     * @param array $params Paramètres GET optionnels
+     * @param int $statusCode Code HTTP de redirection (défaut: 302)
+     * @return never
+     */
+    function redirect(string $path = '', array $params = [], int $statusCode = 302): never
+    {
+        $targetUrl = url($path, $params);
+        if (!headers_sent()) {
+            header('Location: ' . $targetUrl, true, $statusCode);
+        } else {
+            echo '<script>window.location.href=' . json_encode($targetUrl) . ';</script>';
+        }
+        exit();
+    }
+}
+
 if (!function_exists('placeholderUrl')) {
     /**
      * Retourne l'URL web standardisée vers une image du dossier placeholders
@@ -174,8 +248,7 @@ if (!function_exists('placeholderUrl')) {
             $cleanFile .= '.png';
         }
 
-        $cleanRacine = defined('RACINE') ? rtrim(RACINE, '/') . '/' : '/geicg/';
-        return $cleanRacine . 'public/assets/images/placeholders/' . ltrim($cleanFile, '/');
+        return asset('assets/images/placeholders/' . ltrim($cleanFile, '/'));
     }
 }
 
