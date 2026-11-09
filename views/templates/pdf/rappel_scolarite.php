@@ -159,7 +159,7 @@
       }
     }
     if (empty($photoSrc)) {
-      $defaultPlaceholder = __DIR__ . '/../../public/assets/images/placeholders/etudiant.png';
+      $defaultPlaceholder = placeholderPath('etudiant');
       if (file_exists($defaultPlaceholder)) {
         $photoSrc = 'data:image/png;base64,' . base64_encode(file_get_contents($defaultPlaceholder));
       }

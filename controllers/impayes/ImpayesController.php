@@ -315,8 +315,7 @@ class ImpayesController extends BaseController
         $photoSrc = $this->toBase64([
             $ins['photo_etudiant'] ?? '',
             $ins['photo_inscription'] ?? '',
-            'public/assets/images/placeholders/etudiant.png',
-            'assets/images/placeholders/etudiant.png'
+            placeholderPath('etudiant')
         ]);
 
         $dataView = [
@@ -424,8 +423,7 @@ class ImpayesController extends BaseController
             $photoSrc = $this->toBase64([
                 $ins['photo_etudiant'] ?? '',
                 $ins['photo_inscription'] ?? '',
-                'public/assets/images/placeholders/etudiant.png',
-                'assets/images/placeholders/etudiant.png'
+                placeholderPath('etudiant')
             ]);
 
             $dataView = [

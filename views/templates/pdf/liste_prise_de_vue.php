@@ -30,7 +30,7 @@ if (!empty($etablissement['logo_etablissement'])) {
     }
 }
 
-$placeholderPath = __DIR__ . '/../../../public/assets/images/placeholders/etudiant.png';
+$placeholderPath = placeholderPath('etudiant');
 
 $totalInscrits = (int)($stats['total'] ?? count($rows ?? []));
 $avecPhoto = (int)($stats['avec_photo'] ?? 0);

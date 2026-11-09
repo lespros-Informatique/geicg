@@ -1257,7 +1257,7 @@ class ModelInscription extends BaseModel
             }
         }
         if (empty($photoSrc)) {
-            $placeholderPath = __DIR__ . '/../../public/assets/images/placeholders/etudiant.png';
+            $placeholderPath = placeholderPath('etudiant');
             if (file_exists($placeholderPath) && is_file($placeholderPath)) {
                 $photoSrc = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderPath));
             }

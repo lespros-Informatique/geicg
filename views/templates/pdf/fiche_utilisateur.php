@@ -64,15 +64,9 @@ if (!empty($user['photo_user'])) {
     }
 }
 if (empty($photoPath) || !file_exists($photoPath)) {
-    $placeholders = [
-        __DIR__ . '/../../../public/assets/images/placeholders/user.png',
-        __DIR__ . '/../../public/assets/images/placeholders/user.png'
-    ];
-    foreach ($placeholders as $pl) {
-        if (file_exists($pl)) {
-            $photoPath = $pl;
-            break;
-        }
+    $userPl = placeholderPath('user');
+    if (file_exists($userPl)) {
+        $photoPath = $userPl;
     }
 }
 

@@ -1571,8 +1571,7 @@ class ModelPaiement extends BaseModel
         $photoSrc = $this->encodeImageBase64([
             $pRow['photo_etudiant'] ?? '',
             $pRow['photo_inscription'] ?? '',
-            'public/assets/images/placeholders/etudiant.png',
-            'assets/images/placeholders/etudiant.png'
+            placeholderPath('etudiant')
         ]);
 
         $numRecuCode = !empty($pRow['recu_numero_paiement']) ? $pRow['recu_numero_paiement'] : (!empty($pRow['code_paiement']) ? $pRow['code_paiement'] : 'GE-' . sprintf('%08d', $pRow['id_paiement']));
@@ -2044,7 +2043,7 @@ class ModelPaiement extends BaseModel
         $photoSrc = $this->encodeImageBase64([
             $ins['photo_etudiant'] ?? '',
             $ins['photo_inscription'] ?? '',
-            'public/assets/images/placeholders/etudiant.png'
+            placeholderPath('etudiant')
         ]);
 
         $nomComplet = trim(strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')));

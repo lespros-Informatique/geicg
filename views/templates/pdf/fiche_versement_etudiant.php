@@ -187,7 +187,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <?php 
     include __DIR__ . '/components/header_institution.php'; 
     if (empty($photo_etudiant)) {
-        $placeholderFile = __DIR__ . '/../../public/assets/images/placeholders/etudiant.png';
+        $placeholderFile = placeholderPath('etudiant');
         if (file_exists($placeholderFile)) {
             $photo_etudiant = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderFile));
         }

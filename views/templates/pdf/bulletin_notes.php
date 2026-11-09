@@ -70,10 +70,7 @@ if (empty($logoPath) || !file_exists($logoPath)) {
     }
 }
 
-$defaultPlaceholder = __DIR__ . '/../../public/' . PLACEHOLDERS::ETUDIANT;
-if (!file_exists($defaultPlaceholder)) {
-    $defaultPlaceholder = __DIR__ . '/../../../public/' . PLACEHOLDERS::ETUDIANT;
-}
+$defaultPlaceholder = placeholderPath('etudiant');
 
 $photoPath = '';
 if (!empty($photo_etudiant)) {
