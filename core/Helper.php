@@ -156,3 +156,46 @@ if (!function_exists('getEtablissementLogoUrl')) {
         return '';
     }
 }
+
+if (!function_exists('placeholderUrl')) {
+    /**
+     * Retourne l'URL web standardisée vers une image du dossier placeholders
+     * 
+     * @param string $filename Nom du fichier (ex: 'etudiant.png' ou 'etudiant')
+     * @return string URL web complète
+     */
+    function placeholderUrl(string $filename = 'etudiant.png'): string
+    {
+        $cleanFile = trim($filename);
+        if ($cleanFile === '') {
+            $cleanFile = 'etudiant.png';
+        }
+        if (!pathinfo($cleanFile, PATHINFO_EXTENSION)) {
+            $cleanFile .= '.png';
+        }
+
+        $cleanRacine = defined('RACINE') ? rtrim(RACINE, '/') . '/' : '/geicg/';
+        return $cleanRacine . 'public/assets/images/placeholders/' . ltrim($cleanFile, '/');
+    }
+}
+
+if (!function_exists('placeholderPath')) {
+    /**
+     * Retourne le chemin absolu sur le disque vers un placeholder (idéal pour PDF mPDF, file_exists, etc.)
+     * 
+     * @param string $filename Nom du fichier (ex: 'etudiant.png' ou 'etudiant')
+     * @return string Chemin absolu sur le serveur
+     */
+    function placeholderPath(string $filename = 'etudiant.png'): string
+    {
+        $cleanFile = trim($filename);
+        if ($cleanFile === '') {
+            $cleanFile = 'etudiant.png';
+        }
+        if (!pathinfo($cleanFile, PATHINFO_EXTENSION)) {
+            $cleanFile .= '.png';
+        }
+
+        return dirname(__DIR__) . '/public/assets/images/placeholders/' . ltrim($cleanFile, '/\\');
+    }
+}
