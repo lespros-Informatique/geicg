@@ -37,6 +37,7 @@ class ModelTranche extends BaseModel
 
         $sql = "
             SELECT t.*, 
+                   s.id_scolarite,
                    s.montant_scolarite, 
                    s.affectation_etat,
                    f.libelle_filiere, 
@@ -61,6 +62,7 @@ class ModelTranche extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT t.*, 
+                   s.id_scolarite,
                    s.montant_scolarite, 
                    s.affectation_etat,
                    f.libelle_filiere, 

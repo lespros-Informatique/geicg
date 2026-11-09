@@ -103,8 +103,8 @@ $nbTranches = count($tranches);
               <i data-lucide="calendar" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Échéancier des Tranches (<?= count($tranches) ?>)
             </h3>
           </div>
-          <a href="<?= url('tranche/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Ajouter une tranche
+          <a href="<?= url('scolarite/edition/' . $encryptedId) ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+            + Gérer l'échéancier
           </a>
         </div>
 

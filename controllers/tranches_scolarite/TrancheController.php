@@ -36,9 +36,11 @@ class TrancheController extends BaseController
         foreach ($items as $i) {
             $id = $i['id_tranche'];
             $idCrypte = $this->validator->crypter($id);
+            $scolCrypte = !empty($i['id_scolarite']) ? $this->validator->crypter($i['id_scolarite']) : null;
             $data[] = array_merge($i, [
                 'id' => $id,
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'scolariteEditId' => $scolCrypte
             ]);
         }
         $this->json(['data' => $data]);
@@ -144,12 +146,17 @@ class TrancheController extends BaseController
                 return;
             }
             $encryptedId = $this->validator->crypter($id);
+            $scolariteEncryptedId = !empty($item['id_scolarite']) ? $this->validator->crypter($item['id_scolarite']) : '';
         } catch (Exception $e) {
             error_log("TrancheController::details error: " . $e->getMessage());
             $this->renderNotFound("La tranche de scolarité demandée est introuvable.");
             return;
         }
-        $this->loadView('../views/tranches_scolarite/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $this->loadView('../views/tranches_scolarite/details.php', [
+            'item' => $item, 
+            'encryptedId' => $encryptedId,
+            'scolariteEncryptedId' => $scolariteEncryptedId
+        ]);
     }
 
     public function edition($details)
@@ -162,20 +169,28 @@ class TrancheController extends BaseController
                 $id = (int)$details;
             }
             $item = $this->model->getById($id);
-            if (!$item) {
-                redirect('scolarite/list', ['tab' => 'tranches']);
+            if ($item && !empty($item['id_scolarite'])) {
+                $scolEncId = $this->validator->crypter($item['id_scolarite']);
+                redirect('scolarite/edition/' . $scolEncId);
+                return;
+            } elseif ($item && !empty($item['scolarite_code'])) {
+                $scol = (new ModelScolarite())->getById($item['scolarite_code']);
+                if ($scol && !empty($scol['id_scolarite'])) {
+                    $scolEncId = $this->validator->crypter($scol['id_scolarite']);
+                    redirect('scolarite/edition/' . $scolEncId);
+                    return;
+                }
             }
-            $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            redirect('scolarite/list', ['tab' => 'tranches']);
+            error_log("TrancheController::edition redirect error: " . $e->getMessage());
         }
-        $this->loadView('../views/tranches_scolarite/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        redirect('scolarite/list', ['tab' => 'tranches']);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_FRAIS_SCOLARITE);
-        $this->loadView('../views/tranches_scolarite/edit.php', ['item' => []]);
+        redirect('scolarite/formulaire');
     }
 }
