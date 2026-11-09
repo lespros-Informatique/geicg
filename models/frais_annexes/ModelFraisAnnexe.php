@@ -10,7 +10,7 @@ class ModelFraisAnnexe extends BaseModel
     public function getAll(?string $anneeCode = null, ?string $typeFiliere = null, ?string $niveauCode = null, ?string $categorie = null): array
     {
         $sql = "
-            SELECT fa.*, a.libelle_annee, n.libelle_niveau
+            SELECT fa.*, a.libelle_annee, n.libelle_niveau, n.slug_niveau
             FROM " . TABLES::FRAIS_ANNEXES . " fa
             LEFT JOIN " . TABLES::ANNEES . " a ON fa.annee_code = a.code_annee
             LEFT JOIN " . TABLES::NIVEAUX . " n ON fa.niveau_code = n.code_niveau
@@ -26,7 +26,8 @@ class ModelFraisAnnexe extends BaseModel
             $params[] = $typeFiliere;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "(fa.niveau_code = ? OR fa.niveau_code IS NULL OR fa.niveau_code = '')";
+            $conditions[] = "(fa.niveau_code = ? OR n.slug_niveau = ? OR fa.niveau_code IS NULL OR fa.niveau_code = '' OR fa.niveau_code = 'TOUT')";
+            $params[] = $niveauCode;
             $params[] = $niveauCode;
         }
         if (!empty($categorie)) {
@@ -46,7 +47,7 @@ class ModelFraisAnnexe extends BaseModel
     public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT fa.*, a.libelle_annee, n.libelle_niveau
+            SELECT fa.*, a.libelle_annee, n.libelle_niveau, n.slug_niveau
             FROM " . TABLES::FRAIS_ANNEXES . " fa
             LEFT JOIN " . TABLES::ANNEES . " a ON fa.annee_code = a.code_annee
             LEFT JOIN " . TABLES::NIVEAUX . " n ON fa.niveau_code = n.code_niveau
