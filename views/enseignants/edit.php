@@ -82,12 +82,12 @@ $isEdit = !empty($item['id_enseignant']);
               </div>
 
               <div class="form-group" style="width: 100%; box-sizing: border-box;">
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse Email (Identifiant de connexion)</label>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse Email</label>
                 <input type="email" class="form-control field-ident" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="email_user" value="<?= htmlspecialchars($item['email_user'] ?? ($item['email_enseignant'] ?? '')) ?>" placeholder="Ex: prof.kouassi@geicg.ci">
               </div>
 
               <div class="form-group" style="width: 100%; box-sizing: border-box;">
-                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro Téléphone (Contact & Login)</label>
+                <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro Téléphone</label>
                 <input type="text" class="form-control field-ident" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="telephone_user" value="<?= htmlspecialchars($item['telephone_user'] ?? ($item['telephone_enseignant'] ?? '')) ?>" placeholder="Ex: 0708091011">
               </div>
 
