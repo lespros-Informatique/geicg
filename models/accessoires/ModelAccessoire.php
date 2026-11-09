@@ -186,6 +186,8 @@ class ModelAccessoire extends BaseModel
         $dernierCodePaiementFrais = '';
         $dateDernierPaiementFrais = '';
         $scolaritePaye = 0.0;
+        $dernierCodePaiementAutre = '';
+        $dateDernierPaiementAutre = '';
         foreach ($allPayments as $p) {
             if ($p['categorie_paiement'] === 'FRAIS_ANNEXES') {
                 $fraisAnnexesPaye += (float)$p['montant_paiement'];
@@ -193,8 +195,14 @@ class ModelAccessoire extends BaseModel
                     $dernierCodePaiementFrais = $p['code_paiement'];
                     $dateDernierPaiementFrais = !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : '';
                 }
-            } elseif ($p['categorie_paiement'] === 'SCOLARITE') {
-                $scolaritePaye += (float)$p['montant_paiement'];
+            } else {
+                if (empty($dernierCodePaiementAutre)) {
+                    $dernierCodePaiementAutre = $p['code_paiement'];
+                    $dateDernierPaiementAutre = !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : '';
+                }
+                if ($p['categorie_paiement'] === 'SCOLARITE') {
+                    $scolaritePaye += (float)$p['montant_paiement'];
+                }
             }
         }
 
@@ -225,6 +233,14 @@ class ModelAccessoire extends BaseModel
         $scolaritePayer = (float)($student['montant_scolarite_inscription'] ?? 0);
         $resteScolarite = max(0, $scolaritePayer - $scolaritePaye);
 
+        // Détermination du code paiement officiel (JAMAIS le code d'inscription)
+        $codePaiementFinal = $dernierCodePaiementFrais ?: $dernierCodePaiementAutre;
+        if (empty($codePaiementFinal)) {
+            require_once __DIR__ . '/../../core/Validator.php';
+            $validator = new Validator();
+            $codePaiementFinal = $validator->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'REC-FA-', 6);
+        }
+
         return [
             'student' => $student,
             'etudiant' => $student,
@@ -236,8 +252,8 @@ class ModelAccessoire extends BaseModel
             'total_en_attente' => count($kitsEnAttente),
             'pourcentage' => (count($kits) > 0) ? round((count($kitsRemis) / count($kits)) * 100) : 0,
             'finances' => [
-                'code_paiement' => $dernierCodePaiementFrais ?: $student['code_inscription'],
-                'date_operation' => $dateDernierPaiementFrais ?: date('d/m/Y', strtotime($student['date_inscription'] ?? date('Y-m-d'))),
+                'code_paiement' => $codePaiementFinal,
+                'date_operation' => $dateDernierPaiementFrais ?: ($dateDernierPaiementAutre ?: date('d/m/Y', strtotime($student['date_inscription'] ?? date('Y-m-d')))),
                 'montant_payer_tenue' => $montantPayerTenue,
                 'montant_paye_tenue' => $fraisAnnexesPaye,
                 'reste_payer_tenue' => ($restePayerTenue <= 0 && $fraisAnnexesPaye > 0) ? 'Soldé' : ($restePayerTenue > 0 ? number_format($restePayerTenue, 0, ',', ' ') . ' CFA' : 'Soldé'),

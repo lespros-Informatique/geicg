@@ -147,6 +147,13 @@ class AccessoireController extends BaseController
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $inscriptionCode = trim($_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? ''));
+        $codePaiementParam = trim($_GET['code_paiement'] ?? ($_GET['code'] ?? ''));
+        if (empty($inscriptionCode) && !empty($codePaiementParam)) {
+            $stmtFind = (new Database())->getCon()->prepare("SELECT inscription_code FROM " . TABLES::PAIEMENTS . " WHERE code_paiement = ? LIMIT 1");
+            $stmtFind->execute([$codePaiementParam]);
+            $inscriptionCode = $stmtFind->fetchColumn() ?: '';
+        }
+
         if (empty($inscriptionCode)) {
             $this->error('Inscription introuvable.');
             return;
@@ -160,6 +167,7 @@ class AccessoireController extends BaseController
 
         $student = $data['student'];
         $finances = $data['finances'] ?? [];
+        $codePaiement = !empty($codePaiementParam) ? $codePaiementParam : ($finances['code_paiement'] ?? '-');
         $etablissement = $this->getEtablissementConfig();
         $currentUser = Auth::user();
         $agentName = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
@@ -173,7 +181,7 @@ class AccessoireController extends BaseController
         $viewData = [
             'etablissement' => $etablissement,
             'annee_libelle' => $student['libelle_annee'] ?? '',
-            'code_paiement' => $finances['code_paiement'] ?? $student['code_inscription'],
+            'code_paiement' => $codePaiement,
             'date_operation' => $finances['date_operation'] ?? date('d/m/Y'),
             'statut_affectation' => (!empty($student['affectation_etat']) && $student['affectation_etat'] === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
             'matricule_etudiant' => $student['matricule_etudiant'] ?? '-',
