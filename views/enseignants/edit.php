@@ -11,7 +11,7 @@ $isEdit = !empty($item['id_enseignant']);
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= $isEdit ? 'Éditer l\'Enseignant' : 'Nouvel Enseignant' ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion du corps enseignant unifié avec les comptes utilisateurs de l'établissement</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Mise à jour des informations de l'enseignant </p>
         </div>
         <a href="<?= url('enseignant/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
@@ -128,18 +128,7 @@ $isEdit = !empty($item['id_enseignant']);
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Numéro d'Autorisation d'Enseigner</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="numero_autorisation" value="<?= htmlspecialchars($item['numero_autorisation'] ?? '') ?>" placeholder="Ex: AUT-2024-00892">
-              <small style="color: #64748B; font-size: 11px; margin-top: 4px; display: block;">Numéro d'autorisation ministérielle.</small>
             </div>
-
-            <?php if ($isEdit): ?>
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut d'activité</label>
-              <select class="form-control" name="statut_enseignant" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;">
-                <option value="actif" <?= (($item['statut_enseignant'] ?? 'actif') === 'actif') ? 'selected' : '' ?>>Actif (En service)</option>
-                <option value="inactif" <?= (($item['statut_enseignant'] ?? '') === STATUTS::INACTIF) ? 'selected' : '' ?>>Inactif / Suspendu</option>
-              </select>
-            </div>
-            <?php endif; ?>
           </div>
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">

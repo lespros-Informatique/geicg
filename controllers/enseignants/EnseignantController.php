@@ -379,7 +379,7 @@ class EnseignantController extends BaseController
             'grade_enseignant' => $data['grade_enseignant'] ?? 'Enseignant',
             'type_contrat' => $data['type_contrat'] ?? 'permanent',
             'numero_autorisation' => !empty($data['numero_autorisation']) ? trim($data['numero_autorisation']) : null,
-            'statut_enseignant' => $data['statut_enseignant'] ?? 'actif'
+            'statut_enseignant' => $data['statut_enseignant'] ?? ($item['statut_enseignant'] ?? 'actif')
         ];
 
         $errorMsg = null;
