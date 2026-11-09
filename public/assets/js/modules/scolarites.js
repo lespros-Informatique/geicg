@@ -127,8 +127,12 @@
         },
         {
           data: null, orderable: false, render: function (d) {
-            return '<a href="' + GEICG.url('scolarite/edition/' + (d.editId || d.id_scolarite)) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-              '<a href="' + GEICG.url('scolarite/details/' + (d.editId || d.id_scolarite)) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+            var detailsUrl = GEICG.url('scolarite/details/' + (d.editId || d.id_scolarite));
+            var editUrl = GEICG.url('scolarite/edition/' + (d.editId || d.id_scolarite));
+            return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
+              '<a href="' + detailsUrl + '" class="btn btn-sm" style="color:#1E3A5F; background:#F1F5F9; border:1px solid #CBD5E1; border-radius:6px; padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Consulter les détails"><i data-lucide="eye" style="width:15px;height:15px;"></i></a>' +
+              '<a href="' + editUrl + '" class="btn btn-sm" style="color:#0284C7; background:#F0F9FF; border:1px solid #BAE6FD; border-radius:6px; padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Modifier la scolarité"><i data-lucide="edit" style="width:15px;height:15px;"></i></a>' +
+              '</div>';
           }, className: 'text-end'
         }
       ],
@@ -192,8 +196,12 @@
         },
         {
           data: null, orderable: false, render: function (d) {
-            return '<a href="' + GEICG.url('tranche/edition/' + (d.editId || d.id_tranche)) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-              '<a href="' + GEICG.url('tranche/details/' + (d.editId || d.id_tranche)) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+            var detailsUrl = GEICG.url('tranche/details/' + (d.editId || d.id_tranche));
+            var editUrl = GEICG.url('tranche/edition/' + (d.editId || d.id_tranche));
+            return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
+              '<a href="' + detailsUrl + '" class="btn btn-sm" style="color:#1E3A5F; background:#F1F5F9; border:1px solid #CBD5E1; border-radius:6px; padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Consulter les détails"><i data-lucide="eye" style="width:15px;height:15px;"></i></a>' +
+              '<a href="' + editUrl + '" class="btn btn-sm" style="color:#0284C7; background:#F0F9FF; border:1px solid #BAE6FD; border-radius:6px; padding:6px 9px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Modifier l\'échéancier"><i data-lucide="edit" style="width:15px;height:15px;"></i></a>' +
+              '</div>';
           }, className: 'text-end'
         }
       ],
