@@ -164,6 +164,7 @@ $route->addRoute('/classe/apiList', [$classeController, 'apiList']);
 $route->addRoute('/classe/add', [$classeController, 'add']);
 $route->addRoute('/classe/edit', [$classeController, 'edit']);
 $route->addRoute('/classe/changer', [$classeController, 'changer']);
+$route->addRoute('/classe/reconduire', [$classeController, 'reconduire']);
 $route->addRoute('/classe/details/{param}', [$classeController, 'details']);
 $route->addRoute('/classe/edition/{param}', [$classeController, 'edition']);
 $route->addRoute('/classe/formulaire', [$classeController, 'formulaire']);

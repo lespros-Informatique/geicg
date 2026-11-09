@@ -71,8 +71,8 @@ $(document).ready(function() {
           var act = '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">';
           act += '<a href="' + racine + 'classe/details/' + idCrypte + '" class="btn-action-view" style="color:#1E3A5F; padding:4px 8px; border-radius:6px; background:#F1F5F9; text-decoration:none;" title="Consulter la fiche classe"><i data-lucide="eye" style="width:15px;height:15px;"></i></a>';
           if (canEditClasse) {
-            act += '<button type="button" class="btn-action-edit btn-edit-classe" data-id="' + idCrypte + '" data-libelle="' + (row.libelle_classe || '').replace(/"/g, '&quot;') + '" data-filiere="' + (row.filiere_code || '') + '" data-niveau="' + (row.niveau_code || '') + '" data-annee="' + (row.annee_code || '') + '" data-capacite="' + (row.capacite_max_classe || '35') + '" data-statut="' + (row.statut_classe || 'actif') + '" style="color:#0284C7; border:none; background:#F0F9FF; padding:4px 8px; border-radius:6px; cursor:pointer;" title="Modifier (Modale rapide)"><i data-lucide="edit-3" style="width:15px;height:15px;"></i></button>';
-            act += '<button type="button" class="btn-action-duplicate btn-duplicate-classe" data-libelle="' + (row.libelle_classe || '').replace(/"/g, '&quot;') + '" data-filiere="' + (row.filiere_code || '') + '" data-niveau="' + (row.niveau_code || '') + '" data-annee="' + (row.annee_code || '') + '" data-capacite="' + (row.capacite_max_classe || '35') + '" style="color:#0D9488; border:none; background:#F0FDFA; padding:4px 8px; border-radius:6px; cursor:pointer;" title="Dupliquer pour créer une Section B / C"><i data-lucide="copy" style="width:15px;height:15px;"></i></button>';
+            act += '<button type="button" class="btn-action-edit btn-edit-classe" data-id="' + idCrypte + '" data-libelle="' + (row.libelle_classe || '').replace(/"/g, '&quot;') + '" data-filiere="' + (row.filiere_code || '') + '" data-niveau="' + (row.niveau_code || '') + '" data-cycle-code="' + (row.cycle_code || '') + '" data-cycle-name="' + (row.libelle_cycle || '').replace(/"/g, '&quot;') + '" data-annee="' + (row.annee_code || '') + '" data-capacite="' + (row.capacite_max_classe || '35') + '" data-statut="' + (row.statut_classe || 'actif') + '" style="color:#0284C7; border:none; background:#F0F9FF; padding:4px 8px; border-radius:6px; cursor:pointer;" title="Modifier (Modale rapide)"><i data-lucide="edit-3" style="width:15px;height:15px;"></i></button>';
+            act += '<button type="button" class="btn-action-duplicate btn-duplicate-classe" data-libelle="' + (row.libelle_classe || '').replace(/"/g, '&quot;') + '" data-filiere="' + (row.filiere_code || '') + '" data-niveau="' + (row.niveau_code || '') + '" data-cycle-code="' + (row.cycle_code || '') + '" data-cycle-name="' + (row.libelle_cycle || '').replace(/"/g, '&quot;') + '" data-annee="' + (row.annee_code || '') + '" data-capacite="' + (row.capacite_max_classe || '35') + '" style="color:#0D9488; border:none; background:#F0FDFA; padding:4px 8px; border-radius:6px; cursor:pointer;" title="Dupliquer pour créer une Section B / C"><i data-lucide="copy" style="width:15px;height:15px;"></i></button>';
           }
           act += '</div>';
           return act;
@@ -165,10 +165,41 @@ $(document).ready(function() {
     }
 
     if ($.fn.select2) {
-      $('#classe_filiere').select2({ placeholder: "-- Choisir une filière --", allowClear: true, width: '100%' });
-      $('#classe_niveau').select2({ placeholder: "-- Choisir un niveau --", allowClear: true, width: '100%' });
-      $('#reconduire_annee_source, #reconduire_annee_cible').select2({ width: '100%' });
+      $('#sel_parcours_pivot').select2({
+        dropdownParent: $('#modal-classe'),
+        placeholder: "-- Sélectionner un parcours pivot --",
+        allowClear: true,
+        width: '100%'
+      });
+      $('#classe_filiere').select2({ dropdownParent: $('#modal-classe'), placeholder: "-- Choisir une filière --", allowClear: true, width: '100%' });
+      $('#classe_niveau').select2({ dropdownParent: $('#modal-classe'), placeholder: "-- Choisir un niveau --", allowClear: true, width: '100%' });
+      $('#classe_annee').select2({ dropdownParent: $('#modal-classe'), width: '100%' });
+      $('#reconduire_annee_source, #reconduire_annee_cible').select2({ dropdownParent: $('#modal-reconduire-classes'), width: '100%' });
     }
+
+    // Sélection dynamique du Parcours Pivot
+    $('#sel_parcours_pivot').on('change', function() {
+      var val = $(this).val();
+      if (!val) return;
+      var $opt = $(this).find('option:selected');
+      var filiereCode = $opt.data('filiere') || '';
+      var niveauCode = $opt.data('niveau') || '';
+      var cycleCode = $opt.data('cycle-code') || '';
+      var cycleName = $opt.data('cycle') || '';
+
+      if (filiereCode) {
+        $('#classe_filiere').val(filiereCode);
+        if ($.fn.select2) $('#classe_filiere').trigger('change.select2');
+      }
+      if (niveauCode) {
+        $('#classe_niveau').val(niveauCode);
+        if ($.fn.select2) $('#classe_niveau').trigger('change.select2');
+      }
+      $('#classe_cycle_code').val(cycleCode);
+      $('#classe_cycle').val(cycleName);
+
+      autoGenerateLibelleClasse();
+    });
 
     $('#classe_filiere, #classe_niveau').on('change', function() {
       autoGenerateLibelleClasse();
@@ -184,9 +215,13 @@ $(document).ready(function() {
         $('#classe_annee').val(currentYear);
       }
       if ($.fn.select2) {
+        $('#sel_parcours_pivot').val('').trigger('change.select2');
         $('#classe_filiere').val('').trigger('change.select2');
         $('#classe_niveau').val('').trigger('change.select2');
+        $('#classe_annee').trigger('change.select2');
       }
+      $('#classe_cycle').val('');
+      $('#classe_cycle_code').val('');
       $('#classe_capacite').val('35');
       $('#classe_statut').prop('checked', true);
       updateStatutClasseUI(true);
@@ -194,7 +229,7 @@ $(document).ready(function() {
       $('#modal-classe-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe');
       $('#modal-classe').css('display', 'flex');
       if (window.lucide) lucide.createIcons();
-      setTimeout(function() { $('#classe_filiere').focus(); }, 100);
+      setTimeout(function() { $('#sel_parcours_pivot').focus(); }, 100);
     });
 
     // Ouverture modale en mode ÉDITION
@@ -205,6 +240,8 @@ $(document).ready(function() {
       var libelle = $(this).data('libelle') || '';
       var filiere = $(this).data('filiere') || '';
       var niveau = $(this).data('niveau') || '';
+      var cycleCode = $(this).data('cycle-code') || '';
+      var cycleName = $(this).data('cycle-name') || '';
       var annee = $(this).data('annee') || '';
       var capacite = $(this).data('capacite') || '35';
       var statut = $(this).data('statut') || 'actif';
@@ -217,7 +254,30 @@ $(document).ready(function() {
       if ($.fn.select2) {
         $('#classe_filiere').trigger('change.select2');
         $('#classe_niveau').trigger('change.select2');
+        $('#classe_annee').trigger('change.select2');
       }
+
+      // Synchroniser le parcours pivot correspondant (Cycle - Filière - Niveau)
+      var matchedPivot = '';
+      $('#sel_parcours_pivot option').each(function() {
+        var optFiliere = $(this).data('filiere');
+        var optNiveau = $(this).data('niveau');
+        if (optFiliere && optNiveau && String(optFiliere) === String(filiere) && String(optNiveau) === String(niveau)) {
+          matchedPivot = $(this).val();
+          if (!cycleName) {
+            cycleName = $(this).data('cycle') || '';
+            cycleCode = $(this).data('cycle-code') || '';
+          }
+          return false;
+        }
+      });
+      $('#sel_parcours_pivot').val(matchedPivot);
+      if ($.fn.select2) {
+        $('#sel_parcours_pivot').trigger('change.select2');
+      }
+      $('#classe_cycle_code').val(cycleCode);
+      $('#classe_cycle').val(cycleName);
+
       $('#classe_capacite').val(capacite);
       var isActif = (statut === 'actif');
       $('#classe_statut').prop('checked', isActif);
@@ -320,7 +380,21 @@ $(document).ready(function() {
       $('#classe_filiere').val(filiere);
       $('#classe_niveau').val(niveau);
       $('#classe_annee').val(annee);
+
+      // Synchroniser le parcours pivot correspondant
+      var matchedPivot = '';
+      $('#sel_parcours_pivot option').each(function() {
+        var optFiliere = $(this).data('filiere');
+        var optNiveau = $(this).data('niveau');
+        if (optFiliere && optNiveau && String(optFiliere) === String(filiere) && String(optNiveau) === String(niveau)) {
+          matchedPivot = $(this).val();
+          return false;
+        }
+      });
+      $('#sel_parcours_pivot').val(matchedPivot);
+
       if ($.fn.select2) {
+        $('#sel_parcours_pivot').trigger('change.select2');
         $('#classe_filiere').trigger('change.select2');
         $('#classe_niveau').trigger('change.select2');
         $('#classe_annee').trigger('change.select2');
@@ -364,7 +438,7 @@ $(document).ready(function() {
       if (window.lucide) lucide.createIcons();
 
       $.ajax({
-        url: racine + 'classe/reconduire',
+        url: (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('classe/reconduire') : (racine + 'classe/reconduire'),
         type: 'POST',
         data: $(this).serialize(),
         headers: { 'X-Requested-With': 'XMLHttpRequest' },

@@ -134,7 +134,7 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_INSCRIPTIONS, PERMISSIONS::VIEW_INSCRIPTIONS])): ?>
-                <a href="<?= url('reinscription/list') ?>" class="nav-item sub <?= $isActiveRoute(['/inscription/', '/reinscription/'], '/inscription/sans_photo') ?>" data-title="Réinscriptions">
+                <a href="<?= url('reinscription/list') ?>" class="nav-item sub <?= $isActiveRoute(['/inscription/', '/reinscription/'], ['/inscription/prise_de_vue', '/inscription/sans_photo']) ?>" data-title="Réinscriptions">
                     <i data-lucide="clipboard-check"></i> <span>Réinscriptions</span>
                 </a>
                 <?php endif; ?>

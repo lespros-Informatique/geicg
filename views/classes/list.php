@@ -149,7 +149,7 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
         <label style="display: block; font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 4px;">
           <i data-lucide="layers" style="width: 14px; height: 14px; vertical-align: middle;"></i> Parcours Pivot (Cycle - Filière - Niveau) <span style="color: #EF4444;">*</span>
         </label>
-        <select id="sel_parcours_pivot" class="form-control" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600;">
+        <select id="sel_parcours_pivot" class="form-control select2" style="width: 100%;">
           <option value="">-- Sélectionner un parcours pivot --</option>
           <?php foreach ($parcoursPivots as $p): 
             $cSlug = !empty($p['slug_cycle']) ? $p['slug_cycle'] : $p['libelle_cycle'];
