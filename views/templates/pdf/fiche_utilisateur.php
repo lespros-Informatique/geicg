@@ -244,27 +244,8 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE INSTITUTIONNEL -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 18%; vertical-align: middle; text-align: left;">
-        <?php if (!empty($logoPath) && file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 48px; max-width: 120px;">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#1E3A5F; font-size:14px;">GEICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 82%; text-align: center; vertical-align: middle;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['libelle_etablissement'] ?? ($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION')) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGREE PAR L\'ETAT ET LE FDFP') ?></div>
-        <div class="inst-contacts">
-          <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) ? $etablissement['adresse_etablissement'] : 'Bouaké quartier Kennedy, route ancien ADDR') ?> 
-          &bull; <?= htmlspecialchars($etablissement['boite_postale'] ?? '01 BP 960 Bouaké 01') ?>
-        <br> Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38') ?>
-        </div>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE INSTITUTIONNEL UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE PRINCIPALE -->
   <div class="banner-title">

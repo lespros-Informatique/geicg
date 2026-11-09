@@ -243,23 +243,12 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE INSTITUTION -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 15%; vertical-align: middle;">
-        <?php if (!empty($logo_src)): ?>
-          <img src="<?= $logo_src ?>" style="max-height: 48px; max-width: 110px;">
-        <?php else: ?>
-          <div class="logo-box">GROUPE<br>EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 85%; text-align: center;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">Agréé par l'Etat et le FDFP</div>
-        <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG (MODE COMPACT) -->
+  <?php 
+    $headerMode = 'compact';
+    $showHeaderDivider = false;
+    include __DIR__ . '/components/header_institution.php'; 
+  ?>
 
   <!-- BANNIÈRE 1 : REÇU DE VERSEMENT -->
   <div class="banner-title">REÇU DE VERSEMENT</div>

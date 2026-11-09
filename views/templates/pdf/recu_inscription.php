@@ -373,21 +373,12 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     <!-- 1. PARTIE SUPERIEURE : REÇU D'INSCRIPTION ETUDIANT -->
     <!-- ========================================================================= -->
 
-    <!-- EN-TÊTE ÉTABLISSEMENT -->
-    <table class="header-table">
-      <tr>
-        <td class="header-logo-cell">
-          <img src="<?= $logoSrc ?>" alt="Logo EICG" class="header-logo-img">
-        </td>
-        <td class="header-text-cell">
-          <h1 class="header-title" style="color: #700303ff; font-weight: bold;">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>
-          <br>
-          <div class="header-subtitle-1">Agréé par l'Etat et le FDFP</div>
-          <div class="header-subtitle-2">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
-          <div class="header-subtitle-2">Site web : www.groupe-eicg.net</div>
-        </td>
-      </tr>
-    </table>
+    <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG (MODE COMPACT) -->
+    <?php 
+      $headerMode = 'compact';
+      $showHeaderDivider = false;
+      include __DIR__ . '/components/header_institution.php'; 
+    ?>
 
     <!-- BANNIÈRE PRINCIPALE ET ANNÉE -->
     <div class="banner-title-box">REÇU D'INSCRIPTION</div>

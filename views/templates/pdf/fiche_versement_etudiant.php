@@ -183,14 +183,9 @@ if (empty($etablissement) || !is_array($etablissement)) {
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE -->
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
   <?php 
-    if (empty($logo_src)) {
-        $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-        if (file_exists($logoPath)) {
-            $logo_src = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
-        }
-    }
+    include __DIR__ . '/components/header_institution.php'; 
     if (empty($photo_etudiant)) {
         $placeholderFile = __DIR__ . '/../../public/assets/images/placeholders/etudiant.png';
         if (file_exists($placeholderFile)) {
@@ -198,25 +193,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
         }
     }
   ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 18%; vertical-align: middle;">
-        <?php if (!empty($logo_src)): ?>
-          <img src="<?= $logo_src ?>" style="max-height: 44px; max-width: 115px;">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#800000; font-size:13px;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 82%; text-align: center; vertical-align: middle;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
-        <br>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGREE PAR L\'ETAT ET LE FDFP') ?></div>
-        <div class="inst-contacts">Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99') ?></div>
-        <div class="inst-contacts">Site web : <?= htmlspecialchars($etablissement['site_web'] ?? 'www.groupe-eicg.net') ?></div>
-      </td>
-    </tr>
-  </table>
-  <br>
 
   <!-- BANNIÈRE PRINCIPALE -->
   <div class="banner-title">

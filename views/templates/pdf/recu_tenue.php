@@ -197,23 +197,12 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
   <!-- SECTION 1 : REÇU PRINCIPAL (ORIGINAL ÉLÈVE)                              -->
   <!-- ========================================================================= -->
 
-  <!-- EN-TÊTE ÉTABLISSEMENT -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 15%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 42px; max-width: 95px;">
-        <?php else: ?>
-          <div class="logo-box"><?= htmlspecialchars($etablissement['sigle_etablissement'] ?? 'GEICG') ?></div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 85%; text-align: center;">
-        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars(strpos($numAutorisation, 'AGRÉ') !== false ? $numAutorisation : 'AGRÉMENT N° ' . $numAutorisation) ?></div>
-        <div class="inst-contacts"><?= htmlspecialchars($adresse) ?> &bull; Contacts : <?= htmlspecialchars($contacts) ?></div>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG (MODE COMPACT) -->
+  <?php 
+    $headerMode = 'compact';
+    $showHeaderDivider = false;
+    include __DIR__ . '/components/header_institution.php'; 
+  ?>
 
   <!-- BANNIÈRE TITRE -->
   <div class="banner-title">Reçu de Paiement des Frais de Tenue & Décharge Kits</div>

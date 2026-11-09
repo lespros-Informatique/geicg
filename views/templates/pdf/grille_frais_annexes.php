@@ -269,40 +269,8 @@
   </htmlpagefooter>
   <sethtmlpagefooter name="pageFooter" value="on" />
 
-  <!-- ENTÊTE DE L'ÉTABLISSEMENT -->
-  <?php
-    $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-    if (!file_exists($logoPath)) {
-      $logoPath = '/var/www/html/geicg/public/assets/images/logo/logo_eicg.jpg';
-    }
-  ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 22%; text-align: left;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 52px; max-width: 135px;" alt="Logo EICG">
-        <?php else: ?>
-          <div style="font-size: 14pt; font-weight: bold; color: #1E3A5F;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 78%; text-align: center;">
-        <?php
-          $nomEtab = 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION';
-          if (!empty($etablissement['libelle_etablissement']) && !in_array(strtoupper(trim($etablissement['libelle_etablissement'])), ['GROUPE EICG', 'GEICG', 'ETABLISSEMENT A'], true)) {
-              $nomEtab = $etablissement['libelle_etablissement'];
-          }
-        ?>
-        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars(!empty($etablissement['numero_autorisation_etablissement']) ? 'AGRÉMENT N° ' . $etablissement['numero_autorisation_etablissement'] : 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP') ?></div>
-        <div class="inst-contacts">
-          <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : 'Bouaké - Côte d\'Ivoire') ?>
-          &nbsp;|&nbsp; Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99
-        </div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- ENTÊTE DE L'ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE DE TITRE -->
   <table class="banner-table">

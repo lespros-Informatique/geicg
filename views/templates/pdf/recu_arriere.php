@@ -153,26 +153,12 @@
 
 <div class="recu-section">
 
-  <!-- EN-TÊTE -->
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG (MODE COMPACT) -->
   <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
+    $headerMode = 'compact';
+    $showHeaderDivider = false;
+    include __DIR__ . '/components/header_institution.php'; 
   ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 18%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 44px; max-width: 110px;">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#800000; font-size:13px;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 82%; text-align: center; vertical-align: middle;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
-        <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
-      </td>
-    </tr>
-  </table>
 
   <!-- BANNIÈRE TITRE -->
   <div class="banner-title">

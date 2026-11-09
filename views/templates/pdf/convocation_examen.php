@@ -143,25 +143,8 @@ if (empty($etablissement) || !is_array($etablissement)) {
 </head>
 <body>
 
-  <!-- EN-TÊTE -->
-  <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-  ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 22%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 50px; max-width: 140px;">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#990000; font-size:14px;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 78%; text-align: center; vertical-align: middle;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGREE PAR L\'ETAT ET LE FDFP') ?></div>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- TITRE DE LA CONVOCATION -->
   <div class="convocation-box">CONVOCATION</div>

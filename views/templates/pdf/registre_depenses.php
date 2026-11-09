@@ -243,28 +243,8 @@ foreach ($depenses as $d) {
 </head>
 <body>
 
-  <!-- EN-TÊTE ÉTABLISSEMENT -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 14%; text-align: left; vertical-align: middle;">
-        <?php if (!empty($logoPath) && file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 48px; max-width: 120px;">
-        <?php else: ?>
-          <div style="font-weight: bold; color: #800000; font-size: 13pt;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 72%; text-align: center; vertical-align: middle;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? ($etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION')) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP') ?> &bull; <?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'Service de la Comptabilité & Direction Financière') ?></div>
-        <div class="inst-contacts">Contacts : <?= htmlspecialchars(!empty($etablissement['telephone_mobile']) ? ($etablissement['telephone_mobile'] . (!empty($etablissement['telephone_mobile2']) ? ' / ' . $etablissement['telephone_mobile2'] : '')) : '27 31 62 40 57 / 07 79 37 37 38') ?> &bull; Email : <?= htmlspecialchars($etablissement['email_etablissement'] ?? 'info@groupe-eicg.net') ?></div>
-      </td>
-      <td style="width: 14%; text-align: right; vertical-align: middle;">
-        <!-- Cellule d'équilibrage -->
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE TITRE -->
   <table class="banner-table">

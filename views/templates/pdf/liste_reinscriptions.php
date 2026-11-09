@@ -258,32 +258,8 @@ if (!file_exists($logoPath)) {
   </htmlpagefooter>
   <sethtmlpagefooter name="pageFooter" value="on" />
 
-  <!-- EN-TÊTE ÉTABLISSEMENT -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 18%; text-align: left;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 50px; max-width: 130px;" alt="Logo EICG">
-        <?php else: ?>
-          <div style="font-size: 13pt; font-weight: bold; color: #1E3A5F;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 82%; text-align: center;">
-        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars(strpos($numAutorisation, 'AGRÉ') !== false ? $numAutorisation : 'AGRÉMENT N° ' . $numAutorisation) ?></div>
-        <div class="inst-contacts">
-          <?= htmlspecialchars($adresse) ?>
-          &nbsp; <br>  Contacts : <?= htmlspecialchars($contacts) ?>
-          <?php if (!empty($email)): ?>
-            &nbsp;<br> Email : <?= htmlspecialchars($email) ?>
-          <?php endif; ?>
-          &nbsp; <br> Site Web : <?= htmlspecialchars($siteWeb) ?>
-        </div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE TITRE -->
   <table class="banner-table">

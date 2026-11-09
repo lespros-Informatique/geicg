@@ -192,30 +192,8 @@ $editeurNom = class_exists('Auth') && Auth::check() ? Auth::fullName() : 'Direct
 </head>
 <body>
 
-  <!-- EN-TÊTE INSTITUTIONNEL -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 15%; text-align: left;">
-        <?php if (!empty($logoPath) && file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 44px; max-width: 110px;">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#1E3A5F; font-size:14px;">GEICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 85%; text-align: center;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['libelle_etablissement'] ?? ($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION')) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGREE PAR L\'ETAT ET LE FDFP') ?></div>
-        <div class="inst-contacts">
-          <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) ? $etablissement['adresse_etablissement'] : 'Bouaké quartier Kennedy, route ancien ADDR') ?> 
-          &bull; <?= htmlspecialchars($etablissement['boite_postale'] ?? '01 BP 960 Bouaké 01') ?>
-          <br> Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38') ?>
-        </div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
-  <br> 
+  <!-- EN-TÊTE INSTITUTIONNEL UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?> 
 
   <!-- BANNIÈRE TITRE -->
   <table class="banner-table">

@@ -145,14 +145,9 @@
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE -->
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
   <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-    $logoSrc = '';
-    if (file_exists($logoPath)) {
-      $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
-    }
-
+    include __DIR__ . '/components/header_institution.php'; 
     $photoSrc = '';
     if (!empty($photo_etudiant)) {
       $cleanP = ltrim($photo_etudiant, '/');
@@ -170,25 +165,6 @@
       }
     }
   ?>
-  <!-- EN-TÊTE INSTITUTION (Inspiré de recu_versement.php) -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 15%; vertical-align: middle;">
-        <?php if (!empty($logo_src)): ?>
-          <img src="<?= $logo_src ?>" style="max-height: 48px; max-width: 110px;">
-        <?php elseif (!empty($logoSrc)): ?>
-          <img src="<?= $logoSrc ?>" style="max-height: 48px; max-width: 110px;">
-        <?php else: ?>
-          <div class="logo-box">GROUPE<br>EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 85%; text-align: center;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">Agréé par l'Etat et le FDFP</div>
-        <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
-      </td>
-    </tr>
-  </table>
 
   <!-- BANNIÈRE TITRE -->
   <div class="banner-title">RAPPEL DE SCOLARITÉ</div>

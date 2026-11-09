@@ -166,29 +166,8 @@ if (empty($etablissement) || !is_array($etablissement)) {
 </head>
 <body>
 
-  <!-- EN-TÊTE OFFICIEL DE L'ÉTABLISSEMENT -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 70%;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? "GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION") ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['sigle_etablissement'] ?? 'GROUPE EICG') ?> &bull; <?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'Direction des Études & Pédagogie') ?></div>
-        <div class="inst-contacts">
-          <?= htmlspecialchars($etablissement['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?> &bull; 
-          Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99') ?> &bull; 
-          Email : <?= htmlspecialchars($etablissement['email_etablissement'] ?? 'eicgbouake01@gmail.com') ?>
-        </div>
-      </td>
-      <td style="width: 30%; text-align: right;">
-        <div style="font-size: 7.5pt; color: #475569;">
-          <div>Édité le : <strong><?= htmlspecialchars($date_impression ?? date('d/m/Y H:i')) ?></strong></div>
-          <div style="margin-top: 1px;">Par : <strong><?= htmlspecialchars($editeur_nom ?? 'Direction des Études') ?></strong></div>
-          <div style="margin-top: 1px;">Année : <strong><?= htmlspecialchars($filtres_labels['annee'] ?? '-') ?></strong></div>
-        </div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- EN-TÊTE OFFICIEL UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE DE TITRE -->
   <table class="banner-table">

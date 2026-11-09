@@ -216,27 +216,11 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE ÉTABLISSEMENT -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 18%; vertical-align: middle;">
-        <?php if (!empty($resolvedLogoPath)): ?>
-          <img src="<?= $resolvedLogoPath ?>" style="max-height: 42px; max-width: 110px;">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#1E3A5F; font-size:12px;"><?= htmlspecialchars($etablissement['sigle_etablissement'] ?? 'GROUPE EICG') ?></div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 82%; text-align: center; vertical-align: middle;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE EICG') ?></div>
-        <?php if (!empty($etablissement['numero_autorisation'])): ?>
-          <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation']) ?></div>
-        <?php endif; ?>
-        <?php if (!empty($etablissement['contacts_formatted'])): ?>
-          <div class="inst-contacts">Contacts : <?= htmlspecialchars($etablissement['contacts_formatted']) ?></div>
-        <?php endif; ?>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php 
+    $showHeaderDivider = true;
+    include __DIR__ . '/components/header_institution.php'; 
+  ?>
 
   <!-- BANNIÈRE PRINCIPALE -->
   <div class="banner-title">

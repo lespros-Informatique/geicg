@@ -386,29 +386,8 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
 
 <div class="page-container">
 
-  <!-- 1. EN-TÊTE OFFICIEL -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 18%; text-align: left;">
-        <?php if (!empty($logoPath) && file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 52px; max-width: 110px;">
-        <?php else: ?>
-          <div style="font-weight: bold; color: #990000; font-size: 11pt;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 82%; text-align: center;">
-        <?php
-          $nomEtab = $etablissement['nom_etablissement'] ?? ($etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION');
-          $numAutorisation = $etablissement['numero_autorisation'] ?? ($etablissement['numero_autorisation_etablissement'] ?? 'AGREE PAR L\'ETAT ET LE FDFP');
-        ?>
-        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($numAutorisation) ?></div>
-        <div class="annee-header">Année Académique : <?= htmlspecialchars($annee_libelle) ?></div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="sep-thick"></div>
+  <!-- 1. EN-TÊTE OFFICIEL UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- 2. BLOC PROFIL ÉTUDIANT -->
   <table class="student-title-table">

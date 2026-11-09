@@ -168,28 +168,8 @@ if (empty($etablissement) || !is_array($etablissement)) {
 </head>
 <body>
 
-  <!-- EN-TÊTE ÉTABLISSEMENT (CENTRÉ) -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 12%; text-align: left; vertical-align: middle;">
-        <?php if (!empty($logo_src)): ?>
-          <img src="<?= $logo_src ?>" style="max-height: 44px; max-width: 95px;">
-        <?php else: ?>
-          <div style="background: #800000; color: #FFF; font-weight: bold; padding: 4px; text-align: center; font-size: 9pt;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 76%; text-align: center; vertical-align: middle;">
-        <div class="inst-title" style="text-align: center;"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
-        <div class="inst-subtitle" style="text-align: center;"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'Agréé par l\'Etat et le FDFP') ?> — <?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'Service de la Comptabilité & Direction Financière') ?></div>
-        <div class="inst-contacts" style="text-align: center;">Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99') ?> — Site Web : <?= htmlspecialchars($etablissement['site_web'] ?? 'www.groupe-eicg.net') ?></div>
-      </td>
-      <td style="width: 12%; text-align: right; vertical-align: middle;">
-        <!-- Cellule d'équilibrage pour centrage parfait -->
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE TITRE -->
   <table class="banner-table">

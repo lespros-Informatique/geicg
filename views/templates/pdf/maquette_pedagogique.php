@@ -190,36 +190,8 @@
 </head>
 <body>
 
-  <!-- EN-TÊTE OFFICIEL -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 75px; text-align: center;">
-        <?php if (!empty($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 55px; max-width: 70px;" alt="Logo">
-        <?php endif; ?>
-      </td>
-      <td style="padding-left: 8px;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['libelle_etablissement'] ?? ($etablissement['nom_etablissement'] ?? 'GROUPE EICG')) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['devise_etablissement'] ?? 'Enseignement Supérieur & Professionnel d\'Excellence') ?></div>
-        <div class="inst-contacts">
-          <?= htmlspecialchars($etablissement['adresse_etablissement'] ?? '') ?>
-          <?php if (!empty($etablissement['telephone_etablissement'])): ?>
-            &bull; Tél: <?= htmlspecialchars($etablissement['telephone_etablissement']) ?>
-          <?php endif; ?>
-          <?php if (!empty($etablissement['email_etablissement'])): ?>
-            &bull; Email: <?= htmlspecialchars($etablissement['email_etablissement']) ?>
-          <?php endif; ?>
-        </div>
-      </td>
-      <td style="width: 140px; text-align: right; font-size: 7.5pt; color: #64748B;">
-        <strong>REPUBLIQUE DE COTE D'IVOIRE</strong><br>
-        <em>Union - Discipline - Travail</em><br>
-        Ministère de l'Enseignement Supérieur
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- EN-TÊTE OFFICIEL UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE -->
   <table class="banner-table">

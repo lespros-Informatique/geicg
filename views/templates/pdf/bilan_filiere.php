@@ -142,24 +142,8 @@
 </head>
 <body>
 
-  <!-- EN-TÊTE DE L'ÉTABLISSEMENT -->
-  <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-  ?>
-  <table class="top-header-table">
-    <tr>
-      <td style="width: 25%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 48px; max-width: 130px;">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#990000; font-size:14px;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 75%; text-align: right; vertical-align: middle;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE FINANCIÈRE & STATISTIQUES FILIÈRE -->
   <table class="bilan-header-grid">

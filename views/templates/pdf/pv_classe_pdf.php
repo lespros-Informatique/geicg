@@ -196,33 +196,8 @@ if (empty($etablissement) || !is_array($etablissement)) {
 </head>
 <body>
 
-  <!-- 1. En-tête Officiel -->
-  <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-  ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 15%; text-align: left;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 40px; max-width: 100px;">
-        <?php else: ?>
-          <div style="font-weight: bold; color: #990000; font-size: 11pt;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 60%; text-align: center;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['numero_autorisation'] ?? 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP &bull; ENSEIGNEMENT SUPÉRIEUR') ?></div>
-        <div class="inst-contacts"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'Direction des Études') ?> &bull; Commission des Examens, Notes et Délibérations</div>
-      </td>
-      <td style="width: 25%; text-align: right; font-size: 7pt; color: #475569;">
-        <div><strong>Édition :</strong> <?= date('d/m/Y H:i') ?></div>
-        <div><strong>Année :</strong> <?= htmlspecialchars($anneeLibelle ?? '-') ?></div>
-        <div><strong>Période :</strong> <?= htmlspecialchars($selectedSemestreCode ?? '-') ?></div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- 1. En-tête Officiel Unifié GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- 2. Bannière Titre -->
   <table class="banner-table">
