@@ -56,6 +56,10 @@ if ($.fn.select2) {
 
     updatePrintUrl();
 
+    if ($.fn.DataTable.isDataTable($tableScolarites)) {
+      $tableScolarites.DataTable().destroy();
+    }
+
     var tableScolarites = $tableScolarites.DataTable({
       ajax: {
         url: GEICG.url('scolarite/apiList'),
@@ -105,6 +109,10 @@ if ($.fn.select2) {
       language: GEICG.dataTableLanguage,
       drawCallback: function() { if (window.lucide) lucide.createIcons(); }
     });
+
+    if ($.fn.DataTable.isDataTable($tableTranches)) {
+      $tableTranches.DataTable().destroy();
+    }
 
     var tableTranches = $tableTranches.DataTable({
       ajax: {
@@ -224,8 +232,6 @@ if ($.fn.select2) {
     }
   }
 
-  $(document).ready(initScolaritesListModule);
-
   // =========================================================================
   // 2. SECTION : ÉDITION TRANCHE SCOLARITÉ (Exécutée si #form-tranche est présent)
   // =========================================================================
@@ -316,8 +322,6 @@ if (window.lucide) lucide.createIcons();
       });
     });
   }
-
-  $(document).ready(initTrancheEditModule);
 
   // =========================================================================
   // 3. SECTION : CONFIGURATION TARIF DE SCOLARITÉ & PANIER TRANCHES (views/scolarites/edit.php)
