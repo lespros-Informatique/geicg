@@ -314,15 +314,18 @@
             render: function(d, type, row) {
               if (type !== 'display') return d || row.matiere_code || '';
               var matNom = $('<div>').text(d || row.matiere_code || '-').html();
-              return '<strong style="color:#0F172A; font-size:13.5px;">' + matNom + '</strong>' +
-                     '<div style="font-size:11px; color:#64748B;">Code: ' + (row.matiere_code || '-') + '</div>';
+              return '<strong style="color:#0F172A; font-size:13.5px;">' + matNom + '</strong>';
             }
           },
           {
-            data: 'libelle_filiere',
+            data: 'slug_filiere',
             render: function(d, type, row) {
-              if (type !== 'display') return d || row.filiere_code || '';
-              return '<span style="color:#1E3A5F; font-weight:600;">' + $('<div>').text(d || row.filiere_code || '-').html() + '</span>';
+              var slug = row.slug_filiere || d || '';
+              if (type !== 'display') return slug || row.libelle_filiere || row.filiere_code || '';
+              if (slug) {
+                return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:800; font-size:12px; padding:4px 8px; border-radius:6px; border:1px solid #BFDBFE;" title="' + (row.libelle_filiere || '').replace(/"/g, '&quot;') + '">' + slug + '</span>';
+              }
+              return '<span style="color:#64748B;">-</span>';
             }
           },
           {
@@ -374,11 +377,12 @@
           },
           {
             data: null,
-            width: '140px',
+            width: '100px',
             orderable: false,
             className: 'text-end',
             render: function(d, type, row) {
-              return '<button type="button" class="btn btn-sm btn-secondary btn-edit-maq" ' +
+              return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
+                     '<button type="button" class="btn btn-sm btn-edit-maq" ' +
                      'data-id="' + row.id_maquette + '" ' +
                      'data-annee="' + (row.annee_code || '') + '" ' +
                      'data-filiere="' + (row.filiere_code || '') + '" ' +
@@ -386,13 +390,16 @@
                      'data-matiere="' + (row.matiere_code || '') + '" ' +
                      'data-categorie="' + (row.categorie_matiere || 'GENERALE') + '" ' +
                      'data-coef="' + (row.coefficient || '1.0') + '" ' +
-                     'style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">' +
-                     '<i data-lucide="edit" style="width:13px;height:13px;"></i> Éditer</button>' +
-                     '<button type="button" class="btn btn-sm btn-outline-danger btn-delete-maq" ' +
+                     'title="Modifier la matière" ' +
+                     'style="background:#F0F9FF; color:#0284C7; border:none; padding:6px 9px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">' +
+                     '<i data-lucide="edit-3" style="width:15px;height:15px;"></i></button>' +
+                     '<button type="button" class="btn btn-sm btn-delete-maq" ' +
                      'data-id="' + row.id_maquette + '" ' +
                      'data-nom="' + $('<div>').text(row.libelle_matiere || '').html() + '" ' +
-                     'style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">' +
-                     '<i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>';
+                     'title="Retirer de la maquette" ' +
+                     'style="background:#FEF2F2; color:#DC2626; border:none; padding:6px 9px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">' +
+                     '<i data-lucide="trash-2" style="width:15px;height:15px;"></i></button>' +
+                     '</div>';
             }
           }
         ],

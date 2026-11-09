@@ -63,30 +63,34 @@ class ModelMaquette extends BaseModel
     {
         $db = $this->getCon();
         $sql = "
-            SELECT *
-            FROM " . VIEWS::MAQUETTES_COMPLETES . "
+            SELECT v.*, f.slug_filiere, n.slug_niveau
+            FROM " . VIEWS::MAQUETTES_COMPLETES . " v
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = v.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = v.niveau_code
             WHERE 1=1
         ";
         $params = [];
 
         if (!empty($anneeCode)) {
-            $sql .= " AND annee_code = ?";
+            $sql .= " AND v.annee_code = ?";
             $params[] = $anneeCode;
         }
         if (!empty($filiereCode)) {
-            $sql .= " AND filiere_code = ?";
+            $sql .= " AND (v.filiere_code = ? OR f.slug_filiere = ?)";
+            $params[] = $filiereCode;
             $params[] = $filiereCode;
         }
         if (!empty($niveauCode)) {
-            $sql .= " AND niveau_code = ?";
+            $sql .= " AND (v.niveau_code = ? OR n.slug_niveau = ?)";
+            $params[] = $niveauCode;
             $params[] = $niveauCode;
         }
         if (!empty($categorie)) {
-            $sql .= " AND categorie_matiere = ?";
+            $sql .= " AND v.categorie_matiere = ?";
             $params[] = strtoupper(trim($categorie));
         }
 
-        $sql .= " ORDER BY libelle_annee DESC, libelle_filiere ASC, libelle_niveau ASC, categorie_matiere ASC, libelle_matiere ASC";
+        $sql .= " ORDER BY v.libelle_annee DESC, v.libelle_filiere ASC, v.libelle_niveau ASC, v.categorie_matiere ASC, v.libelle_matiere ASC";
 
         try {
             $stmt = $db->prepare($sql);

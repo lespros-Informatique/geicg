@@ -101,7 +101,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
               <option value="">-- Toutes les filières --</option>
               <?php foreach ($filieres as $f): ?>
                 <option value="<?= htmlspecialchars($f['code_filiere']) ?>">
-                  <?= htmlspecialchars($f['libelle_filiere']) ?>
+                  <?= !empty($f['slug_filiere']) ? '[' . htmlspecialchars($f['slug_filiere']) . '] ' : '' ?><?= htmlspecialchars($f['libelle_filiere']) ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -112,7 +112,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
               <option value="">-- Tous les niveaux --</option>
               <?php foreach ($niveaux as $n): ?>
                 <option value="<?= htmlspecialchars($n['code_niveau']) ?>">
-                  <?= htmlspecialchars($n['libelle_niveau']) ?>
+                  <?= !empty($n['slug_niveau']) ? '[' . htmlspecialchars($n['slug_niveau']) . '] ' : '' ?><?= htmlspecialchars($n['libelle_niveau']) ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -138,8 +138,8 @@ require_once __DIR__ . '/../../public/inc/header.php';
                 <th>Matière</th>
                 <th>Filière Associée</th>
                 <th>Niveau</th>
-                <th class="text-center">Catégorie Bulletin</th>
-                <th class="text-center">Coefficient</th>
+                <th class="text-center">Catégorie </th>
+                <th class="text-center">Coef</th>
                 <th class="text-center">Statut</th>
                 <th class="text-end" style="width: 140px;">Actions</th>
               </tr>
