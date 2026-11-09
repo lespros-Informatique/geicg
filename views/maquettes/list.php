@@ -70,7 +70,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des matières par Filière et Niveau d'études (Matières Générales & Matières Professionnelles)</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <a id="btn-print-maquette" href="<?= RACINE ?>maquette/imprimerPdf<?= !empty($activeAnnee) ? '?annee_code=' . urlencode($activeAnnee) : '' ?>" target="_blank" class="btn btn-outline-secondary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #64748B; color: #334155; background: #FFFFFF; text-decoration: none; cursor: pointer;">
+          <a id="btn-print-maquette" href="<?= url() ?>maquette/imprimerPdf<?= !empty($activeAnnee) ? '?annee_code=' . urlencode($activeAnnee) : '' ?>" target="_blank" class="btn btn-outline-secondary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #64748B; color: #334155; background: #FFFFFF; text-decoration: none; cursor: pointer;">
             <i data-lucide="printer" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Imprimer (PDF)
           </a>
           <button type="button" class="btn btn-outline-primary btn-duplicate-maquette" onclick="openModalDuplicateMaquette()" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; cursor: pointer;">

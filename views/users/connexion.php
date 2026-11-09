@@ -10,7 +10,7 @@ $loginLogo = $loginLogo ?? '';
       <div class="auth-header">
         <div class="logo">
           <?php if (!empty($loginLogo)): ?>
-            <?php $logoUrl = (strpos($loginLogo, 'http') === 0) ? $loginLogo : RACINE . ltrim($loginLogo, '/'); ?>
+            <?php $logoUrl = (strpos($loginLogo, 'http') === 0) ? $loginLogo : url(ltrim($loginLogo, '/')); ?>
             <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo" style="max-height: 50px; max-width: 180px; object-fit: contain;">
           <?php else: ?>
             <?= LOGO ?>

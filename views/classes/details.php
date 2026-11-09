@@ -19,17 +19,17 @@ $encryptedId = $encryptedId ?? '';
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong> &bull; Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong> &bull; Année : <strong><?= htmlspecialchars($item['libelle_annee'] ?? 'En cours') ?></strong></p>
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <a href="<?= RACINE ?>classe/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('classe/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux classes
           </a>
-          <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['annee_code'] ?? '') ?>&classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste nominative des étudiants de cette classe">
+          <a href="<?= url() ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['annee_code'] ?? '') ?>&classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste nominative des étudiants de cette classe">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Liste de la Classe
           </a>
-          <a href="<?= RACINE ?>emploi/imprimerPdf?classe_code=<?= urlencode($item['code_classe'] ?? '') ?>&annee_code=<?= urlencode($item['annee_code'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #0284C7; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; transition: all 0.2s;" title="Imprimer l'emploi du temps officiel de cette classe">
+          <a href="<?= url() ?>emploi/imprimerPdf?classe_code=<?= urlencode($item['code_classe'] ?? '') ?>&annee_code=<?= urlencode($item['annee_code'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #0284C7; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; transition: all 0.2s;" title="Imprimer l'emploi du temps officiel de cette classe">
             <i data-lucide="calendar" style="width: 18px; height: 18px; color: #0284C7;"></i> Imprimer Emploi du Temps
           </a>
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_CLASSES]))): ?>
-            <a href="<?= RACINE ?>classe/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <a href="<?= url('classe/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
               <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la classe
             </a>
           <?php endif; ?>
@@ -120,7 +120,7 @@ $encryptedId = $encryptedId ?? '';
                     </td>
                     <td style="padding: 10px; color: #334155;"><?= htmlspecialchars($e['telephone_etudiant'] ?? '-') ?></td>
                     <td style="padding: 10px; text-align: right;">
-                      <a href="<?= RACINE ?>etudiant/details/<?= $this->validator->crypter($e['id_etudiant']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
+                      <a href="<?= url() ?>etudiant/details/<?= $this->validator->crypter($e['id_etudiant']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
                         Fiche élève
                       </a>
                     </td>
@@ -140,7 +140,7 @@ $encryptedId = $encryptedId ?? '';
               <i data-lucide="book-open" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Matières & Enseignements de la Classe (<?= count($matieres) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>emploi/formulaire?classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+          <a href="<?= url() ?>emploi/formulaire?classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="calendar-plus" style="width: 14px; height: 14px;"></i> + Programmer un créneau
           </a>
         </div>

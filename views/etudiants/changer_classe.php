@@ -29,12 +29,12 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <?php if (!empty($encryptedId)): ?>
-            <a href="<?= RACINE ?>etudiant/details/<?= $encryptedId ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 6px;">
+            <a href="<?= url('etudiant/details/' . $encryptedId) ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 6px;">
               <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
               Dossier Étudiant
             </a>
           <?php endif; ?>
-          <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 6px;">
+          <a href="<?= url('etudiant/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
             Registre Étudiants
           </a>
@@ -55,9 +55,9 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
               if (!empty($photoCandidate)) {
                   $cleanRel = ltrim($photoCandidate, '/');
                   if (file_exists(__DIR__ . '/../../' . $cleanRel)) {
-                      $photoSrc = RACINE . $cleanRel;
+                      $photoSrc = url($cleanRel);
                   } elseif (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
-                      $photoSrc = RACINE . 'public/' . $cleanRel;
+                      $photoSrc = asset($cleanRel);
                   } elseif (strpos($photoCandidate, 'http') === 0) {
                       $photoSrc = $photoCandidate;
                   }
@@ -103,7 +103,7 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
       <!-- FORMULAIRE PRINCIPAL : CHOIX DE LA CLASSE & RÉGIME (INSPIRÉ DE L'ÉTAPE 3 DU WIZARD) -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1.5px solid #CBD5E1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
         
-        <form id="form-changer-classe-page" action="<?= RACINE ?>etudiant/changerClasse" method="POST" style="width: 100%;">
+        <form id="form-changer-classe-page" action="<?= url('etudiant/changerClasse') ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <input type="hidden" name="code_inscription" value="<?= htmlspecialchars($inscription['code_inscription'] ?? '') ?>">
           <input type="hidden" name="code_etudiant" value="<?= htmlspecialchars($item['code_etudiant'] ?? '') ?>">
@@ -286,7 +286,7 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
               <i data-lucide="check" style="width: 18px; height: 18px;"></i>
               <span>Valider le Changement de Classe</span>
             </button>
-            <a href="<?= !empty($encryptedId) ? (RACINE . 'etudiant/details/' . $encryptedId) : (RACINE . 'etudiant/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px; display: inline-flex; align-items: center; gap: 6px;">
+            <a href="<?= !empty($encryptedId) ? url('etudiant/details/' . $encryptedId) : url('etudiant/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px; display: inline-flex; align-items: center; gap: 6px;">
               Annuler
             </a>
           </div>

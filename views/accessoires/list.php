@@ -199,7 +199,7 @@ $stats = $stats ?? (new ModelAccessoire())->getStats();
       <button type="button" class="btn-close-modal" style="background: transparent; border: none; color: #FFFFFF; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
 
-    <form id="form-attribuer-kit" action="<?= RACINE ?>accessoire/attribuerKit" method="POST" style="padding: 24px;">
+    <form id="form-attribuer-kit" action="<?= url('accessoire/attribuerKit') ?>" method="POST" style="padding: 24px;">
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
       <div class="form-group" style="margin-bottom: 18px;">

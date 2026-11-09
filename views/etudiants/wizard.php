@@ -36,7 +36,7 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
           <button type="button" id="btn-reset-draft" class="btn" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 10px 16px; border: 1px solid #FCA5A5; color: #DC2626; background: #FEF2F2; cursor: pointer;">
             <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i> Effacer le brouillon
           </button>
-          <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('etudiant/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
         </div>
@@ -72,7 +72,7 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
 
       <!-- Form Wizard -->
       <div class="wizard-card">
-        <form id="form-wizard-etudiant" action="<?= RACINE ?>etudiant/addWizard" method="POST" novalidate>
+        <form id="form-wizard-etudiant" action="<?= url('etudiant/addWizard') ?>" method="POST" novalidate>
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
           <!-- ÉTAPE 1 : IDENTITÉ ÉTUDIANT -->

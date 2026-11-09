@@ -292,7 +292,7 @@ if (empty($agentNom)) {
     <!-- Barre d'action (masquée à l'impression) -->
     <div class="action-bar no-print">
         <div>
-            <a href="<?= RACINE ?>caisse_annexe/list" class="btn-action btn-back">
+            <a href="<?= url('caisse_annexe/list') ?>" class="btn-action btn-back">
                 &larr; Retour au Bilan Caisse Annexe
             </a>
         </div>

@@ -22,7 +22,7 @@ $isEdit = !empty($item['id_piece_fournir']);
           </p>
         </div>
         <div style="display: flex; gap: 10px;">
-          <a href="<?= RACINE ?>piece_fournir/list" class="btn btn-secondary" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
+          <a href="<?= url('piece_fournir/list') ?>" class="btn btn-secondary" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour au Répertoire
           </a>
         </div>
@@ -50,7 +50,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             </span>
           </div>
 
-          <form action="<?= RACINE ?>piece_fournir/edit" method="POST" style="width: 100%;">
+          <form action="<?= url('piece_fournir/edit') ?>" method="POST" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
             <input type="hidden" name="id_piece_fournir" value="<?= (int)($item['id_piece_fournir'] ?? 0) ?>">
 
@@ -102,7 +102,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid #F1F5F9;">
-              <a href="<?= RACINE ?>piece_fournir/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
+              <a href="<?= url('piece_fournir/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
                 Annuler
               </a>
               <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 26px; display: inline-flex; align-items: center; gap: 8px;">
@@ -138,7 +138,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             <p style="color: #64748B; font-size: 13px; margin: 0;">Saisissez les détails de la pièce administrative à ajouter au répertoire général.</p>
           </div>
 
-          <form action="<?= RACINE ?>piece_fournir/add" method="POST" style="width: 100%;">
+          <form action="<?= url('piece_fournir/add') ?>" method="POST" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
@@ -182,7 +182,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid #F1F5F9;">
-              <a href="<?= RACINE ?>piece_fournir/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
+              <a href="<?= url('piece_fournir/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
                 Annuler
               </a>
               <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 26px; display: inline-flex; align-items: center; gap: 8px;">
@@ -208,7 +208,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             </button>
           </div>
 
-          <form action="<?= RACINE ?>piece_fournir/add" method="POST" id="form-batch-pieces" style="width: 100%;">
+          <form action="<?= url('piece_fournir/add') ?>" method="POST" id="form-batch-pieces" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
             <div style="overflow-x: auto; width: 100%; margin-bottom: 24px;">
@@ -280,7 +280,7 @@ $isEdit = !empty($item['id_piece_fournir']);
               </button>
 
               <div style="display: flex; gap: 12px;">
-                <a href="<?= RACINE ?>piece_fournir/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
+                <a href="<?= url('piece_fournir/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
                   Annuler
                 </a>
                 <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 26px; display: inline-flex; align-items: center; gap: 8px;">

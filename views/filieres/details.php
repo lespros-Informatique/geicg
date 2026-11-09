@@ -14,10 +14,10 @@ $stats = isset($stats) ? $stats : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Spécialité académique, cycles de rattachement, classes et effectifs</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>filiere/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('filiere/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <a href="<?= RACINE ?>filiere/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('filiere/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la filière
           </a>
         </div>
@@ -90,7 +90,7 @@ $stats = isset($stats) ? $stats : [];
               <i data-lucide="layers" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Classes Ouvertes (<?= count($classes) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>classe/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+          <a href="<?= url('classe/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
             + Ouvrir une classe
           </a>
         </div>
@@ -113,7 +113,7 @@ $stats = isset($stats) ? $stats : [];
                 <?php foreach ($classes as $cl): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" style="color: #1E3A5F; text-decoration: underline;">
+                      <a href="<?= url() ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" style="color: #1E3A5F; text-decoration: underline;">
                         <?= htmlspecialchars($cl['libelle_classe']) ?>
                       </a>
                     </td>
@@ -125,7 +125,7 @@ $stats = isset($stats) ? $stats : [];
                       </span>
                     </td>
                     <td style="padding: 10px; text-align: right;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
+                      <a href="<?= url() ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
                         Voir la classe
                       </a>
                     </td>
@@ -146,7 +146,7 @@ $stats = isset($stats) ? $stats : [];
             </h3>
             <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Matières Générales et Professionnelles programmées pour l'année active</p>
           </div>
-          <a href="<?= RACINE ?>maquette/list" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+          <a href="<?= url('maquette/list') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="sliders" style="width: 14px; height: 14px;"></i> Gérer les Maquettes
           </a>
         </div>
@@ -154,7 +154,7 @@ $stats = isset($stats) ? $stats : [];
         <?php if (empty($maquetteMatieres)): ?>
           <div style="text-align: center; padding: 30px 0;">
             <p style="color: #94A3B8; font-style: italic; margin-bottom: 12px;">Aucune matière n'a encore été configurée dans la maquette pour cette filière.</p>
-            <a href="<?= RACINE ?>maquette/list" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px;">
+            <a href="<?= url('maquette/list') ?>" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px;">
               + Configurer la maquette de la filière
             </a>
           </div>

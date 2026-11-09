@@ -15,13 +15,13 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= isset($user['id_user']) ? 'Modifier l\'Utilisateur' : 'Créer un Compte Utilisateur' ?></h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion des accès, des attributions de rôles et des droits CRUD</p>
         </div>
-        <a href="<?= RACINE ?>user/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('user/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form id="form-user" action="<?= RACINE ?>user/<?= !empty($user['id_user']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form id="form-user" action="<?= url('user/' . (!empty($user['id_user']) ? 'edit' : 'add')) ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($user['id_user'])): ?>
             <input type="hidden" name="id_user" value="<?= $user['id_user'] ?>">
@@ -183,7 +183,7 @@ $fonctions = isset($fonctions) ? $fonctions : (new ModelFonction())->getAll();
               <i data-lucide="check" style="width: 18px; height: 18px;"></i>
               Enregistrer l'Utilisateur & Permissions
             </button>
-            <a href="<?= RACINE ?>user/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 22px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+            <a href="<?= url('user/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 22px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
               <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Annuler
             </a>
           </div>

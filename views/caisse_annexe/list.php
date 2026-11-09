@@ -46,7 +46,7 @@ $canRecord = $canRecord ?? false;
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Journal des encaissements, suivi du recouvrement et bilan comptable des frais annexes</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-          <a href="<?= RACINE ?>fraisAnnexe/list" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 16px; text-decoration: none;" title="Consulter et configurer la grille tarifaire des frais annexes">
+          <a href="<?= url('fraisAnnexe/list') ?>" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 16px; text-decoration: none;" title="Consulter et configurer la grille tarifaire des frais annexes">
             <i data-lucide="package-check" style="width: 18px; height: 18px; color: #B45309;"></i> Grille des Tarifs
           </a>
 
@@ -56,7 +56,7 @@ $canRecord = $canRecord ?? false;
 
           <?php if (!empty($isCaisseOuverte)): ?>
             <?php if (!empty($canCloseCaisse)): ?>
-              <a href="<?= RACINE ?>session_caisse/cloturer/<?= !empty($encryptedSessionId) ? $encryptedSessionId : '' ?>" class="btn btn-danger" style="background: #DC2626; border-color: #DC2626; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(220,38,38,0.2); text-decoration: none;" title="Clôturer la session de caisse du jour (<?= htmlspecialchars($activeSession['code_session'] ?? '') ?>)">
+              <a href="<?= url('session_caisse/cloturer/' . (!empty($encryptedSessionId) ? $encryptedSessionId : '')) ?>" class="btn btn-danger" style="background: #DC2626; border-color: #DC2626; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(220,38,38,0.2); text-decoration: none;" title="Clôturer la session de caisse du jour (<?= htmlspecialchars($activeSession['code_session'] ?? '') ?>)">
                 <i data-lucide="lock" style="width: 18px; height: 18px;"></i> Fermeture caisse
               </a>
             <?php endif; ?>
@@ -467,7 +467,7 @@ $canRecord = $canRecord ?? false;
             <?php foreach (($inscriptions ?? []) as $in): ?>
               <?php 
                 $photoPath = !empty($in['photo_inscription']) ? trim($in['photo_inscription']) : (!empty($in['photo_etudiant']) ? trim($in['photo_etudiant']) : '');
-                $photoUrl = !empty($photoPath) ? RACINE . ltrim($photoPath, '/') : '';
+                $photoUrl = !empty($photoPath) ? url($photoPath) : '';
               ?>
               <option value="<?= htmlspecialchars($in['code_inscription']) ?>" 
                       data-nom="<?= htmlspecialchars(trim(($in['nom_etudiant'] ?? '') . ' ' . ($in['prenom_etudiant'] ?? ''))) ?>"

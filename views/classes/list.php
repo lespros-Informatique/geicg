@@ -21,7 +21,7 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]))): ?>
-            <a href="<?= RACINE ?>classe/imprimerPdf" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+            <a href="<?= url('classe/imprimerPdf') ?>" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
               <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Répertoire (PDF)
             </a>
           <?php endif; ?>
@@ -42,7 +42,7 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
             <i data-lucide="alert-triangle" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
             <span style="font-weight: 700; font-size: 13.5px;">Aucune année académique n'est configurée. Pour créer une classe, veuillez d'abord ajouter une année académique active.</span>
           </div>
-          <a href="<?= RACINE ?>annee/list" class="btn btn-sm" style="background: #DC2626; color: #FFFFFF; font-weight: 700; border-radius: 6px; padding: 6px 14px; text-decoration: none;">
+          <a href="<?= url('annee/list') ?>" class="btn btn-sm" style="background: #DC2626; color: #FFFFFF; font-weight: 700; border-radius: 6px; padding: 6px 14px; text-decoration: none;">
             Ajouter une Année
           </a>
         </div>

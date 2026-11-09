@@ -32,7 +32,7 @@
       <div id="tab-assignations" class="tab-content" style="display: block;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <h2 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0;">Table d'Assignation Filières ↔ Cycles</h2>
-          <a href="<?= RACINE ?>filiere_cycle/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px;">
+          <a href="<?= url('filiere_cycle/formulaire') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px;">
             <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Nouvelle Assignation
           </a>
         </div>
@@ -61,11 +61,11 @@
           <h2 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0;">Catalogue Général des Filières</h2>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <?php if (isset($canAccess) && $canAccess([PERMISSIONS::PRINT_FILIERES, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE])): ?>
-              <a href="<?= RACINE ?>filiere/imprimerPdf" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none;">
+              <a href="<?= url('filiere/imprimerPdf') ?>" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none;">
                 <i data-lucide="printer" style="width: 15px; height: 15px;"></i> Imprimer les Filières (PDF)
               </a>
             <?php endif; ?>
-            <a href="<?= RACINE ?>filiere/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px;">
+            <a href="<?= url('filiere/formulaire') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter une Filière
             </a>
           </div>
@@ -94,7 +94,7 @@
       <div id="tab-cycles" class="tab-content" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <h2 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0;">Référentiel des Cycles d'Études</h2>
-          <a href="<?= RACINE ?>cycle/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px;">
+          <a href="<?= url('cycle/formulaire') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px;">
             <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter un Cycle
           </a>
         </div>

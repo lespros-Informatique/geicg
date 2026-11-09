@@ -15,7 +15,7 @@
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS]))): ?>
-          <a href="<?= RACINE ?>dossier_etudiant/imprimerPdf" id="btn-print-dossiers" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le registre des dossiers étudiants en PDF">
+          <a href="<?= url('dossier_etudiant/imprimerPdf') ?>" id="btn-print-dossiers" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le registre des dossiers étudiants en PDF">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </a>
           <?php endif; ?>
@@ -217,7 +217,7 @@
         <!-- En-tête Récépissé -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #CBD5E1; padding-bottom: 16px; margin-bottom: 20px;">
           <div style="display: flex; align-items: center; gap: 14px;">
-            <img id="rec-etab-logo" src="<?= RACINE ?>public/images/logo-placeholder.png" style="max-height: 55px; max-width: 140px; object-fit: contain;" onerror="this.style.display='none'">
+            <img id="rec-etab-logo" src="<?= asset('images/logo-placeholder.png') ?>" style="max-height: 55px; max-width: 140px; object-fit: contain;" onerror="this.style.display='none'">
             <div>
               <div id="rec-etab-nom" style="font-size: 16px; font-weight: 900; color: #1E3A5F; text-transform: uppercase;"><?= htmlspecialchars($etablissementConfig['nom_etablissement'] ?? 'ÉTABLISSEMENT GEICG') ?></div>
               <div id="rec-etab-adresse" style="font-size: 11px; color: #64748B;"><?= htmlspecialchars($etablissementConfig['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?></div>

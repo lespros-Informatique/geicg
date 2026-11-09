@@ -15,7 +15,7 @@
         </div>
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;" class="no-print">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]))): ?>
-          <a href="<?= RACINE ?>accessoire_inscription/imprimerRegistrePdf" id="btn-print-registre" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le registre d'émargement des kits en PDF">
+          <a href="<?= url('accessoire_inscription/imprimerRegistrePdf') ?>" id="btn-print-registre" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le registre d'émargement des kits en PDF">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </a>
           <?php endif; ?>
@@ -219,7 +219,7 @@
         <!-- En-tête Récépissé -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #CBD5E1; padding-bottom: 16px; margin-bottom: 20px;">
           <div style="display: flex; align-items: center; gap: 14px;">
-            <img id="bon-etab-logo" src="<?= RACINE ?>public/images/logo-placeholder.png" style="max-height: 55px; max-width: 140px; object-fit: contain;" onerror="this.style.display='none'">
+            <img id="bon-etab-logo" src="<?= asset('images/logo-placeholder.png') ?>" style="max-height: 55px; max-width: 140px; object-fit: contain;" onerror="this.style.display='none'">
             <div>
               <div id="bon-etab-nom" style="font-size: 16px; font-weight: 900; color: #15803D; text-transform: uppercase;"><?= htmlspecialchars($etablissementConfig['nom_etablissement'] ?? 'ÉTABLISSEMENT GEICG') ?></div>
               <div id="bon-etab-adresse" style="font-size: 11px; color: #64748B;"><?= htmlspecialchars($etablissementConfig['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?></div>

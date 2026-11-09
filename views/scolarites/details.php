@@ -27,10 +27,10 @@ $nbTranches = count($tranches);
           </p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>scolarite/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('scolarite/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux scolarités
           </a>
-          <a href="<?= RACINE ?>scolarite/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('scolarite/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le tarif
           </a>
         </div>
@@ -103,7 +103,7 @@ $nbTranches = count($tranches);
               <i data-lucide="calendar" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Échéancier des Tranches (<?= count($tranches) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>tranche/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+          <a href="<?= url('tranche/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
             + Ajouter une tranche
           </a>
         </div>

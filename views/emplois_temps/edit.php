@@ -25,7 +25,7 @@ $enseignants = (new ModelEnseignant())->getAll();
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_emploi']) ? 'Éditer ' : 'Ajouter ' ?> Créneau Horaire</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Saisie des données du module Emplois du Temps</p>
         </div>
-        <a href="<?= RACINE ?>emploi/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('emploi/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
@@ -109,7 +109,7 @@ $enseignants = (new ModelEnseignant())->getAll();
           </div>
         </div>
 
-        <form action="<?= RACINE ?>emploi/<?= !empty($item['id_emploi']) ? 'edit' : 'add' ?>" method="POST" id="form-emploi" style="width: 100%;">
+        <form action="<?= url() ?>emploi/<?= !empty($item['id_emploi']) ? 'edit' : 'add' ?>" method="POST" id="form-emploi" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_emploi'])): ?>
             <input type="hidden" name="id_emploi" value="<?= $item['id_emploi'] ?>">
@@ -204,7 +204,7 @@ $enseignants = (new ModelEnseignant())->getAll();
             <?php else: ?>
               <button type="submit" name="submit_action" value="save" id="btn-submit-emploi" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer</button>
             <?php endif; ?>
-            <a href="<?= RACINE ?>emploi/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
+            <a href="<?= url('emploi/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
           </div>
         </form>
       </div>

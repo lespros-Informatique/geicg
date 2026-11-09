@@ -51,11 +51,11 @@ $confirmateur = !empty($item['confirmateur_nom_complet']) ? trim($item['confirma
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Bénéficiaire : <strong><?= htmlspecialchars($beneficiaire) ?></strong> &bull; Catégorie : <strong><?= htmlspecialchars($item['libelle_type_depense'] ?? 'Générale') ?></strong></p>
         </div>
         <div class="page-header-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <a href="<?= RACINE ?>depense/list" class="btn btn-secondary" style="background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('depense/list') ?>" class="btn btn-secondary" style="background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour au registre
           </a>
           <?php if (!empty($item['piece_justificative'])): ?>
-            <a href="<?= RACINE ?>public/<?= htmlspecialchars($item['piece_justificative']) ?>" target="_blank" class="btn btn-info" style="background: #0284C7; border-color: #0284C7; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <a href="<?= asset($item['piece_justificative']) ?>" target="_blank" class="btn btn-info" style="background: #0284C7; border-color: #0284C7; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
               <i data-lucide="paperclip" style="width: 18px; height: 18px;"></i> Pièce Justificative (3 Mo max)
             </a>
           <?php endif; ?>
@@ -196,7 +196,7 @@ $confirmateur = !empty($item['confirmateur_nom_complet']) ? trim($item['confirma
               <span style="font-size: 12px; color: #0284C7; font-weight: 600;"><?= htmlspecialchars(basename($item['piece_justificative'])) ?> (Document joint, max 3 Mo)</span>
             </div>
           </div>
-          <a href="<?= RACINE ?>public/<?= htmlspecialchars($item['piece_justificative']) ?>" target="_blank" class="btn btn-sm btn-primary no-print" style="background: #0284C7; border-color: #0284C7; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(2,132,199,0.2);">
+          <a href="<?= asset($item['piece_justificative']) ?>" target="_blank" class="btn btn-sm btn-primary no-print" style="background: #0284C7; border-color: #0284C7; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(2,132,199,0.2);">
             <i data-lucide="external-link" style="width: 16px; height: 16px;"></i> Consulter / Télécharger le document
           </a>
         </div>

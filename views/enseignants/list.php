@@ -13,10 +13,10 @@
           <button type="button" id="btn-programme-cours" class="btn btn-outline-primary" style="border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; transition: all 0.2s;" title="Afficher le programme des cours du jour ou d'une autre date">
             <i data-lucide="calendar" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Programme des Cours
           </button>
-          <a href="<?= RACINE ?>enseignant/imprimerPdf" id="btn-print-enseignants" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le répertoire des enseignants en PDF">
+          <a href="<?= url('enseignant/imprimerPdf') ?>" id="btn-print-enseignants" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le répertoire des enseignants en PDF">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </a>
-          <a href="<?= RACINE ?>enseignant/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('enseignant/formulaire') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Nouvel Enseignant
           </a>
         </div>

@@ -17,13 +17,13 @@ $encryptedId = $encryptedId ?? (!empty($item['id_inscription']) ? (new Validator
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Classe : <strong><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></strong> &bull; Année Académique : <strong><?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></strong></p>
         </div>
         <div class="page-header-actions" style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>reinscription/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('reinscription/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux inscriptions
           </a>
           <button onclick="window.print()" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer la Fiche
           </button>
-          <a href="<?= RACINE ?>inscription/edition/<?= $encryptedId ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
+          <a href="<?= url('inscription/edition/' . $encryptedId) ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
           </a>
         </div>
@@ -40,7 +40,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_inscription']) ? (new Validator
           <!-- Photo / Avatar Étudiant -->
           <div style="width: 72px; height: 86px; min-width: 72px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
             <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+              <img src="<?= url($item['photo_etudiant']) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
             <?php else: ?>
               <span style="font-size: 20px; font-weight: 900; color: #1E3A5F;">
                 <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
@@ -90,7 +90,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_inscription']) ? (new Validator
               <i data-lucide="credit-card" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Suivi des Paiements de la Scolarité
             </h3>
           </div>
-          <a href="<?= RACINE ?>paiement/list?action=encaissement&inscription_code=<?= urlencode($item['code_inscription'] ?? '') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+          <a href="<?= url('paiement/list', ['action' => 'encaissement', 'inscription_code' => $item['code_inscription'] ?? '']) ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> Encaisser un versement
           </a>
         </div>
@@ -132,7 +132,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_inscription']) ? (new Validator
                 <?php foreach ($paiements as $p): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-family: monospace; font-weight: 700; color: #1E3A5F;">
-                      <a href="<?= RACINE ?>paiement/details/<?= $this->validator->crypter($p['id_paiement']) ?>" style="color: #1E3A5F; text-decoration: underline;">
+                      <a href="<?= url('paiement/details/' . $this->validator->crypter($p['id_paiement'])) ?>" style="color: #1E3A5F; text-decoration: underline;">
                         <?= htmlspecialchars($p['reference_paiement'] ?? ($p['code_paiement'] ?? '-')) ?>
                       </a>
                     </td>

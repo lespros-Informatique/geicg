@@ -15,7 +15,7 @@
             <?= !empty($item['id_piece_cycle']) ? 'Mise à jour des critères d\'exigence de la pièce pour ce cycle' : 'Sélectionnez les pièces administratives à exiger aux étudiants pour ce cycle académique' ?>
           </p>
         </div>
-        <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+        <a href="<?= url('piece_fournir_cycle/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
           <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour à la liste
         </a>
       </div>
@@ -23,7 +23,7 @@
       <?php if (!empty($item['id_piece_cycle'])): ?>
         <!-- FORMULAIRE MODIFICATION UNITAIRE -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-          <form action="<?= RACINE ?>piece_fournir_cycle/edit" method="POST" style="width: 100%;">
+          <form action="<?= url('piece_fournir_cycle/edit') ?>" method="POST" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
             <input type="hidden" name="id_piece_cycle" value="<?= $item['id_piece_cycle'] ?>">
 
@@ -103,7 +103,7 @@
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px;">
-              <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Annuler</a>
+              <a href="<?= url('piece_fournir_cycle/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Annuler</a>
               <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer les modifications</button>
             </div>
           </form>
@@ -111,7 +111,7 @@
 
       <?php else: ?>
         <!-- FORMULAIRE AJOUT RAPIDE / PANIER DE PIÈCES À FOURNIR PAR CYCLE -->
-        <form action="<?= RACINE ?>piece_fournir_cycle/add" method="POST" id="form-bulk-piece-cycle" style="width: 100%;">
+        <form action="<?= url('piece_fournir_cycle/add') ?>" method="POST" id="form-bulk-piece-cycle" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
           <!-- Choix du Cycle & Niveau -->
@@ -184,7 +184,7 @@
             </div>
 
             <div style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
-              <a href="<?= RACINE ?>piece_fournir/formulaire" target="_blank" style="font-size: 12.5px; font-weight: 700; color: #3B82F6; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+              <a href="<?= url('piece_fournir/formulaire') ?>" target="_blank" style="font-size: 12.5px; font-weight: 700; color: #3B82F6; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                 <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Créer une nouvelle pièce dans le répertoire &rarr;
               </a>
             </div>
@@ -192,7 +192,7 @@
 
           <!-- Bottom Submit Bar -->
           <div style="display: flex; justify-content: flex-end; align-items: center; gap: 14px;">
-            <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 12px 24px;">Annuler</a>
+            <a href="<?= url('piece_fournir_cycle/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 12px 24px;">Annuler</a>
             <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; font-size: 14px; border-radius: 8px; padding: 12px 32px; box-shadow: 0 4px 12px rgba(30,58,95,0.25); display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Enregistrer le Dossier du Cycle
             </button>

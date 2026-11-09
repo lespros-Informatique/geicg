@@ -358,14 +358,14 @@ $niveaux = $niveaux ?? [];
       <button type="button" class="btn-close-modal-encaissement" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer;">&times;</button>
     </div>
 
-    <form id="form-encaisse-versement" action="<?= RACINE ?>paiement/add" method="POST" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+    <form id="form-encaisse-versement" action="<?= url('paiement/add') ?>" method="POST" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
       <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
 
         <input type="hidden" id="modal_select_inscription" name="inscription_code" value="" required>
 
         <div id="encaisse-student-summary-card" style="display: none; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-            <img id="encaisse-photo-preview" src="<?= RACINE ?>public/assets/images/default-avatar.png" class="student-avatar" alt="Avatar">
+            <img id="encaisse-photo-preview" src="<?= asset('assets/images/default-avatar.png') ?>" class="student-avatar" alt="Avatar">
             <div>
               <div id="encaisse-student-name" style="font-size: 15px; font-weight: 900; color: #0F172A;">Nom Étudiant</div>
               <div id="encaisse-student-meta" style="font-size: 12px; color: #64748B;">Matricule: - | Classe: -</div>

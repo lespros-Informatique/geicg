@@ -21,10 +21,10 @@ $totalCloturees = $totalCloturees ?? 0;
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <?php if (!empty($activeSession)): ?>
-            <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-secondary" style="background: #EFF6FF; border: 1.5px solid #BFDBFE; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <a href="<?= url('paiement/formulaire') ?>" class="btn btn-secondary" style="background: #EFF6FF; border: 1.5px solid #BFDBFE; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
               <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvel Encaissement
             </a>
-            <a href="<?= RACINE ?>session_caisse/cloturer/<?= !empty($activeSession['id_session']) ? $this->validator->crypter($activeSession['id_session']) : '' ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; color: #FFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(30,58,95,0.2);">
+            <a href="<?= url('session_caisse/cloturer/' . (!empty($activeSession['id_session']) ? $this->validator->crypter($activeSession['id_session']) : '')) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; color: #FFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(30,58,95,0.2);">
               <i data-lucide="lock" style="width: 18px; height: 18px;"></i> Clôturer la Caisse
             </a>
           <?php else: ?>

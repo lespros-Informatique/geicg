@@ -21,11 +21,11 @@ $encryptedId = $encryptedId ?? '';
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails de la programmation, coefficients et classes associées</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-          <a href="<?= RACINE ?>composition/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('composition/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
           <?php if (!empty($item['code_composition']) && (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::ENTER_NOTES])))): ?>
-          <a href="<?= RACINE ?>note/saisieClasse?type_evaluation_code=EXAMEN&composition_code=<?= urlencode($item['code_composition']) ?>" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 10px rgba(22,163,74,0.2);">
+          <a href="<?= url() ?>note/saisieClasse?type_evaluation_code=EXAMEN&composition_code=<?= urlencode($item['code_composition']) ?>" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 10px rgba(22,163,74,0.2);">
             <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisir les Notes
           </a>
           <?php endif; ?>
@@ -34,7 +34,7 @@ $encryptedId = $encryptedId ?? '';
           if (!empty($encryptedId)): 
             if ($isExamen):
           ?>
-          <a href="<?= RACINE ?>composition/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('composition/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
           </a>
           <?php else: ?>
@@ -194,7 +194,7 @@ $encryptedId = $encryptedId ?? '';
                                 style="background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(30,58,95,0.2); white-space: nowrap;">
                           <i data-lucide="list-checks" style="width: 14px; height: 14px;"></i> Liste Matières
                         </button>
-                        <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($classeCode) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px; white-space: nowrap;">
+                        <a href="<?= url() ?>note/saisieClasse?classe_code=<?= urlencode($classeCode) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px; white-space: nowrap;">
                           <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Grille des notes
                         </a>
                       </div>
@@ -232,7 +232,7 @@ $encryptedId = $encryptedId ?? '';
     </div>
 
     <!-- Form Content -->
-    <form action="<?= RACINE ?>note/saisieClasse" method="GET" id="form-modal-saisie-notes" style="padding: 24px; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+    <form action="<?= url('note/saisieClasse') ?>" method="GET" id="form-modal-saisie-notes" style="padding: 24px; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
       <input type="hidden" name="classe_code" id="modal_input_classe_code" value="">
       <input type="hidden" name="composition_cible_code" id="modal_input_cible_code" value="">
       <input type="hidden" name="semestre_code" value="<?= htmlspecialchars($item['semestre_code'] ?? '') ?>">

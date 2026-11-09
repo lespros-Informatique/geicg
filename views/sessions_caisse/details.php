@@ -31,7 +31,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
           <button onclick="window.print()" class="btn btn-secondary btn-no-print" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le PV
           </button>
-          <a href="<?= RACINE ?>session_caisse/list" class="btn btn-secondary btn-no-print" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('session_caisse/list') ?>" class="btn btn-secondary btn-no-print" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour
           </a>
         </div>

@@ -14,10 +14,10 @@ $montantDu = (float)($item['montant_restant'] ?? ($item['montant_du'] ?? 0));
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Étudiant : <strong><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></strong> &bull; Réf : <strong><?= htmlspecialchars($item['code_relance'] ?? '-') ?></strong></p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>impayes/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('impayes/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux impayés
           </a>
-          <a href="<?= RACINE ?>paiement/list?action=encaissement&inscription_code=<?= urlencode($item['inscription_code'] ?? '') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('paiement/list', ['action' => 'encaissement', 'inscription_code' => $item['inscription_code'] ?? '']) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="credit-card" style="width: 18px; height: 18px;"></i> Encaisser le règlement
           </a>
         </div>
@@ -34,7 +34,7 @@ $montantDu = (float)($item['montant_restant'] ?? ($item['montant_du'] ?? 0));
           <!-- Photo / Avatar Étudiant -->
           <div style="width: 72px; height: 86px; min-width: 72px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
             <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+              <img src="<?= url(ltrim($item['photo_etudiant'], '/')) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
             <?php else: ?>
               <span style="font-size: 20px; font-weight: 900; color: #1E3A5F;">
                 <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>

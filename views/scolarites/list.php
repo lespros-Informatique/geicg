@@ -11,11 +11,11 @@
         </div>
         <div id="btn-container" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::PRINT_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]))): ?>
-            <a href="<?= RACINE ?>scolarite/imprimerPdf" id="btn-print-scolarite" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+            <a href="<?= url('scolarite/imprimerPdf') ?>" id="btn-print-scolarite" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
               <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer la Grille Tarifaire (PDF)
             </a>
           <?php endif; ?>
-          <a href="<?= RACINE ?>scolarite/formulaire" id="btn-add-action" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; color: #FFFFFF;">
+          <a href="<?= url('scolarite/formulaire') ?>" id="btn-add-action" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; color: #FFFFFF;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> <span id="btn-add-label">Ajouter Tarif de Scolarité</span>
           </a>
         </div>

@@ -12,7 +12,7 @@ $existingAbsences = $existingAbsences ?? [];
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <a href="<?= RACINE ?>absence/list" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;">
+            <a href="<?= url('absence/list') ?>" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;">
               <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour
             </a>
             <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Registre des Absences par Classe</h1>
@@ -23,7 +23,7 @@ $existingAbsences = $existingAbsences ?? [];
 
       <!-- Formulaire de Sélection de la Classe & Séance -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px;">
-        <form method="GET" action="<?= RACINE ?>absence/saisieClasse" id="filter-form">
+        <form method="GET" action="<?= url('absence/saisieClasse') ?>" id="filter-form">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
             <div>
               <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: block;">Classe <span style="color:#EF4444;">*</span></label>

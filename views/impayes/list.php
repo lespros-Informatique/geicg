@@ -35,7 +35,7 @@ $canRecordPayment = $canRecordPayment ?? true;
             <i data-lucide="files" style="width: 18px; height: 18px;"></i> Imprimer en Masse
           </button>
 
-          <a id="btn-print-impayes-list" href="<?= RACINE ?>impayes/imprimerListeImpayes" target="_blank" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(30,58,95,0.25); text-decoration: none;">
+          <a id="btn-print-impayes-list" href="<?= url('impayes/imprimerListeImpayes') ?>" target="_blank" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; border-radius: 8px; padding: 10px 18px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(30,58,95,0.25); text-decoration: none;">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Liste
           </a>
         </div>
@@ -321,7 +321,7 @@ $canRecordPayment = $canRecordPayment ?? true;
       <button type="button" class="btn-close-modal-encaissement" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
 
-    <form id="form-encaisse-versement" action="<?= RACINE ?>paiement/add" method="POST" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+    <form id="form-encaisse-versement" action="<?= url('paiement/add') ?>" method="POST" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       <input type="hidden" id="modal_select_inscription" name="inscription_code" value="" required>
 
@@ -329,7 +329,7 @@ $canRecordPayment = $canRecordPayment ?? true;
 
         <div id="encaisse-student-summary-card" style="display: none; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-            <img id="encaisse-photo-preview" src="<?= RACINE ?>public/assets/images/default-avatar.png" class="student-avatar" alt="Avatar" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #CBD5E1;">
+            <img id="encaisse-photo-preview" src="<?= asset('assets/images/default-avatar.png') ?>" class="student-avatar" alt="Avatar" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #CBD5E1;">
             <div>
               <div id="encaisse-student-name" style="font-size: 15px; font-weight: 900; color: #0F172A;">Nom Étudiant</div>
               <div id="encaisse-student-meta" style="font-size: 12px; color: #64748B;">Matricule: - | Classe: -</div>

@@ -10,14 +10,14 @@
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_session']) ? 'Modifier la ' : 'Ouverture de ' ?> Session de Caisse</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Démarrage de la journée de caisse & Saisie du Fond Initial</p>
         </div>
-        <a href="<?= RACINE ?>session_caisse/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('session_caisse/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux sessions
         </a>
       </div>
 
       <!-- Card Form -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>session_caisse/<?= !empty($item['id_session']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form action="<?= url('session_caisse/' . (!empty($item['id_session']) ? 'edit' : 'add')) ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_session'])): ?>
             <input type="hidden" name="id_session" value="<?= $item['id_session'] ?>">
@@ -53,7 +53,7 @@
             <button type="submit" class="btn btn-primary" style="background: #166534; border-color: #166534; font-weight: 800; border-radius: 8px; padding: 11px 28px; display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="unlock" style="width: 18px; height: 18px;"></i> Ouvrir la Session de Caisse
             </button>
-            <a href="<?= RACINE ?>session_caisse/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px;">Annuler</a>
+            <a href="<?= url('session_caisse/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px;">Annuler</a>
           </div>
 
         </form>

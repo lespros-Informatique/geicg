@@ -15,10 +15,10 @@ $stats = isset($stats) ? $stats : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Unités d'enseignement, professeurs assignés et classes concernées</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>matiere/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('matiere/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux matières
           </a>
-          <a href="<?= RACINE ?>matiere/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('matiere/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la matière
           </a>
         </div>
@@ -65,7 +65,7 @@ $stats = isset($stats) ? $stats : [];
               <i data-lucide="layers" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Répartition Pédagogique par Classe & Enseignant (<?= count($affectations) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>emploi/list" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+          <a href="<?= url('emploi/list') ?>" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Voir emplois du temps
           </a>
         </div>

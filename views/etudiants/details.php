@@ -33,14 +33,14 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Matricule : <strong><?= htmlspecialchars($matricule) ?></strong> &bull; Classe : <strong><?= htmlspecialchars($classeLibelle) ?></strong> &bull; Année : <strong><?= htmlspecialchars($anneeLibelle) ?></strong></p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+          <a href="<?= url('etudiant/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
             <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour
           </a>
           <button type="button" onclick="imprimerCarteScolaire()" class="btn btn-warning" style="background: #D97706; border-color: #D97706; color: #FFF; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
             <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer Carte Scolaire
           </button>
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]))): ?>
-          <a href="<?= RACINE ?>etudiant/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+          <a href="<?= url('etudiant/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
             <i data-lucide="edit" style="width: 16px; height: 16px;"></i> Modifier le dossier
           </a>
           <?php endif; ?>
@@ -100,7 +100,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
               <!-- Photo / Avatar Étudiant avec cadre sécurité -->
               <div style="width: 78px; height: 96px; border-radius: 8px; border: 2px solid #F59E0B; background: #0F172A; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0;">
                 <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-                  <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+                  <img src="<?= url($item['photo_etudiant']) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
                 <?php else: ?>
                   <span style="font-size: 24px; font-weight: 900; color: #FDE68A;">
                     <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
@@ -221,7 +221,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
           <div style="display: flex; align-items: center; gap: 16px;">
             <div style="width: 64px; height: 76px; min-width: 64px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); flex-shrink: 0;">
               <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-                <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="<?= url($item['photo_etudiant']) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
               <?php else: ?>
                 <span style="font-size: 18px; font-weight: 900; color: #1E3A5F;">
                   <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
@@ -408,7 +408,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
               <i data-lucide="credit-card" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Situation Financière & Reçus de Scolarité
             </h3>
           </div>
-          <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+          <a href="<?= url('paiement/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
             + Nouveau règlement
           </a>
         </div>
@@ -450,7 +450,7 @@ $encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())
                 <?php foreach ($paiements as $p): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-family: monospace; font-weight: 700; color: #1E3A5F;">
-                      <a href="<?= RACINE ?>paiement/details/<?= $this->validator->crypter($p['id_paiement']) ?>" style="color: #1E3A5F; text-decoration: underline;">
+                      <a href="<?= url('paiement/details/' . $this->validator->crypter($p['id_paiement'])) ?>" style="color: #1E3A5F; text-decoration: underline;">
                         <?= htmlspecialchars($p['reference_paiement'] ?? ($p['code_paiement'] ?? '-')) ?>
                       </a>
                     </td>

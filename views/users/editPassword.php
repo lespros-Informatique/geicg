@@ -16,7 +16,7 @@ $user = isset($user) ? $user : (Auth::user() ?: []);
           </h1>
           <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0;">Sécurisez votre compte avec un mot de passe robuste</p>
         </div>
-        <a href="<?= RACINE ?>user/profil" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+        <a href="<?= url('user/profil') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
           <i class="fa fa-arrow-left"></i> Retour au profil
         </a>
       </div>
@@ -76,7 +76,7 @@ $user = isset($user) ? $user : (Auth::user() ?: []);
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 12px;">
-            <a href="<?= RACINE ?>user/profil" class="btn btn-secondary">Annuler</a>
+            <a href="<?= url('user/profil') ?>" class="btn btn-secondary">Annuler</a>
             <button type="submit" class="btn btn-primary btn_actions" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700;">
               <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Mettre à jour mon mot de passe
             </button>

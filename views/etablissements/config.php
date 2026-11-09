@@ -56,7 +56,7 @@
       <!-- SECTION 1 : IDENTITÉ & LOGO INSTITUTIONNEL                               -->
       <!-- ========================================================================= -->
       <div id="section-identite" class="card config-section-card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; margin-bottom: 24px;">
-        <form class="form-config-section" id="form-config-identite" action="<?= RACINE ?>etablissement/edit" method="POST" enctype="multipart/form-data" style="width: 100%;">
+        <form class="form-config-section" id="form-config-identite" action="<?= url('etablissement/edit') ?>" method="POST" enctype="multipart/form-data" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <input type="hidden" name="id_etablissement" value="<?= htmlspecialchars($item['id_etablissement'] ?? 1) ?>">
           <input type="hidden" name="section_id" value="identite">
@@ -76,7 +76,7 @@
               $rawLogo = $item['logo_etablissement'] ?? '';
               $logoSrc = '';
               if (!empty($rawLogo)) {
-                $logoSrc = (strpos($rawLogo, 'http') === 0) ? $rawLogo : RACINE . ltrim($rawLogo, '/');
+                $logoSrc = (strpos($rawLogo, 'http') === 0) ? $rawLogo : url(ltrim($rawLogo, '/'));
               }
             ?>
             <div style="width: 110px; height: 110px; border-radius: 12px; background: #FFFFFF; border: 2px dashed #CBD5E1; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; position: relative;">
@@ -131,7 +131,7 @@
       <!-- SECTION 2 : COORDONNÉES & LOCALISATION                                   -->
       <!-- ========================================================================= -->
       <div id="section-coordonnees" class="card config-section-card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; margin-bottom: 24px;">
-        <form class="form-config-section" id="form-config-coordonnees" action="<?= RACINE ?>etablissement/edit" method="POST" style="width: 100%;">
+        <form class="form-config-section" id="form-config-coordonnees" action="<?= url('etablissement/edit') ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <input type="hidden" name="id_etablissement" value="<?= htmlspecialchars($item['id_etablissement'] ?? 1) ?>">
           <input type="hidden" name="section_id" value="coordonnees">
@@ -217,7 +217,7 @@
       <!-- SECTION 3 : SIGNATAIRES & RESPONSABLES OFFICIELS (PDF)                    -->
       <!-- ========================================================================= -->
       <div id="section-signataires" class="card config-section-card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; margin-bottom: 24px;">
-        <form class="form-config-section" id="form-config-signataires" action="<?= RACINE ?>etablissement/edit" method="POST" style="width: 100%;">
+        <form class="form-config-section" id="form-config-signataires" action="<?= url('etablissement/edit') ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <input type="hidden" name="id_etablissement" value="<?= htmlspecialchars($item['id_etablissement'] ?? 1) ?>">
           <input type="hidden" name="section_id" value="signataires">
@@ -310,7 +310,7 @@
       <!-- SECTION 4 : PARAMÈTRES SYSTÈME, PIEDS DE PAGE & SLUGS                     -->
       <!-- ========================================================================= -->
       <div id="section-parametres" class="card config-section-card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; margin-bottom: 24px;">
-        <form class="form-config-section" id="form-config-parametres" action="<?= RACINE ?>etablissement/edit" method="POST" style="width: 100%;">
+        <form class="form-config-section" id="form-config-parametres" action="<?= url('etablissement/edit') ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <input type="hidden" name="id_etablissement" value="<?= htmlspecialchars($item['id_etablissement'] ?? 1) ?>">
           <input type="hidden" name="section_parametres" value="1">

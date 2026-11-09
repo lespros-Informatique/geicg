@@ -46,7 +46,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
 
           <?php if (!empty($isCaisseOuverte)): ?>
             <?php if (!empty($canCloseCaisse)): ?>
-              <a href="<?= RACINE ?>session_caisse/cloturer/<?= !empty($encryptedSessionId) ? $encryptedSessionId : '' ?>" class="btn btn-danger" style="background: #DC2626; border-color: #DC2626; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(220,38,38,0.2); text-decoration: none;" title="Clôturer la session de caisse du jour (<?= htmlspecialchars($activeSession['code_session'] ?? '') ?>)">
+              <a href="<?= url('session_caisse/cloturer/' . (!empty($encryptedSessionId) ? $encryptedSessionId : '')) ?>" class="btn btn-danger" style="background: #DC2626; border-color: #DC2626; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(220,38,38,0.2); text-decoration: none;" title="Clôturer la session de caisse du jour (<?= htmlspecialchars($activeSession['code_session'] ?? '') ?>)">
                 <i data-lucide="lock" style="width: 18px; height: 18px;"></i> Fermeture de caisse
               </a>
             <?php endif; ?>
@@ -291,7 +291,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
       <div class="card-kpi-container">
         
         <!-- 9. Étudiants Soldés -->
-        <div onclick="window.location.href='<?= RACINE ?>paiement/comptabilite_etudiants?statut_paiement=solde'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants soldés">
+        <div onclick="window.location.href='<?= url('paiement/comptabilite_etudiants', ['statut_paiement' => 'solde']) ?>'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants soldés">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Soldés (100%)</div>
             <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
@@ -305,7 +305,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
         </div>
 
         <!-- 10. Étudiants en Acompte -->
-        <div onclick="window.location.href='<?= RACINE ?>paiement/comptabilite_etudiants?statut_paiement=partiel'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FEF3C7; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants en acompte">
+        <div onclick="window.location.href='<?= url('paiement/comptabilite_etudiants', ['statut_paiement' => 'partiel']) ?>'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FEF3C7; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants en acompte">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #D97706; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants en Acompte</div>
             <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
@@ -319,7 +319,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
         </div>
 
         <!-- 11. Frais d'inscription non réglé -->
-        <div onclick="window.location.href='<?= RACINE ?>paiement/comptabilite_etudiants?statut_paiement=non_paye'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FECACA; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants non réglés">
+        <div onclick="window.location.href='<?= url('paiement/comptabilite_etudiants', ['statut_paiement' => 'non_paye']) ?>'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FECACA; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste des étudiants non réglés">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #E11D48; text-transform: uppercase; letter-spacing: 0.5px;">Frais d'inscription non réglé</div>
             <div style="font-size: 18px; font-weight: 900; color: #BE123C; margin-top: 3px;">
@@ -333,7 +333,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
         </div>
 
         <!-- 12. Total Inscrits -->
-        <div onclick="window.location.href='<?= RACINE ?>paiement/comptabilite_etudiants'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E9D5FF; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste complète des étudiants inscrits">
+        <div onclick="window.location.href='<?= url('paiement/comptabilite_etudiants') ?>'" class="card kpi-card kpi-card-clickable" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E9D5FF; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Cliquer pour afficher la liste complète des étudiants inscrits">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Total Inscrits</div>
             <div style="font-size: 18px; font-weight: 900; color: #7E22CE; margin-top: 3px;">
@@ -455,7 +455,7 @@ $canCancelPaiement = $canCancelPaiement ?? (isset($canAccess) && is_callable($ca
             <?php foreach (($inscriptions ?? []) as $ins): ?>
               <?php 
                 $photoPath = !empty($ins['photo_inscription']) ? trim($ins['photo_inscription']) : (!empty($ins['photo_etudiant']) ? trim($ins['photo_etudiant']) : '');
-                $photoUrl = !empty($photoPath) ? RACINE . ltrim($photoPath, '/') : '';
+                $photoUrl = !empty($photoPath) ? url(ltrim($photoPath, '/')) : '';
               ?>
               <option value="<?= htmlspecialchars($ins['code_inscription']) ?>" 
                       data-matricule="<?= htmlspecialchars($ins['matricule_etudiant'] ?? '') ?>" 

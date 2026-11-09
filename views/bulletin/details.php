@@ -29,10 +29,10 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
           </p>
         </div>
         <div class="page-header-actions" style="display: flex; gap: 10px; align-items: center;">
-          <a href="<?= RACINE ?>bulletin/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('bulletin/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <a href="<?= RACINE ?>bulletin/imprimerBulletinPdf/<?= $encryptedId ?>?semestre=<?= urlencode($selectedSemestreCode) ?>" target="_blank" class="btn btn-outline-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; border-color: #1E3A5F; color: #1E3A5F;">
+          <a href="<?= url() ?>bulletin/imprimerBulletinPdf/<?= $encryptedId ?>?semestre=<?= urlencode($selectedSemestreCode) ?>" target="_blank" class="btn btn-outline-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; border-color: #1E3A5F; color: #1E3A5F;">
             <i data-lucide="file-down" style="width: 18px; height: 18px;"></i> Télécharger PDF
           </a>
           <button onclick="window.print()" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 20px;">
@@ -52,7 +52,7 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <?php foreach ($semestres as $sem): ?>
               <?php $isActive = ($sem['code_semestre'] === $selectedSemestreCode); ?>
-              <a href="<?= RACINE ?>bulletin/details/<?= $encryptedId ?>?semestre=<?= urlencode($sem['code_semestre']) ?>"
+              <a href="<?= url() ?>bulletin/details/<?= $encryptedId ?>?semestre=<?= urlencode($sem['code_semestre']) ?>"
                  class="btn btn-sm"
                  style="font-weight: 700; border-radius: 6px; padding: 6px 16px; border: 1px solid <?= $isActive ? '#1E3A5F' : '#CBD5E1' ?>; background: <?= $isActive ? '#1E3A5F' : '#FFFFFF' ?>; color: <?= $isActive ? '#FFFFFF' : '#475569' ?>;">
                 <?= htmlspecialchars($sem['libelle_semestre']) ?>

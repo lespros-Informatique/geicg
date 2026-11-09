@@ -29,7 +29,7 @@ $typeEvals = [
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <a href="<?= RACINE ?>note/list" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px; font-weight: 700;">
+            <a href="<?= url('note/list') ?>" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px; font-weight: 700;">
               <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Registre
             </a>
             <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">

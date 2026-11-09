@@ -58,7 +58,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Menu de sélection par classe pour la gestion des notes individuelles</p>
         </div>
-        <a href="<?= RACINE ?>note/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('note/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
@@ -80,7 +80,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
 
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 12px; font-weight: 700; color: #64748B;">Saisie Groupée par Classe ?</span>
-          <a href="<?= RACINE ?>note/saisieClasse" class="btn btn-outline-primary" style="font-weight: 700; font-size: 13px; border-radius: 8px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+          <a href="<?= url('note/saisieClasse') ?>" class="btn btn-outline-primary" style="font-weight: 700; font-size: 13px; border-radius: 8px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="users" style="width: 15px; height: 15px;"></i> Passer à la saisie par classe
           </a>
         </div>
@@ -148,7 +148,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
 
       <!-- FORMULAIRE DE SAISIE DE LA NOTE -->
       <div class="card" style="background: #FFFFFF; border-radius: 14px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>note/<?= !empty($item['id_note']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;" id="form-note-indiv">
+        <form action="<?= url() ?>note/<?= !empty($item['id_note']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;" id="form-note-indiv">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_note'])): ?>
             <input type="hidden" name="id_note" value="<?= $item['id_note'] ?>">
@@ -283,7 +283,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
             <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; font-weight: 700; border-radius: 8px; padding: 12px 28px; box-shadow: 0 4px 10px rgba(30,58,95,0.25); display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="save" style="width: 18px; height: 18px;"></i> Enregistrer la Note
             </button>
-            <a href="<?= RACINE ?>note/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px;">Annuler</a>
+            <a href="<?= url('note/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px;">Annuler</a>
           </div>
         </form>
       </div>

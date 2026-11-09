@@ -17,10 +17,10 @@ require_once __DIR__ . '/../../public/inc/header.php';
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Code Assignation : <strong><?= htmlspecialchars($item['code_filiere_cycle'] ?? '-') ?></strong></p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>filiere_cycle/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('filiere_cycle/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux assignations
           </a>
-          <a href="<?= RACINE ?>filiere_cycle/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('filiere_cycle/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l'assignation
           </a>
         </div>
@@ -102,7 +102,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
                       </span>
                     </td>
                     <td style="padding: 10px; text-align: right;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($c['id_classe']) ?>" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; font-size:12px;">
+                      <a href="<?= url() ?>classe/details/<?= $this->validator->crypter($c['id_classe']) ?>" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; font-size:12px;">
                         <i data-lucide="eye" style="width:14px;height:14px;"></i> Détails
                       </a>
                     </td>

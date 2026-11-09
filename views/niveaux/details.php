@@ -14,10 +14,10 @@ $stats = isset($stats) ? $stats : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Palier d'études, classes et effectifs d'étudiants</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>niveau/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('niveau/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <a href="<?= RACINE ?>niveau/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('niveau/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le niveau
           </a>
         </div>
@@ -74,7 +74,7 @@ $stats = isset($stats) ? $stats : [];
               <i data-lucide="layers" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Classes rattachées à ce niveau (<?= count($classes) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>classe/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+          <a href="<?= url('classe/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
             + Ouvrir une classe
           </a>
         </div>
@@ -97,7 +97,7 @@ $stats = isset($stats) ? $stats : [];
                 <?php foreach ($classes as $cl): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" style="color: #1E3A5F; text-decoration: underline;">
+                      <a href="<?= url() ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" style="color: #1E3A5F; text-decoration: underline;">
                         <?= htmlspecialchars($cl['libelle_classe']) ?>
                       </a>
                     </td>
@@ -109,7 +109,7 @@ $stats = isset($stats) ? $stats : [];
                       </span>
                     </td>
                     <td style="padding: 10px; text-align: right;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
+                      <a href="<?= url() ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
                         Voir la classe
                       </a>
                     </td>

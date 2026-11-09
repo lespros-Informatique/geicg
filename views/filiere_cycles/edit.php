@@ -16,13 +16,13 @@
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Rattachement d'une filière du catalogue général à un cycle d'études</p>
         </div>
-        <a href="<?= RACINE ?>filiere_cycle/list" class="btn btn-secondary" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="<?= url('filiere_cycle/list') ?>" class="btn btn-secondary" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la Liste
         </a>
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?><?= !empty($item['id_filiere_cycle']) ? 'filiere_cycle/edit' : 'filiere_cycle/add' ?>" method="POST" style="width: 100%;">
+        <form action="<?= url() ?><?= !empty($item['id_filiere_cycle']) ? 'filiere_cycle/edit' : 'filiere_cycle/add' ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_filiere_cycle'])): ?>
             <input type="hidden" name="id_filiere_cycle" value="<?= htmlspecialchars($item['id_filiere_cycle']) ?>">

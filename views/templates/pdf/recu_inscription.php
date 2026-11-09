@@ -24,7 +24,7 @@ if (!empty($logo_src)) {
     $logoSrc = $logo_src;
 } else {
     $logoEicgFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-    $logoSrc = defined('RACINE') ? RACINE . 'assets/images/logo/logo_eicg.jpg' : '/geicg/public/assets/images/logo/logo_eicg.jpg';
+    $logoSrc = asset('assets/images/logo/logo_eicg.jpg');
     if (file_exists($logoEicgFile)) {
         $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
     }

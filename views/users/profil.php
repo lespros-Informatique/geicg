@@ -34,7 +34,7 @@
       </div>
 
       <div class="form-actions" style="margin-top: 20px;">
-        <a href="<?= RACINE ?>user/editPassword" class="btn btn-primary"><i data-lucide="lock"></i> Modifier le mot de passe</a>
+        <a href="<?= url('user/editPassword') ?>" class="btn btn-primary"><i data-lucide="lock"></i> Modifier le mot de passe</a>
       </div>
     </div>
   </main>

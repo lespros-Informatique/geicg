@@ -16,14 +16,14 @@ $stAnnee = $item['statut_annee'] ?? 'planifie';
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Bilan académique, effectifs d'étudiants, classes et semestres</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <a href="<?= RACINE ?>annee/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('annee/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['code_annee'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre nominatif des étudiants de cette année">
+          <a href="<?= url() ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['code_annee'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre nominatif des étudiants de cette année">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Registre Annuel
           </a>
           <?php if ($stAnnee === 'planifie'): ?>
-            <a href="<?= RACINE ?>annee/list" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <a href="<?= url('annee/list') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
               <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l'année
             </a>
           <?php endif; ?>
@@ -106,7 +106,7 @@ $stAnnee = $item['statut_annee'] ?? 'planifie';
                   ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;">
-                      <a href="<?= RACINE ?>classe/details/<?= $clIdCrypte ?>" style="color: #1E3A5F; text-decoration: underline;">
+                      <a href="<?= url('classe/details/' . $clIdCrypte) ?>" style="color: #1E3A5F; text-decoration: underline;">
                         <?= htmlspecialchars($cl['libelle_classe']) ?>
                       </a>
                     </td>
@@ -126,10 +126,10 @@ $stAnnee = $item['statut_annee'] ?? 'planifie';
                       <?php endif; ?>
                     </td>
                     <td style="padding: 10px; text-align: right; white-space: nowrap;">
-                      <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['code_annee'] ?? '') ?>&classe_code=<?= urlencode($cl['code_classe'] ?? '') ?>" target="_blank" class="btn btn-sm btn-outline-secondary" style="border: 1px solid #CBD5E1; color: #1E3A5F; background: #FFFFFF; font-weight: 600; border-radius: 6px; font-size: 11px; padding: 4px 8px; margin-right: 4px;" title="Imprimer la liste de cette classe">
+                      <a href="<?= url() ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['code_annee'] ?? '') ?>&classe_code=<?= urlencode($cl['code_classe'] ?? '') ?>" target="_blank" class="btn btn-sm btn-outline-secondary" style="border: 1px solid #CBD5E1; color: #1E3A5F; background: #FFFFFF; font-weight: 600; border-radius: 6px; font-size: 11px; padding: 4px 8px; margin-right: 4px;" title="Imprimer la liste de cette classe">
                         <i data-lucide="printer" style="width: 12px; height: 12px;"></i> Imprimer
                       </a>
-                      <a href="<?= RACINE ?>classe/details/<?= $clIdCrypte ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 11px; padding: 4px 8px;">
+                      <a href="<?= url('classe/details/' . $clIdCrypte) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 11px; padding: 4px 8px;">
                         Détails
                       </a>
                     </td>

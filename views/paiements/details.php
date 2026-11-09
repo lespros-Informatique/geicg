@@ -97,13 +97,13 @@ if (!empty($rawPhoto)) {
     $cleanPhotoPath = ltrim($rawPhoto, '/');
     if (strpos($cleanPhotoPath, 'public/') === 0) {
         if (file_exists(__DIR__ . '/../../' . $cleanPhotoPath)) {
-            $studentPhotoUrl = RACINE . $cleanPhotoPath;
+            $studentPhotoUrl = url($cleanPhotoPath);
         }
     } else {
         if (file_exists(__DIR__ . '/../../public/' . $cleanPhotoPath)) {
-            $studentPhotoUrl = RACINE . 'public/' . $cleanPhotoPath;
+            $studentPhotoUrl = url('public/' . $cleanPhotoPath);
         } elseif (file_exists(__DIR__ . '/../../' . $cleanPhotoPath)) {
-            $studentPhotoUrl = RACINE . $cleanPhotoPath;
+            $studentPhotoUrl = url($cleanPhotoPath);
         }
     }
 }
@@ -113,7 +113,7 @@ if (empty($studentPhotoUrl) && !empty($item['nom_etudiant'])) {
     $anneeFolder = !empty($anneeLibelle) ? $anneeLibelle : '';
     $potentialPath = 'public/uploads/photos_inscriptions/' . $anneeFolder . '/' . $slugNom . '.png';
     if (file_exists(__DIR__ . '/../../' . $potentialPath)) {
-        $studentPhotoUrl = RACINE . $potentialPath;
+        $studentPhotoUrl = url($potentialPath);
     }
 }
 
@@ -154,10 +154,10 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Étudiant : <strong><?= htmlspecialchars($nomComplet) ?></strong> &bull; Impression conforme au modèle standard</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('paiement/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux paiements
           </a>
-          <a href="<?= RACINE ?>paiement/imprimerPdf/<?= $encryptedId ?>" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('paiement/imprimerPdf/' . $encryptedId) ?>" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu (PDF)
           </a>
         </div>

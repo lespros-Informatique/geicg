@@ -14,12 +14,12 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($role['id']) ? 'Configuration du Rôle : ' . htmlspecialchars($role['libelle_role']) : 'Ajouter un Rôle & Profil' ?></h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Définition des accès et des permissions granulaires du rôle</p>
         </div>
-        <a href="<?= RACINE ?>role/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('role/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux rôles
         </a>
       </div>
 
-      <form action="<?= RACINE ?>role/<?= !empty($role['id']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+      <form action="<?= url('role/' . (!empty($role['id']) ? 'edit' : 'add')) ?>" method="POST" style="width: 100%;">
         <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
         <?php if (!empty($role['id'])): ?>
           <input type="hidden" name="id" value="<?= $role['id'] ?>">
@@ -160,7 +160,7 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
           <button type="submit" id="btn-save-role" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 12px 28px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
             <i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Rôle & Permissions
           </button>
-          <a href="<?= RACINE ?>role/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+          <a href="<?= url('role/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
             <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Annuler
           </a>
         </div>

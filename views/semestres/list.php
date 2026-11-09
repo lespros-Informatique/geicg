@@ -18,10 +18,10 @@
 
       <!-- Navigation Tabs (Années Académiques vs Semestres & Périodes) -->
       <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
-        <a href="<?= RACINE ?>annee/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="<?= url('annee/list') ?>" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="calendar-range" style="width: 17px; height: 17px;"></i> Années Académiques
         </a>
-        <a href="<?= RACINE ?>semestre/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="<?= url('semestre/list') ?>" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="clock" style="width: 17px; height: 17px;"></i> Semestres & Périodes
         </a>
       </div>

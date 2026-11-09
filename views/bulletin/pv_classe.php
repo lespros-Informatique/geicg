@@ -14,7 +14,7 @@ $encryptedClasseCode = $encryptedClasseCode ?? '';
       <div class="page-header no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <a href="<?= RACINE ?>bulletin/list" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;">
+            <a href="<?= url('bulletin/list') ?>" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;">
               <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour Bulletins
             </a>
             <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Procès-Verbal (PV) de Notes de la Classe</h1>
@@ -22,7 +22,7 @@ $encryptedClasseCode = $encryptedClasseCode ?? '';
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Tableau récapitulatif de délibération des notes et classements par classe</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-          <a href="<?= RACINE ?>bulletin/imprimerPvPdf/<?= $encryptedClasseCode ?>?semestre=<?= urlencode($selectedSemestreCode) ?>" target="_blank" class="btn btn-outline-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; border-color: #1E3A5F; color: #1E3A5F;">
+          <a href="<?= url() ?>bulletin/imprimerPvPdf/<?= $encryptedClasseCode ?>?semestre=<?= urlencode($selectedSemestreCode) ?>" target="_blank" class="btn btn-outline-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; border-color: #1E3A5F; color: #1E3A5F;">
             <i data-lucide="file-down" style="width: 18px; height: 18px;"></i> Télécharger PV (PDF)
           </a>
           <button onclick="window.print();" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
@@ -33,7 +33,7 @@ $encryptedClasseCode = $encryptedClasseCode ?? '';
 
       <!-- Filtres de Sélection Classe & Semestre -->
       <div class="card no-print" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px;">
-        <form method="GET" action="<?= RACINE ?>bulletin/pvClasse" id="filter-pv-form">
+        <form method="GET" action="<?= url('bulletin/pvClasse') ?>" id="filter-pv-form">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: end;">
             <div>
               <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: block;">Classe <span style="color:#EF4444;">*</span></label>

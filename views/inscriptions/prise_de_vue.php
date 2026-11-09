@@ -15,7 +15,7 @@
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]))): ?>
-          <a href="<?= RACINE ?>inscription/imprimerPriseDeVuePdf" id="btn-print-prise-de-vue" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer l'état de la prise de vue en PDF">
+          <a href="<?= url('inscription/imprimerPriseDeVuePdf') ?>" id="btn-print-prise-de-vue" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer l'état de la prise de vue en PDF">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </a>
           <?php endif; ?>

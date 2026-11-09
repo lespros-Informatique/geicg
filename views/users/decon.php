@@ -12,11 +12,11 @@ require_once __DIR__ . '/../../public/inc/header.php';
       </div>
 
       <div class="auth-body">
-        <form class="formDecon" method="POST" action="<?= RACINE ?>user/decon">
+        <form class="formDecon" method="POST" action="<?= url('user/decon') ?>">
           <?= Validator::csrfField() ?>
 
           <div class="form-actions" style="justify-content: center; gap: 1rem;">
-            <a href="<?= RACINE ?>" class="btn btn-secondary">Annuler</a>
+            <a href="<?= url() ?>" class="btn btn-secondary">Annuler</a>
             <button type="submit" class="btn btn-primary btn_actions btnDecon">
               <span class="btn-text">
                 <i data-lucide="log-out"></i>
@@ -30,5 +30,5 @@ require_once __DIR__ . '/../../public/inc/header.php';
   </main>
 </div>
 
-<script src="<?= RACINE ?>public/json/auth.js"></script>
+<script src="<?= asset('json/auth.js') ?>"></script></script>
 <?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>

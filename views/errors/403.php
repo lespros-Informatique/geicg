@@ -57,7 +57,7 @@ $auth = Auth::user() ?: [];
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Page précédente
           </button>
           
-          <a href="<?= RACINE ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 11px 22px; border-radius: 8px;">
+          <a href="<?= url() ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 11px 22px; border-radius: 8px;">
             <i data-lucide="home" style="width: 18px; height: 18px;"></i> Tableau de bord
           </a>
         </div>
