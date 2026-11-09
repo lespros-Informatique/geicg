@@ -372,6 +372,17 @@ class ModelCaisseAnnexe extends BaseModel
     public function recordPayment(array $data): int|string
     {
         $filtered = $this->filterData($data);
-        return $this->create($filtered);
+        if ($this->create($filtered)) {
+            $lastId = (int)$this->getCon()->lastInsertId();
+            if ($lastId > 0) {
+                return $lastId;
+            }
+            if (!empty($data['code_paiement'])) {
+                $stmt = $this->getCon()->prepare("SELECT id_paiement FROM " . TABLES::PAIEMENTS . " WHERE code_paiement = ? LIMIT 1");
+                $stmt->execute([$data['code_paiement']]);
+                return (int)($stmt->fetchColumn() ?: 0);
+            }
+        }
+        return 0;
     }
 }

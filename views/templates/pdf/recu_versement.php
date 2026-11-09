@@ -1,4 +1,16 @@
 <?php
+// 1. Initialisation défensive de la configuration (Règle 9)
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } elseif (file_exists(__DIR__ . '/../../../models/configurations/ModelConfiguration.php')) {
+        require_once __DIR__ . '/../../../models/configurations/ModelConfiguration.php';
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+
 // Helper code-barres officiel Picqer & fallback natif mPDF
 if (!function_exists('generatePicqerBarcodeHtml')) {
     function generatePicqerBarcodeHtml($code, $height = 26, $widthFactor = 1.0) {

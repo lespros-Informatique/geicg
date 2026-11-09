@@ -167,10 +167,11 @@ class PaiementController extends BaseController
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_paiement'];
-            $idCrypte = $this->validator->crypter($id);
+            $idCrypte = !empty($id) ? $this->validator->crypter($id) : (!empty($i['code_paiement']) ? $this->validator->crypter($i['code_paiement']) : '');
             $data[] = array_merge($i, [
                 'id' => $id,
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'encrypted_id' => $idCrypte
             ]);
         }
         $this->json(['data' => $data]);
@@ -228,6 +229,13 @@ class PaiementController extends BaseController
                 ],
                 $etabCode
             );
+            $idPmt = (int)($res['data']['id_paiement'] ?? 0);
+            if ($idPmt > 0) {
+                Session::set('last_paiement_id', $idPmt);
+            }
+            if (!empty($codePmt)) {
+                Session::set('last_paiement_code', $codePmt);
+            }
             $this->success($res['message'], $res['data'] ?? []);
         } else {
             $this->error($res['message']);
@@ -407,16 +415,41 @@ class PaiementController extends BaseController
         $id = $details;
         if (!empty($details)) {
             $decrypted = $this->validator->decrypter($details);
-            if (!empty($decrypted)) {
+            if (!empty($decrypted) && $decrypted !== 0 && $decrypted !== '0') {
                 $id = $decrypted;
+            } elseif ($decrypted === 0 || $decrypted === '0') {
+                // Le hash décrypté équivaut à 0 (ex: lien généré avant insertion ou fallback 0)
+                // Récupération prioritaire via la session ou le dernier paiement confirmé
+                $id = Session::get('last_paiement_id') ?: Session::get('last_paiement_code') ?: null;
+                if (empty($id)) {
+                    $db = (new Database())->getCon();
+                    $stmtLast = $db->query("SELECT id_paiement FROM " . TABLES::PAIEMENTS . " WHERE statut_paiement != '" . STATUTS::ANNULE . "' ORDER BY id_paiement DESC LIMIT 1");
+                    $id = (int)($stmtLast->fetchColumn() ?: 0);
+                }
             }
         }
 
         $data = $this->model->getRecuVersementData((string)$id);
+        if (!$data && !empty($details) && (string)$id !== (string)$details) {
+            $data = $this->model->getRecuVersementData((string)$details);
+        }
+        if (!$data && !empty($_GET['code'])) {
+            $data = $this->model->getRecuVersementData((string)$_GET['code']);
+        }
+        if (!$data) {
+            $lastIdInDb = Session::get('last_paiement_id');
+            if (!empty($lastIdInDb)) {
+                $data = $this->model->getRecuVersementData((string)$lastIdInDb);
+            }
+        }
+
         if (!$data) {
             $this->renderNotFound("Le reçu de versement demandé est introuvable.");
             return;
         }
+
+        // Conforme à la règle 9 : injection des configurations institutionnelles
+        $data['etablissement'] = $this->getEtablissementConfig();
 
         $templateName = 'recu_versement.php';
         $html = PdfService::renderTemplate($templateName, $data);

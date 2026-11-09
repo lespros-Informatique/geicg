@@ -111,7 +111,7 @@ class CaisseAnnexeController extends BaseController
 
         foreach ($items as $i) {
             $id = $i['id_paiement'];
-            $idCrypte = $this->validator->crypter($id);
+            $idCrypte = !empty($id) ? $this->validator->crypter($id) : (!empty($i['code_paiement']) ? $this->validator->crypter($i['code_paiement']) : '');
             $encInscrId = !empty($i['inscription_code']) ? $this->validator->crypter($i['inscription_code']) : '';
 
             $data[] = array_merge($i, [
@@ -300,9 +300,18 @@ class CaisseAnnexeController extends BaseController
                 'user_code' => $userCode
             ];
 
-            $newId = $this->model->recordPayment($paymentData);
-            $encryptedId = $this->validator->crypter($newId);
+            $newId = (int)$this->model->recordPayment($paymentData);
+            if ($newId <= 0 && !empty($codePaiement)) {
+                $db = (new Database())->getCon();
+                $stmtFind = $db->prepare("SELECT id_paiement FROM " . TABLES::PAIEMENTS . " WHERE code_paiement = ? LIMIT 1");
+                $stmtFind->execute([$codePaiement]);
+                $newId = (int)($stmtFind->fetchColumn() ?: 0);
+            }
+            $encryptedId = $newId > 0 ? $this->validator->crypter($newId) : $this->validator->crypter($codePaiement);
             $encryptedInscrId = $this->validator->crypter($inscription['id_inscription'] ?? $codeInscription);
+
+            Session::set('last_paiement_id', $newId);
+            Session::set('last_paiement_code', $codePaiement);
 
             $this->logAction(
                 AuditLogger::ACTION_CREATE,

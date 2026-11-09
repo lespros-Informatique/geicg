@@ -1262,7 +1262,10 @@ class ModelPaiement extends BaseModel
             $stmtInscrId->execute([$inscriptionCode]);
             $inscrId = (int)($stmtInscrId->fetchColumn() ?: 0);
             $encryptedInscriptionId = ($validator && method_exists($validator, 'crypter')) ? $validator->crypter($inscrId > 0 ? $inscrId : $inscriptionCode) : (string)$inscrId;
-            $encryptedId = ($validator && method_exists($validator, 'crypter')) ? $validator->crypter($lastPaiementId) : (string)$lastPaiementId;
+            $lastCode = end($createdCodes) ?: '';
+            $encryptedId = ($validator && method_exists($validator, 'crypter')) 
+                ? ($lastPaiementId > 0 ? $validator->crypter($lastPaiementId) : (!empty($lastCode) ? $validator->crypter($lastCode) : '')) 
+                : (string)$lastPaiementId;
 
             return [
                 'success' => true,
@@ -1315,7 +1318,9 @@ class ModelPaiement extends BaseModel
             $stmtInscrId->execute([$inscriptionCode]);
             $inscrId = (int)($stmtInscrId->fetchColumn() ?: 0);
             $encryptedInscriptionId = ($validator && method_exists($validator, 'crypter')) ? $validator->crypter($inscrId > 0 ? $inscrId : $inscriptionCode) : (string)$inscrId;
-            $encryptedId = ($validator && method_exists($validator, 'crypter')) ? $validator->crypter($lastId) : (string)$lastId;
+            $encryptedId = ($validator && method_exists($validator, 'crypter')) 
+                ? ($lastId > 0 ? $validator->crypter($lastId) : (!empty($data['code_paiement']) ? $validator->crypter($data['code_paiement']) : '')) 
+                : (string)$lastId;
 
             return [
                 'success' => true,
