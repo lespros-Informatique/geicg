@@ -107,11 +107,11 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
     .banner-title {
       background: #1E3A5F;
       color: #FFFFFF;
-      font-size: 10pt;
+      font-size: 15pt;
       font-weight: bold;
       text-align: center;
       padding: 3px;
-      margin-top: 2px;
+      margin-top: 5px;
       margin-bottom: 2px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -119,20 +119,21 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
     .banner-title-secondary {
       background: #475569;
       color: #FFFFFF;
-      font-size: 8.5pt;
+      font-size: 9pt;
       font-weight: bold;
       text-align: center;
-      padding: 2.5px;
-      margin-top: 4px;
-      margin-bottom: 3px;
+      padding: 7px 2.5px;
+      margin-top: 9px;
+      margin-bottom: 10px;
       text-transform: uppercase;
     }
 
     .annee-header {
-      font-size: 8.5pt;
+      font-size: 10pt;
       font-weight: bold;
       text-align: center;
-      margin-bottom: 3px;
+      margin-top: 5px;
+      margin-bottom: 5px;
       color: #1E3A5F;
     }
 
@@ -172,7 +173,7 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
     .data-table th, .data-table td {
       border: 0.5px solid #000000;
       padding: 2px 4px;
-      font-size: 7.5pt;
+      font-size: 9.5pt;
     }
     .data-table th {
       background: #E2E8F0;
@@ -183,8 +184,8 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
 
     .dashed-sep {
       border-top: 1px dashed #64748B;
-      margin-top: 5px;
-      margin-bottom: 5px;
+      margin-top: 25px;
+      margin-bottom: 30px;
     }
   </style>
 </head>
@@ -226,10 +227,13 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
           <tr>
             <td style="width: 38%;">
               N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? '-') ?></span>
+              <br>
               <?php if (!empty($code_paiement) && $code_paiement !== '-'): ?>
                 <div style="margin-top: 2px;">
-                  <barcode code="<?= htmlspecialchars($code_paiement) ?>" type="C128A" size="0.5" height="0.45" />
+                  <barcode code="<?= htmlspecialchars($code_paiement) ?>" type="C128A" size="0.45" height="0.95" />
                 </div>
+                <br>
+                <br>
               <?php endif; ?>
             </td>
             <td style="width: 32%;">Date : <span class="val-bold"><?= htmlspecialchars($date_operation ?? date('d/m/Y')) ?></span></td>
@@ -261,6 +265,7 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
     </tr>
   </table>
 
+  <br>
   <!-- TABLEAU FINANCIER DES FRAIS DE TENUE -->
   <table class="data-table">
     <thead>
@@ -283,7 +288,7 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
   <table class="data-table">
     <thead>
       <tr style="background: #1E3A5F; color: #FFFFFF;">
-        <th colspan="3" style="text-align: center; font-size: 8pt; color: #FFFFFF;">Kits & Fournitures Scolaires Assignés</th>
+        <th colspan="3" style="text-align: center; font-size: 10pt; color: #0d0d0dff;">Kits Scolaires Assignés</th>
       </tr>
       <tr>
         <th style="width: 45%;">Désignation</th>
@@ -344,8 +349,10 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
         N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? '-') ?></span>
         <?php if (!empty($code_paiement) && $code_paiement !== '-'): ?>
           <div style="margin-top: 1px;">
-            <barcode code="<?= htmlspecialchars($code_paiement) ?>" type="C128A" size="0.45" height="0.35" />
+            <barcode code="<?= htmlspecialchars($code_paiement) ?>" type="C128A" size="0.45" height="0.95" />
           </div>
+          <br>
+          <br>
         <?php endif; ?>
       </td>
       <td style="width: 25%;">Classe : <span class="val-bold"><?= htmlspecialchars($filiere_niveau ?? '-') ?></span></td>
