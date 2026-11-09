@@ -132,27 +132,27 @@
                     <h3>Raccourcis GEICG</h3>
                 </div>
                 <div class="dropdown-grid">
-                    <a href="<?= RACINE ?>inscription/add" class="dropdown-card">
+                    <a href="<?= url('inscription/add') ?>" class="dropdown-card">
                         <i data-lucide="user-plus"></i>
                         <span>Nouvelle Inscription</span>
                     </a>
-                    <a href="<?= RACINE ?>paiement/add" class="dropdown-card">
+                    <a href="<?= url('paiement/add') ?>" class="dropdown-card">
                         <i data-lucide="credit-card"></i>
                         <span>Nouveau Paiement</span>
                     </a>
-                    <a href="<?= RACINE ?>note/add" class="dropdown-card">
+                    <a href="<?= url('note/add') ?>" class="dropdown-card">
                         <i data-lucide="edit-3"></i>
                         <span>Saisir Notes</span>
                     </a>
-                    <a href="<?= RACINE ?>etudiant/list" class="dropdown-card">
+                    <a href="<?= url('etudiant/list') ?>" class="dropdown-card">
                         <i data-lucide="users"></i>
                         <span>Étudiants</span>
                     </a>
-                    <a href="<?= RACINE ?>emploi/list" class="dropdown-card">
+                    <a href="<?= url('emploi/list') ?>" class="dropdown-card">
                         <i data-lucide="calendar"></i>
                         <span>Emplois du temps</span>
                     </a>
-                    <a href="<?= RACINE ?>bulletin/list" class="dropdown-card">
+                    <a href="<?= url('bulletin/list') ?>" class="dropdown-card">
                         <i data-lucide="file-text"></i>
                         <span>Bulletins</span>
                     </a>
@@ -398,9 +398,9 @@
                         <?php endif; ?>
                     </div>
                 </div>
-                <a href="<?= RACINE ?>user/profil" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>
+                <a href="<?= url('user/profil') ?>" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>
                 <hr>
-                <a href="<?= RACINE ?>user/decon" class="dropdown-item logout"><i data-lucide="log-out"></i> Déconnexion</a>
+                <a href="<?= url('user/decon') ?>" class="dropdown-item logout"><i data-lucide="log-out"></i> Déconnexion</a>
             </div>
         </div>
     </div>

@@ -41,7 +41,7 @@
     </div>
 
     <nav class="sidebar-nav">
-        <a href="<?= RACINE ?>" class="nav-item <?= in_array($currentUri, [RACINE, RACINE . 'public/', '/geicg/', '/geicg/public/'], true) ? 'active' : '' ?>" data-title="Tableau de bord">
+        <a href="<?= url() ?>" class="nav-item <?= in_array($currentUri, [RACINE, RACINE . 'public/', '/geicg/', '/geicg/public/'], true) ? 'active' : '' ?>" data-title="Tableau de bord">
             <i data-lucide="layout-dashboard"></i> <span>Tableau de bord</span>
         </a>
 
@@ -56,27 +56,27 @@
             </div>
             <div class="nav-section-items" id="sec-structure">
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ETABLISSEMENT, PERMISSIONS::CONFIG_SYSTEM])): ?>
-                <a href="<?= RACINE ?>etablissement/config" class="nav-item sub <?= $isActiveRoute('/etablissement/') ?>" data-title="Configuration Établissement">
+                <a href="<?= url('etablissement/config') ?>" class="nav-item sub <?= $isActiveRoute('/etablissement/') ?>" data-title="Configuration Établissement">
                     <i data-lucide="landmark"></i> <span>Configuration Établissement</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::MANAGE_CYCLES, PERMISSIONS::VIEW_CYCLES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_NIVEAUX, PERMISSIONS::VIEW_NIVEAUX])): ?>
-                <a href="<?= RACINE ?>filiere_cycle/list" class="nav-item sub <?= $isActiveRoute(['/filiere_cycle/', '/filiere/', '/cycle/', '/niveau/']) ?>" data-title="Offre Académique (Cycles, Filières & Niveaux)">
+                <a href="<?= url('filiere_cycle/list') ?>" class="nav-item sub <?= $isActiveRoute(['/filiere_cycle/', '/filiere/', '/cycle/', '/niveau/']) ?>" data-title="Offre Académique (Cycles, Filières & Niveaux)">
                     <i data-lucide="layers"></i> <span>Cycles, Filières & Niveaux</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_SALLES, PERMISSIONS::VIEW_SALLES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
-                <a href="<?= RACINE ?>salle/list" class="nav-item sub <?= $isActiveRoute('/salle/') ?>" data-title="Salles de Cours">
+                <a href="<?= url('salle/list') ?>" class="nav-item sub <?= $isActiveRoute('/salle/') ?>" data-title="Salles de Cours">
                     <i data-lucide="door-open"></i> <span>Salles de Cours</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS])): ?>
-                <a href="<?= RACINE ?>piece_fournir/list" class="nav-item sub <?= $isActiveRoute('/piece_fournir') ?>" data-title="Pièces à Fournir">
+                <a href="<?= url('piece_fournir/list') ?>" class="nav-item sub <?= $isActiveRoute('/piece_fournir') ?>" data-title="Pièces à Fournir">
                     <i data-lucide="file-check-2"></i> <span>Pièces à Fournir</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS])): ?>
-                <a href="<?= RACINE ?>accessoire/list" class="nav-item sub <?= $isActiveRoute('/accessoire/list') ?>" data-title="Kits & Accessoires">
+                <a href="<?= url('accessoire/list') ?>" class="nav-item sub <?= $isActiveRoute('/accessoire/list') ?>" data-title="Kits & Accessoires">
                     <i data-lucide="package"></i> <span>Kits & Accessoires</span>
                 </a>
                 <?php endif; ?>
@@ -95,22 +95,22 @@
             </div>
             <div class="nav-section-items" id="sec-academique">
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ANNEES, PERMISSIONS::VIEW_ANNEES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_SEMESTRES, PERMISSIONS::VIEW_SEMESTRES])): ?>
-                <a href="<?= RACINE ?>annee/list" class="nav-item sub <?= $isActiveRoute(['/annee', '/semestre']) ?>" data-title="Années & Semestres">
+                <a href="<?= url('annee/list') ?>" class="nav-item sub <?= $isActiveRoute(['/annee', '/semestre']) ?>" data-title="Années & Semestres">
                     <i data-lucide="calendar-range"></i> <span>Années & Semestres</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
-                <a href="<?= RACINE ?>classe/list" class="nav-item sub <?= $isActiveRoute('/classe/') ?>" data-title="Classes">
+                <a href="<?= url('classe/list') ?>" class="nav-item sub <?= $isActiveRoute('/classe/') ?>" data-title="Classes">
                     <i data-lucide="graduation-cap"></i> <span>Classes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES])): ?>
-                <a href="<?= RACINE ?>maquette/list" class="nav-item sub <?= $isActiveRoute('/maquette/') ?>" data-title="Maquettes Pédagogiques & Coefficients">
+                <a href="<?= url('maquette/list') ?>" class="nav-item sub <?= $isActiveRoute('/maquette/') ?>" data-title="Maquettes Pédagogiques & Coefficients">
                     <i data-lucide="book-marked"></i> <span>Maquettes & Coefs</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_MATIERES, PERMISSIONS::VIEW_MATIERES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
-                <a href="<?= RACINE ?>matiere/list" class="nav-item sub <?= $isActiveRoute('/matiere/') ?>" data-title="Matières">
+                <a href="<?= url('matiere/list') ?>" class="nav-item sub <?= $isActiveRoute('/matiere/') ?>" data-title="Matières">
                     <i data-lucide="book-open"></i> <span>Matières</span>
                 </a>
                 <?php endif; ?>
@@ -129,32 +129,32 @@
             </div>
             <div class="nav-section-items" id="sec-eleves">
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::VIEW_ETUDIANTS])): ?>
-                <a href="<?= RACINE ?>etudiant/list" class="nav-item sub <?= $isActiveRoute('/etudiant/') ?>" data-title="Registre des Étudiants">
+                <a href="<?= url('etudiant/list') ?>" class="nav-item sub <?= $isActiveRoute('/etudiant/') ?>" data-title="Registre des Étudiants">
                     <i data-lucide="users"></i> <span>Registre des Étudiants</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_INSCRIPTIONS, PERMISSIONS::VIEW_INSCRIPTIONS])): ?>
-                <a href="<?= RACINE ?>reinscription/list" class="nav-item sub <?= $isActiveRoute(['/inscription/', '/reinscription/'], '/inscription/sans_photo') ?>" data-title="Réinscriptions">
+                <a href="<?= url('reinscription/list') ?>" class="nav-item sub <?= $isActiveRoute(['/inscription/', '/reinscription/'], '/inscription/sans_photo') ?>" data-title="Réinscriptions">
                     <i data-lucide="clipboard-check"></i> <span>Réinscriptions</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS])): ?>
-                <a href="<?= RACINE ?>inscription/prise_de_vue" class="nav-item sub <?= $isActiveRoute(['/inscription/prise_de_vue', '/inscription/sans_photo']) ?>" data-title="Prise de vue">
+                <a href="<?= url('inscription/prise_de_vue') ?>" class="nav-item sub <?= $isActiveRoute(['/inscription/prise_de_vue', '/inscription/sans_photo']) ?>" data-title="Prise de vue">
                     <i data-lucide="camera"></i> <span>Prise de vue</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_DEPOT_DOSSIERS, PERMISSIONS::VIEW_DEPOT_DOSSIERS])): ?>
-                <a href="<?= RACINE ?>dossier_etudiant/list" class="nav-item sub <?= $isActiveRoute('/dossier_etudiant/') ?>" data-title="Dépôt des Dossiers Étudiants">
+                <a href="<?= url('dossier_etudiant/list') ?>" class="nav-item sub <?= $isActiveRoute('/dossier_etudiant/') ?>" data-title="Dépôt des Dossiers Étudiants">
                     <i data-lucide="folder-open"></i> <span>Dépôt des Dossiers </span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS])): ?>
-                <a href="<?= RACINE ?>accessoire_inscription/registre" class="nav-item sub <?= $isActiveRoute(['/accessoire_inscription/', '/accessoire/registre']) ?>" data-title="Registre & Remise des Kits">
+                <a href="<?= url('accessoire_inscription/registre') ?>" class="nav-item sub <?= $isActiveRoute(['/accessoire_inscription/', '/accessoire/registre']) ?>" data-title="Registre & Remise des Kits">
                     <i data-lucide="package-check"></i> <span>Retrait des Kits</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_PARENTS, PERMISSIONS::VIEW_PARENTS, PERMISSIONS::MANAGE_ETUDIANTS])): ?>
-                <a href="<?= RACINE ?>parent/list" class="nav-item sub <?= $isActiveRoute('/parent/') ?>" data-title="Parents & Tuteurs">
+                <a href="<?= url('parent/list') ?>" class="nav-item sub <?= $isActiveRoute('/parent/') ?>" data-title="Parents & Tuteurs">
                     <i data-lucide="contact"></i> <span>Parents & Tuteurs</span>
                 </a>
                 <?php endif; ?>
@@ -173,47 +173,47 @@
             </div>
             <div class="nav-section-items" id="sec-finance">
                 <?php if ($canAccess([PERMISSIONS::MANAGE_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE])): ?>
-                <a href="<?= RACINE ?>scolarite/list" class="nav-item sub <?= $isActiveRoute(['/scolarite/', '/tranche/']) ?>" data-title="Scolarités & Échéanciers">
+                <a href="<?= url('scolarite/list') ?>" class="nav-item sub <?= $isActiveRoute(['/scolarite/', '/tranche/']) ?>" data-title="Scolarités & Échéanciers">
                     <i data-lucide="receipt"></i> <span>Scolarités & Échéanciers</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE])): ?>
-                <a href="<?= RACINE ?>fraisAnnexe/list" class="nav-item sub <?= $isActiveRoute('/fraisAnnexe/') ?>" data-title="Grille Frais Annexes">
+                <a href="<?= url('fraisAnnexe/list') ?>" class="nav-item sub <?= $isActiveRoute('/fraisAnnexe/') ?>" data-title="Grille Frais Annexes">
                     <i data-lucide="package-check"></i> <span>Grille Frais Annexes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::MANAGE_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS, PERMISSIONS::VIEW_RAPPORTS_FINANCIERS, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_ANNEXES])): ?>
-                <a href="<?= RACINE ?>caisse_annexe/list" class="nav-item sub <?= $isActiveRoute('/caisse_annexe') ?>" data-title="Caisse Annexe (Bilan)">
+                <a href="<?= url('caisse_annexe/list') ?>" class="nav-item sub <?= $isActiveRoute('/caisse_annexe') ?>" data-title="Caisse Annexe (Bilan)">
                     <i data-lucide="wallet-cards"></i> <span>Caisse Annexe</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_PAIEMENTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::RECORD_PAIEMENTS])): ?>
-                <a href="<?= RACINE ?>paiement/list" class="nav-item sub <?= $isActiveRoute('/paiement/', '/comptabilite_etudiants') ?>" data-title="Caisse & Encaissements">
+                <a href="<?= url('paiement/list') ?>" class="nav-item sub <?= $isActiveRoute('/paiement/', '/comptabilite_etudiants') ?>" data-title="Caisse & Encaissements">
                     <i data-lucide="credit-card"></i> <span>Caisse & Encaissements</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::MANAGE_PAIEMENTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_RAPPORTS_FINANCIERS, PERMISSIONS::EXPORT_FINANCE])): ?>
-                <a href="<?= RACINE ?>paiement/comptabilite_etudiants" class="nav-item sub <?= $isActiveRoute('/comptabilite_etudiants') ?>" data-title="Comptabilité Étudiants">
+                <a href="<?= url('paiement/comptabilite_etudiants') ?>" class="nav-item sub <?= $isActiveRoute('/comptabilite_etudiants') ?>" data-title="Comptabilité Étudiants">
                     <i data-lucide="users"></i> <span>Comptabilité Étudiants</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::CLOTURE_CAISSE, PERMISSIONS::VIEW_RAPPORTS_FINANCIERS, PERMISSIONS::MANAGE_PAIEMENTS, PERMISSIONS::RECORD_PAIEMENTS])): ?>
-                <a href="<?= RACINE ?>session_caisse/list" class="nav-item sub <?= $isActiveRoute(['/session_caisse/', '/ouverture_caisse/', '/cloture_caisse/']) ?>" data-title="Sessions de Caisse">
+                <a href="<?= url('session_caisse/list') ?>" class="nav-item sub <?= $isActiveRoute(['/session_caisse/', '/ouverture_caisse/', '/cloture_caisse/']) ?>" data-title="Sessions de Caisse">
                     <i data-lucide="vault"></i> <span>Sessions de Caisse</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_MORATOIRES])): ?>
-                <a href="<?= RACINE ?>impayes/list" class="nav-item sub <?= $isActiveRoute('/impayes/') ?>" data-title="Relances & Impayés">
+                <a href="<?= url('impayes/list') ?>" class="nav-item sub <?= $isActiveRoute('/impayes/') ?>" data-title="Relances & Impayés">
                     <i data-lucide="alert-triangle"></i> <span>Relances & Impayés</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ARRIERES, PERMISSIONS::VIEW_ARRIERES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::MANAGE_PAIEMENTS])): ?>
-                <a href="<?= RACINE ?>arriere/list" class="nav-item sub <?= $isActiveRoute('/arriere/') ?>" data-title="Arriérés Années Antérieures">
+                <a href="<?= url('arriere/list') ?>" class="nav-item sub <?= $isActiveRoute('/arriere/') ?>" data-title="Arriérés Années Antérieures">
                     <i data-lucide="history"></i> <span>Arriérés Années Antérieures</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::RECORD_DEPENSES, PERMISSIONS::VIEW_DEPENSES, PERMISSIONS::VALIDATE_DEPENSES, PERMISSIONS::MANAGE_TYPES_DEPENSE, PERMISSIONS::VIEW_TYPES_DEPENSE])): ?>
-                <a href="<?= RACINE ?>depense/list" class="nav-item sub <?= $isActiveRoute(['/depense', '/type_depense']) ?>" data-title="Dépenses & Engagements">
+                <a href="<?= url('depense/list') ?>" class="nav-item sub <?= $isActiveRoute(['/depense', '/type_depense']) ?>" data-title="Dépenses & Engagements">
                     <i data-lucide="file-minus"></i> <span>Dépenses & Engagements</span>
                 </a>
                 <?php endif; ?>
@@ -232,38 +232,38 @@
             </div>
             <div class="nav-section-items" id="sec-pedagogie">
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ENSEIGNANTS, PERMISSIONS::VIEW_ENSEIGNANTS])): ?>
-                <a href="<?= RACINE ?>enseignant/list" class="nav-item sub <?= $isActiveRoute('/enseignant/', '_matiere') ?>" data-title="Corps Enseignant">
+                <a href="<?= url('enseignant/list') ?>" class="nav-item sub <?= $isActiveRoute('/enseignant/', '_matiere') ?>" data-title="Corps Enseignant">
                     <i data-lucide="user-check"></i> <span>Corps Enseignant</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_EMPLOI_TEMPS, PERMISSIONS::VIEW_EMPLOI_TEMPS])): ?>
-                <a href="<?= RACINE ?>emploi/list" class="nav-item sub <?= $isActiveRoute('/emploi/') ?>" data-title="Emplois du Temps">
+                <a href="<?= url('emploi/list') ?>" class="nav-item sub <?= $isActiveRoute('/emploi/') ?>" data-title="Emplois du Temps">
                     <i data-lucide="calendar"></i> <span>Emplois du Temps</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ABSENCES, PERMISSIONS::VIEW_ABSENCES])): ?>
-                <a href="<?= RACINE ?>absence/list" class="nav-item sub <?= $isActiveRoute('/absence/') ?>" data-title="Absences par Classe">
+                <a href="<?= url('absence/list') ?>" class="nav-item sub <?= $isActiveRoute('/absence/') ?>" data-title="Absences par Classe">
                     <i data-lucide="user-x"></i> <span>Absences & Appel par Classe</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS])): ?>
-                <a href="<?= RACINE ?>composition/list" class="nav-item sub <?= $isActiveRoute('/composition/') ?>" data-title="Planning des Examens">
+                <a href="<?= url('composition/list') ?>" class="nav-item sub <?= $isActiveRoute('/composition/') ?>" data-title="Planning des Examens">
                     <i data-lucide="award"></i> <span>Planning des Examens</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::ENTER_NOTES, PERMISSIONS::VIEW_NOTES, PERMISSIONS::LOCK_NOTES])): ?>
-                <a href="<?= RACINE ?>note/saisieClasse" class="nav-item sub <?= $isActiveRoute('/note/saisieClasse') ?>" data-title="Saisie des Notes par Classe">
+                <a href="<?= url('note/saisieClasse') ?>" class="nav-item sub <?= $isActiveRoute('/note/saisieClasse') ?>" data-title="Saisie des Notes par Classe">
                     <i data-lucide="edit-3"></i> <span>Saisie des Notes par Classe</span>
                 </a>
-                <a href="<?= RACINE ?>note/list" class="nav-item sub <?= $isActiveRoute('/note/', 'saisieClasse') ?>" data-title="Registre & Journal des Notes">
+                <a href="<?= url('note/list') ?>" class="nav-item sub <?= $isActiveRoute('/note/', 'saisieClasse') ?>" data-title="Registre & Journal des Notes">
                     <i data-lucide="list"></i> <span>Registre & Journal des Notes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_REPORTS])): ?>
-                <a href="<?= RACINE ?>bulletin/list" class="nav-item sub <?= $isActiveRoute(['/bulletin/list', RACINE . 'bulletin/'], 'pvClasse') ?>" data-title="Bulletins Semestriels">
+                <a href="<?= url('bulletin/list') ?>" class="nav-item sub <?= $isActiveRoute(['/bulletin/list', RACINE . 'bulletin/'], 'pvClasse') ?>" data-title="Bulletins Semestriels">
                     <i data-lucide="file-text"></i> <span>Bulletins Semestriels</span>
                 </a>
-                <a href="<?= RACINE ?>bulletin/pvClasse" class="nav-item sub <?= $isActiveRoute('/bulletin/pvClasse') ?>" data-title="PV de Délibération">
+                <a href="<?= url('bulletin/pvClasse') ?>" class="nav-item sub <?= $isActiveRoute('/bulletin/pvClasse') ?>" data-title="PV de Délibération">
                     <i data-lucide="file-spreadsheet"></i> <span>PV de Délibération</span>
                 </a>
                 <?php endif; ?>
@@ -282,17 +282,17 @@
             </div>
             <div class="nav-section-items" id="sec-medias">
                 <?php if ($canAccess([PERMISSIONS::MANAGE_EVENEMENTS, PERMISSIONS::VIEW_EVENEMENTS])): ?>
-                <a href="<?= RACINE ?>evenement/list" class="nav-item sub <?= $isActiveRoute('/evenement/') ?>" data-title="Actualités & Événements">
+                <a href="<?= url('evenement/list') ?>" class="nav-item sub <?= $isActiveRoute('/evenement/') ?>" data-title="Actualités & Événements">
                     <i data-lucide="bell"></i> <span>Actualités & Événements</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_GALLERY, PERMISSIONS::VIEW_GALLERY, PERMISSIONS::MANAGE_COMMUNICATION])): ?>
-                <a href="<?= RACINE ?>galerie/list" class="nav-item sub <?= $isActiveRoute('/galerie/') ?>" data-title="Galeries Photos/Vidéos">
+                <a href="<?= url('galerie/list') ?>" class="nav-item sub <?= $isActiveRoute('/galerie/') ?>" data-title="Galeries Photos/Vidéos">
                     <i data-lucide="image"></i> <span>Galeries Photos/Vidéos</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_DOCUMENTS, PERMISSIONS::VIEW_DOCUMENTS])): ?>
-                <a href="<?= RACINE ?>document/list" class="nav-item sub <?= $isActiveRoute('/document/') ?>" data-title="Documents & Supports">
+                <a href="<?= url('document/list') ?>" class="nav-item sub <?= $isActiveRoute('/document/') ?>" data-title="Documents & Supports">
                     <i data-lucide="folder-down"></i> <span>Documents & Supports</span>
                 </a>
                 <?php endif; ?>
@@ -311,27 +311,27 @@
             </div>
             <div class="nav-section-items" id="sec-securite">
                 <?php if ($canAccess([PERMISSIONS::MANAGE_USERS, PERMISSIONS::VIEW_USERS])): ?>
-                <a href="<?= RACINE ?>user/list" class="nav-item sub <?= $isActiveRoute('/user/') ?>" data-title="Utilisateurs Système">
+                <a href="<?= url('user/list') ?>" class="nav-item sub <?= $isActiveRoute('/user/') ?>" data-title="Utilisateurs Système">
                     <i data-lucide="users"></i> <span>Utilisateurs Système</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_FONCTIONS, PERMISSIONS::VIEW_FONCTIONS])): ?>
-                <a href="<?= RACINE ?>fonction/list" class="nav-item sub <?= $isActiveRoute('/fonction/') ?>" data-title="Fonctions & Postes">
+                <a href="<?= url('fonction/list') ?>" class="nav-item sub <?= $isActiveRoute('/fonction/') ?>" data-title="Fonctions & Postes">
                     <i data-lucide="user-check"></i> <span>Fonctions & Postes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ROLES, PERMISSIONS::VIEW_ROLES])): ?>
-                <a href="<?= RACINE ?>role/list" class="nav-item sub <?= $isActiveRoute('/role/') ?>" data-title="Rôles & Groupes">
+                <a href="<?= url('role/list') ?>" class="nav-item sub <?= $isActiveRoute('/role/') ?>" data-title="Rôles & Groupes">
                     <i data-lucide="shield"></i> <span>Rôles & Groupes</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_PERMISSIONS, PERMISSIONS::VIEW_PERMISSIONS])): ?>
-                <a href="<?= RACINE ?>permission/list" class="nav-item sub <?= $isActiveRoute('/permission/') ?>" data-title="Permissions Granulaires">
+                <a href="<?= url('permission/list') ?>" class="nav-item sub <?= $isActiveRoute('/permission/') ?>" data-title="Permissions Granulaires">
                     <i data-lucide="key"></i> <span>Permissions Granulaires</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess(PERMISSIONS::VIEW_LOGS)): ?>
-                <a href="<?= RACINE ?>audit/list" class="nav-item sub <?= $isActiveRoute(['/audit/', '/audit/list']) ?>" data-title="Journal d'Audit & Logs">
+                <a href="<?= url('audit/list') ?>" class="nav-item sub <?= $isActiveRoute(['/audit/', '/audit/list']) ?>" data-title="Journal d'Audit & Logs">
                     <i data-lucide="history"></i> <span>Journal d'Audit (Logs)</span>
                 </a>
                 <?php endif; ?>

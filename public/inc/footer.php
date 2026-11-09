@@ -9,19 +9,19 @@
     </footer>
 
     <div class="bottom-nav" id="bottomNav">
-        <a href="<?= RACINE ?>" class="bottom-nav-item">
+        <a href="<?= url() ?>" class="bottom-nav-item">
             <i data-lucide="layout-dashboard"></i>
             <span>Accueil</span>
         </a>
-        <a href="<?= RACINE ?>inscription/list" class="bottom-nav-item">
+        <a href="<?= url('inscription/list') ?>" class="bottom-nav-item">
             <i data-lucide="user-plus"></i>
             <span>Inscriptions</span>
         </a>
-        <a href="<?= RACINE ?>paiement/list" class="bottom-nav-item">
+        <a href="<?= url('paiement/list') ?>" class="bottom-nav-item">
             <i data-lucide="credit-card"></i>
             <span>Caisse</span>
         </a>
-        <a href="<?= RACINE ?>note/list" class="bottom-nav-item">
+        <a href="<?= url('note/list') ?>" class="bottom-nav-item">
             <i data-lucide="edit-3"></i>
             <span>Notes</span>
         </a>
@@ -38,11 +38,11 @@
             <h3>Profil</h3>
         </div>
         <div class="dropdown-grid">
-            <a href="<?= RACINE ?>user/profil" class="dropdown-card">
+            <a href="<?= url('user/profil') ?>" class="dropdown-card">
                 <i data-lucide="user"></i>
                 <span>Mon profil</span>
             </a>
-            <a href="<?= RACINE ?>user/editPassword" class="dropdown-card">
+            <a href="<?= url('user/editPassword') ?>" class="dropdown-card">
                 <i data-lucide="lock"></i>
                 <span>Mot de passe</span>
             </a>

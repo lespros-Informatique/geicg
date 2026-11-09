@@ -1,9 +1,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="<?= RACINE ?>public/json/func.js?v=<?= time() ?>"></script>
-<script src="<?= RACINE ?>public/json/validator.js?v=<?= time() ?>"></script>
-<script src="<?= RACINE ?>public/json/app.js?v=<?= time() ?>"></script>
-<script src="<?= RACINE ?>public/json/auth.js?v=<?= time() ?>"></script>
-<script src="<?= RACINE ?>public/json/theme-manager.js?v=<?= time() ?>"></script>
+<script src="<?= asset('json/func.js', true) ?>"></script>
+<script src="<?= asset('json/validator.js', true) ?>"></script>
+<script src="<?= asset('json/app.js', true) ?>"></script>
+<script src="<?= asset('json/auth.js', true) ?>"></script>
+<script src="<?= asset('json/theme-manager.js', true) ?>"></script>
 <script>
     try {
         lucide.createIcons();

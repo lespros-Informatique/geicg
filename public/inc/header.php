@@ -7,8 +7,8 @@
     <meta name="theme-color" content="#18385F">
     <meta name="csrf-token" content="<?= Validator::generateCsrfToken() ?>">
     <title><?= htmlspecialchars(TITLE) ?></title>
-    <link rel="icon" type="image/png" href="<?= RACINE ?>public/assets/images/logo/logo_eicg.jpg">
-    <link rel="apple-touch-icon" href="<?= RACINE ?>public/assets/images/logo/logo_eicg.jpg">
+    <link rel="icon" type="image/png" href="<?= asset('assets/images/logo/logo_eicg.jpg') ?>">
+    <link rel="apple-touch-icon" href="<?= asset('assets/images/logo/logo_eicg.jpg') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -42,20 +42,20 @@
             } catch(e) {}
         })();
     </script>
-    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../assets/css/style.css') ?: time() ?>">
-    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/geicg-components.css?v=<?= @filemtime(__DIR__ . '/../assets/css/geicg-components.css') ?: time() ?>">
-    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/toastr.min.css?v=<?= @filemtime(__DIR__ . '/../assets/css/toastr.min.css') ?: time() ?>">
-    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="<?= asset('assets/css/style.css', true) ?>">
+    <link rel="stylesheet" href="<?= asset('assets/css/geicg-components.css', true) ?>">
+    <link rel="stylesheet" href="<?= asset('assets/css/toastr.min.css', true) ?>">
+    <link rel="stylesheet" href="<?= asset('assets/css/jquery.dataTables.min.css') ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-    <link rel="stylesheet" href="<?= RACINE ?>public/assets/css/sidebar.css?v=<?= @filemtime(__DIR__ . '/../assets/css/sidebar.css') ?: time() ?>">
+    <link rel="stylesheet" href="<?= asset('assets/css/sidebar.css', true) ?>">
 
-    <script src="<?= RACINE ?>public/assets/js/jquery.min.js"></script>
-    <script src="<?= RACINE ?>public/assets/js/geicg-app.js?v=<?= @filemtime(__DIR__ . '/../assets/js/geicg-app.js') ?: time() ?>"></script>
-    <script src="<?= RACINE ?>public/json/func.js?v=<?= @filemtime(__DIR__ . '/../../public/json/func.js') ?: time() ?>"></script>
-    <script src="<?= RACINE ?>public/assets/js/toastr.min.js"></script>
-    <script src="<?= RACINE ?>public/assets/js/sweetalert2.all.min.js"></script>
-    <script src="<?= RACINE ?>public/assets/js/jquery.dataTables.min.js"></script>
+    <script src="<?= asset('assets/js/jquery.min.js') ?>"></script>
+    <script src="<?= asset('assets/js/geicg-app.js', true) ?>"></script>
+    <script src="<?= asset('json/func.js', true) ?>"></script>
+    <script src="<?= asset('assets/js/toastr.min.js') ?>"></script>
+    <script src="<?= asset('assets/js/sweetalert2.all.min.js') ?>"></script>
+    <script src="<?= asset('assets/js/jquery.dataTables.min.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
