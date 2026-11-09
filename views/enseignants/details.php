@@ -30,7 +30,7 @@ $cours = isset($cours) ? $cours : [];
       <!-- CARD 1 (COL-12) : PROFIL ENSEIGNANT HORIZONTAL -->
       <?php
       $photoEnseignant = !empty($item['photo_user']) ? $item['photo_user'] : (!empty($item['photo_enseignant']) ? $item['photo_enseignant'] : '');
-      $photoUrl = RACINE . 'public/assets/images/placeholders/user.png';
+      $photoUrl = placeholderUrl('user');
       if (!empty($photoEnseignant)) {
           $cleanRel = ltrim($photoEnseignant, '/');
           if (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
@@ -64,7 +64,7 @@ $cours = isset($cours) ? $cours : [];
           <!-- Colonne 1 : Photo Enseignant -->
           <div>
             <div style="width: 105px; height: 105px; min-width: 105px; border-radius: 14px; border: 2px solid #E2E8F0; overflow: hidden; background: #F8FAFC; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: center;">
-              <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Enseignant" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='<?= RACINE ?>public/assets/images/placeholders/enseignant.png';">
+              <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Enseignant" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='<?= placeholderUrl('user') ?>';">
             </div>
           </div>
 

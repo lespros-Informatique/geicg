@@ -62,7 +62,7 @@ $regimeActuel = ($inscription['affectation_etat'] ?? '') === 'affecte' ? 'Affect
                       $photoSrc = $photoCandidate;
                   }
               }
-              $placeholderImg = RACINE . 'public/assets/images/placeholders/etudiant.png';
+              $placeholderImg = placeholderUrl('etudiant');
               $finalPhotoUrl = !empty($photoSrc) ? $photoSrc : $placeholderImg;
             ?>
             <div style="width: 104px; height: 108px; min-width: 64px; border-radius: 10px; border: 2px solid #CBD5E1; background: #F8FAFC; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; flex-shrink: 0;">

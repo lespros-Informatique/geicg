@@ -38,7 +38,7 @@ if (!empty($photo_etudiant)) {
         $resolvedPhoto = $cand2;
     }
 }
-$placeholderPhoto = __DIR__ . '/../../../public/assets/images/placeholders/etudiant.png';
+$placeholderPhoto = placeholderPath('etudiant');
 
 $itemsList = !empty($items_kits) ? $items_kits : [];
 $remisList = !empty($kits_remis) ? $kits_remis : [];

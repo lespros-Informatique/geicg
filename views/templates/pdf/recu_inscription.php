@@ -34,7 +34,7 @@ if (!empty($logo_src)) {
 if (!empty($photo_etudiant)) {
     $photo_src = $photo_etudiant;
 } else if (empty($photo_src)) {
-    $placeholderPhotoFile = __DIR__ . '/../../../public/assets/images/placeholders/etudiant.png';
+    $placeholderPhotoFile = placeholderPath('etudiant');
     if (file_exists($placeholderPhotoFile)) {
         $photo_src = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderPhotoFile));
     }

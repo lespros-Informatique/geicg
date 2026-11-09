@@ -118,10 +118,7 @@ if (empty($studentPhotoUrl) && !empty($item['nom_etudiant'])) {
 }
 
 if (empty($studentPhotoUrl)) {
-    $placeholderRel = 'assets/images/placeholders/etudiant.png';
-    if (file_exists(__DIR__ . '/../../public/' . $placeholderRel)) {
-        $studentPhotoUrl = RACINE . 'assets/images/placeholders/etudiant.png';
-    }
+    $studentPhotoUrl = placeholderUrl('etudiant');
 }
 
 // Générateur vectoriel SVG Code 128 (Subset B) natif, net et conforme pour impression et lecture scanner

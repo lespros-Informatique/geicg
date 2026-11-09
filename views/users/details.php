@@ -29,7 +29,7 @@ if (class_exists('ModelConfiguration')) {
 
 // Photo et placeholder
 $photoUser = !empty($user['photo_user']) ? $user['photo_user'] : '';
-$photoUrl = RACINE . 'public/assets/images/placeholders/user.png';
+$photoUrl = placeholderUrl('user');
 if (!empty($photoUser)) {
     $cleanRel = ltrim($photoUser, '/');
     if (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
@@ -173,7 +173,7 @@ if (!empty($user['sexe_user'])) {
           <!-- Avatar & Nom -->
           <div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #F1F5F9;">
             <div style="width: 115px; height: 115px; border-radius: 50%; border: 3px solid #E2E8F0; overflow: hidden; background: #F8FAFC; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-              <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Utilisateur" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='<?= RACINE ?>public/assets/images/placeholders/user.png';">
+              <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Utilisateur" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='<?= placeholderUrl('user') ?>';">
             </div>
             
             <h2 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0; line-height: 1.3;">
