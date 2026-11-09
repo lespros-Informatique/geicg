@@ -325,7 +325,7 @@ class EnseignantController extends BaseController
                     $etabCode
                 );
                 $this->success("L'employé <strong>{$userRow['nom_user']} {$userRow['prenom_user']}</strong> a été configuré comme enseignant avec succès !", [
-                    'redirect' => RACINE . 'enseignant/list'
+                    'redirect' => url('enseignant/list')
                 ]);
             } else {
                 $this->error($errorMsg ?: "Erreur lors de la configuration du profil enseignant.");
@@ -383,7 +383,7 @@ class EnseignantController extends BaseController
             $idDisplay = $email ?: ($telephone ?: $codeUser);
             $this->success("Enseignant et compte utilisateur créés avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
                 'password' => $rawPassword,
-                'redirect' => RACINE . 'enseignant/list'
+                'redirect' => url('enseignant/list')
             ]);
         } else {
             $this->error($errorMsg ?: "Erreur lors de la création de l'enseignant.");
@@ -448,7 +448,7 @@ class EnseignantController extends BaseController
                 ['id_enseignant' => $id, 'code_enseignant' => $item['code_enseignant'] ?? null, 'nom' => $nomComplet]
             );
             $this->success('Profil enseignant et compte utilisateur mis à jour avec succès !', [
-                'redirect' => RACINE . 'enseignant/list'
+                'redirect' => url('enseignant/list')
             ]);
         } else {
             $this->error($errorMsg ?: 'Erreur lors de la modification.');
@@ -488,12 +488,12 @@ class EnseignantController extends BaseController
             if (!$id || !is_numeric($id)) $id = is_numeric($details) ? (int)$details : 0;
 
             $item = $this->model->getById((int)$id);
-            if (!$item) { header('Location: ' . RACINE . 'enseignant/list'); exit(); }
+            if (!$item) { redirect('enseignant/list'); }
 
             $cours = $this->model->getCoursForEnseignant($item['code_enseignant']);
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'enseignant/list'); exit();
+            redirect('enseignant/list');
         }
         $this->loadView('../views/enseignants/details.php', [
             'item' => $item, 
@@ -519,8 +519,7 @@ class EnseignantController extends BaseController
 
             $item = $this->model->getById((int)$id);
             if (!$item) {
-                header('Location: ' . RACINE . 'enseignant/list');
-                exit();
+                redirect('enseignant/list');
             }
 
             $cours = $this->model->getCoursForEnseignant($item['code_enseignant']);
@@ -559,8 +558,7 @@ class EnseignantController extends BaseController
             ]);
         } catch (Exception $e) {
             error_log("imprimerFichePdf error: " . $e->getMessage());
-            header('Location: ' . RACINE . 'enseignant/list');
-            exit();
+            redirect('enseignant/list');
         }
     }
 
@@ -573,11 +571,11 @@ class EnseignantController extends BaseController
             if (!$id || !is_numeric($id)) $id = is_numeric($details) ? (int)$details : 0;
 
             $item = $this->model->getById((int)$id);
-            if (!$item) { header('Location: ' . RACINE . 'enseignant/list'); exit(); }
+            if (!$item) { redirect('enseignant/list'); }
             $encryptedId = $this->validator->crypter($id);
             $availableUsers = $this->model->getUsersAvailableForTeacher();
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'enseignant/list'); exit();
+            redirect('enseignant/list');
         }
         $this->loadView('../views/enseignants/edit.php', [
             'item' => $item, 

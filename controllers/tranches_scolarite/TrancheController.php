@@ -11,8 +11,7 @@ class TrancheController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_FRAIS_SCOLARITE);
-        header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
-        exit();
+        redirect('scolarite/list', ['tab' => 'tranches']);
     }
 
     public function apiList()
@@ -80,7 +79,7 @@ class TrancheController extends BaseController
         $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
-            $this->success('Tranche créée avec succès!', RACINE . 'scolarite/list?tab=tranches');
+            $this->success('Tranche créée avec succès!', url('scolarite/list', ['tab' => 'tranches']));
         } else {
             $this->error('Erreur lors de la création de la tranche');
         }
@@ -107,7 +106,7 @@ class TrancheController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Tranche modifiée avec succès!', RACINE . 'scolarite/list?tab=tranches');
+            $this->success('Tranche modifiée avec succès!', url('scolarite/list', ['tab' => 'tranches']));
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -164,13 +163,11 @@ class TrancheController extends BaseController
             }
             $item = $this->model->getById($id);
             if (!$item) {
-                header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
-                exit();
+                redirect('scolarite/list', ['tab' => 'tranches']);
             }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'scolarite/list?tab=tranches');
-            exit();
+            redirect('scolarite/list', ['tab' => 'tranches']);
         }
         $this->loadView('../views/tranches_scolarite/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

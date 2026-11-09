@@ -118,10 +118,10 @@ class EvenementController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'evenement/list'); exit(); }
+            if (!$item) { redirect('evenement/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'evenement/list'); exit();
+            redirect('evenement/list');
         }
         $this->loadView('../views/evenements/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -133,10 +133,10 @@ class EvenementController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'evenement/list'); exit(); }
+            if (!$item) { redirect('evenement/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'evenement/list'); exit();
+            redirect('evenement/list');
         }
         $this->loadView('../views/evenements/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

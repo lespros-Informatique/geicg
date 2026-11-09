@@ -147,7 +147,7 @@ class SessionCaisseController extends BaseController
                 ],
                 $etabCode
             );
-            $this->success("La session de caisse {$data['code_session']} a été ouverte avec succès.", RACINE . 'session_caisse/list');
+            $this->success("La session de caisse {$data['code_session']} a été ouverte avec succès.", url('session_caisse/list'));
         } else {
             $this->error("Erreur lors de l'ouverture de la session de caisse.");
         }
@@ -170,7 +170,7 @@ class SessionCaisseController extends BaseController
         }
 
         if (!$session) {
-            $this->error("Aucune session de caisse active à clôturer.", RACINE . 'session_caisse/list');
+            $this->error("Aucune session de caisse active à clôturer.", url('session_caisse/list'));
             return;
         }
 
@@ -244,7 +244,7 @@ class SessionCaisseController extends BaseController
                 ],
                 $session['etablissement_code'] ?? null
             );
-            $this->success("Arrêté et clôture de la session {$session['code_session']} enregistrés avec succès.", RACINE . 'session_caisse/details/' . $this->validator->crypter($idSession));
+            $this->success("Arrêté et clôture de la session {$session['code_session']} enregistrés avec succès.", url('session_caisse/details/' . $this->validator->crypter($idSession)));
         } else {
             $this->error("Erreur lors de l'enregistrement de la clôture.");
         }
@@ -261,7 +261,7 @@ class SessionCaisseController extends BaseController
 
         $item = $this->model->getById($id);
         if (!$item) {
-            $this->error('Session de caisse introuvable.', RACINE . 'session_caisse/list');
+            $this->error('Session de caisse introuvable.', url('session_caisse/list'));
             return;
         }
 
@@ -428,7 +428,7 @@ class SessionCaisseController extends BaseController
 
         $item = $this->model->getById($id);
         if (!$item) {
-            $this->error('Session de caisse introuvable.', RACINE . 'session_caisse/list');
+            $this->error('Session de caisse introuvable.', url('session_caisse/list'));
             return;
         }
 
@@ -462,7 +462,7 @@ class SessionCaisseController extends BaseController
                 "Modification des informations de la session de caisse #{$id}",
                 $filteredData
             );
-            $this->success("Session de caisse mise à jour.", RACINE . 'session_caisse/list');
+            $this->success("Session de caisse mise à jour.", url('session_caisse/list'));
         } else {
             $this->error("Erreur lors de la mise à jour.");
         }

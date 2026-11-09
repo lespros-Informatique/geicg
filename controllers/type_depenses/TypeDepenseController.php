@@ -116,7 +116,7 @@ class TypeDepenseController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'type_depense/list'); exit(); }
+            if (!$item) { redirect('type_depense/list'); }
 
             $depenses = $this->model->getDepensesForType($item['code_type_depense']);
 
@@ -143,13 +143,11 @@ class TypeDepenseController extends BaseController
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'type_depense/list');
-        exit();
+        redirect('type_depense/list');
     }
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'type_depense/list');
-        exit();
+        redirect('type_depense/list');
     }
 }

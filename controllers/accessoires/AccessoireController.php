@@ -581,24 +581,21 @@ class AccessoireController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'accessoire/list'); exit(); }
+            if (!$item) { redirect('accessoire/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'accessoire/list'); exit();
+            redirect('accessoire/list');
         }
-        header('Location: ' . RACINE . 'accessoire/list');
-        exit();
+        redirect('accessoire/list');
     }
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'accessoire/list');
-        exit();
+        redirect('accessoire/list');
     }
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'accessoire/list');
-        exit();
+        redirect('accessoire/list');
     }
 }

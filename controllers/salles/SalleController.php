@@ -144,7 +144,7 @@ class SalleController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'salle/list'); exit(); }
+            if (!$item) { redirect('salle/list'); }
 
             $salleCode = $item['code_salle'];
             $planning = $this->model->getPlanningForSalle($salleCode);
@@ -163,14 +163,12 @@ class SalleController extends BaseController
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'salle/list');
-        exit();
+        redirect('salle/list');
     }
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'salle/list');
-        exit();
+        redirect('salle/list');
     }
 
     /**

@@ -468,14 +468,14 @@ class ScolariteController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'scolarite/list'); exit(); }
+            if (!$item) { redirect('scolarite/list'); }
             
             // Récupérer les tranches existantes associées à cette scolarité
             $tranches = $this->model->getTranches($item['code_scolarite'] ?? '', $item['filiere_code'] ?? null, $item['niveau_code'] ?? null, $item['annee_code'] ?? null);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'scolarite/list'); exit();
+            redirect('scolarite/list');
         }
         $formData = $this->model->getFormData($item);
         $this->loadView('../views/scolarites/edit.php', array_merge([

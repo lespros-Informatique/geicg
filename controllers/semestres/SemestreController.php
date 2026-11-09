@@ -286,7 +286,7 @@ class SemestreController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getSemestreWithAnnee($id);
-            if (!$item) { header('Location: ' . RACINE . 'semestre/list'); exit(); }
+            if (!$item) { redirect('semestre/list'); }
 
             $semestreCode = $item['code_semestre'];
             $stats = $this->model->getStatsForSemestre($semestreCode);
@@ -311,12 +311,11 @@ class SemestreController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
             if (!$item || ($item['statut_semestre'] ?? '') === STATUTS::ACTIF) { 
-                header('Location: ' . RACINE . 'semestre/list'); 
-                exit(); 
+                redirect('semestre/list'); 
             }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'semestre/list'); exit();
+            redirect('semestre/list');
         }
         $this->loadView('../views/semestres/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

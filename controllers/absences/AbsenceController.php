@@ -167,10 +167,10 @@ class AbsenceController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getByIdWithDetails($id);
-            if (!$item) { header('Location: ' . RACINE . 'absence/list'); exit(); }
+            if (!$item) { redirect('absence/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'absence/list'); exit();
+            redirect('absence/list');
         }
         $this->loadView('../views/absences/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -182,10 +182,10 @@ class AbsenceController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getByIdWithDetails($id);
-            if (!$item) { header('Location: ' . RACINE . 'absence/list'); exit(); }
+            if (!$item) { redirect('absence/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'absence/list'); exit();
+            redirect('absence/list');
         }
         $deps = $this->model->getFormDataDependencies();
         $this->loadView('../views/absences/edit.php', array_merge([
@@ -286,13 +286,12 @@ class AbsenceController extends BaseController
                 $this->json([
                     'status' => 0,
                     'session_expired' => true,
-                    'redirect' => RACINE . 'user/connexion?expired=1',
+                    'redirect' => url('user/connexion', ['expired' => 1]),
                     'message' => 'Session expirée. Veuillez vous reconnecter.'
                 ], 401);
                 return;
             }
-            header('Location: ' . RACINE . 'user/connexion?expired=1');
-            exit();
+            redirect('user/connexion', ['expired' => 1]);
         }
 
         $classeCode = $this->post('classe_code');

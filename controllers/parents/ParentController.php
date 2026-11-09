@@ -113,10 +113,10 @@ class ParentController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getParentDetails((int)$id);
-            if (!$item) { header('Location: ' . RACINE . 'parent/list'); exit(); }
+            if (!$item) { redirect('parent/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'parent/list'); exit();
+            redirect('parent/list');
         }
         $this->loadView('../views/parents/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -128,10 +128,10 @@ class ParentController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'parent/list'); exit(); }
+            if (!$item) { redirect('parent/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'parent/list'); exit();
+            redirect('parent/list');
         }
         $this->loadView('../views/parents/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

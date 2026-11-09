@@ -167,7 +167,7 @@ class EtudiantController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         $encryptedId = $this->validator->crypter($id);
-        $redirectUrl = RACINE . 'etudiant/details/' . $encryptedId;
+        $redirectUrl = url('etudiant/details/' . $encryptedId);
 
         if ($this->model->update($filteredData, $id)) {
             $mat = $data['matricule_etudiant'] ?? (string)$id;
@@ -236,16 +236,14 @@ class EtudiantController extends BaseController
             $item = $this->model->getById($id);
             if (!$item) {
                 Session::flash('flash_error', "Étudiant introuvable.");
-                header('Location: ' . RACINE . 'etudiant/list');
-                exit;
+                redirect('etudiant/list');
             }
 
             $anneeActive = $this->getActiveAnneeCode();
             $data = $this->model->getChangerClasseData($item['code_etudiant'], $anneeActive);
             if (empty($data['inscription'])) {
                 Session::flash('flash_error', "Impossible de changer de classe : cet étudiant n'a aucun dossier d'inscription actif (inscription annulée ou inexistante).");
-                header('Location: ' . RACINE . 'etudiant/list');
-                exit;
+                redirect('etudiant/list');
             }
             $encryptedId = $this->validator->crypter($item['id_etudiant']);
 
@@ -260,8 +258,7 @@ class EtudiantController extends BaseController
 
         } catch (Exception $e) {
             Session::flash('flash_error', "Erreur : " . $e->getMessage());
-            header('Location: ' . RACINE . 'etudiant/list');
-            exit;
+            redirect('etudiant/list');
         }
     }
 
@@ -329,7 +326,7 @@ class EtudiantController extends BaseController
                     'kits_reactives' => $res['kits_reactives_count'] ?? 0
                 ]
             );
-            $this->success($res['message'], ['redirect' => RACINE . 'etudiant/list']);
+            $this->success($res['message'], ['redirect' => url('etudiant/list')]);
         } else {
             $this->error($res['message']);
         }
@@ -387,10 +384,10 @@ class EtudiantController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'etudiant/list'); exit(); }
+            if (!$item) { redirect('etudiant/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'etudiant/list'); exit();
+            redirect('etudiant/list');
         }
         $this->loadView('../views/etudiants/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -425,7 +422,7 @@ class EtudiantController extends BaseController
 
         $res = $this->model->createFullStudent($data, $userCode, $etabCode, $anneeCode, $this->validator);
         if ($res['success']) {
-            $this->success($res['message'], ['redirect' => RACINE . 'etudiant/list']);
+            $this->success($res['message'], ['redirect' => url('etudiant/list')]);
         } else {
             $this->error($res['message']);
         }
@@ -582,8 +579,7 @@ class EtudiantController extends BaseController
             $ficheData = $this->model->getStudentFicheData($id, $inscrId);
             if (!$ficheData) {
                 Session::flash('flash_error', "Dossier étudiant ou inscription introuvable pour l'impression de la fiche.");
-                header('Location: ' . RACINE . 'etudiant/list');
-                exit();
+                redirect('etudiant/list');
             }
 
             $etudiant = $ficheData['etudiant'];
@@ -624,8 +620,7 @@ class EtudiantController extends BaseController
         } catch (Exception $e) {
             error_log("EtudiantController::imprimerFichePdf error: " . $e->getMessage());
             Session::flash('flash_error', "Erreur lors de la génération de la fiche étudiant : " . $e->getMessage());
-            header('Location: ' . RACINE . 'etudiant/list');
-            exit();
+            redirect('etudiant/list');
         }
     }
 

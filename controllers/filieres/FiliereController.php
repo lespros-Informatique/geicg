@@ -148,7 +148,7 @@ class FiliereController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'filiere/list'); exit(); }
+            if (!$item) { redirect('filiere/list'); }
 
             $filiereCode = $item['code_filiere'];
             $cycles = $this->model->getCyclesForFiliere($filiereCode);
@@ -158,7 +158,7 @@ class FiliereController extends BaseController
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'filiere/list'); exit();
+            redirect('filiere/list');
         }
         $this->loadView('../views/filieres/details.php', [
             'item' => $item, 
@@ -177,10 +177,10 @@ class FiliereController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'filiere/list'); exit(); }
+            if (!$item) { redirect('filiere/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'filiere/list'); exit();
+            redirect('filiere/list');
         }
         $this->loadView('../views/filieres/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

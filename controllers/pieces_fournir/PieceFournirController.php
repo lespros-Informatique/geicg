@@ -111,8 +111,7 @@ class PieceFournirController extends BaseController
                 } else {
                     Session::set('flash_success', "$inserted pièce(s) ajoutée(s) au répertoire avec succès !");
                 }
-                header('Location: ' . RACINE . 'piece_fournir/list');
-                exit();
+                redirect('piece_fournir/list');
             } else {
                 if ($duplicates > 0) {
                     $this->error("Le(s) document(s) saisi(s) existe(nt) déjà dans le répertoire des pièces.");
@@ -147,8 +146,7 @@ class PieceFournirController extends BaseController
 
         if ($this->model->create($saveData)) {
             Session::set('flash_success', "Pièce « $libelle » enregistrée avec succès !");
-            header('Location: ' . RACINE . 'piece_fournir/list');
-            exit();
+            redirect('piece_fournir/list');
         } else {
             $this->error("Erreur lors de l'enregistrement.");
         }
@@ -186,8 +184,7 @@ class PieceFournirController extends BaseController
 
         if ($this->model->update($updateData, $id)) {
             Session::set('flash_success', "Pièce à fournir mise à jour avec succès !");
-            header('Location: ' . RACINE . 'piece_fournir/list');
-            exit();
+            redirect('piece_fournir/list');
         } else {
             $this->error("Erreur lors de la mise à jour.");
         }
@@ -227,8 +224,7 @@ class PieceFournirController extends BaseController
 
         if ($this->model->delete((int)$id)) {
             Session::set('flash_success', "Pièce supprimée du répertoire.");
-            header('Location: ' . RACINE . 'piece_fournir/list');
-            exit();
+            redirect('piece_fournir/list');
         } else {
             $this->error("Impossible de supprimer cette pièce.");
         }

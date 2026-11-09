@@ -322,10 +322,10 @@ class InscriptionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'inscription/list'); exit(); }
+            if (!$item) { redirect('inscription/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'inscription/list'); exit();
+            redirect('inscription/list');
         }
         $canDerogate = $this->hasPermission(PERMISSIONS::MANAGE_DEROGATION_INSCRIPTION);
         $this->loadView('../views/inscriptions/edit.php', ['item' => $item, 'encryptedId' => $encryptedId, 'canDerogate' => $canDerogate]);
@@ -381,8 +381,7 @@ class InscriptionController extends BaseController
             if ($recuData === null || isset($recuData['error'])) {
                 $msg = $recuData['error'] ?? "Impossible de générer le reçu d'inscription : Inscription introuvable.";
                 Session::flash('flash_error', $msg);
-                header('Location: ' . RACINE . 'etudiant/list');
-                exit;
+                redirect('etudiant/list');
             }
             $data = $recuData;
         }
@@ -775,7 +774,7 @@ class InscriptionController extends BaseController
                     ['id_inscription' => $inscInfo['id_inscription'], 'matricule' => $matEtu, 'photo_path' => $relativePath]
                 );
                 $this->success("La photo d'inscription a été enregistrée avec succès !", [
-                    'photo_url' => RACINE . $relativePath
+                    'photo_url' => url($relativePath)
                 ]);
             } else {
                 $this->error("Erreur lors de la mise à jour de la photo dans la base de données.");

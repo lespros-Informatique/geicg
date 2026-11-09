@@ -154,14 +154,14 @@ class UserController extends BaseController
                         'userEmail'    => $email,
                         'userPassword' => $rawPassword,
                         'userFonction' => $libelleFonction,
-                        'loginUrl'     => RACINE . 'user/connexion'
+                        'loginUrl'     => url('user/connexion')
                     ]
                 );
             }
 
             $idDisplay = $email ?: ($telephone ?: $nom);
             $this->success("Utilisateur créé avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
-                'redirect' => RACINE . 'user/list',
+                'redirect' => url('user/list'),
                 'password' => $rawPassword
             ]);
         } else {
@@ -172,18 +172,17 @@ class UserController extends BaseController
     public function edit()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            header('Location: ' . RACINE . 'user/list');
-            exit;
+            redirect('user/list');
         }
 
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         $id = (int)$this->post('id_user');
-        if (!$id) { $this->error('Identifiant invalide', RACINE . 'user/list'); return; }
+        if (!$id) { $this->error('Identifiant invalide', url('user/list')); return; }
 
         $user = $this->model->getById($id);
-        if (!$user) { $this->error('Utilisateur introuvable', RACINE . 'user/list'); return; }
+        if (!$user) { $this->error('Utilisateur introuvable', url('user/list')); return; }
 
         $nom = trim($_POST['nom'] ?? '');
         $prenom = trim($_POST['prenom'] ?? '');
@@ -271,7 +270,7 @@ class UserController extends BaseController
                 ]
             );
 
-            $this->success('Utilisateur et permissions par rôle mis à jour avec succès !', RACINE . 'user/list');
+            $this->success('Utilisateur et permissions par rôle mis à jour avec succès !', url('user/list'));
         } else {
             $this->error('Erreur lors de la modification de l\'utilisateur.');
         }
@@ -309,15 +308,13 @@ class UserController extends BaseController
             $userId = $this->validator->decrypter($details);
             $userProfile = $this->model->getById($userId);
             if (!$userProfile) {
-                header('Location: ' . RACINE . 'user/list');
-                exit();
+                redirect('user/list');
             }
             $userRoles = $this->model->getUserRoles($userProfile['code_user']);
             $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
             $encryptedId = $this->validator->crypter($userId);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'user/list');
-            exit();
+            redirect('user/list');
         }
 
         $this->loadView('../views/users/details.php', [
@@ -356,8 +353,7 @@ class UserController extends BaseController
             $userProfile = $this->model->getById($decryptedId);
 
             if (!$userProfile) {
-                header('Location: ' . RACINE . 'user/list');
-                exit();
+                redirect('user/list');
             }
             $userRoles = $this->model->getUserRoles($userProfile['code_user']);
             $userRoleCodes = $this->model->getUserRoleCodes($userProfile['code_user']);
@@ -367,8 +363,7 @@ class UserController extends BaseController
             $allAnneesList = (new ModelAnnee())->getAll();
             $userAnneeAcces = $this->model->getUserAnneeAcces($userProfile['code_user']);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'user/list');
-            exit();
+            redirect('user/list');
         }
 
         $this->loadView('../views/users/edit.php', [
@@ -490,7 +485,7 @@ class UserController extends BaseController
                         ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user'] . ' ' . ($user['prenom_user'] ?? '')) . ' !'
                         : 'Connexion réussie ! Bienvenue sur GEICG.';
 
-                    $this->success($welcomeMsg, ['redirect' => RACINE]);
+                    $this->success($welcomeMsg, ['redirect' => url()]);
                     return;
                 } else {
                     $this->error('Ce compte utilisateur est inactif ou suspendu. Veuillez contacter l\'administrateur.');
@@ -509,8 +504,7 @@ class UserController extends BaseController
     {
         AuditLogger::logLogout();
         Auth::logout();
-        header('Location: ' . RACINE . 'user/connexion');
-        exit();
+        redirect('user/connexion');
     }
 
     public function logout()
@@ -595,8 +589,7 @@ class UserController extends BaseController
 
             $userProfile = $this->model->getById((int)$userId);
             if (!$userProfile) {
-                header('Location: ' . RACINE . 'user/list');
-                exit();
+                redirect('user/list');
             }
 
             $userRoles = $this->model->getUserRoles($userProfile['code_user'] ?? '');
@@ -637,8 +630,7 @@ class UserController extends BaseController
             ]);
         } catch (Exception $e) {
             error_log("UserController::imprimerFichePdf error: " . $e->getMessage());
-            header('Location: ' . RACINE . 'user/list');
-            exit();
+            redirect('user/list');
         }
     }
 }

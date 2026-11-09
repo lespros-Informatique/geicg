@@ -140,14 +140,14 @@ class MatiereController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'matiere/list'); exit(); }
+            if (!$item) { redirect('matiere/list'); }
 
             $matiereCode = $item['code_matiere'];
             $affectations = $this->model->getAffectationsForMatiere($matiereCode);
             $stats = $this->model->getStatsForMatiere($matiereCode, count($affectations));
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'matiere/list'); exit();
+            redirect('matiere/list');
         }
         $this->loadView('../views/matieres/details.php', [
             'item' => $item, 
@@ -164,10 +164,10 @@ class MatiereController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'matiere/list'); exit(); }
+            if (!$item) { redirect('matiere/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'matiere/list'); exit();
+            redirect('matiere/list');
         }
         $this->loadView('../views/matieres/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

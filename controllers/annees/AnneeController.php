@@ -274,14 +274,12 @@ class AnneeController extends BaseController
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'annee/list');
-        exit();
+        redirect('annee/list');
     }
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'annee/list');
-        exit();
+        redirect('annee/list');
     }
 
     /**

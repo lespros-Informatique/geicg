@@ -388,8 +388,7 @@ class BulletinController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        header('Location: ' . RACINE . 'bulletin/list');
-        exit();
+        redirect('bulletin/list');
     }
 
     public function edition($details)

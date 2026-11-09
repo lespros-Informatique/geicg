@@ -185,15 +185,14 @@ class EtablissementController extends BaseController
             'section' => $this->post('section_id') ?? ''
         ];
         if (!empty($data['logo_etablissement'])) {
-            $responseData['logo_url'] = RACINE . ltrim($data['logo_etablissement'], '/');
+            $responseData['logo_url'] = url($data['logo_etablissement']);
         }
 
         if ($isAjax) {
             $this->success($message, $responseData);
         } else {
             Session::set('flash_success', $message);
-            header('Location: ' . RACINE . 'etablissement/config');
-            exit();
+            redirect('etablissement/config');
         }
     }
 

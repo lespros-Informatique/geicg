@@ -201,7 +201,7 @@ class CaisseAnnexeController extends BaseController
         $isSolde = ($montantExigible > 0 && $resteAPayer <= 0);
 
         $photoPath = !empty($ins['photo_inscription']) ? trim($ins['photo_inscription']) : (!empty($ins['photo_etudiant']) ? trim($ins['photo_etudiant']) : '');
-        $photoUrl = !empty($photoPath) ? RACINE . ltrim($photoPath, '/') : '';
+        $photoUrl = !empty($photoPath) ? url($photoPath) : '';
 
         $this->json([
             'status' => 1,

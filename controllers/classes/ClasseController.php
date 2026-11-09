@@ -118,7 +118,7 @@ class ClasseController extends BaseController
                 $filteredData,
                 $etabCode
             );
-            $this->success('Classe créée avec succès!', ['redirect' => RACINE . 'classe/list']);
+            $this->success('Classe créée avec succès!', ['redirect' => url('classe/list')]);
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de la création de la classe.';
             $this->error($err);
@@ -180,7 +180,7 @@ class ClasseController extends BaseController
                 "Modification de la classe '" . ($data['libelle_classe'] ?? $id) . "'",
                 $filteredData
             );
-            $this->success('Classe modifiée avec succès!', ['redirect' => RACINE . 'classe/list']);
+            $this->success('Classe modifiée avec succès!', ['redirect' => url('classe/list')]);
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de la modification de la classe.';
             $this->error($err);
@@ -247,10 +247,10 @@ class ClasseController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'classe/list'); exit(); }
+            if (!$item) { redirect('classe/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'classe/list'); exit();
+            redirect('classe/list');
         }
         $this->loadView('../views/classes/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -389,8 +389,7 @@ class ClasseController extends BaseController
             $classeCode = $item['code_classe'] ?? '';
             $anneeCode = $item['annee_code'] ?? $this->getActiveAnneeCode();
 
-            header('Location: ' . RACINE . 'etudiant/imprimerPdf?annee_code=' . urlencode($anneeCode) . '&classe_code=' . urlencode($classeCode));
-            exit;
+            redirect('etudiant/imprimerPdf', ['annee_code' => $anneeCode, 'classe_code' => $classeCode]);
         } catch (Exception $e) {
             $this->renderNotFound("Erreur lors de l'accès à la classe.");
         }

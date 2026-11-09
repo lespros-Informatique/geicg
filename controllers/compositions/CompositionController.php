@@ -191,7 +191,7 @@ class CompositionController extends BaseController
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
             $this->model->saveTargetClasses($data['code_composition'], $targetItems);
-            $this->success('Composition / Examen programmé avec succès !', ['redirect' => RACINE . 'composition/list']);
+            $this->success('Composition / Examen programmé avec succès !', ['redirect' => url('composition/list')]);
         } else {
             $this->error('Erreur lors de la programmation de la composition');
         }
@@ -244,7 +244,7 @@ class CompositionController extends BaseController
             if (!empty($targetItems)) {
                 $this->model->saveTargetClasses($item['code_composition'], $targetItems);
             }
-            $this->success('Programmation de la composition mise à jour avec succès !', ['redirect' => RACINE . 'composition/list']);
+            $this->success('Programmation de la composition mise à jour avec succès !', ['redirect' => url('composition/list')]);
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -257,13 +257,13 @@ class CompositionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'composition/list'); exit(); }
+            if (!$item) { redirect('composition/list'); }
             if (!empty($item['annee_code']) && !$this->canWriteAcademicYear($item['annee_code'])) {
-                header('Location: ' . RACINE . 'composition/list'); exit();
+                redirect('composition/list');
             }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'composition/list'); exit();
+            redirect('composition/list');
         }
 
         $activeAnneeCode = $this->getActiveAnneeCode();
@@ -419,13 +419,13 @@ class CompositionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'composition/list'); exit(); }
+            if (!$item) { redirect('composition/list'); }
             if (!empty($item['annee_code']) && !$this->canAccessAcademicYear($item['annee_code'])) {
-                header('Location: ' . RACINE . 'composition/list'); exit();
+                redirect('composition/list');
             }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'composition/list'); exit();
+            redirect('composition/list');
         }
 
         $semestre = (new ModelSemestre())->getByCode($item['semestre_code'] ?? '');

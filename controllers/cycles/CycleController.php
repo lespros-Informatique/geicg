@@ -138,7 +138,7 @@ class CycleController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'cycle/list'); exit(); }
+            if (!$item) { redirect('cycle/list'); }
 
             $cycleCode = $item['code_cycle'];
             $filieres = $this->model->getFilieresForCycle($cycleCode);
@@ -146,7 +146,7 @@ class CycleController extends BaseController
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'cycle/list'); exit();
+            redirect('cycle/list');
         }
         $this->loadView('../views/cycles/details.php', [
             'item' => $item, 
@@ -162,10 +162,10 @@ class CycleController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'cycle/list'); exit(); }
+            if (!$item) { redirect('cycle/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'cycle/list'); exit();
+            redirect('cycle/list');
         }
         $this->loadView('../views/cycles/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

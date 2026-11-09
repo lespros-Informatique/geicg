@@ -131,7 +131,7 @@ class NiveauController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'niveau/list'); exit(); }
+            if (!$item) { redirect('niveau/list'); }
 
             $niveauCode = $item['code_niveau'];
             $classes = $this->model->getClassesForNiveau($niveauCode);
@@ -139,7 +139,7 @@ class NiveauController extends BaseController
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'niveau/list'); exit();
+            redirect('niveau/list');
         }
         $this->loadView('../views/niveaux/details.php', [
             'item' => $item, 
@@ -155,10 +155,10 @@ class NiveauController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'niveau/list'); exit(); }
+            if (!$item) { redirect('niveau/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'niveau/list'); exit();
+            redirect('niveau/list');
         }
         $this->loadView('../views/niveaux/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

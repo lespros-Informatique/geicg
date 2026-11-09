@@ -168,8 +168,7 @@ class PieceFournirCycleController extends BaseController
                 } else {
                     Session::set('flash_success', "$insertedCount pièce(s) assignée(s) au dossier du cycle avec succès !");
                 }
-                header('Location: ' . RACINE . 'piece_fournir_cycle/list');
-                exit();
+                redirect('piece_fournir_cycle/list');
             } else {
                 if ($duplicateCount > 0) {
                     $this->error("Toutes les pièces sélectionnées existent déjà dans le dossier de ce cycle pour ce niveau.");
@@ -210,8 +209,7 @@ class PieceFournirCycleController extends BaseController
 
         if ($this->model->create($saveData)) {
             Session::set('flash_success', "Pièce assignée au dossier du cycle avec succès !");
-            header('Location: ' . RACINE . 'piece_fournir_cycle/list');
-            exit();
+            redirect('piece_fournir_cycle/list');
         } else {
             $this->error("Erreur lors de l'enregistrement de la pièce.");
         }
@@ -258,8 +256,7 @@ class PieceFournirCycleController extends BaseController
 
         if ($this->model->update($updateData, $id)) {
             Session::set('flash_success', "Pièce du cycle mise à jour avec succès !");
-            header('Location: ' . RACINE . 'piece_fournir_cycle/list');
-            exit();
+            redirect('piece_fournir_cycle/list');
         } else {
             $this->error("Erreur lors de la mise à jour.");
         }
@@ -301,8 +298,7 @@ class PieceFournirCycleController extends BaseController
 
         if ($this->model->delete((int)$id)) {
             Session::set('flash_success', "Pièce retirée du dossier de ce cycle.");
-            header('Location: ' . RACINE . 'piece_fournir_cycle/list');
-            exit();
+            redirect('piece_fournir_cycle/list');
         } else {
             $this->error("Impossible de retirer cette pièce.");
         }

@@ -134,10 +134,10 @@ class PermissionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'permission/list'); exit(); }
+            if (!$item) { redirect('permission/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'permission/list'); exit();
+            redirect('permission/list');
         }
         $this->loadView('../views/permissions/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -148,10 +148,10 @@ class PermissionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'permission/list'); exit(); }
+            if (!$item) { redirect('permission/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'permission/list'); exit();
+            redirect('permission/list');
         }
         $existingModules = $this->model->getDistinctModules();
         $this->loadView('../views/permissions/edit.php', [

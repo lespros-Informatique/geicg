@@ -334,10 +334,10 @@ class EmploiController extends BaseController
                 $etabCode
             );
             if ($submitAction === 'save_and_new') {
-                $redirectUrl = RACINE . 'emploi/formulaire?classe_code=' . urlencode($data['classe_code']);
+                $redirectUrl = url('emploi/formulaire', ['classe_code' => $data['classe_code']]);
                 $this->success('Créneau horaire planifié avec succès ! Saisissez le créneau suivant.', ['redirect' => $redirectUrl]);
             } else {
-                $this->success('Créneau horaire planifié avec succès!', ['redirect' => RACINE . 'emploi/list']);
+                $this->success('Créneau horaire planifié avec succès!', ['redirect' => url('emploi/list')]);
             }
         } else {
             $this->error('Erreur lors de la création');
@@ -421,10 +421,10 @@ class EmploiController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getDetailsById((int)$id);
-            if (!$item) { header('Location: ' . RACINE . 'emploi/list'); exit(); }
+            if (!$item) { redirect('emploi/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'emploi/list'); exit();
+            redirect('emploi/list');
         }
         $this->loadView('../views/emplois_temps/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -436,10 +436,10 @@ class EmploiController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'emploi/list'); exit(); }
+            if (!$item) { redirect('emploi/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'emploi/list'); exit();
+            redirect('emploi/list');
         }
         $this->loadView('../views/emplois_temps/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

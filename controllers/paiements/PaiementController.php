@@ -365,19 +365,17 @@ class PaiementController extends BaseController
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'paiement/list');
-        exit();
+        redirect('paiement/list');
     }
 
     public function formulaire()
     {
         $inscrCode = $_GET['inscription_code'] ?? ($_GET['code'] ?? '');
         $etuCode = $_GET['etudiant_code'] ?? '';
-        $query = '?action=encaissement';
-        if (!empty($inscrCode)) $query .= '&inscription_code=' . urlencode($inscrCode);
-        if (!empty($etuCode)) $query .= '&etudiant_code=' . urlencode($etuCode);
-        header('Location: ' . RACINE . 'paiement/list' . $query);
-        exit();
+        $params = ['action' => 'encaissement'];
+        if (!empty($inscrCode)) $params['inscription_code'] = $inscrCode;
+        if (!empty($etuCode)) $params['etudiant_code'] = $etuCode;
+        redirect('paiement/list', $params);
     }
 
     public function imprimerPdf($details = null)

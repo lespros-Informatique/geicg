@@ -75,7 +75,7 @@ class FiliereCycleController extends BaseController
         unset($filteredData['id_filiere_cycle']);
 
         if ($this->model->create($filteredData)) {
-            $this->success('Assignation Parcours Pivot créée avec succès!', RACINE . 'filiere_cycle/list');
+            $this->success('Assignation Parcours Pivot créée avec succès!', url('filiere_cycle/list'));
         } else {
             $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
                 ? $this->model->getLastError() 
@@ -121,7 +121,7 @@ class FiliereCycleController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Assignation Parcours Pivot modifiée avec succès!', RACINE . 'filiere_cycle/list');
+            $this->success('Assignation Parcours Pivot modifiée avec succès!', url('filiere_cycle/list'));
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -179,10 +179,10 @@ class FiliereCycleController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'filiere_cycle/list'); exit(); }
+            if (!$item) { redirect('filiere_cycle/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'filiere_cycle/list'); exit();
+            redirect('filiere_cycle/list');
         }
         $filieresList = $this->model->getActiveFilieres();
         $cyclesList = $this->model->getActiveCycles();

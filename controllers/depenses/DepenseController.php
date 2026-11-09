@@ -353,10 +353,10 @@ class DepenseController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getDetailsById((int)$id);
-            if (!$item) { header('Location: ' . RACINE . 'depense/list'); exit(); }
+            if (!$item) { redirect('depense/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'depense/list'); exit();
+            redirect('depense/list');
         }
         $this->loadView('../views/depenses/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -368,10 +368,10 @@ class DepenseController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'depense/list'); exit(); }
+            if (!$item) { redirect('depense/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'depense/list'); exit();
+            redirect('depense/list');
         }
         $this->loadView('../views/depenses/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

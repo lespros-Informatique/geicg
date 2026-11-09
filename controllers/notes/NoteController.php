@@ -555,7 +555,7 @@ class NoteController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getByIdWithDetails($id);
-            if (!$item) { header('Location: ' . RACINE . 'note/list'); exit(); }
+            if (!$item) { redirect('note/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("NoteController::details error: " . $e->getMessage());
@@ -575,10 +575,10 @@ class NoteController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getByIdWithDetails($id);
-            if (!$item) { header('Location: ' . RACINE . 'note/list'); exit(); }
+            if (!$item) { redirect('note/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'note/list'); exit();
+            redirect('note/list');
         }
         $deps = $this->model->getFormDataDependencies($anneeCode);
         $this->loadView('../views/notes/edit.php', array_merge([
@@ -927,13 +927,12 @@ class NoteController extends BaseController
                 $this->json([
                     'status' => 0,
                     'session_expired' => true,
-                    'redirect' => RACINE . 'user/connexion?expired=1',
+                    'redirect' => url('user/connexion', ['expired' => 1]),
                     'message' => 'Session expirée. Veuillez vous reconnecter.'
                 ], 401);
                 return;
             }
-            header('Location: ' . RACINE . 'user/connexion?expired=1');
-            exit();
+            redirect('user/connexion', ['expired' => 1]);
         }
 
         $classeCode = $this->post('classe_code');

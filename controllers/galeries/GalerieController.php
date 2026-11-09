@@ -141,7 +141,7 @@ class GalerieController extends BaseController
         }
 
         // Chemin relatif accessible depuis le web
-        $relativePath = RACINE . 'uploads/galeries/' . $newName;
+        $relativePath = url('uploads/galeries/' . $newName);
         return ['success' => true, 'path' => $relativePath];
     }
 
@@ -183,10 +183,10 @@ class GalerieController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'galerie/list'); exit(); }
+            if (!$item) { redirect('galerie/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'galerie/list'); exit();
+            redirect('galerie/list');
         }
         $this->loadView('../views/galeries/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -198,10 +198,10 @@ class GalerieController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'galerie/list'); exit(); }
+            if (!$item) { redirect('galerie/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'galerie/list'); exit();
+            redirect('galerie/list');
         }
         $this->loadView('../views/galeries/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

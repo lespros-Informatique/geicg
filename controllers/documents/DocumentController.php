@@ -87,7 +87,7 @@ class DocumentController extends BaseController
                 "Ajout du document: " . ($filteredData['libelle_document'] ?? $filteredData['code_document'] ?? ''),
                 ['id_document' => $newId, 'code' => $filteredData['code_document'] ?? '', 'titre' => $filteredData['libelle_document'] ?? '', 'type' => $filteredData['type_document'] ?? '']
             );
-            $this->success('Document enregistré avec succès !', ['redirect' => RACINE . 'document/list']);
+            $this->success('Document enregistré avec succès !', ['redirect' => url('document/list')]);
         } else {
             $this->error('Erreur lors de l\'enregistrement du document');
         }
@@ -131,7 +131,7 @@ class DocumentController extends BaseController
                 "Modification du document: " . ($filteredData['libelle_document'] ?? "#{$id}"),
                 ['id_document' => $id, 'titre' => $filteredData['libelle_document'] ?? '', 'type' => $filteredData['type_document'] ?? '']
             );
-            $this->success('Document modifié avec succès !', ['redirect' => RACINE . 'document/list']);
+            $this->success('Document modifié avec succès !', ['redirect' => url('document/list')]);
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -176,7 +176,7 @@ class DocumentController extends BaseController
         }
 
         // Chemin relatif accessible
-        $relativePath = RACINE . 'uploads/documents/' . $newName;
+        $relativePath = url('uploads/documents/' . $newName);
         return [
             'success' => true, 
             'path' => $relativePath,
@@ -217,10 +217,10 @@ class DocumentController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'document/list'); exit(); }
+            if (!$item) { redirect('document/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'document/list'); exit();
+            redirect('document/list');
         }
         $this->loadView('../views/documents/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -232,10 +232,10 @@ class DocumentController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'document/list'); exit(); }
+            if (!$item) { redirect('document/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'document/list'); exit();
+            redirect('document/list');
         }
         $this->loadView('../views/documents/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

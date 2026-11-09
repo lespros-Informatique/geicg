@@ -312,7 +312,7 @@ class DossierEtudiantController extends BaseController
             $this->success('Statut et documents du dossier mis à jour avec succès !', [
                 'statut' => $statut,
                 'date_depot' => date('d/m/Y H:i'),
-                'fichier_joint' => $fichierJoint ? (RACINE . $fichierJoint) : null
+                'fichier_joint' => $fichierJoint ? url($fichierJoint) : null
             ]);
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de l\'enregistrement du statut de dépôt.');

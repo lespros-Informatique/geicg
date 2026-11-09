@@ -135,10 +135,10 @@ class FonctionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'fonction/list'); exit(); }
+            if (!$item) { redirect('fonction/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'fonction/list'); exit();
+            redirect('fonction/list');
         }
         $this->loadView('../views/fonctions/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
