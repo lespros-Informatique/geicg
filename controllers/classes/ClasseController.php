@@ -14,12 +14,18 @@ class ClasseController extends BaseController
 
         $annees = $this->getAccessibleAnnees();
         $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $modelFiliere = new ModelFiliere();
+        $modelNiveau = new ModelNiveau();
+        $filieres = $modelFiliere->getAll();
+        $niveaux = $modelNiveau->getActifs();
 
         if ($activeYear === null) {
             $this->loadView('../views/classes/list.php', [
                 'annees' => $annees,
                 'selectedAnneeCode' => '',
-                'parcoursPivots' => []
+                'parcoursPivots' => [],
+                'filieres' => $filieres,
+                'niveaux' => $niveaux
             ]);
             return;
         }
@@ -29,7 +35,9 @@ class ClasseController extends BaseController
         $this->loadView('../views/classes/list.php', [
             'annees' => $annees,
             'selectedAnneeCode' => $activeYear,
-            'parcoursPivots' => $parcoursPivots
+            'parcoursPivots' => $parcoursPivots,
+            'filieres' => $filieres,
+            'niveaux' => $niveaux
         ]);
     }
 

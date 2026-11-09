@@ -1,10 +1,10 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$rawFilieres = $filieres ?? (new ModelFiliere())->getAll();
+$rawFilieres = !empty($filieres) ? $filieres : (new ModelFiliere())->getAll();
 $filieres = array_filter($rawFilieres, function($f) {
     return (($f['statut_filiere'] ?? 'actif') === 'actif');
 });
-$niveaux = $niveaux ?? (new ModelNiveau())->getActifs();
+$niveaux = !empty($niveaux) ? $niveaux : (new ModelNiveau())->getActifs();
 $currentAnneeCode = $selectedAnneeCode ?? (Session::get('annee_active_code', ''));
 $canEditClasse = (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_CLASSES])));
 $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_CLASSES])));
@@ -17,17 +17,17 @@ $canManageClasses = (!isset($canAccess) || (is_callable($canAccess) && $canAcces
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Classes</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre des classes d'étudiants</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion des classes</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]))): ?>
             <a href="<?= url('classe/imprimerPdf') ?>" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
-              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Répertoire (PDF)
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer la liste
             </a>
           <?php endif; ?>
           <?php if ($canManageClasses): ?>
             <button type="button" class="btn btn-secondary btn-reconduire-classes" style="background: #0D9488; border-color: #0D9488; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;" title="Reconduire toutes les classes d'une année vers une autre">
-              <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduire les Classes (N-1 &rarr; N)
+              <i data-lucide="copy-check" style="width: 18px; height: 18px;"></i> Reconduire les Classes
             </button>
             <button type="button" class="btn btn-primary btn-add-classe" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: none; color: #FFFFFF;">
               <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Classe
