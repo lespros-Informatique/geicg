@@ -94,9 +94,9 @@ $nbTranches = count($tranches);
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($tranches as $t): ?>
+                <?php foreach ($tranches as $index => $t): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
-                    <td style="padding: 10px; font-weight: 800; color: #1E3A5F;">#<?= (int)($t['ordre_tranche'] ?? 1) ?></td>
+                    <td style="padding: 10px; font-weight: 800; color: #1E3A5F;">#<?= $index + 1 ?></td>
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($t['libelle_tranche'] ?? 'Tranche') ?></td>
                     <td style="padding: 10px; text-align: right; font-weight: 800; color: #15803D;">
                       <?= number_format((float)($t['montant_tranche'] ?? 0), 0, ',', ' ') ?> FCFA
