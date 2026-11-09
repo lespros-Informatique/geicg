@@ -378,10 +378,21 @@ class PaiementController extends BaseController
         redirect('paiement/list', $params);
     }
 
+    public function recu($details = null)
+    {
+        return $this->imprimerPdf($details);
+    }
+
     public function imprimerPdf($details = null)
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::VIEW_INSCRIPTIONS]);
+        $this->requirePermission([
+            PERMISSIONS::VIEW_PAIEMENTS,
+            PERMISSIONS::VIEW_ETUDIANTS,
+            PERMISSIONS::VIEW_INSCRIPTIONS,
+            PERMISSIONS::VIEW_CAISSE_ANNEXE,
+            PERMISSIONS::PRINT_FRAIS_ANNEXES
+        ]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         if (empty($details) && !empty($_GET['id'])) {

@@ -360,6 +360,8 @@ $route->addRoute('/paiement/edit', [$paiementController, 'edit']);
 $route->addRoute('/paiement/changer', [$paiementController, 'changer']);
 $route->addRoute('/paiement/annuler', [$paiementController, 'annuler']);
 $route->addRoute('/paiement/details/{param}', [$paiementController, 'details']);
+$route->addRoute('/paiement/recu/{param}', [$paiementController, 'recu']);
+$route->addRoute('/paiement/recu', [$paiementController, 'recu']);
 $route->addRoute('/paiement/imprimerPdf/{param}', [$paiementController, 'imprimerPdf']);
 $route->addRoute('/paiement/imprimerPdf', [$paiementController, 'imprimerPdf']);
 $route->addRoute('/paiement/imprimerComptabiliteEtudiants', [$paiementController, 'imprimerComptabiliteEtudiants']);
