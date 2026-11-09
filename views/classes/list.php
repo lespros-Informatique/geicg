@@ -1,6 +1,6 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$rawFilieres = $filieres ?? (new ModelFiliere())->getFilieresAssocieesAuxCycles();
+$rawFilieres = $filieres ?? (new ModelFiliere())->getAll();
 $filieres = array_filter($rawFilieres, function($f) {
     return (($f['statut_filiere'] ?? 'actif') === 'actif');
 });
