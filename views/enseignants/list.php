@@ -139,13 +139,13 @@
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code</th>
-                <th style="padding: 12px;">Enseignant </th>
+                <th style="padding: 12px; min-width: 150px;">Enseignant </th>
                 <th style="padding: 12px;" class="text-center">Genre</th>
                 <th style="padding: 12px;">Email / Téléphone</th>
                 <th style="padding: 12px;" class="text-center">Volume Horaire</th>
                 <th style="padding: 12px;">Contrat</th>
                 <th style="padding: 12px;" class="text-center">Statut</th>
-                <th style="padding: 12px; text-align: right; width: 130px;">Actions</th>
+                <th style="padding: 12px; text-align: center; width: 150px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>

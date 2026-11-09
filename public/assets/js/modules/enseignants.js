@@ -85,17 +85,30 @@ $(document).ready(function() {
                  '</label>' +
                  '</div>';
         }},
-        { data: null, width: '130px', orderable: false, render: function(d) {
-          var ensName = (((d.nom_enseignant || '') + ' ' + (d.prenom_enseignant || '')).trim()).replace(/"/g, '&quot;');
-          return '<div style="display:inline-flex; align-items:center; gap:5px; justify-content:flex-end;">' +
-                 '  <button type="button" class="btn btn-sm btn-outline-primary btn-open-prof-programme" data-code="' + (d.code_enseignant || '') + '" data-name="' + ensName + '" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px;" title="Programme des cours"><i data-lucide="calendar" style="width:15px;height:15px;"></i></button>' +
-                 '  <a href="' + racine + 'enseignant/edition/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-secondary" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px;" title="Modifier cet enseignant"><i data-lucide="edit-3" style="width:15px;height:15px;"></i></a>' +
-                 '  <a href="' + racine + 'enseignant/details/' + (d.editId || d.id_enseignant) + '" class="btn btn-sm btn-info" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px;" title="Profil complet"><i data-lucide="eye" style="width:15px;height:15px;"></i></a>' +
-                 '</div>';
-        }, className: 'text-end' }
+        {
+          data: null,
+          width: '150px',
+          orderable: false,
+          className: 'text-center',
+          render: function(d, type, row) {
+            var ensName = (((row.nom_enseignant || '') + ' ' + (row.prenom_enseignant || '')).trim()).replace(/"/g, '&quot;');
+            var idCrypte = row.editId || row.id_enseignant;
+            var ficheUrl = racine + 'enseignant/imprimerFichePdf/' + idCrypte;
+
+            return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">' +
+                   '  <button type="button" class="btn-action-icon btn-open-prof-programme" data-code="' + (row.code_enseignant || '') + '" data-name="' + ensName + '" style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; width:32px; height:32px; padding:0; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;" title="Programme des cours"><i data-lucide="calendar" style="width:15px;height:15px;"></i></button>' +
+                   '  <a href="' + ficheUrl + '" target="_blank" class="btn-action-icon" style="background:#F0FDF4; color:#166534; border:1px solid #BBF7D0; width:32px; height:32px; padding:0; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Fiche individuelle (PDF)"><i data-lucide="printer" style="width:15px;height:15px;"></i></a>' +
+                   '  <a href="' + racine + 'enseignant/edition/' + idCrypte + '" class="btn-action-icon" style="background:#F0F9FF; color:#0284C7; border:1px solid #BAE6FD; width:32px; height:32px; padding:0; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Modifier cet enseignant"><i data-lucide="edit-3" style="width:15px;height:15px;"></i></a>' +
+                   '  <a href="' + racine + 'enseignant/details/' + idCrypte + '" class="btn-action-icon" style="background:#F8FAFC; color:#1E3A5F; border:1px solid #CBD5E1; width:32px; height:32px; padding:0; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;" title="Profil complet"><i data-lucide="eye" style="width:15px;height:15px;"></i></a>' +
+                   '</div>';
+          }
+        }
       ],
       language: (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage) ? GEICG.dataTableLanguage : {
         url: racine + 'json/datatables-i18n-fr-FR.json'
+      },
+      initComplete: function() {
+        if (window.lucide) lucide.createIcons();
       },
       drawCallback: function() {
         if (window.lucide) lucide.createIcons();
