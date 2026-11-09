@@ -58,7 +58,7 @@ class ModelScolarite extends BaseModel
     public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT s.*, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+            SELECT s.*, f.libelle_filiere, f.slug_filiere, n.libelle_niveau, n.slug_niveau, a.libelle_annee
             FROM " . TABLES::SCOLARITES . " s
             LEFT JOIN " . TABLES::FILIERES . " f ON s.filiere_code = f.code_filiere
             LEFT JOIN " . TABLES::NIVEAUX . " n ON s.niveau_code = n.code_niveau
