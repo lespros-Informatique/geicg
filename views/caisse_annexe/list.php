@@ -38,18 +38,12 @@ $canRecord = $canRecord ?? false;
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="background: #FEF3C7; color: #B45309; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; border: 1px solid #FDE68A;">
-              Guichet Annexe
-            </span>
-            <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Caisse Annexe & Bilan des Frais Annexes</h1>
+           
+            <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Caisse des Frais Annexes</h1>
           </div>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Journal des encaissements, suivi du recouvrement et bilan comptable des frais annexes</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Journal des encaissementsdes frais annexes</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-          <a href="<?= url('fraisAnnexe/list') ?>" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 16px; text-decoration: none;" title="Consulter et configurer la grille tarifaire des frais annexes">
-            <i data-lucide="package-check" style="width: 18px; height: 18px; color: #B45309;"></i> Grille des Tarifs
-          </a>
-
           <button onclick="printRegistry()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;" title="Imprimer le bilan des frais annexes">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
