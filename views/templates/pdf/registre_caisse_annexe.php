@@ -269,7 +269,10 @@ $tauxRecouvrement = (float)($stats['taux_recouvrement_fa'] ?? 0);
           $mt = (float)($p['montant_paiement'] ?? 0);
           $sumTable += $mt;
           $nomComplet = trim(($p['nom_etudiant'] ?? '') . ' ' . ($p['prenom_etudiant'] ?? ''));
-          $motif = $p['motif_paiement'] ?: ($p['libelle_frais_annexe'] ?: 'Frais Annexes');
+          if (empty($nomComplet)) {
+            $nomComplet = $p['etudiant_nom'] ?? '-';
+          }
+          $motif = !empty($p['type_paiement']) ? $p['type_paiement'] : (!empty($p['observations']) ? $p['observations'] : 'Frais Annexes');
         ?>
         <tr>
           <td style="text-align: center;"><?= $i++ ?></td>

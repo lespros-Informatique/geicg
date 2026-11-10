@@ -385,7 +385,11 @@ if (empty($agentNom)) {
                 foreach ($paiements as $p): 
                     $mt = (float)($p['montant_paiement'] ?? 0);
                     $sumTable += $mt;
-                    $motif = $p['motif_paiement'] ?: ($p['libelle_frais_annexe'] ?: 'Frais Annexes');
+                    $nomComplet = trim(($p['nom_etudiant'] ?? '') . ' ' . ($p['prenom_etudiant'] ?? ''));
+                    if (empty($nomComplet)) {
+                        $nomComplet = $p['etudiant_nom'] ?? '-';
+                    }
+                    $motif = !empty($p['type_paiement']) ? $p['type_paiement'] : (!empty($p['observations']) ? $p['observations'] : 'Frais Annexes');
                 ?>
                 <tr>
                     <td class="text-center"><?= $i++ ?></td>
