@@ -157,18 +157,19 @@
             var idCrypte = row.encrypted_id || row.editId || row.id_paiement;
             var printUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('paiement/imprimerPdf/' + idCrypte) : (racine + 'paiement/imprimerPdf/' + idCrypte);
             var recuUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('paiement/recu/' + idCrypte) : (racine + 'paiement/recu/' + idCrypte);
-            return '<div style="display:flex; justify-content:center; gap:6px;">' +
-              '<a href="' + printUrl + '" target="_blank" class="btn btn-sm btn-outline-primary" style="padding:4px 8px; border-radius:6px;" title="Imprimer le reçu officiel">' +
-              '<i data-lucide="printer" style="width:14px;height:14px;"></i>' +
+            return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">' +
+              '<a href="' + printUrl + '" target="_blank" class="btn-action-icon" style="background:#F0FDF4; color:#166534; border:1px solid #BBF7D0;" title="Imprimer le reçu officiel (PDF)">' +
+              '<i data-lucide="printer"></i>' +
               '</a>' +
-              '<a href="' + recuUrl + '" target="_blank" class="btn btn-sm btn-outline-secondary" style="padding:4px 8px; border-radius:6px;" title="Consulter la quittance">' +
-              '<i data-lucide="eye" style="width:14px;height:14px;"></i>' +
+              '<a href="' + recuUrl + '" target="_blank" class="btn-action-icon" style="background:#F8FAFC; color:#1E3A5F; border:1px solid #CBD5E1;" title="Consulter la quittance">' +
+              '<i data-lucide="eye"></i>' +
               '</a>' +
               '</div>';
           }
         }
       ],
       language: (typeof dtLang === 'object') ? dtLang : { url: dtLang },
+      initComplete: function () { if (window.lucide) lucide.createIcons(); },
       drawCallback: function () { if (window.lucide) lucide.createIcons(); }
     });
 
