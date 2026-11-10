@@ -195,10 +195,6 @@
             animateCounter($('#kpi-taux-recouvrement-fa'), Number(s.taux_recouvrement_fa || 0), true);
             animateCounter($('#kpi-encaisse-aujourdhui'), Number(s.encaisse_aujourdhui || 0), false);
             animateCounter($('#kpi-attente-frais-annexes'), Number(s.attente_frais_annexes || 0), false);
-
-            animateCounter($('#kpi-encaisse-industrielle'), Number(s.encaisse_industrielle || 0), false);
-            animateCounter($('#kpi-encaisse-tertiaire'), Number(s.encaisse_tertiaire || 0), false);
-            animateCounter($('#kpi-encaisse-mobile-money'), Number((s.encaisse_mobile_money || 0) + (s.encaisse_banque || 0)), false);
             animateCounter($('#kpi-total-frais-annexes-attendus'), Number(s.total_frais_annexes_attendus || 0), false);
 
             animateCounter($('#kpi-eleves-soldes'), Number(s.eleves_soldes || 0), false);

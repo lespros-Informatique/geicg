@@ -154,7 +154,23 @@ $canRecord = $canRecord ?? false;
       
       <div class="card-kpi-container">
         
-        <!-- 1. Total Encaissé Frais Annexes -->
+        <!-- 1. Budget Frais Annexes Attendus -->
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Total Budget Exigible</div>
+            <div style="font-size: 18px; font-weight: 900; color: #1E3A8A; margin-top: 3px;">
+              <span id="kpi-total-frais-annexes-attendus"><?= number_format((float)($stats['total_frais_annexes_attendus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? (Session::get('annee_active_libelle', 'En session'))) ?></strong>
+            </div>
+          </div>
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- 2. Total Encaissé Frais Annexes -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FDE68A; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Total Annexes Encaissé</div>
@@ -170,7 +186,7 @@ $canRecord = $canRecord ?? false;
           </div>
         </div>
 
-        <!-- 2. Encaissements Jour -->
+        <!-- 3. Encaissements Jour -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Jour (Annexes)</div>
@@ -186,7 +202,7 @@ $canRecord = $canRecord ?? false;
           </div>
         </div>
 
-        <!-- 3. Reste à Recouvrer -->
+        <!-- 4. Reste à Recouvrer -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FCA5A5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Reste à Recouvrer (Annexes)</div>
@@ -197,75 +213,6 @@ $canRecord = $canRecord ?? false;
           </div>
           <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- SECTION 2 : RÉPARTITION PAR FILIÈRE & MODES DIGITAUX (4 CARTES) -->
-      <div class="kpi-section-title" style="margin-bottom: 8px; margin-top: 20px;">
-        <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
-          <i data-lucide="pie-chart" style="width: 15px; height: 15px; color: #0284C7;"></i> Répartition Filières & Canaux de Règlement
-        </h4>
-      </div>
-
-      <div class="card-kpi-container">
-        
-        <!-- 5. Filière Industrielle -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Filière Industrielle</div>
-            <div style="font-size: 18px; font-weight: 900; color: #0369A1; margin-top: 3px;">
-              <span id="kpi-encaisse-industrielle"><?= number_format((float)($stats['encaisse_industrielle'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Annexes filière industrielle</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="cpu" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 6. Filière Tertiaire -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Filière Tertiaire</div>
-            <div style="font-size: 18px; font-weight: 900; color: #3730A3; margin-top: 3px;">
-              <span id="kpi-encaisse-tertiaire"><?= number_format((float)($stats['encaisse_tertiaire'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Annexes filière tertiaire</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="briefcase" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 7. Mobile Money & Digital -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #0E7490; text-transform: uppercase; letter-spacing: 0.5px;">Mobile Money / Banque</div>
-            <div style="font-size: 18px; font-weight: 900; color: #0E7490; margin-top: 3px;">
-              <span id="kpi-encaisse-mobile-money"><?= number_format((float)(($stats['encaisse_mobile_money'] ?? 0) + ($stats['encaisse_banque'] ?? 0)), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Paiements digitaux & virements</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #CFFAFE; color: #0E7490; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="smartphone" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 8. Budget Frais Annexes Attendus -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Total Budget Exigible</div>
-            <div style="font-size: 18px; font-weight: 900; color: #1E3A8A; margin-top: 3px;">
-              <span id="kpi-total-frais-annexes-attendus"><?= number_format((float)($stats['total_frais_annexes_attendus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? (Session::get('annee_active_libelle', 'En session'))) ?></strong>
-            </div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
