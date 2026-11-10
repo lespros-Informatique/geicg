@@ -126,20 +126,6 @@ $canRecord = $canRecord ?? false;
             </select>
           </div>
 
-          <!-- Filtre Mode de Règlement -->
-          <div class="form-group" style="margin: 0;">
-            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="credit-card" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Mode de Paiement :
-            </label>
-            <select id="filter-mode" class="form-control select2" style="width: 100%;">
-              <option value="ALL">-- Tous les modes --</option>
-              <option value="espece">💵 Espèces (Guichet)</option>
-              <option value="mobile_money">📱 Mobile Money</option>
-              <option value="cheque">🏦 Chèque</option>
-              <option value="virement">🏛️ Virement</option>
-            </select>
-          </div>
-
           <!-- Filtre Période : Date Début -->
           <div class="form-group" style="margin: 0;">
             <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
@@ -356,11 +342,9 @@ $canRecord = $canRecord ?? false;
                 <th style="padding: 12px; width: 120px;">Réf. Reçu</th>
                 <th style="padding: 12px; width: 120px;">Date & Heure</th>
                 <th style="padding: 12px; width: 110px;">Matricule</th>
-                <th style="padding: 12px;">Étudiant</th>
-                <th style="padding: 12px; width: 110px;">Classe</th>
-                <th style="padding: 12px;">Filière</th>
+                <th style="padding: 12px; ">Étudiant</th>
+                <th style="padding: 12px; ">Classe</th>
                 <th style="padding: 12px;">Motif / Libellé</th>
-                <th style="padding: 12px;">Mode</th>
                 <th style="padding: 12px; width: 130px; text-align: right;">Montant Versé</th>
                 <th style="padding: 12px; width: 90px; text-align: center;">Actions</th>
               </tr>

@@ -93,7 +93,6 @@
           d.type_filiere = $('#filter-type-filiere').val();
           d.niveau_code = $('#filter-niveau').val();
           d.classe_code = $('#filter-classe').val();
-          d.mode_paiement = $('#filter-mode').val();
           d.date_debut = $('#filter-date-debut').val();
           d.date_fin = $('#filter-date-fin').val();
         }
@@ -156,27 +155,6 @@
         {
           data: 'type_paiement', render: function (d) {
             return '<span style="font-weight:600; color:#475569;"><i data-lucide="tag" style="width:13px;height:13px;vertical-align:middle;color:#B45309;margin-right:4px;"></i>' + escapeHtml(d || 'Frais Annexes') + '</span>';
-          }
-        },
-        {
-          data: 'mode_paiement', render: function (d) {
-            var m = (d || '').toLowerCase();
-            var badgeStyle = 'background:#F1F5F9; color:#475569; border:1px solid #CBD5E1;';
-            var label = ucfirst(m || 'Espèce');
-            if (m.indexOf('espece') !== -1 || m.indexOf('cash') !== -1) {
-              badgeStyle = 'background:#DCFCE7; color:#15803D; border:1px solid #86EFAC;';
-              label = '💵 Espèces';
-            } else if (m.indexOf('mobile') !== -1 || m.indexOf('wave') !== -1 || m.indexOf('orange') !== -1 || m.indexOf('mtn') !== -1 || m.indexOf('moov') !== -1) {
-              badgeStyle = 'background:#CFFAFE; color:#0E7490; border:1px solid #A5F3FC;';
-              label = '📱 Mobile Money';
-            } else if (m.indexOf('cheque') !== -1) {
-              badgeStyle = 'background:#FEF3C7; color:#B45309; border:1px solid #FDE68A;';
-              label = '🏦 Chèque';
-            } else if (m.indexOf('virement') !== -1) {
-              badgeStyle = 'background:#F3E8FF; color:#7E22CE; border:1px solid #D8B4FE;';
-              label = '🏛️ Virement';
-            }
-            return '<span style="font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-block; ' + badgeStyle + '">' + label + '</span>';
           }
         },
         {
@@ -253,7 +231,7 @@
     }
 
     // Événements de filtre
-    $('#filter-annee, #filter-type-filiere, #filter-niveau, #filter-classe, #filter-mode, #filter-date-debut, #filter-date-fin').on('change input', function () {
+    $('#filter-annee, #filter-type-filiere, #filter-niveau, #filter-classe, #filter-date-debut, #filter-date-fin').on('change input', function () {
       table.ajax.reload();
       refreshKpis();
     });
@@ -265,7 +243,6 @@
         type_filiere: $('#filter-type-filiere').val() || '',
         niveau_code: $('#filter-niveau').val() || '',
         classe_code: $('#filter-classe').val() || '',
-        mode_paiement: $('#filter-mode').val() || '',
         date_debut: $('#filter-date-debut').val() || '',
         date_fin: $('#filter-date-fin').val() || ''
       };
