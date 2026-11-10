@@ -34,6 +34,7 @@ class CaisseAnnexeController extends BaseController
                 'activeSession' => null,
                 'encryptedSessionId' => '',
                 'canRecord' => false,
+                'canCancel' => false,
                 'canOpenCaisse' => false,
                 'canCloseCaisse' => false
             ]);
@@ -65,6 +66,7 @@ class CaisseAnnexeController extends BaseController
         $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
         $canRecord = $this->hasPermission([PERMISSIONS::MANAGE_CAISSE_ANNEXE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canCancel = $this->hasPermission([PERMISSIONS::CANCEL_CAISSE_ANNEXE, PERMISSIONS::CANCEL_PAIEMENTS]);
         $canOpenCaisse = $this->hasPermission([PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         $canCloseCaisse = $this->hasPermission([PERMISSIONS::CLOTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
@@ -81,6 +83,7 @@ class CaisseAnnexeController extends BaseController
             'activeSession' => $activeSession,
             'encryptedSessionId' => $encryptedSessionId,
             'canRecord' => $canRecord,
+            'canCancel' => $canCancel,
             'canOpenCaisse' => $canOpenCaisse,
             'canCloseCaisse' => $canCloseCaisse
         ]);
@@ -426,5 +429,36 @@ class CaisseAnnexeController extends BaseController
             'margin_top' => 6,
             'margin_bottom' => 6
         ]);
+    }
+
+    /**
+     * Annulation d'un encaissement de la Caisse Annexe
+     */
+    public function annuler()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::CANCEL_CAISSE_ANNEXE, PERMISSIONS::CANCEL_PAIEMENTS]);
+
+        $id = (int)($this->post('id_paiement') ?: $this->post('id'));
+        $codePaiement = trim($this->post('code_paiement') ?? '');
+        $motif = trim($this->post('motif') ?? '');
+
+        $userCode = Auth::code() ?: 'SYS';
+        $userName = trim(Auth::user('prenom') . ' ' . Auth::user('nom'));
+
+        $res = $this->model->annulerEncaissement($id, $codePaiement, $motif, $userCode, $userName);
+        if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'caisse_annexe',
+                $codePaiement ?: (string)$id,
+                "Annulation de l'encaissement de frais annexe {$codePaiement} (Motif: {$motif})",
+                ['id_paiement' => $id, 'code_paiement' => $codePaiement, 'motif' => $motif]
+            );
+            $this->success($res['message'], $res['data'] ?? []);
+        } else {
+            $this->error($res['message']);
+        }
     }
 }

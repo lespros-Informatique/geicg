@@ -27,7 +27,11 @@
       return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
-    var racine = (typeof RACINE !== 'undefined') ? RACINE : '/geicg/';
+    var configElem = document.getElementById('caisse-annexe-config');
+    var moduleConfig = configElem ? JSON.parse(configElem.textContent) : {};
+    var racine = moduleConfig.racine || ((typeof RACINE !== 'undefined') ? RACINE : '/geicg/');
+    var canCancel = (moduleConfig.canCancel !== undefined) ? moduleConfig.canCancel : false;
+    var csrfToken = moduleConfig.csrfToken || '';
     var dtLang = (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage) ? GEICG.dataTableLanguage : (racine + 'json/datatables-i18n-fr-FR.json');
 
     if ($.fn.select2) {
@@ -156,14 +160,27 @@
           data: null, className: 'text-center', width: '90px', orderable: false, render: function (d, type, row) {
             var idCrypte = row.encrypted_id || row.editId || row.id_paiement;
             var printUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('paiement/imprimerPdf/' + idCrypte) : (racine + 'paiement/imprimerPdf/' + idCrypte);
-            var recuUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('paiement/recu/' + idCrypte) : (racine + 'paiement/recu/' + idCrypte);
-            return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">' +
-              '<a href="' + printUrl + '" target="_blank" class="btn-action-icon" style="background:#F0FDF4; color:#166534; border:1px solid #BBF7D0;" title="Imprimer le reçu officiel (PDF)">' +
+            
+            var printBtn = '<a href="' + printUrl + '" target="_blank" class="btn-action-icon" style="background:#F0FDF4; color:#166534; border:1px solid #BBF7D0;" title="Imprimer le reçu officiel (PDF)">' +
               '<i data-lucide="printer"></i>' +
-              '</a>' +
-              '<a href="' + recuUrl + '" target="_blank" class="btn-action-icon" style="background:#F8FAFC; color:#1E3A5F; border:1px solid #CBD5E1;" title="Consulter la quittance">' +
-              '<i data-lucide="eye"></i>' +
-              '</a>' +
+              '</a>';
+
+            var cancelBtn = '';
+            if (canCancel) {
+              cancelBtn = '<button type="button" class="btn-action-icon btn-cancel-encaissement" ' +
+                'data-id="' + escapeHtml(row.id_paiement || '') + '" ' +
+                'data-code="' + escapeHtml(row.code_paiement || '') + '" ' +
+                'data-nom="' + escapeHtml(row.etudiant_nom || '') + '" ' +
+                'data-montant="' + escapeHtml(row.montant_fmt || (Number(row.montant_paiement || 0).toLocaleString('fr-FR') + ' FCFA')) + '" ' +
+                'style="background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; cursor:pointer;" ' +
+                'title="Annuler / Supprimer cet encaissement">' +
+                '<i data-lucide="trash-2"></i>' +
+                '</button>';
+            }
+
+            return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">' +
+              printBtn +
+              cancelBtn +
               '</div>';
           }
         }
@@ -240,6 +257,100 @@
     $('#btn-print-caisse-annexe').on('click', function (e) {
       e.preventDefault();
       window.printRegistry();
+    });
+
+    // ANNULATION / SUPPRESSION D'UN ENCAISSEMENT DE FRAIS ANNEXE
+    $(document).on('click', '.btn-cancel-encaissement', function (e) {
+      e.preventDefault();
+      var idPaiement = $(this).data('id');
+      var codePaiement = $(this).data('code');
+      var etudiantNom = $(this).data('nom');
+      var montant = $(this).data('montant');
+
+      function executeAnnulation(motif) {
+        var annulerUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('caisse_annexe/annuler') : (racine + 'caisse_annexe/annuler');
+        $.ajax({
+          url: annulerUrl,
+          type: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          data: {
+            id_paiement: idPaiement,
+            code_paiement: codePaiement,
+            motif: motif || '',
+            csrf_token: csrfToken
+          },
+          dataType: 'json',
+          success: function (res) {
+            if (res.status === 1 || res.success) {
+              var msg = res.message || 'Encaissement annulé avec succès';
+              if (typeof showToast === 'function') {
+                showToast(msg, 'success');
+              } else if (window.toastr) {
+                toastr.success(msg);
+              } else if (window.Swal) {
+                Swal.fire({ icon: 'success', title: 'Annulé !', text: msg, timer: 1800, showConfirmButton: false });
+              } else {
+                alert(msg);
+              }
+              table.ajax.reload(null, false);
+              refreshKpis();
+            } else {
+              var errMsg = res.message || 'Erreur lors de l\'annulation de l\'encaissement';
+              if (typeof showToast === 'function') {
+                showToast(errMsg, 'error');
+              } else if (window.toastr) {
+                toastr.error(errMsg);
+              } else if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'Erreur', text: errMsg });
+              } else {
+                alert(errMsg);
+              }
+            }
+          },
+          error: function (xhr) {
+            var msg = 'Erreur réseau lors de la communication avec le serveur.';
+            try {
+              var json = JSON.parse(xhr.responseText);
+              if (json && json.message) msg = json.message;
+            } catch (err) {}
+            if (typeof showToast === 'function') {
+              showToast(msg, 'error');
+            } else if (window.toastr) {
+              toastr.error(msg);
+            } else if (window.Swal) {
+              Swal.fire({ icon: 'error', title: 'Erreur', text: msg });
+            } else {
+              alert(msg);
+            }
+          }
+        });
+      }
+
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Annuler cet encaissement ?',
+          html: '<p style="font-size:13px; color:#475569; margin-bottom:10px;">Êtes-vous sûr de vouloir annuler le reçu <strong>#' + escapeHtml(codePaiement) + '</strong> (' + escapeHtml(montant) + ') de <strong>' + escapeHtml(etudiantNom) + '</strong> ?</p>' +
+                '<p style="font-size:12px; color:#DC2626; font-weight:700; margin:0;">Cette action retirera ce versement des encaissements et réajustera les indicateurs de caisse.</p>',
+          input: 'text',
+          inputPlaceholder: 'Motif de l\'annulation (facultatif)...',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#DC2626',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: '<i class="fa fa-trash"></i> Confirmer l\'annulation',
+          cancelButtonText: 'Conserver',
+          focusCancel: true
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            executeAnnulation(result.value);
+          }
+        });
+      } else {
+        if (confirm('Êtes-vous sûr de vouloir annuler l\'encaissement #' + codePaiement + ' (' + montant + ') de ' + etudiantNom + ' ?')) {
+          var motif = prompt('Motif d\'annulation (facultatif) :') || '';
+          executeAnnulation(motif);
+        }
+      }
     });
 
     // GESTION DU MODAL D'ENCAISSEMENT DIRECT DE FRAIS ANNEXE

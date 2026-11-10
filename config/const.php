@@ -221,6 +221,7 @@ class PERMISSIONS
     public const VIEW_DASHBOARD_SCOLARITE         = 'VIEW_DASHBOARD_SCOLARITE';
 
     // MODULE: FINANCE
+    public const CANCEL_CAISSE_ANNEXE             = 'CANCEL_CAISSE_ANNEXE';
     public const CANCEL_PAIEMENTS                 = 'CANCEL_PAIEMENTS';
     public const CLOTURE_CAISSE                   = 'CLOTURE_CAISSE';
     public const EXPORT_FINANCE                   = 'EXPORT_FINANCE';

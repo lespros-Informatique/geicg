@@ -383,6 +383,7 @@ $route->addRoute('/caisse_annexe/apiList', [$caisseAnnexeController, 'apiList'])
 $route->addRoute('/caisse_annexe/apiStats', [$caisseAnnexeController, 'apiStats']);
 $route->addRoute('/caisse_annexe/getStudentAnnexesSummary', [$caisseAnnexeController, 'getStudentAnnexesSummary']);
 $route->addRoute('/caisse_annexe/encaisser', [$caisseAnnexeController, 'encaisser']);
+$route->addRoute('/caisse_annexe/annuler', [$caisseAnnexeController, 'annuler']);
 $route->addRoute('/caisse_annexe/imprimerRegistre', [$caisseAnnexeController, 'imprimerRegistre']);
 
 // Module: session_caisse (SessionCaisseController)

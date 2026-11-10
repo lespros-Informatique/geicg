@@ -1,6 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $canRecord = $canRecord ?? false;
+$canCancel = $canCancel ?? false;
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -541,6 +542,15 @@ $canRecord = $canRecord ?? false;
     </form>
   </div>
 </div>
+
+<script type="application/json" id="caisse-annexe-config">
+<?= json_encode([
+    'racine' => RACINE,
+    'csrfToken' => Validator::generateCsrfToken(),
+    'canCancel' => !empty($canCancel),
+    'canRecord' => !empty($canRecord)
+]) ?>
+</script>
 
 <?php 
 ViewContext::setScripts(['public/assets/js/modules/caisse_annexe.js']);

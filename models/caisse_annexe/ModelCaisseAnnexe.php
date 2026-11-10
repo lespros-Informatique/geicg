@@ -302,6 +302,48 @@ class ModelCaisseAnnexe extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    public function annulerEncaissement(int $id, string $codePaiement, string $motif, string $userCode, string $userName): array
+    {
+        $db = $this->getCon();
+        $paiement = null;
+        if ($id > 0) {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::PAIEMENTS . " WHERE id_paiement = ? LIMIT 1");
+            $stmt->execute([$id]);
+            $paiement = $stmt->fetch(PDO::FETCH_ASSOC);
+        } elseif (!empty($codePaiement)) {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::PAIEMENTS . " WHERE code_paiement = ? LIMIT 1");
+            $stmt->execute([$codePaiement]);
+            $paiement = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$paiement) {
+            return ['success' => false, 'message' => "Encaissement introuvable."];
+        }
+
+        if ($paiement['statut_paiement'] === STATUTS::ANNULE) {
+            return ['success' => false, 'message' => "Ce versement est déjà annulé."];
+        }
+
+        $cancellationNote = " [ANNULATION CAISSE ANNEXE le " . date('d/m/Y H:i') . " par " . (!empty($userName) ? $userName : $userCode) . (!empty($motif) ? " - Motif: " . $motif : "") . "]";
+        $newObservations = trim(($paiement['observations'] ?? '') . $cancellationNote);
+
+        $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = '" . STATUTS::ANNULE . "', observations = ? WHERE id_paiement = ?");
+        $res = $stmtUp->execute([$newObservations, $paiement['id_paiement']]);
+
+        if ($res) {
+            return [
+                'success' => true,
+                'message' => "L'encaissement #" . ($paiement['code_paiement'] ?? '') . " a été annulé avec succès.",
+                'data' => [
+                    'id_paiement' => $paiement['id_paiement'],
+                    'code_paiement' => $paiement['code_paiement']
+                ]
+            ];
+        }
+
+        return ['success' => false, 'message' => "Erreur lors de l'annulation de l'encaissement."];
+    }
+
     public function getAnneeByCode(string $code): ?array
     {
         $stmt = $this->getCon()->prepare("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
