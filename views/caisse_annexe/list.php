@@ -12,7 +12,9 @@ $canRecord = $canRecord ?? false;
       <div id="print-header-banner" style="margin-bottom: 16px; border-bottom: 2px solid #1E3A5F; padding-bottom: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">GEICG - GROUPE ÉCOLE D'INGÉNIEURS ET DE COMMERCE DE GAGNOA</h2>
+            <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">
+              <?= htmlspecialchars(!empty($etablissement['nom_etablissement']) ? $etablissement['nom_etablissement'] : 'GROUPE EICG') ?>
+            </h2>
             <div style="font-size: 12px; font-weight: 800; color: #0F172A; margin-top: 3px;">CAISSE ANNEXE - BILAN DES FRAIS ANNEXES & ENCAISSEMENTS</div>
             <div style="font-size: 11px; color: #475569; margin-top: 3px;" id="print-filter-summary-text">
               Année Académique : All &bull; Niveau : Tous &bull; Classe : Toutes
@@ -38,15 +40,16 @@ $canRecord = $canRecord ?? false;
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-           
             <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Caisse des Frais Annexes</h1>
           </div>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Journal des encaissementsdes frais annexes</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Journal des encaissements des frais annexes</p>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-          <button onclick="printRegistry()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;" title="Imprimer le bilan des frais annexes">
-            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
-          </button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;" class="no-print">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::PRINT_FRAIS_ANNEXES, PERMISSIONS::VIEW_PAIEMENTS]))): ?>
+            <button type="button" onclick="printRegistry()" id="btn-print-caisse-annexe" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease; cursor: pointer;" title="Générer & imprimer le registre officiel de la caisse annexe en PDF">
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Registre (PDF)
+            </button>
+          <?php endif; ?>
 
           <?php if (!empty($isCaisseOuverte)): ?>
             <?php if (!empty($canCloseCaisse)): ?>

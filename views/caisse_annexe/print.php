@@ -3,6 +3,12 @@
  * Vue d'impression / Bilan du Registre Caisse Annexe (Format A4 Paysage / Impression Directe)
  * Conforme aux règles d'affichage dynamique et charte graphique GEICG
  */
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+
 $anneeLibelle = $anneeLibelle ?? 'Toutes les années';
 $stats = $stats ?? [];
 $sumTable = 0;
@@ -303,12 +309,12 @@ if (empty($agentNom)) {
         </div>
     </div>
 
-    <!-- En-tête officiel -->
+    <!-- En-tête officiel (Dynamique selon Règle 9) -->
     <div class="institution-header">
         <div class="inst-info">
-            <h2>GROUPE EICG - DIRECTION GÉNÉRALE</h2>
-            <p><strong>École Internationale de Commerce et de Gestion</strong></p>
-            <p>Service Comptabilité & Caisse Annexe | Abidjan - Côte d'Ivoire</p>
+            <h2><?= htmlspecialchars(!empty($etablissement['nom_etablissement']) ? $etablissement['nom_etablissement'] : 'GROUPE EICG') ?></h2>
+            <p><strong><?= htmlspecialchars(!empty($etablissement['slogan_etablissement']) ? $etablissement['slogan_etablissement'] : 'École d\'Ingénieurs et de Commerce') ?></strong></p>
+            <p>Service Caisse & Frais Annexes &bull; <?= htmlspecialchars($etablissement['contacts_formatted'] ?? ($etablissement['telephone_fixe'] ?? '')) ?></p>
         </div>
         <div class="report-title-box">
             <span class="report-badge">Journal Financier Officiel</span>
@@ -326,27 +332,27 @@ if (empty($agentNom)) {
     <!-- Cartes KPIs de synthèse -->
     <div class="kpi-row">
         <div class="kpi-box emerald">
-            <div class="kpi-label">Total Recouvré Annexes</div>
-            <div class="kpi-val"><?= number_format($stats['total_collecte'] ?? 0, 0, ',', ' ') ?> FCFA</div>
-            <div class="kpi-sub"><?= count($paiements) ?> transaction(s) enregistrée(s)</div>
+            <div class="kpi-label">Total Annexes Encaissé</div>
+            <div class="kpi-val"><?= number_format((float)($stats['total_encaisse'] ?? 0), 0, ',', ' ') ?> FCFA</div>
+            <div class="kpi-sub"><?= count($paiements) ?> reçu(s) émis</div>
         </div>
         <div class="kpi-box indigo">
-            <div class="kpi-label">Budget Annexe Attendu</div>
-            <div class="kpi-val"><?= number_format($stats['budget_attendu'] ?? 0, 0, ',', ' ') ?> FCFA</div>
-            <div class="kpi-sub"><?= number_format($stats['total_etudiants'] ?? 0, 0, ',', ' ') ?> étudiant(s) inscrit(s)</div>
+            <div class="kpi-label">Budget Annexe Exigible</div>
+            <div class="kpi-val"><?= number_format((float)($stats['total_frais_annexes_attendus'] ?? 0), 0, ',', ' ') ?> FCFA</div>
+            <div class="kpi-sub">Total budget attendu</div>
         </div>
         <div class="kpi-box amber">
             <div class="kpi-label">Reste à Recouvrer</div>
-            <div class="kpi-val"><?= number_format($stats['reste_a_recouvrer'] ?? 0, 0, ',', ' ') ?> FCFA</div>
-            <div class="kpi-sub">Taux : <?= number_format($stats['taux_recouvrement'] ?? 0, 1, ',', ' ') ?>% de recouvrement</div>
+            <div class="kpi-val"><?= number_format((float)($stats['attente_frais_annexes'] ?? 0), 0, ',', ' ') ?> FCFA</div>
+            <div class="kpi-sub">Taux : <?= number_format((float)($stats['taux_recouvrement_fa'] ?? 0), 1, ',', ' ') ?>% de recouvrement</div>
         </div>
         <div class="kpi-box">
             <div class="kpi-label">Répartition Espèces / Digital</div>
             <div class="kpi-val" style="font-size: 13px;">
-                Esp : <?= number_format($stats['total_especes'] ?? 0, 0, ',', ' ') ?> F
+                Esp : <?= number_format((float)($stats['encaisse_especes'] ?? 0), 0, ',', ' ') ?> F
             </div>
             <div class="kpi-sub">
-                Dig : <?= number_format($stats['total_digital'] ?? 0, 0, ',', ' ') ?> F
+                Dig : <?= number_format((float)(($stats['encaisse_mobile_money'] ?? 0) + ($stats['encaisse_banque'] ?? 0)), 0, ',', ' ') ?> F
             </div>
         </div>
     </div>
@@ -356,21 +362,19 @@ if (empty($agentNom)) {
         <thead>
             <tr>
                 <th style="width: 30px;" class="text-center">#</th>
-                <th style="width: 80px;">Réf. Reçu</th>
-                <th style="width: 75px;">Date & Heure</th>
-                <th style="width: 75px;">Matricule</th>
+                <th style="width: 85px;">Réf. Reçu</th>
+                <th style="width: 80px;">Date & Heure</th>
+                <th style="width: 80px;">Matricule</th>
                 <th>Nom & Prénoms Étudiant</th>
-                <th style="width: 90px;">Classe</th>
-                <th style="width: 70px;">Filière</th>
-                <th style="width: 70px;">Mode</th>
-                <th style="width: 90px;">Réf. Paiement</th>
-                <th style="width: 95px;" class="text-end">Montant (FCFA)</th>
+                <th style="width: 95px;">Classe</th>
+                <th>Motif / Libellé Frais Annexe</th>
+                <th style="width: 105px;" class="text-end">Montant (FCFA)</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($paiements)): ?>
             <tr>
-                <td colspan="10" class="text-center" style="padding: 24px; color: #64748B; font-style: italic;">
+                <td colspan="8" class="text-center" style="padding: 24px; color: #64748B; font-style: italic;">
                     Aucun encaissement de frais annexe n'a été trouvé pour les critères sélectionnés.
                 </td>
             </tr>
@@ -379,12 +383,9 @@ if (empty($agentNom)) {
                 $i = 1; 
                 $sumTable = 0;
                 foreach ($paiements as $p): 
-                    $mt = (float)$p['montant_paiement'];
+                    $mt = (float)($p['montant_paiement'] ?? 0);
                     $sumTable += $mt;
-                    $mode = strtolower($p['mode_paiement'] ?? 'espece');
-                    $isEspece = (strpos($mode, 'espece') !== false || strpos($mode, 'cash') !== false);
-                    $isDig = (strpos($mode, 'mobile') !== false || strpos($mode, 'wave') !== false || strpos($mode, 'orange') !== false || strpos($mode, 'mtn') !== false || strpos($mode, 'moov') !== false || strpos($mode, 'cheque') !== false || strpos($mode, 'virement') !== false);
-                    $badgeCls = $isEspece ? 'badge-espece' : ($isDig ? 'badge-digital' : 'badge-autre');
+                    $motif = $p['motif_paiement'] ?: ($p['libelle_frais_annexe'] ?: 'Frais Annexes');
                 ?>
                 <tr>
                     <td class="text-center"><?= $i++ ?></td>
@@ -395,13 +396,7 @@ if (empty($agentNom)) {
                         <?= htmlspecialchars(trim(($p['nom_etudiant'] ?? '') . ' ' . ($p['prenom_etudiant'] ?? ''))) ?>
                     </td>
                     <td><?= htmlspecialchars($p['libelle_classe'] ?? '-') ?></td>
-                    <td>
-                        <span style="font-size: 8.5px;"><?= htmlspecialchars($p['libelle_filiere'] ?? '-') ?></span>
-                    </td>
-                    <td>
-                        <span class="badge-mode <?= $badgeCls ?>"><?= htmlspecialchars(ucfirst($p['mode_paiement'] ?? 'espece')) ?></span>
-                    </td>
-                    <td class="font-mono" style="font-size: 9px;"><?= htmlspecialchars($p['reference_paiement'] ?: '-') ?></td>
+                    <td><?= htmlspecialchars($motif) ?></td>
                     <td class="text-end fw-bold font-mono" style="color: #15803D;">
                         <?= number_format($mt, 0, ',', ' ') ?>
                     </td>
@@ -412,7 +407,7 @@ if (empty($agentNom)) {
         <?php if (!empty($paiements)): ?>
         <tfoot>
             <tr style="background: #E2E8F0; font-weight: 800; font-size: 11px;">
-                <td colspan="9" class="text-end" style="padding: 8px;">TOTAL RECOUVRÉ SUR CE REGISTRE :</td>
+                <td colspan="7" class="text-end" style="padding: 8px;">TOTAL RECOUVRÉ SUR CE REGISTRE :</td>
                 <td class="text-end font-mono" style="padding: 8px; color: #1E3A5F; font-size: 12px;">
                     <?= number_format($sumTable, 0, ',', ' ') ?> FCFA
                 </td>
@@ -421,22 +416,24 @@ if (empty($agentNom)) {
         <?php endif; ?>
     </table>
 
-    <!-- Bloc des Signatures officielles -->
+    <!-- Bloc des Signatures officielles (Règle 9) -->
     <div class="signatures-row">
         <div class="signature-box">
-            <div class="signature-title">Le Caissier / Agent Émetteur</div>
+            <div class="signature-title">Le Caissier Annexe</div>
             <div class="signature-line"></div>
             <div class="signature-author"><?= htmlspecialchars($agentNom) ?></div>
         </div>
         <div class="signature-box">
-            <div class="signature-title">Le Chef de Service Comptabilité</div>
+            <div class="signature-title"><?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'Le Chef de Service Comptabilité') ?></div>
             <div class="signature-line"></div>
-            <div class="signature-author">Visa & Cachet Officiel</div>
+            <div class="signature-author"><?= htmlspecialchars($etablissement['nom_responsable_finance'] ?? 'Visa & Cachet Officiel') ?></div>
         </div>
         <div class="signature-box">
-            <div class="signature-title">La Direction Générale</div>
+            <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'La Direction Générale') ?></div>
             <div class="signature-line"></div>
-            <div class="signature-author">Pour Approbation</div>
+            <div class="signature-author"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? 'Pour Approbation') ?></div>
+        </div>
+    </div>
         </div>
     </div>
 

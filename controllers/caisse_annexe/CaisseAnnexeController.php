@@ -69,6 +69,7 @@ class CaisseAnnexeController extends BaseController
         $canCloseCaisse = $this->hasPermission([PERMISSIONS::CLOTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $this->loadView('../views/caisse_annexe/list.php', [
+            'etablissement' => $this->getEtablissementConfig(),
             'stats' => $stats,
             'annees' => $annees,
             'niveaux' => $niveaux,
@@ -348,6 +349,7 @@ class CaisseAnnexeController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_RAPPORTS_FINANCIERS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
 
         $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? null;
@@ -366,6 +368,25 @@ class CaisseAnnexeController extends BaseController
             $anneeLibelle = $aRow['libelle_annee'] ?? $anneeCode;
         }
 
+        $niveauLibelle = 'Tous les niveaux';
+        if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+            $nRow = $this->model->getNiveauByCode($niveauCode);
+            $niveauLibelle = $nRow['libelle_niveau'] ?? $niveauCode;
+        }
+
+        $classeLibelle = 'Toutes les classes';
+        if (!empty($classeCode) && $classeCode !== 'ALL') {
+            $cRow = $this->model->getClasseByCode($classeCode);
+            $classeLibelle = $cRow['libelle_classe'] ?? $classeCode;
+        }
+
+        $agentNom = trim(Auth::fullName());
+        if (empty($agentNom)) {
+            $agentNom = 'Service Caisse & Comptabilité';
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+
         $this->logAction(
             AuditLogger::ACTION_PRINT,
             'caisse_annexe',
@@ -374,13 +395,36 @@ class CaisseAnnexeController extends BaseController
             ['annee_code' => $anneeCode, 'niveau_code' => $niveauCode, 'classe_code' => $classeCode, 'date_debut' => $dateDebut, 'date_fin' => $dateFin]
         );
 
-        // Rendu de la vue d'impression épurée
-        $this->loadView('../views/caisse_annexe/print.php', [
+        $dataView = [
+            'etablissement' => $etablissement,
             'paiements' => $paiements,
             'stats' => $stats,
             'anneeLibelle' => $anneeLibelle,
+            'niveauLibelle' => $niveauLibelle,
+            'classeLibelle' => $classeLibelle,
+            'typeFiliere' => $typeFiliere,
             'dateDebut' => $dateDebut,
-            'dateFin' => $dateFin
+            'dateFin' => $dateFin,
+            'agentNom' => $agentNom,
+            'dateImpression' => date('d/m/Y à H:i:s')
+        ];
+
+        $html = PdfService::renderTemplate('registre_caisse_annexe.php', $dataView);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Caisse_Annexe_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre Caisse Annexe - GEICG',
+            'margin_left' => 6,
+            'margin_right' => 6,
+            'margin_top' => 6,
+            'margin_bottom' => 6
         ]);
     }
 }

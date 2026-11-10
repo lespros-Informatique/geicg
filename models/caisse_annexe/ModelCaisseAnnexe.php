@@ -310,6 +310,22 @@ class ModelCaisseAnnexe extends BaseModel
         return $row ?: null;
     }
 
+    public function getNiveauByCode(string $code): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ? LIMIT 1");
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function getClasseByCode(string $code): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_classe, libelle_classe FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
     public function getStudentAnnexeDetails(string $codeInscription): ?array
     {
         $stmt = $this->getCon()->prepare("

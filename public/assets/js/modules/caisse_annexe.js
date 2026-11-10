@@ -222,7 +222,7 @@
       refreshKpis();
     });
 
-    // Impression
+    // Impression officielle du registre de caisse annexe (mPDF)
     window.printRegistry = function () {
       var params = {
         annee_code: $('#filter-annee').val() || '',
@@ -236,6 +236,11 @@
       var url = basePrintUrl + '?' + $.param(params);
       window.open(url, '_blank');
     };
+
+    $('#btn-print-caisse-annexe').on('click', function (e) {
+      e.preventDefault();
+      window.printRegistry();
+    });
 
     // GESTION DU MODAL D'ENCAISSEMENT DIRECT DE FRAIS ANNEXE
     function openEncaissementModal() {
