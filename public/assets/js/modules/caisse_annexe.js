@@ -142,17 +142,6 @@
           }
         },
         {
-          data: 'type_filiere', render: function (d) {
-            var t = (d || '').toUpperCase();
-            var isIndus = (t === 'INDUSTRIELLE');
-            var bg = isIndus ? '#E0F2FE' : '#E0E7FF';
-            var col = isIndus ? '#0369A1' : '#3730A3';
-            var brd = isIndus ? '#BAE6FD' : '#C7D2FE';
-            var lbl = isIndus ? 'Industrielle' : 'Tertiaire';
-            return '<span style="font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; background:' + bg + '; color:' + col + '; border:1px solid ' + brd + ';">' + lbl + '</span>';
-          }
-        },
-        {
           data: 'type_paiement', render: function (d) {
             return '<span style="font-weight:600; color:#475569;"><i data-lucide="tag" style="width:13px;height:13px;vertical-align:middle;color:#B45309;margin-right:4px;"></i>' + escapeHtml(d || 'Frais Annexes') + '</span>';
           }
