@@ -200,21 +200,7 @@ $canRecord = $canRecord ?? false;
           </div>
         </div>
 
-        <!-- 3. Caisse Espèces -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Espèces (Caisse Guichet)</div>
-            <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
-              <span id="kpi-encaisse-especes"><?= number_format((float)($stats['encaisse_especes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Frais annexes en liquide</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="banknote" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 4. Reste à Recouvrer -->
+        <!-- 3. Reste à Recouvrer -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FCA5A5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Reste à Recouvrer (Annexes)</div>
@@ -336,21 +322,7 @@ $canRecord = $canRecord ?? false;
           </div>
         </div>
 
-        <!-- 11. Total Reçus Émis -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FEF3C7; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Quittances & Reçus Émis</div>
-            <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
-              <span id="kpi-total-recus"><?= number_format((int)($stats['total_recus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">versement(s)</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Transactions enregistrées</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 12. Effectif Total Inscrits -->
+        <!-- 11. Effectif Total Inscrits -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E9D5FF; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Total Effectif Suivi</div>

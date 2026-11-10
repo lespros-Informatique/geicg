@@ -226,7 +226,6 @@
             animateCounter($('#kpi-total-encaisse'), Number(s.total_encaisse || 0), false);
             animateCounter($('#kpi-taux-recouvrement-fa'), Number(s.taux_recouvrement_fa || 0), true);
             animateCounter($('#kpi-encaisse-aujourdhui'), Number(s.encaisse_aujourdhui || 0), false);
-            animateCounter($('#kpi-encaisse-especes'), Number(s.encaisse_especes || 0), false);
             animateCounter($('#kpi-attente-frais-annexes'), Number(s.attente_frais_annexes || 0), false);
 
             animateCounter($('#kpi-encaisse-industrielle'), Number(s.encaisse_industrielle || 0), false);
@@ -236,7 +235,6 @@
 
             animateCounter($('#kpi-eleves-soldes'), Number(s.eleves_soldes || 0), false);
             animateCounter($('#kpi-eleves-non-soldes'), Number(s.eleves_non_soldes || 0), false);
-            animateCounter($('#kpi-total-recus'), Number(s.total_recus || 0), false);
             animateCounter($('#kpi-total-inscrits'), Number(s.total_inscrits || 0), false);
 
             if (s.annee_exercice_libelle) {
