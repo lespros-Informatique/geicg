@@ -7,6 +7,49 @@ class ModelAccessoire extends BaseModel
     protected ?string $statusField = 'statut_accessoire';
     protected ?string $createdAtField = 'created_at_accessoire';
 
+    public function getById($id): array
+    {
+        if (empty($id)) {
+            return [];
+        }
+        $sql = "
+            SELECT a.*,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.niveau_code ORDER BY n.id_niveau ASC SEPARATOR ','),
+                       ''
+                   ) AS niveaux_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT n.libelle_niveau ORDER BY n.id_niveau ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_niveau,
+                   COALESCE(
+                       MAX(anf.type_filiere_cible),
+                       'TOUT'
+                   ) AS type_filiere_cible
+            FROM " . TABLES::ACCESSOIRES . " a
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            WHERE a.id_accessoire = ?
+            GROUP BY a.id_accessoire
+            LIMIT 1
+        ";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                return [];
+            }
+            $csv = trim((string)($row['niveaux_codes_csv'] ?? ''));
+            $row['niveaux_codes'] = $csv !== '' ? array_values(array_filter(array_map('trim', explode(',', $csv)))) : [];
+            $row['niveau_code'] = $csv;
+            return $row;
+        } catch (Exception $e) {
+            error_log("Get accessoire by id: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function getAll(?string $anneeCode = null): array
     {
         $sql = "

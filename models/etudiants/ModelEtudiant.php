@@ -423,11 +423,12 @@ class ModelEtudiant extends BaseModel
 
                     // 2. Kits éligibles pour la nouvelle classe
                     $sqlEligible = "
-                        SELECT code_accessoire, libelle_accessoire, type_filiere_cible, niveau_code
-                        FROM " . TABLES::ACCESSOIRES . "
-                        WHERE statut_accessoire = '" . STATUTS::ACTIF . "'
-                          AND (type_filiere_cible = 'TOUT' OR type_filiere_cible IS NULL OR type_filiere_cible = ''" . (!empty($nouveauTypeFiliere) ? " OR type_filiere_cible = ?" : "") . ")
-                          AND (niveau_code IS NULL OR niveau_code = '' OR niveau_code = 'TOUT'" . (!empty($classeRow['niveau_code']) ? " OR niveau_code = ?" : "") . ")
+                        SELECT DISTINCT a.code_accessoire, a.libelle_accessoire
+                        FROM " . TABLES::ACCESSOIRES . " a
+                        LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+                        WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
+                          AND (anf.type_filiere_cible = 'TOUT' OR anf.type_filiere_cible IS NULL OR anf.type_filiere_cible = ''" . (!empty($nouveauTypeFiliere) ? " OR anf.type_filiere_cible = ?" : "") . ")
+                          AND (anf.niveau_code IS NULL OR anf.niveau_code = '' OR anf.niveau_code = 'TOUT'" . (!empty($classeRow['niveau_code']) ? " OR anf.niveau_code = ?" : "") . ")
                     ";
                     $paramsEligible = [];
                     if (!empty($nouveauTypeFiliere)) $paramsEligible[] = $nouveauTypeFiliere;
