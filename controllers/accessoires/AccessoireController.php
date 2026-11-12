@@ -13,6 +13,9 @@ class AccessoireController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $annees = $this->getAccessibleAnnees();
         $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $niveaux = (new ModelNiveau())->getActifs();
+        $etudiants = (new ModelEtudiant())->getAll();
+        $accessoires = $this->model->getAll();
 
         if ($selectedAnneeCode === null) {
             $this->loadView('../views/accessoires/list.php', [
@@ -23,22 +26,25 @@ class AccessoireController extends BaseController
                     'retire' => 0,
                     'taux_retrait' => 0,
                     'taux' => 0,
-                    'total_types' => 0
+                    'total_types' => count($accessoires)
                 ],
                 'annees' => $annees,
-                'niveaux' => [],
+                'niveaux' => $niveaux,
+                'etudiants' => $etudiants,
+                'accessoires' => $accessoires,
                 'selectedAnneeCode' => ''
             ]);
             return;
         }
 
         $stats = $this->model->getStats($selectedAnneeCode);
-        $niveaux = (new ModelNiveau())->getActifs();
 
         $this->loadView('../views/accessoires/list.php', [
             'stats' => $stats,
             'annees' => $annees,
             'niveaux' => $niveaux,
+            'etudiants' => $etudiants,
+            'accessoires' => $accessoires,
             'selectedAnneeCode' => $selectedAnneeCode
         ]);
     }
@@ -50,6 +56,9 @@ class AccessoireController extends BaseController
 
         $annees = $this->getAccessibleAnnees();
         $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $classes = (new ModelClasse())->getAll();
+        $etudiants = (new ModelEtudiant())->getAll();
+        $accessoires = $this->model->getAll();
 
         if ($selectedAnneeCode === null) {
             $this->loadView('../views/accessoires/registre.php', [
@@ -60,21 +69,18 @@ class AccessoireController extends BaseController
                     'retire' => 0,
                     'taux_retrait' => 0,
                     'taux' => 0,
-                    'total_types' => 0
+                    'total_types' => count($accessoires)
                 ],
                 'annees' => $annees,
-                'classes' => [],
+                'classes' => $classes,
+                'etudiants' => $etudiants,
+                'accessoires' => $accessoires,
                 'selectedAnneeCode' => ''
             ]);
             return;
         }
 
-        $classeModel = new ModelClasse();
-        $classes = $classeModel->getAll();
-
         $stats = $this->model->getStats($selectedAnneeCode);
-        $etudiants = (new ModelEtudiant())->getAll();
-        $accessoires = $this->model->getAll();
 
         $this->loadView('../views/accessoires/registre.php', [
             'stats' => $stats,
@@ -246,12 +252,7 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES]);
-        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
-        if ($anneeCode === null) {
-            $this->json(['data' => []]);
-            return;
-        }
-        $items = $this->model->getAll($anneeCode);
+        $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_accessoire'];

@@ -1,8 +1,9 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$etudiants = (new ModelEtudiant())->getAll();
-$accessoires = (new ModelAccessoire())->getAll();
-$stats = $stats ?? (new ModelAccessoire())->getStats();
+$etudiants = $etudiants ?? [];
+$accessoires = $accessoires ?? [];
+$niveaux = $niveaux ?? [];
+$stats = $stats ?? [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
