@@ -1889,79 +1889,82 @@ window.removeBatchRow = function(btn) {
       tableCibles.ajax.reload();
     });
 
+    var allModalFiliereOpts = [];
+    $('#acc_cible_filiere_code option.opt-cible-filiere').each(function() {
+      allModalFiliereOpts.push({
+        value: $(this).val(),
+        text: $(this).text(),
+        cycles: String($(this).attr('data-cycles') || '').trim(),
+        type: String($(this).attr('data-type') || '').trim()
+      });
+    });
+
+    var allModalNiveauOpts = [];
+    $('#acc_cible_niveau_code option.opt-cible-niveau').each(function() {
+      allModalNiveauOpts.push({
+        value: $(this).val(),
+        text: $(this).text(),
+        cycles: String($(this).attr('data-cycles') || '').trim()
+      });
+    });
+
     function filterModalByCycle(cycleCode) {
       var cyc = String(cycleCode || '').trim();
+      var currentFil = $('#acc_cible_filiere_code').val() || '';
+      var currentNiv = $('#acc_cible_niveau_code').val() || '';
+
+      var $selFil = $('#acc_cible_filiere_code');
+      var $selNiv = $('#acc_cible_niveau_code');
+
+      var filAllLabel = cyc ? '-- Toutes les filières de ce cycle --' : '-- Toutes les filières (Général) --';
+      var nivAllLabel = cyc ? '-- Tous les niveaux de ce cycle --' : '-- Tous les niveaux (Général) --';
+
+      $selFil.empty().append($('<option>', { value: '', id: 'opt_acc_cible_filiere_all', text: filAllLabel }));
       var visibleFilieres = 0;
-      var visibleNiveaux = 0;
+      var filStillExists = false;
 
-      $('.lbl-cible-filiere').each(function() {
-        var cyclesCsv = String($(this).attr('data-cycles') || '').trim();
-        var cyclesArr = cyclesCsv ? cyclesCsv.split(',') : [];
+      allModalFiliereOpts.forEach(function(item) {
+        var cyclesArr = item.cycles ? item.cycles.split(',') : [];
         if (!cyc || cyclesArr.indexOf(cyc) !== -1) {
-          $(this).css('display', 'flex');
+          $selFil.append($('<option>', {
+            value: item.value,
+            class: 'opt-cible-filiere',
+            'data-cycles': item.cycles,
+            'data-type': item.type,
+            text: item.text
+          }));
           visibleFilieres++;
-        } else {
-          $(this).css('display', 'none');
-          $(this).find('.chk-cible-filiere').prop('checked', false);
+          if (item.value === currentFil) filStillExists = true;
         }
       });
 
-      $('.lbl-cible-niveau').each(function() {
-        var cyclesCsv = String($(this).attr('data-cycles') || '').trim();
-        var cyclesArr = cyclesCsv ? cyclesCsv.split(',') : [];
+      $selNiv.empty().append($('<option>', { value: '', id: 'opt_acc_cible_niveau_all', text: nivAllLabel }));
+      var visibleNiveaux = 0;
+      var nivStillExists = false;
+
+      allModalNiveauOpts.forEach(function(item) {
+        var cyclesArr = item.cycles ? item.cycles.split(',') : [];
         if (!cyc || cyclesArr.indexOf(cyc) !== -1) {
-          $(this).css('display', 'flex');
+          $selNiv.append($('<option>', {
+            value: item.value,
+            class: 'opt-cible-niveau',
+            'data-cycles': item.cycles,
+            text: item.text
+          }));
           visibleNiveaux++;
-        } else {
-          $(this).css('display', 'none');
-          $(this).find('.chk-cible-niveau').prop('checked', false);
+          if (item.value === currentNiv) nivStillExists = true;
         }
       });
 
-      $('#txt_acc_cible_filiere_all').text(cyc ? 'Toutes les filières de ce cycle' : 'Toutes les filières (Général)');
-      $('#txt_acc_cible_niveau_all').text(cyc ? 'Tous les niveaux de ce cycle' : 'Tous les niveaux (Général)');
+      $selFil.val(filStillExists ? currentFil : '');
+      $selNiv.val(nivStillExists ? currentNiv : '');
 
       $('#acc_cible_filiere_empty').toggle(visibleFilieres === 0);
       $('#acc_cible_niveau_empty').toggle(visibleNiveaux === 0);
-
-      $('#acc_cible_filiere_all').prop('checked', $('.chk-cible-filiere:checked').length === 0);
-      $('#acc_cible_niveau_all').prop('checked', $('.chk-cible-niveau:checked').length === 0);
     }
 
     $(document).on('change', '#acc_cible_cycle', function() {
       filterModalByCycle($(this).val());
-    });
-
-    $(document).on('change', '#acc_cible_filiere_all', function() {
-      if ($(this).is(':checked')) {
-        $('.chk-cible-filiere').prop('checked', false);
-      } else if ($('.chk-cible-filiere:checked').length === 0) {
-        $(this).prop('checked', true);
-      }
-    });
-
-    $(document).on('change', '.chk-cible-filiere', function() {
-      if ($('.chk-cible-filiere:checked').length > 0) {
-        $('#acc_cible_filiere_all').prop('checked', false);
-      } else {
-        $('#acc_cible_filiere_all').prop('checked', true);
-      }
-    });
-
-    $(document).on('change', '#acc_cible_niveau_all', function() {
-      if ($(this).is(':checked')) {
-        $('.chk-cible-niveau').prop('checked', false);
-      } else if ($('.chk-cible-niveau:checked').length === 0) {
-        $(this).prop('checked', true);
-      }
-    });
-
-    $(document).on('change', '.chk-cible-niveau', function() {
-      if ($('.chk-cible-niveau:checked').length > 0) {
-        $('#acc_cible_niveau_all').prop('checked', false);
-      } else {
-        $('#acc_cible_niveau_all').prop('checked', true);
-      }
     });
 
     $(document).on('click', '.btn-add-acc-cible', function() {
@@ -1969,11 +1972,9 @@ window.removeBatchRow = function(btn) {
       $('#acc_cible_id').val('');
       $('#acc_cible_cycle').val('');
       $('.chk-cible-acc').prop('checked', false);
-      $('.chk-cible-filiere').prop('checked', false);
-      $('.chk-cible-niveau').prop('checked', false);
       filterModalByCycle('');
-      $('#acc_cible_filiere_all').prop('checked', true);
-      $('#acc_cible_niveau_all').prop('checked', true);
+      $('#acc_cible_filiere_code').val('');
+      $('#acc_cible_niveau_code').val('');
       $('#modal-accessoire-cible-title').html('<i data-lucide="layers" style="width: 18px; height: 18px;"></i> Configurer Kits par Filière & Niveau');
       $('#modal-accessoire-cible').css('display', 'flex');
       if (window.lucide) lucide.createIcons();
@@ -1993,23 +1994,10 @@ window.removeBatchRow = function(btn) {
         $('.chk-cible-acc[value="' + accCode + '"]').prop('checked', true);
       }
 
-      $('.chk-cible-filiere').prop('checked', false);
-      $('.chk-cible-niveau').prop('checked', false);
       filterModalByCycle(cycleCode);
 
-      if (filiereCode && filiereCode !== 'TOUT') {
-        $('.chk-cible-filiere[value="' + filiereCode + '"]').prop('checked', true);
-        $('#acc_cible_filiere_all').prop('checked', false);
-      } else {
-        $('#acc_cible_filiere_all').prop('checked', true);
-      }
-
-      if (niveau && niveau !== 'TOUT') {
-        $('.chk-cible-niveau[value="' + niveau + '"]').prop('checked', true);
-        $('#acc_cible_niveau_all').prop('checked', false);
-      } else {
-        $('#acc_cible_niveau_all').prop('checked', true);
-      }
+      $('#acc_cible_filiere_code').val(filiereCode && filiereCode !== 'TOUT' ? filiereCode : '');
+      $('#acc_cible_niveau_code').val(niveau && niveau !== 'TOUT' ? niveau : '');
 
       $('#modal-accessoire-cible-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la Configuration du Kit');
       $('#modal-accessoire-cible').css('display', 'flex');
