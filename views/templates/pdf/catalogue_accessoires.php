@@ -85,7 +85,7 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
       margin-bottom: 14px;
     }
     .data-table th {
-      background-color: #1E3A5F;
+      background-color: #686868ff;
       color: #FFFFFF;
       border: 0.5px solid #0F172A;
       padding: 6px 8px;
@@ -184,7 +184,7 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
   <table class="banner-table">
     <tr>
       <td>
-        <div class="banner-title">RÉPERTOIRE OFFICIEL DES KITS & ACCESSOIRES ACTIFS</div>
+        <div class="banner-title">RÉPERTOIRE DES KITS & ACCESSOIRES </div>
         <div class="banner-sub">ARTICLES ET KITS SCOLAIRES DISPONIBLES À L'INSCRIPTION</div>
       </td>
     </tr>
@@ -200,16 +200,15 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 40px;">N°</th>
+        <th style="width: 45px;">N°</th>
         <th style="text-align: left; padding-left: 10px;">Désignation du Kit / Accessoire</th>
-        <th style="width: 160px;">Type de Filière</th>
-        <th style="width: 180px;">Niveau(x) Cible(s)</th>
+        <th style="width: 180px;">Type de Filière</th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($rows)): ?>
         <tr>
-          <td colspan="4" class="text-center" style="padding: 18px; color: #64748B; font-style: italic;">
+          <td colspan="3" class="text-center" style="padding: 18px; color: #64748B; font-style: italic;">
             Aucun kit ou accessoire actif enregistré dans le répertoire.
           </td>
         </tr>
@@ -218,7 +217,6 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
           $rowClass = ($idx % 2 === 0) ? 'row-even' : 'row-odd';
           $tf = $r['type_filiere_cible'] ?? 'TOUT';
           $filiereText = ($tf === 'INDUSTRIELLE') ? 'Filière Industrielle' : (($tf === 'TERTIAIRE') ? 'Filière Tertiaire' : 'Toutes Filières');
-          $niveauText = !empty($r['libelle_niveau']) ? $r['libelle_niveau'] : 'Tous niveaux';
         ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center text-bold" style="color: #64748B;"><?= $idx + 1 ?></td>
@@ -228,34 +226,10 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
             <td class="text-center">
               <?= htmlspecialchars($filiereText) ?>
             </td>
-            <td class="text-center">
-              <?= htmlspecialchars($niveauText) ?>
-            </td>
           </tr>
         <?php endforeach; ?>
       <?php endif; ?>
     </tbody>
-  </table>
-
-  <table class="signature-table">
-    <tr>
-      <td class="signature-box" style="width: 48%;">
-        <div class="signature-title">Édité par</div>
-        <div style="height: 36px;"></div>
-        <div class="signature-mention"><?= htmlspecialchars($editeur_nom ?? '') ?></div>
-      </td>
-      <td style="width: 4%;"></td>
-      <td class="signature-box" style="width: 48%;">
-        <div class="signature-title"><?= htmlspecialchars($titreDirection) ?></div>
-        <?php if ($villeSignature !== ''): ?>
-        <div style="text-align: center; font-size: 7.5pt; color: #475569; margin-bottom: 2px;">
-          Fait à <?= htmlspecialchars($villeSignature) ?>, le <?= date('d/m/Y') ?>
-        </div>
-        <?php endif; ?>
-        <div style="height: 32px;"></div>
-        <div class="signature-mention"><?= htmlspecialchars($nomSignataire) ?></div>
-      </td>
-    </tr>
   </table>
 
 </body>
