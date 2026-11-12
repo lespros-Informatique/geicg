@@ -235,6 +235,7 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
                       <option value="<?= htmlspecialchars($cl['code_classe']) ?>" 
                               data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"
                               data-type-filiere="<?= htmlspecialchars($cl['type_filiere'] ?? '') ?>"
+                              data-filiere="<?= htmlspecialchars($cl['filiere_code'] ?? '') ?>"
                               data-niveau="<?= htmlspecialchars($cl['niveau_code'] ?? '') ?>">
                         <?= htmlspecialchars($cl['libelle_classe']) ?> (<?= htmlspecialchars($cl['code_classe']) ?>)
                       </option>
@@ -362,10 +363,13 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
                 <div id="acc_cards_container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
                   <?php foreach($accessoires as $acc): 
                     $kitTypeFiliere = $acc['type_filiere_cible'] ?? 'TOUT';
+                    $filieresCodesCsv = $acc['filieres_codes_csv'] ?? '';
+                    $libelleFiliere = $acc['libelle_filiere'] ?? '';
                     $niveauCode = $acc['niveau_code'] ?? '';
                     $libelleNiveau = $acc['libelle_niveau'] ?? '';
                     
                     $filiereBadgeText = ($kitTypeFiliere === 'INDUSTRIELLE') ? 'Industrielle' : (($kitTypeFiliere === 'TERTIAIRE') ? 'Tertiaire' : 'Toutes filières');
+                    if (!empty($libelleFiliere)) { $filiereBadgeText .= ' (' . $libelleFiliere . ')'; }
                     $filiereBadgeBg = ($kitTypeFiliere === 'INDUSTRIELLE') ? '#FEF3C7' : (($kitTypeFiliere === 'TERTIAIRE') ? '#DBEAFE' : '#F1F5F9');
                     $filiereBadgeColor = ($kitTypeFiliere === 'INDUSTRIELLE') ? '#92400E' : (($kitTypeFiliere === 'TERTIAIRE') ? '#1E40AF' : '#475569');
 
@@ -374,6 +378,7 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
                     <label class="acc-checkbox-card" 
                            data-code="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>"
                            data-type-filiere="<?= htmlspecialchars($kitTypeFiliere) ?>"
+                           data-filiere-codes="<?= htmlspecialchars($filieresCodesCsv) ?>"
                            data-niveau="<?= htmlspecialchars($niveauCode) ?>"
                            style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
                       <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer; margin-top: 2px; flex-shrink: 0;">

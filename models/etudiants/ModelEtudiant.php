@@ -427,12 +427,10 @@ class ModelEtudiant extends BaseModel
                         FROM " . TABLES::ACCESSOIRES . " a
                         LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
                         WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
-                          AND (anf.type_filiere_cible = 'TOUT' OR anf.type_filiere_cible IS NULL OR anf.type_filiere_cible = ''" . (!empty($nouveauTypeFiliere) ? " OR anf.type_filiere_cible = ?" : "") . ")
                           AND (anf.filiere_code IS NULL OR anf.filiere_code = '' OR anf.filiere_code = 'TOUT'" . (!empty($classeRow['filiere_code']) ? " OR anf.filiere_code = ?" : "") . ")
                           AND (anf.niveau_code IS NULL OR anf.niveau_code = '' OR anf.niveau_code = 'TOUT'" . (!empty($classeRow['niveau_code']) ? " OR anf.niveau_code = ?" : "") . ")
                     ";
                     $paramsEligible = [];
-                    if (!empty($nouveauTypeFiliere)) $paramsEligible[] = $nouveauTypeFiliere;
                     if (!empty($classeRow['filiere_code'])) $paramsEligible[] = $classeRow['filiere_code'];
                     if (!empty($classeRow['niveau_code'])) $paramsEligible[] = $classeRow['niveau_code'];
 

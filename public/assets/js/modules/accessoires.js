@@ -1889,24 +1889,6 @@ window.removeBatchRow = function(btn) {
       tableCibles.ajax.reload();
     });
 
-    function filterModalFilieresByType(typeFiliere) {
-      var t = String(typeFiliere || 'TOUT').toUpperCase();
-      $('.lbl-cible-filiere').each(function() {
-        var itemType = String($(this).attr('data-type') || '').toUpperCase();
-        if (t === 'TOUT' || itemType === t) {
-          $(this).css('display', 'flex');
-        } else {
-          $(this).css('display', 'none');
-          $(this).find('.chk-cible-filiere').prop('checked', false);
-        }
-      });
-      $('#acc_cible_filiere_all').prop('checked', $('.chk-cible-filiere:checked').length === 0);
-    }
-
-    $(document).on('change', '#acc_cible_filiere', function() {
-      filterModalFilieresByType($(this).val());
-    });
-
     $(document).on('change', '#acc_cible_filiere_all', function() {
       if ($(this).is(':checked')) {
         $('.chk-cible-filiere').prop('checked', false);
@@ -1943,9 +1925,7 @@ window.removeBatchRow = function(btn) {
       $('#form-accessoire-cible')[0].reset();
       $('#acc_cible_id').val('');
       $('.chk-cible-acc').prop('checked', false);
-      $('#acc_cible_filiere').val('TOUT');
       $('.chk-cible-filiere').prop('checked', false);
-      filterModalFilieresByType('TOUT');
       $('#acc_cible_filiere_all').prop('checked', true);
       $('.chk-cible-niveau').prop('checked', false);
       $('#acc_cible_niveau_all').prop('checked', true);
@@ -1957,7 +1937,6 @@ window.removeBatchRow = function(btn) {
     $(document).on('click', '.btn-edit-acc-cible', function() {
       var id = $(this).data('id');
       var accCode = String($(this).attr('data-acc-code') || '').trim();
-      var filiere = String($(this).attr('data-filiere') || 'TOUT').trim();
       var filiereCode = String($(this).attr('data-filiere-code') || '').trim();
       var niveau = String($(this).attr('data-niveau') || '').trim();
 
@@ -1966,8 +1945,6 @@ window.removeBatchRow = function(btn) {
       if (accCode) {
         $('.chk-cible-acc[value="' + accCode + '"]').prop('checked', true);
       }
-      $('#acc_cible_filiere').val(filiere || 'TOUT');
-      filterModalFilieresByType(filiere || 'TOUT');
 
       $('.chk-cible-filiere').prop('checked', false);
       if (filiereCode && filiereCode !== 'TOUT') {

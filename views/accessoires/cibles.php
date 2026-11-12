@@ -134,23 +134,12 @@ $filieres = $filieres ?? [];
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Type de Filière Cible <span style="color: #EF4444;">*</span>
-        </label>
-        <select name="type_filiere_cible" id="acc_cible_filiere" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
-          <option value="TOUT">Toutes les Filières (Général)</option>
-          <option value="INDUSTRIELLE">Filière Industrielle uniquement (Ex: IDA, RIT, GBAT...)</option>
-          <option value="TERTIAIRE">Filière Tertiaire uniquement (Ex: RHCOM, GEC...)</option>
-        </select>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 18px;">
-        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Filière(s) / Spécialité(s) Spécifique(s) <span style="font-weight: 500; font-size: 11.5px; color: #64748B;">(Ex: GBAT uniquement)</span>
+          Filière(s) / Spécialité(s) Cible(s)
         </label>
         <div id="acc_cible_filieres_container" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; background: #F8FAFC; display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
           <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #1E3A5F; cursor: pointer; padding-bottom: 6px; border-bottom: 1px dashed #CBD5E1; margin: 0;">
             <input type="checkbox" id="acc_cible_filiere_all" value="" checked style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
-            <span>Toutes les filières de ce type (Général)</span>
+            <span>Toutes les filières (Général)</span>
           </label>
           <?php foreach ($filieres as $fil): ?>
             <label class="lbl-cible-filiere" data-type="<?= htmlspecialchars(strtoupper($fil['type_filiere'] ?? '')) ?>" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; cursor: pointer; margin: 0;">
@@ -159,7 +148,7 @@ $filieres = $filieres ?? [];
             </label>
           <?php endforeach; ?>
         </div>
-        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cochez une ou plusieurs filières spécifiques (ex: GBAT), ou laissez « Toutes les filières de ce type »</small>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cochez une ou plusieurs filières spécifiques (ex: GBAT), ou laissez « Toutes les filières »</small>
       </div>
 
       <div class="form-group" style="margin-bottom: 22px;">

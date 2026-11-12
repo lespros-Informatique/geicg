@@ -1210,11 +1210,12 @@
 
     $('#acc_no_class_msg').slideUp(150);
 
+    var $selectedOpt = $('#wiz_classe option:selected');
     if (typeof typeFiliere === 'undefined' || typeFiliere === null || typeFiliere === '') {
-      var $selectedOpt = $('#wiz_classe option:selected');
       typeFiliere = $selectedOpt.attr('data-type-filiere') || '';
       niveauCode = $selectedOpt.attr('data-niveau') || '';
     }
+    var filiereCode = ($selectedOpt.attr('data-filiere') || '').trim();
 
     typeFiliere = (typeFiliere || '').trim().toUpperCase();
     niveauCode = (niveauCode || '').trim();
@@ -1228,17 +1229,22 @@
       var $card = $(this);
       var $chk = $card.find('.chk-accessoire');
       var kitFiliere = ($card.attr('data-type-filiere') || 'TOUT').trim().toUpperCase();
+      var kitFiliereCodes = ($card.attr('data-filiere-codes') || '').trim();
       var kitNiveau = ($card.attr('data-niveau') || '').trim();
 
       // Règle d'attribution Option 1 :
       // 1. Filière : 'TOUT', vide, ou même type de filière que la classe
       var matchFiliere = (kitFiliere === 'TOUT' || kitFiliere === '' || (typeFiliere !== '' && kitFiliere === typeFiliere));
 
+      // 1b. Filière spécifique (ex: GBAT) : vide, 'TOUT', ou code filière présent dans la liste des filières cibles de l'accessoire
+      var kitFiliereCodesList = kitFiliereCodes ? kitFiliereCodes.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+      var matchFiliereSpec = (kitFiliereCodesList.length === 0 || kitFiliereCodesList.indexOf('TOUT') !== -1 || (filiereCode !== '' && kitFiliereCodesList.indexOf(filiereCode) !== -1));
+
       // 2. Niveau : vide, 'TOUT', ou code niveau présent dans la liste des niveaux cibles de l'accessoire
       var kitNiveauxList = kitNiveau ? kitNiveau.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
       var matchNiveau = (kitNiveauxList.length === 0 || kitNiveauxList.indexOf('TOUT') !== -1 || (niveauCode !== '' && kitNiveauxList.indexOf(niveauCode) !== -1));
 
-      if (matchFiliere && matchNiveau) {
+      if (matchFiliere && matchFiliereSpec && matchNiveau) {
         $card.show();
         if (shouldAutoCheck) {
           $chk.prop('checked', true);
