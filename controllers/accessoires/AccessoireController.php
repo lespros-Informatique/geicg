@@ -306,7 +306,7 @@ class AccessoireController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
-            $this->model->syncCibles($data['code_accessoire'], $typeFiliereCible, $niveauCodes);
+            $this->model->syncCibles($data['code_accessoire'], $typeFiliereCible, $niveauCodes, $etabCode, $userCode);
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été créé avec succès !" : "Accessoire créé avec succès !";
             $this->success($msg);
         } else {
@@ -339,18 +339,19 @@ class AccessoireController extends BaseController
                 : [trim((string)$data['niveau_code'])];
         }
         unset($data['niveau_codes']);
-        $data['niveau_code'] = (count($niveauCodes) === 1) ? $niveauCodes[0] : null;
 
         $libelle = trim($data['libelle_accessoire'] ?? '');
         $typeFiliereCible = trim($data['type_filiere_cible'] ?? 'TOUT');
 
         $existing = $this->model->getById($id);
         $codeAccessoire = $existing['code_accessoire'] ?? '';
+        $etabCode = $existing['etablissement_code'] ?? $this->getActiveEtablissementCode();
+        $userCode = Auth::code();
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             if (!empty($codeAccessoire)) {
-                $this->model->syncCibles($codeAccessoire, $typeFiliereCible, $niveauCodes);
+                $this->model->syncCibles($codeAccessoire, $typeFiliereCible, $niveauCodes, $etabCode, $userCode);
             }
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été modifié avec succès !" : "Accessoire modifié avec succès !";
             $this->success($msg);
