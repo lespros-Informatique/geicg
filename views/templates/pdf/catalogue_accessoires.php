@@ -192,27 +192,24 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
 
   <table class="meta-box-table">
     <tr>
-      <td style="width: 35%;"><span class="meta-label">Filtre :</span> <span class="meta-value">Kits Actifs uniquement</span></td>
-      <td style="width: 30%;"><span class="meta-label">Total Kits Actifs :</span> <span class="meta-value"><?= count($rows ?? []) ?></span></td>
-      <td style="width: 35%; text-align: right;"><span class="meta-label">Date d'édition :</span> <span class="meta-value"><?= date('d/m/Y à H:i') ?></span></td>
+      <td style="width: 50%;"><span class="meta-label">Total Kits Actifs :</span> <span class="meta-value"><?= count($rows ?? []) ?></span></td>
+      <td style="width: 50%; text-align: right;"><span class="meta-label">Date d'édition :</span> <span class="meta-value"><?= date('d/m/Y à H:i') ?></span></td>
     </tr>
   </table>
 
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 36px;">N°</th>
-        <th style="width: 120px;">Code Article</th>
+        <th style="width: 40px;">N°</th>
         <th style="text-align: left; padding-left: 10px;">Désignation du Kit / Accessoire</th>
-        <th style="width: 130px;">Type de Filière</th>
-        <th style="width: 160px;">Niveau(x) Cible(s)</th>
-        <th style="width: 85px;">Statut</th>
+        <th style="width: 160px;">Type de Filière</th>
+        <th style="width: 180px;">Niveau(x) Cible(s)</th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($rows)): ?>
         <tr>
-          <td colspan="6" class="text-center" style="padding: 18px; color: #64748B; font-style: italic;">
+          <td colspan="4" class="text-center" style="padding: 18px; color: #64748B; font-style: italic;">
             Aucun kit ou accessoire actif enregistré dans le répertoire.
           </td>
         </tr>
@@ -225,10 +222,7 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
         ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center text-bold" style="color: #64748B;"><?= $idx + 1 ?></td>
-            <td class="text-center">
-              <span class="badge-code"><?= htmlspecialchars($r['code_accessoire'] ?? '-') ?></span>
-            </td>
-            <td class="text-left text-bold" style="color: #0F172A;">
+            <td class="text-left text-bold" style="color: #0F172A; padding-left: 10px;">
               <?= htmlspecialchars($r['libelle_accessoire'] ?? '-') ?>
             </td>
             <td class="text-center">
@@ -236,9 +230,6 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
             </td>
             <td class="text-center">
               <?= htmlspecialchars($niveauText) ?>
-            </td>
-            <td class="text-center">
-              <span class="badge-actif">Actif</span>
             </td>
           </tr>
         <?php endforeach; ?>
