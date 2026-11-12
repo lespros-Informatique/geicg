@@ -33,6 +33,42 @@ class AccessoireController extends BaseController
         ]);
     }
 
+    public function imprimerCataloguePdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $rows = $this->model->getActifs();
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+
+        $data = [
+            'etablissement' => $etablissement,
+            'editeur_nom' => $editeurNom,
+            'rows' => $rows
+        ];
+
+        $html = PdfService::renderTemplate('catalogue_accessoires.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Catalogue_Kits_Actifs_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Catalogue des Kits Actifs - ' . ($etablissement['nom_etablissement'] ?? ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
     public function registre()
     {
         $this->requireAuth();

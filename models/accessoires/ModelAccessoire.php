@@ -90,6 +90,39 @@ class ModelAccessoire extends BaseModel
         }
     }
 
+    public function getActifs(): array
+    {
+        $sql = "
+            SELECT a.*,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.niveau_code ORDER BY n.id_niveau ASC SEPARATOR ','),
+                       ''
+                   ) AS niveaux_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT n.libelle_niveau ORDER BY n.id_niveau ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_niveau,
+                   COALESCE(
+                       MAX(anf.type_filiere_cible),
+                       'TOUT'
+                   ) AS type_filiere_cible
+            FROM " . TABLES::ACCESSOIRES . " a
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
+            GROUP BY a.id_accessoire
+            ORDER BY a.libelle_accessoire ASC
+        ";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getActifs error: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function syncCibles(string $accessoireCode, string $typeFiliereCible, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null): void
     {
         if (empty($accessoireCode)) {
