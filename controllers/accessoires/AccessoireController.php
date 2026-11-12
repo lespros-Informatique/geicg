@@ -16,7 +16,15 @@ class AccessoireController extends BaseController
 
         if ($selectedAnneeCode === null) {
             $this->loadView('../views/accessoires/list.php', [
-                'stats' => ['total' => 0, 'actifs' => 0, 'inactifs' => 0, 'obligatoires' => 0, 'montant_total' => 0],
+                'stats' => [
+                    'total' => 0,
+                    'en_attente' => 0,
+                    'retires' => 0,
+                    'retire' => 0,
+                    'taux_retrait' => 0,
+                    'taux' => 0,
+                    'total_types' => 0
+                ],
                 'annees' => $annees,
                 'niveaux' => [],
                 'selectedAnneeCode' => ''
@@ -45,7 +53,15 @@ class AccessoireController extends BaseController
 
         if ($selectedAnneeCode === null) {
             $this->loadView('../views/accessoires/registre.php', [
-                'stats' => ['total' => 0, 'actifs' => 0, 'inactifs' => 0, 'obligatoires' => 0, 'montant_total' => 0],
+                'stats' => [
+                    'total' => 0,
+                    'en_attente' => 0,
+                    'retires' => 0,
+                    'retire' => 0,
+                    'taux_retrait' => 0,
+                    'taux' => 0,
+                    'total_types' => 0
+                ],
                 'annees' => $annees,
                 'classes' => [],
                 'selectedAnneeCode' => ''

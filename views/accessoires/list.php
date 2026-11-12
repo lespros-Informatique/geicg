@@ -63,7 +63,7 @@ $stats = $stats ?? (new ModelAccessoire())->getStats();
           </div>
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Total Kits Souscrits</div>
-            <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-kits"><?= $stats['total'] ?></div>
+            <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-kits"><?= (int)($stats['total'] ?? 0) ?></div>
           </div>
         </div>
 
@@ -74,7 +74,7 @@ $stats = $stats ?? (new ModelAccessoire())->getStats();
           </div>
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #EA580C; text-transform: uppercase;">En Attente de Retrait</div>
-            <div style="font-size: 22px; font-weight: 900; color: #C2410C; margin-top: 2px;" id="kpi-en-attente"><?= $stats['en_attente'] ?></div>
+            <div style="font-size: 22px; font-weight: 900; color: #C2410C; margin-top: 2px;" id="kpi-en-attente"><?= (int)($stats['en_attente'] ?? 0) ?></div>
           </div>
         </div>
 
@@ -85,7 +85,7 @@ $stats = $stats ?? (new ModelAccessoire())->getStats();
           </div>
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase;">Kits Retirés / Livrés</div>
-            <div style="font-size: 22px; font-weight: 900; color: #166534; margin-top: 2px;" id="kpi-retires"><?= $stats['retire'] ?></div>
+            <div style="font-size: 22px; font-weight: 900; color: #166534; margin-top: 2px;" id="kpi-retires"><?= (int)($stats['retire'] ?? ($stats['retires'] ?? 0)) ?></div>
           </div>
         </div>
 
@@ -96,7 +96,7 @@ $stats = $stats ?? (new ModelAccessoire())->getStats();
           </div>
           <div style="flex: 1;">
             <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Taux de Distribution</div>
-            <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-taux"><?= $stats['taux'] ?>%</div>
+            <div style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-taux"><?= (float)($stats['taux'] ?? ($stats['taux_retrait'] ?? 0)) ?>%</div>
           </div>
         </div>
 
