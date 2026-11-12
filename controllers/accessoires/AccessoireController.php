@@ -24,13 +24,17 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $cycles = array_values(array_filter((new ModelCycle())->getAll(), fn($c) => ($c['statut_cycle'] ?? 'actif') === 'actif'));
         $niveaux = (new ModelNiveau())->getActifs();
         $filieres = array_values(array_filter((new ModelFiliere())->getAll(), fn($f) => ($f['statut_filiere'] ?? 'actif') === 'actif'));
+        $filiereCyclesMap = $this->model->getFiliereCyclesMap();
         $accessoires = $this->model->getAll();
 
         $this->loadView('../views/accessoires/cibles.php', [
+            'cycles' => $cycles,
             'niveaux' => $niveaux,
             'filieres' => $filieres,
+            'filiereCyclesMap' => $filiereCyclesMap,
             'accessoires' => $accessoires
         ]);
     }
@@ -411,7 +415,8 @@ class AccessoireController extends BaseController
         $typeFiliere = !empty($_GET['type_filiere']) ? trim($_GET['type_filiere']) : null;
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
-        $items = $this->model->getCiblesList($typeFiliere, $niveauCode, $filiereCode);
+        $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
+        $items = $this->model->getCiblesList($typeFiliere, $niveauCode, $filiereCode, $cycleCode);
         $this->json(['data' => $items]);
     }
 
@@ -423,6 +428,7 @@ class AccessoireController extends BaseController
 
         $idCible = (int)($_POST['id_accessoire_niveau_filiere'] ?? 0);
         $typeFiliere = trim($_POST['type_filiere_cible'] ?? 'TOUT');
+        $cycleCode = !empty($_POST['cycle_code']) ? trim($_POST['cycle_code']) : null;
 
         $accessoireCodes = [];
         if (!empty($_POST['accessoire_codes']) && is_array($_POST['accessoire_codes'])) {
@@ -460,7 +466,8 @@ class AccessoireController extends BaseController
             $niveauCodes,
             $etabCode,
             $userCode,
-            $idCible > 0 ? $idCible : null
+            $idCible > 0 ? $idCible : null,
+            $cycleCode
         );
 
         $this->success($idCible > 0 ? 'Configuration modifiée avec succès !' : "Configuration enregistrée avec succès ({$inserted} liaison(s)) !");

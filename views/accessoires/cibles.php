@@ -1,8 +1,24 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $accessoires = $accessoires ?? [];
+$cycles = $cycles ?? [];
 $niveaux = $niveaux ?? [];
 $filieres = $filieres ?? [];
+$filiereCyclesMap = $filiereCyclesMap ?? [];
+
+$filiereToCycles = [];
+$niveauToCycles = [];
+foreach ($filiereCyclesMap as $fc) {
+    $cCode = $fc['cycle_code'] ?? '';
+    $fCode = $fc['filiere_code'] ?? '';
+    $nCode = $fc['niveau_code'] ?? '';
+    if (!empty($fCode) && !empty($cCode) && !in_array($cCode, $filiereToCycles[$fCode] ?? [], true)) {
+        $filiereToCycles[$fCode][] = $cCode;
+    }
+    if (!empty($nCode) && !empty($cCode) && !in_array($cCode, $niveauToCycles[$nCode] ?? [], true)) {
+        $niveauToCycles[$nCode][] = $cCode;
+    }
+}
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -35,16 +51,18 @@ $filieres = $filieres ?? [];
         </a>
       </div>
 
-      <!-- Filtres par Type de Filière, Filière Spécifique & Niveau d'étude -->
+      <!-- Filtres par Cycle, Filière Spécifique & Niveau d'étude -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
         <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
-          <div style="flex: 1; min-width: 220px;">
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Type de Filière</label>
-            <select id="filter-cible-filiere" class="form-control select2" style="width: 100%;">
-              <option value="">-- Tous les types --</option>
-              <option value="TOUT">Toutes Filières (Général)</option>
-              <option value="INDUSTRIELLE">Filière Industrielle</option>
-              <option value="TERTIAIRE">Filière Tertiaire</option>
+          <div style="flex: 1; min-width: 200px;">
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Cycle</label>
+            <select id="filter-cible-cycle" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les cycles --</option>
+              <?php foreach ($cycles as $cyc): ?>
+                <option value="<?= htmlspecialchars($cyc['code_cycle']) ?>">
+                  <?= htmlspecialchars(!empty($cyc['slug_cycle']) ? $cyc['slug_cycle'] . ' - ' . $cyc['libelle_cycle'] : $cyc['libelle_cycle']) ?>
+                </option>
+              <?php endforeach; ?>
             </select>
           </div>
           <div style="flex: 1; min-width: 240px;">
@@ -52,18 +70,18 @@ $filieres = $filieres ?? [];
             <select id="filter-cible-filiere-code" class="form-control select2" style="width: 100%;">
               <option value="">-- Toutes les filières --</option>
               <?php foreach ($filieres as $fil): ?>
-                <option value="<?= htmlspecialchars($fil['code_filiere']) ?>">
+                <option value="<?= htmlspecialchars($fil['code_filiere']) ?>" data-cycles="<?= htmlspecialchars(implode(',', $filiereToCycles[$fil['code_filiere']] ?? [])) ?>">
                   <?= htmlspecialchars(!empty($fil['slug_filiere']) ? $fil['slug_filiere'] . ' - ' . $fil['libelle_filiere'] : $fil['libelle_filiere']) ?>
                 </option>
               <?php endforeach; ?>
             </select>
           </div>
-          <div style="flex: 1; min-width: 220px;">
+          <div style="flex: 1; min-width: 200px;">
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Niveau d'étude</label>
             <select id="filter-cible-niveau" class="form-control select2" style="width: 100%;">
               <option value="">-- Tous les niveaux --</option>
               <?php foreach ($niveaux as $niv): ?>
-                <option value="<?= htmlspecialchars($niv['code_niveau']) ?>">
+                <option value="<?= htmlspecialchars($niv['code_niveau']) ?>" data-cycles="<?= htmlspecialchars(implode(',', $niveauToCycles[$niv['code_niveau']] ?? [])) ?>">
                   <?= htmlspecialchars($niv['libelle_niveau']) ?>
                 </option>
               <?php endforeach; ?>
@@ -134,19 +152,37 @@ $filieres = $filieres ?? [];
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Cycle d'étude
+        </label>
+        <select name="cycle_code" id="acc_cible_cycle" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="">-- Tous les cycles --</option>
+          <?php foreach ($cycles as $cyc): ?>
+            <option value="<?= htmlspecialchars($cyc['code_cycle']) ?>">
+              <?= htmlspecialchars(!empty($cyc['slug_cycle']) ? $cyc['slug_cycle'] . ' - ' . $cyc['libelle_cycle'] : $cyc['libelle_cycle']) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Sélectionnez un cycle pour afficher uniquement ses filières et niveaux associés</small>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
           Filière(s) / Spécialité(s) Cible(s)
         </label>
         <div id="acc_cible_filieres_container" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; background: #F8FAFC; display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
-          <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #1E3A5F; cursor: pointer; padding-bottom: 6px; border-bottom: 1px dashed #CBD5E1; margin: 0;">
+          <label id="lbl_acc_cible_filiere_all" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #1E3A5F; cursor: pointer; padding-bottom: 6px; border-bottom: 1px dashed #CBD5E1; margin: 0;">
             <input type="checkbox" id="acc_cible_filiere_all" value="" checked style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
-            <span>Toutes les filières (Général)</span>
+            <span id="txt_acc_cible_filiere_all">Toutes les filières (Général)</span>
           </label>
           <?php foreach ($filieres as $fil): ?>
-            <label class="lbl-cible-filiere" data-type="<?= htmlspecialchars(strtoupper($fil['type_filiere'] ?? '')) ?>" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; cursor: pointer; margin: 0;">
+            <label class="lbl-cible-filiere" data-cycles="<?= htmlspecialchars(implode(',', $filiereToCycles[$fil['code_filiere']] ?? [])) ?>" data-type="<?= htmlspecialchars(strtoupper($fil['type_filiere'] ?? '')) ?>" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; cursor: pointer; margin: 0;">
               <input type="checkbox" name="filiere_codes[]" class="chk-cible-filiere" data-type="<?= htmlspecialchars(strtoupper($fil['type_filiere'] ?? '')) ?>" value="<?= htmlspecialchars($fil['code_filiere']) ?>" style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
               <span><?= htmlspecialchars(!empty($fil['slug_filiere']) ? $fil['slug_filiere'] . ' - ' . $fil['libelle_filiere'] : $fil['libelle_filiere']) ?></span>
             </label>
           <?php endforeach; ?>
+          <div id="acc_cible_filiere_empty" style="display: none; font-size: 12px; color: #B45309; font-weight: 600; padding: 4px 0;">
+            Aucune filière associée à ce cycle.
+          </div>
         </div>
         <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cochez une ou plusieurs filières spécifiques (ex: GBAT), ou laissez « Toutes les filières »</small>
       </div>
@@ -156,16 +192,19 @@ $filieres = $filieres ?? [];
           Niveau(x) d'étude Cible(s)
         </label>
         <div id="acc_cible_niveaux_container" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; background: #F8FAFC; display: flex; flex-direction: column; gap: 8px; max-height: 160px; overflow-y: auto;">
-          <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #1E3A5F; cursor: pointer; padding-bottom: 6px; border-bottom: 1px dashed #CBD5E1; margin: 0;">
+          <label id="lbl_acc_cible_niveau_all" style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #1E3A5F; cursor: pointer; padding-bottom: 6px; border-bottom: 1px dashed #CBD5E1; margin: 0;">
             <input type="checkbox" id="acc_cible_niveau_all" value="" checked style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
-            <span>Tous les niveaux (Général)</span>
+            <span id="txt_acc_cible_niveau_all">Tous les niveaux (Général)</span>
           </label>
           <?php foreach ($niveaux as $niv): ?>
-            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; cursor: pointer; margin: 0;">
+            <label class="lbl-cible-niveau" data-cycles="<?= htmlspecialchars(implode(',', $niveauToCycles[$niv['code_niveau']] ?? [])) ?>" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; cursor: pointer; margin: 0;">
               <input type="checkbox" name="niveau_codes[]" class="chk-cible-niveau" value="<?= htmlspecialchars($niv['code_niveau']) ?>" style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
               <span><?= htmlspecialchars($niv['libelle_niveau']) ?></span>
             </label>
           <?php endforeach; ?>
+          <div id="acc_cible_niveau_empty" style="display: none; font-size: 12px; color: #B45309; font-weight: 600; padding: 4px 0;">
+            Aucun niveau associé à ce cycle.
+          </div>
         </div>
         <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cochez un ou plusieurs niveaux spécifiques, ou laissez « Tous les niveaux »</small>
       </div>

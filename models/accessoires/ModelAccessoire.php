@@ -197,11 +197,32 @@ class ModelAccessoire extends BaseModel
         }
     }
 
-    public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null, ?string $filiereCode = null): array
+    public function getFiliereCyclesMap(): array
+    {
+        $sql = "
+            SELECT fc.filiere_code, fc.cycle_code, fc.niveau_code
+            FROM " . TABLES::FILIERE_CYCLES . " fc
+            WHERE fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "' OR fc.statut_filiere_cycle IS NULL
+        ";
+        try {
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getFiliereCyclesMap error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null, ?string $filiereCode = null, ?string $cycleCode = null): array
     {
         $where = [];
         $params = [];
 
+        if (!empty($cycleCode)) {
+            $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code = '' OR anf.filiere_code IN (SELECT fc.filiere_code FROM " . TABLES::FILIERE_CYCLES . " fc WHERE fc.cycle_code = ?))";
+            $where[] = "(anf.niveau_code IS NULL OR anf.niveau_code = '' OR anf.niveau_code IN (SELECT fc2.niveau_code FROM " . TABLES::FILIERE_CYCLES . " fc2 WHERE fc2.cycle_code = ?))";
+            $params[] = $cycleCode;
+            $params[] = $cycleCode;
+        }
         if (!empty($typeFiliere)) {
             if ($typeFiliere === 'TOUT') {
                 $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code = '')";
@@ -230,7 +251,11 @@ class ModelAccessoire extends BaseModel
                    f.slug_filiere,
                    COALESCE(f.type_filiere, 'TOUT') AS type_filiere_cible,
                    n.libelle_niveau,
-                   n.slug_niveau
+                   n.slug_niveau,
+                   (SELECT fc.cycle_code FROM " . TABLES::FILIERE_CYCLES . " fc
+                    WHERE (anf.filiere_code IS NULL OR fc.filiere_code = anf.filiere_code)
+                      AND (anf.niveau_code IS NULL OR fc.niveau_code = anf.niveau_code)
+                    LIMIT 1) AS cycle_code
             FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf
             JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = anf.accessoire_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
@@ -248,7 +273,7 @@ class ModelAccessoire extends BaseModel
         }
     }
 
-    public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $filiereCodes, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null): int
+    public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $filiereCodes, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null, ?string $cycleCode = null): int
     {
         $db = $this->getCon();
         $filiereType = in_array($typeFiliereCible, ['TOUT', 'INDUSTRIELLE', 'TERTIAIRE'], true) ? $typeFiliereCible : 'TOUT';
@@ -270,7 +295,18 @@ class ModelAccessoire extends BaseModel
                 $stmtDel->execute([$idCibleToUpdate]);
             }
 
-            if (empty($cleanFilieres) && in_array($filiereType, ['INDUSTRIELLE', 'TERTIAIRE'], true)) {
+            if (!empty($cycleCode)) {
+                if (empty($cleanFilieres)) {
+                    $stmtFilCycle = $db->prepare("SELECT DISTINCT filiere_code FROM " . TABLES::FILIERE_CYCLES . " WHERE cycle_code = ? AND (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)");
+                    $stmtFilCycle->execute([$cycleCode]);
+                    $cleanFilieres = array_values(array_filter($stmtFilCycle->fetchAll(PDO::FETCH_COLUMN) ?: []));
+                }
+                if (empty($cleanNiveaux)) {
+                    $stmtNivCycle = $db->prepare("SELECT DISTINCT niveau_code FROM " . TABLES::FILIERE_CYCLES . " WHERE cycle_code = ? AND (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)");
+                    $stmtNivCycle->execute([$cycleCode]);
+                    $cleanNiveaux = array_values(array_filter($stmtNivCycle->fetchAll(PDO::FETCH_COLUMN) ?: []));
+                }
+            } elseif (empty($cleanFilieres) && in_array($filiereType, ['INDUSTRIELLE', 'TERTIAIRE'], true)) {
                 $stmtFilByType = $db->prepare("SELECT code_filiere FROM " . TABLES::FILIERES . " WHERE type_filiere = ? AND statut_filiere = 'actif'");
                 $stmtFilByType->execute([$filiereType]);
                 $cleanFilieres = $stmtFilByType->fetchAll(PDO::FETCH_COLUMN) ?: [];
