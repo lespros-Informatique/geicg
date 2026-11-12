@@ -329,7 +329,17 @@ class ModelAccessoire extends BaseModel
                    (SELECT fc.cycle_code FROM " . TABLES::FILIERE_CYCLES . " fc
                     WHERE (anf.filiere_code IS NULL OR fc.filiere_code = anf.filiere_code)
                       AND (anf.niveau_code IS NULL OR fc.niveau_code = anf.niveau_code)
-                    LIMIT 1) AS cycle_code
+                    LIMIT 1) AS cycle_code,
+                   (SELECT CASE
+                             WHEN cy.slug_cycle IS NOT NULL AND cy.slug_cycle != '' AND cy.slug_cycle != cy.libelle_cycle
+                             THEN CONCAT(cy.slug_cycle, ' - ', cy.libelle_cycle)
+                             ELSE cy.libelle_cycle
+                           END
+                    FROM " . TABLES::FILIERE_CYCLES . " fc
+                    JOIN " . TABLES::CYCLES . " cy ON cy.code_cycle = fc.cycle_code
+                    WHERE (anf.filiere_code IS NULL OR fc.filiere_code = anf.filiere_code)
+                      AND (anf.niveau_code IS NULL OR fc.niveau_code = anf.niveau_code)
+                    LIMIT 1) AS libelle_cycle
             FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf
             JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = anf.accessoire_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code

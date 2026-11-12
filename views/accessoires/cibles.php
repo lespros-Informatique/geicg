@@ -99,7 +99,7 @@ foreach ($filiereCyclesMap as $fc) {
                 <th style="padding: 12px 14px; width: 50px;">#</th>
                 <th style="padding: 12px 14px; width: 150px;">Code</th>
                 <th style="padding: 12px 14px;">Kit / Accessoire</th>
-                <th style="padding: 12px 14px;">Type de Filière</th>
+                <th style="padding: 12px 14px;">Cycle d'étude</th>
                 <th style="padding: 12px 14px;">Filière / Spécialité</th>
                 <th style="padding: 12px 14px;">Niveau d'étude</th>
                 <th style="padding: 12px 14px; text-align: right; width: 160px;">Actions</th>
@@ -169,7 +169,7 @@ foreach ($filiereCyclesMap as $fc) {
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
           Filière(s) / Spécialité(s) Cible(s)
         </label>
-        <select name="filiere_code" id="acc_cible_filiere_code" disabled class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F1F5F9; color: #64748B; cursor: not-allowed; font-weight: 600; font-size: 14px;">
+        <select name="filiere_code" id="acc_cible_filiere_code" disabled class="form-control select2" style="width: 100%;">
           <option value="">-- Sélectionnez d'abord un cycle --</option>
         </select>
         <div id="acc_cible_filiere_empty" style="display: none; font-size: 12px; color: #B45309; font-weight: 600; margin-top: 4px;">
