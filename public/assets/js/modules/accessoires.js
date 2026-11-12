@@ -1869,11 +1869,12 @@ window.removeBatchRow = function(btn) {
           return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11.5px;">Tous cycles</span>';
         }},
         { data: null, render: function(d) {
-          if (d.filiere_code) {
+          var fCode = String(d.filiere_code || '').trim().toUpperCase();
+          if (fCode && fCode !== 'TOUT' && fCode !== 'TOUTE_FILIERE' && fCode !== 'TOUTE FILIERE') {
             var label = d.slug_filiere ? (d.slug_filiere + (d.libelle_filiere ? ' - ' + d.libelle_filiere : '')) : (d.libelle_filiere || d.filiere_code);
             return '<span class="badge" style="background:#EDE9FE; color:#6D28D9; padding:5px 10px; border-radius:6px; font-weight:800; font-size:11.5px;">' + escapeHtml(label) + '</span>';
           }
-          return '<span class="badge" style="background:#F1F5F9; color:#64748B; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11.5px;">Toutes filières</span>';
+          return '<span class="badge" style="background:#F1F5F9; color:#64748B; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11.5px;">Toute filière</span>';
         }},
         { data: 'libelle_niveau', render: function(d) {
           if (d) {
@@ -1924,9 +1925,10 @@ window.removeBatchRow = function(btn) {
     function populateNiveauxForSelectedFiliere(filiereCode, preselectNiveau) {
       var $selNiv = $('#acc_cible_niveau_code');
       var fCode = String(filiereCode || '').trim();
+      var isAllFilieres = (!fCode || fCode === 'TOUTE_FILIERE' || fCode === 'TOUTE FILIERE' || fCode === 'TOUT');
       var allowedNiveaux = null;
 
-      if (fCode && currentCyclePivots.length > 0) {
+      if (!isAllFilieres && currentCyclePivots.length > 0) {
         allowedNiveaux = {};
         currentCyclePivots.forEach(function(p) {
           if (p.filiere_code === fCode && p.niveau_code) {
@@ -1937,7 +1939,7 @@ window.removeBatchRow = function(btn) {
 
       $selNiv.empty().append($('<option>', {
         value: '',
-        text: fCode ? '-- Tous les niveaux de cette filière --' : '-- Tous les niveaux de ce cycle --'
+        text: !isAllFilieres ? '-- Tous les niveaux de cette filière --' : '-- Tous les niveaux de ce cycle --'
       }));
 
       var count = 0;
@@ -1986,7 +1988,7 @@ window.removeBatchRow = function(btn) {
           currentCyclePivots = (res && res.pivots) ? res.pivots : [];
 
           var $selFil = $('#acc_cible_filiere_code');
-          $selFil.empty().append($('<option>', { value: '', text: '-- Toutes les filières de ce cycle --' }));
+          $selFil.empty().append($('<option>', { value: 'TOUTE_FILIERE', text: '-- Toutes les filières de ce cycle --' }));
 
           filieres.forEach(function(fil) {
             var label = fil.slug_filiere ? (fil.slug_filiere + ' - ' + fil.libelle_filiere) : fil.libelle_filiere;
@@ -2001,6 +2003,8 @@ window.removeBatchRow = function(btn) {
             $('#acc_cible_filiere_empty').hide();
             if (preselectFiliere) {
               $selFil.val(preselectFiliere);
+            } else {
+              $selFil.val('TOUTE_FILIERE');
             }
           } else {
             $selFil.prop('disabled', true).css({ background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' });
@@ -2017,7 +2021,7 @@ window.removeBatchRow = function(btn) {
     }
 
     $(document).on('change', '#acc_cible_cycle', function() {
-      loadPivotByCycle($(this).val(), '', '');
+      loadPivotByCycle($(this).val(), 'TOUTE_FILIERE', '');
     });
 
     $(document).on('change', '#acc_cible_filiere_code', function() {
@@ -2051,7 +2055,7 @@ window.removeBatchRow = function(btn) {
 
       loadPivotByCycle(
         cycleCode,
-        filiereCode && filiereCode !== 'TOUT' ? filiereCode : '',
+        (filiereCode && filiereCode !== 'TOUT' && filiereCode !== 'TOUTE_FILIERE') ? filiereCode : 'TOUTE_FILIERE',
         niveau && niveau !== 'TOUT' ? niveau : ''
       );
 

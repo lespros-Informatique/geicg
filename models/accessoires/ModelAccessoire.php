@@ -23,16 +23,20 @@ class ModelAccessoire extends BaseModel
                        ''
                    ) AS libelle_niveau,
                    COALESCE(
-                       GROUP_CONCAT(DISTINCT anf.filiere_code ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       GROUP_CONCAT(DISTINCT CASE WHEN anf.filiere_code IN ('TOUTE_FILIERE', 'TOUTE FILIERE', 'TOUT', '') THEN NULL ELSE anf.filiere_code END ORDER BY f.id_filiere ASC SEPARATOR ','),
                        ''
                    ) AS filieres_codes_csv,
                    COALESCE(
                        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
                        ''
                    ) AS libelle_filiere,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CONCAT(COALESCE(NULLIF(anf.filiere_code, ''), 'TOUTE_FILIERE'), ':', COALESCE(NULLIF(anf.niveau_code, ''), 'TOUT')) SEPARATOR '|'),
+                       ''
+                   ) AS cibles_rules,
                    CASE
                        WHEN COUNT(anf.id_accessoire_niveau_filiere) > 0
-                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code = '' THEN 1 ELSE 0 END) = 0
+                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') THEN 1 ELSE 0 END) = 0
                         AND COUNT(DISTINCT f.type_filiere) = 1
                        THEN MAX(f.type_filiere)
                        ELSE 'TOUT'
@@ -77,16 +81,20 @@ class ModelAccessoire extends BaseModel
                        ''
                    ) AS libelle_niveau,
                    COALESCE(
-                       GROUP_CONCAT(DISTINCT anf.filiere_code ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       GROUP_CONCAT(DISTINCT CASE WHEN anf.filiere_code IN ('TOUTE_FILIERE', 'TOUTE FILIERE', 'TOUT', '') THEN NULL ELSE anf.filiere_code END ORDER BY f.id_filiere ASC SEPARATOR ','),
                        ''
                    ) AS filieres_codes_csv,
                    COALESCE(
                        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
                        ''
                    ) AS libelle_filiere,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CONCAT(COALESCE(NULLIF(anf.filiere_code, ''), 'TOUTE_FILIERE'), ':', COALESCE(NULLIF(anf.niveau_code, ''), 'TOUT')) SEPARATOR '|'),
+                       ''
+                   ) AS cibles_rules,
                    CASE
                        WHEN COUNT(anf.id_accessoire_niveau_filiere) > 0
-                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code = '' THEN 1 ELSE 0 END) = 0
+                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') THEN 1 ELSE 0 END) = 0
                         AND COUNT(DISTINCT f.type_filiere) = 1
                        THEN MAX(f.type_filiere)
                        ELSE 'TOUT'
@@ -131,16 +139,20 @@ class ModelAccessoire extends BaseModel
                        ''
                    ) AS libelle_niveau,
                    COALESCE(
-                       GROUP_CONCAT(DISTINCT anf.filiere_code ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       GROUP_CONCAT(DISTINCT CASE WHEN anf.filiere_code IN ('TOUTE_FILIERE', 'TOUTE FILIERE', 'TOUT', '') THEN NULL ELSE anf.filiere_code END ORDER BY f.id_filiere ASC SEPARATOR ','),
                        ''
                    ) AS filieres_codes_csv,
                    COALESCE(
                        GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
                        ''
                    ) AS libelle_filiere,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CONCAT(COALESCE(NULLIF(anf.filiere_code, ''), 'TOUTE_FILIERE'), ':', COALESCE(NULLIF(anf.niveau_code, ''), 'TOUT')) SEPARATOR '|'),
+                       ''
+                   ) AS cibles_rules,
                    CASE
                        WHEN COUNT(anf.id_accessoire_niveau_filiere) > 0
-                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code = '' THEN 1 ELSE 0 END) = 0
+                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') THEN 1 ELSE 0 END) = 0
                         AND COUNT(DISTINCT f.type_filiere) = 1
                        THEN MAX(f.type_filiere)
                        ELSE 'TOUT'
@@ -292,25 +304,25 @@ class ModelAccessoire extends BaseModel
         $params = [];
 
         if (!empty($cycleCode)) {
-            $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code = '' OR anf.filiere_code IN (SELECT fc.filiere_code FROM " . TABLES::FILIERE_CYCLES . " fc WHERE fc.cycle_code = ?))";
-            $where[] = "(anf.niveau_code IS NULL OR anf.niveau_code = '' OR anf.niveau_code IN (SELECT fc2.niveau_code FROM " . TABLES::FILIERE_CYCLES . " fc2 WHERE fc2.cycle_code = ?))";
+            $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR anf.filiere_code IN (SELECT fc.filiere_code FROM " . TABLES::FILIERE_CYCLES . " fc WHERE fc.cycle_code = ?))";
+            $where[] = "(anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR anf.niveau_code IN (SELECT fc2.niveau_code FROM " . TABLES::FILIERE_CYCLES . " fc2 WHERE fc2.cycle_code = ?))";
             $params[] = $cycleCode;
             $params[] = $cycleCode;
         }
         if (!empty($typeFiliere)) {
             if ($typeFiliere === 'TOUT') {
-                $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code = '')";
+                $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE'))";
             } else {
                 $where[] = "f.type_filiere = ?";
                 $params[] = $typeFiliere;
             }
         }
         if (!empty($filiereCode)) {
-            $where[] = "(anf.filiere_code = ? OR anf.filiere_code IS NULL OR anf.filiere_code = '')";
+            $where[] = "(anf.filiere_code = ? OR anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE'))";
             $params[] = $filiereCode;
         }
         if (!empty($niveauCode)) {
-            $where[] = "(anf.niveau_code = ? OR anf.niveau_code IS NULL OR anf.niveau_code = '')";
+            $where[] = "(anf.niveau_code = ? OR anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT'))";
             $params[] = $niveauCode;
         }
 
@@ -327,8 +339,8 @@ class ModelAccessoire extends BaseModel
                    n.libelle_niveau,
                    n.slug_niveau,
                    (SELECT fc.cycle_code FROM " . TABLES::FILIERE_CYCLES . " fc
-                    WHERE (anf.filiere_code IS NULL OR fc.filiere_code = anf.filiere_code)
-                      AND (anf.niveau_code IS NULL OR fc.niveau_code = anf.niveau_code)
+                    WHERE (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR fc.filiere_code = anf.filiere_code)
+                      AND (anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR fc.niveau_code = anf.niveau_code)
                     LIMIT 1) AS cycle_code,
                    (SELECT CASE
                              WHEN cy.slug_cycle IS NOT NULL AND cy.slug_cycle != '' AND cy.slug_cycle != cy.libelle_cycle
@@ -337,8 +349,8 @@ class ModelAccessoire extends BaseModel
                            END
                     FROM " . TABLES::FILIERE_CYCLES . " fc
                     JOIN " . TABLES::CYCLES . " cy ON cy.code_cycle = fc.cycle_code
-                    WHERE (anf.filiere_code IS NULL OR fc.filiere_code = anf.filiere_code)
-                      AND (anf.niveau_code IS NULL OR fc.niveau_code = anf.niveau_code)
+                    WHERE (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR fc.filiere_code = anf.filiere_code)
+                      AND (anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR fc.niveau_code = anf.niveau_code)
                     LIMIT 1) AS libelle_cycle
             FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf
             JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = anf.accessoire_code
@@ -360,10 +372,9 @@ class ModelAccessoire extends BaseModel
     public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $filiereCodes, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null, ?string $cycleCode = null): int
     {
         $db = $this->getCon();
-        $filiereType = in_array($typeFiliereCible, ['TOUT', 'INDUSTRIELLE', 'TERTIAIRE'], true) ? $typeFiliereCible : 'TOUT';
         $cleanAccs = array_values(array_unique(array_filter(array_map('trim', $accessoireCodes))));
         $cleanFilieres = array_values(array_unique(array_filter(array_map('trim', $filiereCodes), function ($v) {
-            return $v !== '' && $v !== 'TOUT';
+            return $v !== '' && $v !== 'TOUT' && $v !== 'TOUTE_FILIERE' && $v !== 'TOUTE FILIERE';
         })));
         $cleanNiveaux = array_values(array_unique(array_filter(array_map('trim', $niveauCodes), function ($v) {
             return $v !== '' && $v !== 'TOUT';
@@ -379,21 +390,10 @@ class ModelAccessoire extends BaseModel
                 $stmtDel->execute([$idCibleToUpdate]);
             }
 
-            if (!empty($cycleCode)) {
-                if (empty($cleanFilieres)) {
-                    $stmtFilCycle = $db->prepare("SELECT DISTINCT filiere_code FROM " . TABLES::FILIERE_CYCLES . " WHERE cycle_code = ? AND (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)");
-                    $stmtFilCycle->execute([$cycleCode]);
-                    $cleanFilieres = array_values(array_filter($stmtFilCycle->fetchAll(PDO::FETCH_COLUMN) ?: []));
-                }
-                if (empty($cleanNiveaux)) {
-                    $stmtNivCycle = $db->prepare("SELECT DISTINCT niveau_code FROM " . TABLES::FILIERE_CYCLES . " WHERE cycle_code = ? AND (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)");
-                    $stmtNivCycle->execute([$cycleCode]);
-                    $cleanNiveaux = array_values(array_filter($stmtNivCycle->fetchAll(PDO::FETCH_COLUMN) ?: []));
-                }
-            } elseif (empty($cleanFilieres) && in_array($filiereType, ['INDUSTRIELLE', 'TERTIAIRE'], true)) {
-                $stmtFilByType = $db->prepare("SELECT code_filiere FROM " . TABLES::FILIERES . " WHERE type_filiere = ? AND statut_filiere = 'actif'");
-                $stmtFilByType->execute([$filiereType]);
-                $cleanFilieres = $stmtFilByType->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            if (!empty($cycleCode) && empty($cleanNiveaux)) {
+                $stmtNivCycle = $db->prepare("SELECT DISTINCT niveau_code FROM " . TABLES::FILIERE_CYCLES . " WHERE cycle_code = ? AND (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)");
+                $stmtNivCycle->execute([$cycleCode]);
+                $cleanNiveaux = array_values(array_filter($stmtNivCycle->fetchAll(PDO::FETCH_COLUMN) ?: []));
             }
 
             $stmtCheck = $db->prepare("
@@ -411,7 +411,8 @@ class ModelAccessoire extends BaseModel
                 VALUES (?, ?, ?, ?, ?, ?, NOW())
             ");
 
-            $targetFilieres = empty($cleanFilieres) ? [null] : $cleanFilieres;
+            // Si "Toutes les filières de ce cycle" est sélectionné, on enregistre une seule ligne par niveau avec 'TOUTE_FILIERE'
+            $targetFilieres = empty($cleanFilieres) ? ['TOUTE_FILIERE'] : $cleanFilieres;
             $targetNiveaux = empty($cleanNiveaux) ? [null] : $cleanNiveaux;
             $inserted = 0;
 

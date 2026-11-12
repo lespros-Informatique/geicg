@@ -1236,9 +1236,15 @@
       // 1. Filière : 'TOUT', vide, ou même type de filière que la classe
       var matchFiliere = (kitFiliere === 'TOUT' || kitFiliere === '' || (typeFiliere !== '' && kitFiliere === typeFiliere));
 
-      // 1b. Filière spécifique (ex: GBAT) : vide, 'TOUT', ou code filière présent dans la liste des filières cibles de l'accessoire
+      // 1b. Filière spécifique (ex: GBAT) : vide, 'TOUT', 'TOUTE_FILIERE', ou code filière présent dans la liste des filières cibles de l'accessoire
       var kitFiliereCodesList = kitFiliereCodes ? kitFiliereCodes.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
-      var matchFiliereSpec = (kitFiliereCodesList.length === 0 || kitFiliereCodesList.indexOf('TOUT') !== -1 || (filiereCode !== '' && kitFiliereCodesList.indexOf(filiereCode) !== -1));
+      var matchFiliereSpec = (
+        kitFiliereCodesList.length === 0 ||
+        kitFiliereCodesList.indexOf('TOUT') !== -1 ||
+        kitFiliereCodesList.indexOf('TOUTE_FILIERE') !== -1 ||
+        kitFiliereCodesList.indexOf('TOUTE FILIERE') !== -1 ||
+        (filiereCode !== '' && kitFiliereCodesList.indexOf(filiereCode) !== -1)
+      );
 
       // 2. Niveau : vide, 'TOUT', ou code niveau présent dans la liste des niveaux cibles de l'accessoire
       var kitNiveauxList = kitNiveau ? kitNiveau.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
