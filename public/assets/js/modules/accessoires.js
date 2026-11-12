@@ -131,7 +131,17 @@
             return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Toutes Filières</span>';
           }},
           { data: 'libelle_niveau', render: function(d) {
-            if (d) return '<span class="badge" style="background:#F0FDF4; color:#15803D; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">' + d + '</span>';
+            if (d) {
+              var parts = String(d).split(',');
+              var badges = [];
+              parts.forEach(function(p) {
+                var clean = $.trim(p);
+                if (clean) {
+                  badges.push('<span class="badge" style="background:#F0FDF4; color:#15803D; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px; margin-right:4px; margin-bottom:2px; display:inline-block;">' + escapeHtml(clean) + '</span>');
+                }
+              });
+              if (badges.length) return badges.join('');
+            }
             return '<span class="badge" style="background:#F1F5F9; color:#64748B; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tous niveaux</span>';
           }},
           { data: 'statut_accessoire', width: '80px', className: 'text-center', render: function(d, type, row) {
@@ -164,12 +174,30 @@
     window.location.href = racine + 'accessoire/list?annee_code=' + encodeURIComponent(val);
   });
 
+  // Synchronisation des cases à cocher Niveau(x) d'étude dans le modal
+  $(document).on('change', '#acc_type_niveau_all', function() {
+    if ($(this).is(':checked')) {
+      $('.chk-acc-niveau').prop('checked', false);
+    } else if ($('.chk-acc-niveau:checked').length === 0) {
+      $(this).prop('checked', true);
+    }
+  });
+
+  $(document).on('change', '.chk-acc-niveau', function() {
+    if ($('.chk-acc-niveau:checked').length > 0) {
+      $('#acc_type_niveau_all').prop('checked', false);
+    } else {
+      $('#acc_type_niveau_all').prop('checked', true);
+    }
+  });
+
   // Modal Type Accessoire : Ajouter
   $(document).on('click', '.btn-add-acc-type', function() {
     $('#form-accessoire-type')[0].reset();
     $('#acc_type_id').val('');
     $('#acc_type_filiere_cible').val('TOUT');
-    $('#acc_type_niveau_code').val('');
+    $('.chk-acc-niveau').prop('checked', false);
+    $('#acc_type_niveau_all').prop('checked', true);
     $('#modal-accessoire-type-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouveau Type de Kit / Article');
     $('#modal-accessoire-type').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
@@ -181,13 +209,25 @@
     var id = $(this).data('id');
     var libelle = $(this).data('libelle');
     var filiereCible = $(this).data('filiere-cible');
-    var niveauCode = $(this).data('niveau-code');
+    var niveauCode = String($(this).attr('data-niveau-code') || '').trim();
     var statut = $(this).data('statut');
 
     $('#acc_type_id').val(id);
     $('#acc_type_libelle').val(libelle);
     $('#acc_type_filiere_cible').val(filiereCible || 'TOUT');
-    $('#acc_type_niveau_code').val(niveauCode || '');
+    $('.chk-acc-niveau').prop('checked', false);
+
+    if (niveauCode !== '' && niveauCode !== 'TOUT') {
+      var codes = niveauCode.split(',');
+      codes.forEach(function(code) {
+        var c = $.trim(code);
+        if (c) {
+          $('.chk-acc-niveau[value="' + c + '"]').prop('checked', true);
+        }
+      });
+    }
+    $('#acc_type_niveau_all').prop('checked', $('.chk-acc-niveau:checked').length === 0);
+
     $('#acc_type_statut').val(statut || 'actif');
     $('#modal-accessoire-type-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le Type de Kit');
     $('#modal-accessoire-type').css('display', 'flex');

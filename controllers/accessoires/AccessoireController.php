@@ -278,6 +278,16 @@ class AccessoireController extends BaseController
             if (!$this->checkUnique(TABLES::ACCESSOIRES, 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire')) return;
         }
 
+        $niveauCodes = [];
+        if (isset($data['niveau_codes']) && is_array($data['niveau_codes'])) {
+            $niveauCodes = array_values(array_filter(array_map('trim', $data['niveau_codes'])));
+        } elseif (!empty($data['niveau_code'])) {
+            $niveauCodes = is_array($data['niveau_code'])
+                ? array_values(array_filter(array_map('trim', $data['niveau_code'])))
+                : [trim((string)$data['niveau_code'])];
+        }
+        unset($data['niveau_codes']);
+
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -289,14 +299,14 @@ class AccessoireController extends BaseController
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
         $data['annee_code'] = $anneeCode;
+        $data['niveau_code'] = (count($niveauCodes) === 1) ? $niveauCodes[0] : null;
 
         $libelle = trim($data['libelle_accessoire'] ?? '');
-        if (isset($data['niveau_code']) && empty(trim($data['niveau_code']))) {
-            $data['niveau_code'] = null;
-        }
+        $typeFiliereCible = trim($data['type_filiere_cible'] ?? 'TOUT');
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->model->syncCibles($data['code_accessoire'], $typeFiliereCible, $niveauCodes);
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été créé avec succès !" : "Accessoire créé avec succès !";
             $this->success($msg);
         } else {
@@ -320,13 +330,28 @@ class AccessoireController extends BaseController
             if (!$this->checkUnique(TABLES::ACCESSOIRES, 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire', 'id_accessoire', $id)) return;
         }
 
-        $libelle = trim($data['libelle_accessoire'] ?? '');
-        if (isset($data['niveau_code']) && empty(trim($data['niveau_code']))) {
-            $data['niveau_code'] = null;
+        $niveauCodes = [];
+        if (isset($data['niveau_codes']) && is_array($data['niveau_codes'])) {
+            $niveauCodes = array_values(array_filter(array_map('trim', $data['niveau_codes'])));
+        } elseif (!empty($data['niveau_code'])) {
+            $niveauCodes = is_array($data['niveau_code'])
+                ? array_values(array_filter(array_map('trim', $data['niveau_code'])))
+                : [trim((string)$data['niveau_code'])];
         }
+        unset($data['niveau_codes']);
+        $data['niveau_code'] = (count($niveauCodes) === 1) ? $niveauCodes[0] : null;
+
+        $libelle = trim($data['libelle_accessoire'] ?? '');
+        $typeFiliereCible = trim($data['type_filiere_cible'] ?? 'TOUT');
+
+        $existing = $this->model->getById($id);
+        $codeAccessoire = $existing['code_accessoire'] ?? '';
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            if (!empty($codeAccessoire)) {
+                $this->model->syncCibles($codeAccessoire, $typeFiliereCible, $niveauCodes);
+            }
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été modifié avec succès !" : "Accessoire modifié avec succès !";
             $this->success($msg);
         } else {

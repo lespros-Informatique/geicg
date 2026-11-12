@@ -11,19 +11,81 @@ class ModelAccessoire extends BaseModel
     {
         $sql = "
             SELECT a.*,
-                   n.libelle_niveau,
-                   n.slug_niveau
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.niveau_code ORDER BY n.id_niveau ASC SEPARATOR ','),
+                       a.niveau_code,
+                       ''
+                   ) AS niveaux_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT n.libelle_niveau ORDER BY n.id_niveau ASC SEPARATOR ', '),
+                       n_direct.libelle_niveau,
+                       ''
+                   ) AS libelle_niveau,
+                   COALESCE(
+                       MAX(anf.type_filiere_cible),
+                       a.type_filiere_cible,
+                       'TOUT'
+                   ) AS type_filiere_cible_resolved
             FROM " . TABLES::ACCESSOIRES . " a
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = a.niveau_code
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n_direct ON n_direct.code_niveau = a.niveau_code
+            GROUP BY a.id_accessoire
             ORDER BY a.id_accessoire DESC
         ";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($rows as &$row) {
+                $csv = trim((string)($row['niveaux_codes_csv'] ?? ''));
+                $codes = $csv !== '' ? array_values(array_filter(array_map('trim', explode(',', $csv)))) : [];
+                $row['niveaux_codes'] = $codes;
+                $row['niveau_code'] = $csv;
+                if (!empty($row['type_filiere_cible_resolved'])) {
+                    $row['type_filiere_cible'] = $row['type_filiere_cible_resolved'];
+                }
+            }
+            unset($row);
+            return $rows;
         } catch (Exception $e) {
             error_log("Get all accessoires: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function syncCibles(string $accessoireCode, string $typeFiliereCible, array $niveauCodes): void
+    {
+        if (empty($accessoireCode)) {
+            return;
+        }
+        $db = $this->getCon();
+        $filiere = in_array($typeFiliereCible, ['TOUT', 'INDUSTRIELLE', 'TERTIAIRE'], true) ? $typeFiliereCible : 'TOUT';
+        $cleanNiveaux = array_values(array_unique(array_filter(array_map('trim', $niveauCodes), function ($v) {
+            return $v !== '' && $v !== 'TOUT';
+        })));
+
+        try {
+            $stmtDel = $db->prepare("DELETE FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE accessoire_code = ?");
+            $stmtDel->execute([$accessoireCode]);
+
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                (code_accessoire_niveau_filiere, accessoire_code, type_filiere_cible, niveau_code, created_at_accessoire_niveau_filiere)
+                VALUES (?, ?, ?, ?, NOW())
+            ");
+
+            if (empty($cleanNiveaux)) {
+                $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                $stmtIns->execute([$codeAnf, $accessoireCode, $filiere, null]);
+            } else {
+                foreach ($cleanNiveaux as $nivCode) {
+                    $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                    $stmtIns->execute([$codeAnf, $accessoireCode, $filiere, $nivCode]);
+                }
+            }
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::syncCibles error: " . $e->getMessage());
         }
     }
 

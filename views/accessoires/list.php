@@ -301,14 +301,21 @@ $stats = $stats ?? [];
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Niveau d'étude
+          Niveau(x) d'étude Cible(s)
         </label>
-        <select name="niveau_code" id="acc_type_niveau_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
-          <option value="">Tous les niveaux</option>
+        <div id="acc_type_niveaux_container" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; background: #F8FAFC; display: flex; flex-direction: column; gap: 8px; max-height: 170px; overflow-y: auto;">
+          <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #1E3A5F; cursor: pointer; padding-bottom: 6px; border-bottom: 1px dashed #CBD5E1; margin: 0;">
+            <input type="checkbox" id="acc_type_niveau_all" value="" checked style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
+            <span>Tous les niveaux (Général)</span>
+          </label>
           <?php foreach (($niveaux ?? []) as $niv): ?>
-            <option value="<?= htmlspecialchars($niv['code_niveau']) ?>"><?= htmlspecialchars($niv['libelle_niveau']) ?></option>
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; cursor: pointer; margin: 0;">
+              <input type="checkbox" name="niveau_codes[]" class="chk-acc-niveau" value="<?= htmlspecialchars($niv['code_niveau']) ?>" style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
+              <span><?= htmlspecialchars($niv['libelle_niveau']) ?></span>
+            </label>
           <?php endforeach; ?>
-        </select>
+        </div>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cochez un ou plusieurs niveaux spécifiques, ou laissez « Tous les niveaux »</small>
       </div>
 
       <div class="form-group" style="margin-bottom: 24px;">

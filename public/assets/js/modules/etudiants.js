@@ -1234,8 +1234,9 @@
       // 1. Filière : 'TOUT', vide, ou même type de filière que la classe
       var matchFiliere = (kitFiliere === 'TOUT' || kitFiliere === '' || (typeFiliere !== '' && kitFiliere === typeFiliere));
 
-      // 2. Niveau : vide, 'TOUT', ou même code niveau que la classe
-      var matchNiveau = (!kitNiveau || kitNiveau === '' || kitNiveau === 'TOUT' || (niveauCode !== '' && kitNiveau === niveauCode));
+      // 2. Niveau : vide, 'TOUT', ou code niveau présent dans la liste des niveaux cibles de l'accessoire
+      var kitNiveauxList = kitNiveau ? kitNiveau.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+      var matchNiveau = (kitNiveauxList.length === 0 || kitNiveauxList.indexOf('TOUT') !== -1 || (niveauCode !== '' && kitNiveauxList.indexOf(niveauCode) !== -1));
 
       if (matchFiliere && matchNiveau) {
         $card.show();

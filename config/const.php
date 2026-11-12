@@ -83,6 +83,7 @@ class TABLES
     public const PARENTS = 'parents';
     public const INSCRIPTIONS = 'inscriptions';
     public const ACCESSOIRES = 'accessoires';
+    public const ACCESSOIRE_NIVEAU_FILIERE = 'accessoire_niveau_filiere';
     public const ACCESSOIRE_INSCRIPTION = 'accessoire_inscription';
     public const DOSSIER_ETUDIANT = 'dossier_etudiant';
     public const PIECES_FOURNIR = 'pieces_fournir';
