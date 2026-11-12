@@ -1382,7 +1382,7 @@
             var isSel = (currentVal && cl.code_classe === currentVal);
             if (isSel) valFound = true;
             var classLabel = escapeHtml(cl.libelle_classe) + (cl.code_classe ? ' (' + escapeHtml(cl.code_classe) + ')' : '');
-            optionsHtml += '<option value="' + escapeHtml(cl.code_classe) + '" data-annee="' + escapeHtml(cl.annee_code || selectedAnnee) + '" data-type-filiere="' + escapeHtml(cl.type_filiere || '') + '" data-niveau="' + escapeHtml(cl.niveau_code || '') + '"' + (isSel ? ' selected' : '') + '>' + classLabel + '</option>';
+            optionsHtml += '<option value="' + escapeHtml(cl.code_classe) + '" data-annee="' + escapeHtml(cl.annee_code || selectedAnnee) + '" data-type-filiere="' + escapeHtml(cl.type_filiere || '') + '" data-filiere="' + escapeHtml(cl.filiere_code || '') + '" data-niveau="' + escapeHtml(cl.niveau_code || '') + '"' + (isSel ? ' selected' : '') + '>' + classLabel + '</option>';
           });
           if ($emptyMsg.length) $emptyMsg.slideUp(150);
           hideRegimeWarningNotice();

@@ -1824,7 +1824,7 @@ window.removeBatchRow = function(btn) {
 
     if (window.lucide) lucide.createIcons();
     if ($.fn.select2) {
-      $('#filter-cible-filiere, #filter-cible-niveau').select2({ width: '100%' });
+      $('#filter-cible-filiere, #filter-cible-filiere-code, #filter-cible-niveau').select2({ width: '100%' });
     }
 
     var racine = (typeof RACINE !== 'undefined') ? RACINE : (window.RACINE || '/geicg/');
@@ -1841,6 +1841,7 @@ window.removeBatchRow = function(btn) {
         type: 'GET',
         data: function(d) {
           d.type_filiere = $('#filter-cible-filiere').val();
+          d.filiere_code = $('#filter-cible-filiere-code').val();
           d.niveau_code = $('#filter-cible-niveau').val();
         }
       },
@@ -1862,6 +1863,13 @@ window.removeBatchRow = function(btn) {
           if (d === 'TERTIAIRE') return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:5px 10px; border-radius:6px; font-weight:800; font-size:11.5px;">Filière Tertiaire</span>';
           return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11.5px;">Toutes Filières</span>';
         }},
+        { data: null, render: function(d) {
+          if (d.filiere_code) {
+            var label = d.slug_filiere ? (d.slug_filiere + (d.libelle_filiere ? ' - ' + d.libelle_filiere : '')) : (d.libelle_filiere || d.filiere_code);
+            return '<span class="badge" style="background:#EDE9FE; color:#6D28D9; padding:5px 10px; border-radius:6px; font-weight:800; font-size:11.5px;">' + escapeHtml(label) + '</span>';
+          }
+          return '<span class="badge" style="background:#F1F5F9; color:#64748B; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11.5px;">Toutes spécialités</span>';
+        }},
         { data: 'libelle_niveau', render: function(d) {
           if (d) {
             return '<span class="badge" style="background:#F0FDF4; color:#15803D; padding:5px 10px; border-radius:6px; font-weight:800; font-size:11.5px;">' + escapeHtml(d) + '</span>';
@@ -1869,7 +1877,7 @@ window.removeBatchRow = function(btn) {
           return '<span class="badge" style="background:#F1F5F9; color:#64748B; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11.5px;">Tous niveaux</span>';
         }},
         { data: null, width: '160px', orderable: false, className: 'text-end', render: function(d) {
-          return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" data-acc-code="' + escapeHtml(d.accessoire_code || '') + '" data-filiere="' + escapeHtml(d.type_filiere_cible || 'TOUT') + '" data-niveau="' + escapeHtml(d.niveau_code || '') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</button>' +
+          return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" data-acc-code="' + escapeHtml(d.accessoire_code || '') + '" data-filiere="' + escapeHtml(d.type_filiere_cible || 'TOUT') + '" data-filiere-code="' + escapeHtml(d.filiere_code || '') + '" data-niveau="' + escapeHtml(d.niveau_code || '') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</button>' +
                  '<button type="button" class="btn btn-sm btn-danger btn-delete-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" style="background:#EF4444; color:#fff; border:none; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Retirer cette configuration"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>';
         }}
       ],
@@ -1877,8 +1885,42 @@ window.removeBatchRow = function(btn) {
       drawCallback: function() { if (window.lucide) lucide.createIcons(); }
     });
 
-    $('#filter-cible-filiere, #filter-cible-niveau').on('change', function() {
+    $('#filter-cible-filiere, #filter-cible-filiere-code, #filter-cible-niveau').on('change', function() {
       tableCibles.ajax.reload();
+    });
+
+    function filterModalFilieresByType(typeFiliere) {
+      var t = String(typeFiliere || 'TOUT').toUpperCase();
+      $('.lbl-cible-filiere').each(function() {
+        var itemType = String($(this).attr('data-type') || '').toUpperCase();
+        if (t === 'TOUT' || itemType === t) {
+          $(this).css('display', 'flex');
+        } else {
+          $(this).css('display', 'none');
+          $(this).find('.chk-cible-filiere').prop('checked', false);
+        }
+      });
+      $('#acc_cible_filiere_all').prop('checked', $('.chk-cible-filiere:checked').length === 0);
+    }
+
+    $(document).on('change', '#acc_cible_filiere', function() {
+      filterModalFilieresByType($(this).val());
+    });
+
+    $(document).on('change', '#acc_cible_filiere_all', function() {
+      if ($(this).is(':checked')) {
+        $('.chk-cible-filiere').prop('checked', false);
+      } else if ($('.chk-cible-filiere:checked').length === 0) {
+        $(this).prop('checked', true);
+      }
+    });
+
+    $(document).on('change', '.chk-cible-filiere', function() {
+      if ($('.chk-cible-filiere:checked').length > 0) {
+        $('#acc_cible_filiere_all').prop('checked', false);
+      } else {
+        $('#acc_cible_filiere_all').prop('checked', true);
+      }
     });
 
     $(document).on('change', '#acc_cible_niveau_all', function() {
@@ -1902,6 +1944,9 @@ window.removeBatchRow = function(btn) {
       $('#acc_cible_id').val('');
       $('.chk-cible-acc').prop('checked', false);
       $('#acc_cible_filiere').val('TOUT');
+      $('.chk-cible-filiere').prop('checked', false);
+      filterModalFilieresByType('TOUT');
+      $('#acc_cible_filiere_all').prop('checked', true);
       $('.chk-cible-niveau').prop('checked', false);
       $('#acc_cible_niveau_all').prop('checked', true);
       $('#modal-accessoire-cible-title').html('<i data-lucide="layers" style="width: 18px; height: 18px;"></i> Configurer Kits par Filière & Niveau');
@@ -1913,6 +1958,7 @@ window.removeBatchRow = function(btn) {
       var id = $(this).data('id');
       var accCode = String($(this).attr('data-acc-code') || '').trim();
       var filiere = String($(this).attr('data-filiere') || 'TOUT').trim();
+      var filiereCode = String($(this).attr('data-filiere-code') || '').trim();
       var niveau = String($(this).attr('data-niveau') || '').trim();
 
       $('#acc_cible_id').val(id);
@@ -1921,6 +1967,15 @@ window.removeBatchRow = function(btn) {
         $('.chk-cible-acc[value="' + accCode + '"]').prop('checked', true);
       }
       $('#acc_cible_filiere').val(filiere || 'TOUT');
+      filterModalFilieresByType(filiere || 'TOUT');
+
+      $('.chk-cible-filiere').prop('checked', false);
+      if (filiereCode && filiereCode !== 'TOUT') {
+        $('.chk-cible-filiere[value="' + filiereCode + '"]').prop('checked', true);
+        $('#acc_cible_filiere_all').prop('checked', false);
+      } else {
+        $('#acc_cible_filiere_all').prop('checked', true);
+      }
 
       $('.chk-cible-niveau').prop('checked', false);
       if (niveau && niveau !== 'TOUT') {

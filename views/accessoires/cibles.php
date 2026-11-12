@@ -2,6 +2,7 @@
 <?php
 $accessoires = $accessoires ?? [];
 $niveaux = $niveaux ?? [];
+$filieres = $filieres ?? [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -34,19 +35,30 @@ $niveaux = $niveaux ?? [];
         </a>
       </div>
 
-      <!-- Filtres par Type de Filière & Niveau d'étude -->
+      <!-- Filtres par Type de Filière, Filière Spécifique & Niveau d'étude -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
         <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
-          <div style="flex: 1; min-width: 250px;">
+          <div style="flex: 1; min-width: 220px;">
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Type de Filière</label>
             <select id="filter-cible-filiere" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les filières --</option>
+              <option value="">-- Tous les types --</option>
               <option value="TOUT">Toutes Filières (Général)</option>
               <option value="INDUSTRIELLE">Filière Industrielle</option>
               <option value="TERTIAIRE">Filière Tertiaire</option>
             </select>
           </div>
-          <div style="flex: 1; min-width: 250px;">
+          <div style="flex: 1; min-width: 240px;">
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Filière / Spécialité</label>
+            <select id="filter-cible-filiere-code" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les filières --</option>
+              <?php foreach ($filieres as $fil): ?>
+                <option value="<?= htmlspecialchars($fil['code_filiere']) ?>">
+                  <?= htmlspecialchars(!empty($fil['slug_filiere']) ? $fil['slug_filiere'] . ' - ' . $fil['libelle_filiere'] : $fil['libelle_filiere']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 220px;">
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Niveau d'étude</label>
             <select id="filter-cible-niveau" class="form-control select2" style="width: 100%;">
               <option value="">-- Tous les niveaux --</option>
@@ -70,6 +82,7 @@ $niveaux = $niveaux ?? [];
                 <th style="padding: 12px 14px; width: 150px;">Code</th>
                 <th style="padding: 12px 14px;">Kit / Accessoire</th>
                 <th style="padding: 12px 14px;">Type de Filière</th>
+                <th style="padding: 12px 14px;">Filière / Spécialité</th>
                 <th style="padding: 12px 14px;">Niveau d'étude</th>
                 <th style="padding: 12px 14px; text-align: right; width: 160px;">Actions</th>
               </tr>
@@ -125,9 +138,28 @@ $niveaux = $niveaux ?? [];
         </label>
         <select name="type_filiere_cible" id="acc_cible_filiere" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
           <option value="TOUT">Toutes les Filières (Général)</option>
-          <option value="INDUSTRIELLE">Filière Industrielle uniquement (Ex: IDA, RIT...)</option>
+          <option value="INDUSTRIELLE">Filière Industrielle uniquement (Ex: IDA, RIT, GBAT...)</option>
           <option value="TERTIAIRE">Filière Tertiaire uniquement (Ex: RHCOM, GEC...)</option>
         </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Filière(s) / Spécialité(s) Spécifique(s) <span style="font-weight: 500; font-size: 11.5px; color: #64748B;">(Ex: GBAT uniquement)</span>
+        </label>
+        <div id="acc_cible_filieres_container" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; background: #F8FAFC; display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
+          <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #1E3A5F; cursor: pointer; padding-bottom: 6px; border-bottom: 1px dashed #CBD5E1; margin: 0;">
+            <input type="checkbox" id="acc_cible_filiere_all" value="" checked style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
+            <span>Toutes les filières de ce type (Général)</span>
+          </label>
+          <?php foreach ($filieres as $fil): ?>
+            <label class="lbl-cible-filiere" data-type="<?= htmlspecialchars(strtoupper($fil['type_filiere'] ?? '')) ?>" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; cursor: pointer; margin: 0;">
+              <input type="checkbox" name="filiere_codes[]" class="chk-cible-filiere" data-type="<?= htmlspecialchars(strtoupper($fil['type_filiere'] ?? '')) ?>" value="<?= htmlspecialchars($fil['code_filiere']) ?>" style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
+              <span><?= htmlspecialchars(!empty($fil['slug_filiere']) ? $fil['slug_filiere'] . ' - ' . $fil['libelle_filiere'] : $fil['libelle_filiere']) ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cochez une ou plusieurs filières spécifiques (ex: GBAT), ou laissez « Toutes les filières de ce type »</small>
       </div>
 
       <div class="form-group" style="margin-bottom: 22px;">

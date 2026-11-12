@@ -25,10 +25,12 @@ class AccessoireController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $niveaux = (new ModelNiveau())->getActifs();
+        $filieres = array_values(array_filter((new ModelFiliere())->getAll(), fn($f) => ($f['statut_filiere'] ?? 'actif') === 'actif'));
         $accessoires = $this->model->getAll();
 
         $this->loadView('../views/accessoires/cibles.php', [
             'niveaux' => $niveaux,
+            'filieres' => $filieres,
             'accessoires' => $accessoires
         ]);
     }
@@ -408,7 +410,8 @@ class AccessoireController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $typeFiliere = !empty($_GET['type_filiere']) ? trim($_GET['type_filiere']) : null;
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
-        $items = $this->model->getCiblesList($typeFiliere, $niveauCode);
+        $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
+        $items = $this->model->getCiblesList($typeFiliere, $niveauCode, $filiereCode);
         $this->json(['data' => $items]);
     }
 
@@ -433,6 +436,13 @@ class AccessoireController extends BaseController
             return;
         }
 
+        $filiereCodes = [];
+        if (!empty($_POST['filiere_codes']) && is_array($_POST['filiere_codes'])) {
+            $filiereCodes = array_values(array_filter(array_map('trim', $_POST['filiere_codes'])));
+        } elseif (!empty($_POST['filiere_code'])) {
+            $filiereCodes = [trim((string)$_POST['filiere_code'])];
+        }
+
         $niveauCodes = [];
         if (!empty($_POST['niveau_codes']) && is_array($_POST['niveau_codes'])) {
             $niveauCodes = array_values(array_filter(array_map('trim', $_POST['niveau_codes'])));
@@ -446,6 +456,7 @@ class AccessoireController extends BaseController
         $inserted = $this->model->saveCiblesBatch(
             $accessoireCodes,
             $typeFiliere,
+            $filiereCodes,
             $niveauCodes,
             $etabCode,
             $userCode,

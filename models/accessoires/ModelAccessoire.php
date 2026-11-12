@@ -23,12 +23,21 @@ class ModelAccessoire extends BaseModel
                        ''
                    ) AS libelle_niveau,
                    COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.filiere_code ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       ''
+                   ) AS filieres_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_filiere,
+                   COALESCE(
                        MAX(anf.type_filiere_cible),
                        'TOUT'
                    ) AS type_filiere_cible
             FROM " . TABLES::ACCESSOIRES . " a
             LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             WHERE a.id_accessoire = ?
             GROUP BY a.id_accessoire
             LIMIT 1
@@ -43,6 +52,8 @@ class ModelAccessoire extends BaseModel
             $csv = trim((string)($row['niveaux_codes_csv'] ?? ''));
             $row['niveaux_codes'] = $csv !== '' ? array_values(array_filter(array_map('trim', explode(',', $csv)))) : [];
             $row['niveau_code'] = $csv;
+            $filCsv = trim((string)($row['filieres_codes_csv'] ?? ''));
+            $row['filieres_codes'] = $filCsv !== '' ? array_values(array_filter(array_map('trim', explode(',', $filCsv)))) : [];
             return $row;
         } catch (Exception $e) {
             error_log("Get accessoire by id: " . $e->getMessage());
@@ -63,12 +74,21 @@ class ModelAccessoire extends BaseModel
                        ''
                    ) AS libelle_niveau,
                    COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.filiere_code ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       ''
+                   ) AS filieres_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_filiere,
+                   COALESCE(
                        MAX(anf.type_filiere_cible),
                        'TOUT'
                    ) AS type_filiere_cible
             FROM " . TABLES::ACCESSOIRES . " a
             LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             GROUP BY a.id_accessoire
             ORDER BY a.id_accessoire DESC
         ";
@@ -81,6 +101,8 @@ class ModelAccessoire extends BaseModel
                 $codes = $csv !== '' ? array_values(array_filter(array_map('trim', explode(',', $csv)))) : [];
                 $row['niveaux_codes'] = $codes;
                 $row['niveau_code'] = $csv;
+                $filCsv = trim((string)($row['filieres_codes_csv'] ?? ''));
+                $row['filieres_codes'] = $filCsv !== '' ? array_values(array_filter(array_map('trim', explode(',', $filCsv)))) : [];
             }
             unset($row);
             return $rows;
@@ -103,12 +125,21 @@ class ModelAccessoire extends BaseModel
                        ''
                    ) AS libelle_niveau,
                    COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.filiere_code ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       ''
+                   ) AS filieres_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_filiere,
+                   COALESCE(
                        MAX(anf.type_filiere_cible),
                        'TOUT'
                    ) AS type_filiere_cible
             FROM " . TABLES::ACCESSOIRES . " a
             LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
             GROUP BY a.id_accessoire
             ORDER BY a.libelle_accessoire ASC
@@ -158,7 +189,7 @@ class ModelAccessoire extends BaseModel
         }
     }
 
-    public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null): array
+    public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null, ?string $filiereCode = null): array
     {
         $where = [];
         $params = [];
@@ -166,6 +197,10 @@ class ModelAccessoire extends BaseModel
         if (!empty($typeFiliere)) {
             $where[] = "anf.type_filiere_cible = ?";
             $params[] = $typeFiliere;
+        }
+        if (!empty($filiereCode)) {
+            $where[] = "(anf.filiere_code = ? OR anf.filiere_code IS NULL OR anf.filiere_code = '')";
+            $params[] = $filiereCode;
         }
         if (!empty($niveauCode)) {
             $where[] = "(anf.niveau_code = ? OR anf.niveau_code IS NULL OR anf.niveau_code = '')";
@@ -179,10 +214,13 @@ class ModelAccessoire extends BaseModel
                    a.id_accessoire,
                    a.libelle_accessoire,
                    a.statut_accessoire,
+                   f.libelle_filiere,
+                   f.slug_filiere,
                    n.libelle_niveau,
                    n.slug_niveau
             FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf
             JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = anf.accessoire_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
             {$whereSql}
             ORDER BY anf.id_accessoire_niveau_filiere DESC
@@ -197,11 +235,14 @@ class ModelAccessoire extends BaseModel
         }
     }
 
-    public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null): int
+    public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $filiereCodes, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null): int
     {
         $db = $this->getCon();
-        $filiere = in_array($typeFiliereCible, ['TOUT', 'INDUSTRIELLE', 'TERTIAIRE'], true) ? $typeFiliereCible : 'TOUT';
+        $filiereType = in_array($typeFiliereCible, ['TOUT', 'INDUSTRIELLE', 'TERTIAIRE'], true) ? $typeFiliereCible : 'TOUT';
         $cleanAccs = array_values(array_unique(array_filter(array_map('trim', $accessoireCodes))));
+        $cleanFilieres = array_values(array_unique(array_filter(array_map('trim', $filiereCodes), function ($v) {
+            return $v !== '' && $v !== 'TOUT';
+        })));
         $cleanNiveaux = array_values(array_unique(array_filter(array_map('trim', $niveauCodes), function ($v) {
             return $v !== '' && $v !== 'TOUT';
         })));
@@ -216,33 +257,50 @@ class ModelAccessoire extends BaseModel
                 $stmtDel->execute([$idCibleToUpdate]);
             }
 
+            // Map filiere_code => type_filiere
+            $filiereTypeMap = [];
+            if (!empty($cleanFilieres)) {
+                $stmtFil = $db->query("SELECT code_filiere, type_filiere FROM " . TABLES::FILIERES);
+                while ($rf = $stmtFil->fetch(PDO::FETCH_ASSOC)) {
+                    $filiereTypeMap[$rf['code_filiere']] = !empty($rf['type_filiere']) ? $rf['type_filiere'] : $filiereType;
+                }
+            }
+
             $stmtCheck = $db->prepare("
                 SELECT id_accessoire_niveau_filiere
                 FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
                 WHERE accessoire_code = ?
                   AND type_filiere_cible = ?
+                  AND ((filiere_code IS NULL AND ? IS NULL) OR filiere_code = ?)
                   AND ((niveau_code IS NULL AND ? IS NULL) OR niveau_code = ?)
                 LIMIT 1
             ");
 
             $stmtIns = $db->prepare("
                 INSERT INTO " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
-                (code_accessoire_niveau_filiere, accessoire_code, type_filiere_cible, niveau_code, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
-                VALUES (?, ?, ?, ?, ?, ?, NOW())
+                (code_accessoire_niveau_filiere, accessoire_code, type_filiere_cible, filiere_code, niveau_code, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
             ");
 
-            $targets = empty($cleanNiveaux) ? [null] : $cleanNiveaux;
+            $targetFilieres = empty($cleanFilieres) ? [null] : $cleanFilieres;
+            $targetNiveaux = empty($cleanNiveaux) ? [null] : $cleanNiveaux;
             $inserted = 0;
 
             foreach ($cleanAccs as $accCode) {
-                foreach ($targets as $nivCode) {
-                    $stmtCheck->execute([$accCode, $filiere, $nivCode, $nivCode]);
-                    if ($stmtCheck->fetchColumn()) {
-                        continue;
-                    }
-                    $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
-                    if ($stmtIns->execute([$codeAnf, $accCode, $filiere, $nivCode, $etabCode, $userCode])) {
-                        $inserted++;
+                foreach ($targetFilieres as $filCode) {
+                    $resolvedType = ($filCode !== null && isset($filiereTypeMap[$filCode]))
+                        ? $filiereTypeMap[$filCode]
+                        : $filiereType;
+
+                    foreach ($targetNiveaux as $nivCode) {
+                        $stmtCheck->execute([$accCode, $resolvedType, $filCode, $filCode, $nivCode, $nivCode]);
+                        if ($stmtCheck->fetchColumn()) {
+                            continue;
+                        }
+                        $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                        if ($stmtIns->execute([$codeAnf, $accCode, $resolvedType, $filCode, $nivCode, $etabCode, $userCode])) {
+                            $inserted++;
+                        }
                     }
                 }
             }
