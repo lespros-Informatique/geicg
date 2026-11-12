@@ -11,41 +11,25 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
-        $annees = $this->getAccessibleAnnees();
-        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
         $niveaux = (new ModelNiveau())->getActifs();
-        $etudiants = (new ModelEtudiant())->getAll();
         $accessoires = $this->model->getAll();
 
-        if ($selectedAnneeCode === null) {
-            $this->loadView('../views/accessoires/list.php', [
-                'stats' => [
-                    'total' => 0,
-                    'en_attente' => 0,
-                    'retires' => 0,
-                    'retire' => 0,
-                    'taux_retrait' => 0,
-                    'taux' => 0,
-                    'total_types' => count($accessoires)
-                ],
-                'annees' => $annees,
-                'niveaux' => $niveaux,
-                'etudiants' => $etudiants,
-                'accessoires' => $accessoires,
-                'selectedAnneeCode' => ''
-            ]);
-            return;
-        }
-
-        $stats = $this->model->getStats($selectedAnneeCode);
-
         $this->loadView('../views/accessoires/list.php', [
-            'stats' => $stats,
-            'annees' => $annees,
             'niveaux' => $niveaux,
-            'etudiants' => $etudiants,
-            'accessoires' => $accessoires,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'accessoires' => $accessoires
+        ]);
+    }
+
+    public function cibles()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $niveaux = (new ModelNiveau())->getActifs();
+        $accessoires = $this->model->getAll();
+
+        $this->loadView('../views/accessoires/cibles.php', [
+            'niveaux' => $niveaux,
+            'accessoires' => $accessoires
         ]);
     }
 
@@ -306,7 +290,9 @@ class AccessoireController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
-            $this->model->syncCibles($data['code_accessoire'], $typeFiliereCible, $niveauCodes, $etabCode, $userCode);
+            if (isset($_POST['type_filiere_cible']) || isset($_POST['niveau_codes']) || isset($_POST['niveau_code'])) {
+                $this->model->syncCibles($data['code_accessoire'], $typeFiliereCible, $niveauCodes, $etabCode, $userCode);
+            }
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été créé avec succès !" : "Accessoire créé avec succès !";
             $this->success($msg);
         } else {
@@ -350,7 +336,7 @@ class AccessoireController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
-            if (!empty($codeAccessoire)) {
+            if (!empty($codeAccessoire) && (isset($_POST['type_filiere_cible']) || isset($_POST['niveau_codes']) || isset($_POST['niveau_code']))) {
                 $this->model->syncCibles($codeAccessoire, $typeFiliereCible, $niveauCodes, $etabCode, $userCode);
             }
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été modifié avec succès !" : "Accessoire modifié avec succès !";
@@ -360,6 +346,94 @@ class AccessoireController extends BaseController
                 ? $this->model->getLastError() 
                 : 'Erreur lors de la modification de l\'accessoire';
             $this->error($msg);
+        }
+    }
+
+    public function delete()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ACCESSOIRES);
+        $id = (int)($this->post('id_accessoire') ?: $this->post('id'));
+        if (!$id) {
+            $this->error('Identifiant invalide.');
+            return;
+        }
+        if ($this->model->deleteAccessoire($id)) {
+            $this->success('Accessoire supprimé du répertoire avec succès !');
+        } else {
+            $this->error('Erreur lors de la suppression de l\'accessoire.');
+        }
+    }
+
+    public function apiCiblesList()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $typeFiliere = !empty($_GET['type_filiere']) ? trim($_GET['type_filiere']) : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $items = $this->model->getCiblesList($typeFiliere, $niveauCode);
+        $this->json(['data' => $items]);
+    }
+
+    public function saveCible()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+
+        $idCible = (int)($_POST['id_accessoire_niveau_filiere'] ?? 0);
+        $typeFiliere = trim($_POST['type_filiere_cible'] ?? 'TOUT');
+
+        $accessoireCodes = [];
+        if (!empty($_POST['accessoire_codes']) && is_array($_POST['accessoire_codes'])) {
+            $accessoireCodes = array_values(array_filter(array_map('trim', $_POST['accessoire_codes'])));
+        } elseif (!empty($_POST['accessoire_code'])) {
+            $accessoireCodes = [trim((string)$_POST['accessoire_code'])];
+        }
+
+        if (empty($accessoireCodes)) {
+            $this->error('Veuillez sélectionner au moins un kit ou accessoire.');
+            return;
+        }
+
+        $niveauCodes = [];
+        if (!empty($_POST['niveau_codes']) && is_array($_POST['niveau_codes'])) {
+            $niveauCodes = array_values(array_filter(array_map('trim', $_POST['niveau_codes'])));
+        } elseif (!empty($_POST['niveau_code'])) {
+            $niveauCodes = [trim((string)$_POST['niveau_code'])];
+        }
+
+        $etabCode = $this->getActiveEtablissementCode();
+        $userCode = Auth::code();
+
+        $inserted = $this->model->saveCiblesBatch(
+            $accessoireCodes,
+            $typeFiliere,
+            $niveauCodes,
+            $etabCode,
+            $userCode,
+            $idCible > 0 ? $idCible : null
+        );
+
+        $this->success($idCible > 0 ? 'Configuration modifiée avec succès !' : "Configuration enregistrée avec succès ({$inserted} liaison(s)) !");
+    }
+
+    public function deleteCible()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+
+        $id = (int)($this->post('id_accessoire_niveau_filiere') ?: $this->post('id'));
+        if (!$id) {
+            $this->error('Identifiant de liaison invalide.');
+            return;
+        }
+        if ($this->model->deleteCible($id)) {
+            $this->success('Liaison supprimée avec succès !');
+        } else {
+            $this->error('Erreur lors de la suppression.');
         }
     }
 

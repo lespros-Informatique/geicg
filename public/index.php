@@ -298,6 +298,11 @@ $route->addRoute('/reinscription/formulaire', [$inscriptionController, 'formulai
 
 // Module: accessoire (AccessoireController)
 $route->addRoute('/accessoire/list', [$accessoireController, 'list']);
+$route->addRoute('/accessoire/cibles', [$accessoireController, 'cibles']);
+$route->addRoute('/accessoire/apiCiblesList', [$accessoireController, 'apiCiblesList']);
+$route->addRoute('/accessoire/saveCible', [$accessoireController, 'saveCible']);
+$route->addRoute('/accessoire/deleteCible', [$accessoireController, 'deleteCible']);
+$route->addRoute('/accessoire/delete', [$accessoireController, 'delete']);
 $route->addRoute('/accessoire/registre', [$accessoireController, 'registre']);
 $route->addRoute('/accessoire/imprimerPdf', [$accessoireController, 'imprimerPdf']);
 $route->addRoute('/accessoire/imprimerRegistrePdf', [$accessoireController, 'imprimerPdf']);

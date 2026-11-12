@@ -1,0 +1,166 @@
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php
+$accessoires = $accessoires ?? [];
+$niveaux = $niveaux ?? [];
+?>
+<div class="app-layout">
+  <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
+  <main class="main-content">
+    <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
+    <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
+
+      <!-- Page Header -->
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="layers" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Kits Exigés par Filière & Niveau
+          </h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des kits et accessoires attribués selon la filière et le niveau d'étude</p>
+        </div>
+        <?php if (!isset($canAccess) || $canAccess([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
+        <button type="button" class="btn btn-primary btn-add-acc-cible" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
+          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Configurer Kits Filière / Niveau
+        </button>
+        <?php endif; ?>
+      </div>
+
+      <!-- Navigation Tabs (Kits par Filière & Niveau vs Répertoire des Kits) -->
+      <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px; flex-wrap: wrap;">
+        <a href="<?= url('accessoire/cibles') ?>" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="layers" style="width: 17px; height: 17px;"></i> Kits Exigés par Filière & Niveau
+        </a>
+        <a href="<?= url('accessoire/list') ?>" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+          <i data-lucide="package" style="width: 17px; height: 17px;"></i> Répertoire des Kits & Articles
+        </a>
+      </div>
+
+      <!-- Filtres par Type de Filière & Niveau d'étude -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+          <div style="flex: 1; min-width: 250px;">
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Type de Filière</label>
+            <select id="filter-cible-filiere" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les filières --</option>
+              <option value="TOUT">Toutes Filières (Général)</option>
+              <option value="INDUSTRIELLE">Filière Industrielle</option>
+              <option value="TERTIAIRE">Filière Tertiaire</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 250px;">
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Niveau d'étude</label>
+            <select id="filter-cible-niveau" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les niveaux --</option>
+              <?php foreach ($niveaux as $niv): ?>
+                <option value="<?= htmlspecialchars($niv['code_niveau']) ?>">
+                  <?= htmlspecialchars($niv['libelle_niveau']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Table Card -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;">
+        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table id="table-accessoires-cibles" class="table display nowrap" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+                <th style="padding: 12px 14px; width: 50px;">#</th>
+                <th style="padding: 12px 14px; width: 150px;">Code</th>
+                <th style="padding: 12px 14px;">Kit / Accessoire</th>
+                <th style="padding: 12px 14px;">Type de Filière</th>
+                <th style="padding: 12px 14px;">Niveau d'étude</th>
+                <th style="padding: 12px 14px; text-align: right; width: 160px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : CONFIGURER / ASSOCIER KITS PAR FILIÈRE ET NIVEAU -->
+<!-- ========================================================================= -->
+<div id="modal-accessoire-cible" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-accessoire-cible-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="layers" style="width: 18px; height: 18px;"></i> Configurer Kits par Filière & Niveau
+      </h3>
+      <button type="button" class="btn-close-modal-acc-cible" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-accessoire-cible" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_accessoire_niveau_filiere" id="acc_cible_id" value="">
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Kit(s) / Accessoire(s) du Répertoire <span style="color: #EF4444;">*</span>
+        </label>
+        <div id="acc_cible_kits_container" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; background: #F8FAFC; display: flex; flex-direction: column; gap: 8px; max-height: 160px; overflow-y: auto;">
+          <?php if (!empty($accessoires)): ?>
+            <?php foreach ($accessoires as $acc): ?>
+              <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #0F172A; cursor: pointer; margin: 0;">
+                <input type="checkbox" name="accessoire_codes[]" class="chk-cible-acc" value="<?= htmlspecialchars($acc['code_accessoire']) ?>" style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
+                <span><?= htmlspecialchars($acc['libelle_accessoire']) ?></span>
+              </label>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div style="font-size: 12.5px; color: #64748B;">
+              Aucun kit enregistré dans le répertoire. <a href="<?= url('accessoire/list') ?>" style="color: #1E3A5F; font-weight: 700;">Ajouter d'abord des kits au répertoire</a>.
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Type de Filière Cible <span style="color: #EF4444;">*</span>
+        </label>
+        <select name="type_filiere_cible" id="acc_cible_filiere" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="TOUT">Toutes les Filières (Général)</option>
+          <option value="INDUSTRIELLE">Filière Industrielle uniquement (Ex: IDA, RIT...)</option>
+          <option value="TERTIAIRE">Filière Tertiaire uniquement (Ex: RHCOM, GEC...)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 22px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Niveau(x) d'étude Cible(s)
+        </label>
+        <div id="acc_cible_niveaux_container" style="border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; background: #F8FAFC; display: flex; flex-direction: column; gap: 8px; max-height: 160px; overflow-y: auto;">
+          <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: #1E3A5F; cursor: pointer; padding-bottom: 6px; border-bottom: 1px dashed #CBD5E1; margin: 0;">
+            <input type="checkbox" id="acc_cible_niveau_all" value="" checked style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
+            <span>Tous les niveaux (Général)</span>
+          </label>
+          <?php foreach ($niveaux as $niv): ?>
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; cursor: pointer; margin: 0;">
+              <input type="checkbox" name="niveau_codes[]" class="chk-cible-niveau" value="<?= htmlspecialchars($niv['code_niveau']) ?>" style="width: 16px; height: 16px; accent-color: #1E3A5F; cursor: pointer;">
+              <span><?= htmlspecialchars($niv['libelle_niveau']) ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Cochez un ou plusieurs niveaux spécifiques, ou laissez « Tous les niveaux »</small>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #E2E8F0;">
+        <button type="button" class="btn btn-secondary btn-close-modal-acc-cible" style="font-weight: 700; border-radius: 8px; padding: 9px 18px;">Annuler</button>
+        <button type="submit" id="btn-save-acc-cible" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 22px; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<?php
+ViewContext::setScripts(['public/assets/js/modules/accessoires.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>
+

@@ -76,7 +76,7 @@
                 </a>
                 <?php endif; ?>
                 <?php if ($canAccess([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS])): ?>
-                <a href="<?= url('accessoire/list') ?>" class="nav-item sub <?= $isActiveRoute('/accessoire/list') ?>" data-title="Kits & Accessoires">
+                <a href="<?= url('accessoire/list') ?>" class="nav-item sub <?= $isActiveRoute(['/accessoire/list', '/accessoire/cibles']) ?>" data-title="Kits & Accessoires">
                     <i data-lucide="package"></i> <span>Kits & Accessoires</span>
                 </a>
                 <?php endif; ?>

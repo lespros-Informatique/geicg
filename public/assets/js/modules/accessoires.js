@@ -118,33 +118,14 @@
           { data: null, width: '50px', render: function(d, type, row, meta) {
             return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
           }},
-          { data: 'code_accessoire', width: '130px', render: function(d) {
+          { data: 'code_accessoire', width: '150px', render: function(d) {
             if (!d) return '-';
-            return '<code style="font-weight:700; color:#334155; background:#F1F5F9; padding:2px 6px; border-radius:4px;">' + d + '</code>';
+            return '<code style="font-weight:700; color:#1E3A5F; background:#F1F5F9; padding:3px 8px; border-radius:4px;">' + d + '</code>';
           }},
           { data: 'libelle_accessoire', render: function(d) {
-            return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
+            return '<div style="font-weight:700; color:#0F172A; font-size:13.5px; display:flex; align-items:center; gap:8px;"><i data-lucide="package" style="width:16px;height:16px;color:#3B82F6;flex-shrink:0;"></i> <span>' + escapeHtml(d || '-') + '</span></div>';
           }},
-          { data: 'type_filiere_cible', render: function(d) {
-            if (d === 'INDUSTRIELLE') return '<span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Industrielle</span>';
-            if (d === 'TERTIAIRE') return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tertiaire</span>';
-            return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Toutes Filières</span>';
-          }},
-          { data: 'libelle_niveau', render: function(d) {
-            if (d) {
-              var parts = String(d).split(',');
-              var badges = [];
-              parts.forEach(function(p) {
-                var clean = $.trim(p);
-                if (clean) {
-                  badges.push('<span class="badge" style="background:#F0FDF4; color:#15803D; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px; margin-right:4px; margin-bottom:2px; display:inline-block;">' + escapeHtml(clean) + '</span>');
-                }
-              });
-              if (badges.length) return badges.join('');
-            }
-            return '<span class="badge" style="background:#F1F5F9; color:#64748B; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">Tous niveaux</span>';
-          }},
-          { data: 'statut_accessoire', width: '80px', className: 'text-center', render: function(d, type, row) {
+          { data: 'statut_accessoire', width: '100px', className: 'text-center', render: function(d, type, row) {
             var isActif = (d === 'actif');
             var checkedAttr = isActif ? 'checked' : '';
             return '<div style="display:flex; justify-content:center; align-items:center;">' +
@@ -158,9 +139,8 @@
           }},
           { data: null, width: '160px', orderable: false, render: function(d) {
             var safeLibelle = $('<div>').text(d.libelle_accessoire || '').html();
-            var detailsUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('accessoire/details/' + (d.editId || d.id_accessoire)) : (racine + 'accessoire/details/' + (d.editId || d.id_accessoire));
-            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-filiere-cible="' + (d.type_filiere_cible || 'TOUT') + '" data-niveau-code="' + (d.niveau_code || '') + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' +
-                   '<a href="' + detailsUrl + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</button>' +
+                   '<button type="button" class="btn btn-sm btn-danger btn-delete-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" style="background:#EF4444; color:#fff; border:none; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Supprimer du répertoire"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>';
           }, className: 'text-end' }
         ],
         language: (typeof dtLang === 'object') ? dtLang : { url: dtLang },
@@ -289,6 +269,37 @@
         } catch(e) {}
         if (typeof showToast === 'function') showToast(msg, 'error');
         else if (window.toastr) toastr.error(msg);
+      }
+    });
+  });
+
+  // Suppression d'un accessoire du répertoire via Ajax
+  $(document).on('click', '.btn-delete-acc-type', function() {
+    var id = $(this).data('id');
+    var libelle = $(this).data('libelle') || 'cet article';
+    if (!confirm('Voulez-vous vraiment supprimer « ' + libelle + ' » du répertoire ?')) return;
+    var csrf = $('input[name="csrf_token"]').val() || '';
+    var delUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('accessoire/delete') : (racine + 'accessoire/delete');
+
+    $.ajax({
+      url: delUrl,
+      type: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      data: { id_accessoire: id, csrf_token: csrf },
+      dataType: 'json',
+      success: function(res) {
+        if (res.status === 1 || res.success) {
+          if (typeof showToast === 'function') showToast(res.message || 'Article supprimé avec succès', 'success');
+          else if (window.toastr) toastr.success(res.message || 'Article supprimé avec succès');
+          if (tableAcc) tableAcc.ajax.reload(null, false);
+        } else {
+          if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de la suppression', 'error');
+          else if (window.toastr) toastr.error(res.message || 'Erreur lors de la suppression');
+        }
+      },
+      error: function() {
+        if (typeof showToast === 'function') showToast('Erreur réseau', 'error');
+        else if (window.toastr) toastr.error('Erreur réseau');
       }
     });
   });
@@ -1805,8 +1816,197 @@ window.removeBatchRow = function(btn) {
 
   }
 
+  // =========================================================================
+  // 7. VUE : KITS EXIGÉS PAR FILIÈRE & NIVEAU (views/accessoires/cibles.php)
+  // =========================================================================
+  function initAccessoiresCiblesModule() {
+    if (!$('#table-accessoires-cibles').length) return;
+
+    if (window.lucide) lucide.createIcons();
+    if ($.fn.select2) {
+      $('#filter-cible-filiere, #filter-cible-niveau').select2({ width: '100%' });
+    }
+
+    var racine = (typeof RACINE !== 'undefined') ? RACINE : (window.RACINE || '/geicg/');
+    var dtLang = (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage) ? GEICG.dataTableLanguage : { url: racine + 'json/datatables-i18n-fr-FR.json' };
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    var tableCibles = $('#table-accessoires-cibles').DataTable({
+      ajax: {
+        url: racine + 'accessoire/apiCiblesList',
+        type: 'GET',
+        data: function(d) {
+          d.type_filiere = $('#filter-cible-filiere').val();
+          d.niveau_code = $('#filter-cible-niveau').val();
+        }
+      },
+      processing: true,
+      autoWidth: false,
+      order: [[0, 'desc']],
+      columns: [
+        { data: null, width: '50px', render: function(d, type, row, meta) {
+          return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+        }},
+        { data: 'code_accessoire_niveau_filiere', width: '150px', render: function(d) {
+          return '<code style="font-weight:700; color:#1E3A5F; background:#F1F5F9; padding:3px 8px; border-radius:4px;">' + escapeHtml(d || '-') + '</code>';
+        }},
+        { data: 'libelle_accessoire', render: function(d) {
+          return '<div style="font-weight:700; color:#0F172A; font-size:13.5px; display:flex; align-items:center; gap:8px;"><i data-lucide="package" style="width:16px;height:16px;color:#3B82F6;flex-shrink:0;"></i> <span>' + escapeHtml(d || '-') + '</span></div>';
+        }},
+        { data: 'type_filiere_cible', render: function(d) {
+          if (d === 'INDUSTRIELLE') return '<span class="badge" style="background:#E0F2FE; color:#0369A1; padding:5px 10px; border-radius:6px; font-weight:800; font-size:11.5px;">Filière Industrielle</span>';
+          if (d === 'TERTIAIRE') return '<span class="badge" style="background:#FEF3C7; color:#B45309; padding:5px 10px; border-radius:6px; font-weight:800; font-size:11.5px;">Filière Tertiaire</span>';
+          return '<span class="badge" style="background:#F1F5F9; color:#475569; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11.5px;">Toutes Filières</span>';
+        }},
+        { data: 'libelle_niveau', render: function(d) {
+          if (d) {
+            return '<span class="badge" style="background:#F0FDF4; color:#15803D; padding:5px 10px; border-radius:6px; font-weight:800; font-size:11.5px;">' + escapeHtml(d) + '</span>';
+          }
+          return '<span class="badge" style="background:#F1F5F9; color:#64748B; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11.5px;">Tous niveaux</span>';
+        }},
+        { data: null, width: '160px', orderable: false, className: 'text-end', render: function(d) {
+          return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" data-acc-code="' + escapeHtml(d.accessoire_code || '') + '" data-filiere="' + escapeHtml(d.type_filiere_cible || 'TOUT') + '" data-niveau="' + escapeHtml(d.niveau_code || '') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</button>' +
+                 '<button type="button" class="btn btn-sm btn-danger btn-delete-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" style="background:#EF4444; color:#fff; border:none; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Retirer cette configuration"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>';
+        }}
+      ],
+      language: dtLang,
+      drawCallback: function() { if (window.lucide) lucide.createIcons(); }
+    });
+
+    $('#filter-cible-filiere, #filter-cible-niveau').on('change', function() {
+      tableCibles.ajax.reload();
+    });
+
+    $(document).on('change', '#acc_cible_niveau_all', function() {
+      if ($(this).is(':checked')) {
+        $('.chk-cible-niveau').prop('checked', false);
+      } else if ($('.chk-cible-niveau:checked').length === 0) {
+        $(this).prop('checked', true);
+      }
+    });
+
+    $(document).on('change', '.chk-cible-niveau', function() {
+      if ($('.chk-cible-niveau:checked').length > 0) {
+        $('#acc_cible_niveau_all').prop('checked', false);
+      } else {
+        $('#acc_cible_niveau_all').prop('checked', true);
+      }
+    });
+
+    $(document).on('click', '.btn-add-acc-cible', function() {
+      $('#form-accessoire-cible')[0].reset();
+      $('#acc_cible_id').val('');
+      $('.chk-cible-acc').prop('checked', false);
+      $('#acc_cible_filiere').val('TOUT');
+      $('.chk-cible-niveau').prop('checked', false);
+      $('#acc_cible_niveau_all').prop('checked', true);
+      $('#modal-accessoire-cible-title').html('<i data-lucide="layers" style="width: 18px; height: 18px;"></i> Configurer Kits par Filière & Niveau');
+      $('#modal-accessoire-cible').css('display', 'flex');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    $(document).on('click', '.btn-edit-acc-cible', function() {
+      var id = $(this).data('id');
+      var accCode = String($(this).attr('data-acc-code') || '').trim();
+      var filiere = String($(this).attr('data-filiere') || 'TOUT').trim();
+      var niveau = String($(this).attr('data-niveau') || '').trim();
+
+      $('#acc_cible_id').val(id);
+      $('.chk-cible-acc').prop('checked', false);
+      if (accCode) {
+        $('.chk-cible-acc[value="' + accCode + '"]').prop('checked', true);
+      }
+      $('#acc_cible_filiere').val(filiere || 'TOUT');
+
+      $('.chk-cible-niveau').prop('checked', false);
+      if (niveau && niveau !== 'TOUT') {
+        $('.chk-cible-niveau[value="' + niveau + '"]').prop('checked', true);
+        $('#acc_cible_niveau_all').prop('checked', false);
+      } else {
+        $('#acc_cible_niveau_all').prop('checked', true);
+      }
+
+      $('#modal-accessoire-cible-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la Configuration du Kit');
+      $('#modal-accessoire-cible').css('display', 'flex');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    $('.btn-close-modal-acc-cible').on('click', function() {
+      $('#modal-accessoire-cible').css('display', 'none');
+    });
+    $('#modal-accessoire-cible').on('click', function(e) {
+      if ($(e.target).is('#modal-accessoire-cible')) {
+        $(this).css('display', 'none');
+      }
+    });
+
+    $('#form-accessoire-cible').on('submit', function(e) {
+      e.preventDefault();
+      if ($('.chk-cible-acc:checked').length === 0) {
+        if (window.toastr) toastr.warning('Veuillez cocher au moins un kit ou accessoire.');
+        return;
+      }
+      var $btn = $('#btn-save-acc-cible');
+      $btn.prop('disabled', true).html('Enregistrement...');
+
+      $.ajax({
+        url: racine + 'accessoire/saveCible',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: $(this).serialize(),
+        dataType: 'json',
+        success: function(res) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+          if (window.lucide) lucide.createIcons();
+          if (res.status === 1 || res.success) {
+            if (window.toastr) toastr.success(res.message || 'Configuration enregistrée avec succès');
+            $('#modal-accessoire-cible').css('display', 'none');
+            tableCibles.ajax.reload(null, false);
+          } else {
+            if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+          }
+        },
+        error: function() {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+          if (window.lucide) lucide.createIcons();
+          if (window.toastr) toastr.error('Erreur réseau ou serveur');
+        }
+      });
+    });
+
+    $(document).on('click', '.btn-delete-acc-cible', function() {
+      var id = $(this).data('id');
+      if (!confirm('Voulez-vous vraiment supprimer cette configuration ?')) return;
+      var csrf = $('input[name="csrf_token"]').val() || '';
+
+      $.ajax({
+        url: racine + 'accessoire/deleteCible',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: { id_accessoire_niveau_filiere: id, csrf_token: csrf },
+        dataType: 'json',
+        success: function(res) {
+          if (res.status === 1 || res.success) {
+            if (window.toastr) toastr.success(res.message || 'Configuration supprimée');
+            tableCibles.ajax.reload(null, false);
+          } else {
+            if (window.toastr) toastr.error(res.message || 'Erreur lors de la suppression');
+          }
+        },
+        error: function() {
+          if (window.toastr) toastr.error('Erreur réseau');
+        }
+      });
+    });
+  }
+
   $(document).ready(function() {
     initAccessoiresListModule();
+    initAccessoiresCiblesModule();
     initAccessoiresRegistreModule();
     initPiecesFournirListModule();
     initPiecesFournirEditModule();

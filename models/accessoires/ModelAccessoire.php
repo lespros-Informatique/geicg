@@ -125,6 +125,130 @@ class ModelAccessoire extends BaseModel
         }
     }
 
+    public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null): array
+    {
+        $where = [];
+        $params = [];
+
+        if (!empty($typeFiliere)) {
+            $where[] = "anf.type_filiere_cible = ?";
+            $params[] = $typeFiliere;
+        }
+        if (!empty($niveauCode)) {
+            $where[] = "(anf.niveau_code = ? OR anf.niveau_code IS NULL OR anf.niveau_code = '')";
+            $params[] = $niveauCode;
+        }
+
+        $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        $sql = "
+            SELECT anf.*,
+                   a.id_accessoire,
+                   a.libelle_accessoire,
+                   a.statut_accessoire,
+                   n.libelle_niveau,
+                   n.slug_niveau
+            FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf
+            JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = anf.accessoire_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            {$whereSql}
+            ORDER BY anf.id_accessoire_niveau_filiere DESC
+        ";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getCiblesList error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null): int
+    {
+        $db = $this->getCon();
+        $filiere = in_array($typeFiliereCible, ['TOUT', 'INDUSTRIELLE', 'TERTIAIRE'], true) ? $typeFiliereCible : 'TOUT';
+        $cleanAccs = array_values(array_unique(array_filter(array_map('trim', $accessoireCodes))));
+        $cleanNiveaux = array_values(array_unique(array_filter(array_map('trim', $niveauCodes), function ($v) {
+            return $v !== '' && $v !== 'TOUT';
+        })));
+
+        if (empty($cleanAccs)) {
+            return 0;
+        }
+
+        try {
+            if ($idCibleToUpdate !== null && $idCibleToUpdate > 0) {
+                $stmtDel = $db->prepare("DELETE FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE id_accessoire_niveau_filiere = ?");
+                $stmtDel->execute([$idCibleToUpdate]);
+            }
+
+            $stmtCheck = $db->prepare("
+                SELECT id_accessoire_niveau_filiere
+                FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                WHERE accessoire_code = ?
+                  AND type_filiere_cible = ?
+                  AND ((niveau_code IS NULL AND ? IS NULL) OR niveau_code = ?)
+                LIMIT 1
+            ");
+
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                (code_accessoire_niveau_filiere, accessoire_code, type_filiere_cible, niveau_code, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
+                VALUES (?, ?, ?, ?, ?, ?, NOW())
+            ");
+
+            $targets = empty($cleanNiveaux) ? [null] : $cleanNiveaux;
+            $inserted = 0;
+
+            foreach ($cleanAccs as $accCode) {
+                foreach ($targets as $nivCode) {
+                    $stmtCheck->execute([$accCode, $filiere, $nivCode, $nivCode]);
+                    if ($stmtCheck->fetchColumn()) {
+                        continue;
+                    }
+                    $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                    if ($stmtIns->execute([$codeAnf, $accCode, $filiere, $nivCode, $etabCode, $userCode])) {
+                        $inserted++;
+                    }
+                }
+            }
+
+            return $inserted;
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::saveCiblesBatch error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function deleteCible(int $idCible): bool
+    {
+        try {
+            $stmt = $this->getCon()->prepare("DELETE FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE id_accessoire_niveau_filiere = ?");
+            return $stmt->execute([$idCible]);
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::deleteCible error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deleteAccessoire(int $idAccessoire): bool
+    {
+        try {
+            $db = $this->getCon();
+            $row = $this->getById($idAccessoire);
+            if (!empty($row['code_accessoire'])) {
+                $stmtAnf = $db->prepare("DELETE FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE accessoire_code = ?");
+                $stmtAnf->execute([$row['code_accessoire']]);
+            }
+            $stmt = $db->prepare("DELETE FROM " . TABLES::ACCESSOIRES . " WHERE id_accessoire = ?");
+            return $stmt->execute([$idAccessoire]);
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::deleteAccessoire error: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function getDistributions(string $filter = 'all', ?string $anneeCode = null, ?string $classeCode = null): array
     {
         $db = $this->getCon();
