@@ -212,6 +212,80 @@ class ModelAccessoire extends BaseModel
         }
     }
 
+    public function getPivotDataByCycle(string $cycleCode): array
+    {
+        if (empty($cycleCode)) {
+            return ['filieres' => [], 'niveaux' => [], 'pivots' => []];
+        }
+        $sql = "
+            SELECT fc.code_filiere_cycle,
+                   fc.cycle_code,
+                   fc.filiere_code,
+                   fc.niveau_code,
+                   f.libelle_filiere,
+                   f.slug_filiere,
+                   f.type_filiere,
+                   n.id_niveau,
+                   n.libelle_niveau,
+                   n.slug_niveau
+            FROM " . TABLES::FILIERE_CYCLES . " fc
+            INNER JOIN " . TABLES::FILIERES . " f ON f.code_filiere = fc.filiere_code
+            INNER JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = fc.niveau_code
+            WHERE fc.cycle_code = ?
+              AND (fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "' OR fc.statut_filiere_cycle IS NULL)
+              AND (f.statut_filiere = '" . STATUTS::ACTIF . "' OR f.statut_filiere IS NULL)
+              AND (n.statut_niveau = '" . STATUTS::ACTIF . "' OR n.statut_niveau IS NULL)
+            ORDER BY f.libelle_filiere ASC, n.id_niveau ASC
+        ";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$cycleCode]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $filieresMap = [];
+            $niveauxMap = [];
+            $pivots = [];
+
+            foreach ($rows as $r) {
+                $fCode = $r['filiere_code'];
+                $nCode = $r['niveau_code'];
+
+                if (!isset($filieresMap[$fCode])) {
+                    $filieresMap[$fCode] = [
+                        'code_filiere' => $fCode,
+                        'libelle_filiere' => $r['libelle_filiere'],
+                        'slug_filiere' => $r['slug_filiere'],
+                        'type_filiere' => $r['type_filiere']
+                    ];
+                }
+                if (!isset($niveauxMap[$nCode])) {
+                    $niveauxMap[$nCode] = [
+                        'code_niveau' => $nCode,
+                        'libelle_niveau' => $r['libelle_niveau'],
+                        'slug_niveau' => $r['slug_niveau'],
+                        'id_niveau' => (int)$r['id_niveau']
+                    ];
+                }
+                $pivots[] = [
+                    'filiere_code' => $fCode,
+                    'niveau_code' => $nCode
+                ];
+            }
+
+            $niveauxList = array_values($niveauxMap);
+            usort($niveauxList, fn($a, $b) => ($a['id_niveau'] <=> $b['id_niveau']));
+
+            return [
+                'filieres' => array_values($filieresMap),
+                'niveaux' => $niveauxList,
+                'pivots' => $pivots
+            ];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getPivotDataByCycle error: " . $e->getMessage());
+            return ['filieres' => [], 'niveaux' => [], 'pivots' => []];
+        }
+    }
+
     public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null, ?string $filiereCode = null, ?string $cycleCode = null): array
     {
         $where = [];

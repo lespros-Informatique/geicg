@@ -420,6 +420,20 @@ class AccessoireController extends BaseController
         $this->json(['data' => $items]);
     }
 
+    public function apiPivotByCycle()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : '';
+        $data = $this->model->getPivotDataByCycle($cycleCode);
+        $this->json([
+            'status' => 1,
+            'filieres' => $data['filieres'],
+            'niveaux' => $data['niveaux'],
+            'pivots' => $data['pivots']
+        ]);
+    }
+
     public function saveCible()
     {
         $this->requirePost(false);

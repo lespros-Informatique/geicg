@@ -152,33 +152,28 @@ foreach ($filiereCyclesMap as $fc) {
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
-          Cycle d'étude
+          Cycle d'étude <span style="color: #EF4444;">*</span>
         </label>
-        <select name="cycle_code" id="acc_cible_cycle" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
-          <option value="">-- Tous les cycles --</option>
+        <select name="cycle_code" id="acc_cible_cycle" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="">-- Sélectionner un cycle d'étude --</option>
           <?php foreach ($cycles as $cyc): ?>
             <option value="<?= htmlspecialchars($cyc['code_cycle']) ?>">
               <?= htmlspecialchars(!empty($cyc['slug_cycle']) ? $cyc['slug_cycle'] . ' - ' . $cyc['libelle_cycle'] : $cyc['libelle_cycle']) ?>
             </option>
           <?php endforeach; ?>
         </select>
-        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Sélectionnez un cycle pour afficher uniquement ses filières et niveaux associés</small>
+        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">Sélectionnez un cycle pour activer et charger ses filières et niveaux associés</small>
       </div>
 
       <div class="form-group" style="margin-bottom: 18px;">
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
           Filière(s) / Spécialité(s) Cible(s)
         </label>
-        <select name="filiere_code" id="acc_cible_filiere_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
-          <option value="" id="opt_acc_cible_filiere_all">-- Toutes les filières (Général) --</option>
-          <?php foreach ($filieres as $fil): ?>
-            <option value="<?= htmlspecialchars($fil['code_filiere']) ?>" class="opt-cible-filiere" data-cycles="<?= htmlspecialchars(implode(',', $filiereToCycles[$fil['code_filiere']] ?? [])) ?>" data-type="<?= htmlspecialchars(strtoupper($fil['type_filiere'] ?? '')) ?>">
-              <?= htmlspecialchars(!empty($fil['slug_filiere']) ? $fil['slug_filiere'] . ' - ' . $fil['libelle_filiere'] : $fil['libelle_filiere']) ?>
-            </option>
-          <?php endforeach; ?>
+        <select name="filiere_code" id="acc_cible_filiere_code" disabled class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F1F5F9; color: #64748B; cursor: not-allowed; font-weight: 600; font-size: 14px;">
+          <option value="">-- Sélectionnez d'abord un cycle --</option>
         </select>
         <div id="acc_cible_filiere_empty" style="display: none; font-size: 12px; color: #B45309; font-weight: 600; margin-top: 4px;">
-          Aucune filière associée à ce cycle.
+          Aucune filière associée à ce cycle dans la table pivot.
         </div>
       </div>
 
@@ -186,16 +181,11 @@ foreach ($filiereCyclesMap as $fc) {
         <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
           Niveau(x) d'étude Cible(s)
         </label>
-        <select name="niveau_code" id="acc_cible_niveau_code" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
-          <option value="" id="opt_acc_cible_niveau_all">-- Tous les niveaux (Général) --</option>
-          <?php foreach ($niveaux as $niv): ?>
-            <option value="<?= htmlspecialchars($niv['code_niveau']) ?>" class="opt-cible-niveau" data-cycles="<?= htmlspecialchars(implode(',', $niveauToCycles[$niv['code_niveau']] ?? [])) ?>">
-              <?= htmlspecialchars($niv['libelle_niveau']) ?>
-            </option>
-          <?php endforeach; ?>
+        <select name="niveau_code" id="acc_cible_niveau_code" disabled class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F1F5F9; color: #64748B; cursor: not-allowed; font-weight: 600; font-size: 14px;">
+          <option value="">-- Sélectionnez d'abord un cycle --</option>
         </select>
         <div id="acc_cible_niveau_empty" style="display: none; font-size: 12px; color: #B45309; font-weight: 600; margin-top: 4px;">
-          Aucun niveau associé à ce cycle.
+          Aucun niveau associé à ce cycle dans la table pivot.
         </div>
       </div>
 
