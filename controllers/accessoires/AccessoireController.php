@@ -505,6 +505,24 @@ class AccessoireController extends BaseController
         }
     }
 
+    public function changerCible()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+
+        $id = (int)($this->post('id_accessoire_niveau_filiere') ?: $this->post('id'));
+        if (!$id) {
+            $this->error('Identifiant de configuration invalide.');
+            return;
+        }
+        if ($this->model->toggleCibleStatus($id)) {
+            $this->success('Statut de la configuration mis à jour avec succès !');
+        } else {
+            $this->error('Erreur lors de la mise à jour du statut.');
+        }
+    }
+
     public function apiDistributions()
     {
         $this->requireAuth();

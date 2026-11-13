@@ -101,6 +101,7 @@ foreach ($filiereCyclesMap as $fc) {
                 <th style="padding: 12px 14px;">Cycle d'étude</th>
                 <th style="padding: 12px 14px;">Filière / Spécialité</th>
                 <th style="padding: 12px 14px;">Niveau d'étude</th>
+                <th style="padding: 12px 14px; width: 100px;" class="text-center">Statut</th>
                 <th style="padding: 12px 14px; text-align: right; width: 120px;">Actions</th>
               </tr>
             </thead>

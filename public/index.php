@@ -303,6 +303,7 @@ $route->addRoute('/accessoire/cibles', [$accessoireController, 'cibles']);
 $route->addRoute('/accessoire/apiCiblesList', [$accessoireController, 'apiCiblesList']);
 $route->addRoute('/accessoire/saveCible', [$accessoireController, 'saveCible']);
 $route->addRoute('/accessoire/deleteCible', [$accessoireController, 'deleteCible']);
+$route->addRoute('/accessoire/changerCible', [$accessoireController, 'changerCible']);
 $route->addRoute('/accessoire/apiPivotByCycle', [$accessoireController, 'apiPivotByCycle']);
 $route->addRoute('/accessoire/delete', [$accessoireController, 'delete']);
 $route->addRoute('/accessoire/registre', [$accessoireController, 'registre']);

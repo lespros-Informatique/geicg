@@ -42,7 +42,7 @@ class ModelAccessoire extends BaseModel
                        ELSE 'TOUT'
                    END AS type_filiere_cible
             FROM " . TABLES::ACCESSOIRES . " a
-            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             WHERE a.id_accessoire = ?
@@ -100,7 +100,7 @@ class ModelAccessoire extends BaseModel
                        ELSE 'TOUT'
                    END AS type_filiere_cible
             FROM " . TABLES::ACCESSOIRES . " a
-            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             GROUP BY a.id_accessoire
@@ -158,7 +158,7 @@ class ModelAccessoire extends BaseModel
                        ELSE 'TOUT'
                    END AS type_filiere_cible
             FROM " . TABLES::ACCESSOIRES . " a
-            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
@@ -441,6 +441,25 @@ class ModelAccessoire extends BaseModel
             return $stmt->execute([$idCible]);
         } catch (Exception $e) {
             error_log("ModelAccessoire::deleteCible error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function toggleCibleStatus(int $idCible): bool
+    {
+        try {
+            $db = $this->getCon();
+            $stmt = $db->prepare("SELECT statut_accessoire_niveau_filiere FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE id_accessoire_niveau_filiere = ? LIMIT 1");
+            $stmt->execute([$idCible]);
+            $current = $stmt->fetchColumn();
+            if ($current === false) {
+                return false;
+            }
+            $newStatus = ($current === STATUTS::ACTIF) ? STATUTS::INACTIF : STATUTS::ACTIF;
+            $stmtUpd = $db->prepare("UPDATE " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " SET statut_accessoire_niveau_filiere = ? WHERE id_accessoire_niveau_filiere = ?");
+            return $stmtUpd->execute([$newStatus, $idCible]);
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::toggleCibleStatus error: " . $e->getMessage());
             return false;
         }
     }

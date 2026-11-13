@@ -1935,9 +1935,22 @@
           }
         },
         {
+          data: 'statut_accessoire_niveau_filiere', width: '100px', className: 'text-center', render: function (d, type, row) {
+            var isActif = (!d || d === 'actif');
+            var checkedAttr = isActif ? 'checked' : '';
+            return '<div style="display:flex; justify-content:center; align-items:center;">' +
+              '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
+              '<input type="checkbox" class="toggle-statut-acc-cible" data-id="' + row.id_accessoire_niveau_filiere + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
+              '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
+              '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
+              '</span>' +
+              '</label>' +
+              '</div>';
+          }
+        },
+        {
           data: null, width: '120px', orderable: false, className: 'text-end', render: function (d) {
-            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" data-acc-code="' + escapeHtml(d.accessoire_code || '') + '" data-cycle-code="' + escapeHtml(d.cycle_code || '') + '" data-filiere-code="' + escapeHtml(d.filiere_code || '') + '" data-niveau="' + escapeHtml(d.niveau_code || '') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Modifier cette configuration"><i data-lucide="edit" style="width:14px;height:14px;"></i></button>' +
-              '<button type="button" class="btn btn-sm btn-danger btn-delete-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" style="background:#EF4444; color:#fff; border:none; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Retirer cette configuration"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>';
+            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" data-acc-code="' + escapeHtml(d.accessoire_code || '') + '" data-cycle-code="' + escapeHtml(d.cycle_code || '') + '" data-filiere-code="' + escapeHtml(d.filiere_code || '') + '" data-niveau="' + escapeHtml(d.niveau_code || '') + '" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Modifier cette configuration"><i data-lucide="edit" style="width:14px;height:14px;"></i></button>';
           }
         }
       ],
@@ -2157,6 +2170,41 @@
           $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
           if (window.lucide) lucide.createIcons();
           if (window.toastr) toastr.error('Erreur réseau ou serveur');
+        }
+      });
+    });
+
+    $(document).on('change', '.toggle-statut-acc-cible', function () {
+      var id = $(this).data('id');
+      var isChecked = $(this).is(':checked');
+      var $input = $(this);
+      var csrf = $('input[name="csrf_token"]').val() || '';
+
+      $.ajax({
+        url: racine + 'accessoire/changerCible',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: {
+          id: id,
+          id_accessoire_niveau_filiere: id,
+          csrf_token: csrf
+        },
+        dataType: 'json',
+        success: function (res) {
+          if (res.status === 1 || res.success) {
+            if (typeof showToast === 'function') showToast(res.message || 'Statut mis à jour avec succès', 'success');
+            else if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
+            tableCibles.ajax.reload(null, false);
+          } else {
+            if (typeof showToast === 'function') showToast(res.message || 'Erreur lors du changement de statut', 'error');
+            else if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
+            $input.prop('checked', !isChecked);
+          }
+        },
+        error: function () {
+          if (typeof showToast === 'function') showToast('Erreur réseau', 'error');
+          else if (window.toastr) toastr.error('Erreur réseau');
+          $input.prop('checked', !isChecked);
         }
       });
     });
