@@ -126,10 +126,11 @@
           },
           processing: true,
           autoWidth: false,
+          order: [],
           columns: [
             {
-              data: null, width: '50px', render: function (d, type, row, meta) {
-                return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+              data: null, width: '50px', orderable: false, searchable: false, render: function (d, type, row, meta) {
+                return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1) + '</span>';
               }
             },
             {
@@ -160,12 +161,19 @@
             {
               data: null, width: '160px', orderable: false, render: function (d) {
                 var safeLibelle = $('<div>').text(d.libelle_accessoire || '').html();
-                return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</button>';
+                return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:16px;height:16px;"></i> Modifier</button>';
               }, className: 'text-end'
             }
           ],
           language: (typeof dtLang === 'object') ? dtLang : { url: dtLang },
-          drawCallback: function () { if (window.lucide) lucide.createIcons(); }
+          drawCallback: function () {
+            var api = this.api();
+            var start = api.page.info().start || 0;
+            api.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+              cell.innerHTML = '<span style="font-weight:700; color:#64748B;">' + (start + i + 1) + '</span>';
+            });
+            if (window.lucide) lucide.createIcons();
+          }
         });
       }
     }
@@ -1896,11 +1904,11 @@
       },
       processing: true,
       autoWidth: false,
-      order: [[0, 'desc']],
+      order: [],
       columns: [
         {
-          data: null, width: '50px', render: function (d, type, row, meta) {
-            return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
+          data: null, width: '50px', orderable: false, searchable: false, render: function (d, type, row, meta) {
+            return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1) + '</span>';
           }
         },
         {
@@ -1955,10 +1963,138 @@
         }
       ],
       language: dtLang,
-      drawCallback: function () { if (window.lucide) lucide.createIcons(); }
+      drawCallback: function () {
+        var api = this.api();
+        var start = api.page.info().start || 0;
+        api.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+          cell.innerHTML = '<span style="font-weight:700; color:#64748B;">' + (start + i + 1) + '</span>';
+        });
+        if (window.lucide) lucide.createIcons();
+      }
     });
 
-    $('#filter-cible-cycle, #filter-cible-filiere-code, #filter-cible-niveau').on('change', function () {
+    var filterCycleNiveaux = [];
+    var filterCyclePivots = [];
+
+    function disableFilterFiliereAndNiveau(msg) {
+      var placeholder = msg || '-- Sélectionnez d\'abord un cycle --';
+      $('#filter-cible-filiere-code')
+        .empty()
+        .append($('<option>', { value: '', text: placeholder }))
+        .prop('disabled', true)
+        .css({ background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' });
+      if ($.fn.select2) {
+        $('#filter-cible-filiere-code').trigger('change.select2');
+      }
+
+      $('#filter-cible-niveau')
+        .empty()
+        .append($('<option>', { value: '', text: placeholder }))
+        .prop('disabled', true)
+        .css({ background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' });
+      if ($.fn.select2) {
+        $('#filter-cible-niveau').trigger('change.select2');
+      }
+    }
+
+    function populateFilterNiveauxForFiliere(filiereCode) {
+      var $selNiv = $('#filter-cible-niveau');
+      var fCode = String(filiereCode || '').trim();
+      var allowedNiveaux = null;
+
+      if (fCode && filterCyclePivots.length > 0) {
+        allowedNiveaux = {};
+        filterCyclePivots.forEach(function (p) {
+          if (p.filiere_code === fCode && p.niveau_code) {
+            allowedNiveaux[p.niveau_code] = true;
+          }
+        });
+      }
+
+      $selNiv.empty().append($('<option>', {
+        value: '',
+        text: fCode ? '-- Tous les niveaux de cette filière --' : '-- Tous les niveaux de ce cycle --'
+      }));
+
+      var count = 0;
+      filterCycleNiveaux.forEach(function (niv) {
+        if (!allowedNiveaux || allowedNiveaux[niv.code_niveau]) {
+          $selNiv.append($('<option>', {
+            value: niv.code_niveau,
+            text: niv.libelle_niveau
+          }));
+          count++;
+        }
+      });
+
+      $selNiv.prop('disabled', count === 0).css(
+        count > 0
+          ? { background: '#FFFFFF', color: '#0F172A', cursor: 'pointer' }
+          : { background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' }
+      );
+      if ($.fn.select2) {
+        $selNiv.trigger('change.select2');
+      }
+    }
+
+    $('#filter-cible-cycle').on('change', function () {
+      var cyc = String($(this).val() || '').trim();
+      if (!cyc) {
+        filterCycleNiveaux = [];
+        filterCyclePivots = [];
+        disableFilterFiliereAndNiveau('-- Sélectionnez d\'abord un cycle --');
+        tableCibles.ajax.reload();
+        return;
+      }
+
+      disableFilterFiliereAndNiveau('Chargement...');
+
+      $.ajax({
+        url: racine + 'accessoire/apiPivotByCycle',
+        type: 'GET',
+        data: { cycle_code: cyc },
+        dataType: 'json',
+        success: function (res) {
+          var filieres = (res && res.filieres) ? res.filieres : [];
+          filterCycleNiveaux = (res && res.niveaux) ? res.niveaux : [];
+          filterCyclePivots = (res && res.pivots) ? res.pivots : [];
+
+          var $selFil = $('#filter-cible-filiere-code');
+          $selFil.empty().append($('<option>', { value: '', text: '-- Toutes les filières de ce cycle --' }));
+
+          filieres.forEach(function (fil) {
+            var label = fil.slug_filiere ? (fil.slug_filiere + ' - ' + fil.libelle_filiere) : fil.libelle_filiere;
+            $selFil.append($('<option>', {
+              value: fil.code_filiere,
+              text: label
+            }));
+          });
+
+          $selFil.prop('disabled', filieres.length === 0).css(
+            filieres.length > 0
+              ? { background: '#FFFFFF', color: '#0F172A', cursor: 'pointer' }
+              : { background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' }
+          );
+          if ($.fn.select2) {
+            $selFil.trigger('change.select2');
+          }
+
+          populateFilterNiveauxForFiliere('');
+          tableCibles.ajax.reload();
+        },
+        error: function () {
+          disableFilterFiliereAndNiveau('-- Erreur de chargement --');
+          tableCibles.ajax.reload();
+        }
+      });
+    });
+
+    $('#filter-cible-filiere-code').on('change', function () {
+      populateFilterNiveauxForFiliere($(this).val());
+      tableCibles.ajax.reload();
+    });
+
+    $('#filter-cible-niveau').on('change', function () {
       tableCibles.ajax.reload();
     });
 

@@ -30,9 +30,9 @@ foreach ($filiereCyclesMap as $fc) {
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="layers" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Kits Exigés par Filière & Niveau
+            <i data-lucide="layers" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Kits - Filière & Niveau
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des kits et accessoires attribués selon la filière et le niveau d'étude</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des kits et accessoires.</p>
         </div>
         <?php if (!isset($canAccess) || $canAccess([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE])): ?>
         <button type="button" class="btn btn-primary btn-add-acc-cible" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
@@ -67,24 +67,14 @@ foreach ($filiereCyclesMap as $fc) {
           </div>
           <div style="flex: 1; min-width: 240px;">
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Filière / Spécialité</label>
-            <select id="filter-cible-filiere-code" class="form-control select2" style="width: 100%;">
-              <option value="">-- Toutes les filières --</option>
-              <?php foreach ($filieres as $fil): ?>
-                <option value="<?= htmlspecialchars($fil['code_filiere']) ?>" data-cycles="<?= htmlspecialchars(implode(',', $filiereToCycles[$fil['code_filiere']] ?? [])) ?>">
-                  <?= htmlspecialchars(!empty($fil['slug_filiere']) ? $fil['slug_filiere'] . ' - ' . $fil['libelle_filiere'] : $fil['libelle_filiere']) ?>
-                </option>
-              <?php endforeach; ?>
+            <select id="filter-cible-filiere-code" class="form-control select2" disabled style="width: 100%; background: #F1F5F9; color: #64748B; cursor: not-allowed;">
+              <option value="">-- Sélectionnez d'abord un cycle --</option>
             </select>
           </div>
           <div style="flex: 1; min-width: 200px;">
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Filtrer par Niveau d'étude</label>
-            <select id="filter-cible-niveau" class="form-control select2" style="width: 100%;">
-              <option value="">-- Tous les niveaux --</option>
-              <?php foreach ($niveaux as $niv): ?>
-                <option value="<?= htmlspecialchars($niv['code_niveau']) ?>" data-cycles="<?= htmlspecialchars(implode(',', $niveauToCycles[$niv['code_niveau']] ?? [])) ?>">
-                  <?= htmlspecialchars($niv['libelle_niveau']) ?>
-                </option>
-              <?php endforeach; ?>
+            <select id="filter-cible-niveau" class="form-control select2" disabled style="width: 100%; background: #F1F5F9; color: #64748B; cursor: not-allowed;">
+              <option value="">-- Sélectionnez d'abord un cycle --</option>
             </select>
           </div>
         </div>
@@ -102,7 +92,7 @@ foreach ($filiereCyclesMap as $fc) {
                 <th style="padding: 12px 14px;">Filière / Spécialité</th>
                 <th style="padding: 12px 14px;">Niveau d'étude</th>
                 <th style="padding: 12px 14px; width: 100px;" class="text-center">Statut</th>
-                <th style="padding: 12px 14px; text-align: right; width: 120px;">Actions</th>
+                <th style="padding: 12px 5px; text-align: center; width: 50px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
