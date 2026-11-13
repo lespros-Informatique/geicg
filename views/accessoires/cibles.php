@@ -97,12 +97,11 @@ foreach ($filiereCyclesMap as $fc) {
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
                 <th style="padding: 12px 14px; width: 50px;">#</th>
-                <th style="padding: 12px 14px; width: 150px;">Code</th>
                 <th style="padding: 12px 14px;">Kit / Accessoire</th>
                 <th style="padding: 12px 14px;">Cycle d'étude</th>
                 <th style="padding: 12px 14px;">Filière / Spécialité</th>
                 <th style="padding: 12px 14px;">Niveau d'étude</th>
-                <th style="padding: 12px 14px; text-align: right; width: 160px;">Actions</th>
+                <th style="padding: 12px 14px; text-align: right; width: 120px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
