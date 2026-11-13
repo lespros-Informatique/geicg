@@ -160,8 +160,7 @@
             {
               data: null, width: '160px', orderable: false, render: function (d) {
                 var safeLibelle = $('<div>').text(d.libelle_accessoire || '').html();
-                return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</button>' +
-                  '<button type="button" class="btn btn-sm btn-danger btn-delete-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" style="background:#EF4444; color:#fff; border:none; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Supprimer du répertoire"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>';
+                return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-type" data-id="' + d.id_accessoire + '" data-libelle="' + safeLibelle + '" data-statut="' + (d.statut_accessoire || 'actif') + '" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Modifier</button>';
               }, className: 'text-end'
             }
           ],

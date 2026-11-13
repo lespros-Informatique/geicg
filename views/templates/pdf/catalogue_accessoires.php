@@ -201,8 +201,8 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
     <thead>
       <tr>
         <th style="width: 45px;">N°</th>
+        <th style="width: 150px;">Code</th>
         <th style="text-align: left; padding-left: 10px;">Désignation du Kit / Accessoire</th>
-        <th style="width: 180px;">Type de Filière</th>
       </tr>
     </thead>
     <tbody>
@@ -215,16 +215,14 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
       <?php else: ?>
         <?php foreach ($rows as $idx => $r):
           $rowClass = ($idx % 2 === 0) ? 'row-even' : 'row-odd';
-          $tf = $r['type_filiere_cible'] ?? 'TOUT';
-          $filiereText = ($tf === 'INDUSTRIELLE') ? 'Filière Industrielle' : (($tf === 'TERTIAIRE') ? 'Filière Tertiaire' : 'Toutes Filières');
         ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center text-bold" style="color: #64748B;"><?= $idx + 1 ?></td>
+            <td class="text-center">
+              <span class="badge-code"><?= htmlspecialchars($r['code_accessoire'] ?? '-') ?></span>
+            </td>
             <td class="text-left text-bold" style="color: #0F172A; padding-left: 10px;">
               <?= htmlspecialchars($r['libelle_accessoire'] ?? '-') ?>
-            </td>
-            <td class="text-center">
-              <?= htmlspecialchars($filiereText) ?>
             </td>
           </tr>
         <?php endforeach; ?>
