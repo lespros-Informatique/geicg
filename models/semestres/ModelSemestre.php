@@ -52,11 +52,11 @@ class ModelSemestre extends BaseModel
 
             $db = $this->getCon();
             $db->beginTransaction();
-            // Clôturer tout semestre précédemment active pour cette année
-            $stmtClose = $db->prepare("UPDATE " . TABLES::SEMESTRES . "` SET `statut_semestre` = 'cloture' WHERE `annee_code` = ? AND `statut_semestre` = 'actif'");
+            // Clôturer tout semestre précédemment actif pour cette année
+            $stmtClose = $db->prepare("UPDATE `" . TABLES::SEMESTRES . "` SET `statut_semestre` = '" . STATUTS::CLOTURE . "' WHERE `annee_code` = ? AND `statut_semestre` = '" . STATUTS::ACTIF . "'");
             $stmtClose->execute([$anneeCode]);
             // Activer le semestre demandé
-            $stmtAct = $db->prepare("UPDATE " . TABLES::SEMESTRES . "` SET `statut_semestre` = 'actif' WHERE `id_semestre` = ?");
+            $stmtAct = $db->prepare("UPDATE `" . TABLES::SEMESTRES . "` SET `statut_semestre` = '" . STATUTS::ACTIF . "' WHERE `id_semestre` = ?");
             $stmtAct->execute([$id]);
             $db->commit();
             return true;
@@ -80,8 +80,13 @@ class ModelSemestre extends BaseModel
         if (($current['statut_semestre'] ?? '') !== STATUTS::ACTIF) {
             return $this->setActiveSemester($id);
         } else {
-            $stmt = $this->getCon()->prepare("UPDATE " . TABLES::SEMESTRES . "` SET `statut_semestre` = 'cloture' WHERE `id_semestre` = ?");
-            return $stmt->execute([$id]);
+            try {
+                $stmt = $this->getCon()->prepare("UPDATE `" . TABLES::SEMESTRES . "` SET `statut_semestre` = '" . STATUTS::CLOTURE . "' WHERE `id_semestre` = ?");
+                return $stmt->execute([$id]);
+            } catch (Exception $e) {
+                error_log("ModelSemestre::toggleStatus error: " . $e->getMessage());
+                return false;
+            }
         }
     }
 
