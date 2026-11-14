@@ -153,13 +153,28 @@ class SemestreController extends BaseController
         if (empty($data['code_semestre'])) {
             $data['code_semestre'] = $this->validator->generateCode(TABLES::SEMESTRES, 'code_semestre', 'SEM-', 8);
         }
-        $data['statut_semestre'] = (!empty($data['statut_semestre']) && in_array($data['statut_semestre'], ['planifie', 'cloture'], true)) ? $data['statut_semestre'] : 'planifie';
+        $data['statut_semestre'] = (!empty($data['statut_semestre']) && in_array($data['statut_semestre'], ['planifie', 'actif', 'cloture'], true)) ? $data['statut_semestre'] : 'planifie';
+
+        if ($data['statut_semestre'] === 'actif') {
+            $actErr = '';
+            if (!$this->model->canActivate($data, $actErr)) {
+                $this->error($actErr);
+                return;
+            }
+        }
+
         $data['created_at_semestre'] = date('Y-m-d H:i:s');
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
         $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            if ($data['statut_semestre'] === 'actif') {
+                $created = $this->model->getByCode($data['code_semestre']);
+                if (!empty($created['id_semestre'])) {
+                    $this->model->setActiveSemester((int)$created['id_semestre']);
+                }
+            }
             $this->logAction(
                 AuditLogger::ACTION_CREATE,
                 'semestres',
@@ -216,6 +231,15 @@ class SemestreController extends BaseController
             return;
         }
 
+        if (($data['statut_semestre'] ?? '') === 'actif') {
+            $actErr = '';
+            $checkData = array_merge($current, $data);
+            if (!$this->model->canActivate($checkData, $actErr)) {
+                $this->error($actErr);
+                return;
+            }
+        }
+
         // Contrôle d'unicité par année académique (en excluant l'enregistrement en cours d'édition)
         if ($this->model->checkSemestreExists($libelle, $anneeCode, $id)) {
             $this->error("Le $libelle est déjà enregistré pour cette année académique.");
@@ -224,6 +248,9 @@ class SemestreController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            if (($data['statut_semestre'] ?? '') === 'actif') {
+                $this->model->setActiveSemester($id);
+            }
             $this->logAction(
                 AuditLogger::ACTION_UPDATE,
                 'semestres',

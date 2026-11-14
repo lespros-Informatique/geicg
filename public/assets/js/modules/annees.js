@@ -278,11 +278,11 @@ var configEl = document.getElementById('semestres-list-config');
         }
 
         var editBtn = isPlanifie ?
-          '<button type="button" class="btn btn-sm btn-secondary btn-edit-semestre" data-id="' + d.id_semestre + '" data-libelle="' + (d.libelle_semestre || '') + '" data-annee="' + (d.annee_code || '') + '" data-debut="' + (d.date_debut_semestre || '') + '" data-fin="' + (d.date_fin_semestre || '') + '" data-statut="' + (d.statut_semestre || 'planifie') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
-          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Seul un semestre en préparation (planifié) peut être édité"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
+          '<button type="button" class="btn btn-sm btn-secondary btn-edit-semestre" data-id="' + d.id_semestre + '" data-libelle="' + (d.libelle_semestre || '') + '" data-annee="' + (d.annee_code || '') + '" data-debut="' + (d.date_debut_semestre || '') + '" data-fin="' + (d.date_fin_semestre || '') + '" data-statut="' + (d.statut_semestre || 'planifie') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Éditer ce semestre"><i data-lucide="edit" style="width:14px;height:14px;"></i></button>' :
+          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Seul un semestre en préparation (planifié) peut être édité"><i data-lucide="edit" style="width:14px;height:14px;"></i></button>';
 
         return statusBtn + editBtn +
-               '<a href="' + racine + 'semestre/details/' + (d.editId || d.id_semestre) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
+               '<a href="' + racine + 'semestre/details/' + (d.editId || d.id_semestre) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="Détails du semestre"><i data-lucide="eye" style="width:14px;height:14px;"></i></a>';
       }, className: 'text-end' }
     ],
     language: { url: racine + 'json/datatables-i18n-fr-FR.json' },

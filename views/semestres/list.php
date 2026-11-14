@@ -109,9 +109,10 @@
         </label>
         <select name="statut_semestre" id="semestre_statut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 13.5px;">
           <option value="planifie">🔵 En préparation (Semestre Futur)</option>
+          <option value="actif">🟢 Actif (Semestre en cours)</option>
           <option value="cloture">⚪ Clôturé (Semestre Passé / Historique)</option>
         </select>
-        <small style="color: #64748B; font-size: 11.5px; margin-top: 4px; display: block;">L'activation du semestre s'effectue via le bouton « Activer » du tableau.</small>
+
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #F1F5F9; padding-top: 16px;">
