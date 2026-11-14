@@ -80,7 +80,7 @@ class ModelAnnee extends BaseModel
     }
 
     /**
-     * Vérifie si une année académique peut être clôturée / désactivée (date de fin arrivée)
+     * Vérifie si une année académique peut être clôturée (date de fin définie et tous les semestres clôturés)
      */
     public function canClose(array $annee, ?string &$errorMsg = null): bool
     {
@@ -88,6 +88,44 @@ class ModelAnnee extends BaseModel
         if (empty($dateFin)) {
             $errorMsg = "La date de fin de l'année académique n'est pas définie.";
             return false;
+        }
+
+        $codeAnnee = $annee['code_annee'] ?? '';
+        $libelle = $annee['libelle_annee'] ?? $codeAnnee;
+
+        if (!empty($codeAnnee)) {
+            try {
+                $stmt = $this->getCon()->prepare("
+                    SELECT libelle_semestre, statut_semestre
+                    FROM `" . TABLES::SEMESTRES . "`
+                    WHERE `annee_code` = ?
+                    ORDER BY id_semestre ASC
+                ");
+                $stmt->execute([$codeAnnee]);
+                $semestres = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                if (empty($semestres)) {
+                    $errorMsg = "Impossible de clôturer l'année académique {$libelle} : aucun semestre n'a été enregistré et clôturé pour cette année.";
+                    return false;
+                }
+
+                $nonClotures = [];
+                foreach ($semestres as $sem) {
+                    if (($sem['statut_semestre'] ?? '') !== STATUTS::CLOTURE) {
+                        $statutLabel = ($sem['statut_semestre'] ?? '') === STATUTS::ACTIF ? 'Actif' : 'En préparation';
+                        $nonClotures[] = ($sem['libelle_semestre'] ?? 'Semestre') . " ({$statutLabel})";
+                    }
+                }
+
+                if (!empty($nonClotures)) {
+                    $errorMsg = "Impossible de clôturer l'année académique {$libelle} : tous les semestres de cette année doivent être clôturés au préalable (" . implode(', ', $nonClotures) . ").";
+                    return false;
+                }
+            } catch (Exception $e) {
+                error_log("ModelAnnee::canClose error: " . $e->getMessage());
+                $errorMsg = "Erreur lors de la vérification des semestres de l'année académique.";
+                return false;
+            }
         }
 
         return true;
