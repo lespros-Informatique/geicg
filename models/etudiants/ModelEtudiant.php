@@ -421,16 +421,20 @@ class ModelEtudiant extends BaseModel
                         $nouveauTypeFiliere = strtoupper(trim((string)$stmtTypeFil->fetchColumn()));
                     }
 
-                    // 2. Kits éligibles pour la nouvelle classe
+                    // 2. Kits éligibles pour la nouvelle classe (selon filière, niveau, année académique et statut actif)
+                    $targetAnnee = !empty($anneeCode) ? $anneeCode : ($inscriptionRow['annee_code'] ?? '');
                     $sqlEligible = "
                         SELECT DISTINCT a.code_accessoire, a.libelle_accessoire
                         FROM " . TABLES::ACCESSOIRES . " a
-                        LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+                        INNER JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
                         WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
+                          AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
+                          " . (!empty($targetAnnee) ? "AND (anf.annee_code = ? OR anf.annee_code IS NULL)" : "") . "
                           AND (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE')" . (!empty($classeRow['filiere_code']) ? " OR anf.filiere_code = ?" : "") . ")
                           AND (anf.niveau_code IS NULL OR anf.niveau_code = '' OR anf.niveau_code = 'TOUT'" . (!empty($classeRow['niveau_code']) ? " OR anf.niveau_code = ?" : "") . ")
                     ";
                     $paramsEligible = [];
+                    if (!empty($targetAnnee)) $paramsEligible[] = $targetAnnee;
                     if (!empty($classeRow['filiere_code'])) $paramsEligible[] = $classeRow['filiere_code'];
                     if (!empty($classeRow['niveau_code'])) $paramsEligible[] = $classeRow['niveau_code'];
 

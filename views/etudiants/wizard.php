@@ -16,7 +16,7 @@ if (empty($activeAnneeCode)) {
     }
 }
 $classes = (new ModelClasse())->getClassesWithScolarite($activeAnneeCode, 'non_affecte');
-$accessoires = (new ModelAccessoire())->getAll();
+$accessoires = (new ModelAccessoire())->getActifs($activeAnneeCode);
 $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
 ?>
 
@@ -380,6 +380,7 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
                            data-type-filiere="<?= htmlspecialchars($kitTypeFiliere) ?>"
                            data-filiere-codes="<?= htmlspecialchars($filieresCodesCsv) ?>"
                            data-niveau="<?= htmlspecialchars($niveauCode) ?>"
+                           data-cibles-rules="<?= htmlspecialchars($acc['cibles_rules'] ?? '') ?>"
                            style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
                       <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer; margin-top: 2px; flex-shrink: 0;">
                       <div style="flex: 1;">

@@ -1228,29 +1228,34 @@
     $('.acc-checkbox-card').each(function() {
       var $card = $(this);
       var $chk = $card.find('.chk-accessoire');
-      var kitFiliere = ($card.attr('data-type-filiere') || 'TOUT').trim().toUpperCase();
-      var kitFiliereCodes = ($card.attr('data-filiere-codes') || '').trim();
-      var kitNiveau = ($card.attr('data-niveau') || '').trim();
+      var ciblesRulesRaw = ($card.attr('data-cibles-rules') || '').trim();
+      var isEligible = false;
 
-      // Règle d'attribution Option 1 :
-      // 1. Filière : 'TOUT', vide, ou même type de filière que la classe
-      var matchFiliere = (kitFiliere === 'TOUT' || kitFiliere === '' || (typeFiliere !== '' && kitFiliere === typeFiliere));
+      if (ciblesRulesRaw !== '') {
+        var rules = ciblesRulesRaw.split('|').map(function(s) { return s.trim(); }).filter(Boolean);
+        rules.forEach(function(rule) {
+          var parts = rule.split(':');
+          var rFil = (parts[0] || '').trim().toUpperCase();
+          var rNiv = (parts[1] || '').trim();
+          var filOk = (
+            rFil === '' ||
+            rFil === 'TOUT' ||
+            rFil === 'TOUTE_FILIERE' ||
+            rFil === 'TOUTE FILIERE' ||
+            (filiereCode !== '' && rFil === filiereCode.toUpperCase())
+          );
+          var nivOk = (
+            rNiv === '' ||
+            rNiv === 'TOUT' ||
+            (niveauCode !== '' && rNiv === niveauCode)
+          );
+          if (filOk && nivOk) {
+            isEligible = true;
+          }
+        });
+      }
 
-      // 1b. Filière spécifique (ex: GBAT) : vide, 'TOUT', 'TOUTE_FILIERE', ou code filière présent dans la liste des filières cibles de l'accessoire
-      var kitFiliereCodesList = kitFiliereCodes ? kitFiliereCodes.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
-      var matchFiliereSpec = (
-        kitFiliereCodesList.length === 0 ||
-        kitFiliereCodesList.indexOf('TOUT') !== -1 ||
-        kitFiliereCodesList.indexOf('TOUTE_FILIERE') !== -1 ||
-        kitFiliereCodesList.indexOf('TOUTE FILIERE') !== -1 ||
-        (filiereCode !== '' && kitFiliereCodesList.indexOf(filiereCode) !== -1)
-      );
-
-      // 2. Niveau : vide, 'TOUT', ou code niveau présent dans la liste des niveaux cibles de l'accessoire
-      var kitNiveauxList = kitNiveau ? kitNiveau.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
-      var matchNiveau = (kitNiveauxList.length === 0 || kitNiveauxList.indexOf('TOUT') !== -1 || (niveauCode !== '' && kitNiveauxList.indexOf(niveauCode) !== -1));
-
-      if (matchFiliere && matchFiliereSpec && matchNiveau) {
+      if (isEligible) {
         $card.show();
         if (shouldAutoCheck) {
           $chk.prop('checked', true);

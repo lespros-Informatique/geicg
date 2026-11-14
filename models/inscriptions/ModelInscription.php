@@ -762,6 +762,8 @@ class ModelInscription extends BaseModel
         $totalFraisAnnexes = $modelFraisAnnexe->getMontantByTypeFiliere($typeFiliere, $activeAnneeCode, $niveauCode, 'inscription');
         $fraisAnnexeDetails = $modelFraisAnnexe->getFraisAnnexeDetails($typeFiliere, $activeAnneeCode, $niveauCode, 'inscription');
 
+        $kitsEligibles = (new ModelAccessoire())->getEligibleKitsForClass($filiereCode, $niveauCode, $activeAnneeCode);
+
         return [
             'classe_code' => $classe['code_classe'],
             'libelle_classe' => $classe['libelle_classe'],
@@ -789,7 +791,8 @@ class ModelInscription extends BaseModel
             'categorie_frais_annexe' => $fraisAnnexeDetails['categorie_frais_annexe'] ?? 'inscription',
             'libelle_categorie_frais_annexe' => 'Inscription',
             'total_frais_inscription' => $fraisInscription + $totalFraisAnnexes,
-            'total_frais_inscription_formate' => number_format($fraisInscription + $totalFraisAnnexes, 0, ',', ' ') . ' FCFA'
+            'total_frais_inscription_formate' => number_format($fraisInscription + $totalFraisAnnexes, 0, ',', ' ') . ' FCFA',
+            'kits_eligibles' => $kitsEligibles
         ];
     }
 
@@ -911,6 +914,40 @@ class ModelInscription extends BaseModel
                 $userCode,
                 $etabCode
             ]);
+
+            // D. Attribution automatique des Kits / Accessoires configurés pour la classe et l'année académique
+            $kitsCodesToAssign = [];
+            if (!empty($data['accessoires']) && is_array($data['accessoires'])) {
+                $kitsCodesToAssign = array_values(array_filter(array_map('trim', $data['accessoires'])));
+            } else {
+                $stmtClKit = $db->prepare("SELECT filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
+                $stmtClKit->execute([$data['classe_code']]);
+                $clKitRow = $stmtClKit->fetch(PDO::FETCH_ASSOC);
+                if ($clKitRow) {
+                    $eligibleKits = (new ModelAccessoire())->getEligibleKitsForClass($clKitRow['filiere_code'] ?? null, $clKitRow['niveau_code'] ?? null, $anneeCode);
+                    $kitsCodesToAssign = array_column($eligibleKits, 'code_accessoire');
+                }
+            }
+
+            if (!empty($kitsCodesToAssign)) {
+                $stmtAcc = $db->prepare("
+                    INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                    (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+                    VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
+                ");
+                foreach ($kitsCodesToAssign as $accCode) {
+                    if (empty($accCode)) continue;
+                    $codeAccIns = $validator->generateCode(TABLES::ACCESSOIRE_INSCRIPTION, 'code_accessoire_inscription', 'ACI-', 8);
+                    $stmtAcc->execute([
+                        $codeAccIns,
+                        $codeInscription,
+                        $accCode,
+                        $anneeCode,
+                        $userCode,
+                        $etabCode
+                    ]);
+                }
+            }
 
             $db->commit();
             return ['success' => true, 'message' => "Dossier d'inscription créé avec succès pour l'étudiant $nomEtudiant $prenomEtudiant !"];
@@ -1083,6 +1120,43 @@ class ModelInscription extends BaseModel
         
         $filteredData = $this->filterData($data);
         if ($this->create($filteredData)) {
+            // Attribution automatique des Kits / Accessoires configurés pour la filière, le niveau et l'année de réinscription
+            try {
+                $kitsCodesToAssign = [];
+                if (!empty($data['accessoires']) && is_array($data['accessoires'])) {
+                    $kitsCodesToAssign = array_values(array_filter(array_map('trim', $data['accessoires'])));
+                } elseif ($cl) {
+                    $eligibleKits = (new ModelAccessoire())->getEligibleKitsForClass($cl['filiere_code'] ?? null, $cl['niveau_code'] ?? null, $anneeCode);
+                    $kitsCodesToAssign = array_column($eligibleKits, 'code_accessoire');
+                }
+
+                if (!empty($kitsCodesToAssign)) {
+                    $stmtChkAccIns = $db->prepare("SELECT id_accessoire_inscription FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE inscription_code = ? AND accessoire_code = ? LIMIT 1");
+                    $stmtInsAcc = $db->prepare("
+                        INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                        (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+                        VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
+                    ");
+                    foreach ($kitsCodesToAssign as $accCode) {
+                        if (empty($accCode)) continue;
+                        $stmtChkAccIns->execute([$codeInscription, $accCode]);
+                        if ($stmtChkAccIns->fetchColumn()) continue;
+
+                        $codeAccIns = $validator->generateCode(TABLES::ACCESSOIRE_INSCRIPTION, 'code_accessoire_inscription', 'ACI-', 8);
+                        $stmtInsAcc->execute([
+                            $codeAccIns,
+                            $codeInscription,
+                            $accCode,
+                            $anneeCode,
+                            $userCode,
+                            $etabCode
+                        ]);
+                    }
+                }
+            } catch (Exception $eKit) {
+                error_log("ModelInscription::processReinscription kits error: " . $eKit->getMessage());
+            }
+
             $stmtE = $db->prepare("SELECT nom_etudiant, prenom_etudiant, matricule_etudiant, telephone_etudiant FROM " . TABLES::ETUDIANTS . " WHERE code_etudiant = ? OR matricule_etudiant = ? LIMIT 1");
             $stmtE->execute([$data['etudiant_code'], $data['etudiant_code']]);
             $etuRow = $stmtE->fetch(PDO::FETCH_ASSOC);

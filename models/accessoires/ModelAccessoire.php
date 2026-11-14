@@ -70,6 +70,11 @@ class ModelAccessoire extends BaseModel
 
     public function getAll(?string $anneeCode = null): array
     {
+        $db = $this->getCon();
+        $anfAnneeClause = (!empty($anneeCode) && $anneeCode !== 'ALL')
+            ? " AND (anf.annee_code = " . $db->quote($anneeCode) . " OR anf.annee_code IS NULL)"
+            : "";
+
         $sql = "
             SELECT a.*,
                    COALESCE(
@@ -100,14 +105,14 @@ class ModelAccessoire extends BaseModel
                        ELSE 'TOUT'
                    END AS type_filiere_cible
             FROM " . TABLES::ACCESSOIRES . " a
-            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL){$anfAnneeClause}
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             GROUP BY a.id_accessoire
             ORDER BY a.id_accessoire DESC
         ";
         try {
-            $stmt = $this->getCon()->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute();
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             foreach ($rows as &$row) {
@@ -122,6 +127,53 @@ class ModelAccessoire extends BaseModel
             return $rows;
         } catch (Exception $e) {
             error_log("Get all accessoires: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getEligibleKitsForClass(?string $filiereCode, ?string $niveauCode, ?string $anneeCode = null): array
+    {
+        $db = $this->getCon();
+        try {
+            if (empty($anneeCode)) {
+                $anneeCode = $db->query("SELECT code_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1")->fetchColumn() ?: null;
+            }
+
+            $sql = "
+                SELECT DISTINCT a.code_accessoire, a.libelle_accessoire
+                FROM " . TABLES::ACCESSOIRES . " a
+                INNER JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+                WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
+                  AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
+            ";
+            $params = [];
+
+            if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+                $sql .= " AND (anf.annee_code = ? OR anf.annee_code IS NULL)";
+                $params[] = $anneeCode;
+            }
+
+            if (!empty($filiereCode)) {
+                $sql .= " AND (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR anf.filiere_code = ?)";
+                $params[] = $filiereCode;
+            } else {
+                $sql .= " AND (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE'))";
+            }
+
+            if (!empty($niveauCode)) {
+                $sql .= " AND (anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR anf.niveau_code = ?)";
+                $params[] = $niveauCode;
+            } else {
+                $sql .= " AND (anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT'))";
+            }
+
+            $sql .= " ORDER BY a.libelle_accessoire ASC";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getEligibleKitsForClass error: " . $e->getMessage());
             return [];
         }
     }
