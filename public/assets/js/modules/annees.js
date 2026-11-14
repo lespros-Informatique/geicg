@@ -255,8 +255,28 @@ var configEl = document.getElementById('semestres-list-config');
         if (type !== 'display') return d || '';
         return '<span style="color:#1E3A5F; font-weight:600;">' + (d || '<span style="color:#94A3B8; font-style:italic;">Non définie</span>') + '</span>';
       }},
-      { data: 'date_debut_semestre', defaultContent: '-' },
-      { data: 'date_fin_semestre', defaultContent: '-' },
+      {
+        data: 'date_debut_semestre',
+        defaultContent: '-',
+        render: function(d, type) {
+          if (type !== 'display') return d || '';
+          if (!d || d === '-') return '<span style="color:#94A3B8;">-</span>';
+          var p = String(d).split('-');
+          var formatted = p.length === 3 ? (p[2] + '-' + p[1] + '-' + p[0]) : d;
+          return '<span style="font-weight:700; color:#1E293B; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="calendar" style="width:14px;height:14px;color:#1E3A5F;"></i> ' + formatted + '</span>';
+        }
+      },
+      {
+        data: 'date_fin_semestre',
+        defaultContent: '-',
+        render: function(d, type) {
+          if (type !== 'display') return d || '';
+          if (!d || d === '-') return '<span style="color:#94A3B8;">-</span>';
+          var p = String(d).split('-');
+          var formatted = p.length === 3 ? (p[2] + '-' + p[1] + '-' + p[0]) : d;
+          return '<span style="font-weight:700; color:#1E293B; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="calendar" style="width:14px;height:14px;color:#1E3A5F;"></i> ' + formatted + '</span>';
+        }
+      },
       { data: 'statut_semestre', width: '130px', className: 'text-center', render: function(d, type, row) {
         if (d === 'actif') {
           return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Active en cours</span>';
