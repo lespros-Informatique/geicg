@@ -2120,6 +2120,21 @@
       }
     }
 
+    function updateSaveCibleButtonState() {
+      var hasKit = $('.chk-cible-acc:checked').length > 0;
+      var hasCycle = String($('#acc_cible_cycle').val() || '').trim() !== '';
+      var hasFiliere = !$('#acc_cible_filiere_code').is(':disabled') && String($('#acc_cible_filiere_code').val() || '').trim() !== '';
+      var hasNiveau = !$('#acc_cible_niveau_code').is(':disabled') && String($('#acc_cible_niveau_code').val() || '').trim() !== '';
+      var isValid = hasKit && hasCycle && hasFiliere && hasNiveau;
+
+      $('#btn-save-acc-cible')
+        .prop('disabled', !isValid)
+        .css({
+          opacity: isValid ? '1' : '0.5',
+          cursor: isValid ? 'pointer' : 'not-allowed'
+        });
+    }
+
     function disableFiliereAndNiveauSelects(msg) {
       var placeholder = msg || '-- Sélectionnez d\'abord un cycle --';
       $('#acc_cible_filiere_code')
@@ -2136,6 +2151,7 @@
         .css({ background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' });
 
       $('#acc_cible_filiere_empty, #acc_cible_niveau_empty').hide();
+      updateSaveCibleButtonState();
     }
 
     function populateNiveauxForSelectedFiliere(filiereCode, preselectNiveau) {
@@ -2154,7 +2170,7 @@
       }
 
       $selNiv.empty().append($('<option>', {
-        value: '',
+        value: 'TOUT',
         text: !isAllFilieres ? '-- Tous les niveaux de cette filière --' : '-- Tous les niveaux de ce cycle --'
       }));
 
@@ -2174,11 +2190,15 @@
         $('#acc_cible_niveau_empty').hide();
         if (preselectNiveau) {
           $selNiv.val(preselectNiveau);
+        } else {
+          $selNiv.val('TOUT');
         }
       } else {
+        $selNiv.empty().append($('<option>', { value: '', text: '-- Aucun niveau disponible --' }));
         $selNiv.prop('disabled', true).css({ background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' });
         $('#acc_cible_niveau_empty').show();
       }
+      updateSaveCibleButtonState();
     }
 
     function loadPivotByCycle(cycleCode, preselectFiliere, preselectNiveau) {
@@ -2223,12 +2243,14 @@
               $selFil.val('TOUTE_FILIERE');
             }
           } else {
+            $selFil.empty().append($('<option>', { value: '', text: '-- Aucune filière disponible --' }));
             $selFil.prop('disabled', true).css({ background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' });
             $('#acc_cible_filiere_empty').show();
           }
           refreshFiliereSelect2();
 
           populateNiveauxForSelectedFiliere($selFil.val(), preselectNiveau);
+          updateSaveCibleButtonState();
         },
         error: function () {
           disableFiliereAndNiveauSelects('-- Erreur de chargement --');
@@ -2236,12 +2258,16 @@
       });
     }
 
+    $(document).on('change', '.chk-cible-acc, #acc_cible_niveau_code', function () {
+      updateSaveCibleButtonState();
+    });
+
     $(document).on('change', '#acc_cible_cycle', function () {
-      loadPivotByCycle($(this).val(), 'TOUTE_FILIERE', '');
+      loadPivotByCycle($(this).val(), 'TOUTE_FILIERE', 'TOUT');
     });
 
     $(document).on('change', '#acc_cible_filiere_code', function () {
-      populateNiveauxForSelectedFiliere($(this).val(), '');
+      populateNiveauxForSelectedFiliere($(this).val(), 'TOUT');
     });
 
     $(document).on('click', '.btn-add-acc-cible', function () {
@@ -2250,6 +2276,7 @@
       $('#acc_cible_cycle').val('');
       $('.chk-cible-acc').prop('checked', false);
       loadPivotByCycle('', '', '');
+      updateSaveCibleButtonState();
       $('#modal-accessoire-cible-title').html('<i data-lucide="layers" style="width: 18px; height: 18px;"></i> Configurer Kits par Filière & Niveau');
       $('#modal-accessoire-cible').css('display', 'flex');
       if (window.lucide) lucide.createIcons();
@@ -2272,8 +2299,9 @@
       loadPivotByCycle(
         cycleCode,
         (filiereCode && filiereCode !== 'TOUT' && filiereCode !== 'TOUTE_FILIERE') ? filiereCode : 'TOUTE_FILIERE',
-        niveau && niveau !== 'TOUT' ? niveau : ''
+        niveau && niveau !== 'TOUT' ? niveau : 'TOUT'
       );
+      updateSaveCibleButtonState();
 
       $('#modal-accessoire-cible-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la Configuration du Kit');
       $('#modal-accessoire-cible').css('display', 'flex');

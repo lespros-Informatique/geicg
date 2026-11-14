@@ -188,7 +188,7 @@ foreach ($filiereCyclesMap as $fc) {
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #E2E8F0;">
         <button type="button" class="btn btn-secondary btn-close-modal-acc-cible" style="font-weight: 700; border-radius: 8px; padding: 9px 18px;">Annuler</button>
-        <button type="submit" id="btn-save-acc-cible" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 22px; display: inline-flex; align-items: center; gap: 6px;">
+        <button type="submit" id="btn-save-acc-cible" disabled class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 22px; display: inline-flex; align-items: center; gap: 6px; opacity: 0.5; cursor: not-allowed;">
           <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
         </button>
       </div>
