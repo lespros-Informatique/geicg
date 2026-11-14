@@ -143,25 +143,27 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
 
   <table class="meta-box-table">
     <tr>
-      <td style="width: 50%;"><span class="meta-label">Total Configurations Actives :</span> <span class="meta-value"><?= count($rows ?? []) ?></span></td>
-      <td style="width: 50%; text-align: right;"><span class="meta-label">Date d'édition :</span> <span class="meta-value"><?= date('d/m/Y à H:i') ?></span></td>
+      <td style="width: 34%;"><span class="meta-label">Année Académique :</span> <span class="meta-value"><?= htmlspecialchars($annee_libelle ?? 'Toutes les années') ?></span></td>
+      <td style="width: 33%; text-align: center;"><span class="meta-label">Total Configurations Actives :</span> <span class="meta-value"><?= count($rows ?? []) ?></span></td>
+      <td style="width: 33%; text-align: right;"><span class="meta-label">Date d'édition :</span> <span class="meta-value"><?= date('d/m/Y à H:i') ?></span></td>
     </tr>
   </table>
 
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 40px;">N°</th>
+        <th style="width: 35px;">N°</th>
         <th style="text-align: left; padding-left: 10px;">Kit / Accessoire</th>
-        <th style="width: 110px;">Cycle d'étude</th>
+        <th style="width: 90px;">Cycle d'étude</th>
         <th style="text-align: left; padding-left: 10px;">Filière / Spécialité</th>
-        <th style="width: 130px;">Niveau d'étude</th>
+        <th style="width: 110px;">Niveau d'étude</th>
+        <th style="width: 95px;">Année Académique</th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($rows)): ?>
         <tr>
-          <td colspan="5" class="text-center" style="padding: 18px; color: #64748B; font-style: italic;">
+          <td colspan="6" class="text-center" style="padding: 18px; color: #64748B; font-style: italic;">
             Aucune configuration de kit active enregistrée.
           </td>
         </tr>
@@ -178,6 +180,7 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
           }
           $cycleLabel = !empty($r['slug_cycle']) ? $r['slug_cycle'] : 'Tous cycles';
           $niveauLabel = !empty($r['libelle_niveau']) ? $r['libelle_niveau'] : 'Tous niveaux';
+          $anneeRowLabel = !empty($r['libelle_annee']) ? $r['libelle_annee'] : '-';
         ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center text-bold" style="color: #64748B;"><?= $idx + 1 ?></td>
@@ -192,6 +195,9 @@ $piedPage = $etablissement['texte_pied_page'] ?? $nomEtab;
             </td>
             <td class="text-center">
               <?= htmlspecialchars($niveauLabel) ?>
+            </td>
+            <td class="text-center">
+              <?= htmlspecialchars($anneeRowLabel) ?>
             </td>
           </tr>
         <?php endforeach; ?>

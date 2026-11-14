@@ -24,6 +24,8 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->getActiveAnneeCode();
         $cycles = array_values(array_filter((new ModelCycle())->getAll(), fn($c) => ($c['statut_cycle'] ?? 'actif') === 'actif'));
         $niveaux = (new ModelNiveau())->getActifs();
         $filieres = array_values(array_filter((new ModelFiliere())->getAll(), fn($f) => ($f['statut_filiere'] ?? 'actif') === 'actif'));
@@ -31,6 +33,8 @@ class AccessoireController extends BaseController
         $accessoires = $this->model->getAll();
 
         $this->loadView('../views/accessoires/cibles.php', [
+            'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode,
             'cycles' => $cycles,
             'niveaux' => $niveaux,
             'filieres' => $filieres,
@@ -81,14 +85,23 @@ class AccessoireController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : null;
         $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
         $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
 
-        $allRows = $this->model->getCiblesList(null, $niveauCode, $filiereCode, $cycleCode);
+        $allRows = $this->model->getCiblesList(null, $niveauCode, $filiereCode, $cycleCode, $anneeCode);
         $rows = array_values(array_filter($allRows, function ($r) {
             return ($r['statut_accessoire_niveau_filiere'] ?? 'actif') === 'actif' && ($r['statut_accessoire'] ?? 'actif') === 'actif';
         }));
+
+        $anneeLibelle = 'Toutes les années';
+        if ($anneeCode && $anneeCode !== 'ALL') {
+            $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+            if ($anneeObj && !empty($anneeObj['libelle_annee'])) {
+                $anneeLibelle = $anneeObj['libelle_annee'];
+            }
+        }
 
         $etablissement = $this->getEtablissementConfig();
         $currentUser = Auth::user();
@@ -97,6 +110,7 @@ class AccessoireController extends BaseController
         $data = [
             'etablissement' => $etablissement,
             'editeur_nom' => $editeurNom,
+            'annee_libelle' => $anneeLibelle,
             'rows' => $rows
         ];
 
@@ -460,7 +474,8 @@ class AccessoireController extends BaseController
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
         $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
-        $items = $this->model->getCiblesList($typeFiliere, $niveauCode, $filiereCode, $cycleCode);
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : null;
+        $items = $this->model->getCiblesList($typeFiliere, $niveauCode, $filiereCode, $cycleCode, $anneeCode);
         $this->json(['data' => $items]);
     }
 
@@ -516,6 +531,7 @@ class AccessoireController extends BaseController
 
         $etabCode = $this->getActiveEtablissementCode();
         $userCode = Auth::code();
+        $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : $this->getActiveAnneeCode();
 
         $inserted = $this->model->saveCiblesBatch(
             $accessoireCodes,
@@ -525,10 +541,43 @@ class AccessoireController extends BaseController
             $etabCode,
             $userCode,
             $idCible > 0 ? $idCible : null,
-            $cycleCode
+            $cycleCode,
+            $anneeCode
         );
 
         $this->success($idCible > 0 ? 'Configuration modifiée avec succès !' : "Configuration enregistrée avec succès ({$inserted} liaison(s)) !");
+    }
+
+    public function reconduireCibles()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+
+        $sourceAnneeCode = trim($_POST['source_annee_code'] ?? '');
+        $targetAnneeCode = trim($_POST['target_annee_code'] ?? $this->getActiveAnneeCode());
+
+        if (empty($sourceAnneeCode) || empty($targetAnneeCode)) {
+            $this->error('Veuillez sélectionner l\'année source et l\'année cible.');
+            return;
+        }
+        if ($sourceAnneeCode === $targetAnneeCode) {
+            $this->error('L\'année source et l\'année cible doivent être différentes.');
+            return;
+        }
+
+        $copied = $this->model->reconduireCibles(
+            $sourceAnneeCode,
+            $targetAnneeCode,
+            $this->getActiveEtablissementCode(),
+            Auth::code()
+        );
+
+        if ($copied > 0) {
+            $this->success("{$copied} configuration(s) de kits reconduite(s) avec succès !");
+        } else {
+            $this->success("Aucune nouvelle configuration à reconduire (toutes les configurations existent déjà pour l'année cible ou l'année source ne contient aucune configuration active).");
+        }
     }
 
     public function deleteCible()

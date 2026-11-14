@@ -303,6 +303,7 @@ $route->addRoute('/accessoire/imprimerCiblesPdf', [$accessoireController, 'impri
 $route->addRoute('/accessoire/cibles', [$accessoireController, 'cibles']);
 $route->addRoute('/accessoire/apiCiblesList', [$accessoireController, 'apiCiblesList']);
 $route->addRoute('/accessoire/saveCible', [$accessoireController, 'saveCible']);
+$route->addRoute('/accessoire/reconduireCibles', [$accessoireController, 'reconduireCibles']);
 $route->addRoute('/accessoire/deleteCible', [$accessoireController, 'deleteCible']);
 $route->addRoute('/accessoire/changerCible', [$accessoireController, 'changerCible']);
 $route->addRoute('/accessoire/apiPivotByCycle', [$accessoireController, 'apiPivotByCycle']);

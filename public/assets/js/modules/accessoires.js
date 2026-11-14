@@ -1877,7 +1877,7 @@
 
     if (window.lucide) lucide.createIcons();
     if ($.fn.select2) {
-      $('#filter-cible-cycle, #filter-cible-filiere-code, #filter-cible-niveau').select2({ width: '100%' });
+      $('#filter-cible-annee, #filter-cible-cycle, #filter-cible-filiere-code, #filter-cible-niveau').select2({ width: '100%' });
       $('#acc_cible_filiere_code').select2({
         dropdownParent: $('#modal-accessoire-cible'),
         width: '100%'
@@ -1897,6 +1897,7 @@
         url: racine + 'accessoire/apiCiblesList',
         type: 'GET',
         data: function (d) {
+          d.annee_code = $('#filter-cible-annee').val() || 'ALL';
           d.cycle_code = $('#filter-cible-cycle').val();
           d.filiere_code = $('#filter-cible-filiere-code').val();
           d.niveau_code = $('#filter-cible-niveau').val();
@@ -1943,6 +1944,11 @@
           }
         },
         {
+          data: 'libelle_annee', render: function (d) {
+            return '<span style="font-weight:700; color:#1E3A5F; font-size:12.5px; background:#EFF6FF; padding:4px 10px; border-radius:6px; border:1px solid #BFDBFE; display:inline-block;">' + escapeHtml(d || '-') + '</span>';
+          }
+        },
+        {
           data: 'statut_accessoire_niveau_filiere', width: '100px', className: 'text-center', render: function (d, type, row) {
             var isActif = (!d || d === 'actif');
             var checkedAttr = isActif ? 'checked' : '';
@@ -1958,7 +1964,7 @@
         },
         {
           data: null, width: '120px', orderable: false, className: 'text-end', render: function (d) {
-            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" data-acc-code="' + escapeHtml(d.accessoire_code || '') + '" data-cycle-code="' + escapeHtml(d.cycle_code || '') + '" data-filiere-code="' + escapeHtml(d.filiere_code || '') + '" data-niveau="' + escapeHtml(d.niveau_code || '') + '" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Modifier cette configuration"><i data-lucide="edit" style="width:14px;height:14px;"></i></button>';
+            return '<button type="button" class="btn btn-sm btn-secondary btn-edit-acc-cible" data-id="' + d.id_accessoire_niveau_filiere + '" data-annee-code="' + escapeHtml(d.annee_code || '') + '" data-acc-code="' + escapeHtml(d.accessoire_code || '') + '" data-cycle-code="' + escapeHtml(d.cycle_code || '') + '" data-filiere-code="' + escapeHtml(d.filiere_code || '') + '" data-niveau="' + escapeHtml(d.niveau_code || '') + '" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Modifier cette configuration"><i data-lucide="edit" style="width:14px;height:14px;"></i></button>';
           }
         }
       ],
@@ -2089,6 +2095,10 @@
       });
     });
 
+    $('#filter-cible-annee').on('change', function () {
+      tableCibles.ajax.reload();
+    });
+
     $('#filter-cible-filiere-code').on('change', function () {
       populateFilterNiveauxForFiliere($(this).val());
       tableCibles.ajax.reload();
@@ -2101,9 +2111,11 @@
     $('#btn-print-cibles-pdf').on('click', function (e) {
       e.preventDefault();
       var params = [];
+      var annee = $('#filter-cible-annee').val();
       var cyc = $('#filter-cible-cycle').val();
       var fil = $('#filter-cible-filiere-code').val();
       var niv = $('#filter-cible-niveau').val();
+      if (annee) params.push('annee_code=' + encodeURIComponent(annee));
       if (cyc) params.push('cycle_code=' + encodeURIComponent(cyc));
       if (fil) params.push('filiere_code=' + encodeURIComponent(fil));
       if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
@@ -2121,11 +2133,12 @@
     }
 
     function updateSaveCibleButtonState() {
+      var hasAnnee = String($('#acc_cible_annee').val() || '').trim() !== '';
       var hasKit = $('.chk-cible-acc:checked').length > 0;
       var hasCycle = String($('#acc_cible_cycle').val() || '').trim() !== '';
       var hasFiliere = !$('#acc_cible_filiere_code').is(':disabled') && String($('#acc_cible_filiere_code').val() || '').trim() !== '';
       var hasNiveau = !$('#acc_cible_niveau_code').is(':disabled') && String($('#acc_cible_niveau_code').val() || '').trim() !== '';
-      var isValid = hasKit && hasCycle && hasFiliere && hasNiveau;
+      var isValid = hasAnnee && hasKit && hasCycle && hasFiliere && hasNiveau;
 
       $('#btn-save-acc-cible')
         .prop('disabled', !isValid)
@@ -2258,7 +2271,7 @@
       });
     }
 
-    $(document).on('change', '.chk-cible-acc, #acc_cible_niveau_code', function () {
+    $(document).on('change', '.chk-cible-acc, #acc_cible_niveau_code, #acc_cible_annee', function () {
       updateSaveCibleButtonState();
     });
 
@@ -2273,6 +2286,13 @@
     $(document).on('click', '.btn-add-acc-cible', function () {
       $('#form-accessoire-cible')[0].reset();
       $('#acc_cible_id').val('');
+      var filterAnnee = $('#filter-cible-annee').val();
+      var defaultAnnee = $('#filter-cible-annee').attr('data-default-annee') || '';
+      if (filterAnnee && filterAnnee !== 'ALL') {
+        $('#acc_cible_annee').val(filterAnnee);
+      } else if (defaultAnnee) {
+        $('#acc_cible_annee').val(defaultAnnee);
+      }
       $('#acc_cible_cycle').val('');
       $('.chk-cible-acc').prop('checked', false);
       loadPivotByCycle('', '', '');
@@ -2284,12 +2304,16 @@
 
     $(document).on('click', '.btn-edit-acc-cible', function () {
       var id = $(this).data('id');
+      var anneeCode = String($(this).attr('data-annee-code') || '').trim();
       var accCode = String($(this).attr('data-acc-code') || '').trim();
       var cycleCode = String($(this).attr('data-cycle-code') || '').trim();
       var filiereCode = String($(this).attr('data-filiere-code') || '').trim();
       var niveau = String($(this).attr('data-niveau') || '').trim();
 
       $('#acc_cible_id').val(id);
+      if (anneeCode) {
+        $('#acc_cible_annee').val(anneeCode);
+      }
       $('#acc_cible_cycle').val(cycleCode);
       $('.chk-cible-acc').prop('checked', false);
       if (accCode) {
@@ -2306,6 +2330,73 @@
       $('#modal-accessoire-cible-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la Configuration du Kit');
       $('#modal-accessoire-cible').css('display', 'flex');
       if (window.lucide) lucide.createIcons();
+    });
+
+    // Modal Reconduire d'une année
+    $(document).on('click', '.btn-open-reconduire-cibles', function () {
+      var filterAnnee = $('#filter-cible-annee').val();
+      var defaultAnnee = $('#filter-cible-annee').attr('data-default-annee') || '';
+      if (filterAnnee && filterAnnee !== 'ALL') {
+        $('#reconduire_target_annee').val(filterAnnee);
+      } else if (defaultAnnee) {
+        $('#reconduire_target_annee').val(defaultAnnee);
+      }
+      $('#reconduire_source_annee').val('');
+      $('#modal-reconduire-cibles').css('display', 'flex');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    $('.btn-close-modal-reconduire-cibles').on('click', function () {
+      $('#modal-reconduire-cibles').css('display', 'none');
+    });
+    $('#modal-reconduire-cibles').on('click', function (e) {
+      if ($(e.target).is('#modal-reconduire-cibles')) {
+        $(this).css('display', 'none');
+      }
+    });
+
+    $('#form-reconduire-cibles').on('submit', function (e) {
+      e.preventDefault();
+      var sourceAnnee = $('#reconduire_source_annee').val();
+      var targetAnnee = $('#reconduire_target_annee').val();
+      if (!sourceAnnee || !targetAnnee) {
+        if (window.toastr) toastr.warning('Veuillez sélectionner l\'année source et l\'année cible.');
+        return;
+      }
+      if (sourceAnnee === targetAnnee) {
+        if (window.toastr) toastr.warning('L\'année source et l\'année cible doivent être différentes.');
+        return;
+      }
+
+      var $btn = $('#btn-submit-reconduire-cibles');
+      $btn.prop('disabled', true).html('Reconduction en cours...');
+
+      $.ajax({
+        url: racine + 'accessoire/reconduireCibles',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: $(this).serialize(),
+        dataType: 'json',
+        success: function (res) {
+          $btn.prop('disabled', false).html('<i data-lucide="copy" style="width: 16px; height: 16px;"></i> Reconduire');
+          if (window.lucide) lucide.createIcons();
+          if (res.status === 1 || res.success) {
+            if (typeof showToast === 'function') showToast(res.message || 'Reconduction effectuée avec succès', 'success');
+            else if (window.toastr) toastr.success(res.message || 'Reconduction effectuée avec succès');
+            $('#modal-reconduire-cibles').css('display', 'none');
+            $('#filter-cible-annee').val(targetAnnee).trigger('change');
+          } else {
+            if (typeof showToast === 'function') showToast(res.message || 'Erreur lors de la reconduction', 'error');
+            else if (window.toastr) toastr.error(res.message || 'Erreur lors de la reconduction');
+          }
+        },
+        error: function () {
+          $btn.prop('disabled', false).html('<i data-lucide="copy" style="width: 16px; height: 16px;"></i> Reconduire');
+          if (window.lucide) lucide.createIcons();
+          if (typeof showToast === 'function') showToast('Erreur réseau ou serveur', 'error');
+          else if (window.toastr) toastr.error('Erreur réseau ou serveur');
+        }
+      });
     });
 
     $('.btn-close-modal-acc-cible').on('click', function () {

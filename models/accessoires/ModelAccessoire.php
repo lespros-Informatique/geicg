@@ -126,8 +126,19 @@ class ModelAccessoire extends BaseModel
         }
     }
 
-    public function getActifs(): array
+    public function getActifs(?string $anneeCode = null): array
     {
+        $db = $this->getCon();
+        if (empty($anneeCode)) {
+            try {
+                $anneeCode = $db->query("SELECT code_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1")->fetchColumn() ?: null;
+            } catch (Exception $e) {
+                $anneeCode = null;
+            }
+        }
+
+        $anfAnneeClause = !empty($anneeCode) ? " AND (anf.annee_code = " . $db->quote($anneeCode) . " OR anf.annee_code IS NULL)" : "";
+
         $sql = "
             SELECT a.*,
                    COALESCE(
@@ -158,7 +169,7 @@ class ModelAccessoire extends BaseModel
                        ELSE 'TOUT'
                    END AS type_filiere_cible
             FROM " . TABLES::ACCESSOIRES . " a
-            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL){$anfAnneeClause}
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
@@ -166,7 +177,7 @@ class ModelAccessoire extends BaseModel
             ORDER BY a.libelle_accessoire ASC
         ";
         try {
-            $stmt = $this->getCon()->prepare($sql);
+            $stmt = $db->prepare($sql);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
@@ -298,11 +309,15 @@ class ModelAccessoire extends BaseModel
         }
     }
 
-    public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null, ?string $filiereCode = null, ?string $cycleCode = null): array
+    public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null, ?string $filiereCode = null, ?string $cycleCode = null, ?string $anneeCode = null): array
     {
         $where = [];
         $params = [];
 
+        if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+            $where[] = "(anf.annee_code = ? OR anf.annee_code IS NULL)";
+            $params[] = $anneeCode;
+        }
         if (!empty($cycleCode)) {
             $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR anf.filiere_code IN (SELECT fc.filiere_code FROM " . TABLES::FILIERE_CYCLES . " fc WHERE fc.cycle_code = ?))";
             $where[] = "(anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR anf.niveau_code IN (SELECT fc2.niveau_code FROM " . TABLES::FILIERE_CYCLES . " fc2 WHERE fc2.cycle_code = ?))";
@@ -333,6 +348,7 @@ class ModelAccessoire extends BaseModel
                    a.id_accessoire,
                    a.libelle_accessoire,
                    a.statut_accessoire,
+                   an.libelle_annee,
                    f.libelle_filiere,
                    f.slug_filiere,
                    COALESCE(f.type_filiere, 'TOUT') AS type_filiere_cible,
@@ -350,6 +366,7 @@ class ModelAccessoire extends BaseModel
                     LIMIT 1) AS slug_cycle
             FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf
             JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = anf.accessoire_code
+            LEFT JOIN " . TABLES::ANNEES . " an ON an.code_annee = anf.annee_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
             {$whereSql}
@@ -365,7 +382,7 @@ class ModelAccessoire extends BaseModel
         }
     }
 
-    public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $filiereCodes, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null, ?string $cycleCode = null): int
+    public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $filiereCodes, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null, ?string $cycleCode = null, ?string $anneeCode = null): int
     {
         $db = $this->getCon();
         $cleanAccs = array_values(array_unique(array_filter(array_map('trim', $accessoireCodes))));
@@ -378,6 +395,14 @@ class ModelAccessoire extends BaseModel
 
         if (empty($cleanAccs)) {
             return 0;
+        }
+
+        if (empty($anneeCode)) {
+            try {
+                $anneeCode = $db->query("SELECT code_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1")->fetchColumn() ?: null;
+            } catch (Exception $e) {
+                $anneeCode = null;
+            }
         }
 
         try {
@@ -398,13 +423,14 @@ class ModelAccessoire extends BaseModel
                 WHERE accessoire_code = ?
                   AND ((filiere_code IS NULL AND ? IS NULL) OR filiere_code = ?)
                   AND ((niveau_code IS NULL AND ? IS NULL) OR niveau_code = ?)
+                  AND ((annee_code IS NULL AND ? IS NULL) OR annee_code = ?)
                 LIMIT 1
             ");
 
             $stmtIns = $db->prepare("
                 INSERT INTO " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
-                (code_accessoire_niveau_filiere, accessoire_code, filiere_code, niveau_code, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
-                VALUES (?, ?, ?, ?, ?, ?, NOW())
+                (code_accessoire_niveau_filiere, accessoire_code, filiere_code, niveau_code, annee_code, statut_accessoire_niveau_filiere, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
+                VALUES (?, ?, ?, ?, ?, 'actif', ?, ?, NOW())
             ");
 
             // Si "Toutes les filières de ce cycle" est sélectionné, on enregistre une seule ligne par niveau avec 'TOUTE_FILIERE'
@@ -415,12 +441,12 @@ class ModelAccessoire extends BaseModel
             foreach ($cleanAccs as $accCode) {
                 foreach ($targetFilieres as $filCode) {
                     foreach ($targetNiveaux as $nivCode) {
-                        $stmtCheck->execute([$accCode, $filCode, $filCode, $nivCode, $nivCode]);
+                        $stmtCheck->execute([$accCode, $filCode, $filCode, $nivCode, $nivCode, $anneeCode, $anneeCode]);
                         if ($stmtCheck->fetchColumn()) {
                             continue;
                         }
                         $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
-                        if ($stmtIns->execute([$codeAnf, $accCode, $filCode, $nivCode, $etabCode, $userCode])) {
+                        if ($stmtIns->execute([$codeAnf, $accCode, $filCode, $nivCode, $anneeCode, $etabCode, $userCode])) {
                             $inserted++;
                         }
                     }
@@ -430,6 +456,61 @@ class ModelAccessoire extends BaseModel
             return $inserted;
         } catch (Exception $e) {
             error_log("ModelAccessoire::saveCiblesBatch error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function reconduireCibles(string $sourceAnneeCode, string $targetAnneeCode, ?string $etabCode = null, ?string $userCode = null): int
+    {
+        if (empty($sourceAnneeCode) || empty($targetAnneeCode) || $sourceAnneeCode === $targetAnneeCode) {
+            return 0;
+        }
+        try {
+            $db = $this->getCon();
+            $stmtSrc = $db->prepare("
+                SELECT accessoire_code, filiere_code, niveau_code
+                FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                WHERE annee_code = ? AND statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "'
+            ");
+            $stmtSrc->execute([$sourceAnneeCode]);
+            $rows = $stmtSrc->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if (empty($rows)) {
+                return 0;
+            }
+
+            $stmtCheck = $db->prepare("
+                SELECT id_accessoire_niveau_filiere
+                FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                WHERE accessoire_code = ?
+                  AND ((filiere_code IS NULL AND ? IS NULL) OR filiere_code = ?)
+                  AND ((niveau_code IS NULL AND ? IS NULL) OR niveau_code = ?)
+                  AND annee_code = ?
+                LIMIT 1
+            ");
+
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                (code_accessoire_niveau_filiere, accessoire_code, filiere_code, niveau_code, annee_code, statut_accessoire_niveau_filiere, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
+                VALUES (?, ?, ?, ?, ?, 'actif', ?, ?, NOW())
+            ");
+
+            $copied = 0;
+            foreach ($rows as $r) {
+                $accCode = $r['accessoire_code'];
+                $filCode = $r['filiere_code'];
+                $nivCode = $r['niveau_code'];
+                $stmtCheck->execute([$accCode, $filCode, $filCode, $nivCode, $nivCode, $targetAnneeCode]);
+                if ($stmtCheck->fetchColumn()) {
+                    continue;
+                }
+                $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                if ($stmtIns->execute([$codeAnf, $accCode, $filCode, $nivCode, $targetAnneeCode, $etabCode, $userCode])) {
+                    $copied++;
+                }
+            }
+            return $copied;
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::reconduireCibles error: " . $e->getMessage());
             return 0;
         }
     }
