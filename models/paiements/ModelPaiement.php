@@ -1527,15 +1527,18 @@ class ModelPaiement extends BaseModel
         $fraisAnnexesVerse = 0;
         $numVersement = 1;
         $numVersementScolarite = 0;
+        $numVersementFA = 0;
         $count = 0;
         $countScolarite = 0;
+        $countFA = 0;
 
         foreach ($allPaiements as $pItem) {
             $count++;
             $m = (float)$pItem['montant_paiement'];
-            $isFA = (($pItem['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($pItem['categorie_paiement'] ?? '')) === 'frais_annexes');
+            $isFA = (($pItem['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($pItem['categorie_paiement'] ?? '')) === 'frais_annexes' || stripos($pItem['type_paiement'] ?? '', 'annexe') !== false);
             if ($isFA) {
                 $fraisAnnexesVerse += $m;
+                $countFA++;
             } else {
                 $scolariteVerse += $m;
                 $countScolarite++;
@@ -1544,11 +1547,13 @@ class ModelPaiement extends BaseModel
             if ((int)$pItem['id_paiement'] === (int)$pRow['id_paiement'] || $pItem['code_paiement'] === $pRow['code_paiement']) {
                 $numVersement = $count;
                 $numVersementScolarite = $isFA ? 0 : $countScolarite;
+                $numVersementFA = $isFA ? $countFA : 0;
+                break;
             }
         }
 
         $montantOp = (float)$pRow['montant_paiement'];
-        $isFAOp = (($pRow['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($pRow['categorie_paiement'] ?? '')) === 'frais_annexes');
+        $isFAOp = (($pRow['tranche_code'] ?? '') === 'FRAIS_ANNEXES' || strtolower(trim($pRow['categorie_paiement'] ?? '')) === 'frais_annexes' || stripos($pRow['type_paiement'] ?? '', 'annexe') !== false);
 
         $scolariteTotPayer = (float)($pRow['montant_scolarite_inscription'] ?? 0);
         $scolariteTotVerse = $scolariteVerse;
@@ -1560,6 +1565,26 @@ class ModelPaiement extends BaseModel
         $totalPayer = $scolariteTotPayer;
         $totalVerse = $scolariteVerse;
         $totalRestePayer = $scolariteReste;
+
+        // Calcul dynamique et étanche des Frais Annexes (Règle 4)
+        $fraisAnnexesTotPayer = 0.0;
+        $libelleFraisAnnexe = 'Frais Annexes Obligatoires';
+        $anneeCodeFA = !empty($pRow['inscription_annee_code']) ? $pRow['inscription_annee_code'] : ($pRow['annee_code'] ?? '');
+        $typeFiliereFA = strtoupper($pRow['type_filiere'] ?? 'TOUT');
+        $niveauCodeFA = $pRow['niveau_code'] ?? '';
+        if (file_exists(__DIR__ . '/../frais_annexes/ModelFraisAnnexe.php')) {
+            require_once __DIR__ . '/../frais_annexes/ModelFraisAnnexe.php';
+            $modelFA = new ModelFraisAnnexe();
+            $faDetails = $modelFA->getFraisAnnexeDetails($typeFiliereFA, $anneeCodeFA, $niveauCodeFA);
+            if ($faDetails) {
+                $fraisAnnexesTotPayer = (float)($faDetails['montant_frais_annexe'] ?? 0);
+                if (!empty($faDetails['libelle_frais_annexe'])) {
+                    $libelleFraisAnnexe = $faDetails['libelle_frais_annexe'];
+                }
+            }
+        }
+        $fraisAnnexesTotVerse = $fraisAnnexesVerse;
+        $fraisAnnexesReste = max(0, $fraisAnnexesTotPayer - $fraisAnnexesTotVerse);
 
         $nomComplet = trim(strtoupper($pRow['nom_etudiant'] ?? '') . ' ' . ($pRow['prenom_etudiant'] ?? ''));
         $caissierNom = trim(($pRow['prenom_caissier'] ?? '') . ' ' . ($pRow['nom_caissier'] ?? ''));
@@ -1591,6 +1616,7 @@ class ModelPaiement extends BaseModel
             : ($pRow['libelle_classe'] ?? '-');
 
         return [
+            'is_frais_annexes' => $isFAOp,
             'annee_libelle' => $pRow['libelle_annee'] ?? '',
             'annee_universitaire' => $pRow['libelle_annee'] ?? '',
             'code_paiement' => $numRecuCode,
@@ -1600,9 +1626,15 @@ class ModelPaiement extends BaseModel
             'matricule_etudiant' => !empty($pRow['matricule_etudiant']) ? $pRow['matricule_etudiant'] : ($pRow['code_etudiant'] ?? '-'),
             'matricule' => !empty($pRow['matricule_etudiant']) ? $pRow['matricule_etudiant'] : ($pRow['code_etudiant'] ?? '-'),
             'filiere_niveau' => $filiereNiveau,
+            'libelle_classe' => $pRow['libelle_classe'] ?? '-',
+            'type_filiere' => $typeFiliereFA,
             'nom_prenom_etudiant' => $nomComplet,
             'nom_prenoms' => $nomComplet,
             'type_operation' => strtoupper($isFAOp ? 'FRAIS ANNEXES' : ($pRow['libelle_tranche'] ?? ($pRow['type_paiement'] ?? 'SCOLARITÉ'))),
+            'libelle_frais_annexe' => $libelleFraisAnnexe,
+            'mode_paiement' => $pRow['mode_paiement'] ?? 'espece',
+            'reference_paiement' => $pRow['reference_paiement'] ?? '',
+            'observations' => $pRow['observations'] ?? '',
             'statut_affectation' => (($pRow['affectation_etat'] ?? '') === 'affecte' || ($pRow['affectation_etat'] ?? '') === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
             'statut_etudiant' => (($pRow['affectation_etat'] ?? '') === 'affecte' || ($pRow['affectation_etat'] ?? '') === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
             'montant_operation' => $montantOp,
@@ -1620,6 +1652,11 @@ class ModelPaiement extends BaseModel
             'scolarite_tot_payer' => $scolariteTotPayer,
             'scolarite_tot_verse' => $scolariteTotVerse,
             'scolarite_reste' => $scolariteReste,
+            'frais_annexes_op_du_jour' => $isFAOp ? $montantOp : 0,
+            'frais_annexes_total_payer' => $fraisAnnexesTotPayer,
+            'frais_annexes_total_verse' => $fraisAnnexesTotVerse,
+            'frais_annexes_reste_payer' => $fraisAnnexesReste,
+            'date_prochain_paiement_fa' => ($fraisAnnexesReste <= 0) ? 'SOLDÉ' : date('d/m/Y', strtotime('+30 days', strtotime($pRow['date_paiement'] ?? 'now'))),
             'versement_op_du_jour' => $versementOpJour,
             'total_op_du_jour' => $totalOpJour,
             'total_payer' => $totalPayer,
@@ -1635,8 +1672,9 @@ class ModelPaiement extends BaseModel
             'date_impression' => date('d/m/Y H:i:s'),
             'ref_caiss' => $refCaiss,
             'code_barre_val' => $refCaiss,
-            'num_versement' => $numVersement,
-            'num_versement_scolarite' => $numVersementScolarite
+            'num_versement' => $isFAOp ? ($numVersementFA > 0 ? $numVersementFA : 1) : ($numVersementScolarite > 0 ? $numVersementScolarite : $numVersement),
+            'num_versement_scolarite' => $numVersementScolarite,
+            'num_versement_fa' => $numVersementFA > 0 ? $numVersementFA : 1
         ];
     }
 

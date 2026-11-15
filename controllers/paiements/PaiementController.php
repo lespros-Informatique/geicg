@@ -451,7 +451,9 @@ class PaiementController extends BaseController
         // Conforme à la règle 9 : injection des configurations institutionnelles
         $data['etablissement'] = $this->getEtablissementConfig();
 
-        $templateName = 'recu_versement.php';
+        // Conforme à la règle 4 : séparation stricte entre Reçu de Scolarité et Reçu de Frais Annexes
+        $isFraisAnnexes = !empty($data['is_frais_annexes']);
+        $templateName = $isFraisAnnexes ? 'recu_frais_annexes.php' : 'recu_versement.php';
         $html = PdfService::renderTemplate($templateName, $data);
 
         if (isset($_GET['html'])) {
@@ -460,18 +462,19 @@ class PaiementController extends BaseController
         }
 
         $numRecuCode = $data['numero_recu'] ?? 'REC';
+        $docTypeLabel = $isFraisAnnexes ? 'reçu de frais annexes' : 'reçu de versement de scolarité';
         $this->logAction(
             AuditLogger::ACTION_PRINT,
-            'paiements',
+            $isFraisAnnexes ? 'caisse_annexe' : 'paiements',
             $numRecuCode,
-            "Impression du reçu de versement N° {$numRecuCode}",
-            ['numero_recu' => $numRecuCode, 'id' => $id]
+            "Impression du {$docTypeLabel} N° {$numRecuCode}",
+            ['numero_recu' => $numRecuCode, 'id' => $id, 'categorie' => $isFraisAnnexes ? 'FRAIS_ANNEXES' : 'SCOLARITE']
         );
-        $filename = 'Recu_Versement_' . $numRecuCode . '.pdf';
+        $filename = ($isFraisAnnexes ? 'Recu_Frais_Annexes_' : 'Recu_Versement_') . $numRecuCode . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
             'format' => 'A4',
-            'title' => 'Reçu de Versement N° ' . $numRecuCode,
+            'title' => ($isFraisAnnexes ? 'Reçu Frais Annexes N° ' : 'Reçu de Versement N° ') . $numRecuCode,
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
