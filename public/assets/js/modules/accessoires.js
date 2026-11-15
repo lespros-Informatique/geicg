@@ -951,9 +951,28 @@
     });
 
     function openStudentKitModal(d) {
+      var totalRetires = parseInt(d.total_retires, 10) || 0;
+      var totalKits = parseInt(d.total_kits, 10) || 0;
+      var pourcentage = parseInt(d.pourcentage, 10) || 0;
+
       $('#modal-kit-student-name').text(d.nom_complet);
       $('#modal-kit-student-info').text('Matricule : ' + (d.matricule_etudiant || '-') + ' | Classe : ' + (d.libelle_classe || '-'));
-      $('#modal-kit-completion-text').text(d.total_retires + ' / ' + d.total_kits + ' Kits remis (' + d.pourcentage + '%)');
+      $('#modal-kit-completion-text').text(totalRetires + ' / ' + totalKits + ' Kits remis (' + pourcentage + '%)');
+      $('#modal-kit-progress-bar').css({
+        width: Math.min(100, Math.max(0, pourcentage)) + '%',
+        background: (pourcentage >= 100 && totalKits > 0) ? '#16A34A' : '#EA580C'
+      });
+
+      var $btnToutValider = $('#btn-tout-valider-kit-modal');
+      if (totalKits > 0 && totalRetires >= totalKits) {
+        $btnToutValider.prop('disabled', true)
+          .css({ background: '#DCFCE7', color: '#15803D', border: '1px solid #BBF7D0', cursor: 'default' })
+          .html('<i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i> Tout est Remis');
+      } else {
+        $btnToutValider.prop('disabled', totalKits === 0)
+          .css({ background: '#15803D', color: '#FFFFFF', border: 'none', cursor: totalKits === 0 ? 'not-allowed' : 'pointer' })
+          .html('<i data-lucide="check-check" style="width: 16px; height: 16px;"></i> Tout Marquer Remis');
+      }
 
       var html = '';
       var items = d.items || [];
@@ -962,25 +981,38 @@
           var isRetire = (item.etat_retrait === 'retire');
           var borderCol = isRetire ? '#16A34A' : '#EA580C';
           var bgCol = isRetire ? '#F0FDF4' : '#FFF7ED';
+          var iconBg = isRetire ? '#DCFCE7' : '#FFEDD5';
+          var iconCol = isRetire ? '#15803D' : '#EA580C';
+          var statusIcon = isRetire ? 'check-circle-2' : 'clock';
           var btnClass = isRetire ? 'btn-outline-secondary' : 'btn-success';
+          var btnStyle = isRetire
+            ? 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; white-space: nowrap; cursor: pointer;'
+            : 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #15803D; color: #FFFFFF; border: none; white-space: nowrap; cursor: pointer;';
           var btnText = isRetire ? 'Annuler la remise' : 'Marquer comme Remis';
           var iconName = isRetire ? 'rotate-ccw' : 'check';
-          var dateText = item.date_retrait_formatee ? ('<span style="font-size: 11px; font-weight: 600; color: #15803D; margin-left: 6px;">(Remis le ' + item.date_retrait_formatee + ')</span>') : '<span style="font-size: 11px; font-weight: 600; color: #EA580C; margin-left: 6px;">(En attente de retrait)</span>';
+          var dateText = item.date_retrait_formatee
+            ? ('<span style="display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; color: #15803D; background: #DCFCE7; padding: 2px 8px; border-radius: 999px; margin-left: 8px;">Remis le ' + escapeHtml(item.date_retrait_formatee) + '</span>')
+            : '<span style="display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; color: #EA580C; background: #FFEDD5; padding: 2px 8px; border-radius: 999px; margin-left: 8px;">En attente de retrait</span>';
 
-          html += '<div style="background: ' + bgCol + '; border-left: 5px solid ' + borderCol + '; padding: 14px 18px; border-radius: 12px; border-top: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">' +
-            '<div>' +
-            '<div style="font-weight: 800; color: #0F172A; font-size: 14px;">' + escapeHtml(item.libelle_accessoire) + dateText + '</div>' +
-            '<div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Fourniture souscrite d\'inscription</div>' +
+          html += '<div style="width: 100%; box-sizing: border-box; background: ' + bgCol + '; border-left: 5px solid ' + borderCol + '; padding: 12px 16px; border-radius: 12px; border-top: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0; display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 14px;">' +
+            '<div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">' +
+              '<div style="width: 36px; height: 36px; border-radius: 10px; background: ' + iconBg + '; color: ' + iconCol + '; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">' +
+                '<i data-lucide="' + statusIcon + '" style="width: 18px; height: 18px;"></i>' +
+              '</div>' +
+              '<div style="min-width: 0; flex: 1;">' +
+                '<div style="font-weight: 800; color: #0F172A; font-size: 14px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">' + escapeHtml(item.libelle_accessoire) + dateText + '</div>' +
+                '<div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Fourniture souscrite d\'inscription</div>' +
+              '</div>' +
             '</div>' +
-            '<div>' +
-            '<button type="button" class="btn btn-sm ' + btnClass + ' btn-toggle-item-modal" data-id="' + item.id_accessoire_inscription + '" style="font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px;">' +
-            '<i data-lucide="' + iconName + '" style="width: 15px; height: 15px;"></i> ' + btnText +
-            '</button>' +
+            '<div style="flex-shrink: 0;">' +
+              '<button type="button" class="btn btn-sm ' + btnClass + ' btn-toggle-item-modal" data-id="' + item.id_accessoire_inscription + '" style="' + btnStyle + '">' +
+                '<i data-lucide="' + iconName + '" style="width: 15px; height: 15px;"></i> ' + btnText +
+              '</button>' +
             '</div>' +
-            '</div>';
+          '</div>';
         });
       } else {
-        html = '<div class="alert alert-info text-center" style="border-radius: 10px;">Aucun article souscrit pour cet élève.</div>';
+        html = '<div class="alert alert-info text-center" style="border-radius: 10px; width: 100%; margin: 0;">Aucun article souscrit pour cet élève.</div>';
       }
 
       $('#modal-kit-items-list').html(html);
@@ -1051,9 +1083,18 @@
             var msgSuccess = res.message || 'Tous les kits ont été validés avec succès.';
             if (typeof showToast === 'function') showToast(msgSuccess, 'success');
             else if (window.toastr) toastr.success(msgSuccess);
-            table.ajax.reload(null, false);
+            table.ajax.reload(function () {
+              if ($('#modal-emargement-student').is(':visible') && currentStudentData) {
+                var updatedData = table.rows().data().toArray().find(function (r) {
+                  return r.code_inscription === inscrCode;
+                });
+                if (updatedData) {
+                  currentStudentData = updatedData;
+                  openStudentKitModal(updatedData);
+                }
+              }
+            }, false);
             refreshKpis();
-            $('#modal-emargement-student').hide();
           } else {
             var msgErr = res.message || 'Erreur lors de la validation.';
             if (typeof showToast === 'function') showToast(msgErr, 'error');

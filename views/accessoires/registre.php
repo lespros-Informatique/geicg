@@ -149,47 +149,50 @@
   <div style="background: #FFFFFF; border-radius: 16px; width: 100%; max-width: 780px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; animation: slideDown 0.2s ease-out;">
     
     <!-- En-tête modal -->
-    <div style="background: #15803D; color: #FFFFFF; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="background: #15803D; color: #FFFFFF; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
           <i data-lucide="package-check" style="width: 22px; height: 22px; color: #FFFFFF;"></i>
         </div>
         <div>
-          <h3 id="modal-kit-student-name" style="font-size: 16px; font-weight: 800; margin: 0; color: #FFFFFF;">Remise des Fournitures</h3>
-          <div id="modal-kit-student-info" style="font-size: 12px; color: #DCFCE7; margin-top: 2px;">Matricule / Classe</div>
+          <h3 id="modal-kit-student-name" style="font-size: 16px; font-weight: 800; margin: 0; color: #FFFFFF; letter-spacing: 0.2px;">Remise des Fournitures</h3>
+          <div id="modal-kit-student-info" style="font-size: 12.5px; color: #DCFCE7; margin-top: 2px; font-weight: 500;">Matricule / Classe</div>
         </div>
       </div>
-      <button type="button" class="btn-close-modal-kit" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+      <button type="button" class="btn-close-modal-kit" style="background: rgba(255,255,255,0.12); border: none; color: #FFFFFF; width: 32px; height: 32px; border-radius: 8px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">&times;</button>
     </div>
 
     <!-- Corps du modal (Scrollable) -->
-    <div style="padding: 24px; background: #F8FAFC; overflow-y: auto; flex: 1;">
+    <div style="padding: 20px 24px; background: #F8FAFC; overflow-y: auto; flex: 1;">
       
       <!-- Banner de Statut Global & Actions Rapides -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding: 14px 18px; background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-        <div>
-          <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Statut des Remises</span>
-          <div style="font-size: 16px; font-weight: 800; color: #0F172A;" id="modal-kit-completion-text">0 / 0 Kits remis</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; padding: 14px 18px; background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(15,23,42,0.04);">
+        <div style="min-width: 200px; flex: 1;">
+          <span style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; display: block;">Statut des Remises</span>
+          <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;" id="modal-kit-completion-text">0 / 0 Kits remis</div>
+          <div style="width: 100%; max-width: 240px; height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-top: 6px;">
+            <div id="modal-kit-progress-bar" style="width: 0%; height: 100%; background: #16A34A; border-radius: 999px; transition: width 0.25s ease;"></div>
+          </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <button type="button" id="btn-tout-valider-kit-modal" class="btn btn-sm btn-success" style="font-weight: 700; border-radius: 8px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: #15803D; border: none;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="button" id="btn-tout-valider-kit-modal" class="btn btn-sm btn-success" style="font-weight: 700; border-radius: 8px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: #15803D; border: none; color: #FFFFFF; white-space: nowrap;">
             <i data-lucide="check-check" style="width: 16px; height: 16px;"></i> Tout Marquer Remis
           </button>
-          <button type="button" id="btn-print-bon-modal" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+          <button type="button" id="btn-print-bon-modal" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap;">
             <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer Bon de Remise
           </button>
         </div>
       </div>
 
       <!-- Liste dynamique des fournitures -->
-      <div id="modal-kit-items-list" style="display: flex; flex-direction: column; gap: 12px;">
+      <div id="modal-kit-items-list" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
         <!-- Rempli dynamiquement en JS -->
       </div>
 
     </div>
 
     <!-- Pied de modal -->
-    <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 16px 24px; display: flex; justify-content: flex-end;">
+    <div style="background: #FFFFFF; border-top: 1px solid #E2E8F0; padding: 14px 24px; display: flex; justify-content: flex-end; flex-shrink: 0;">
       <button type="button" class="btn btn-secondary btn-close-modal-kit" style="font-weight: 700; border-radius: 8px; padding: 9px 22px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
         Fermer
       </button>
