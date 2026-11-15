@@ -373,15 +373,6 @@ class ModelEnseignant extends BaseModel
             return null;
         }
 
-        $fkErrRole = ForeignKeyValidator::validate($db, TABLES::USER_ROLES, [
-            'user_code' => $codeUser,
-            'role_code' => ROLES::ENSEIGNANT
-        ]);
-        if ($fkErrRole !== null) {
-            $errorMsg = $fkErrRole;
-            return null;
-        }
-
         $fkErrEns = ForeignKeyValidator::validate($db, TABLES::ENSEIGNANTS, [
             'etablissement_code' => $etabCode
         ]);
@@ -409,6 +400,16 @@ class ModelEnseignant extends BaseModel
                 $hashedPassword,
                 $etabCode
             ]);
+
+            $fkErrRole = ForeignKeyValidator::validate($db, TABLES::USER_ROLES, [
+                'user_code' => $codeUser,
+                'role_code' => ROLES::ENSEIGNANT
+            ]);
+            if ($fkErrRole !== null) {
+                $db->rollBack();
+                $errorMsg = $fkErrRole;
+                return null;
+            }
 
             $stmtRole = $db->prepare("
                 INSERT INTO " . TABLES::USER_ROLES . " (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
