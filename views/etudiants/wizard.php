@@ -15,7 +15,11 @@ if (empty($activeAnneeCode)) {
         $activeAnneeCode = $annees[0]['code_annee'];
     }
 }
-$classes = (new ModelClasse())->getClassesWithScolarite($activeAnneeCode, 'non_affecte');
+$modelClasse = new ModelClasse();
+$classes = $modelClasse->getClassesWithScolarite($activeAnneeCode, 'non_affecte');
+$diagClassesScol = $modelClasse->getDiagnosticsAnneeScolarite($activeAnneeCode, 'non_affecte');
+$totalClassesAnneeInit = (int)($diagClassesScol['total_classes_annee'] ?? 0);
+$totalScolaritesAnneeInit = (int)($diagClassesScol['total_scolarites_annee'] ?? 0);
 $accessoires = (new ModelAccessoire())->getActifs($activeAnneeCode);
 $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
 ?>
@@ -241,12 +245,26 @@ $pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
                       </option>
                     <?php endforeach; ?>
                   <?php else: ?>
-                    <option value="">-- Aucune classe avec scolarité enregistrée pour cette année --</option>
+                    <?php if ($totalClassesAnneeInit === 0): ?>
+                      <option value="">-- Aucune classe enregistrée pour cette année académique --</option>
+                    <?php elseif ($totalScolaritesAnneeInit === 0): ?>
+                      <option value="">-- Aucune scolarité enregistrée pour cette année académique --</option>
+                    <?php else: ?>
+                      <option value="">-- Aucune scolarité enregistrée pour le régime Non Affecté --</option>
+                    <?php endif; ?>
                   <?php endif; ?>
                 </select>
                 <div id="wiz_classe_empty_msg" style="<?= empty($classes) ? '' : 'display: none;' ?> margin-top: 8px; font-size: 12.5px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: 8px; line-height: 1.4;">
                   <i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline-block; vertical-align: middle; margin-right: 6px; color: #D97706;"></i>
-                  <span>Aucune classe n'a été créée pour l'année académique sélectionnée. Veuillez créer les classes dans le module Structure Académique &gt; Classes pour associer les tarifs de scolarité enregistrés.</span>
+                  <span>
+                    <?php if ($totalClassesAnneeInit === 0): ?>
+                      Aucune classe n'est enregistrée pour l'année académique sélectionnée. Veuillez d'abord créer ou reconduire les classes dans le module <strong>Structure Académique &gt; Classes</strong>.
+                    <?php elseif ($totalScolaritesAnneeInit === 0): ?>
+                      Des classes existent pour cette année académique, mais <strong>aucun tarif de scolarité n'est encore enregistré</strong>. Veuillez configurer les grilles tarifaires dans le module <strong>Finance &gt; Scolarités</strong>.
+                    <?php else: ?>
+                      Des classes existent pour cette année académique, mais <strong>aucun tarif de scolarité actif n'est enregistré</strong> pour le régime <strong>Non Affecté</strong>. Veuillez configurer la scolarité dans le module <strong>Finance &gt; Scolarités</strong>.
+                    <?php endif; ?>
+                  </span>
                 </div>
               </div>
 

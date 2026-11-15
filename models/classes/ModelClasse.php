@@ -76,6 +76,45 @@ class ModelClasse extends BaseModel
     }
 
     /**
+     * Retourne les compteurs de diagnostic pour distinguer :
+     * - l'absence de classes créées pour l'année académique (total_classes_annee === 0)
+     * - l'absence de scolarité enregistrée pour l'année ou le régime (total_scolarites_annee / total_scolarites_regime === 0)
+     */
+    public function getDiagnosticsAnneeScolarite(string $anneeCode, ?string $affectationEtat = null): array
+    {
+        if (empty($anneeCode)) {
+            return [
+                'total_classes_annee' => 0,
+                'total_scolarites_annee' => 0,
+                'total_scolarites_regime' => 0,
+            ];
+        }
+
+        $db = $this->getCon();
+
+        $stmtCls = $db->prepare("SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ?");
+        $stmtCls->execute([$anneeCode]);
+        $totalClassesAnnee = (int)$stmtCls->fetchColumn();
+
+        $stmtScolAnnee = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND annee_code = ?");
+        $stmtScolAnnee->execute([$anneeCode]);
+        $totalScolaritesAnnee = (int)$stmtScolAnnee->fetchColumn();
+
+        $totalScolaritesRegime = $totalScolaritesAnnee;
+        if (!empty($affectationEtat)) {
+            $stmtScolRegime = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND annee_code = ? AND affectation_etat = ?");
+            $stmtScolRegime->execute([$anneeCode, $affectationEtat]);
+            $totalScolaritesRegime = (int)$stmtScolRegime->fetchColumn();
+        }
+
+        return [
+            'total_classes_annee' => $totalClassesAnnee,
+            'total_scolarites_annee' => $totalScolaritesAnnee,
+            'total_scolarites_regime' => $totalScolaritesRegime,
+        ];
+    }
+
+    /**
      * Reconduit toutes les classes actives d'une année source vers une année de destination.
      */
     public function reconduireClassesAnnee(string $anneeSourceCode, string $anneeCibleCode, ?string $etabCode = null, ?string $userCode = null): array

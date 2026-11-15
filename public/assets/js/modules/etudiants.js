@@ -1011,6 +1011,13 @@
     if (window.lucide) lucide.createIcons();
   }
 
+  var wizardDiagnostics = {
+    totalClassesAnnee: null,
+    totalScolaritesAnnee: null,
+    totalScolaritesRegime: null,
+    availableClassesCount: 0
+  };
+
   function validateStep(step) {
     if (step === 1) {
       var nom = ($('#wiz_nom').val() || '').trim();
@@ -1028,11 +1035,21 @@
       var montant = Number($('#wiz_montant_scolarite').val() || 0);
 
       if (!classe) {
-        showToast('Veuillez sélectionner la classe d\'affectation.', 'warning', 'Champs requis');
+        if (wizardDiagnostics.totalClassesAnnee === 0) {
+          showToast('Aucune classe n\'est enregistrée pour l\'année académique sélectionnée. Veuillez d\'abord créer les classes dans le module Structure Académique > Classes.', 'warning', 'Aucune classe enregistrée');
+        } else if (wizardDiagnostics.availableClassesCount === 0) {
+          if (wizardDiagnostics.totalScolaritesAnnee === 0) {
+            showToast('Des classes existent pour cette année académique, mais aucun tarif de scolarité n\'est encore enregistré. Veuillez configurer les tarifs dans le module Finance > Scolarités.', 'warning', 'Scolarité non enregistrée');
+          } else {
+            showToast('Aucun tarif de scolarité actif n\'est enregistré pour le régime "' + regimeName + '" sur cette année académique. Veuillez configurer la scolarité dans le module Finance > Scolarités.', 'warning', 'Scolarité non enregistrée');
+          }
+        } else {
+          showToast('Veuillez sélectionner la classe d\'affectation de l\'étudiant.', 'warning', 'Classe requise');
+        }
         return false;
       }
       if (montant <= 0) {
-        showToast('Attention : Aucun tarif de scolarité actif n\'est enregistré pour le régime "' + regimeName + '" sur cette classe. Veuillez configurer le tarif dans le module Scolarité.', 'warning', 'Tarif manquant');
+        showToast('Aucun tarif de scolarité actif n\'est enregistré pour la classe sélectionnée sous le régime "' + regimeName + '". Veuillez configurer le tarif dans le module Finance > Scolarités.', 'warning', 'Scolarité non enregistrée');
         return false;
       }
     }
@@ -1342,9 +1359,10 @@
     saveFormData();
   });
 
-  function showRegimeWarningNotice(regimeName) {
-    var msg = "Aucune classe n'a été créée pour l'année académique sélectionnée pour le régime <strong>" + escapeHtml(regimeName) + "</strong>. Veuillez ajouter les classes dans le module Classes.";
-    
+  function showRegimeWarningNotice(customMessageHtml) {
+    var msg = customMessageHtml || '';
+    if (!msg) return;
+
     if ($('#wiz_regime_notice_banner').length === 0) {
       var html = '<div id="wiz_regime_notice_banner" style="margin-top: 12px; font-size: 13px; color: #B45309; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 12px 16px; border-radius: 8px; line-height: 1.4; display: flex; align-items: center; gap: 10px;">' +
         '<i data-lucide="alert-triangle" style="width: 18px; height: 18px; flex-shrink: 0; color: #D97706;"></i>' +
@@ -1375,6 +1393,7 @@
       $classeSelect.html('<option value="">-- Sélectionnez d\'abord une année académique --</option>');
       if ($classeSelect.data('select2')) $classeSelect.trigger('change.select2');
       if ($emptyMsg.length) $emptyMsg.hide();
+      hideRegimeWarningNotice();
       return;
     }
 
@@ -1391,6 +1410,15 @@
       success: function(res) {
         var optionsHtml = '';
         var classes = (res && res.data) ? res.data : [];
+        var totalClassesAnnee = (res && typeof res.total_classes_annee !== 'undefined') ? Number(res.total_classes_annee) : classes.length;
+        var totalScolaritesAnnee = (res && typeof res.total_scolarites_annee !== 'undefined') ? Number(res.total_scolarites_annee) : classes.length;
+        var totalScolaritesRegime = (res && typeof res.total_scolarites_regime !== 'undefined') ? Number(res.total_scolarites_regime) : classes.length;
+
+        wizardDiagnostics.totalClassesAnnee = totalClassesAnnee;
+        wizardDiagnostics.totalScolaritesAnnee = totalScolaritesAnnee;
+        wizardDiagnostics.totalScolaritesRegime = totalScolaritesRegime;
+        wizardDiagnostics.availableClassesCount = classes.length;
+
         var valFound = false;
 
         if (classes.length > 0) {
@@ -1405,13 +1433,35 @@
           hideRegimeWarningNotice();
         } else {
           var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
-          optionsHtml += '<option value="">-- Aucune classe disponible pour le régime ' + escapeHtml(regimeName) + ' --</option>';
-          if ($emptyMsg.length) {
-            $emptyMsg.find('span').html('Aucune classe n\'a été créée pour le régime <strong>' + escapeHtml(regimeName) + '</strong> pour l\'année académique sélectionnée. Veuillez ajouter les classes dans le module Classes.');
-            $emptyMsg.slideDown(200);
-            if (window.lucide) lucide.createIcons();
+
+          if (totalClassesAnnee === 0) {
+            // Cas 1 : Aucune classe n'est enregistrée pour cette année académique
+            optionsHtml += '<option value="">-- Aucune classe enregistrée pour cette année académique --</option>';
+            if ($emptyMsg.length) {
+              $emptyMsg.find('span').html('Aucune classe n\'est enregistrée pour l\'année académique sélectionnée. Veuillez d\'abord créer ou reconduire les classes dans le module <strong>Structure Académique &gt; Classes</strong>.');
+              $emptyMsg.slideDown(200);
+              if (window.lucide) lucide.createIcons();
+            }
+            hideRegimeWarningNotice();
+          } else if (totalScolaritesAnnee === 0) {
+            // Cas 2 : Des classes existent pour cette année, mais aucun tarif de scolarité n'est enregistré sur l'année
+            optionsHtml += '<option value="">-- Aucune scolarité enregistrée pour cette année académique --</option>';
+            if ($emptyMsg.length) {
+              $emptyMsg.find('span').html('Des classes existent pour cette année académique, mais <strong>aucun tarif de scolarité n\'est encore enregistré</strong>. Veuillez configurer les grilles tarifaires dans le module <strong>Finance &gt; Scolarités</strong>.');
+              $emptyMsg.slideDown(200);
+              if (window.lucide) lucide.createIcons();
+            }
+            showRegimeWarningNotice('Aucun tarif de scolarité n\'est enregistré pour l\'année académique sélectionnée. Veuillez paramétrer les scolarités dans le module <strong>Finance &gt; Scolarités</strong>.');
+          } else {
+            // Cas 3 : Des classes existent, mais aucun tarif de scolarité actif n'est enregistré pour ce régime (ou ces classes)
+            optionsHtml += '<option value="">-- Aucune scolarité enregistrée pour le régime ' + escapeHtml(regimeName) + ' --</option>';
+            if ($emptyMsg.length) {
+              $emptyMsg.find('span').html('Des classes existent pour cette année académique, mais <strong>aucun tarif de scolarité actif n\'est enregistré</strong> pour le régime <strong>' + escapeHtml(regimeName) + '</strong>. Veuillez configurer la scolarité dans le module <strong>Finance &gt; Scolarités</strong>.');
+              $emptyMsg.slideDown(200);
+              if (window.lucide) lucide.createIcons();
+            }
+            showRegimeWarningNotice('Aucun tarif de scolarité actif n\'est enregistré pour le régime <strong>' + escapeHtml(regimeName) + '</strong> sur cette année académique. Veuillez configurer la grille tarifaire dans le module <strong>Finance &gt; Scolarités</strong>.');
           }
-          showRegimeWarningNotice(regimeName);
         }
 
         $classeSelect.html(optionsHtml);
@@ -1449,7 +1499,9 @@
       $('#wiz_frais_annexes_title_text').text('-');
       $('#wiz_frais_annexes_details_desc').text('-');
       updateNetScolarite();
-      hideRegimeWarningNotice();
+      if (wizardDiagnostics.availableClassesCount > 0) {
+        hideRegimeWarningNotice();
+      }
       return;
     }
 
@@ -1589,14 +1641,14 @@
             $('#wiz_montant_scolarite').val(0);
             updateNetScolarite();
             var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
-            showRegimeWarningNotice(regimeName);
+            showRegimeWarningNotice('Aucun tarif de scolarité actif n\'est enregistré pour la classe sélectionnée sous le régime <strong>' + escapeHtml(regimeName) + '</strong>. Veuillez configurer ce tarif dans le module <strong>Finance &gt; Scolarités</strong>.');
           }
         } else {
           $('#wiz-class-tuition-box').slideUp(200);
           $('#wiz_montant_scolarite').val(0);
           updateNetScolarite();
           var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
-          showRegimeWarningNotice(regimeName);
+          showRegimeWarningNotice('Aucun tarif de scolarité actif n\'est enregistré pour la classe sélectionnée sous le régime <strong>' + escapeHtml(regimeName) + '</strong>. Veuillez configurer ce tarif dans le module <strong>Finance &gt; Scolarités</strong>.');
         }
       },
       error: function(err) {
@@ -1605,7 +1657,7 @@
         $('#wiz_montant_scolarite').val(0);
         updateNetScolarite();
         var regimeName = (affectationEtat === 'affecte') ? "Affecté (de l'État)" : "Non Affecté (Privé)";
-        showRegimeWarningNotice(regimeName);
+        showRegimeWarningNotice('Aucun tarif de scolarité actif n\'est enregistré pour la classe sélectionnée sous le régime <strong>' + escapeHtml(regimeName) + '</strong>. Veuillez configurer ce tarif dans le module <strong>Finance &gt; Scolarités</strong>.');
       }
     });
   }

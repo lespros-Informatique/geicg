@@ -285,12 +285,17 @@ class ClasseController extends BaseController
         }
 
         $classes = $this->model->getClassesWithScolarite($anneeCode, $affectationEtat);
+        $diagnostics = $this->model->getDiagnosticsAnneeScolarite($anneeCode, $affectationEtat);
 
         $this->json([
             'status' => 1,
             'data' => $classes,
             'annee_code' => $anneeCode,
-            'total' => count($classes)
+            'affectation_etat' => $affectationEtat,
+            'total' => count($classes),
+            'total_classes_annee' => $diagnostics['total_classes_annee'],
+            'total_scolarites_annee' => $diagnostics['total_scolarites_annee'],
+            'total_scolarites_regime' => $diagnostics['total_scolarites_regime']
         ]);
     }
 
