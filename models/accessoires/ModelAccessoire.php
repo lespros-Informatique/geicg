@@ -823,7 +823,9 @@ class ModelAccessoire extends BaseModel
         // Détermination du code paiement officiel (JAMAIS le code d'inscription)
         $codePaiementFinal = $dernierCodePaiementFrais ?: $dernierCodePaiementAutre;
         if (empty($codePaiementFinal)) {
-            require_once __DIR__ . '/../../core/Validator.php';
+            if (!class_exists('Validator')) {
+                require_once __DIR__ . '/../Validator.php';
+            }
             $validator = new Validator();
             $codePaiementFinal = $validator->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'REC-FA-', 6);
         }
