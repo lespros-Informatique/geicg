@@ -281,8 +281,8 @@ class EtudiantController extends BaseController
             return;
         }
 
-        $userCode = Auth::user()['code_user'] ?? Session::get('user_code') ?? null;
-        $etabCode = $this->getEtablissementCode();
+        $userCode = Auth::code() ?? (Auth::user()['code_user'] ?? Session::get('user_code') ?? null);
+        $etabCode = $this->getActiveEtablissementCode();
 
         $res = $this->model->changerClasseInscription(
             $codeInscription,

@@ -103,6 +103,14 @@ abstract class BaseController
     }
 
     /**
+     * Alias de rétrocompatibilité pour getActiveEtablissementCode()
+     */
+    protected function getEtablissementCode(): string
+    {
+        return $this->getActiveEtablissementCode();
+    }
+
+    /**
      * Récupère la ligne complète de l'année active
      */
     protected function getActiveAnnee(): array
