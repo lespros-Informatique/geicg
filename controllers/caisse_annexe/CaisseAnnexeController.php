@@ -311,7 +311,11 @@ class CaisseAnnexeController extends BaseController
                 $stmtFind->execute([$codePaiement]);
                 $newId = (int)($stmtFind->fetchColumn() ?: 0);
             }
-            $encryptedId = $newId > 0 ? $this->validator->crypter($newId) : $this->validator->crypter($codePaiement);
+            if ($newId <= 0) {
+                $this->error($this->model->getLastError() ?: "Erreur lors de l'enregistrement du règlement des frais annexes.");
+                return;
+            }
+            $encryptedId = $this->validator->crypter($newId);
             $encryptedInscrId = $this->validator->crypter($inscription['id_inscription'] ?? $codeInscription);
 
             Session::set('last_paiement_id', $newId);

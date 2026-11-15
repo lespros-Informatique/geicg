@@ -304,7 +304,7 @@ class ForeignKeyValidator
      */
     private static function checkKeyExistence(PDO $pdo, string $fkCol, string $val, ?string $customLabel = null): ?string
     {
-        if ($fkCol === 'tranche_code' && $val === 'SCOLARITE_GLOBALE') {
+        if ($fkCol === 'tranche_code' && in_array($val, ['SCOLARITE_GLOBALE', 'FRAIS_ANNEXES'], true)) {
             return null;
         }
 
