@@ -990,6 +990,26 @@
           return new Intl.NumberFormat('fr-FR').format(Math.round(amount || 0)) + ' FCFA';
         }
 
+        function notifyCompta(message, type, title) {
+          type = type || 'info';
+          if (typeof showToast === 'function') {
+            showToast(message, type, title || null);
+          } else if (window.toastr && typeof window.toastr[type] === 'function') {
+            window.toastr[type](message, title || '');
+          } else if (window.Swal) {
+            Swal.fire({
+              icon: type === 'error' ? 'error' : (type === 'warning' ? 'warning' : (type === 'success' ? 'success' : 'info')),
+              title: title || (type === 'error' ? 'Attention' : (type === 'warning' ? 'Avertissement' : 'Notification')),
+              text: message,
+              confirmButtonColor: '#1E3A5F'
+            });
+          }
+        }
+
+        function notifyCaisseFermeeCompta() {
+          notifyCompta("La caisse du jour est actuellement fermée. Veuillez d'abord ouvrir une session de caisse.", 'warning', 'Caisse Fermée');
+        }
+
         function initDataTableCompta() {
           if ($.fn.DataTable.isDataTable('#table-comptabilite-etudiants')) {
             $('#table-comptabilite-etudiants').DataTable().destroy();
@@ -1070,7 +1090,7 @@
                       '<i data-lucide="credit-card" style="width: 15px; height: 15px;"></i>' +
                       '</button>';
                   } else if (canRecord && !isCaisseOuverte) {
-                    btnEncaisse = '<button type="button" onclick="alert(\'La caisse du jour est actuellement fermée. Veuillez d\\\'abord ouvrir une session de caisse.\')" ' +
+                    btnEncaisse = '<button type="button" onclick="notifyCaisseFermeeCompta()" ' +
                       'class="btn btn-sm btn-secondary" ' +
                       'style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 800; opacity: 0.6; display: inline-flex; align-items: center; justify-content: center;" ' +
                       'title="Caisse du jour fermée">' +
@@ -1284,12 +1304,12 @@
                 if (elModal) elModal.style.display = 'flex';
                 if (window.lucide) { lucide.createIcons(); }
               } else {
-                alert(res.message || "Impossible de charger les données financières de cet étudiant.");
+                notifyCompta(res.message || "Impossible de charger les données financières de cet étudiant.", 'error');
               }
             })
             .catch(function (err) {
               console.error("Erreur résumé financier :", err);
-              alert("Une erreur de communication est survenue.");
+              notifyCompta("Une erreur de communication est survenue.", 'error');
             });
         }
 
@@ -1391,12 +1411,12 @@
                 var elInputsSec = document.getElementById('encaisse-payment-inputs-section');
                 if (elInputsSec) elInputsSec.style.display = 'block';
               } else {
-                alert(res.message || "Erreur de chargement des données de l'étudiant.");
+                notifyCompta(res.message || "Erreur de chargement des données de l'étudiant.", 'error');
               }
             })
             .catch(function (err) {
               console.error("Erreur encaissement étudiant :", err);
-              alert("Une erreur de communication est survenue.");
+              notifyCompta("Une erreur de communication est survenue.", 'error');
             });
         }
 
@@ -1432,8 +1452,17 @@
           if (btnSubmit) { btnSubmit.disabled = true; }
 
           var formData = new FormData(form);
+          var metaCsrf = document.querySelector('meta[name="csrf-token"]');
+          if (metaCsrf && metaCsrf.content && !formData.has('csrf_token')) {
+            formData.append('csrf_token', metaCsrf.content);
+          }
+
           fetch(form.action, {
             method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': (metaCsrf && metaCsrf.content) ? metaCsrf.content : ''
+            },
             body: formData
           })
             .then(function (r) { return r.json(); })
@@ -1443,15 +1472,15 @@
                 var elModal = document.getElementById('modal-encaisse-versement');
                 if (elModal) elModal.style.display = 'none';
                 loadComptaData();
-                alert(res.message || "Versement encaissé avec succès !");
+                notifyCompta(res.message || "Versement encaissé avec succès !", 'success');
               } else {
-                alert(res.message || res.error || "Erreur lors de l'enregistrement du versement.");
+                notifyCompta(res.message || res.error || "Erreur lors de l'enregistrement du versement.", 'error');
               }
             })
             .catch(function (err) {
               if (btnSubmit) { updateSubmitButtonStateCompta(); }
               console.error("Erreur encaissement :", err);
-              alert("Une erreur de communication est survenue avec le serveur.");
+              notifyCompta("Une erreur de communication est survenue avec le serveur.", 'error');
             });
         }
 
@@ -1462,6 +1491,8 @@
         window.resetComptaFilters = resetComptaFilters;
         window.printEtatComptabilite = printEtatComptabilite;
         window.formatFCFA = formatFCFA;
+        window.notifyCompta = notifyCompta;
+        window.notifyCaisseFermeeCompta = notifyCaisseFermeeCompta;
         window.openStudentFinancialSummaryModal = openStudentFinancialSummaryModal;
         window.closeStudentSummaryModal = closeStudentSummaryModal;
         window.openModalEncaissementCompta = openModalEncaissementCompta;
