@@ -120,7 +120,7 @@ class ModelBulletin extends BaseModel
             return null;
         }
 
-        $semestres = $this->getActiveSemestres();
+        $semestres = $this->getActiveSemestres($item['annee_code'] ?? null);
 
         if (empty($selectedSemestreCode)) {
             $stmtCheck = $db->prepare("
@@ -500,8 +500,8 @@ class ModelBulletin extends BaseModel
     public function calculatePvClasseData(string $selectedClasseCode, string $selectedSemestreCode, ?string $anneeCode = null): array
     {
         $db = $this->getCon();
-        $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
-        $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
+        $anneeItem = !empty($anneeCode) ? (new ModelAnnee())->getByCode((string)$anneeCode) : [];
+        $anneeLibelle = $anneeItem['libelle_annee'] ?? ($anneeCode ?: '-');
 
         $classeInfo = null;
         $matieres = [];
@@ -531,40 +531,70 @@ class ModelBulletin extends BaseModel
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             WHERE cl.code_classe = ?
+            LIMIT 1
         ");
         $stmtC->execute([$selectedClasseCode]);
-        $classeInfo = $stmtC->fetch(PDO::FETCH_ASSOC);
+        $classeInfo = $stmtC->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if (!$classeInfo) {
+            return [
+                'classeInfo' => null,
+                'matieres' => [],
+                'pvRows' => [],
+                'statsClasse' => $statsClasse,
+                'anneeLibelle' => $anneeLibelle
+            ];
+        }
+
+        if (empty($anneeCode) && !empty($classeInfo['annee_code'])) {
+            $anneeCode = $classeInfo['annee_code'];
+            $anneeItem = (new ModelAnnee())->getByCode((string)$anneeCode);
+            $anneeLibelle = $anneeItem['libelle_annee'] ?? $anneeCode;
+        }
 
         $filiereCode = $classeInfo['filiere_code'] ?? '';
         $niveauCode = $classeInfo['niveau_code'] ?? '';
 
         // 2. Matières assignées / évaluées pour cette classe via VIEWS::BULLETIN_NOTES_DETAILS
+        $matWhere = "classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')";
+        $matParams = [$selectedClasseCode, $selectedSemestreCode];
+        if (!empty($anneeCode)) {
+            $matWhere .= " AND annee_code = ?";
+            $matParams[] = $anneeCode;
+        }
+
         $stmtM = $db->prepare("
             SELECT DISTINCT matiere_code AS code_matiere, 
                    libelle_matiere, 
                    coefficient_maquette AS coefficient,
                    categorie_matiere
             FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
-            WHERE classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+            WHERE {$matWhere}
             ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC
         ");
-        $stmtM->execute([$selectedClasseCode, $selectedSemestreCode]);
+        $stmtM->execute($matParams);
         $matieres = $stmtM->fetchAll(PDO::FETCH_ASSOC);
 
         // Fallback 1: Si aucune note n'est encore saisie, charger directement la maquette pédagogique via VIEWS::MAQUETTES_COMPLETES
         if (empty($matieres) && !empty($filiereCode) && !empty($niveauCode)) {
+            $maqWhere = "filiere_code = ? AND niveau_code = ?
+                  AND (statut_maquette = '" . STATUTS::ACTIF . "' OR statut_maquette IS NULL)";
+            $maqParams = [$filiereCode, $niveauCode];
+            if (!empty($anneeCode)) {
+                $maqWhere .= " AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+                $maqParams[] = $anneeCode;
+            }
             $stmtMaq = $db->prepare("
                 SELECT matiere_code AS code_matiere, 
                        libelle_matiere, 
                        COALESCE(coefficient, 1.00) AS coefficient,
                        COALESCE(categorie_matiere, '" . CATEGORIES_MATIERES::GENERALE . "') AS categorie_matiere
                 FROM " . VIEWS::MAQUETTES_COMPLETES . "
-                WHERE filiere_code = ? AND niveau_code = ? 
-                  AND annee_code = ?
-                  AND (statut_maquette = '" . STATUTS::ACTIF . "' OR statut_maquette IS NULL)
+                WHERE {$maqWhere}
                 ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC
             ");
-            $stmtMaq->execute([$filiereCode, $niveauCode, $anneeCode]);
+            $stmtMaq->execute($maqParams);
             $matieres = $stmtMaq->fetchAll(PDO::FETCH_ASSOC);
         }
 
@@ -590,16 +620,23 @@ class ModelBulletin extends BaseModel
         $etudiants = $stmtE->fetchAll(PDO::FETCH_ASSOC);
 
         // 4. Batch query allégée via VIEWS::BULLETIN_NOTES_DETAILS
+        $notesWhere = "classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')";
+        $notesParams = [$selectedClasseCode, $selectedSemestreCode];
+        if (!empty($anneeCode)) {
+            $notesWhere .= " AND annee_code = ?";
+            $notesParams[] = $anneeCode;
+        }
+
         $stmtAllNotes = $db->prepare("
             SELECT inscription_code, 
                    matiere_code, 
                    valeur_note, 
                    coefficient_composition
             FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
-            WHERE classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
-              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
+            WHERE {$notesWhere}
         ");
-        $stmtAllNotes->execute([$selectedClasseCode, $selectedSemestreCode]);
+        $stmtAllNotes->execute($notesParams);
         $allNotesRows = $stmtAllNotes->fetchAll(PDO::FETCH_ASSOC);
 
         $notesByInscAndMat = []; // [insc][matCode] = ['sum_pond' => X, 'sum_coef' => Y]
@@ -666,20 +703,52 @@ class ModelBulletin extends BaseModel
                 'total_coef' => $totalCoefEtud,
                 'moyenne_generale' => $moyenneGen,
                 'decision' => $decision,
-                'rang' => 1
+                'rang' => null,
+                'ex_aequo' => false
             ];
         }
 
+        // Trier d'abord les étudiants évalués par moyenne décroissante, puis les non évalués par ordre alphabétique
         usort($tempPvData, function($a, $b) {
-            return $b['moyenne_generale'] <=> $a['moyenne_generale'];
+            $aEval = ($a['total_coef'] > 0) ? 1 : 0;
+            $bEval = ($b['total_coef'] > 0) ? 1 : 0;
+            if ($aEval !== $bEval) {
+                return $bEval <=> $aEval;
+            }
+            if ($aEval === 1 && $b['moyenne_generale'] !== $a['moyenne_generale']) {
+                return $b['moyenne_generale'] <=> $a['moyenne_generale'];
+            }
+            return strcmp((string)$a['nom_prenom'], (string)$b['nom_prenom']);
         });
 
-        $rank = 1;
+        // Attribution des rangs avec gestion des ex-æquo uniquement pour les élèves évalués
+        $evalIndex = 0;
+        $currentRank = 0;
+        $prevMoy = null;
+        $moyCounts = [];
         $allMoyennes = [];
+
+        foreach ($tempPvData as $rowCheck) {
+            if ($rowCheck['total_coef'] > 0) {
+                $keyMoy = number_format((float)$rowCheck['moyenne_generale'], 2, '.', '');
+                $moyCounts[$keyMoy] = ($moyCounts[$keyMoy] ?? 0) + 1;
+            }
+        }
+
         foreach ($tempPvData as &$row) {
-            $row['rang'] = $rank++;
             if ($row['total_coef'] > 0) {
+                $evalIndex++;
+                $keyMoy = number_format((float)$row['moyenne_generale'], 2, '.', '');
+                if ($prevMoy === null || $keyMoy !== $prevMoy) {
+                    $currentRank = $evalIndex;
+                    $prevMoy = $keyMoy;
+                }
+                $row['rang'] = $currentRank;
+                $row['ex_aequo'] = (($moyCounts[$keyMoy] ?? 0) > 1);
                 $allMoyennes[] = $row['moyenne_generale'];
+            } else {
+                $row['rang'] = null;
+                $row['ex_aequo'] = false;
             }
         }
         unset($row);

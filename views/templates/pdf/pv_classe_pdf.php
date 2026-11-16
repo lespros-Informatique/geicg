@@ -11,6 +11,11 @@ $anneeLibelle = $anneeLibelle ?? '-';
 if (empty($etablissement) || !is_array($etablissement)) {
     if (class_exists('ModelConfiguration')) {
         $etablissement = (new ModelConfiguration())->getConfig();
+    } elseif (file_exists(__DIR__ . '/../../../models/configurations/ModelConfiguration.php')) {
+        require_once __DIR__ . '/../../../models/configurations/ModelConfiguration.php';
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
     }
 }
 ?>
@@ -18,7 +23,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Procès-Verbal de Délibération - GROUPE EICG</title>
+  <title>Procès-Verbal de Délibération<?= !empty($etablissement['sigle_etablissement']) ? (' - ' . htmlspecialchars($etablissement['sigle_etablissement'])) : '' ?></title>
   <style>
     @page {
       margin-top: 8mm;
@@ -152,6 +157,12 @@ if (empty($etablissement) || !is_array($etablissement)) {
       font-weight: bold;
       text-align: center;
     }
+    .pv-table .noneval-cell {
+      background-color: #F1F5F9 !important;
+      color: #475569 !important;
+      font-weight: bold;
+      text-align: center;
+    }
     .pv-table .note-danger {
       color: #DC2626;
       font-weight: bold;
@@ -253,11 +264,18 @@ if (empty($etablissement) || !is_array($etablissement)) {
         </tr>
       <?php else: ?>
         <?php foreach ($pvRows as $r): 
-          $isAdmis = ($r['decision'] === 'Admis(e)');
+          $isNonEval = ($r['decision'] === 'Non éval.' || (float)($r['total_coef'] ?? 0) <= 0);
+          $isAdmis = (!$isNonEval && $r['decision'] === 'Admis(e)');
+          $decisionClass = $isNonEval ? 'noneval-cell' : ($isAdmis ? 'admis-cell' : 'ajourne-cell');
+          $moyColorPdf = $isNonEval ? '#64748B' : ($isAdmis ? '#15803D' : '#991B1B');
         ?>
           <tr>
             <td style="text-align: center; font-weight: bold; color: #1E3A5F;">
-              <?= $r['rang'] ?><sup><?= $r['rang'] == 1 ? 'er' : 'e' ?></sup>
+              <?php if ($r['rang'] !== null): ?>
+                <?= (int)$r['rang'] ?><sup><?= ((int)$r['rang'] === 1) ? 'er' : 'e' ?></sup><?= !empty($r['ex_aequo']) ? ' <span style="font-size:6pt;font-weight:normal;">ex</span>' : '' ?>
+              <?php else: ?>
+                -
+              <?php endif; ?>
             </td>
             <td style="font-family: monospace; font-weight: bold; color: #334155;">
               <?= htmlspecialchars($r['matricule'] ?: '-') ?>
@@ -273,12 +291,12 @@ if (empty($etablissement) || !is_array($etablissement)) {
               </td>
             <?php endforeach; ?>
             <td style="text-align: center; font-weight: bold; color: #334155;">
-              <?= number_format($r['total_points'], 2) ?>
+              <?= $isNonEval ? '-' : number_format($r['total_points'], 2) ?>
             </td>
-            <td style="text-align: center; font-weight: 800; font-size: 8pt; color: <?= $isAdmis ? '#15803D' : '#991B1B' ?>;">
-              <?= number_format($r['moyenne_generale'], 2) ?>
+            <td style="text-align: center; font-weight: 800; font-size: 8pt; color: <?= $moyColorPdf ?>;">
+              <?= $isNonEval ? '-' : number_format($r['moyenne_generale'], 2) ?>
             </td>
-            <td class="<?= $isAdmis ? 'admis-cell' : 'ajourne-cell' ?>">
+            <td class="<?= $decisionClass ?>">
               <?= htmlspecialchars($r['decision']) ?>
             </td>
           </tr>
@@ -293,26 +311,33 @@ if (empty($etablissement) || !is_array($etablissement)) {
       <td>
         <div class="sig-title">Le Chef de Département / Enseignant</div>
         <div style="height: 38px;"></div>
-        <div class="sig-cachet">Signature & Date</div>
+        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
       </td>
       <td>
-        <div class="sig-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'Le Directeur des Études') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?></div>
+        <div class="sig-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? '') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
         <div style="height: 20px;"></div>
-        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Signature, Visa & Cachet') ?></div>
+        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
       </td>
       <td>
-        <div class="sig-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'Le Président du Jury / Directeur Général') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? 'La Direction Générale') ?></div>
+        <div class="sig-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? '') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? '') ?></div>
         <div style="height: 20px;"></div>
-        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Signature, Visa & Cachet') ?></div>
+        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
       </td>
     </tr>
   </table>
 
   <!-- 6. Footer -->
+  <?php
+    $footerParts = array_filter([
+      $etablissement['nom_etablissement'] ?? '',
+      $etablissement['texte_pied_page'] ?? '',
+      !empty($etablissement['ville_signature']) ? ('Fait à ' . $etablissement['ville_signature'] . ', le ' . date('d/m/Y')) : ('Le ' . date('d/m/Y'))
+    ], fn($p) => trim((string)$p) !== '');
+  ?>
   <div class="footer-text">
-    <?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?> &bull; <?= htmlspecialchars($etablissement['texte_pied_page'] ?? 'Document officiel généré par le Système Intégré de Délibérations') ?> &bull; Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?>
+    <?= htmlspecialchars(implode(' • ', $footerParts)) ?>
   </div>
 
 </body>

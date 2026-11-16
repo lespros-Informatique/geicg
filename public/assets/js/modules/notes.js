@@ -1611,7 +1611,10 @@ $(document).ready(function() {
         var params = ['classe_code=' + encodeURIComponent(cls)];
         var pvParams = ['classe_code=' + encodeURIComponent(cls)];
 
-        if (annee) params.push('annee_code=' + encodeURIComponent(annee));
+        if (annee) {
+          params.push('annee_code=' + encodeURIComponent(annee));
+          pvParams.push('annee_code=' + encodeURIComponent(annee));
+        }
         if (sem) {
           params.push('semestre_code=' + encodeURIComponent(sem));
           pvParams.push('semestre_code=' + encodeURIComponent(sem));
@@ -1784,12 +1787,13 @@ $(document).ready(function() {
           className: 'text-end',
           render: function(d) {
             if (!d) return '';
+            var curAnnee = $('#filter-annee').val() || '';
             var curSem = $('#filter-semestre').val() || '';
             var semQuery = curSem ? ('?semestre=' + encodeURIComponent(curSem)) : '';
             var viewUrl = window.RACINE + 'bulletin/details/' + (d.editId || d.id_inscription) + semQuery;
             var pdfUrl = window.RACINE + 'bulletin/imprimerBulletinPdf/' + (d.editId || d.id_inscription) + semQuery;
             var pvUrl = d.code_classe 
-              ? (window.RACINE + 'bulletin/pvClasse?classe_code=' + encodeURIComponent(d.code_classe) + (curSem ? ('&semestre_code=' + encodeURIComponent(curSem)) : '')) 
+              ? (window.RACINE + 'bulletin/pvClasse?classe_code=' + encodeURIComponent(d.code_classe) + (curAnnee ? ('&annee_code=' + encodeURIComponent(curAnnee)) : '') + (curSem ? ('&semestre_code=' + encodeURIComponent(curSem)) : '')) 
               : '';
 
             var actionsHtml = '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">';

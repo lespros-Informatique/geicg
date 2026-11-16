@@ -397,9 +397,130 @@ class BulletinController extends BaseController
         $this->details($details);
     }
 
-    private function calculatePvClasseData(string $selectedClasseCode, string $selectedSemestreCode): array
+    private function calculatePvClasseData(string $selectedClasseCode, string $selectedSemestreCode, ?string $anneeCode = null): array
     {
-        return $this->model->calculatePvClasseData($selectedClasseCode, $selectedSemestreCode, $this->getActiveAnneeCode());
+        return $this->model->calculatePvClasseData($selectedClasseCode, $selectedSemestreCode, $anneeCode ?: $this->getActiveAnneeCode());
+    }
+
+    /**
+     * Charge les classes accessibles pour le PV (filtrées par année académique et par rôle enseignant)
+     */
+    private function getAccessibleClassesForPv(?string $anneeCode, array $teacherCtx): array
+    {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
+        if (!empty($teacherCtx['isTeacherOnly'])) {
+            if (empty($teacherCtx['teacherCodes'])) {
+                return [];
+            }
+            require_once __DIR__ . '/../../models/notes/ModelNote.php';
+            return (new ModelNote())->getClassesForTeacher($teacherCtx['teacherCodes'], $anneeCode);
+        }
+
+        $allClasses = (new ModelClasse())->getAllWithDetails($anneeCode);
+        return array_values(array_filter($allClasses, function ($c) {
+            return empty($c['statut_classe']) || $c['statut_classe'] === STATUTS::ACTIF;
+        }));
+    }
+
+    /**
+     * Résout le contexte commun du PV de classe (année, classes autorisées, semestres, données PV)
+     */
+    private function resolvePvContext($param = null, bool $defaultFirstClass = true): ?array
+    {
+        $requestedAnnee = $_GET['annee_code'] ?? null;
+        $anneeCode = $this->resolveTargetAcademicYear($requestedAnnee);
+        if (empty($anneeCode)) {
+            if (!$defaultFirstClass) {
+                $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
+                return null;
+            }
+            return [
+                'anneeCode' => null,
+                'classes' => [],
+                'semestres' => [],
+                'selectedClasseCode' => '',
+                'selectedSemestreCode' => '',
+                'selectedSemestreLibelle' => '-',
+                'pvData' => $this->model->calculatePvClasseData('', '', null),
+                'isTeacherOnly' => false
+            ];
+        }
+
+        $teacherCtx = $this->getTeacherContext();
+        $isTeacherOnly = !empty($teacherCtx['isTeacherOnly']);
+        $classes = $this->getAccessibleClassesForPv($anneeCode, $teacherCtx);
+
+        $selectedClasseCode = trim((string)($_GET['classe_code'] ?? ''));
+        if (empty($selectedClasseCode) && !empty($param)) {
+            try {
+                $decrypted = $this->validator->decrypter($param);
+                $selectedClasseCode = (!empty($decrypted) && $decrypted !== false) ? (string)$decrypted : (string)$param;
+            } catch (Exception $e) {
+                $selectedClasseCode = (string)$param;
+            }
+        }
+
+        $allowedClassCodes = array_column($classes, 'code_classe');
+
+        if (!empty($selectedClasseCode)) {
+            if ($isTeacherOnly) {
+                if (!in_array($selectedClasseCode, $allowedClassCodes, true)) {
+                    $this->renderForbidden("Accès refusé : vous n'êtes pas autorisé à consulter le PV de cette classe.");
+                    return null;
+                }
+            } elseif (!in_array($selectedClasseCode, $allowedClassCodes, true)) {
+                // Si une classe d'une autre année est explicitement demandée sans annee_code dans l'URL, basculer si autorisé
+                if (empty($requestedAnnee)) {
+                    $clsRow = (new ModelClasse())->getClasseWithDetails($selectedClasseCode);
+                    if (!empty($clsRow['annee_code']) && $this->canAccessAcademicYear($clsRow['annee_code'])) {
+                        $anneeCode = $clsRow['annee_code'];
+                        $classes = $this->getAccessibleClassesForPv($anneeCode, $teacherCtx);
+                        $allowedClassCodes = array_column($classes, 'code_classe');
+                    } elseif ($defaultFirstClass) {
+                        $selectedClasseCode = $classes[0]['code_classe'] ?? '';
+                    }
+                } elseif ($defaultFirstClass) {
+                    $selectedClasseCode = $classes[0]['code_classe'] ?? '';
+                }
+            }
+        } elseif ($defaultFirstClass && !empty($classes)) {
+            $selectedClasseCode = $classes[0]['code_classe'] ?? '';
+        }
+
+        $semestres = $this->model->getActiveSemestres($anneeCode);
+        if (empty($semestres)) {
+            $semestres = (new ModelSemestre())->getAll($anneeCode);
+        }
+
+        $selectedSemestreCode = trim((string)($_GET['semestre'] ?? ($_GET['semestre_code'] ?? '')));
+        $semCodes = array_column($semestres, 'code_semestre');
+        if (empty($selectedSemestreCode) || (!empty($semCodes) && !in_array($selectedSemestreCode, $semCodes, true))) {
+            $selectedSemestreCode = $semestres[0]['code_semestre'] ?? '';
+        }
+
+        $selectedSemestreLibelle = '-';
+        foreach ($semestres as $s) {
+            if (($s['code_semestre'] ?? '') === $selectedSemestreCode) {
+                $selectedSemestreLibelle = $s['libelle_semestre'] ?: $selectedSemestreCode;
+                break;
+            }
+        }
+
+        $pvData = $this->calculatePvClasseData($selectedClasseCode, $selectedSemestreCode, $anneeCode);
+
+        return [
+            'anneeCode' => $anneeCode,
+            'classes' => $classes,
+            'semestres' => $semestres,
+            'selectedClasseCode' => $selectedClasseCode,
+            'selectedSemestreCode' => $selectedSemestreCode,
+            'selectedSemestreLibelle' => $selectedSemestreLibelle,
+            'pvData' => $pvData,
+            'isTeacherOnly' => $isTeacherOnly
+        ];
     }
 
     public function pvClasse($param = null)
@@ -407,32 +528,24 @@ class BulletinController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
 
-        $classes = (new ModelClasse())->getAll();
-        $semestres = $this->model->getActiveSemestres();
-
-        $selectedClasseCode = $_GET['classe_code'] ?? '';
-        if (empty($selectedClasseCode) && !empty($param)) {
-            try {
-                $selectedClasseCode = $this->validator->decrypter($param);
-            } catch (Exception $e) {
-                $selectedClasseCode = $param;
-            }
-        }
-        if (empty($selectedClasseCode) && !empty($classes)) {
-            $selectedClasseCode = $classes[0]['code_classe'] ?? '';
+        $ctx = $this->resolvePvContext($param, true);
+        if ($ctx === null) {
+            return;
         }
 
-        $selectedSemestreCode = $_GET['semestre_code'] ?? ($semestres[0]['code_semestre'] ?? '');
-
-        $pvData = $this->calculatePvClasseData($selectedClasseCode, $selectedSemestreCode);
+        $selectedClasseCode = $ctx['selectedClasseCode'];
         $encryptedClasseCode = !empty($selectedClasseCode) ? $this->validator->crypter($selectedClasseCode) : '';
 
-        $this->loadView('../views/bulletin/pv_classe.php', array_merge($pvData, [
-            'classes' => $classes,
-            'semestres' => $semestres,
+        $this->loadView('../views/bulletin/pv_classe.php', array_merge($ctx['pvData'], [
+            'etablissement' => $this->getEtablissementConfig(),
+            'classes' => $ctx['classes'],
+            'semestres' => $ctx['semestres'],
+            'selectedAnneeCode' => $ctx['anneeCode'] ?? '',
             'selectedClasseCode' => $selectedClasseCode,
-            'selectedSemestreCode' => $selectedSemestreCode,
-            'encryptedClasseCode' => $encryptedClasseCode
+            'selectedSemestreCode' => $ctx['selectedSemestreCode'],
+            'selectedSemestreLibelle' => $ctx['selectedSemestreLibelle'],
+            'encryptedClasseCode' => $encryptedClasseCode,
+            'isTeacherOnly' => $ctx['isTeacherOnly']
         ]));
     }
 
@@ -442,27 +555,16 @@ class BulletinController extends BaseController
         $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $selectedClasseCode = $_GET['classe_code'] ?? '';
-        if (empty($selectedClasseCode) && !empty($param)) {
-            try {
-                $selectedClasseCode = $this->validator->decrypter($param);
-            } catch (Exception $e) {
-                $selectedClasseCode = $param;
-            }
+        $ctx = $this->resolvePvContext($param, false);
+        if ($ctx === null) {
+            return;
         }
 
-        $semestres = $this->model->getActiveSemestres();
-        $selectedSemestreCode = $_GET['semestre'] ?? ($_GET['semestre_code'] ?? ($semestres[0]['code_semestre'] ?? ''));
+        $selectedClasseCode = $ctx['selectedClasseCode'];
+        $selectedSemestreCode = $ctx['selectedSemestreCode'];
+        $selectedSemestreLibelle = $ctx['selectedSemestreLibelle'];
+        $pvData = $ctx['pvData'];
 
-        $selectedSemestreLibelle = $selectedSemestreCode;
-        foreach ($semestres as $s) {
-            if ($s['code_semestre'] === $selectedSemestreCode) {
-                $selectedSemestreLibelle = $s['libelle_semestre'];
-                break;
-            }
-        }
-
-        $pvData = $this->calculatePvClasseData($selectedClasseCode, $selectedSemestreCode);
         if (empty($pvData['classeInfo'])) {
             $this->renderNotFound("Classe introuvable pour la génération du PV.");
             return;
@@ -482,7 +584,7 @@ class BulletinController extends BaseController
             'bulletins',
             $selectedClasseCode,
             "Impression du PV de délibération de la classe {$selectedClasseCode} ({$selectedSemestreLibelle})",
-            ['classe_code' => $selectedClasseCode, 'semestre' => $selectedSemestreCode]
+            ['classe_code' => $selectedClasseCode, 'semestre' => $selectedSemestreCode, 'annee_code' => $ctx['anneeCode']]
         );
 
         if (isset($_GET['html'])) {
