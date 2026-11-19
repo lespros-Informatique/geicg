@@ -118,7 +118,6 @@ class ModelMaquette extends BaseModel
                      : CATEGORIES_MATIERES::GENERALE;
         $coefficient = (float)($data['coefficient'] ?? 1.00);
         if ($coefficient <= 0) $coefficient = 1.00;
-        $volumeHoraire = (int)($data['volume_horaire'] ?? 0);
         $statut = ($data['statut_maquette'] ?? STATUTS::ACTIF) === STATUTS::INACTIF ? STATUTS::INACTIF : STATUTS::ACTIF;
         $userCode = $data['user_code'] ?? Session::get('user_code') ?? null;
         $etablissementCode = $data['etablissement_code'] ?? Session::get('etablissement_code') ?? 'ETA-052CG';
@@ -140,12 +139,12 @@ class ModelMaquette extends BaseModel
                 $stmt = $db->prepare("
                     UPDATE " . TABLES::MAQUETTES_PEDAGOGIQUES . "
                     SET filiere_code = ?, niveau_code = ?, matiere_code = ?, annee_code = ?,
-                        categorie_matiere = ?, coefficient = ?, volume_horaire = ?, statut_maquette = ?, user_code = ?
+                        categorie_matiere = ?, coefficient = ?, statut_maquette = ?, user_code = ?
                     WHERE id_maquette = ?
                 ");
                 $stmt->execute([
                     $filiereCode, $niveauCode, $matiereCode, $anneeCode,
-                    $categorie, $coefficient, $volumeHoraire, $statut, $userCode,
+                    $categorie, $coefficient, $statut, $userCode,
                     $idMaquette
                 ]);
 
@@ -162,12 +161,12 @@ class ModelMaquette extends BaseModel
 
                 $stmt = $db->prepare("
                     INSERT INTO " . TABLES::MAQUETTES_PEDAGOGIQUES . "
-                    (code_maquette, annee_code, filiere_code, niveau_code, matiere_code, categorie_matiere, coefficient, volume_horaire, etablissement_code, statut_maquette, user_code)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (code_maquette, annee_code, filiere_code, niveau_code, matiere_code, categorie_matiere, coefficient, etablissement_code, statut_maquette, user_code)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $stmt->execute([
                     $codeMaquette, $anneeCode, $filiereCode, $niveauCode, $matiereCode,
-                    $categorie, $coefficient, $volumeHoraire, $etablissementCode, $statut, $userCode
+                    $categorie, $coefficient, $etablissementCode, $statut, $userCode
                 ]);
 
                 return ['status' => 1, 'message' => 'Matière ajoutée à la maquette pédagogique avec succès.', 'code_maquette' => $codeMaquette];
@@ -220,8 +219,8 @@ class ModelMaquette extends BaseModel
             $stmtCheck = $db->prepare("SELECT id_maquette FROM " . TABLES::MAQUETTES_PEDAGOGIQUES . " WHERE annee_code = ? AND filiere_code = ? AND niveau_code = ? AND matiere_code = ? LIMIT 1");
             $stmtInsert = $db->prepare("
                 INSERT INTO " . TABLES::MAQUETTES_PEDAGOGIQUES . "
-                (code_maquette, annee_code, filiere_code, niveau_code, matiere_code, categorie_matiere, coefficient, volume_horaire, etablissement_code, statut_maquette, user_code)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (code_maquette, annee_code, filiere_code, niveau_code, matiere_code, categorie_matiere, coefficient, etablissement_code, statut_maquette, user_code)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             foreach ($items as $row) {
@@ -240,7 +239,6 @@ class ModelMaquette extends BaseModel
                     $row['matiere_code'],
                     $row['categorie_matiere'],
                     $row['coefficient'],
-                    $row['volume_horaire'] ?? 0,
                     $etablissementCode,
                     $row['statut_maquette'] ?? STATUTS::ACTIF,
                     $userCode

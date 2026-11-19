@@ -389,7 +389,6 @@ SELECT
     mq.matiere_code,
     mq.categorie_matiere,
     mq.coefficient,
-    mq.volume_horaire,
     mq.etablissement_code,
     mq.statut_maquette,
     mq.user_code,

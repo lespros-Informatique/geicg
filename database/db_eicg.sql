@@ -1107,7 +1107,7 @@ CREATE TABLE `logs_activites` (
   KEY `idx_logs_action` (`action`),
   KEY `idx_logs_module` (`module`),
   KEY `idx_logs_created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1116,6 +1116,7 @@ CREATE TABLE `logs_activites` (
 
 LOCK TABLES `logs_activites` WRITE;
 /*!40000 ALTER TABLE `logs_activites` DISABLE KEYS */;
+INSERT INTO `logs_activites` VALUES (1,NULL,NULL,'Système','5454544456','DECONNEXION','authentification','','Déconnexion du système de ',NULL,'::1','Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36','2026-11-19 01:17:32'),(2,1,'5wBEh2OfI00frxk8ITPf','Admin Admin','5454544456','CONNEXION','authentification','1','Connexion réussie au système (admin@gmail.com)','{\"email\":\"admin@gmail.com\"}','::1','Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36','2026-11-19 01:17:35');
 /*!40000 ALTER TABLE `logs_activites` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1135,7 +1136,6 @@ CREATE TABLE `maquettes_pedagogiques` (
   `matiere_code` varchar(50) NOT NULL,
   `categorie_matiere` enum('GENERALE','PROFESSIONNELLE') NOT NULL DEFAULT 'GENERALE',
   `coefficient` decimal(4,2) NOT NULL DEFAULT '1.00',
-  `volume_horaire` int NOT NULL DEFAULT '0',
   `etablissement_code` varchar(50) DEFAULT NULL,
   `statut_maquette` enum('actif','inactif') NOT NULL DEFAULT 'actif',
   `user_code` varchar(50) DEFAULT NULL,
@@ -2350,7 +2350,6 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `matiere_code`,
  1 AS `categorie_matiere`,
  1 AS `coefficient`,
- 1 AS `volume_horaire`,
  1 AS `etablissement_code`,
  1 AS `statut_maquette`,
  1 AS `user_code`,
@@ -2728,7 +2727,7 @@ SET character_set_client = @saved_cs_client;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`admin`@`localhost` SQL SECURITY INVOKER */
-/*!50001 VIEW `v_maquettes_completes` AS select `mq`.`id_maquette` AS `id_maquette`,`mq`.`code_maquette` AS `code_maquette`,`mq`.`annee_code` AS `annee_code`,`mq`.`filiere_code` AS `filiere_code`,`mq`.`niveau_code` AS `niveau_code`,`mq`.`matiere_code` AS `matiere_code`,`mq`.`categorie_matiere` AS `categorie_matiere`,`mq`.`coefficient` AS `coefficient`,`mq`.`volume_horaire` AS `volume_horaire`,`mq`.`etablissement_code` AS `etablissement_code`,`mq`.`statut_maquette` AS `statut_maquette`,`mq`.`user_code` AS `user_code`,`mq`.`created_at_maquette` AS `created_at_maquette`,`mq`.`updated_at_maquette` AS `updated_at_maquette`,`m`.`libelle_matiere` AS `libelle_matiere`,`f`.`libelle_filiere` AS `libelle_filiere`,`f`.`type_filiere` AS `type_filiere`,`n`.`libelle_niveau` AS `libelle_niveau`,`a`.`libelle_annee` AS `libelle_annee` from ((((`maquettes_pedagogiques` `mq` left join `matieres` `m` on((`m`.`code_matiere` = `mq`.`matiere_code`))) left join `filieres` `f` on((`f`.`code_filiere` = `mq`.`filiere_code`))) left join `niveaux` `n` on((`n`.`code_niveau` = `mq`.`niveau_code`))) left join `annees` `a` on((`a`.`code_annee` = `mq`.`annee_code`))) */;
+/*!50001 VIEW `v_maquettes_completes` AS select `mq`.`id_maquette` AS `id_maquette`,`mq`.`code_maquette` AS `code_maquette`,`mq`.`annee_code` AS `annee_code`,`mq`.`filiere_code` AS `filiere_code`,`mq`.`niveau_code` AS `niveau_code`,`mq`.`matiere_code` AS `matiere_code`,`mq`.`categorie_matiere` AS `categorie_matiere`,`mq`.`coefficient` AS `coefficient`,`mq`.`etablissement_code` AS `etablissement_code`,`mq`.`statut_maquette` AS `statut_maquette`,`mq`.`user_code` AS `user_code`,`mq`.`created_at_maquette` AS `created_at_maquette`,`mq`.`updated_at_maquette` AS `updated_at_maquette`,`m`.`libelle_matiere` AS `libelle_matiere`,`f`.`libelle_filiere` AS `libelle_filiere`,`f`.`type_filiere` AS `type_filiere`,`n`.`libelle_niveau` AS `libelle_niveau`,`a`.`libelle_annee` AS `libelle_annee` from ((((`maquettes_pedagogiques` `mq` left join `matieres` `m` on((`m`.`code_matiere` = `mq`.`matiere_code`))) left join `filieres` `f` on((`f`.`code_filiere` = `mq`.`filiere_code`))) left join `niveaux` `n` on((`n`.`code_niveau` = `mq`.`niveau_code`))) left join `annees` `a` on((`a`.`code_annee` = `mq`.`annee_code`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -2796,4 +2795,4 @@ SET character_set_client = @saved_cs_client;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-11-19  1:03:40
+-- Dump completed on 2026-11-19  1:33:06
