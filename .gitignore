@@ -16,38 +16,40 @@ Desktop.ini
 /vendor/
 composer.phar
 *.log
+.phpunit.result.cache
 
 # ==== Fichiers locaux de configuration / secrets ====
 .env
 .env.*
+!.env.example
 config/.env
 *.local.php
 *.secret.php
-config/Database.php
 
-# ==== Cache / Temp ====
+# ==== Cache / Temp / Scratch ====
 cache/
 tmp/
 temp/
+scratch/
 *.cache
 
 # ==== Base de données ====
+# Ignorer les dumps temporaires tout en versionnant les sources SQL officielles
 *.sql
-sql/*.sql
-!sql/.gitkeep
+!database/db_eicg.sql
+!database/rbac.sql
+!database/optimize_views.sql
+!database/optimize_indexes.sql
 *.db
 *.sqlite
 *.sqlite3
 
-# ==== Fichiers téléchargés / uploads ====
-/public/assets/images/articles/*
-/public/assets/images/produits/*
-/public/assets/images/logo/*
-/public/assets/uploads/*
-!/public/assets/images/articles/.gitkeep
-!/public/assets/images/produits/.gitkeep
-!/public/assets/images/logo/.gitkeep
-!/public/assets/uploads/.gitkeep
+# ==== Fichiers téléchargés / uploads utilisateur ====
+/public/uploads/depenses/*
+/public/uploads/dossiers/*
+/public/uploads/galeries/*
+/public/uploads/photos_inscriptions/*
+!/public/uploads/**/.gitkeep
 
 # ==== Logs système / erreurs ====
 logs/
@@ -55,33 +57,25 @@ logs/
 error_log
 error_log.*
 
-# ==== Rapports / métriques ====
+# ==== Rapports / métriques / archives ====
 coverage/
 build/
 dist/
 *.prof
-
-# ==== Archives / Zip ====
 *.zip
 *.tar.gz
 *.rar
 *.7z
 
-# Node.js
+# ==== Node.js ====
 node_modules/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
-# PHP
-.phpunit.result.cache
-
-# Scratch migration scripts
-public/get_last_ids.php
-public/run_permission_migration.php
-public/scratch_check_perms.php
-public/get_etudiant_cols.php
+# ==== Scripts temporaires de debug/migration dans public/ ====
 public/scratch_*.php
+public/test_*.php
 public/migrate_*.php
-public/check_syntax.php
-public/test_check_*.php
+public/check_*.php
+public/run_*.php

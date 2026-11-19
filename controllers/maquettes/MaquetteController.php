@@ -186,7 +186,7 @@ class MaquetteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
+        $this->requirePermission([PERMISSIONS::MANAGE_MAQUETTES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
 
         $data = $_POST;
         unset($data['csrf_token']);
@@ -214,7 +214,7 @@ class MaquetteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
+        $this->requirePermission([PERMISSIONS::MANAGE_MAQUETTES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
 
         $data = $_POST;
         unset($data['csrf_token']);
@@ -246,7 +246,7 @@ class MaquetteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
+        $this->requirePermission([PERMISSIONS::MANAGE_MAQUETTES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
 
         $id = $_POST['id'] ?? null;
         if (!$id) {
@@ -284,7 +284,7 @@ class MaquetteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
+        $this->requirePermission([PERMISSIONS::MANAGE_MAQUETTES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
 
         $id = $_POST['id'] ?? null;
         if (!$id) {
@@ -315,7 +315,7 @@ class MaquetteController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
+        $this->requirePermission([PERMISSIONS::MANAGE_MAQUETTES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_MATIERES]);
 
         $sourceAnnee = trim($_POST['source_annee_code'] ?? '');
         $targetAnnee = trim($_POST['target_annee_code'] ?? '');

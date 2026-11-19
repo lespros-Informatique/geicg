@@ -104,7 +104,7 @@
                     <i data-lucide="graduation-cap"></i> <span>Classes</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($canAccess([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES])): ?>
+                <?php if ($canAccess([PERMISSIONS::VIEW_MAQUETTES, PERMISSIONS::MANAGE_MAQUETTES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_MATIERES])): ?>
                 <a href="<?= url('maquette/list') ?>" class="nav-item sub <?= $isActiveRoute('/maquette/') ?>" data-title="Maquettes Pédagogiques & Coefficients">
                     <i data-lucide="book-marked"></i> <span>Maquettes & Coefs</span>
                 </a>
